@@ -1,0 +1,115 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Role-based access control: Check for 'admin' custom claim in JWT token
+    // Access by email prefix is now DISABLED for maximum security.
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // ============================================================================
+    // BASE COLLECTIONS (Operations)
+    // Operators: can read, create, and update (renewals, edits)
+    // Admins: full access (including deletion)
+    // ============================================================================
+
+    match /usuarios/{docId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /ventas/{docId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /servicios/{docId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /pagosServicio/{docId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /pagosVenta/{docId} {
+      allow read, create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+    
+    match /notificaciones/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ============================================================================
+    // ADMINISTRATIVE COLLECTIONS
+    // Operators: Read-only access to catalogs
+    // Admins: Full access (manage categories, methods, templates)
+    // ============================================================================
+
+    match /categorias/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /metodosPago/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /tiposGasto/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /templates/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /config/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ============================================================================
+    // FINANCIAL COLLECTIONS
+    // Admins only: Sensitive expense data
+    // ============================================================================
+
+    match /gastos/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ============================================================================
+    // AUDIT LOG
+    // Operators: Can log their actions, but cannot modify or delete them
+    // Admins: Can view and perform maintenance/cleanup
+    // ============================================================================
+
+    match /activityLog/{docId} {
+      allow read, create: if isAuthenticated();
+      allow update: if false; // Immutable: no updates allowed
+      allow delete: if isAdmin(); // Only admins can cleanup logs
+    }
+
+    // ============================================================================
+    // DENY ALL OTHER COLLECTIONS
+    // ============================================================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
