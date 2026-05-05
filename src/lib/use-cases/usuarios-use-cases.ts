@@ -8,7 +8,7 @@ import {
   updateUsuario,
 } from '@/lib/supabase/usuarios-repository';
 import { ENTITIES } from '@/lib/supabase/entities';
-import { queryPagosVenta, queryVentas, updatePagoVenta, updateVenta } from '@/lib/supabase/ventas-repository';
+import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { adjustUsuariosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
@@ -95,27 +95,8 @@ export async function updateUsuarioUseCase(
 
   let shouldRefreshNotificaciones = false;
   if ((nombreChanged || telefonoChanged) && oldUsuario) {
-    const nuevoNombre = `${updates.nombre ?? oldUsuario.nombre} ${updates.apellido ?? oldUsuario.apellido}`;
-    const nuevoTelefono = updates.telefono ?? oldUsuario.telefono;
-    const [ventasDelCliente, pagosDelCliente] = await Promise.all([
-      queryVentas<{ id: string }>([{ field: 'clienteId', operator: '==', value: id }]),
-      nombreChanged
-        ? queryPagosVenta<{ id: string }>([{ field: 'clienteId', operator: '==', value: id }])
-        : Promise.resolve([] as { id: string }[]),
-    ]);
-    const ventaUpdates: Record<string, unknown> = {};
-
-    if (nombreChanged) {
-      ventaUpdates.clienteNombre = nuevoNombre;
-    }
-
-    if (telefonoChanged) {
-      ventaUpdates.clienteTelefono = nuevoTelefono;
-    }
-
-    await Promise.all([
-      ...ventasDelCliente.map((venta) => updateVenta(venta.id, ventaUpdates)),
-      ...pagosDelCliente.map((pago) => updatePagoVenta(pago.id, { clienteNombre: nuevoNombre })),
+    const ventasDelCliente = await queryVentas<{ id: string }>([
+      { field: 'clienteId', operator: '==', value: id },
     ]);
 
     if (ventasDelCliente.length > 0) {

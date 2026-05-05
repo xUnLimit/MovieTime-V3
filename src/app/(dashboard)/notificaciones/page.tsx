@@ -16,6 +16,7 @@ import { ServiciosProximosTable } from '@/components/notificaciones/ServiciosPro
 import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNotificacionesTable';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { useTemplatesStore } from '@/store/templatesStore';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import {
@@ -66,6 +67,7 @@ function NotificacionesMetrics() {
 function NotificacionesPageContent() {
   const { notificaciones, fetchNotificaciones, fetchCounts, ventasProximas, serviciosProximos, reposoCompletados } =
     useNotificacionesStore();
+  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
 
   const [activeTab, setActiveTab] = useState('ventas');
   const [isSyncing, setIsSyncing] = useState(false);
@@ -84,8 +86,11 @@ function NotificacionesPageContent() {
     const init = async () => {
       try {
         await sincronizarNotificaciones();
-        await fetchNotificaciones(true);
-        await fetchCounts();
+        await Promise.all([
+          fetchNotificaciones(true),
+          fetchCounts(),
+          fetchTemplates(true),
+        ]);
       } catch (error) {
         console.error('Error initializing notifications:', error);
         toast.error('Error al cargar notificaciones', { description: 'No se pudieron obtener las notificaciones. Intenta nuevamente.' });
@@ -93,7 +98,7 @@ function NotificacionesPageContent() {
     };
 
     init();
-  }, [fetchNotificaciones, fetchCounts]);
+  }, [fetchNotificaciones, fetchCounts, fetchTemplates]);
 
   /**
    * Manual sync trigger
@@ -102,8 +107,11 @@ function NotificacionesPageContent() {
     setIsSyncing(true);
     try {
       await sincronizarNotificacionesForzado();
-      await fetchNotificaciones(true);
-      await fetchCounts();
+      await Promise.all([
+        fetchNotificaciones(true),
+        fetchCounts(),
+        fetchTemplates(true),
+      ]);
       toast.success('Sincronización completada', { description: 'Las notificaciones han sido actualizadas correctamente.' });
     } catch (error) {
       console.error('Error during sync:', error);

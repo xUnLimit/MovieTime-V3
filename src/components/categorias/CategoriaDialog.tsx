@@ -158,7 +158,7 @@ export function CategoriaDialog({
             <Label htmlFor="activo">Activo</Label>
             <Switch
               id="activo"
-              checked={activoValue}
+              checked={Boolean(activoValue)}
               onCheckedChange={(checked) => setValue("activo", checked)}
             />
           </div>

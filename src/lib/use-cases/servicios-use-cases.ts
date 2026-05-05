@@ -4,22 +4,26 @@ import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
 import {
   adjustCategoriaGastos,
   countServicios,
-  createServicio,
+  createServicioWithInitialPayment,
+  getPagoServicioById,
   getServicioById,
   queryPagosServicio,
   queryServicios,
   removePagoServicio,
   removeServicio,
+  updateLatestServicioPeriodo,
   updatePagoServicio,
   updateServicio,
+  updateServicioPeriodoById,
 } from '@/lib/supabase/servicios-repository';
+import { toDateOnly, toIso } from '@/lib/supabase/dates';
 import {
   adjustGastosStats,
   getDiaKeyFromDate,
   getMesKeyFromDate,
   upsertServicioPronostico,
 } from '@/lib/services/dashboardStatsService';
-import { crearPagoInicial, crearPagoRenovacion } from '@/lib/services/pagosServicioService';
+import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
 import { resyncServiciosDenormalizedData, syncServicioDependencias } from '@/lib/services/servicioSyncService';
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
@@ -55,6 +59,59 @@ function normalizeServicioPagoInput(
     metodoPagoNombre: input.metodoPagoNombre || metodoPago?.nombre || '',
     moneda: input.moneda || metodoPago?.moneda || fallbackMoneda || 'USD',
     cicloPago: input.periodoRenovacion as 'mensual' | 'trimestral' | 'semestral' | 'anual',
+  };
+}
+
+const SERVICIO_TABLE_UPDATE_KEYS = new Set([
+  'categoriaId',
+  'tipo',
+  'nombre',
+  'correo',
+  'contrasena',
+  'perfilesDisponibles',
+  'perfilesOcupados',
+  'activo',
+  'enReposo',
+  'diasReposo',
+  'fechaInicioReposo',
+  'fechaFinReposo',
+  'cortadoAt',
+  'cortadoBy',
+  'motivoCorte',
+  'archivadoAt',
+  'archivadoBy',
+  'motivoArchivado',
+  'notas',
+  'createdBy',
+]);
+
+function getServicioTableUpdates(updates: Partial<Servicio>): Partial<Servicio> {
+  const result: Partial<Servicio> = {};
+  const source = updates as Record<string, unknown>;
+  const target = result as Record<string, unknown>;
+  for (const key of SERVICIO_TABLE_UPDATE_KEYS) {
+    if (source[key] !== undefined) target[key] = source[key];
+  }
+  return result;
+}
+
+function hasServicioPeriodoUpdates(updates: Partial<Servicio>): boolean {
+  return [
+    'costoServicio',
+    'moneda',
+    'cicloPago',
+    'fechaInicio',
+    'fechaVencimiento',
+    'renovacionAutomatica',
+    'metodoPagoId',
+  ].some((key) => (updates as Record<string, unknown>)[key] !== undefined);
+}
+
+async function getUsdValues(amount: number, moneda: string) {
+  const usd = await currencyService.convertToUSD(amount, moneda);
+  return {
+    usd,
+    rate: moneda === 'USD' || amount === 0 || usd === 0 ? 1 : amount / usd,
   };
 }
 
@@ -113,26 +170,36 @@ export async function createServicioUseCase(
     moneda = metodoPago?.moneda;
   }
 
-  const id = await createServicio({
-    ...servicioData,
-    metodoPagoNombre,
-    moneda,
-    perfilesOcupados: 0,
-    gastosTotal: servicioData.costoServicio ?? 0,
+  const costo = Number(servicioData.costoServicio ?? 0);
+  const monedaOriginal = moneda || 'USD';
+  const { usd, rate } = await getUsdValues(costo, monedaOriginal);
+  const id = await createServicioWithInitialPayment({
+    p_categoria_id: servicioData.categoriaId,
+    p_plan_tipo_id: servicioData.tipo || null,
+    p_nombre: servicioData.nombre,
+    p_correo: servicioData.correo,
+    p_contrasena: servicioData.contrasena,
+    p_perfiles_disponibles: servicioData.perfilesDisponibles ?? 0,
+    p_perfiles_ocupados: 0,
+    p_activo: servicioData.activo ?? true,
+    p_en_reposo: servicioData.enReposo ?? false,
+    p_dias_reposo: servicioData.diasReposo ?? null,
+    p_fecha_inicio_reposo: servicioData.fechaInicioReposo ? toDateOnly(servicioData.fechaInicioReposo) : null,
+    p_fecha_fin_reposo: servicioData.fechaFinReposo ? toDateOnly(servicioData.fechaFinReposo) : null,
+    p_notas: servicioData.notas ?? null,
+    p_fecha_inicio: toDateOnly(servicioData.fechaInicio ?? new Date()),
+    p_fecha_vencimiento: toDateOnly(servicioData.fechaVencimiento ?? new Date()),
+    p_ciclo_pago: servicioData.cicloPago ?? 'mensual',
+    p_costo_original: costo,
+    p_moneda_original: monedaOriginal,
+    p_costo_usd: usd,
+    p_exchange_rate: rate,
+    p_renovacion_automatica: servicioData.renovacionAutomatica ?? false,
+    p_metodo_pago_id: servicioData.metodoPagoId || null,
+    p_metodo_pago_nombre_snapshot: metodoPagoNombre || null,
+    p_fecha_pago: toIso(new Date()),
+    p_pago_notas: servicioData.notas ?? '',
   });
-
-  await crearPagoInicial(
-    id,
-    servicioData.categoriaId,
-    servicioData.costoServicio ?? 0,
-    servicioData.metodoPagoId || '',
-    metodoPagoNombre || '',
-    moneda || 'USD',
-    servicioData.cicloPago ?? 'mensual',
-    servicioData.fechaInicio ?? new Date(),
-    servicioData.fechaVencimiento ?? new Date(),
-    servicioData.notas
-  );
 
   if (servicioData.costoServicio) {
     const costoUSD = await currencyService.convertToUSD(servicioData.costoServicio, moneda ?? 'USD');
@@ -198,7 +265,24 @@ export async function updateServicioUseCase(
     };
   }
 
-  await updateServicio(id, finalUpdates);
+  await updateServicio(id, getServicioTableUpdates(finalUpdates));
+
+  const shouldSyncPeriodo = hasServicioPeriodoUpdates(finalUpdates);
+  if (shouldSyncPeriodo) {
+    const nextCosto = Number(finalUpdates.costoServicio ?? servicio.costoServicio ?? 0);
+    const nextMoneda = finalUpdates.moneda ?? servicio.moneda ?? 'USD';
+    const { usd, rate } = await getUsdValues(nextCosto, nextMoneda);
+    await updateLatestServicioPeriodo(id, {
+      fechaInicio: finalUpdates.fechaInicio ?? servicio.fechaInicio ?? new Date(),
+      fechaVencimiento: finalUpdates.fechaVencimiento ?? servicio.fechaVencimiento ?? new Date(),
+      cicloPago: (finalUpdates.cicloPago ?? servicio.cicloPago ?? 'mensual') as NonNullable<Servicio['cicloPago']>,
+      costo: nextCosto,
+      moneda: nextMoneda,
+      costoUsd: usd,
+      exchangeRate: rate,
+      renovacionAutomatica: finalUpdates.renovacionAutomatica ?? servicio.renovacionAutomatica,
+    });
+  }
 
   const servicioActualizado = {
     ...servicio,
@@ -226,6 +310,7 @@ export async function updateServicioUseCase(
   );
 
   const shouldSyncPronostico =
+    shouldSyncPeriodo ||
     (updates.activo !== undefined && updates.activo !== servicio.activo) ||
     (updates.enReposo !== undefined && updates.enReposo !== servicio.enReposo);
   const pronostico = shouldSyncPronostico ? toServicioPronostico(servicioActualizado) : undefined;
@@ -342,7 +427,8 @@ export async function renewServicioUseCase(
     input.fechaInicio,
     input.fechaVencimiento,
     numeroRenovacion,
-    notaPrincipal
+    notaPrincipal,
+    servicio.renovacionAutomatica
   );
 
   const costoUSD = await currencyService.convertToUSD(input.costo, moneda);
@@ -368,16 +454,7 @@ export async function renewServicioUseCase(
   };
   upsertServicioPronostico(pronostico, servicio.id).catch(() => {});
 
-  await updateServicio(servicio.id, {
-    fechaInicio: input.fechaInicio,
-    fechaVencimiento: input.fechaVencimiento,
-    costoServicio: input.costo,
-    metodoPagoId: input.metodoPagoId || undefined,
-    metodoPagoNombre,
-    moneda,
-    cicloPago,
-    notas: notaPrincipal,
-  });
+  await updateServicio(servicio.id, getServicioTableUpdates({ notas: notaPrincipal }));
 
   await options.recordActivityLog?.({
     ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
@@ -419,31 +496,37 @@ export async function updateServicioPagoUseCase(
     options.metodoPago,
     pago.moneda || servicio.moneda
   );
+  const { usd, rate } = await getUsdValues(input.costo, moneda);
+  const pagoActual = await getPagoServicioById<PagoServicio & { servicioPeriodoId?: string }>(pago.id);
 
   await updatePagoServicio(pago.id, {
-    fechaInicio: input.fechaInicio,
-    fechaVencimiento: input.fechaVencimiento,
-    monto: input.costo,
-    cicloPago,
-    metodoPagoId: input.metodoPagoId,
-    metodoPagoNombre,
-    moneda,
+    monto_original: input.costo,
+    moneda_original: moneda,
+    monto_usd: usd,
+    exchange_rate: rate,
+    metodo_pago_id: input.metodoPagoId || null,
+    metodo_pago_nombre_snapshot: metodoPagoNombre || null,
     notas: notaPrincipal,
   });
 
-  let servicioActualizado: Servicio | null = null;
-  if (options.isLatestPayment) {
-    await updateServicio(servicio.id, {
+  if (pagoActual?.servicioPeriodoId) {
+    await updateServicioPeriodoById(pagoActual.servicioPeriodoId, {
       fechaInicio: input.fechaInicio,
       fechaVencimiento: input.fechaVencimiento,
-      costoServicio: input.costo,
-      metodoPagoId: input.metodoPagoId || undefined,
-      metodoPagoNombre,
-      moneda,
       cicloPago,
+      costo: input.costo,
+      moneda,
+      costoUsd: usd,
+      exchangeRate: rate,
+      renovacionAutomatica: servicio.renovacionAutomatica,
     });
+  }
 
+  let servicioActualizado: Servicio | null = null;
+  if (options.isLatestPayment) {
     servicioActualizado = await getServicioById<Servicio>(servicio.id);
+    const pronostico = servicioActualizado ? toServicioPronostico(servicioActualizado) : null;
+    upsertServicioPronostico(pronostico, servicio.id).catch(() => {});
   }
 
   return { servicioActualizado };
@@ -452,12 +535,13 @@ export async function updateServicioPagoUseCase(
 export async function deleteServicioPagoUseCase(
   servicio: Servicio,
   pago: PagoServicio,
-  remainingPayments: PagoServicio[],
+  _remainingPayments: PagoServicio[],
   options: {
     isLatestPayment: boolean;
     fallbackMoneda?: string;
   }
 ) {
+  void _remainingPayments;
   await removePagoServicio(pago.id);
 
   const montoToRevertUSD = await currencyService.convertToUSD(
@@ -469,17 +553,10 @@ export async function deleteServicioPagoUseCase(
   }
 
   let servicioActualizado: Servicio | null = null;
-  if (options.isLatestPayment && remainingPayments.length > 0) {
-    const anterior = remainingPayments[0];
-    await updateServicio(servicio.id, {
-      fechaInicio: anterior.fechaInicio,
-      fechaVencimiento: anterior.fechaVencimiento,
-      costoServicio: anterior.monto,
-      metodoPagoId: anterior.metodoPagoId || undefined,
-      cicloPago: anterior.cicloPago,
-    });
-
+  if (options.isLatestPayment) {
     servicioActualizado = await getServicioById<Servicio>(servicio.id);
+    const pronostico = servicioActualizado ? toServicioPronostico(servicioActualizado) : null;
+    upsertServicioPronostico(pronostico, servicio.id).catch(() => {});
   }
 
   return { servicioActualizado };

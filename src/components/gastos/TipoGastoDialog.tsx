@@ -135,7 +135,7 @@ export function TipoGastoDialog({ open, onOpenChange, tipoGasto }: TipoGastoDial
                 Los tipos inactivos no se pueden usar en nuevos gastos.
               </p>
             </div>
-            <Switch checked={activo} onCheckedChange={(checked) => setValue('activo', checked, { shouldValidate: true })} />
+            <Switch checked={Boolean(activo)} onCheckedChange={(checked) => setValue('activo', checked, { shouldValidate: true })} />
           </div>
 
           <DialogFooter>

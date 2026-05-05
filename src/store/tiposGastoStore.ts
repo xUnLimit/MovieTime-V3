@@ -1,8 +1,8 @@
-﻿import { countTiposGasto, createTipoGasto, ENTITIES, getTiposGasto, logCacheHit, queryGastos, updateGasto, updateTipoGasto } from '@/lib/supabase/catalogos-repository';
+﻿import { countTiposGasto, createTipoGasto, ENTITIES, getTiposGasto, logCacheHit, updateTipoGasto } from '@/lib/supabase/catalogos-repository';
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Gasto, TipoGasto } from '@/types';
+import type { TipoGasto } from '@/types';
 
 const CACHE_TIMEOUT = 5 * 60 * 1000;
 
@@ -131,16 +131,6 @@ export const useTiposGastoStore = create<TiposGastoState>()(
         await updateTipoGasto(id, finalUpdates);
 
         if (finalUpdates.nombre && finalUpdates.nombre !== tipoActual.nombre) {
-          const gastosRelacionados = await queryGastos<Gasto>([
-            { field: 'tipoGastoId', operator: '==', value: id },
-          ]);
-
-          await Promise.all(
-            gastosRelacionados.map((gasto) =>
-              updateGasto(gasto.id, { tipoGastoNombre: finalUpdates.nombre })
-            )
-          );
-
           import('./gastosStore')
             .then(({ useGastosStore }) => {
               useGastosStore.setState((state) => ({

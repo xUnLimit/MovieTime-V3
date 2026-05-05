@@ -19,7 +19,8 @@ export async function crearPagoInicial(
   cicloPago: 'mensual' | 'trimestral' | 'semestral' | 'anual',
   fechaInicio: Date,
   fechaVencimiento: Date,
-  notas?: string
+  notas?: string,
+  renovacionAutomatica?: boolean
 ): Promise<void> {
   await createPagoServicio({
     servicioId,
@@ -33,6 +34,7 @@ export async function crearPagoInicial(
     metodoPagoId,
     metodoPagoNombre, // Denormalizado
     moneda,           // Denormalizado
+    renovacionAutomatica,
     isPagoInicial: true,
     notas: notas || '',
   });
@@ -52,7 +54,8 @@ export async function crearPagoRenovacion(
   fechaInicio: Date,
   fechaVencimiento: Date,
   numeroRenovacion: number,
-  notas?: string
+  notas?: string,
+  renovacionAutomatica?: boolean
 ): Promise<void> {
   await createPagoServicio({
     servicioId,
@@ -66,6 +69,7 @@ export async function crearPagoRenovacion(
     metodoPagoId,
     metodoPagoNombre, // Denormalizado
     moneda,           // Denormalizado
+    renovacionAutomatica,
     isPagoInicial: false,
     notas: notas || '',
   });

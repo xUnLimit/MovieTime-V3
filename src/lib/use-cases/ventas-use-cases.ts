@@ -1,21 +1,24 @@
 import { format } from 'date-fns';
 
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { timestampToDate } from '@/lib/supabase/dates';
+import { timestampToDate, toDateOnly, toIso } from '@/lib/supabase/dates';
 import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
 import {
   adjustCategoriaSuscripciones,
   adjustServiciosActivos,
-  createPagoVenta,
   createVenta,
+  createVentaWithInitialPayment,
+  getPagoVentaById,
   getVentaById,
   countVentas,
   queryPagosVenta,
   queryVentas,
   removePagoVenta,
   removeVenta,
+  updateLatestVentaPeriodo,
   updatePagoVenta,
   updateVenta,
+  updateVentaPeriodoById,
 } from '@/lib/supabase/ventas-repository';
 import {
   adjustIngresosStats,
@@ -30,6 +33,7 @@ import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { syncUsuarioMetodoPago } from '@/lib/services/usuarioMetodoPagoSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
+import { isPendingUserPaymentMethodId } from '@/lib/utils/usuarioMetodoPago';
 import type { ActivityLog, MetodoPago, PagoVenta, VentaDoc } from '@/types';
 import type { VentaPronostico } from '@/types/dashboard';
 
@@ -70,6 +74,45 @@ type VentaPagoResult = {
   syncPaymentMethodFailed: boolean;
 };
 
+const VENTA_TABLE_UPDATE_KEYS = new Set([
+  'clienteId',
+  'servicioId',
+  'categoriaId',
+  'estado',
+  'perfilNumero',
+  'perfilNombre',
+  'codigo',
+  'cortadaAt',
+  'cortadaBy',
+  'motivoCorte',
+  'archivadoAt',
+  'archivadoBy',
+  'motivoArchivado',
+  'notas',
+]);
+
+function getVentaTableUpdates(updates: Partial<VentaDoc>): Partial<VentaDoc> {
+  const result: Partial<VentaDoc> = {};
+  const source = updates as Record<string, unknown>;
+  const target = result as Record<string, unknown>;
+  for (const key of VENTA_TABLE_UPDATE_KEYS) {
+    if (source[key] !== undefined) target[key] = source[key];
+  }
+  return result;
+}
+
+async function getUsdValues(amount: number, moneda: string) {
+  const usd = await currencyService.convertToUSD(amount, moneda);
+  return {
+    usd,
+    rate: moneda === 'USD' || amount === 0 || usd === 0 ? 1 : amount / usd,
+  };
+}
+
+function nullableMetodoPagoId(id?: string | null) {
+  return isPendingUserPaymentMethodId(id) ? null : id;
+}
+
 function ventaBaseFromRecord(doc: Record<string, unknown>): VentaDoc {
   return {
     id: doc.id as string,
@@ -108,14 +151,15 @@ function getPagoValues(venta: VentaDoc, input: VentaPagoInput) {
 }
 
 export function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
-  if (v.estado === 'inactivo' || !v.fechaFin || !v.cicloPago) return null;
+  const precioFinal = v.precio || v.precioFinal || 0;
+  if (v.estado === 'inactivo' || !v.fechaFin || !v.cicloPago || precioFinal <= 0) return null;
   return {
     id: v.id,
     categoriaId: v.categoriaId ?? '',
     fechaInicio: v.fechaInicio instanceof Date ? format(v.fechaInicio, "yyyy-MM-dd'T'HH:mm:ss") : String(v.fechaInicio ?? new Date()),
     fechaFin: v.fechaFin instanceof Date ? format(v.fechaFin, "yyyy-MM-dd'T'HH:mm:ss") : String(v.fechaFin),
     cicloPago: v.cicloPago,
-    precioFinal: v.precio || v.precioFinal || 0,
+    precioFinal,
     moneda: v.moneda || 'USD',
   };
 }
@@ -180,29 +224,43 @@ export async function createVentaUseCase(
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
   const { pagos, ...ventaDataLimpia } = ventaData;
-  const ventaId = await createVenta(ventaDataLimpia);
+  const pagoInicial = pagos?.[0];
+  const ventaId = pagoInicial
+    ? await (async () => {
+        const monto = Number(pagoInicial.total ?? ventaData.precioFinal ?? 0);
+        const precio = Number(ventaData.precio ?? monto);
+        const descuento = Number(ventaData.descuento ?? 0);
+        const moneda = ventaData.moneda ?? 'USD';
+        const { usd, rate } = await getUsdValues(monto, moneda);
 
-  if (pagos && pagos.length > 0) {
-    const pagoInicial = pagos[0];
-    await createPagoVenta({
-      ventaId,
-      clienteId: ventaData.clienteId || '',
-      clienteNombre: ventaData.clienteNombre,
-      categoriaId: ventaData.categoriaId,
-      fecha: pagoInicial.fecha || new Date(),
-      monto: pagoInicial.total || ventaData.precioFinal,
-      precio: ventaData.precio,
-      descuento: ventaData.descuento,
-      metodoPagoId: ventaData.metodoPagoId,
-      metodoPago: ventaData.metodoPagoNombre,
-      moneda: ventaData.moneda,
-      notas: pagoInicial.notas ?? '',
-      isPagoInicial: true,
-      cicloPago: ventaData.cicloPago,
-      fechaInicio: ventaData.fechaInicio,
-      fechaVencimiento: ventaData.fechaFin,
-    });
-  }
+        return createVentaWithInitialPayment({
+          p_cliente_id: ventaData.clienteId || null,
+          p_servicio_id: ventaData.servicioId,
+          p_categoria_id: ventaData.categoriaId,
+          p_estado: ventaData.estado ?? 'activo',
+          p_perfil_numero: ventaData.perfilNumero ?? null,
+          p_perfil_nombre: ventaData.perfilNombre ?? null,
+          p_codigo: ventaData.codigo ?? null,
+          p_notas: ventaData.notas ?? null,
+          p_fecha_inicio: toDateOnly(ventaData.fechaInicio ?? new Date()),
+          p_fecha_fin: toDateOnly(ventaData.fechaFin ?? new Date()),
+          p_ciclo_pago: ventaData.cicloPago ?? 'mensual',
+          p_precio_original: precio,
+          p_descuento: descuento,
+          p_total_original: monto,
+          p_moneda_original: moneda,
+          p_total_usd: usd,
+          p_exchange_rate: rate,
+          p_metodo_pago_id: nullableMetodoPagoId(ventaData.metodoPagoId),
+          p_metodo_pago_nombre_snapshot: ventaData.metodoPagoNombre ?? null,
+          p_fecha_pago: toIso(pagoInicial.fecha ?? new Date()),
+          p_pago_notas: pagoInicial.notas ?? '',
+          p_plan_id: null,
+          p_plan_nombre_snapshot: null,
+          p_plan_tipo_nombre_snapshot: null,
+        });
+      })()
+    : await createVenta(getVentaTableUpdates(ventaDataLimpia) as Omit<VentaDoc, 'id'>);
 
   const venta: VentaDoc = {
     ...ventaDataLimpia,
@@ -283,12 +341,7 @@ export async function renewVentaUseCase(
     descuentoNumero
   );
 
-  await updateVenta(venta.id, {
-    fechaFin: input.fechaVencimiento,
-    fechaInicio: input.fechaInicio,
-    cicloPago: input.periodoRenovacion,
-    notas: notaPrincipal,
-  });
+  await updateVenta(venta.id, getVentaTableUpdates({ notas: notaPrincipal }));
 
   let syncPaymentMethodFailed = false;
   try {
@@ -341,19 +394,32 @@ export async function updateVentaPagoUseCase(
   input: VentaPagoInput
 ) {
   const { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda } = getPagoValues(venta, input);
+  const { usd, rate } = await getUsdValues(monto, moneda);
+  const pago = await getPagoVentaById<PagoVenta & { ventaPeriodoId?: string }>(pagoId);
 
   await updatePagoVenta(pagoId, {
-    precio: costo,
-    descuento: descuentoNumero,
-    monto,
-    metodoPagoId: input.metodoPagoId,
-    metodoPago: metodoPagoNombre,
-    moneda,
-    cicloPago: input.periodoRenovacion as VentaDoc['cicloPago'],
-    fechaInicio: input.fechaInicio,
-    fechaVencimiento: input.fechaVencimiento,
+    monto_original: monto,
+    moneda_original: moneda,
+    monto_usd: usd,
+    exchange_rate: rate,
+    metodo_pago_id: input.metodoPagoId || null,
+    metodo_pago_nombre_snapshot: metodoPagoNombre || null,
     notas: notaPrincipal,
   });
+
+  if (pago?.ventaPeriodoId) {
+    await updateVentaPeriodoById(pago.ventaPeriodoId, {
+      precio: costo,
+      descuento: descuentoNumero,
+      monto,
+      moneda,
+      montoUsd: usd,
+      exchangeRate: rate,
+      cicloPago: (input.periodoRenovacion || 'mensual') as NonNullable<VentaDoc['cicloPago']>,
+      fechaInicio: input.fechaInicio,
+      fechaVencimiento: input.fechaVencimiento,
+    });
+  }
 
   let syncPaymentMethodFailed = false;
   try {
@@ -368,22 +434,20 @@ export async function updateVentaPagoUseCase(
     console.error('[VentasUseCases] Error syncing user payment method:', error);
   }
 
-  return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, syncPaymentMethodFailed };
+  const ventaActualizada = await getVentaConPagoActualUseCase(venta.id);
+  const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
+  upsertVentaPronostico(pronostico, venta.id).catch(() => {});
+
+  return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, syncPaymentMethodFailed, pronostico };
 }
 
 export async function deleteVentaPagoUseCase(ventaId: string, pagoId: string) {
   await removePagoVenta(pagoId);
   const ventaActualizada = await getVentaConPagoActualUseCase(ventaId);
+  const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
+  upsertVentaPronostico(pronostico, ventaId).catch(() => {});
 
-  if (ventaActualizada) {
-    await updateVenta(ventaId, {
-      fechaFin: ventaActualizada.fechaFin,
-      fechaInicio: ventaActualizada.fechaInicio,
-      cicloPago: ventaActualizada.cicloPago,
-    });
-  }
-
-  return { ventaActualizada };
+  return { ventaActualizada, pronostico };
 }
 
 export async function updateVentaWithLatestPagoUseCase(
@@ -407,6 +471,21 @@ export async function updateVentaWithLatestPagoUseCase(
   }
 ) {
   const result = await updateVentaUseCase(id, updates, options);
+  const { usd, rate } = await getUsdValues(pagoUpdates.monto, pagoUpdates.moneda);
+  const cicloPago = (pagoUpdates.cicloPago || 'mensual') as NonNullable<VentaDoc['cicloPago']>;
+
+  await updateLatestVentaPeriodo(id, {
+    precio: pagoUpdates.precio,
+    descuento: pagoUpdates.descuento,
+    monto: pagoUpdates.monto,
+    moneda: pagoUpdates.moneda,
+    montoUsd: usd,
+    exchangeRate: rate,
+    cicloPago,
+    fechaInicio: pagoUpdates.fechaInicio,
+    fechaVencimiento: pagoUpdates.fechaVencimiento,
+  });
+
   const pagos = await queryPagosVenta<PagoVenta>([{ field: 'ventaId', operator: '==', value: id }]);
 
   if (pagos.length > 0) {
@@ -416,7 +495,14 @@ export async function updateVentaWithLatestPagoUseCase(
       return dateB.getTime() - dateA.getTime();
     })[0];
 
-    await updatePagoVenta(pagoMasReciente.id, pagoUpdates);
+    await updatePagoVenta(pagoMasReciente.id, {
+      monto_original: pagoUpdates.monto,
+      moneda_original: pagoUpdates.moneda,
+      monto_usd: usd,
+      exchange_rate: rate,
+      metodo_pago_id: pagoUpdates.metodoPagoId || null,
+      metodo_pago_nombre_snapshot: pagoUpdates.metodoPago || null,
+    });
   }
 
   if (updates.clienteId && updates.metodoPagoId) {
@@ -461,7 +547,7 @@ export async function updateVentaUseCase(
     };
   }
 
-  await updateVenta(id, finalUpdates);
+  await updateVenta(id, getVentaTableUpdates(finalUpdates));
 
   const precioAnterior = ventaAnterior.precioFinal || 0;
   const precioNuevo = updates.precioFinal !== undefined ? updates.precioFinal : precioAnterior;

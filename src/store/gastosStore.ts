@@ -99,13 +99,12 @@ export const useGastosStore = create<GastosState>()(
 
         try {
           const tipoGasto = await getTipoGastoActivo(gastoData.tipoGastoId);
-          const gastoToCreate = {
+          const gastoToCreate: Omit<Gasto, 'id' | 'createdAt' | 'updatedAt' | 'tipoGastoNombre'> = {
             ...gastoData,
-            tipoGastoNombre: tipoGasto.nombre,
             detalle: gastoData.detalle?.trim() || undefined,
           };
 
-          gastoId = await createGasto(gastoToCreate as Omit<Gasto, 'id'>);
+          gastoId = await createGasto(gastoToCreate);
 
           const newGasto: Gasto = {
             ...gastoData,
@@ -179,7 +178,9 @@ export const useGastosStore = create<GastosState>()(
           }
 
           try {
-            await updateGasto(id, finalUpdates);
+            const { tipoGastoNombre: _tipoGastoNombre, ...writeUpdates } = finalUpdates;
+            void _tipoGastoNombre;
+            await updateGasto(id, writeUpdates);
           } catch (persistError) {
             if (requiereRecalculoDashboard) {
               await syncDashboardGasto(gastoActualizado, -1).catch(() => {});

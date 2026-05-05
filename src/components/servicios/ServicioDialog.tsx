@@ -325,7 +325,7 @@ export function ServicioDialog({
             </div>
             <Switch
               id="renovacionAutomatica"
-              checked={renovacionAutomaticaValue}
+              checked={Boolean(renovacionAutomaticaValue)}
               onCheckedChange={(checked) =>
                 setValue("renovacionAutomatica", checked)
               }

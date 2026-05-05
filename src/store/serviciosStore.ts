@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { ENTITIES, getServicioById, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
+import { ENTITIES, getServicioById, getServicios, logCacheHit, updateServicio as updateServicioRecord } from '@/lib/supabase/servicios-repository';
+import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas-use-cases';
 import {
   createServicioUseCase,
   deleteServicioUseCase,
@@ -241,11 +242,33 @@ export const useServiciosStore = create<ServiciosState>()(
             servicio = servicioDoc;
           }
 
+          const previousCount = servicio.perfilesOcupados || 0;
+          const fallbackCount = Math.max(0, previousCount + delta);
+
           if (get().servicios.find((item) => item.id === id)) {
             set((state) => ({
               servicios: state.servicios.map((item) =>
                 item.id === id
-                  ? { ...item, perfilesOcupados: Math.max(0, item.perfilesOcupados + delta), updatedAt: new Date() }
+                  ? { ...item, perfilesOcupados: fallbackCount, updatedAt: new Date() }
+                  : item
+              ),
+            }));
+          }
+
+          let realCount = fallbackCount;
+          try {
+            realCount = await countVentasActivasByServicioUseCase(id);
+          } catch (countError) {
+            console.error('Error counting active ventas for perfil ocupado:', countError);
+          }
+
+          await updateServicioRecord(id, { perfilesOcupados: realCount });
+
+          if (get().servicios.find((item) => item.id === id)) {
+            set((state) => ({
+              servicios: state.servicios.map((item) =>
+                item.id === id
+                  ? { ...item, perfilesOcupados: realCount, updatedAt: new Date() }
                   : item
               ),
             }));

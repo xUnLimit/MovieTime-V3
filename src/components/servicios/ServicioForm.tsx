@@ -1162,7 +1162,7 @@ export function ServicioForm({
             </div>
             <Switch
               id="renovacionAutomatica"
-              checked={renovacionAutomaticaValue}
+              checked={Boolean(renovacionAutomaticaValue)}
               onCheckedChange={(checked) =>
                 setValue("renovacionAutomatica", checked)
               }

@@ -127,9 +127,7 @@ describe('useUsuariosStore.updateUsuario', () => {
     expect(updateMock).toHaveBeenCalledWith('cliente-1', {
       telefono: '+507 6999-1111',
     });
-    expect(updateMock).toHaveBeenCalledWith('venta-1', {
-      clienteTelefono: '+507 6999-1111',
-    });
+    expect(updateMock).toHaveBeenCalledTimes(1);
     expect(sincronizarNotificacionesForzadoMock).toHaveBeenCalledTimes(1);
     expect(fetchNotificacionesMock).toHaveBeenCalledWith(true);
   });

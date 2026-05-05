@@ -77,6 +77,13 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
     } as T;
   }
 
+  if (collectionName === ENTITIES.TEMPLATES) {
+    return {
+      ...camel,
+      placeholders: Array.isArray(camel.placeholders) ? camel.placeholders : [],
+    } as T;
+  }
+
   return camel as T;
 }
 

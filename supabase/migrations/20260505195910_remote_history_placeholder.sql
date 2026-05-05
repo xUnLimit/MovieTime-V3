@@ -1,0 +1,5 @@
+-- Placeholder for a migration version already recorded in the linked remote
+-- Supabase project before this workspace was synced.
+-- The remote migration table contains version 20260505195910, but the SQL body
+-- is not present locally. Keep this file so future pushes do not require
+-- destructive migration-history repair.

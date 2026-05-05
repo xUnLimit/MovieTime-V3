@@ -697,7 +697,7 @@ export function PagoDialog(props: PagoDialogProps) {
             <div className="rounded-lg border bg-background/40 p-3">
               <div className="flex items-center gap-3">
                 <Switch
-                  checked={notificarWhatsAppValue}
+                  checked={Boolean(notificarWhatsAppValue)}
                   onCheckedChange={(checked) => setValue('notificarWhatsApp', checked as boolean)}
                 />
                 <div className="flex items-center gap-2 text-sm font-medium">
