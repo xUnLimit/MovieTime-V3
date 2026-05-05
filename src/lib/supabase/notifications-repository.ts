@@ -117,6 +117,7 @@ async function upsertNotificationDetail(notificacionId: string, payload: Record<
       precio_final_snapshot: payload.precioFinal ?? null,
       moneda_snapshot: payload.moneda ?? null,
       metodo_pago_nombre_snapshot: payload.metodoPagoNombre ?? payload.metodoPago ?? null,
+      metodo_pago_id: payload.metodoPagoId ?? null,
     } as never);
     if (error) throw new Error(error.message);
     return;

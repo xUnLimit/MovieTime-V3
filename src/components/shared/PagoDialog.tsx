@@ -207,7 +207,7 @@ export function PagoDialog(props: PagoDialogProps) {
   const precioFinal = calculateDiscountedAmount(costoNormalizado, descuentoNumero);
 
   useEffect(() => {
-    if (!open) return;
+    if (!props.open) return;
 
     if (props.context === 'venta') {
       if (isEdit) {
@@ -273,7 +273,7 @@ export function PagoDialog(props: PagoDialogProps) {
       notas: servicio?.notas ?? '',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, props.pago, servicio?.fechaVencimiento, servicio?.metodoPagoId, servicio?.costoServicio]);
+  }, [props.open, props.pago, servicio?.fechaVencimiento, servicio?.metodoPagoId, servicio?.costoServicio]);
 
   useEffect(() => {
     if (fechaInicioValue && periodoValue && periodoValue !== '') {

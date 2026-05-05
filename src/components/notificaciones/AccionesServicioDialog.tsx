@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Scissors, Star, X } from 'lucide-react';
+import { PowerOff, Star, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ interface AccionesServicioDialogProps {
   notificacion: (NotificacionServicio & { id: string }) | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onCortar: () => Promise<void>;
+  onInactivar: () => Promise<void>;
   onResaltar: () => Promise<void>;
   onDescartar: () => Promise<void>;
 }
@@ -27,17 +27,17 @@ export function AccionesServicioDialog({
   notificacion,
   isOpen,
   onOpenChange,
-  onCortar,
+  onInactivar,
   onResaltar,
   onDescartar,
 }: AccionesServicioDialogProps) {
-  const [accion, setAccion] = useState<'cortar' | 'resaltar' | 'descartar'>('resaltar');
+  const [accion, setAccion] = useState<'inactivar' | 'resaltar' | 'descartar'>('resaltar');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const yaResaltada = notificacion?.resaltada ?? false;
 
   useEffect(() => {
-    setAccion(yaResaltada ? 'cortar' : 'resaltar');
+    setAccion(yaResaltada ? 'inactivar' : 'resaltar');
   }, [notificacion?.id, yaResaltada]);
 
   if (!notificacion) return null;
@@ -63,8 +63,8 @@ export function AccionesServicioDialog({
   const handleConfirmar = async () => {
     setIsSubmitting(true);
     try {
-      if (accion === 'cortar') {
-        await onCortar();
+      if (accion === 'inactivar') {
+        await onInactivar();
       } else if (accion === 'descartar') {
         await onDescartar();
       } else {
@@ -75,14 +75,14 @@ export function AccionesServicioDialog({
       // error handled in parent
     } finally {
       setIsSubmitting(false);
-      setAccion(yaResaltada ? 'cortar' : 'resaltar');
+      setAccion(yaResaltada ? 'inactivar' : 'resaltar');
     }
   };
 
   const handleClose = () => {
     if (!isSubmitting) {
       onOpenChange(false);
-      setAccion(yaResaltada ? 'cortar' : 'resaltar');
+      setAccion(yaResaltada ? 'inactivar' : 'resaltar');
     }
   };
 
@@ -95,9 +95,9 @@ export function AccionesServicioDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted">
-                <Scissors className="h-4 w-4 text-muted-foreground" />
+                <PowerOff className="h-4 w-4 text-muted-foreground" />
               </div>
-              {'Cortar — Servicio'}
+              {'Inactivar — Servicio'}
             </DialogTitle>
           </DialogHeader>
 
@@ -127,23 +127,23 @@ export function AccionesServicioDialog({
               <p className="text-sm font-medium text-muted-foreground">¿Qué acción deseas realizar?</p>
               <RadioGroup
                 value={accion}
-                onValueChange={(v) => setAccion(v as 'cortar' | 'descartar')}
+                onValueChange={(v) => setAccion(v as 'inactivar' | 'descartar')}
                 className="space-y-2"
               >
-                {/* Opción Cortar */}
+                {/* Opción Inactivar */}
                 <label
-                  htmlFor="opt-cortar-sr"
+                  htmlFor="opt-inactivar-sr"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                    accion === 'cortar'
-                      ? 'border-orange-400 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/20'
+                    accion === 'inactivar'
+                      ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20'
                       : 'border-border hover:border-muted-foreground/40'
                   }`}
                 >
-                  <RadioGroupItem value="cortar" id="opt-cortar-sr" className="mt-0.5" />
+                  <RadioGroupItem value="inactivar" id="opt-inactivar-sr" className="mt-0.5" />
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
-                      <Scissors className="h-3.5 w-3.5 text-orange-600" />
-                      <span className="text-sm font-medium">Cortar servicio ahora</span>
+                      <PowerOff className="h-3.5 w-3.5 text-red-600" />
+                      <span className="text-sm font-medium">Inactivar servicio</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Inactivar servicio + eliminar notificación
@@ -178,23 +178,23 @@ export function AccionesServicioDialog({
               <p className="text-sm font-medium text-muted-foreground">¿Qué acción deseas realizar?</p>
               <RadioGroup
                 value={accion}
-                onValueChange={(v) => setAccion(v as 'cortar' | 'resaltar')}
+                onValueChange={(v) => setAccion(v as 'inactivar' | 'resaltar')}
                 className="space-y-2"
               >
-                {/* Opción Cortar */}
+                {/* Opción Inactivar */}
                 <label
-                  htmlFor="opt-cortar-s"
+                  htmlFor="opt-inactivar-s"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                    accion === 'cortar'
-                      ? 'border-orange-400 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/20'
+                    accion === 'inactivar'
+                      ? 'border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20'
                       : 'border-border hover:border-muted-foreground/40'
                   }`}
                 >
-                  <RadioGroupItem value="cortar" id="opt-cortar-s" className="mt-0.5" />
+                  <RadioGroupItem value="inactivar" id="opt-inactivar-s" className="mt-0.5" />
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
-                      <Scissors className="h-3.5 w-3.5 text-orange-600" />
-                      <span className="text-sm font-medium">Cortar servicio ahora</span>
+                      <PowerOff className="h-3.5 w-3.5 text-red-600" />
+                      <span className="text-sm font-medium">Inactivar servicio</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Inactivar servicio + eliminar notificación
@@ -246,8 +246,8 @@ export function AccionesServicioDialog({
           >
             {isSubmitting
               ? 'Procesando...'
-              : accion === 'cortar'
-                ? 'Cortar'
+              : accion === 'inactivar'
+                ? 'Inactivar'
                 : accion === 'descartar'
                   ? 'Descartar resaltado'
                   : 'Resaltar'}

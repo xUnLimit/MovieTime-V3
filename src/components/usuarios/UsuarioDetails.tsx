@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   Calendar,
-  CheckCircle,
   Clock,
   Copy,
   MessageCircle,
@@ -18,6 +17,7 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -198,6 +198,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
         montoSinConsumir,
         renovaciones: renovacionesByServicio[venta.id] ?? 0,
         diasRestantes,
+        cortadaAt: venta.cortadaAt ?? null,
         estado: venta.estado === "inactivo" ? "Inactivo" : "Activo",
         moneda: venta.moneda,
         perfilNumero: venta.perfilNumero,
@@ -341,252 +342,275 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
         </div>
       </div>
 
-      {/* Servicios Asociados */}
-      <Card className="p-6">
-        <div className="space-y-2">
-          <h3 className="text-xl font-semibold leading-none">
-            Servicios Asociados
-          </h3>
-          <p className="text-sm text-muted-foreground leading-none">
-            Lista de servicios y perfiles que este usuario tiene o ha tenido.
-          </p>
-        </div>
-        {rows.length === 0 ? (
-          <div className="mt-4 text-center py-8 text-muted-foreground">
-            <p>No hay servicios asociados a este usuario.</p>
-          </div>
-        ) : (
-          <div className="mt-4 rounded-md border bg-background overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-muted-foreground">
-                    Categoría
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">Email</TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Contraseña
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Ciclo de Pago
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Fecha de Inicio
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Fecha de Expiración
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Monto Sin Consumir
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Renovaciones
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Días Restantes
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Estado
-                  </TableHead>
-                  <TableHead className="text-center text-muted-foreground">
-                    Acciones
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Monitor
-                          className={`h-4 w-4 ${row.estado === "Inactivo" ? "text-red-500" : "text-green-500"}`}
-                        />
-                        <div>
-                          <p className="font-medium">{row.categoriaNombre}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {row.servicioNombre}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="inline-flex items-center gap-2">
-                        <span className="font-medium">{row.correo}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => handleCopy(row.correo, "Correo")}
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex w-full items-center justify-center gap-2">
-                        <span className="font-medium">{row.contrasena}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() =>
-                            handleCopy(row.contrasena, "Contraseña")
-                          }
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{row.cicloPago}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {row.fechaInicio
-                            ? formatearFecha(row.fechaInicio)
-                            : "—"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {row.fechaFin ? formatearFecha(row.fechaFin) : "—"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center font-medium">
-                      <span
-                        className={
-                          row.estado === "Inactivo"
-                            ? "text-muted-foreground"
-                            : "text-green-500"
-                        }
-                      >
-                        {getCurrencySymbol(row.moneda)}
-                      </span>
-                      <span
-                        className={
-                          row.estado === "Inactivo"
-                            ? "text-muted-foreground"
-                            : "text-foreground"
-                        }
-                      >
-                        {" "}
-                        {row.montoSinConsumir.toFixed(2)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="inline-flex items-center justify-center gap-1 font-medium">
-                        <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-                        {row.renovaciones}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {row.estado === "Inactivo" ? (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      ) : row.diasRestantes < 0 ? (
-                        <Badge
-                          variant="outline"
-                          className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 gap-1"
-                        >
-                          <AlertTriangle className="h-3 w-3 shrink-0" />
-                          {Math.abs(row.diasRestantes)} día
-                          {Math.abs(row.diasRestantes) !== 1 ? "s" : ""} de
-                          retraso
-                        </Badge>
-                      ) : row.diasRestantes === 0 ? (
-                        <Badge
-                          variant="outline"
-                          className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
-                        >
-                          Vence hoy
-                        </Badge>
-                      ) : row.diasRestantes <= 7 ? (
-                        <Badge
-                          variant="outline"
-                          className="border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300"
-                        >
-                          {row.diasRestantes} día
-                          {row.diasRestantes !== 1 ? "s" : ""} restante
-                          {row.diasRestantes !== 1 ? "s" : ""}
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
-                        >
-                          {row.diasRestantes} días restantes
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant="outline"
-                        className={
-                          row.estado === "Activo"
-                            ? "border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
-                            : "border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
-                        }
-                      >
-                        {row.estado}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
+      {/* Tabs: Servicios Activos / Historial de Ventas */}
+      <Tabs defaultValue="activos">
+        <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex border-b border-border justify-start">
+          <TabsTrigger
+            value="activos"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+          >
+            Servicios Activos
+            {rows.filter(r => r.estado === "Activo").length > 0 && (
+              <span className="ml-2 rounded-full bg-green-500/20 text-green-700 dark:text-green-400 px-1.5 py-0.5 text-xs font-medium">
+                {rows.filter(r => r.estado === "Activo").length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="historial"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+          >
+            Historial de Ventas
+            {rows.filter(r => r.estado === "Inactivo").length > 0 && (
+              <span className="ml-2 rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 text-xs font-medium">
+                {rows.filter(r => r.estado === "Inactivo").length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <Card className="p-6 mt-4">
+          <TabsContent value="activos">
+            <div className="space-y-1 mb-4">
+              <h3 className="text-xl font-semibold leading-none">Servicios Activos</h3>
+              <p className="text-sm text-muted-foreground">Servicios que este usuario tiene actualmente.</p>
+            </div>
+            {rows.filter(r => r.estado === "Activo").length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No hay servicios activos.</p>
+              </div>
+            ) : (
+              <div className="rounded-md border bg-background overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-muted-foreground">Categoría</TableHead>
+                      <TableHead className="text-muted-foreground">Email</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Contraseña</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Ciclo de Pago</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Fecha de Inicio</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Fecha de Expiración</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Monto Sin Consumir</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Renovaciones</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Días Restantes</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.filter(r => r.estado === "Activo").map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Monitor className="h-4 w-4 text-green-500" />
+                            <div>
+                              <p className="font-medium">{row.categoriaNombre}</p>
+                              <p className="text-xs text-muted-foreground">{row.servicioNombre}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="inline-flex items-center gap-2">
+                            <span className="font-medium">{row.correo}</span>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(row.correo, "Correo")}>
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex w-full items-center justify-center gap-2">
+                            <span className="font-medium">{row.contrasena}</span>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(row.contrasena, "Contraseña")}>
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{row.cicloPago}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{row.fechaInicio ? formatearFecha(row.fechaInicio) : "—"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{row.fechaFin ? formatearFecha(row.fechaFin) : "—"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center font-medium">
+                          <span className="text-green-500">{getCurrencySymbol(row.moneda)}</span>
+                          <span> {row.montoSinConsumir.toFixed(2)}</span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center justify-center gap-1 font-medium">
+                            <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
+                            {row.renovaciones}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {row.diasRestantes < 0 ? (
+                            <Badge variant="outline" className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 gap-1">
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                              {Math.abs(row.diasRestantes)} día{Math.abs(row.diasRestantes) !== 1 ? "s" : ""} de retraso
+                            </Badge>
+                          ) : row.diasRestantes === 0 ? (
+                            <Badge variant="outline" className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300">
+                              Vence hoy
+                            </Badge>
+                          ) : row.diasRestantes <= 7 ? (
+                            <Badge variant="outline" className="border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300">
+                              {row.diasRestantes} día{row.diasRestantes !== 1 ? "s" : ""} restante{row.diasRestantes !== 1 ? "s" : ""}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300">
+                              {row.diasRestantes} días restantes
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/ventas/${row.id}`}>
+                                  <ShoppingCart className="h-4 w-4 mr-2" />
+                                  Ver Venta
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/servicios/detalle/${row.servicioId}`}>
+                                  <Monitor className="h-4 w-4 mr-2" />
+                                  Ver Servicio
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => abrirDialogEstado("inactivar", row)}>
+                                <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                                <span className="text-red-600">Inactivar</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="historial">
+            <div className="space-y-1 mb-4">
+              <h3 className="text-xl font-semibold leading-none">Historial de Ventas</h3>
+              <p className="text-sm text-muted-foreground">Ventas inactivas o cortadas de este usuario.</p>
+            </div>
+            {rows.filter(r => r.estado === "Inactivo").length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No hay ventas en el historial.</p>
+              </div>
+            ) : (
+              <div className="rounded-md border bg-background overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-muted-foreground">Categoría</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Ciclo de Pago</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Fecha de Inicio</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Fecha de Expiración</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Renovaciones</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Estado</TableHead>
+                      <TableHead className="text-center text-muted-foreground">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.filter(r => r.estado === "Inactivo").map((row) => (
+                      <TableRow key={row.id} className="opacity-70">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Monitor className="h-4 w-4 text-red-500" />
+                            <div>
+                              <p className="font-medium">{row.categoriaNombre}</p>
+                              <p className="text-xs text-muted-foreground">{row.servicioNombre}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{row.cicloPago}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{row.fechaInicio ? formatearFecha(row.fechaInicio) : "—"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{row.fechaFin ? formatearFecha(row.fechaFin) : "—"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center justify-center gap-1 font-medium">
+                            <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
+                            {row.renovaciones}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant="outline"
+                            className={row.cortadaAt
+                              ? "border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
+                              : "border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
+                            }
                           >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/ventas/${row.id}`}>
-                              <ShoppingCart className="h-4 w-4 mr-2" />
-                              Ver Venta
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/servicios/detalle/${row.servicioId}`}>
-                              <Monitor className="h-4 w-4 mr-2" />
-                              Ver Servicio
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => abrirDialogEstado("activar", row)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                            <span className="text-green-600">Activar</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => abrirDialogEstado("inactivar", row)}
-                          >
-                            <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                            <span className="text-red-600">Inactivar</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </Card>
+                            {row.cortadaAt ? "Cortada" : "Inactiva"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/ventas/${row.id}`}>
+                                  <ShoppingCart className="h-4 w-4 mr-2" />
+                                  Ver Venta
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/servicios/detalle/${row.servicioId}`}>
+                                  <Monitor className="h-4 w-4 mr-2" />
+                                  Ver Servicio
+                                </Link>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+
+        </Card>
+      </Tabs>
 
       <CambiarEstadoVentaDialog
         open={estadoDialog.open}

@@ -83,6 +83,7 @@ function ventaBaseFromRecord(doc: Record<string, unknown>): VentaDoc {
     servicioContrasena: (doc.servicioContrasena as string) || undefined,
     clienteTelefono: (doc.clienteTelefono as string) || undefined,
     estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
+    cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
     perfilNumero: (doc.perfilNumero as number) ?? null,
     perfilNombre: (doc.perfilNombre as string) || undefined,
     codigo: (doc.codigo as string) || undefined,

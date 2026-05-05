@@ -53,7 +53,7 @@ function VentaDetallePageContent() {
   const id = params.id as string;
 
   const { deleteNotificacionesPorVenta, fetchNotificaciones } = useNotificacionesStore();
-  const { getTemplateByTipo } = useTemplatesStore();
+  const { getTemplateByTipo, fetchTemplates } = useTemplatesStore();
 
   // Estados locales para datos específicos de esta venta
   const [venta, setVenta] = useState<VentaDoc | null>(null);
@@ -100,6 +100,7 @@ function VentaDetallePageContent() {
         codigo: (doc.codigo as string) || '',
         notas: (doc.notas as string) || '',
         estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
+        cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
         createdAt: doc.createdAt ? timestampToDate(doc.createdAt) : undefined,
         // Denormalized fields (required) - will be populated from PagoVenta
         fechaInicio: (doc.fechaInicio as Date) || new Date(),
@@ -140,10 +141,13 @@ function VentaDetallePageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const estadoLabel = venta?.estado === 'inactivo' ? 'Inactiva' : 'Activa';
+  const esCortada = venta?.estado === 'inactivo' && !!venta?.cortadaAt;
+  const estadoLabel = venta?.estado === 'inactivo' ? (esCortada ? 'Cortada' : 'Inactiva') : 'Activa';
   const estadoBadgeClass =
     venta?.estado === 'inactivo'
-      ? 'bg-red-100 text-red-700 dark:bg-red-600/20 dark:text-red-400'
+      ? (esCortada
+          ? 'bg-orange-100 text-orange-700 dark:bg-orange-600/20 dark:text-orange-400'
+          : 'bg-red-100 text-red-700 dark:bg-red-600/20 dark:text-red-400')
       : 'bg-green-100 text-green-700 dark:bg-green-600/20 dark:text-green-400';
 
   const diasRestantes = useMemo(() => {
@@ -528,7 +532,7 @@ function VentaDetallePageContent() {
             size="sm"
             className="bg-purple-600 hover:bg-purple-700"
             onClick={async () => {
-              await loadMetodosPagoYPlanes(); // Cargar métodos de pago y planes solo cuando se necesite
+              await Promise.all([loadMetodosPagoYPlanes(), fetchTemplates()]);
               setRenovarDialogOpen(true);
             }}
           >
@@ -622,25 +626,33 @@ function VentaDetallePageContent() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Días Restantes</p>
-              <Badge
-                variant="outline"
-                className={`mt-1 font-normal ${
-                  diasRestantes < 0
-                    ? 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
-                    : diasRestantes === 0
+              {esCortada ? (
+                <Badge variant="outline" className="mt-1 font-normal border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                  Servicio cortado
+                </Badge>
+              ) : venta?.estado === 'inactivo' ? (
+                <span className="mt-1 block text-sm text-muted-foreground">—</span>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className={`mt-1 font-normal ${
+                    diasRestantes < 0
                       ? 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
-                      : diasRestantes <= 7
-                        ? 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300'
-                        : 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300'
-                }`}
-              >
-                {diasRestantes < 0
-                  ? `${Math.abs(diasRestantes)} día${Math.abs(diasRestantes) !== 1 ? 's' : ''} de retraso`
-                  : diasRestantes === 0
-                    ? 'Vence hoy'
-                    : `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`
-                }
-              </Badge>
+                      : diasRestantes === 0
+                        ? 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
+                        : diasRestantes <= 7
+                          ? 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300'
+                          : 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300'
+                  }`}
+                >
+                  {diasRestantes < 0
+                    ? `${Math.abs(diasRestantes)} día${Math.abs(diasRestantes) !== 1 ? 's' : ''} de retraso`
+                    : diasRestantes === 0
+                      ? 'Vence hoy'
+                      : `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`
+                  }
+                </Badge>
+              )}
             </div>
           </div>
         </Card>

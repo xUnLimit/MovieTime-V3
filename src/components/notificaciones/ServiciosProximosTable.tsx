@@ -50,7 +50,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { AccionesServicioDialog } from './AccionesServicioDialog';
-import { AlertTriangle, BellOff, BellRing, ChevronDown, Copy, ExternalLink, Eye, EyeOff, MoreHorizontal, RefreshCw, Scissors, Search } from 'lucide-react';
+import { AlertTriangle, BellOff, BellRing, ChevronDown, Copy, ExternalLink, Eye, EyeOff, MoreHorizontal, PowerOff, RefreshCw, Search } from 'lucide-react';
 import { filtrarServiciosNotificaciones } from './serviciosNotificacionesFilters';
 
 /**
@@ -289,22 +289,22 @@ export function ServiciosProximosTable({
   };
 
   /**
-   * Handle Cortar servicio - Set activo to false + delete notification
+   * Handle Inactivar servicio - Set activo to false + delete notification
    * Uses serviciosStore.updateServicio which handles:
    * - Category counters (serviciosActivos, perfilesDisponiblesTotal)
    * - Dashboard forecast update + cache invalidation
    * - Activity log with change detection
    */
-  const handleCortarServicio = async () => {
+  const handleInactivarServicio = async () => {
     if (!notifParaAcciones) return;
     try {
       await useServiciosStore.getState().updateServicio(notifParaAcciones.servicioId, { activo: false });
       await deleteNotificacionesPorServicio(notifParaAcciones.servicioId);
 
-      toast.success('Servicio cortado', { description: `${notifParaAcciones.servicioNombre} ha sido marcado como inactivo.` });
+      toast.success('Servicio inactivado', { description: `${notifParaAcciones.servicioNombre} ha sido marcado como inactivo.` });
       fetchNotificaciones(true);
     } catch {
-      toast.error('Error al cortar servicio', { description: 'No se pudo cortar el servicio. Intenta nuevamente.' });
+      toast.error('Error al inactivar servicio', { description: 'No se pudo inactivar el servicio. Intenta nuevamente.' });
     }
   };
 
@@ -628,8 +628,8 @@ export function ServiciosProximosTable({
                                 <span className="text-purple-600">Renovar</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleAcciones(notif)}>
-                                <Scissors className="h-4 w-4 mr-2 text-orange-600" />
-                                <span className="text-orange-600">Cortar</span>
+                                <PowerOff className="h-4 w-4 mr-2 text-red-600" />
+                                <span className="text-red-600">Inactivar</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild className="cursor-pointer">
                                 <Link href={`/servicios/detalle/${notif.servicioId}`}>
@@ -728,7 +728,7 @@ export function ServiciosProximosTable({
           setAccionesDialogOpen(open);
           if (!open) setNotifParaAcciones(null);
         }}
-        onCortar={handleCortarServicio}
+        onInactivar={handleInactivarServicio}
         onResaltar={handleResaltar}
         onDescartar={handleDescartar}
       />

@@ -129,6 +129,7 @@ export function useVentasUsuario(usuarioId: string) {
           precio:          venta.precio ?? 0,
           precioFinal:     venta.precioFinal ?? venta.precio ?? 0,
           estado:          venta.estado ?? 'activo',
+          cortadaAt:       venta.cortadaAt ?? null,
           moneda:          venta.moneda,
         }));
 
@@ -200,6 +201,7 @@ export function useVentasUsuario(usuarioId: string) {
           precio:          venta.precio ?? 0,
           precioFinal:     venta.precioFinal ?? venta.precio ?? 0,
           estado:          venta.estado ?? 'activo',
+          cortadaAt:       venta.cortadaAt ?? null,
           moneda:          venta.moneda,
         }));
 

@@ -59,6 +59,7 @@ export interface VentaDoc {
   categoriaId: string;
   categoriaNombre?: string;           // Denormalizado
   estado?: 'activo' | 'inactivo';
+  cortadaAt?: Date | null;
   perfilNumero?: number | null;
   perfilNombre?: string;
   codigo?: string;
