@@ -51,7 +51,7 @@ import {
   queryDocuments,
   remove,
   adjustCategoriaGastos,
-} from "@/lib/supabase/repository";
+} from "@/lib/supabase/servicios-repository";
 import { currencyService } from "@/lib/services/currencyService";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { crearPagoRenovacion } from "@/lib/services/pagosServicioService";

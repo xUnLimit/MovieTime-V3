@@ -31,7 +31,7 @@ import { Servicio, MetodoPago } from "@/types";
 import { addMonths } from "date-fns";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
-import { update, getCount, ENTITIES } from "@/lib/supabase/repository";
+import { update, getCount, ENTITIES } from "@/lib/supabase/servicios-repository";
 
 const servicioEditSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { CategoriaForm } from '@/components/categorias/CategoriaForm';
-import { getById, ENTITIES } from '@/lib/supabase/repository';
+import { getById, ENTITIES } from '@/lib/supabase/categorias-repository';
 import type { Categoria } from '@/types';
 import { toast } from 'sonner';
 

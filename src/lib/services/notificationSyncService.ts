@@ -21,7 +21,7 @@ import {
   create,
   update,
   remove,
-} from '@/lib/supabase/repository';
+} from '@/lib/supabase/notifications-repository';
 import type {
   Notificacion,
   NotificacionVenta,

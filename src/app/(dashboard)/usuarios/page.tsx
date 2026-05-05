@@ -16,7 +16,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { invalidateVentasPorUsuariosCache } from '@/hooks/use-ventas-por-usuarios';
 import { Usuario } from '@/types';
-import { ENTITIES } from '@/lib/supabase/repository';
+import { ENTITIES } from '@/lib/supabase/usuarios-repository';
 import { FilterOption } from '@/lib/supabase/pagination';
 import { normalizePhoneSearch, normalizeSearchText } from '@/lib/utils';
 import {

@@ -1,4 +1,4 @@
-import { ENTITIES, update } from '@/lib/supabase/repository';
+import { ENTITIES, update } from '@/lib/supabase/usuarios-repository';
 import { useUsuariosStore } from '@/store/usuariosStore';
 import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
 

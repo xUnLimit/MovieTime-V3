@@ -4,7 +4,7 @@ import { memo, useEffect, useState, useRef } from "react";
 import { Categoria } from "@/types";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { Monitor, Calendar } from "lucide-react";
-import { queryDocuments, ENTITIES } from "@/lib/supabase/repository";
+import { queryDocuments, ENTITIES } from "@/lib/supabase/servicios-repository";
 import { Servicio } from "@/types";
 
 interface ServiciosCategoriaMetricsProps {

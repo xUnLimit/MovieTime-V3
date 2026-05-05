@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { TemplateMensaje, TipoTemplate } from '@/types';
-import { getAll, create as createDoc, update, remove, ENTITIES, logCacheHit } from '@/lib/supabase/repository';
+import { getAll, create as createDoc, update, remove, ENTITIES, logCacheHit } from '@/lib/supabase/templates-repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';

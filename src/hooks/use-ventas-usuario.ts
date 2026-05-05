@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ENTITIES, queryDocuments, remove, adjustServiciosActivos, adjustCategoriaSuscripciones } from '@/lib/supabase/repository';
+import { ENTITIES, queryDocuments, remove, adjustServiciosActivos, adjustCategoriaSuscripciones } from '@/lib/supabase/ventas-repository';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';

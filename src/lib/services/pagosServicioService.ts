@@ -1,4 +1,4 @@
-import { create, queryDocuments, ENTITIES } from '@/lib/supabase/repository';
+import { create, queryDocuments, ENTITIES } from '@/lib/supabase/pagos-repository';
 import { PagoServicio } from '@/types';
 
 /**

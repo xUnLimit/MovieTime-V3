@@ -33,7 +33,7 @@ import { Servicio, MetodoPago } from "@/types";
 import { addMonths, addDays } from "date-fns";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
-import { update, getCount, ENTITIES } from "@/lib/supabase/repository";
+import { update, getCount, ENTITIES } from "@/lib/supabase/servicios-repository";
 import {
   PROFILE_PREVIEW_FULL_RENDER_LIMIT,
   getProfilePreviewSample,

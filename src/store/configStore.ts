@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { Configuracion, TasasCambio } from '@/types';
 import { supabase } from '@/lib/supabase/client';
-import { logCacheHit, ENTITIES } from '@/lib/supabase/repository';
+import { logCacheHit, ENTITIES } from '@/lib/supabase/catalogos-repository';
 
 interface ConfigState {
   config: Configuracion | null;

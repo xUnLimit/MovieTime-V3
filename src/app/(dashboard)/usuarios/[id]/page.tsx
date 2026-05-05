@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
-import { getById, ENTITIES } from '@/lib/supabase/repository';
+import { getById, ENTITIES } from '@/lib/supabase/usuarios-repository';
 import { Usuario } from '@/types';
 import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
 

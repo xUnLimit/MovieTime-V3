@@ -45,7 +45,7 @@ import {
   queryDocuments,
   update,
   adjustServiciosActivos,
-} from "@/lib/supabase/repository";
+} from "@/lib/supabase/ventas-repository";
 import { upsertVentaPronostico } from "@/lib/services/dashboardStatsService";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";

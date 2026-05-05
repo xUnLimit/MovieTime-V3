@@ -40,7 +40,7 @@ import type { Plan } from '@/types/categorias';
 import { useVentasStore } from '@/store/ventasStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import type { VentaDoc } from '@/types/ventas';
-import { update, adjustServiciosActivos, getById, ENTITIES } from '@/lib/supabase/repository';
+import { update, adjustServiciosActivos, getById, ENTITIES } from '@/lib/supabase/ventas-repository';
 import { getCurrencySymbol } from '@/lib/constants';
 import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
 import { upsertVentaPronostico, adjustIngresosStats, getMesKeyFromDate, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';

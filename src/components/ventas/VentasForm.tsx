@@ -58,7 +58,7 @@ import {
   ENTITIES,
   queryDocuments,
   adjustServiciosActivos,
-} from "@/lib/supabase/repository";
+} from "@/lib/supabase/ventas-repository";
 import { Switch } from "@/components/ui/switch";
 import { formatearFechaWhatsApp, getSaludo } from "@/lib/utils/whatsapp";
 import { getCurrencySymbol } from "@/lib/constants";

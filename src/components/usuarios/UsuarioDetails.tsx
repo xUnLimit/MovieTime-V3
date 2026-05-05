@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useVentasUsuario } from "@/hooks/use-ventas-usuario";
 import { getCurrencySymbol } from "@/lib/constants";
-import { queryDocuments, ENTITIES } from "@/lib/supabase/repository";
+import { queryDocuments, ENTITIES } from "@/lib/supabase/usuarios-repository";
 import { formatearFecha, formatearFechaHora } from "@/lib/utils/calculations";
 import { toast } from "sonner";
 import { useVentasStore } from "@/store/ventasStore";

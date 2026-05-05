@@ -13,7 +13,7 @@ import { useServerPagination } from '@/hooks/useServerPagination';
 import { useVentasStore } from '@/store/ventasStore';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { toast } from 'sonner';
-import { ENTITIES } from '@/lib/supabase/repository';
+import { ENTITIES } from '@/lib/supabase/ventas-repository';
 import { normalizeSearchText } from '@/lib/utils';
 import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';

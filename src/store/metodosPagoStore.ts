@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { MetodoPago } from '@/types';
-import { getAll, getCount, queryDocuments, create as createDoc, update, remove, ENTITIES, logCacheHit } from '@/lib/supabase/repository';
+import { getAll, getCount, queryDocuments, create as createDoc, update, remove, ENTITIES, logCacheHit } from '@/lib/supabase/catalogos-repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';

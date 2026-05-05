@@ -6,7 +6,7 @@ const createMock = vi.fn();
 const updateMock = vi.fn();
 const removeMock = vi.fn();
 
-vi.mock('@/lib/supabase/repository', () => ({
+vi.mock('@/lib/supabase/notifications-repository', () => ({
   ENTITIES: {
     METODOS_PAGO: 'metodosPago',
     NOTIFICACIONES: 'notificaciones',

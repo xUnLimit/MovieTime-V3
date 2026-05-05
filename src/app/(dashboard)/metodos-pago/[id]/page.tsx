@@ -11,7 +11,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
 import { formatearFechaHora } from '@/lib/utils/calculations';
-import { getById, ENTITIES } from '@/lib/supabase/repository';
+import { getById, ENTITIES } from '@/lib/supabase/catalogos-repository';
 import { MetodoPago } from '@/types';
 
 function VerMetodoPagoPageContent() {

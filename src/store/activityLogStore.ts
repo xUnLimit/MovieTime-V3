@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { ActivityLog, AccionLog, EntidadLog } from '@/types';
-import { getAll, create as createDoc, remove, ENTITIES, logCacheHit } from '@/lib/supabase/repository';
+import { getAll, create as createDoc, remove, ENTITIES, logCacheHit } from '@/lib/supabase/activity-log-repository';
 
 interface ActivityLogState {
   logs: ActivityLog[];

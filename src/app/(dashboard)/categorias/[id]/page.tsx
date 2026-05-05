@@ -10,7 +10,7 @@ import { useCategoriasStore } from '@/store/categoriasStore';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
-import { getById, ENTITIES } from '@/lib/supabase/repository';
+import { getById, ENTITIES } from '@/lib/supabase/categorias-repository';
 import { formatearFechaHora } from '@/lib/utils/calculations';
 import { Categoria, Plan } from '@/types';
 

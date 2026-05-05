@@ -6,8 +6,8 @@
  * - VentaDoc = solo metadatos y referencias (no duplica datos de pago)
  */
 
-import { queryDocuments } from '@/lib/supabase/repository';
-import { ENTITIES } from '@/lib/supabase/repository';
+import { queryDocuments } from '@/lib/supabase/ventas-repository';
+import { ENTITIES } from '@/lib/supabase/ventas-repository';
 import { VentaDoc, PagoVenta } from '@/types';
 
 /**

@@ -54,7 +54,7 @@ import type { NotificacionServicio } from '@/types/notificaciones';
 import { getCurrencySymbol } from '@/lib/constants';
 import { toast } from 'sonner';
 import { PagoDialog, EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
-import { queryDocuments, ENTITIES, update, getById, adjustCategoriaGastos } from '@/lib/supabase/repository';
+import { queryDocuments, ENTITIES, update, getById, adjustCategoriaGastos } from '@/lib/supabase/servicios-repository';
 import { MetodoPago, Servicio } from '@/types';
 import { crearPagoRenovacion, obtenerPagosDeServicio } from '@/lib/services/pagosServicioService';
 import { currencyService } from '@/lib/services/currencyService';

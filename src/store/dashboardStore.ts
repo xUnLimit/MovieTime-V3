@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { getDashboardStats, rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
-import { getCount, ENTITIES, logCacheHit, queryDocuments } from '@/lib/supabase/repository';
+import { getCount, ENTITIES, logCacheHit, queryDocuments } from '@/lib/supabase/dashboard-repository';
 import type { DashboardStats, DashboardCounts } from '@/types/dashboard';
 import type { ActivityLog } from '@/types';
 

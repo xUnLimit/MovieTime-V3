@@ -3058,11 +3058,16 @@ dashboardStatsService lee/escribe dashboard_stats en Supabase y recalcula desde 
 analytics runtime desactivado como no-op.
 ```
 
-Repositorio Supabase:
+Repositorios Supabase:
 
 ```text
-src/lib/supabase/repository.ts centraliza lecturas por vistas, escrituras
-normalizadas, soft-delete de ventas/servicios y creacion de periodos/pagos.
+src/lib/supabase/*-repository.ts expone repositorios por dominio para consumidores runtime.
+src/lib/supabase/record-core.ts mantiene operaciones compartidas internas para evitar duplicacion.
+src/lib/supabase/read-models.ts centraliza mapping de vistas y enrichers.
+src/lib/supabase/notifications-repository.ts maneja notificaciones normalizadas.
+src/lib/supabase/payments-repository.ts maneja pagos y creacion de periodos.
+src/lib/supabase/write-utils.ts contiene allowlists y escrituras raw.
+src/lib/supabase/filters.ts y dates.ts contienen filtros y fechas DATE locales.
 Los contadores legacy denormalizados ahora son no-op/derivados por vistas o triggers.
 Las escrituras de pagos crean periodos normalizados en venta_periodos/servicio_periodos.
 ```
@@ -3074,16 +3079,19 @@ Se ejecuto la opcion agresiva de eliminar `compat.ts` del runtime.
 Cambios:
 
 ```text
-src/lib/supabase/compat.ts -> src/lib/supabase/repository.ts
+src/lib/supabase/compat.ts eliminado
+src/lib/supabase/repository.ts eliminado
+src/lib/supabase/records.ts eliminado
 COLLECTIONS -> ENTITIES en codigo runtime
 imports de @/lib/supabase/compat: 0
+imports de @/lib/supabase/repository: 0
+imports de @/lib/supabase/records: 0
 iconUrl/color de categorias removidos de tipos y componentes runtime
 ```
 
-La capa generica no se elimina todavia porque contiene comportamiento de dominio
-critico: mapping de vistas, fechas DATE locales, notificaciones normalizadas,
-soft-delete y creacion atomica de periodos/pagos. El siguiente paso de deuda
-tecnica es dividir `repository.ts` por dominio sin cambiar comportamiento.
+La capa generica central fue dividida por responsabilidad. Los consumidores
+runtime ya importan repositorios por dominio; `record-core.ts` queda como
+infraestructura interna compartida.
 
 Validacion final ejecutada:
 

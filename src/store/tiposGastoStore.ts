@@ -9,7 +9,7 @@ import {
   logCacheHit,
   queryDocuments,
   update,
-} from '@/lib/supabase/repository';
+} from '@/lib/supabase/catalogos-repository';
 
 const CACHE_TIMEOUT = 5 * 60 * 1000;
 

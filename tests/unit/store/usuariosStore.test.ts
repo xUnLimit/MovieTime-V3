@@ -12,7 +12,7 @@ const sincronizarNotificacionesForzadoMock = vi.fn();
 const fetchNotificacionesMock = vi.fn();
 const addLogMock = vi.fn();
 
-vi.mock('@/lib/supabase/repository', () => ({
+vi.mock('@/lib/supabase/usuarios-repository', () => ({
   getAll: getAllMock,
   getCount: getCountMock,
   getById: getByIdMock,

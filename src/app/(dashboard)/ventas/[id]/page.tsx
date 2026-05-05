@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ConfirmDeleteVentaDialog } from '@/components/shared/ConfirmDeleteVentaDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
-import { ENTITIES, getById, remove, timestampToDate, update, queryDocuments } from '@/lib/supabase/repository';
+import { ENTITIES, getById, remove, timestampToDate, update, queryDocuments } from '@/lib/supabase/ventas-repository';
 import { toast } from 'sonner';
 import { PagoDialog } from '@/components/shared/PagoDialog';
 import { useTemplatesStore } from '@/store/templatesStore';

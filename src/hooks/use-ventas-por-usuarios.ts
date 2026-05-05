@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { differenceInCalendarDays } from 'date-fns';
-import { ENTITIES, queryDocuments } from '@/lib/supabase/repository';
+import { ENTITIES, queryDocuments } from '@/lib/supabase/ventas-repository';
 import { logVentasCacheHit } from '@/lib/utils/devLogger';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';

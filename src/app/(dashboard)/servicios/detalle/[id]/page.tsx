@@ -18,7 +18,7 @@ import { PagoDialog } from '@/components/shared/PagoDialog';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { queryDocuments, remove, update, ENTITIES, getById, adjustCategoriaGastos } from '@/lib/supabase/repository';
+import { queryDocuments, remove, update, ENTITIES, getById, adjustCategoriaGastos } from '@/lib/supabase/servicios-repository';
 import { Servicio, Categoria, MetodoPago, VentaDoc, PagoServicio } from '@/types';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import {

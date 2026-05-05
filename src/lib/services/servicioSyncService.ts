@@ -1,4 +1,4 @@
-import { ENTITIES, getAll, queryDocuments } from '@/lib/supabase/repository';
+import { ENTITIES, getAll, queryDocuments } from '@/lib/supabase/servicios-repository';
 import { sincronizarUnServicio, sincronizarUnaVenta, sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { Servicio, VentaDoc } from '@/types';

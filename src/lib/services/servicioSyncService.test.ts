@@ -8,7 +8,7 @@ const syncUnaVentaMock = vi.fn();
 const fetchNotificacionesMock = vi.fn();
 const fetchCountsMock = vi.fn();
 
-vi.mock('@/lib/supabase/repository', () => ({
+vi.mock('@/lib/supabase/servicios-repository', () => ({
   queryDocuments: queryDocumentsMock,
   getAll: getAllMock,
   ENTITIES: {

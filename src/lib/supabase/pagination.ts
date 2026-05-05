@@ -1,6 +1,6 @@
 import { supabase } from './client';
 import { toSnakeCase } from './mappers';
-import { ENTITIES } from './repository';
+import { ENTITIES } from './entities';
 import type { Database } from './database.types';
 
 export interface FilterOption {

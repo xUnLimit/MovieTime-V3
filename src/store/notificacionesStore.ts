@@ -21,7 +21,7 @@ import {
   getCount,
   update,
   remove,
-} from '@/lib/supabase/repository';
+} from '@/lib/supabase/notifications-repository';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
 import { esNotificacionVenta, esNotificacionServicio, esNotificacionReposo } from '@/types/notificaciones';
 

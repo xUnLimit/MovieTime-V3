@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { Servicio, MetodoPago } from '@/types';
-import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustCategoriaGastos, queryDocuments } from '@/lib/supabase/repository';
+import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustCategoriaGastos, queryDocuments } from '@/lib/supabase/servicios-repository';
 import { adjustGastosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
 import { currencyService } from '@/lib/services/currencyService';
 import { syncServicioDependencias, resyncServiciosDenormalizedData } from '@/lib/services/servicioSyncService';
@@ -371,7 +371,7 @@ export const useServiciosStore = create<ServiciosState>()(
 
             // Si se solicita, eliminar todos los pagos del servicio
             if (deletePayments) {
-              const { remove: removeDoc } = await import('@/lib/supabase/repository');
+              const { remove: removeDoc } = await import('@/lib/supabase/servicios-repository');
               await Promise.all(pagosActuales.map(pago => removeDoc(ENTITIES.PAGOS_SERVICIO, pago.id)));
             }
           }

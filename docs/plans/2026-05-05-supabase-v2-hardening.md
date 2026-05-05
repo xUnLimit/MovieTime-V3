@@ -67,7 +67,7 @@ activarse en Supabase Dashboard, en Auth password security.
 ### Fechas
 
 `src/lib/supabase/pagination.ts` ahora trata columnas `DATE` como fecha local,
-igual que `src/lib/supabase/repository.ts`. Esto evita desplazamientos de un dia por
+igual que `src/lib/supabase/dates.ts`. Esto evita desplazamientos de un dia por
 `new Date('YYYY-MM-DD')` en America/Panama/America/Bogota.
 
 ### Notificaciones
@@ -105,10 +105,12 @@ denormalizados a ventas/pagos. En V2:
 
 ### Compat runtime
 
-`src/lib/supabase/compat.ts` fue eliminado del runtime. La capa puente quedo
-renombrada y explicitada como `src/lib/supabase/repository.ts`, con `ENTITIES`,
-vistas normalizadas, soft-delete de ventas/servicios y creacion de periodos/pagos
-centralizada.
+`src/lib/supabase/compat.ts`, `src/lib/supabase/repository.ts` y el facade
+publico `records.ts` fueron eliminados del runtime. Los consumidores apuntan a
+repositorios por dominio y la infraestructura compartida quedo dividida en
+modulos explicitos: `entities.ts`, `record-core.ts`, `read-models.ts`,
+`notifications-repository.ts`, `payments-repository.ts`, `write-utils.ts`,
+`filters.ts` y `dates.ts`.
 
 ## Data fixes legacy
 
@@ -159,7 +161,8 @@ operativa y para detectar drift inesperado antes de migraciones finales futuras.
 
 ## Deuda post-cutover no bloqueante
 
-- Reducir gradualmente `src/lib/supabase/repository.ts` hacia repositorios por dominio.
+- Reducir gradualmente el uso generico de `record-core.ts` dentro de repositorios
+  de dominio cuando convenga exponer metodos mas especificos por modulo.
 - Mover la separacion de validaciones bloqueantes/reportes aceptables desde
   `scripts/validate-supabase-migration.ts` a SQL si se quiere enforce remoto.
 - Evaluar mover regeneracion de notificaciones a RPC/Edge Function programada.

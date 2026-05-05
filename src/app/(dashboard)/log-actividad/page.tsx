@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { LogTimeline } from '@/components/log-actividad/LogTimeline';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ENTITIES, remove, queryDocuments } from '@/lib/supabase/repository';
+import { ENTITIES, remove, queryDocuments } from '@/lib/supabase/activity-log-repository';
 import { ActivityLog } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
 import { toast } from 'sonner';

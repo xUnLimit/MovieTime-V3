@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
-import { getById, ENTITIES } from '@/lib/supabase/repository';
+import { getById, ENTITIES } from '@/lib/supabase/catalogos-repository';
 import type { MetodoPago } from '@/types';
 import { toast } from 'sonner';
 

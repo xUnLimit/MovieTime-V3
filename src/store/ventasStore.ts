@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { VentaDoc, MetodoPago, PagoVenta } from '@/types';
-import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustServiciosActivos, queryDocuments, adjustCategoriaSuscripciones } from '@/lib/supabase/repository';
+import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustServiciosActivos, queryDocuments, adjustCategoriaSuscripciones } from '@/lib/supabase/ventas-repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { format } from 'date-fns';

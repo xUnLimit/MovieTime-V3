@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PagoVenta } from '@/types';
-import { queryDocuments, ENTITIES } from '@/lib/supabase/repository';
+import { queryDocuments, ENTITIES } from '@/lib/supabase/pagos-repository';
 
 /**
  * Hook para cargar los pagos de una venta específica

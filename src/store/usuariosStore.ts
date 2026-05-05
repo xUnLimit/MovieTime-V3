@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { startOfDay, format } from 'date-fns';
 import { Usuario } from '@/types';
-import { getAll, getCount, getById, create as createDoc, update, remove, queryDocuments, ENTITIES, logCacheHit } from '@/lib/supabase/repository';
+import { getAll, getCount, getById, create as createDoc, update, remove, queryDocuments, ENTITIES, logCacheHit } from '@/lib/supabase/usuarios-repository';
 import { adjustUsuariosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useActivityLogStore } from '@/store/activityLogStore';

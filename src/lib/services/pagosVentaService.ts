@@ -1,4 +1,4 @@
-import { create as createDoc, queryDocuments, ENTITIES } from '@/lib/supabase/repository';
+import { create as createDoc, queryDocuments, ENTITIES } from '@/lib/supabase/pagos-repository';
 import { PagoVenta } from '@/types';
 
 /**

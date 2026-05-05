@@ -10,7 +10,7 @@ import {
   logCacheHit,
   remove,
   update,
-} from '@/lib/supabase/repository';
+} from '@/lib/supabase/catalogos-repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';

@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { getActivityDisplayConfig, activityActionColors } from '@/lib/utils/activityDisplayHelpers';
-import { getCount, ENTITIES } from '@/lib/supabase/repository';
+import { getCount, ENTITIES } from '@/lib/supabase/activity-log-repository';
 import {
   Dialog,
   DialogContent,

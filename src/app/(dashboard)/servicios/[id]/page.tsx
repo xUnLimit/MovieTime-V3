@@ -12,7 +12,7 @@ import { useCategoriasStore } from '@/store/categoriasStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ENTITIES } from '@/lib/supabase/repository';
+import { ENTITIES } from '@/lib/supabase/servicios-repository';
 import { Servicio } from '@/types';
 import type { FilterOption } from '@/lib/supabase/pagination';
 
