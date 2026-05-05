@@ -190,9 +190,6 @@ export function ServicioDialog({
                 <SelectContent>
                   {categorias?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.iconUrl && (
-                        <span className="mr-2">{cat.iconUrl}</span>
-                      )}
                       {cat.nombre}
                     </SelectItem>
                   )) || <SelectItem value="">No hay categorías</SelectItem>}

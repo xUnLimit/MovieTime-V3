@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { supabase } from '@/lib/supabase/client';
 
 // ===========================
 // TYPES & INTERFACES
@@ -29,7 +28,6 @@ export interface ExchangeRateAPIResponse {
 // ===========================
 
 const CACHE_TTL_HOURS = 24;
-const EXCHANGE_RATES_DOC_ID = 'exchange_rates';
 const API_BASE_URL = 'https://open.er-api.com/v6'; // Public endpoint, no API key required
 
 // ===========================
@@ -113,7 +111,7 @@ class CurrencyService {
   }
 
   /**
-   * Get exchange rates (from memory cache, Firebase cache, or API)
+   * Get exchange rates (from memory cache, Supabase cache, or API)
    * @returns Cached rates or null if unavailable
    */
   private async getRates(): Promise<CachedRates | null> {
@@ -122,12 +120,12 @@ class CurrencyService {
       return this.memoryCache;
     }
 
-    // Check Firebase cache
-    const firebaseCache = await this.getCachedRates();
+    // Check Supabase cache
+    const supabaseCache = await this.getCachedRates();
 
-    if (firebaseCache && this.isCacheValid(firebaseCache.lastUpdated)) {
-      this.memoryCache = firebaseCache;
-      return firebaseCache;
+    if (supabaseCache && this.isCacheValid(supabaseCache.lastUpdated)) {
+      this.memoryCache = supabaseCache;
+      return supabaseCache;
     }
 
     try {
@@ -137,9 +135,9 @@ class CurrencyService {
       console.error('[CurrencyService] Failed to refresh rates:', error);
 
       // Use stale cache if available
-      if (firebaseCache) {
-        this.memoryCache = firebaseCache;
-        return firebaseCache;
+      if (supabaseCache) {
+        this.memoryCache = supabaseCache;
+        return supabaseCache;
       }
 
       return null;
@@ -147,7 +145,7 @@ class CurrencyService {
   }
 
   /**
-   * Fetch fresh rates from API and cache in Firebase
+   * Fetch fresh rates from API and cache in Supabase
    */
   async refreshExchangeRates(): Promise<void> {
     try {
@@ -181,7 +179,7 @@ class CurrencyService {
         apiVersion: 'v6'
       };
 
-      // Save to Firebase
+      // Save to Supabase
       await this.saveRatesToCache(cachedRates);
 
       // Save to memory cache
@@ -194,52 +192,63 @@ class CurrencyService {
   }
 
   /**
-   * Get cached rates from Firebase
+   * Get cached rates from Supabase
    */
   private async getCachedRates(): Promise<CachedRates | null> {
     try {
-      const docRef = doc(db, 'config', EXCHANGE_RATES_DOC_ID);
-      const docSnap = await getDoc(docRef);
+      const { data, error } = await supabase
+        .from('exchange_rates')
+        .select('currency_pair,rate,source,last_updated')
+        .like('currency_pair', 'USD_%');
 
-      if (!docSnap.exists()) {
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) {
         return null;
       }
 
-      const data = docSnap.data();
+      const rates: Record<string, number> = {};
+      let lastUpdated = new Date(0);
+      let source = 'supabase';
 
-      // Convert Firestore Timestamp to Date
-      const lastUpdated = data.lastUpdated instanceof Timestamp
-        ? data.lastUpdated.toDate()
-        : new Date(data.lastUpdated);
+      for (const row of data) {
+        rates[row.currency_pair] = Number(row.rate);
+        const updatedAt = new Date(row.last_updated);
+        if (updatedAt > lastUpdated) lastUpdated = updatedAt;
+        if (row.source) source = row.source;
+      }
 
       return {
-        rates: data.rates,
+        rates,
         lastUpdated,
-        source: data.source,
-        apiVersion: data.apiVersion
+        source,
+        apiVersion: 'v6'
       };
     } catch (error) {
-      console.error('[CurrencyService] Error reading cached rates from Firebase:', error);
+      console.error('[CurrencyService] Error reading cached rates from Supabase:', error);
       return null;
     }
   }
 
   /**
-   * Save rates to Firebase cache
+   * Save rates to Supabase cache
    */
   private async saveRatesToCache(cachedRates: CachedRates): Promise<void> {
     try {
-      const docRef = doc(db, 'config', EXCHANGE_RATES_DOC_ID);
-
-      await setDoc(docRef, {
-        rates: cachedRates.rates,
-        lastUpdated: Timestamp.fromDate(cachedRates.lastUpdated),
-        source: cachedRates.source,
-        apiVersion: cachedRates.apiVersion
+      const rows = Object.entries(cachedRates.rates).map(([key, rate]) => {
+        return {
+          currency_pair: key,
+          rate,
+          source: cachedRates.source,
+          last_updated: cachedRates.lastUpdated.toISOString(),
+        };
       });
 
+      const { error } = await supabase
+        .from('exchange_rates')
+        .upsert(rows, { onConflict: 'currency_pair' });
+      if (error) throw new Error(error.message);
     } catch (error) {
-      console.error('[CurrencyService] Error saving rates to Firebase:', error);
+      console.error('[CurrencyService] Error saving rates to Supabase:', error);
       throw error;
     }
   }

@@ -121,6 +121,7 @@ export function UsuarioForm({
   const nombreValue = watch("nombre");
   const apellidoValue = watch("apellido");
   const telefonoValue = watch("telefono");
+  const notasValue = watch("notas");
   const metodosPagoOrdenados = useMemo(
     () => [
       pendienteOption,
@@ -146,7 +147,8 @@ export function UsuarioForm({
       apellidoValue !== (usuario.apellido || "") ||
       tipoUsuarioValue !== usuario.tipo ||
       telefonoValue !== usuario.telefono ||
-      metodoPagoIdValue !== usuarioMetodoPagoId
+      metodoPagoIdValue !== usuarioMetodoPagoId ||
+      (notasValue ?? "") !== (usuario.notas ?? "")
     );
   }, [
     usuario,
@@ -155,6 +157,7 @@ export function UsuarioForm({
     tipoUsuarioValue,
     telefonoValue,
     metodoPagoIdValue,
+    notasValue,
   ]);
 
   // Limpiar errores cuando los campos se corrijan
@@ -192,7 +195,7 @@ export function UsuarioForm({
         metodoPagoId: isPendingUserPaymentMethodId(usuario.metodoPagoId)
           ? PENDING_USER_PAYMENT_ID
           : usuario.metodoPagoId,
-        notas: "",
+        notas: usuario.notas || "",
       });
     } else {
       reset({
@@ -243,6 +246,7 @@ export function UsuarioForm({
           data.metodoPagoId,
           metodoPago?.moneda,
         ),
+        notas: data.notas?.trim() || "",
         active: true,
         createdBy: "current-user",
       };

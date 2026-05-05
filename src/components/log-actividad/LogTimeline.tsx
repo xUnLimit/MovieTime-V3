@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { getActivityDisplayConfig, activityActionColors } from '@/lib/utils/activityDisplayHelpers';
-import { getCount, COLLECTIONS } from '@/lib/firebase/firestore';
+import { getCount, ENTITIES } from '@/lib/supabase/repository';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,7 @@ interface LogTimelineProps {
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
   // Delete handlers
+  canDeleteLogs?: boolean;
   onDeleteSelected: (ids: string[]) => Promise<void>;
   onDeleteByDays: (days: number) => Promise<void>;
 }
@@ -65,6 +66,7 @@ export function LogTimeline({
   page,
   onNext,
   onPrevious,
+  canDeleteLogs = false,
   onDeleteSelected,
   onDeleteByDays,
   pageSize,
@@ -146,7 +148,7 @@ export function LogTimeline({
     setIsLoadingCount(true);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const count = await getCount(COLLECTIONS.ACTIVITY_LOG, [
+    const count = await getCount(ENTITIES.ACTIVITY_LOG, [
       { field: 'timestamp', operator: '<', value: cutoff },
     ]);
     setConfirmCount(count);
@@ -285,6 +287,7 @@ export function LogTimeline({
           usuarioFilter={usuarioFilter}
           setUsuarioFilter={setUsuarioFilter}
           selectedCount={selectedLogs.size}
+          canDeleteLogs={canDeleteLogs}
           onDeleteSelected={handleDeleteSelected}
           onRequestDeleteByDays={handleRequestDeleteByDays}
         />

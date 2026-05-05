@@ -35,11 +35,9 @@ export interface Categoria {
   tiposPlanes?: TipoPlanConfig[];
   planes?: Plan[];
   notas?: string;
-  iconUrl?: string;
-  color?: string;
   activo: boolean;
 
-  // Campos denormalizados (actualizados automáticamente por serviciosStore y ventasStore)
+  // Campos derivados desde vistas/consultas Supabase.
   totalServicios: number;           // Total de servicios en esta categoría
   serviciosActivos: number;         // Servicios con activo=true
   perfilesDisponiblesTotal: number; // Suma de (perfilesDisponibles - perfilesOcupados) de servicios activos

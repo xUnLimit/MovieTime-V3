@@ -11,7 +11,7 @@ export interface VentasCategoriaStats {
 
 /**
  * Calcula el monto sin consumir por categoría usando ventasPronostico del dashboardStore.
- * 0 reads a Firestore — los datos ya están en memoria desde fetchDashboardStats().
+ * 0 reads a Supabase — los datos ya están en memoria desde fetchDashboardStats().
  */
 export function useVentasPorCategorias(categoriaIds: string[], { enabled = true } = {}) {
   const ventasPronostico = useDashboardStore(s => s.stats?.ventasPronostico);

@@ -1,4 +1,4 @@
-import { create, queryDocuments, COLLECTIONS } from '@/lib/firebase/firestore';
+import { create, queryDocuments, ENTITIES } from '@/lib/supabase/repository';
 import { PagoServicio } from '@/types';
 
 /**
@@ -21,7 +21,7 @@ export async function crearPagoInicial(
   fechaVencimiento: Date,
   notas?: string
 ): Promise<void> {
-  await create(COLLECTIONS.PAGOS_SERVICIO, {
+  await create(ENTITIES.PAGOS_SERVICIO, {
     servicioId,
     categoriaId,
     fecha: new Date(), // Fecha de registro del pago
@@ -54,7 +54,7 @@ export async function crearPagoRenovacion(
   numeroRenovacion: number,
   notas?: string
 ): Promise<void> {
-  await create(COLLECTIONS.PAGOS_SERVICIO, {
+  await create(ENTITIES.PAGOS_SERVICIO, {
     servicioId,
     categoriaId,
     fecha: new Date(), // Fecha de registro del pago
@@ -75,7 +75,7 @@ export async function crearPagoRenovacion(
  * Obtener todos los pagos de un servicio específico
  */
 export async function obtenerPagosDeServicio(servicioId: string): Promise<PagoServicio[]> {
-  const docs = await queryDocuments<PagoServicio>(COLLECTIONS.PAGOS_SERVICIO, [
+  const docs = await queryDocuments<PagoServicio>(ENTITIES.PAGOS_SERVICIO, [
     { field: 'servicioId', operator: '==', value: servicioId },
   ]);
 
@@ -93,7 +93,7 @@ export async function contarRenovacionesDeServicio(servicioId: string): Promise<
 
 /**
  * Obtener pagos de varios servicios (batch query con chunking automático)
- * Firestore 'in' operator tiene límite de 10 valores
+ * Supabase .in() tiene límite de 10 valores
  */
 export async function obtenerPagosDeVariosServicios(servicioIds: string[]): Promise<PagoServicio[]> {
   if (servicioIds.length === 0) return [];
@@ -108,7 +108,7 @@ export async function obtenerPagosDeVariosServicios(servicioIds: string[]): Prom
   const allPagos: PagoServicio[] = [];
 
   for (const chunk of chunks) {
-    const docs = await queryDocuments<PagoServicio>(COLLECTIONS.PAGOS_SERVICIO, [
+    const docs = await queryDocuments<PagoServicio>(ENTITIES.PAGOS_SERVICIO, [
       { field: 'servicioId', operator: 'in', value: chunk },
     ]);
     allPagos.push(...docs);

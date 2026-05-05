@@ -41,11 +41,11 @@ import {
 } from "lucide-react";
 import { cn, normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import {
-  COLLECTIONS,
+  ENTITIES,
   queryDocuments,
   update,
   adjustServiciosActivos,
-} from "@/lib/firebase/firestore";
+} from "@/lib/supabase/repository";
 import { upsertVentaPronostico } from "@/lib/services/dashboardStatsService";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
@@ -294,7 +294,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
       setLoadingServicios(true);
       try {
         const servicios = await queryDocuments<Servicio>(
-          COLLECTIONS.SERVICIOS,
+          ENTITIES.SERVICIOS,
           [{ field: "categoriaId", operator: "==", value: categoriaIdValue }],
         );
         setServiciosCategoria(servicios);
@@ -472,7 +472,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
       if (!servicioIdValue) return;
       try {
         const docs = await queryDocuments<Record<string, unknown>>(
-          COLLECTIONS.VENTAS,
+          ENTITIES.VENTAS,
           [{ field: "servicioId", operator: "==", value: servicioIdValue }],
         );
         const ocupados = new Set<number>();
@@ -609,7 +609,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     setLoadingPerfilesDetalle(true);
     setErrorPerfilesDetalle(null);
     try {
-      const ventas = await queryDocuments<VentaDoc>(COLLECTIONS.VENTAS, [
+      const ventas = await queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
         { field: "servicioId", operator: "==", value: servicio.id },
       ]);
 
@@ -899,7 +899,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
       );
 
       // Actualizar SOLO metadatos en VentaDoc + campos denormalizados para notificaciones
-      await update(COLLECTIONS.VENTAS, venta.id, {
+      await update(ENTITIES.VENTAS, venta.id, {
         clienteId: data.clienteId,
         clienteNombre: clienteSeleccionado
           ? `${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}`
@@ -928,7 +928,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
 
       // Actualizar el pago más reciente (fuente de verdad para datos de pago)
       const todosLosPagos = await queryDocuments<PagoVenta>(
-        COLLECTIONS.PAGOS_VENTA,
+        ENTITIES.PAGOS_VENTA,
         [{ field: "ventaId", operator: "==", value: venta.id }],
       );
 
@@ -943,7 +943,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         const pagoMasReciente = sorted[0];
 
         // Actualizar TODOS los campos de pago (sin condicionales)
-        await update(COLLECTIONS.PAGOS_VENTA, pagoMasReciente.id, {
+        await update(ENTITIES.PAGOS_VENTA, pagoMasReciente.id, {
           precio,
           descuento,
           monto: precioFinalValue,

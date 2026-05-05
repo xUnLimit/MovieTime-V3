@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { getPaginated, FilterOption } from '@/lib/firebase/pagination';
+import { getPaginated, FilterOption } from '@/lib/supabase/pagination';
 
 interface UseServerPaginationOptions {
   collectionName: string;
@@ -15,7 +14,7 @@ interface UseServerPaginationOptions {
 
 /**
  * Hook para paginación server-side con cursores.
- * Solo trae pageSize docs por página desde Firestore.
+ * Solo trae pageSize docs por página desde Supabase.
  * Se resetea automáticamente cuando cambian los filtros.
  */
 export function useServerPagination<T>({
@@ -30,7 +29,7 @@ export function useServerPagination<T>({
   const [hasMore, setHasMore] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
-  const cursorsRef = useRef<(QueryDocumentSnapshot<DocumentData> | undefined)[]>([undefined]);
+  const cursorsRef = useRef<(number | undefined)[]>([undefined]);
   const prevFiltersRef = useRef(JSON.stringify(filters));
 
   const filtersKey = JSON.stringify(filters);

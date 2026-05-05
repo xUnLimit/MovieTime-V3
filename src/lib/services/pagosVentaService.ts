@@ -1,4 +1,4 @@
-import { create as createDoc, queryDocuments, COLLECTIONS } from '@/lib/firebase/firestore';
+import { create as createDoc, queryDocuments, ENTITIES } from '@/lib/supabase/repository';
 import { PagoVenta } from '@/types';
 
 /**
@@ -22,7 +22,7 @@ export async function crearPagoInicial(
   fechaInicio?: Date,
   fechaVencimiento?: Date
 ): Promise<string> {
-  const pagoId = await createDoc(COLLECTIONS.PAGOS_VENTA, {
+  const pagoId = await createDoc(ENTITIES.PAGOS_VENTA, {
     ventaId,
     clienteId,
     clienteNombre,
@@ -61,7 +61,7 @@ export async function crearPagoRenovacion(
   precio?: number,          // Precio original
   descuento?: number        // Porcentaje de descuento
 ): Promise<string> {
-  const pagoId = await createDoc(COLLECTIONS.PAGOS_VENTA, {
+  const pagoId = await createDoc(ENTITIES.PAGOS_VENTA, {
     ventaId,
     clienteId,
     clienteNombre,
@@ -87,7 +87,7 @@ export async function crearPagoRenovacion(
  * Obtiene todos los pagos de una venta específica
  */
 export async function obtenerPagosDeVenta(ventaId: string): Promise<PagoVenta[]> {
-  const pagos = await queryDocuments<PagoVenta>(COLLECTIONS.PAGOS_VENTA, [
+  const pagos = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
     { field: 'ventaId', operator: '==', value: ventaId }
   ]);
 
@@ -108,7 +108,7 @@ export async function contarRenovacionesDeVenta(ventaId: string): Promise<number
 export async function obtenerPagosDeVariasVentas(ventaIds: string[]): Promise<PagoVenta[]> {
   if (ventaIds.length === 0) return [];
 
-  // Firestore 'in' acepta max 10 valores — partir en chunks
+  // Supabase .in() acepta max 10 valores — partir en chunks
   const chunks: string[][] = [];
   for (let i = 0; i < ventaIds.length; i += 10) {
     chunks.push(ventaIds.slice(i, i + 10));
@@ -116,7 +116,7 @@ export async function obtenerPagosDeVariasVentas(ventaIds: string[]): Promise<Pa
 
   const allPagos = await Promise.all(
     chunks.map(chunk =>
-      queryDocuments<PagoVenta>(COLLECTIONS.PAGOS_VENTA, [
+      queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
         { field: 'ventaId', operator: 'in', value: chunk },
       ])
     )

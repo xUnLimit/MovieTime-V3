@@ -202,13 +202,7 @@ export default function DashboardPage() {
     const toastId = toast.loading('Sincronizando sistema...');
     try {
       const { performGlobalSync } = await import('@/lib/services/centralSyncService');
-      const {
-        usuariosReparados,
-        serviciosCorregidos,
-        serviciosRevisados,
-        ventasActualizadas,
-        categoriasCorregidas,
-      } = await performGlobalSync();
+      await performGlobalSync();
 
       // Refrescar stores locales para reflejar cambios
       const { useDashboardStore } = await import('@/store/dashboardStore');
@@ -217,20 +211,8 @@ export default function DashboardPage() {
 
       toast.success('Sistema sincronizado correctamente', {
         id: toastId,
-        description: [
-          ventasActualizadas > 0
-            ? `${ventasActualizadas} venta(s) resincronizadas desde ${serviciosRevisados} servicio(s).`
-            : `No se encontraron ventas desfasadas en ${serviciosRevisados} servicio(s).`,
-          usuariosReparados > 0
-            ? `${usuariosReparados} usuario(s) reparados en servicios activos.`
-            : 'Sin desfases en servicios activos de usuarios.',
-          serviciosCorregidos > 0
-            ? `${serviciosCorregidos} servicio(s) con perfiles corregidos.`
-            : '',
-          categoriasCorregidas > 0
-            ? `${categoriasCorregidas} categoría(s) con contadores recalculados.`
-            : 'Contadores de categorías correctos.',
-        ].filter(Boolean).join(' '),
+        description:
+          'Notificaciones regeneradas y métricas del dashboard reconstruidas desde la base de datos.',
       });
     } catch (error) {
       console.error('Error during global sync:', error);

@@ -55,10 +55,10 @@ import { toast } from "sonner";
 import type { Servicio } from "@/types/servicios";
 import type { VentaDoc } from "@/types/ventas";
 import {
-  COLLECTIONS,
+  ENTITIES,
   queryDocuments,
   adjustServiciosActivos,
-} from "@/lib/firebase/firestore";
+} from "@/lib/supabase/repository";
 import { Switch } from "@/components/ui/switch";
 import { formatearFechaWhatsApp, getSaludo } from "@/lib/utils/whatsapp";
 import { getCurrencySymbol } from "@/lib/constants";
@@ -250,7 +250,7 @@ export function VentasForm() {
     const loadMetodosPagoUsuarios = async () => {
       try {
         const metodos = await queryDocuments<MetodoPagoOption>(
-          COLLECTIONS.METODOS_PAGO,
+          ENTITIES.METODOS_PAGO,
           [{ field: "asociadoA", operator: "==", value: "usuario" }],
         );
         setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION, ...metodos]);
@@ -273,7 +273,7 @@ export function VentasForm() {
       setLoadingServicios(true);
       try {
         const servicios = await queryDocuments<Servicio>(
-          COLLECTIONS.SERVICIOS,
+          ENTITIES.SERVICIOS,
           [{ field: "categoriaId", operator: "==", value: categoriaId }],
         );
         setServiciosCategoria(servicios);
@@ -292,7 +292,7 @@ export function VentasForm() {
       if (!servicioId) return;
       try {
         const docs = await queryDocuments<Record<string, unknown>>(
-          COLLECTIONS.VENTAS,
+          ENTITIES.VENTAS,
           [{ field: "servicioId", operator: "==", value: servicioId }],
         );
         const ocupados = new Set<number>();
@@ -549,7 +549,7 @@ export function VentasForm() {
     setLoadingPerfilesDetalle(true);
     setErrorPerfilesDetalle(null);
     try {
-      const ventas = await queryDocuments<VentaDoc>(COLLECTIONS.VENTAS, [
+      const ventas = await queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
         { field: "servicioId", operator: "==", value: servicio.id },
       ]);
 

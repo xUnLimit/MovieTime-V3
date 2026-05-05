@@ -1,83 +1,40 @@
 /**
- * Analytics Utilities para MovieTime
+ * Analytics hooks.
  *
- * Wrapper functions para Firebase Analytics con type-safety
+ * Analytics provider is disabled in the Supabase runtime. These functions stay
+ * as no-op wrappers so feature code does not need analytics conditionals.
  */
 
-import { logEvent } from 'firebase/analytics';
-import { analytics } from '@/lib/firebase/config';
-
-/**
- * Trackea cuando se crea una venta
- */
-export function trackVentaCreada(data: {
+export function trackVentaCreada(_data: {
   monto: number;
   servicio: string;
   ciclo: string;
   tipoUsuario: 'cliente' | 'revendedor';
 }) {
-  if (!analytics) return;
-  logEvent(analytics, 'venta_creada', {
-    value: data.monto,
-    currency: 'USD',
-    servicio: data.servicio,
-    ciclo_pago: data.ciclo,
-    tipo_usuario: data.tipoUsuario,
-  });
+  void _data;
 }
 
-/**
- * Trackea cuando se crea un usuario
- */
-export function trackUsuarioCreado(tipo: 'cliente' | 'revendedor') {
-  if (!analytics) return;
-  logEvent(analytics, 'usuario_creado', {
-    tipo_usuario: tipo,
-  });
+export function trackUsuarioCreado(_tipo: 'cliente' | 'revendedor') {
+  void _tipo;
 }
 
-/**
- * Trackea cuando se crea un servicio
- */
-export function trackServicioCreado(data: {
+export function trackServicioCreado(_data: {
   tipo: string;
   perfiles: number;
 }) {
-  if (!analytics) return;
-  logEvent(analytics, 'servicio_creado', {
-    tipo_servicio: data.tipo,
-    cantidad_perfiles: data.perfiles,
-  });
+  void _data;
 }
 
-/**
- * Trackea búsquedas
- */
-export function trackBusqueda(modulo: string, termino: string) {
-  if (!analytics) return;
-  logEvent(analytics, 'search', {
-    search_term: termino,
-    modulo: modulo,
-  });
+export function trackBusqueda(_modulo: string, _termino: string) {
+  void _modulo;
+  void _termino;
 }
 
-/**
- * Trackea cuando un usuario elimina algo
- */
-export function trackEliminacion(entidad: string) {
-  if (!analytics) return;
-  logEvent(analytics, 'item_deleted', {
-    tipo_entidad: entidad,
-  });
+export function trackEliminacion(_entidad: string) {
+  void _entidad;
 }
 
-/**
- * Trackea errores en la app
- */
-export function trackError(errorType: string, errorMessage: string) {
-  if (!analytics) return;
-  logEvent(analytics, 'app_error', {
-    error_type: errorType,
-    error_message: errorMessage,
-  });
+export function trackError(_errorType: string, _errorMessage: string) {
+  void _errorType;
+  void _errorMessage;
 }

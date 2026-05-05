@@ -47,13 +47,11 @@ import { DataTable, Column } from "@/components/shared/DataTable";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import {
-  COLLECTIONS,
+  ENTITIES,
   queryDocuments,
   remove,
   adjustCategoriaGastos,
-} from "@/lib/firebase/firestore";
-import { doc as firestoreDoc, updateDoc, increment } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+} from "@/lib/supabase/repository";
 import { currencyService } from "@/lib/services/currencyService";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { crearPagoRenovacion } from "@/lib/services/pagosServicioService";
@@ -151,7 +149,7 @@ function ReposoPageContent() {
     if (metodosPago.length > 0) return;
     try {
       const methods = await queryDocuments<MetodoPago>(
-        COLLECTIONS.METODOS_PAGO,
+        ENTITIES.METODOS_PAGO,
         [{ field: "asociadoA", operator: "==", value: "servicio" }],
       );
       setMetodosPago(methods);
@@ -163,7 +161,7 @@ function ReposoPageContent() {
   const fetchReposoServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      const servicios = await queryDocuments<Servicio>(COLLECTIONS.SERVICIOS, [
+      const servicios = await queryDocuments<Servicio>(ENTITIES.SERVICIOS, [
         { field: "enReposo", operator: "==", value: true },
       ]);
       const enriched = servicios.map(calcularReposoData);
@@ -206,14 +204,14 @@ function ReposoPageContent() {
   const limpiarNotificacionesReposo = async (servicioId: string) => {
     try {
       const notifs = await queryDocuments<{ id: string }>(
-        COLLECTIONS.NOTIFICACIONES,
+        ENTITIES.NOTIFICACIONES,
         [
           { field: "entidad", operator: "==", value: "reposo" },
           { field: "servicioId", operator: "==", value: servicioId },
         ],
       );
       await Promise.all(
-        notifs.map((n) => remove(COLLECTIONS.NOTIFICACIONES, n.id)),
+        notifs.map((n) => remove(ENTITIES.NOTIFICACIONES, n.id)),
       );
       fetchNotificaciones(true);
     } catch {
@@ -301,12 +299,7 @@ function ReposoPageContent() {
         pagoData.costo,
         pagoData.moneda || "USD",
       );
-      const servicioRef = firestoreDoc(
-        db,
-        COLLECTIONS.SERVICIOS,
-        selectedServicio.id,
-      );
-      await updateDoc(servicioRef, { gastosTotal: increment(costoUSD) });
+      // gastosTotal se deriva desde pagos_servicio en Supabase.
       if (selectedServicio.categoriaId) {
         await adjustCategoriaGastos(selectedServicio.categoriaId, costoUSD);
       }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { COLLECTIONS, queryDocuments, remove, adjustServiciosActivos, adjustCategoriaSuscripciones } from '@/lib/firebase/firestore';
+import { ENTITIES, queryDocuments, remove, adjustServiciosActivos, adjustCategoriaSuscripciones } from '@/lib/supabase/repository';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';
@@ -34,7 +34,7 @@ function shouldInvalidateUsuarioVentasCache(cachedTs: number): boolean {
 }
 
 /**
- * Venta tal como la devuelve Firestore, con timestamps
+ * Venta tal como la devuelve Supabase, con timestamps
  * convertidos a Date para consumo directo en componentes.
  */
 export interface VentaUsuarioDoc {
@@ -103,7 +103,7 @@ export function useVentasUsuario(usuarioId: string) {
       setIsLoading(true);
       try {
         // Paso 1: Cargar ventas base (solo metadatos)
-        const ventasBase = await queryDocuments<VentaDoc>(COLLECTIONS.VENTAS, [
+        const ventasBase = await queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
           { field: 'clienteId', operator: '==', value: usuarioId },
         ]);
 
@@ -138,7 +138,7 @@ export function useVentasUsuario(usuarioId: string) {
 
         let renovaciones: Record<string, number> = {};
         if (ventaIds.length > 0) {
-          // Firestore 'in' acepta max 10 valores — si hay más, partir en chunks
+          // Supabase .in() acepta max 10 valores — si hay más, partir en chunks
           const chunks: string[][] = [];
           for (let i = 0; i < ventaIds.length; i += 10) {
             chunks.push(ventaIds.slice(i, i + 10));
@@ -146,7 +146,7 @@ export function useVentasUsuario(usuarioId: string) {
 
           const allPagos = await Promise.all(
             chunks.map(chunk =>
-              queryDocuments<Record<string, unknown>>(COLLECTIONS.PAGOS_VENTA, [
+              queryDocuments<Record<string, unknown>>(ENTITIES.PAGOS_VENTA, [
                 { field: 'ventaId', operator: 'in', value: chunk },
               ])
             )
@@ -197,7 +197,7 @@ export function useVentasUsuario(usuarioId: string) {
       setIsLoading(true);
 
       try {
-        const ventasBase = await queryDocuments<VentaDoc>(COLLECTIONS.VENTAS, [
+        const ventasBase = await queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
           { field: 'clienteId', operator: '==', value: usuarioId }
         ]);
         const ventasConDatos = await getVentasConUltimoPago(ventasBase);
@@ -231,7 +231,7 @@ export function useVentasUsuario(usuarioId: string) {
 
           const allPagos = await Promise.all(
             chunks.map((chunk) =>
-              queryDocuments<Record<string, unknown>>(COLLECTIONS.PAGOS_VENTA, [
+              queryDocuments<Record<string, unknown>>(ENTITIES.PAGOS_VENTA, [
                 { field: 'ventaId', operator: 'in', value: chunk },
               ])
             )
@@ -271,16 +271,16 @@ export function useVentasUsuario(usuarioId: string) {
 
     try {
       // Eliminar todos los pagos asociados primero
-      const pagosVenta = await queryDocuments<{ id: string }>(COLLECTIONS.PAGOS_VENTA, [
+      const pagosVenta = await queryDocuments<{ id: string }>(ENTITIES.PAGOS_VENTA, [
         { field: 'ventaId', operator: '==', value: ventaId }
       ]);
 
       await Promise.all(
-        pagosVenta.map(pago => remove(COLLECTIONS.PAGOS_VENTA, pago.id))
+        pagosVenta.map(pago => remove(ENTITIES.PAGOS_VENTA, pago.id))
       );
 
       // Eliminar la venta
-      await remove(COLLECTIONS.VENTAS, ventaId);
+      await remove(ENTITIES.VENTAS, ventaId);
 
       // Actualizar perfil ocupado del servicio
       if (servicioId && perfilNumero) {

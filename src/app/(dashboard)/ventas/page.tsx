@@ -13,10 +13,10 @@ import { useServerPagination } from '@/hooks/useServerPagination';
 import { useVentasStore } from '@/store/ventasStore';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { toast } from 'sonner';
-import { COLLECTIONS } from '@/lib/firebase/firestore';
+import { ENTITIES } from '@/lib/supabase/repository';
 import { normalizeSearchText } from '@/lib/utils';
 import { VentaDoc } from '@/types';
-import { FilterOption } from '@/lib/firebase/pagination';
+import { FilterOption } from '@/lib/supabase/pagination';
 import { getVentasConUltimoPago, VentaConUltimoPago } from '@/lib/services/ventaSyncService';
 
 function VentasPageContent() {
@@ -51,7 +51,7 @@ function VentasPageContent() {
 
   // Paginación server-side (solo cuando NO hay búsqueda activa)
   const { data: ventasPaginadas, isLoading: isLoadingPage, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<VentaDoc>({
-    collectionName: COLLECTIONS.VENTAS,
+    collectionName: ENTITIES.VENTAS,
     filters,
     pageSize,
     orderByField: orderBy,

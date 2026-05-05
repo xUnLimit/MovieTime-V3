@@ -29,8 +29,6 @@ import { toast } from "sonner";
 const categoriaSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   tipo: z.enum(["cliente", "revendedor", "ambos"]),
-  iconUrl: z.string().optional(),
-  color: z.string().optional(),
   activo: z.boolean(),
 });
 
@@ -60,8 +58,6 @@ export function CategoriaDialog({
     defaultValues: {
       nombre: "",
       tipo: "cliente",
-      iconUrl: "",
-      color: "#000000",
       activo: true,
     },
   });
@@ -74,16 +70,12 @@ export function CategoriaDialog({
       reset({
         nombre: categoria.nombre,
         tipo: categoria.tipo,
-        iconUrl: categoria.iconUrl || "",
-        color: categoria.color || "#000000",
         activo: categoria.activo,
       });
     } else {
       reset({
         nombre: "",
         tipo: "cliente",
-        iconUrl: "",
-        color: "#000000",
         activo: true,
       });
     }
@@ -160,32 +152,6 @@ export function CategoriaDialog({
             {errors.tipo && (
               <p className="text-sm text-red-500">{errors.tipo.message}</p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="iconUrl">Ícono (opcional)</Label>
-            <Input
-              id="iconUrl"
-              {...register("iconUrl")}
-              placeholder="Ej: 📺, 🎵, 🎮"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="color">Color (opcional)</Label>
-            <div className="flex gap-2">
-              <Input
-                id="color"
-                type="color"
-                {...register("color")}
-                className="w-20"
-              />
-              <Input
-                {...register("color")}
-                placeholder="#000000"
-                className="flex-1"
-              />
-            </div>
           </div>
 
           <div className="flex items-center justify-between">

@@ -44,3 +44,7 @@ next-env.d.ts
 *adminsdk*.json
 *serviceAccount*.json
 *service-account*.json
+
+# migration scratch/output
+scripts/migrate-to-supabase/reports/
+supabase/.temp/

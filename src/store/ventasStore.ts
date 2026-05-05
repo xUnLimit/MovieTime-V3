@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { VentaDoc, MetodoPago, PagoVenta } from '@/types';
-import { getAll, getById, getCount, create as createDoc, update, remove, COLLECTIONS, logCacheHit, adjustServiciosActivos, queryDocuments, adjustCategoriaSuscripciones } from '@/lib/firebase/firestore';
+import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustServiciosActivos, queryDocuments, adjustCategoriaSuscripciones } from '@/lib/supabase/repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { format } from 'date-fns';
@@ -74,13 +74,13 @@ export const useVentasStore = create<VentasState>()(
       fetchVentas: async (force = false) => {
         const { lastFetch } = get();
         if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
-          logCacheHit(COLLECTIONS.VENTAS);
+          logCacheHit(ENTITIES.VENTAS);
           return;
         }
 
         set({ isLoading: true, error: null });
         try {
-          const ventas = await getAll<VentaDoc>(COLLECTIONS.VENTAS);
+          const ventas = await getAll<VentaDoc>(ENTITIES.VENTAS);
           set({ ventas, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar ventas';
@@ -92,9 +92,9 @@ export const useVentasStore = create<VentasState>()(
       fetchCounts: async () => {
         try {
           const [totalVentas, ventasActivas, ventasInactivas] = await Promise.all([
-            getCount(COLLECTIONS.VENTAS, []),
-            getCount(COLLECTIONS.VENTAS, [{ field: 'estado', operator: '==', value: 'activo' }]),
-            getCount(COLLECTIONS.VENTAS, [{ field: 'estado', operator: '==', value: 'inactivo' }]),
+            getCount(ENTITIES.VENTAS, []),
+            getCount(ENTITIES.VENTAS, [{ field: 'estado', operator: '==', value: 'activo' }]),
+            getCount(ENTITIES.VENTAS, [{ field: 'estado', operator: '==', value: 'inactivo' }]),
           ]);
           set({ totalVentas, ventasActivas, ventasInactivas });
         } catch (error) {
@@ -117,12 +117,12 @@ export const useVentasStore = create<VentasState>()(
             ...ventaDataLimpia,
           };
 
-          const ventaId = await createDoc(COLLECTIONS.VENTAS, ventaDocData);
+          const ventaId = await createDoc(ENTITIES.VENTAS, ventaDocData);
 
           // Paso 2: Crear el pago inicial en la colección separada (fuente de verdad)
           if (pagos && pagos.length > 0) {
             const pagoInicial = pagos[0];
-            await createDoc(COLLECTIONS.PAGOS_VENTA, {
+            await createDoc(ENTITIES.PAGOS_VENTA, {
               ventaId,
               clienteId: ventaData.clienteId || '',
               clienteNombre: ventaData.clienteNombre,
@@ -179,7 +179,7 @@ export const useVentasStore = create<VentasState>()(
             categoriaNombre: ventaData.categoriaNombre ?? '',
           }).catch((err) => console.error('[VentasStore] Error updating dashboard ingresos:', err));
 
-          // Actualizar dashboard store local INMEDIATAMENTE + upsert a Firestore en background
+          // Actualizar dashboard store local INMEDIATAMENTE + upsert a Supabase en background
           const ventaPronostico = toVentaPronostico(newVenta);
           if (ventaPronostico) {
             // 1. Actualizar estado local del dashboard de inmediato (antes de que el usuario navegue)
@@ -194,7 +194,7 @@ export const useVentasStore = create<VentasState>()(
               }
             }).catch(() => {});
 
-            // 2. Persistir a Firestore en background (non-blocking)
+            // 2. Persistir a Supabase en background (non-blocking)
             upsertVentaPronostico(ventaPronostico, newVenta.id).catch((err) => {
               console.error('[VentasStore] Error upserting pronostico:', err);
               toast.warning('El pronóstico del dashboard puede estar desactualizado', { duration: 4000 });
@@ -222,7 +222,7 @@ export const useVentasStore = create<VentasState>()(
           // Obtener la venta actual para comparar valores
           const ventaActual = get().ventas.find(v => v.id === id);
           if (!ventaActual) {
-            const ventaDoc = await getById<VentaDoc>(COLLECTIONS.VENTAS, id);
+            const ventaDoc = await getById<VentaDoc>(ENTITIES.VENTAS, id);
             if (!ventaDoc) throw new Error('Venta no encontrada');
           }
 
@@ -231,7 +231,7 @@ export const useVentasStore = create<VentasState>()(
           // Si cambia metodoPagoId, actualizar campos denormalizados
           if (updates.metodoPagoId !== undefined) {
             const metodoPago = updates.metodoPagoId
-              ? await getById<MetodoPago>(COLLECTIONS.METODOS_PAGO, updates.metodoPagoId)
+              ? await getById<MetodoPago>(ENTITIES.METODOS_PAGO, updates.metodoPagoId)
               : null;
 
             finalUpdates = {
@@ -241,10 +241,10 @@ export const useVentasStore = create<VentasState>()(
             };
           }
 
-          await update(COLLECTIONS.VENTAS, id, finalUpdates);
+          await update(ENTITIES.VENTAS, id, finalUpdates);
 
           // Actualizar contadores de categoría y usuario si cambió el estado, precio o la categoría
-          const ventaAnterior = ventaActual || await getById<VentaDoc>(COLLECTIONS.VENTAS, id);
+          const ventaAnterior = ventaActual || await getById<VentaDoc>(ENTITIES.VENTAS, id);
           if (ventaAnterior) {
             const precioAnterior = ventaAnterior.precioFinal || 0;
             const precioNuevo = updates.precioFinal !== undefined ? updates.precioFinal : precioAnterior;
@@ -335,7 +335,7 @@ export const useVentasStore = create<VentasState>()(
             cambios: cambios.length > 0 ? cambios : undefined,
           }).catch(() => {});
 
-          // Actualizar dashboard store local INMEDIATAMENTE + upsert a Firestore en background
+          // Actualizar dashboard store local INMEDIATAMENTE + upsert a Supabase en background
           const ventaActualizada = get().ventas.find((v) => v.id === id);
           if (ventaActualizada) {
             const ventaPronostico = toVentaPronostico(ventaActualizada);
@@ -355,7 +355,7 @@ export const useVentasStore = create<VentasState>()(
               }
             }).catch(() => {});
 
-            // 2. Persistir a Firestore en background (non-blocking)
+            // 2. Persistir a Supabase en background (non-blocking)
             upsertVentaPronostico(ventaPronostico, id).catch((err) => {
               console.error('[VentasStore] Error upserting pronostico:', err);
               toast.warning('El pronóstico del dashboard puede estar desactualizado', { duration: 4000 });
@@ -379,11 +379,11 @@ export const useVentasStore = create<VentasState>()(
         // Save current state for rollback
         const currentVentas = get().ventas;
 
-        // Buscar la venta en memoria primero, si no está, buscar en Firestore
+        // Buscar la venta en memoria primero, si no está, buscar en Supabase
         let ventaEliminada = currentVentas.find(v => v.id === id);
         if (!ventaEliminada) {
           // La página de ventas usa paginación, el store puede no tener la venta cargada
-          const ventaDoc = await getById<VentaDoc>(COLLECTIONS.VENTAS, id);
+          const ventaDoc = await getById<VentaDoc>(ENTITIES.VENTAS, id);
           if (ventaDoc) {
             ventaEliminada = ventaDoc;
           }
@@ -397,18 +397,18 @@ export const useVentasStore = create<VentasState>()(
         try {
           // Si se solicita eliminar pagos, eliminar primero todos los PagoVenta asociados
           if (deletePagos) {
-            const pagos = await queryDocuments<PagoVenta>(COLLECTIONS.PAGOS_VENTA, [
+            const pagos = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
               { field: 'ventaId', operator: '==', value: id }
             ]);
 
             // Eliminar todos los pagos en paralelo
             await Promise.all(
-              pagos.map(pago => remove(COLLECTIONS.PAGOS_VENTA, pago.id))
+              pagos.map(pago => remove(ENTITIES.PAGOS_VENTA, pago.id))
             );
           }
 
           // Eliminar la venta
-          await remove(COLLECTIONS.VENTAS, id);
+          await remove(ENTITIES.VENTAS, id);
 
           // Update service profile occupancy if applicable
           if (servicioId && perfilNumero) {
@@ -461,7 +461,7 @@ export const useVentasStore = create<VentasState>()(
             detalles: `Venta eliminada: ${ventaEliminada?.clienteNombre} / ${ventaEliminada?.servicioNombre}`,
           }).catch(() => {});
 
-          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Firestore en background
+          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Supabase en background
           import('./dashboardStore').then(({ useDashboardStore }) => {
             const currentStats = useDashboardStore.getState().stats;
             if (currentStats) {

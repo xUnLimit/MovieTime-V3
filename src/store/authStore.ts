@@ -1,13 +1,12 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { User } from '@/types';
-import { 
-  signIn, 
-  signOut as firebaseSignOut, 
-  onAuthStateChange, 
-  convertFirebaseUser,
-  convertFirebaseUserAsync 
-} from '@/lib/firebase/auth';
+import {
+  signIn,
+  signOut as supabaseSignOut,
+  getCurrentProfile,
+  onAuthStateChange,
+} from '@/lib/supabase/auth';
 
 const STORAGE_KEY = 'auth-storage';
 const REMEMBER_KEY = 'auth-remember';
@@ -15,8 +14,8 @@ let authListenerInitialized = false;
 
 /**
  * Returns the active storage based on the "Recordarme" flag.
- * - rememberMe = true  → localStorage  (persists across browser close)
- * - rememberMe = false → sessionStorage (cleared on browser close)
+ * - rememberMe = true  -> localStorage  (persists across browser close)
+ * - rememberMe = false -> sessionStorage (cleared on browser close)
  */
 function getActiveStorage(): Storage {
   if (typeof window === 'undefined') return localStorage; // SSR fallback
@@ -48,6 +47,17 @@ interface AuthState {
   initAuth: () => void;
 }
 
+async function loadActiveProfile(): Promise<User> {
+  const user = await getCurrentProfile();
+  if (!user) {
+    throw new Error('No se encontro un perfil activo para este usuario.');
+  }
+  if (!user.active) {
+    throw new Error('Este usuario esta inactivo.');
+  }
+  return user;
+}
+
 export const useAuthStore = create<AuthState>()(
   devtools(
     persist(
@@ -61,9 +71,8 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
 
           try {
-            const firebaseUser = await signIn(email, password, rememberMe);
-            // Use async version to get latest custom claims
-            const user = await convertFirebaseUserAsync(firebaseUser);
+            await signIn(email, password);
+            const user = await loadActiveProfile();
 
             // Clear old data from both storages first
             clearAllAuthStorage();
@@ -76,27 +85,28 @@ export const useAuthStore = create<AuthState>()(
             set({
               user,
               isAuthenticated: true,
-              isLoading: false
+              isLoading: false,
             });
           } catch (error) {
+            await supabaseSignOut().catch(() => undefined);
             set({ isLoading: false });
-            const message = error instanceof Error ? error.message : 'Error al iniciar sesión';
+            const message = error instanceof Error ? error.message : 'Error al iniciar sesion';
             throw new Error(message);
           }
         },
 
         logout: async () => {
           try {
-            await firebaseSignOut();
+            await supabaseSignOut();
             clearAllAuthStorage();
             set({
               user: null,
               isAuthenticated: false,
-              isLoading: false
+              isLoading: false,
             });
           } catch (error) {
             console.error('Error logging out:', error);
-            const message = error instanceof Error ? error.message : 'Error al cerrar sesión';
+            const message = error instanceof Error ? error.message : 'Error al cerrar sesion';
             throw new Error(message);
           }
         },
@@ -119,25 +129,24 @@ export const useAuthStore = create<AuthState>()(
         initAuth: () => {
           if (authListenerInitialized) return;
           authListenerInitialized = true;
-          onAuthStateChange(async (firebaseUser) => {
-            if (firebaseUser) {
+          onAuthStateChange(async (session) => {
+            if (session) {
               try {
-                // IMPORTANT: Fetch claims asynchronously to ensure correct role
-                const user = await convertFirebaseUserAsync(firebaseUser);
+                const user = await loadActiveProfile();
                 set({ user, isAuthenticated: true, isLoading: false });
               } catch (error) {
-                console.error('Error hydrating user claims:', error);
-                // Fallback to sync version if async fails
-                const user = convertFirebaseUser(firebaseUser);
-                set({ user, isAuthenticated: true, isLoading: false });
+                void error;
+                await supabaseSignOut().catch(() => undefined);
+                clearAllAuthStorage();
+                set({ user: null, isAuthenticated: false, isLoading: false });
               }
             } else {
-              // Firebase has no user — clear everything
+              // Supabase has no session: clear everything
               clearAllAuthStorage();
               set({ user: null, isAuthenticated: false, isLoading: false });
             }
           });
-        }
+        },
       }),
       {
         name: STORAGE_KEY,
@@ -161,13 +170,13 @@ export const useAuthStore = create<AuthState>()(
         },
         partialize: (state) => ({
           user: state.user,
-          isAuthenticated: state.isAuthenticated
+          isAuthenticated: state.isAuthenticated,
         }) as AuthState,
         onRehydrateStorage: () => {
           return (state) => {
             state?.setHydrated(true);
           };
-        }
+        },
       }
     )
   )

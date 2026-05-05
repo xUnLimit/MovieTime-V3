@@ -31,6 +31,7 @@ interface LogFiltersProps {
   usuarioFilter: string;
   setUsuarioFilter: (value: string) => void;
   selectedCount: number;
+  canDeleteLogs?: boolean;
   onDeleteSelected: () => void;
   onRequestDeleteByDays: (days: number) => void;
 }
@@ -43,6 +44,7 @@ export function LogFilters({
   entidadFilter,
   setEntidadFilter,
   selectedCount,
+  canDeleteLogs = false,
   onDeleteSelected,
   onRequestDeleteByDays,
 }: LogFiltersProps) {
@@ -174,7 +176,11 @@ export function LogFilters({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="gap-2 bg-[#ff0000] hover:bg-[#e00000] text-white whitespace-nowrap shadow-lg shadow-red-600/50">
+          <Button
+            className="gap-2 bg-[#ff0000] hover:bg-[#e00000] text-white whitespace-nowrap shadow-lg shadow-red-600/50"
+            disabled={!canDeleteLogs}
+            title={canDeleteLogs ? 'Limpiar logs' : 'Solo administradores'}
+          >
             <Trash2 className="h-4 w-4" />
             Limpiar Logs
           </Button>

@@ -2911,3 +2911,267 @@ La migracion esta lista cuando:
 - Admin puede gestionar datos administrativos.
 - Validadores SQL post-migracion devuelven cero filas.
 - `legacy_orphan_records` fue revisado y cada registro tiene decision documentada antes del cutover.
+
+## Registro de Ejecucion - 2026-05-04
+
+Fase 3 - Migrador ejecutada contra Supabase `amvougsdkpyptzahtram`.
+
+Scripts implementados:
+
+- `scripts/migrate-to-supabase.ts`
+- `scripts/migrate-to-supabase/`
+- `scripts/validate-supabase-migration.ts`
+
+Dry-run final:
+
+```text
+errors: 0
+warnings: 6
+orphans: 40
+```
+
+Migracion real:
+
+```text
+usuarios: 470
+servicios: 158
+categorias: 10
+metodos_pago: 16
+tipos_gasto: 6
+gastos: 13
+templates: 5
+activity_log: 1050
+servicio_periodos: 259
+pagos_servicio: 259
+ventas: 429
+venta_periodos: 639
+pagos_venta: 639
+legacy_orphan_records: 40
+```
+
+Huerfanos preservados:
+
+```text
+pagosServicio con servicioId faltante: 32
+ventas con servicioId faltante: 7
+pagosVenta con ventaId faltante: 1
+```
+
+Advertencias conocidas:
+
+```text
+usuarios con metodoPagoId faltante: 2
+pagosVenta con metodoPagoId faltante: 4
+```
+
+Validacion post-migracion:
+
+```text
+run_all_validations(): todos los checks en 0
+```
+
+Pendiente antes de cutover:
+
+- Revisar y documentar decision para cada fila en `legacy_orphan_records`.
+- Definir tratamiento final para metodos de pago legacy faltantes (`VxcWa6EufNuk7FmvfCG9` y `pendiente`).
+- Continuar con Fase 3 Auth App / migracion de stores segun el orden de implementacion.
+
+## Registro de Correccion de Orden - 2026-05-05
+
+Se marco la migracion previa como staging de prueba y se ejecuto auditoria legacy antes de continuar.
+
+Auditoria Firebase legacy:
+
+```text
+ventas: 436
+pagosVenta: 647
+pagosServicio: 291
+servicios: 158
+usuarios: 470
+metodosPago: 16
+ventas con pagos[] deprecated: 0
+pagos embebidos sin equivalente en pagosVenta: 0
+ventas con servicioId faltante: 7
+pagosVenta con ventaId faltante: 1
+pagosServicio con servicioId faltante: 32
+referencias a metodoPagoId faltante: 6
+metodoPagoId faltantes distintos: 2
+```
+
+Decision aplicada:
+
+```text
+VentaDoc.pagos[]: no hay datos deprecated que purgar.
+ventas/pagos con servicioId o ventaId faltante: preservar en legacy_orphan_records.
+metodoPagoId faltantes VxcWa6EufNuk7FmvfCG9 y pendiente: crear placeholders inactivos en metodos_pago durante migracion.
+```
+
+Supabase staging fue reseteado y re-migrado con el migrador corregido.
+
+Resultado re-migracion:
+
+```text
+usuarios: 470
+servicios: 158
+categorias: 10
+metodos_pago: 18
+tipos_gasto: 6
+gastos: 13
+templates: 5
+activity_log: 1050
+servicio_periodos: 259
+pagos_servicio: 259
+ventas: 429
+venta_periodos: 639
+pagos_venta: 639
+legacy_orphan_records: 40
+warnings: 0
+errors: 0
+```
+
+Validacion post re-migracion:
+
+```text
+run_all_validations(): todos los checks en 0
+```
+
+## Registro de Cutover App - 2026-05-05
+
+Auth:
+
+```text
+Supabase Auth sincronizado desde Firebase Auth: 2 usuarios
+profiles creados: 2
+roles: itsallan1403@hotmail.com = admin, kairapitty674@gmail.com = operador
+passwords Firebase no migrados; se requiere reset/invite para login real.
+```
+
+Runtime app:
+
+```text
+authStore migro a Supabase Auth/profiles.
+Stores base migrados a Supabase: categorias, config, metodos_pago, tipos_gasto, gastos, templates, activity_log, dashboard.
+Importaciones runtime de Firebase removidas fuera de src/lib/firebase legacy.
+Paginacion server-side migrada a Supabase.
+currencyService lee/escribe exchange_rates en Supabase.
+dashboardStatsService lee/escribe dashboard_stats en Supabase y recalcula desde tablas normalizadas.
+analytics runtime desactivado como no-op.
+```
+
+Repositorio Supabase:
+
+```text
+src/lib/supabase/repository.ts centraliza lecturas por vistas, escrituras
+normalizadas, soft-delete de ventas/servicios y creacion de periodos/pagos.
+Los contadores legacy denormalizados ahora son no-op/derivados por vistas o triggers.
+Las escrituras de pagos crean periodos normalizados en venta_periodos/servicio_periodos.
+```
+
+## Registro de Cierre Compat Runtime - 2026-05-05
+
+Se ejecuto la opcion agresiva de eliminar `compat.ts` del runtime.
+
+Cambios:
+
+```text
+src/lib/supabase/compat.ts -> src/lib/supabase/repository.ts
+COLLECTIONS -> ENTITIES en codigo runtime
+imports de @/lib/supabase/compat: 0
+iconUrl/color de categorias removidos de tipos y componentes runtime
+```
+
+La capa generica no se elimina todavia porque contiene comportamiento de dominio
+critico: mapping de vistas, fechas DATE locales, notificaciones normalizadas,
+soft-delete y creacion atomica de periodos/pagos. El siguiente paso de deuda
+tecnica es dividir `repository.ts` por dominio sin cambiar comportamiento.
+
+Validacion final ejecutada:
+
+```text
+npm run lint: OK
+npm test -- --run: OK
+npm run build: OK
+npm run migrate:validate: OK
+run_all_validations(): bloqueantes en 0; reportes aceptables documentados
+```
+
+Conteos Supabase finales:
+
+```text
+usuarios: 470
+servicios: 164
+categorias: 11
+metodos_pago: 18
+tipos_gasto: 6
+gastos: 13
+templates: 5
+activity_log: 1050
+pagos_servicio: 259
+ventas: 437
+pagos_venta: 646
+```
+
+Nota operativa:
+
+```text
+Si el dashboard de Supabase muestra tablas vacias con anon/no session, es RLS.
+Con service_role los datos estan presentes y las validaciones pasan.
+```
+
+## Addendum 2026-05-05: V2 hardening
+
+Se inicio endurecimiento V2 antes del cutover. Detalle en
+`docs/plans/2026-05-05-supabase-v2-hardening.md`.
+
+Cambios clave:
+
+- dashboard financiero pasa a SQL/RPC como fuente unica;
+- RLS de notificaciones se separa por accion;
+- `activity_log` vuelve a borrado admin-only;
+- fechas `DATE` se parsean como locales tambien en paginacion;
+- se elimina runtime Firebase de `src/lib/firebase`;
+- sync services dejan de propagar campos denormalizados a ventas/pagos.
+
+## Registro de Saneamiento de Migrations - 2026-05-05
+
+Problema:
+
+```text
+El proyecto remoto tenia migrations registradas con versiones timestamped
+20260504231238..20260504231819, pero el repo local tenia archivos 000..011.
+Esto bloqueaba `npx supabase db push`.
+```
+
+Correccion aplicada:
+
+```text
+000_extensions.sql                        -> 20260504231238_extensions.sql
+001_enums.sql                             -> 20260504231242_enums.sql
+002_core_tables.sql                       -> 20260504231318_core_tables.sql
+003_financial_tables.sql                  -> 20260504231349_financial_tables.sql
+004_notification_tables.sql               -> 20260504231417_notification_tables.sql
+005_indexes.sql                           -> 20260504231434_indexes.sql
+006_triggers.sql                          -> 20260504231456_triggers.sql
+007_views.sql                             -> 20260504231543_views.sql
+008_rls.sql                               -> 20260504231626_rls.sql
+009_seed_data.sql                         -> 20260504231635_seed_data.sql
+010_validation_functions.sql              -> 20260504231702_validation_functions.sql
+011_security_hardening.sql                -> 20260504231819_security_hardening.sql
+012_rls_authenticated_function_grants.sql -> 20260505013000_rls_authenticated_function_grants.sql
+```
+
+Migration nueva aplicada:
+
+```sql
+GRANT EXECUTE ON FUNCTION public.auth_role() TO authenticated;
+```
+
+Estado final:
+
+```text
+npx supabase migration list --linked: local y remoto alineados en 13 migrations.
+npx supabase db push --yes: OK.
+npm run migrate:validate: OK.
+npm run lint: OK.
+npm run build: OK.
+```

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PagoVenta } from '@/types';
-import { queryDocuments, COLLECTIONS } from '@/lib/firebase/firestore';
+import { queryDocuments, ENTITIES } from '@/lib/supabase/repository';
 
 /**
  * Hook para cargar los pagos de una venta específica
@@ -29,7 +29,7 @@ export function usePagosVenta(ventaId: string) {
     const load = async () => {
       setIsLoading(true);
       try {
-        const docs = await queryDocuments<PagoVenta>(COLLECTIONS.PAGOS_VENTA, [
+        const docs = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
           { field: 'ventaId', operator: '==', value: ventaId }
         ]);
 

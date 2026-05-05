@@ -31,7 +31,7 @@ import { Servicio, MetodoPago } from "@/types";
 import { addMonths } from "date-fns";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
-import { update, getCount, COLLECTIONS } from "@/lib/firebase/firestore";
+import { update, getCount, ENTITIES } from "@/lib/supabase/repository";
 
 const servicioEditSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -101,7 +101,7 @@ export function ServicioEditForm({
   );
 
   useEffect(() => {
-    getCount(COLLECTIONS.VENTAS, [
+    getCount(ENTITIES.VENTAS, [
       { field: "servicioId", operator: "==", value: servicio.id },
       { field: "estado", operator: "!=", value: "inactivo" },
     ]).then((count) => setPerfilesOcupadosReal(count));
@@ -362,14 +362,14 @@ export function ServicioEditForm({
 
       // Resincronizar perfilesOcupados si el contador estaba desfasado
       if (servicio.perfilesOcupados !== perfilesOcupadosReal) {
-        await update(COLLECTIONS.SERVICIOS, servicio.id, {
+        await update(ENTITIES.SERVICIOS, servicio.id, {
           perfilesOcupados: perfilesOcupadosReal,
         });
       }
 
       // Actualizar el último pago si existe (Single Source of Truth)
       if (ultimoPago && ultimoPago.id) {
-        await update(COLLECTIONS.PAGOS_SERVICIO, ultimoPago.id, {
+        await update(ENTITIES.PAGOS_SERVICIO, ultimoPago.id, {
           fechaInicio: data.fechaInicio,
           fechaVencimiento: data.fechaVencimiento,
           monto: Number(data.costoServicio),

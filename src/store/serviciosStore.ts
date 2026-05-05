@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Servicio, MetodoPago, VentaDoc } from '@/types';
-import { getAll, getById, getCount, create as createDoc, update, remove, COLLECTIONS, logCacheHit, adjustCategoriaGastos, queryDocuments } from '@/lib/firebase/firestore';
+import { Servicio, MetodoPago } from '@/types';
+import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustCategoriaGastos, queryDocuments } from '@/lib/supabase/repository';
 import { adjustGastosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
 import { currencyService } from '@/lib/services/currencyService';
-import { resyncServiciosDenormalizedData, syncServicioDependencias } from '@/lib/services/servicioSyncService';
+import { syncServicioDependencias, resyncServiciosDenormalizedData } from '@/lib/services/servicioSyncService';
 import type { ServicioPronostico } from '@/types/dashboard';
 
 function toServicioPronostico(s: Servicio): ServicioPronostico | null {
@@ -19,8 +19,6 @@ function toServicioPronostico(s: Servicio): ServicioPronostico | null {
     moneda: s.moneda || 'USD',
   };
 }
-import { doc as firestoreDoc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
 import { crearPagoInicial } from '@/lib/services/pagosServicioService';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
@@ -60,7 +58,7 @@ interface ServiciosState {
   getServiciosByCategoria: (categoriaId: string) => Servicio[];
   getServiciosDisponibles: () => Servicio[];
   updatePerfilOcupado: (id: string, shouldIncrement: boolean) => Promise<void>;
-  resyncPerfilesDisponiblesTotal: (preFetchedData?: { ventas?: VentaDoc[]; servicios?: Servicio[]; categorias?: { id: string }[] }) => Promise<{ categoriasActualizadas: number; serviciosCorregidos: number }>;
+  resyncPerfilesDisponiblesTotal: () => Promise<{ categoriasActualizadas: number; serviciosCorregidos: number }>;
   resyncServicioReferencias: () => Promise<{ serviciosRevisados: number; ventasActualizadas: number }>;
 }
 
@@ -82,13 +80,13 @@ export const useServiciosStore = create<ServiciosState>()(
       fetchServicios: async (force = false) => {
         const { lastFetch } = get();
         if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
-          logCacheHit(COLLECTIONS.SERVICIOS);
+          logCacheHit(ENTITIES.SERVICIOS);
           return;
         }
 
         set({ isLoading: true, error: null });
         try {
-          const servicios = await getAll<Servicio>(COLLECTIONS.SERVICIOS);
+          const servicios = await getAll<Servicio>(ENTITIES.SERVICIOS);
           set({ servicios, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar servicios';
@@ -114,11 +112,11 @@ export const useServiciosStore = create<ServiciosState>()(
             serviciosEnReposoDocs,
             totalCategoriasActivas
           ] = await Promise.all([
-            getCount(COLLECTIONS.SERVICIOS, []),
-            getCount(COLLECTIONS.SERVICIOS, [{ field: 'enReposo', operator: '==', value: true }]),
-            getCount(COLLECTIONS.SERVICIOS, [{ field: 'activo', operator: '==', value: true }]),
-            queryDocuments<Servicio>(COLLECTIONS.SERVICIOS, [{ field: 'enReposo', operator: '==', value: true }]),
-            getCount(COLLECTIONS.CATEGORIAS, [{ field: 'activo', operator: '==', value: true }]),
+            getCount(ENTITIES.SERVICIOS, []),
+            getCount(ENTITIES.SERVICIOS, [{ field: 'enReposo', operator: '==', value: true }]),
+            getCount(ENTITIES.SERVICIOS, [{ field: 'activo', operator: '==', value: true }]),
+            queryDocuments<Servicio>(ENTITIES.SERVICIOS, [{ field: 'enReposo', operator: '==', value: true }]),
+            getCount(ENTITIES.CATEGORIAS, [{ field: 'activo', operator: '==', value: true }]),
           ]);
           const serviciosActivosEnReposo = serviciosEnReposoDocs.filter((s) => s.activo).length;
           const totalServicios = Math.max(0, totalServiciosRaw - serviciosEnReposo);
@@ -141,12 +139,12 @@ export const useServiciosStore = create<ServiciosState>()(
           let metodoPagoNombre: string | undefined;
           let moneda: string | undefined;
           if (servicioData.metodoPagoId) {
-            const metodoPago = await getById<MetodoPago>(COLLECTIONS.METODOS_PAGO, servicioData.metodoPagoId);
+            const metodoPago = await getById<MetodoPago>(ENTITIES.METODOS_PAGO, servicioData.metodoPagoId);
             metodoPagoNombre = metodoPago?.nombre;
             moneda = metodoPago?.moneda;
           }
 
-          const id = await createDoc(COLLECTIONS.SERVICIOS, {
+          const id = await createDoc(ENTITIES.SERVICIOS, {
             ...servicioData,
             metodoPagoNombre,  // Denormalizado
             moneda,            // Denormalizado
@@ -167,16 +165,7 @@ export const useServiciosStore = create<ServiciosState>()(
             servicioData.fechaVencimiento ?? new Date(),
             servicioData.notas
           );
-
-          // Actualizar contadores de la categoría
-          const categoriaRef = firestoreDoc(db, COLLECTIONS.CATEGORIAS, servicioData.categoriaId);
-          const isContableEnServicios = !servicioData.enReposo;
-          const isActivoContable = isContableEnServicios && servicioData.activo !== false;
-          await updateDoc(categoriaRef, {
-            totalServicios: increment(isContableEnServicios ? 1 : 0),
-            serviciosActivos: increment(isActivoContable ? 1 : 0),
-            perfilesDisponiblesTotal: increment(isActivoContable ? (servicioData.perfilesDisponibles ?? 0) : 0),
-          });
+          // Los contadores de categoria se derivan en Supabase con vistas/triggers.
           // Denormalizar gasto inicial en la categoría (convertido a USD)
           if (servicioData.costoServicio) {
             const costoUSD = await currencyService.convertToUSD(servicioData.costoServicio, moneda ?? 'USD');
@@ -206,7 +195,7 @@ export const useServiciosStore = create<ServiciosState>()(
             error: null
           }));
 
-          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Firestore en background
+          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Supabase en background
           const servicioPronostico = toServicioPronostico(newServicio);
           if (servicioPronostico) {
             import('./dashboardStore').then(({ useDashboardStore }) => {
@@ -244,8 +233,8 @@ export const useServiciosStore = create<ServiciosState>()(
 
       updateServicio: async (id, updates) => {
         try {
-          // Obtener el servicio directamente de Firestore (no del store local)
-          const servicio = await getById<Servicio>(COLLECTIONS.SERVICIOS, id);
+          // Obtener el servicio directamente de Supabase (no del store local)
+          const servicio = await getById<Servicio>(ENTITIES.SERVICIOS, id);
           if (!servicio) throw new Error('Servicio not found');
 
           let finalUpdates = { ...updates };
@@ -253,7 +242,7 @@ export const useServiciosStore = create<ServiciosState>()(
           // Si cambia metodoPagoId, actualizar campos denormalizados
           if (updates.metodoPagoId !== undefined) {
             const metodoPago = updates.metodoPagoId
-              ? await getById<MetodoPago>(COLLECTIONS.METODOS_PAGO, updates.metodoPagoId)
+              ? await getById<MetodoPago>(ENTITIES.METODOS_PAGO, updates.metodoPagoId)
               : null;
 
             finalUpdates = {
@@ -263,59 +252,8 @@ export const useServiciosStore = create<ServiciosState>()(
             };
           }
 
-          await update(COLLECTIONS.SERVICIOS, id, finalUpdates);
-
-          // Recalcular contadores de categoria (total/activos/perfiles) excluyendo servicios en reposo
-          {
-            const prevEnReposo = !!servicio.enReposo;
-            const nextEnReposo = !!(finalUpdates.enReposo ?? servicio.enReposo);
-            const prevActivo = !!servicio.activo;
-            const nextActivo = !!(finalUpdates.activo ?? servicio.activo);
-            const prevCategoriaId = servicio.categoriaId;
-            const nextCategoriaId = finalUpdates.categoriaId ?? servicio.categoriaId;
-            const prevContable = !prevEnReposo;
-            const nextContable = !nextEnReposo;
-            const prevActivoContable = prevContable && prevActivo;
-            const nextActivoContable = nextContable && nextActivo;
-            const nextPerfilesDisponibles = finalUpdates.perfilesDisponibles ?? servicio.perfilesDisponibles;
-            const nextPerfilesOcupados = finalUpdates.perfilesOcupados ?? servicio.perfilesOcupados;
-            const perfilesLibresPrev = prevActivoContable
-              ? Math.max((servicio.perfilesDisponibles || 0) - (servicio.perfilesOcupados || 0), 0)
-              : 0;
-            const perfilesLibresNext = nextActivoContable
-              ? Math.max((nextPerfilesDisponibles || 0) - (nextPerfilesOcupados || 0), 0)
-              : 0;
-            if (prevCategoriaId !== nextCategoriaId) {
-              const categoriaAnteriorRef = firestoreDoc(db, COLLECTIONS.CATEGORIAS, prevCategoriaId);
-              const categoriaNuevaRef = firestoreDoc(db, COLLECTIONS.CATEGORIAS, nextCategoriaId);
-
-              await Promise.all([
-                updateDoc(categoriaAnteriorRef, {
-                  totalServicios: increment(prevContable ? -1 : 0),
-                  serviciosActivos: increment(prevActivoContable ? -1 : 0),
-                  perfilesDisponiblesTotal: increment(-perfilesLibresPrev),
-                }),
-                updateDoc(categoriaNuevaRef, {
-                  totalServicios: increment(nextContable ? 1 : 0),
-                  serviciosActivos: increment(nextActivoContable ? 1 : 0),
-                  perfilesDisponiblesTotal: increment(perfilesLibresNext),
-                }),
-              ]);
-            } else {
-              const deltaTotalServicios = (nextContable ? 1 : 0) - (prevContable ? 1 : 0);
-              const deltaServiciosActivos = (nextActivoContable ? 1 : 0) - (prevActivoContable ? 1 : 0);
-              const deltaPerfilesDisponibles = perfilesLibresNext - perfilesLibresPrev;
-
-              if (deltaTotalServicios !== 0 || deltaServiciosActivos !== 0 || deltaPerfilesDisponibles !== 0) {
-                const categoriaRef = firestoreDoc(db, COLLECTIONS.CATEGORIAS, servicio.categoriaId);
-                await updateDoc(categoriaRef, {
-                  totalServicios: increment(deltaTotalServicios),
-                  serviciosActivos: increment(deltaServiciosActivos),
-                  perfilesDisponiblesTotal: increment(deltaPerfilesDisponibles),
-                });
-              }
-            }
-          }
+          await update(ENTITIES.SERVICIOS, id, finalUpdates);
+          // Los contadores de categoria se derivan desde Supabase.
 
           const servicioActualizado = {
             ...servicio,
@@ -408,8 +346,8 @@ export const useServiciosStore = create<ServiciosState>()(
 
       deleteServicio: async (id, deletePayments = false) => {
         try {
-          // Obtener el servicio directamente de Firestore (no del store local)
-          const servicio = await getById<Servicio>(COLLECTIONS.SERVICIOS, id);
+          // Obtener el servicio directamente de Supabase (no del store local)
+          const servicio = await getById<Servicio>(ENTITIES.SERVICIOS, id);
           if (!servicio) throw new Error('Servicio not found');
 
           // Optimistic update del store local (si existe)
@@ -422,7 +360,7 @@ export const useServiciosStore = create<ServiciosState>()(
           let gastosRealUSD = 0;
           {
             const pagosActuales = await queryDocuments<{ id: string; monto: number; moneda?: string }>(
-              COLLECTIONS.PAGOS_SERVICIO,
+              ENTITIES.PAGOS_SERVICIO,
               [{ field: 'servicioId', operator: '==', value: id }]
             );
             const conversiones = pagosActuales.map(async (p) => {
@@ -433,26 +371,14 @@ export const useServiciosStore = create<ServiciosState>()(
 
             // Si se solicita, eliminar todos los pagos del servicio
             if (deletePayments) {
-              const { remove: removeDoc } = await import('@/lib/firebase/firestore');
-              await Promise.all(pagosActuales.map(pago => removeDoc(COLLECTIONS.PAGOS_SERVICIO, pago.id)));
+              const { remove: removeDoc } = await import('@/lib/supabase/repository');
+              await Promise.all(pagosActuales.map(pago => removeDoc(ENTITIES.PAGOS_SERVICIO, pago.id)));
             }
           }
 
-          // Eliminar el servicio de Firestore
-          await remove(COLLECTIONS.SERVICIOS, id);
-
-          // Decrementar contadores de la categoría
-          const categoriaRef = firestoreDoc(db, COLLECTIONS.CATEGORIAS, servicio.categoriaId);
-          const isContableEnServicios = !servicio.enReposo;
-          const isActivoContable = isContableEnServicios && servicio.activo;
-          const perfilesDisponibles = isActivoContable
-            ? Math.max((servicio.perfilesDisponibles || 0) - (servicio.perfilesOcupados || 0), 0)
-            : 0;
-          await updateDoc(categoriaRef, {
-            totalServicios: increment(isContableEnServicios ? -1 : 0),
-            serviciosActivos: increment(isActivoContable ? -1 : 0),
-            perfilesDisponiblesTotal: increment(-perfilesDisponibles),
-          });
+          // Eliminar el servicio de Supabase
+          await remove(ENTITIES.SERVICIOS, id);
+          // Los contadores de categoria se derivan desde Supabase.
           // Restar el gastosTotal REAL (recalculado desde pagos) de la categoría
           if (gastosRealUSD > 0) {
             await adjustCategoriaGastos(servicio.categoriaId, -gastosRealUSD);
@@ -478,7 +404,7 @@ export const useServiciosStore = create<ServiciosState>()(
             // Notifications cleanup is best-effort, don't fail the delete
           }
 
-          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Firestore en background
+          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Supabase en background
           import('./dashboardStore').then(({ useDashboardStore }) => {
             const currentStats = useDashboardStore.getState().stats;
             if (currentStats) {
@@ -542,14 +468,14 @@ export const useServiciosStore = create<ServiciosState>()(
         const delta = shouldIncrement ? 1 : -1;
 
         try {
-          // Obtener servicio de Firebase si no está en el store
+          // Obtener servicio de Supabase si no está en el store
           let servicio = get().servicios.find((s) => s.id === id);
 
           if (!servicio) {
-            // Si no está en el store, obtenerlo de Firebase
-            const servicioDoc = await getById<Servicio>(COLLECTIONS.SERVICIOS, id);
+            // Si no está en el store, obtenerlo de Supabase
+            const servicioDoc = await getById<Servicio>(ENTITIES.SERVICIOS, id);
             if (!servicioDoc) {
-              console.error('Servicio not found in Firebase for updatePerfilOcupado');
+              console.error('Servicio not found in Supabase for updatePerfilOcupado');
               return;
             }
             servicio = servicioDoc;
@@ -566,19 +492,7 @@ export const useServiciosStore = create<ServiciosState>()(
             }));
           }
 
-          // Actualizar en Firebase
-          const docRef = firestoreDoc(db, COLLECTIONS.SERVICIOS, id);
-          await updateDoc(docRef, {
-            perfilesOcupados: increment(delta),
-          });
-
-          // Actualizar perfilesDisponiblesTotal de la categoría (inverso del delta)
-          if (servicio.activo && !servicio.enReposo) {
-            const categoriaRef = firestoreDoc(db, COLLECTIONS.CATEGORIAS, servicio.categoriaId);
-            await updateDoc(categoriaRef, {
-              perfilesDisponiblesTotal: increment(-delta), // Si ocupamos +1, disponibles -1
-            });
-          }
+          // En Supabase perfiles_ocupados se mantiene por trigger desde ventas activas.
         } catch (error) {
           console.error('Error updating perfil ocupado:', error);
           // Rollback local si existe en el store
@@ -592,78 +506,15 @@ export const useServiciosStore = create<ServiciosState>()(
         }
       },
 
-      resyncPerfilesDisponiblesTotal: async (preFetchedData?: { ventas?: VentaDoc[], servicios?: Servicio[], categorias?: { id: string }[] }) => {
-        // 1. Contar ventas activas (no inactivas) por servicioId desde la fuente de verdad
-        const ventasActivas = preFetchedData?.ventas 
-          ? preFetchedData.ventas.filter(v => v.estado !== 'inactivo')
-          : await queryDocuments<VentaDoc>(COLLECTIONS.VENTAS, [
-            { field: 'estado', operator: '!=', value: 'inactivo' },
-          ]);
-
-        // Contar perfiles ocupados reales por servicioId (solo ventas con perfilNumero asignado)
-        const ocupadosPorServicio = new Map<string, number>();
-        for (const v of ventasActivas) {
-          if (v.servicioId && v.perfilNumero) {
-            ocupadosPorServicio.set(v.servicioId, (ocupadosPorServicio.get(v.servicioId) ?? 0) + 1);
-          }
-        }
-
-        // 2. Leer todos los servicios y corregir perfilesOcupados donde no coincida
-        const servicios = preFetchedData?.servicios || await getAll<Servicio>(COLLECTIONS.SERVICIOS);
-        const servicioUpdates: Promise<void>[] = [];
-
-        for (const s of servicios) {
-          const ocupadosReal = ocupadosPorServicio.get(s.id) ?? 0;
-          if (s.perfilesOcupados !== ocupadosReal) {
-            // Corregir en Firebase con set absoluto (no increment)
-            const ref = firestoreDoc(db, COLLECTIONS.SERVICIOS, s.id);
-            servicioUpdates.push(updateDoc(ref, { perfilesOcupados: ocupadosReal }));
-          }
-        }
-        await Promise.all(servicioUpdates);
-
-        // 3. Recalcular perfilesDisponiblesTotal por categoría usando los valores corregidos
-        const totalPorCategoria = new Map<string, number>();
-        for (const s of servicios) {
-          if (!s.activo || s.enReposo) continue;
-          const ocupadosReal = ocupadosPorServicio.get(s.id) ?? 0;
-          const libres = Math.max((s.perfilesDisponibles || 0) - ocupadosReal, 0);
-          totalPorCategoria.set(s.categoriaId, (totalPorCategoria.get(s.categoriaId) ?? 0) + libres);
-        }
-
-        // Sobrescribir el campo en cada categoría afectada
-        const categorias = preFetchedData?.categorias || await getAll<{ id: string }>(COLLECTIONS.CATEGORIAS);
-        const categoriaUpdates = categorias.map((categoria) => {
-          const total = totalPorCategoria.get(categoria.id) ?? 0;
-          const ref = firestoreDoc(db, COLLECTIONS.CATEGORIAS, categoria.id);
-          return updateDoc(ref, { perfilesDisponiblesTotal: total });
-        });
-        await Promise.all(categoriaUpdates);
-
-        // 4. Actualizar store local con valores corregidos
-        if (servicioUpdates.length > 0) {
-          set((state) => ({
-            servicios: state.servicios.map((s) => {
-              const ocupadosReal = ocupadosPorServicio.get(s.id) ?? 0;
-              return s.perfilesOcupados !== ocupadosReal
-                ? { ...s, perfilesOcupados: ocupadosReal }
-                : s;
-            }),
-          }));
-        }
-
-        return { categoriasActualizadas: categoriaUpdates.length, serviciosCorregidos: servicioUpdates.length };
+      resyncPerfilesDisponiblesTotal: async () => {
+        // perfiles_ocupados is maintained by the SQL trigger recalc_perfiles_ocupados.
+        // No client-side recompute needed; a store refresh picks up the current value.
+        await get().fetchServicios(true);
+        return { categoriasActualizadas: 0, serviciosCorregidos: 0 };
       },
 
       resyncServicioReferencias: async () => {
-        try {
-          return await resyncServiciosDenormalizedData();
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Error al resincronizar referencias de servicios';
-          set({ error: errorMessage });
-          console.error('[ServiciosStore] Error resyncing servicio references:', error);
-          throw error;
-        }
+        return await resyncServiciosDenormalizedData();
       },
     }),
     { name: 'servicios-store' }

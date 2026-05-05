@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { ActivityLog, AccionLog, EntidadLog } from '@/types';
-import { getAll, create as createDoc, remove, COLLECTIONS, logCacheHit } from '@/lib/firebase/firestore';
-import { Timestamp } from 'firebase/firestore';
+import { getAll, create as createDoc, remove, ENTITIES, logCacheHit } from '@/lib/supabase/repository';
 
 interface ActivityLogState {
   logs: ActivityLog[];
@@ -32,13 +31,13 @@ export const useActivityLogStore = create<ActivityLogState>()(
       fetchLogs: async (force = false) => {
         const { lastFetch } = get();
         if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
-          logCacheHit(COLLECTIONS.ACTIVITY_LOG);
+          logCacheHit(ENTITIES.ACTIVITY_LOG);
           return;
         }
 
         set({ isLoading: true, error: null });
         try {
-          const logs = (await getAll<ActivityLog>(COLLECTIONS.ACTIVITY_LOG))
+          const logs = (await getAll<ActivityLog>(ENTITIES.ACTIVITY_LOG))
             .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
           set({ logs, isLoading: false, error: null, lastFetch: Date.now() });
@@ -51,9 +50,9 @@ export const useActivityLogStore = create<ActivityLogState>()(
 
       addLog: async (logData) => {
         try {
-          const id = await createDoc(COLLECTIONS.ACTIVITY_LOG, {
+          const id = await createDoc(ENTITIES.ACTIVITY_LOG, {
             ...logData,
-            timestamp: Timestamp.now()
+            timestamp: new Date().toISOString()
           });
 
           const newLog: ActivityLog = {
@@ -75,7 +74,7 @@ export const useActivityLogStore = create<ActivityLogState>()(
         set({ isLoading: true });
         try {
           const logs = get().logs;
-          await Promise.all(logs.map(log => remove(COLLECTIONS.ACTIVITY_LOG, log.id)));
+          await Promise.all(logs.map(log => remove(ENTITIES.ACTIVITY_LOG, log.id)));
           set({ logs: [], isLoading: false });
         } catch (error) {
           console.error('Error clearing logs:', error);

@@ -3,14 +3,14 @@ import { devtools } from 'zustand/middleware';
 import { format } from 'date-fns';
 import { Gasto, TipoGasto } from '@/types';
 import {
-  COLLECTIONS,
+  ENTITIES,
   create as createDoc,
   getAll,
   getById,
   logCacheHit,
   remove,
   update,
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
@@ -35,7 +35,7 @@ function sortGastos(gastos: Gasto[]) {
 }
 
 async function getTipoGastoActivo(tipoGastoId: string): Promise<TipoGasto> {
-  const tipoGasto = await getById<TipoGasto>(COLLECTIONS.TIPOS_GASTO, tipoGastoId);
+  const tipoGasto = await getById<TipoGasto>(ENTITIES.TIPOS_GASTO, tipoGastoId);
   if (!tipoGasto) throw new Error('Tipo de gasto no encontrado');
   if (!tipoGasto.activo) throw new Error('El tipo de gasto seleccionado está inactivo');
   return tipoGasto;
@@ -81,13 +81,13 @@ export const useGastosStore = create<GastosState>()(
       fetchGastos: async (force = false) => {
         const { lastFetch } = get();
         if (!force && lastFetch && Date.now() - lastFetch < CACHE_TIMEOUT) {
-          logCacheHit(COLLECTIONS.GASTOS);
+          logCacheHit(ENTITIES.GASTOS);
           return;
         }
 
         set({ isLoading: true, error: null });
         try {
-          const gastos = await getAll<Gasto>(COLLECTIONS.GASTOS);
+          const gastos = await getAll<Gasto>(ENTITIES.GASTOS);
           set({
             gastos: sortGastos(gastos),
             isLoading: false,
@@ -112,7 +112,7 @@ export const useGastosStore = create<GastosState>()(
             detalle: gastoData.detalle?.trim() || undefined,
           };
 
-          gastoId = await createDoc(COLLECTIONS.GASTOS, gastoToCreate as Omit<Gasto, 'id'>);
+          gastoId = await createDoc(ENTITIES.GASTOS, gastoToCreate as Omit<Gasto, 'id'>);
 
           const newGasto: Gasto = {
             ...gastoData,
@@ -141,7 +141,7 @@ export const useGastosStore = create<GastosState>()(
           }).catch(() => {});
         } catch (error) {
           if (gastoId) {
-            await remove(COLLECTIONS.GASTOS, gastoId).catch(() => {});
+            await remove(ENTITIES.GASTOS, gastoId).catch(() => {});
           }
           const errorMessage = error instanceof Error ? error.message : 'Error al crear gasto';
           set({ error: errorMessage });
@@ -151,7 +151,7 @@ export const useGastosStore = create<GastosState>()(
       },
 
       updateGasto: async (id, updates) => {
-        const gastoActual = get().gastos.find((gasto) => gasto.id === id) ?? await getById<Gasto>(COLLECTIONS.GASTOS, id);
+        const gastoActual = get().gastos.find((gasto) => gasto.id === id) ?? await getById<Gasto>(ENTITIES.GASTOS, id);
         if (!gastoActual) throw new Error('Gasto no encontrado');
 
         const finalUpdates: Partial<Gasto> = {
@@ -186,7 +186,7 @@ export const useGastosStore = create<GastosState>()(
           }
 
           try {
-            await update(COLLECTIONS.GASTOS, id, finalUpdates);
+            await update(ENTITIES.GASTOS, id, finalUpdates);
           } catch (persistError) {
             if (requiereRecalculoDashboard) {
               await syncDashboardGasto(gastoActualizado, -1).catch(() => {});
@@ -230,13 +230,13 @@ export const useGastosStore = create<GastosState>()(
       },
 
       deleteGasto: async (id) => {
-        const gasto = get().gastos.find((item) => item.id === id) ?? await getById<Gasto>(COLLECTIONS.GASTOS, id);
+        const gasto = get().gastos.find((item) => item.id === id) ?? await getById<Gasto>(ENTITIES.GASTOS, id);
         if (!gasto) throw new Error('Gasto no encontrado');
 
         try {
           await syncDashboardGasto(gasto, -1);
           try {
-            await remove(COLLECTIONS.GASTOS, id);
+            await remove(ENTITIES.GASTOS, id);
           } catch (persistError) {
             await syncDashboardGasto(gasto, 1).catch(() => {});
             throw persistError;

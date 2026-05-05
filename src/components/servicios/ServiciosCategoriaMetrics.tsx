@@ -4,7 +4,7 @@ import { memo, useEffect, useState, useRef } from "react";
 import { Categoria } from "@/types";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { Monitor, Calendar } from "lucide-react";
-import { queryDocuments, COLLECTIONS } from "@/lib/firebase/firestore";
+import { queryDocuments, ENTITIES } from "@/lib/supabase/repository";
 import { Servicio } from "@/types";
 
 interface ServiciosCategoriaMetricsProps {
@@ -28,7 +28,7 @@ export const ServiciosCategoriaMetrics = memo(
           en7Dias.setDate(en7Dias.getDate() + 7);
 
           const servicios = await queryDocuments<Servicio>(
-            COLLECTIONS.SERVICIOS,
+            ENTITIES.SERVICIOS,
             [
               { field: "categoriaId", operator: "==", value: categoria.id },
               { field: "fechaVencimiento", operator: "<=", value: en7Dias },

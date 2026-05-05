@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VentasEditForm, VentaEditData } from '@/components/ventas/VentasEditForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { COLLECTIONS, getById } from '@/lib/firebase/firestore';
+import { ENTITIES, getById } from '@/lib/supabase/repository';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { VentaDoc } from '@/types';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ function EditarVentaPageContent() {
   useEffect(() => {
     const loadVenta = async () => {
       try {
-        const doc = await getById<Record<string, unknown>>(COLLECTIONS.VENTAS, id);
+        const doc = await getById<Record<string, unknown>>(ENTITIES.VENTAS, id);
         if (!doc) {
           setVenta(null);
           return;

@@ -16,10 +16,11 @@ export interface Usuario {
   serviciosActivos?: number;        // Denormalizado — count de ventas activas (se actualiza con increment())
   suscripcionesTotales?: number;    // Solo para revendedores (campo legacy)
   active: boolean;
+  notas?: string;
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;
-  // NOTA: montoSinConsumir NO se guarda en Firestore
+  // NOTA: montoSinConsumir NO se guarda en Supabase
   // Se calcula dinámicamente en el cliente usando useVentasPorUsuarios
 }
 

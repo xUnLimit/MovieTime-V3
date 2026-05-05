@@ -16,8 +16,8 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { invalidateVentasPorUsuariosCache } from '@/hooks/use-ventas-por-usuarios';
 import { Usuario } from '@/types';
-import { COLLECTIONS } from '@/lib/firebase/firestore';
-import { FilterOption } from '@/lib/firebase/pagination';
+import { ENTITIES } from '@/lib/supabase/repository';
+import { FilterOption } from '@/lib/supabase/pagination';
 import { normalizePhoneSearch, normalizeSearchText } from '@/lib/utils';
 import {
   getUsuarioMetodoPagoNombre,
@@ -115,7 +115,7 @@ function UsuariosPageContent() {
 
   // Paginación server-side (solo cuando NO hay búsqueda activa)
   const { data: pageData, isLoading: isLoadingPage, hasMore, hasPrevious, page, next, previous, refresh } = useServerPagination<Usuario>({
-    collectionName: COLLECTIONS.USUARIOS,
+    collectionName: ENTITIES.USUARIOS,
     filters,
     pageSize,
   });

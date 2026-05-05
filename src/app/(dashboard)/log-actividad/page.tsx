@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { LogTimeline } from '@/components/log-actividad/LogTimeline';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { COLLECTIONS, remove, queryDocuments } from '@/lib/firebase/firestore';
+import { ENTITIES, remove, queryDocuments } from '@/lib/supabase/repository';
 import { ActivityLog } from '@/types';
-import { FilterOption } from '@/lib/firebase/pagination';
+import { FilterOption } from '@/lib/supabase/pagination';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 function LogActividadPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,8 +17,10 @@ function LogActividadPageContent() {
   const [entidadFilter, setEntidadFilter] = useState('all');
   const [usuarioFilter, setUsuarioFilter] = useState('all');
   const [pageSize, setPageSize] = useState(10);
+  const user = useAuthStore((state) => state.user);
+  const canDeleteLogs = user?.role === 'admin';
 
-  // Construir filtros para Firestore
+  // Construir filtros para Supabase
   const filters = useMemo((): FilterOption[] => {
     const f: FilterOption[] = [];
     if (accionFilter !== 'all') {
@@ -33,14 +36,14 @@ function LogActividadPageContent() {
   }, [accionFilter, entidadFilter, usuarioFilter]);
 
   const { data: logs, isLoading, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<ActivityLog>({
-    collectionName: COLLECTIONS.ACTIVITY_LOG,
+    collectionName: ENTITIES.ACTIVITY_LOG,
     filters,
     pageSize,
     orderByField: 'timestamp',
     orderDirection: 'desc',
   });
 
-  // Filtrado client-side solo para búsqueda de texto (no se puede hacer en Firestore)
+  // Filtrado client-side solo para búsqueda de texto (no se puede hacer server-side)
   const filteredLogs = useMemo(() => {
     if (!searchTerm) return logs;
     return logs.filter((log) => {
@@ -55,7 +58,7 @@ function LogActividadPageContent() {
   // Delete handlers
   const handleDeleteSelected = async (ids: string[]) => {
     try {
-      await Promise.all(ids.map(id => remove(COLLECTIONS.ACTIVITY_LOG, id)));
+      await Promise.all(ids.map(id => remove(ENTITIES.ACTIVITY_LOG, id)));
       toast.success('Registros eliminados', { description: `${ids.length} registro(s) han sido eliminados del log de actividad.` });
       refresh();
     } catch (error) {
@@ -68,10 +71,10 @@ function LogActividadPageContent() {
     try {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
-      const oldLogs = await queryDocuments<ActivityLog>(COLLECTIONS.ACTIVITY_LOG, [
+      const oldLogs = await queryDocuments<ActivityLog>(ENTITIES.ACTIVITY_LOG, [
         { field: 'timestamp', operator: '<', value: cutoff }
       ]);
-      await Promise.all(oldLogs.map(log => remove(COLLECTIONS.ACTIVITY_LOG, log.id)));
+      await Promise.all(oldLogs.map(log => remove(ENTITIES.ACTIVITY_LOG, log.id)));
       toast.success('Registros antiguos eliminados', { description: `${oldLogs.length} registro(s) anterior(es) al período seleccionado han sido eliminados.` });
       refresh();
     } catch (error) {
@@ -108,6 +111,7 @@ function LogActividadPageContent() {
         onPrevious={previous}
         onRefresh={refresh}
         // Delete handlers
+        canDeleteLogs={canDeleteLogs}
         onDeleteSelected={handleDeleteSelected}
         onDeleteByDays={handleDeleteByDays}
         pageSize={pageSize}

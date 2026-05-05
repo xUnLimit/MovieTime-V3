@@ -58,16 +58,16 @@ export function logCacheHit(collectionName: string, details?: string) {
   if (!shouldLog(message)) return;
 
   console.log(
-    '%c[Cache]%c Hit (' + collectionName + ')' + (details ? ' · ' + details : '') + ' → sin lectura a Firestore',
+    '%c[Cache]%c Hit (' + collectionName + ')' + (details ? ' · ' + details : '') + ' → sin lectura a Supabase',
     'background:#FF9800;color:#fff;padding:2px 6px;border-radius:3px;font-weight:600',
     'color:#FF9800;font-weight:600'
   );
 }
 
 /**
- * Log de operación Firestore (azul/verde/morado según tipo)
+ * Log de operación Supabase (azul/verde/morado según tipo)
  */
-export function logFirestoreOp(
+export function logSupabaseOp(
   operation: 'getAll' | 'getById' | 'query' | 'paginated' | 'count',
   collectionName: string,
   details: string,
@@ -75,7 +75,7 @@ export function logFirestoreOp(
 ) {
   if (process.env.NODE_ENV !== 'development') return;
 
-  const message = `[Firestore] ${operation} (${collectionName}) ${details}`;
+  const message = `[Supabase] ${operation} (${collectionName}) ${details}`;
   if (!shouldLog(message)) return;
 
   const colors: Record<typeof operation, string> = {
@@ -89,7 +89,7 @@ export function logFirestoreOp(
   const color = colors[operation];
 
   console.log(
-    '%c[Firestore]%c ' + operation + ' (' + collectionName + ') → ' + details + ' · ' + duration + 'ms',
+    '%c[Supabase]%c ' + operation + ' (' + collectionName + ') → ' + details + ' · ' + duration + 'ms',
     `background:${color};color:#fff;padding:2px 6px;border-radius:3px;font-weight:600`,
     `color:${color};font-weight:600`
   );

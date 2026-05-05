@@ -40,7 +40,7 @@ import type { Plan } from '@/types/categorias';
 import { useVentasStore } from '@/store/ventasStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import type { VentaDoc } from '@/types/ventas';
-import { update, adjustServiciosActivos, getById, COLLECTIONS } from '@/lib/firebase/firestore';
+import { update, adjustServiciosActivos, getById, ENTITIES } from '@/lib/supabase/repository';
 import { getCurrencySymbol } from '@/lib/constants';
 import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
 import { upsertVentaPronostico, adjustIngresosStats, getMesKeyFromDate, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
@@ -434,7 +434,7 @@ export function VentasProximasTable() {
         fetchMetodosPagoUsuarios(),
         (async () => {
           if (notif.categoriaId) {
-            const categoriaDoc = await getById<Record<string, unknown>>(COLLECTIONS.CATEGORIAS, notif.categoriaId);
+            const categoriaDoc = await getById<Record<string, unknown>>(ENTITIES.CATEGORIAS, notif.categoriaId);
             if (categoriaDoc && Array.isArray(categoriaDoc.planes)) {
               setCategoriaPlanes(categoriaDoc.planes as Plan[]);
             }
@@ -442,7 +442,7 @@ export function VentasProximasTable() {
         })(),
         (async () => {
           if (notif.servicioId) {
-            const servicioDoc = await getById<Record<string, unknown>>(COLLECTIONS.SERVICIOS, notif.servicioId);
+            const servicioDoc = await getById<Record<string, unknown>>(ENTITIES.SERVICIOS, notif.servicioId);
             if (servicioDoc && typeof servicioDoc.tipo === 'string') {
               setServicioTipoSeleccionado(servicioDoc.tipo);
             }
@@ -520,7 +520,7 @@ export function VentasProximasTable() {
         detalles: `Venta renovada: ${notifSeleccionada.clienteNombre} / ${notifSeleccionada.servicioNombre} — ${getCurrencySymbol(data.moneda)}${monto.toFixed(2)} — hasta ${format(data.fechaVencimiento, 'dd/MM/yyyy')} (${data.periodoRenovacion})`,
       }).catch(() => {});
 
-      // Actualizar dashboard: local INMEDIATAMENTE + Firestore en background
+      // Actualizar dashboard: local INMEDIATAMENTE + Supabase en background
       const ventaPronosticoData = {
         id: notifSeleccionada.ventaId,
         categoriaId: notifSeleccionada.categoriaId || '',

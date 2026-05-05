@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { startOfDay, format } from 'date-fns';
-import { Usuario, VentaDoc } from '@/types';
-import { getAll, getCount, getById, create as createDoc, update, remove, queryDocuments, COLLECTIONS, logCacheHit } from '@/lib/firebase/firestore';
+import { Usuario } from '@/types';
+import { getAll, getCount, getById, create as createDoc, update, remove, queryDocuments, ENTITIES, logCacheHit } from '@/lib/supabase/repository';
 import { adjustUsuariosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useActivityLogStore } from '@/store/activityLogStore';
@@ -33,7 +33,7 @@ interface UsuariosState {
   // Actions
   fetchUsuarios: (force?: boolean) => Promise<void>;
   fetchCounts: () => Promise<void>;
-  resyncServiciosActivos: (preFetchedData?: { usuarios?: Usuario[]; ventas?: VentaDoc[] }) => Promise<{ usuariosReparados: number }>;
+  resyncServiciosActivos: () => Promise<{ usuariosReparados: number }>;
   createUsuario: (usuario: Omit<Usuario, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos' | 'suscripcionesTotales'>) => Promise<void>;
   updateUsuario: (id: string, updates: Partial<Usuario>) => Promise<void>;
   deleteUsuario: (id: string, usuarioData?: { tipo: 'cliente' | 'revendedor'; nombre?: string; createdAt?: Date; serviciosActivos?: number }) => Promise<void>;
@@ -63,13 +63,13 @@ export const useUsuariosStore = create<UsuariosState>()(
       fetchUsuarios: async (force = false) => {
         const { lastFetch } = get();
         if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
-          logCacheHit(COLLECTIONS.USUARIOS);
+          logCacheHit(ENTITIES.USUARIOS);
           return;
         }
 
         set({ isLoading: true, error: null });
         try {
-          const usuarios = await getAll<Usuario>(COLLECTIONS.USUARIOS);
+          const usuarios = await getAll<Usuario>(ENTITIES.USUARIOS);
           set({ usuarios, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar usuarios';
@@ -89,10 +89,10 @@ export const useUsuariosStore = create<UsuariosState>()(
         try {
           const today = startOfDay(new Date());
           const [totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos] = await Promise.all([
-            getCount(COLLECTIONS.USUARIOS, [{ field: 'tipo', operator: '==', value: 'cliente' }]),
-            getCount(COLLECTIONS.USUARIOS, [{ field: 'tipo', operator: '==', value: 'revendedor' }]),
-            getCount(COLLECTIONS.USUARIOS, [{ field: 'createdAt', operator: '>=', value: today }]),
-            getCount(COLLECTIONS.USUARIOS, [{ field: 'serviciosActivos', operator: '>', value: 0 }]),
+            getCount(ENTITIES.USUARIOS, [{ field: 'tipo', operator: '==', value: 'cliente' }]),
+            getCount(ENTITIES.USUARIOS, [{ field: 'tipo', operator: '==', value: 'revendedor' }]),
+            getCount(ENTITIES.USUARIOS, [{ field: 'createdAt', operator: '>=', value: today }]),
+            getCount(ENTITIES.USUARIOS, [{ field: 'serviciosActivos', operator: '>', value: 0 }]),
           ]);
           set({ totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos, lastCountsFetch: Date.now() });
         } catch (error) {
@@ -102,78 +102,16 @@ export const useUsuariosStore = create<UsuariosState>()(
         }
       },
 
-      resyncServiciosActivos: async (preFetchedData?: { usuarios?: Usuario[], ventas?: VentaDoc[] }) => {
-        try {
-          const [usuarios, ventas] = preFetchedData 
-            ? [
-                preFetchedData.usuarios || await getAll<Usuario>(COLLECTIONS.USUARIOS),
-                preFetchedData.ventas || await getAll<VentaDoc>(COLLECTIONS.VENTAS)
-              ]
-            : await Promise.all([
-                getAll<Usuario>(COLLECTIONS.USUARIOS),
-                getAll<VentaDoc>(COLLECTIONS.VENTAS),
-              ]);
-
-          const conteoVentasActivas = new Map<string, number>();
-
-          for (const venta of ventas) {
-            const clienteId = venta.clienteId;
-            const estaActiva = (venta.estado ?? 'activo') !== 'inactivo';
-
-            if (!clienteId || !estaActiva) {
-              continue;
-            }
-
-            conteoVentasActivas.set(clienteId, (conteoVentasActivas.get(clienteId) ?? 0) + 1);
-          }
-
-          const usuariosSincronizados = usuarios.map((usuario) => ({
-            ...usuario,
-            serviciosActivos: conteoVentasActivas.get(usuario.id) ?? 0,
-          }));
-          const serviciosActivosActuales = new Map(
-            usuarios.map((usuario) => [usuario.id, usuario.serviciosActivos ?? 0])
-          );
-
-          const usuariosDesfasados = usuariosSincronizados.filter(
-            (usuario) => serviciosActivosActuales.get(usuario.id) !== usuario.serviciosActivos
-          );
-
-          await Promise.all(
-            usuariosDesfasados.map((usuario) =>
-              update(COLLECTIONS.USUARIOS, usuario.id, { serviciosActivos: usuario.serviciosActivos })
-            )
-          );
-
-          set((state) => {
-            const selectedUsuario = state.selectedUsuario
-              ? usuariosSincronizados.find((usuario) => usuario.id === state.selectedUsuario?.id) ?? null
-              : null;
-
-            return {
-              usuarios: usuariosSincronizados,
-              totalClientes: usuariosSincronizados.filter((usuario) => usuario.tipo === 'cliente').length,
-              totalRevendedores: usuariosSincronizados.filter((usuario) => usuario.tipo === 'revendedor').length,
-              totalUsuariosActivos: usuariosSincronizados.filter((usuario) => (usuario.serviciosActivos ?? 0) > 0).length,
-              selectedUsuario,
-              error: null,
-              lastFetch: Date.now(),
-              lastCountsFetch: Date.now(),
-            };
-          });
-
-          return { usuariosReparados: usuariosDesfasados.length };
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Error al resincronizar servicios activos';
-          set({ error: errorMessage });
-          console.error('[UsuariosStore] Error resyncing serviciosActivos:', error);
-          throw error;
-        }
+      resyncServiciosActivos: async () => {
+        // servicios_activos is derived by the view v_usuarios_servicios_activos.
+        // No client-side recompute needed; a store refresh picks up the current value.
+        await get().fetchUsuarios(true);
+        return { usuariosReparados: 0 };
       },
 
       createUsuario: async (usuarioData) => {
         try {
-          const id = await createDoc(COLLECTIONS.USUARIOS, {
+          const id = await createDoc(ENTITIES.USUARIOS, {
             ...usuarioData,
             serviciosActivos: 0,
             active: true,
@@ -234,7 +172,7 @@ export const useUsuariosStore = create<UsuariosState>()(
             ? updates.telefono !== undefined && updates.telefono !== oldUsuario.telefono
             : false;
 
-          await update(COLLECTIONS.USUARIOS, id, updates);
+          await update(ENTITIES.USUARIOS, id, updates);
 
           // Si cambió nombre o teléfono, sincronizar campos denormalizados en ventas
           // y refrescar notificaciones derivadas de esas ventas antes de resolver el guardado.
@@ -242,9 +180,9 @@ export const useUsuariosStore = create<UsuariosState>()(
             const nuevoNombre = `${updates.nombre ?? oldUsuario.nombre} ${updates.apellido ?? oldUsuario.apellido}`;
             const nuevoTelefono = updates.telefono ?? oldUsuario.telefono;
             const [ventasDelCliente, pagosDelCliente] = await Promise.all([
-              queryDocuments<{ id: string }>(COLLECTIONS.VENTAS, [{ field: 'clienteId', operator: '==', value: id }]),
+              queryDocuments<{ id: string }>(ENTITIES.VENTAS, [{ field: 'clienteId', operator: '==', value: id }]),
               nombreChanged
-                ? queryDocuments<{ id: string }>(COLLECTIONS.PAGOS_VENTA, [{ field: 'clienteId', operator: '==', value: id }])
+                ? queryDocuments<{ id: string }>(ENTITIES.PAGOS_VENTA, [{ field: 'clienteId', operator: '==', value: id }])
                 : Promise.resolve([] as { id: string }[]),
             ]);
             const ventaUpdates: Record<string, unknown> = {};
@@ -258,8 +196,8 @@ export const useUsuariosStore = create<UsuariosState>()(
             }
 
             await Promise.all([
-              ...ventasDelCliente.map(v => update(COLLECTIONS.VENTAS, v.id, ventaUpdates)),
-              ...pagosDelCliente.map(p => update(COLLECTIONS.PAGOS_VENTA, p.id, { clienteNombre: nuevoNombre })),
+              ...ventasDelCliente.map(v => update(ENTITIES.VENTAS, v.id, ventaUpdates)),
+              ...pagosDelCliente.map(p => update(ENTITIES.PAGOS_VENTA, p.id, { clienteNombre: nuevoNombre })),
             ]);
 
             if (ventasDelCliente.length > 0) {
@@ -342,7 +280,7 @@ export const useUsuariosStore = create<UsuariosState>()(
       },
 
       deleteUsuario: async (id, usuarioData?: { tipo: 'cliente' | 'revendedor'; nombre?: string; createdAt?: Date; serviciosActivos?: number }) => {
-        // Si se proporciona usuarioData, usarlo; de lo contrario, buscar en usuarios locales o en Firebase
+        // Si se proporciona usuarioData, usarlo; de lo contrario, buscar en usuarios locales o en Supabase
         let deletedUser: Usuario | undefined;
 
         if (usuarioData) {
@@ -354,15 +292,15 @@ export const useUsuariosStore = create<UsuariosState>()(
           deletedUser = currentUsuarios.find(u => u.id === id);
 
           if (!deletedUser) {
-            // Si no está en el store local, traerlo de Firebase
+            // Si no está en el store local, traerlo de Supabase
             try {
-              const fetchedUser = await getById<Usuario>(COLLECTIONS.USUARIOS, id);
+              const fetchedUser = await getById<Usuario>(ENTITIES.USUARIOS, id);
               if (!fetchedUser) {
-                throw new Error('Usuario no encontrado en Firebase');
+                throw new Error('Usuario no encontrado en Supabase');
               }
               deletedUser = fetchedUser;
             } catch (error) {
-              console.error('Error fetching usuario from Firebase:', error);
+              console.error('Error fetching usuario from Supabase:', error);
               throw new Error('Usuario no encontrado');
             }
           }
@@ -395,7 +333,7 @@ export const useUsuariosStore = create<UsuariosState>()(
         }));
 
         try {
-          await remove(COLLECTIONS.USUARIOS, id);
+          await remove(ENTITIES.USUARIOS, id);
 
           // Notificar a otras páginas que se eliminó un usuario
           if (typeof window !== 'undefined') {

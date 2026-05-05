@@ -6,8 +6,8 @@ const createMock = vi.fn();
 const updateMock = vi.fn();
 const removeMock = vi.fn();
 
-vi.mock('@/lib/firebase/firestore', () => ({
-  COLLECTIONS: {
+vi.mock('@/lib/supabase/repository', () => ({
+  ENTITIES: {
     METODOS_PAGO: 'metodosPago',
     NOTIFICACIONES: 'notificaciones',
     SERVICIOS: 'servicios',

@@ -10,7 +10,7 @@ import { useCategoriasStore } from '@/store/categoriasStore';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
-import { getById, COLLECTIONS } from '@/lib/firebase/firestore';
+import { getById, ENTITIES } from '@/lib/supabase/repository';
 import { formatearFechaHora } from '@/lib/utils/calculations';
 import { Categoria, Plan } from '@/types';
 
@@ -29,7 +29,7 @@ function VerCategoriaPageContent() {
       if (!id) return;
       setIsLoading(true);
       try {
-        const data = await getById<Categoria>(COLLECTIONS.CATEGORIAS, id);
+        const data = await getById<Categoria>(ENTITIES.CATEGORIAS, id);
         setCategoria(data);
       } catch (error) {
         console.error('Error cargando categoría:', error);

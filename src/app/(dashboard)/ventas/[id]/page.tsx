@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ConfirmDeleteVentaDialog } from '@/components/shared/ConfirmDeleteVentaDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
-import { COLLECTIONS, getById, remove, timestampToDate, update, queryDocuments } from '@/lib/firebase/firestore';
+import { ENTITIES, getById, remove, timestampToDate, update, queryDocuments } from '@/lib/supabase/repository';
 import { toast } from 'sonner';
 import { PagoDialog } from '@/components/shared/PagoDialog';
 import { useTemplatesStore } from '@/store/templatesStore';
@@ -79,7 +79,7 @@ function VentaDetallePageContent() {
     try {
       setLoading(true);
       // 1. Cargar la venta
-      const doc = await getById<Record<string, unknown>>(COLLECTIONS.VENTAS, id);
+      const doc = await getById<Record<string, unknown>>(ENTITIES.VENTAS, id);
       if (!doc) {
         setVenta(null);
         setLoading(false);
@@ -116,7 +116,7 @@ function VentaDetallePageContent() {
       // Cargar la contraseña del servicio (lazy load)
       if (ventaConDatos.servicioId) {
         try {
-          const servicioDoc = await getById<Record<string, unknown>>(COLLECTIONS.SERVICIOS, ventaConDatos.servicioId);
+          const servicioDoc = await getById<Record<string, unknown>>(ENTITIES.SERVICIOS, ventaConDatos.servicioId);
           if (servicioDoc && servicioDoc.contrasena) {
             setServicioContrasena(servicioDoc.contrasena as string);
           }
@@ -232,7 +232,7 @@ function VentaDetallePageContent() {
     try {
       // Cargar métodos de pago asociados a usuarios/clientes
       if (metodosPago.length === 0) {
-        const methods = await queryDocuments<MetodoPago>(COLLECTIONS.METODOS_PAGO, [
+        const methods = await queryDocuments<MetodoPago>(ENTITIES.METODOS_PAGO, [
           { field: 'asociadoA', operator: '==', value: 'usuario' }
         ]);
         setMetodosPago(Array.isArray(methods) ? withPendingUserPaymentMethod(methods) : withPendingUserPaymentMethod([]));
@@ -240,7 +240,7 @@ function VentaDetallePageContent() {
 
       // Cargar planes de la categoría
       if (categoriaPlanes.length === 0 && venta?.categoriaId) {
-        const categoriaDoc = await getById<Record<string, unknown>>(COLLECTIONS.CATEGORIAS, venta.categoriaId);
+        const categoriaDoc = await getById<Record<string, unknown>>(ENTITIES.CATEGORIAS, venta.categoriaId);
         if (categoriaDoc && Array.isArray(categoriaDoc.planes)) {
           setCategoriaPlanes(categoriaDoc.planes as Plan[]);
         }
@@ -314,7 +314,7 @@ function VentaDetallePageContent() {
 
       // Actualizar fechaFin y fechaInicio en VentaDoc para que el sync de notificaciones
       // vea la nueva fecha y no vuelva a crear la notificación
-      await update(COLLECTIONS.VENTAS, id, {
+      await update(ENTITIES.VENTAS, id, {
         fechaFin: data.fechaVencimiento,
         fechaInicio: data.fechaInicio,
         cicloPago: data.periodoRenovacion,
@@ -335,7 +335,7 @@ function VentaDetallePageContent() {
         });
       }
 
-      // Actualizar ventasPronostico en el dashboard: local INMEDIATAMENTE + Firestore en background
+      // Actualizar ventasPronostico en el dashboard: local INMEDIATAMENTE + Supabase en background
       const ventaPronosticoData = {
         id: venta.id,
         categoriaId: venta.categoriaId ?? '',
@@ -362,7 +362,7 @@ function VentaDetallePageContent() {
         store.invalidateCache();
       }).catch(() => {});
 
-      // 2. Persistir a Firestore en background (non-blocking)
+      // 2. Persistir a Supabase en background (non-blocking)
       upsertVentaPronostico(ventaPronosticoData, venta.id).catch(() => {});
 
       // Sync dashboard ingresos for the new payment
@@ -377,7 +377,7 @@ function VentaDetallePageContent() {
 
       // Recargar la venta actualizada (sin loading screen)
       if (id && venta) {
-        const doc = await getById<Record<string, unknown>>(COLLECTIONS.VENTAS, id);
+        const doc = await getById<Record<string, unknown>>(ENTITIES.VENTAS, id);
         if (doc) {
           const ventaBase: VentaDoc = {
             id: doc.id as string,
@@ -509,7 +509,7 @@ function VentaDetallePageContent() {
       const notaPago = data.notas?.trim() ?? '';
 
       // Actualizar el pago en la colección pagosVenta (fuente de verdad)
-      await update(COLLECTIONS.PAGOS_VENTA, pagoToEdit.id, {
+      await update(ENTITIES.PAGOS_VENTA, pagoToEdit.id, {
         precio: costo,                              // Precio original
         descuento: descuentoNumero,                 // Porcentaje de descuento
         monto,                                      // Monto final
@@ -543,7 +543,7 @@ function VentaDetallePageContent() {
 
       // Recargar la venta actualizada (sin loading screen)
       if (id && venta) {
-        const doc = await getById<Record<string, unknown>>(COLLECTIONS.VENTAS, id);
+        const doc = await getById<Record<string, unknown>>(ENTITIES.VENTAS, id);
         if (doc) {
           const ventaBase: VentaDoc = {
             id: doc.id as string,
@@ -591,7 +591,7 @@ function VentaDetallePageContent() {
 
     try {
       // Eliminar el pago de la colección pagosVenta (fuente de verdad)
-      await remove(COLLECTIONS.PAGOS_VENTA, pagoToDelete.id);
+      await remove(ENTITIES.PAGOS_VENTA, pagoToDelete.id);
 
       // ✅ NO sincronizar con VentaDoc - PagoVenta es la fuente de verdad
       // El pago más reciente que quede seguirá siendo la fuente de verdad
@@ -601,7 +601,7 @@ function VentaDetallePageContent() {
 
       // Recargar la venta actualizada (sin loading screen)
       if (id && venta) {
-        const doc = await getById<Record<string, unknown>>(COLLECTIONS.VENTAS, id);
+        const doc = await getById<Record<string, unknown>>(ENTITIES.VENTAS, id);
         if (doc) {
           const ventaBase: VentaDoc = {
             id: doc.id as string,
@@ -629,9 +629,9 @@ function VentaDetallePageContent() {
           const ventaActualizada = await getVentaConUltimoPago(ventaBase);
           setVenta(ventaActualizada);
 
-          // Sincronizar fechaFin/fechaInicio/cicloPago en Firestore para que el
+          // Sincronizar fechaFin/fechaInicio/cicloPago en Supabase para que el
           // sistema de notificaciones detecte correctamente la venta tras la eliminación
-          await update(COLLECTIONS.VENTAS, id, {
+          await update(ENTITIES.VENTAS, id, {
             fechaFin: ventaActualizada.fechaFin,
             fechaInicio: ventaActualizada.fechaInicio,
             cicloPago: ventaActualizada.cicloPago,

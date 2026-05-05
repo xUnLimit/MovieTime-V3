@@ -2,7 +2,7 @@
  * Notificaciones Store - Zustand
  *
  * Manages notification state and persistence
- * Synced with Firestore `notificaciones` collection
+ * Synced with Supabase `notificaciones` table
  *
  * Features:
  * - CRUD operations for notifications
@@ -16,12 +16,12 @@
 
 import { create } from 'zustand';
 import {
-  COLLECTIONS,
+  ENTITIES,
   queryDocuments,
   getCount,
   update,
   remove,
-} from '@/lib/firebase/firestore';
+} from '@/lib/supabase/repository';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
 import { esNotificacionVenta, esNotificacionServicio, esNotificacionReposo } from '@/types/notificaciones';
 
@@ -71,7 +71,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
   reposoCompletados: 0,
 
   /**
-   * Fetch all notifications from Firestore
+   * Fetch all notifications from Supabase
    * Uses cache with 5-minute TTL
    */
   fetchNotificaciones: async (force = false) => {
@@ -89,7 +89,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     set({ isLoading: true, error: null });
 
     try {
-      const notificaciones = (await queryDocuments(COLLECTIONS.NOTIFICACIONES, [])) as (
+      const notificaciones = (await queryDocuments(ENTITIES.NOTIFICACIONES, [])) as (
         Notificacion & { id: string }
       )[];
 
@@ -127,10 +127,10 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
   fetchCounts: async () => {
     try {
       const [totalNotificaciones, ventasProximas, serviciosProximas, reposoCompletados] = await Promise.all([
-        getCount(COLLECTIONS.NOTIFICACIONES),
-        getCount(COLLECTIONS.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'venta' }]),
-        getCount(COLLECTIONS.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'servicio' }]),
-        getCount(COLLECTIONS.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'reposo' }]),
+        getCount(ENTITIES.NOTIFICACIONES),
+        getCount(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'venta' }]),
+        getCount(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'servicio' }]),
+        getCount(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'reposo' }]),
       ]);
 
       set({
@@ -164,7 +164,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     set({ notificaciones: updatedNotifs });
 
     try {
-      await update(COLLECTIONS.NOTIFICACIONES, notifId, {
+      await update(ENTITIES.NOTIFICACIONES, notifId, {
         leida,
         updatedAt: new Date(),
       });
@@ -189,7 +189,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     set({ notificaciones: updatedNotifs });
 
     try {
-      await update(COLLECTIONS.NOTIFICACIONES, notifId, {
+      await update(ENTITIES.NOTIFICACIONES, notifId, {
         resaltada,
         updatedAt: new Date(),
       });
@@ -225,7 +225,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     });
 
     try {
-      await remove(COLLECTIONS.NOTIFICACIONES, notifId);
+      await remove(ENTITIES.NOTIFICACIONES, notifId);
     } catch (error) {
       // Rollback on error
       set({
@@ -275,7 +275,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
       // Delete all notifications for this venta
       await Promise.all(
         notifsToDelete.map((n) =>
-          remove(COLLECTIONS.NOTIFICACIONES, n.id).catch((error) => {
+          remove(ENTITIES.NOTIFICACIONES, n.id).catch((error) => {
             console.error(`[NotificacionesStore] Error deleting notif ${n.id}:`, error);
           })
         )
@@ -329,7 +329,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
       // Delete all notifications for this servicio
       await Promise.all(
         notifsToDelete.map((n) =>
-          remove(COLLECTIONS.NOTIFICACIONES, n.id).catch((error) => {
+          remove(ENTITIES.NOTIFICACIONES, n.id).catch((error) => {
             console.error(`[NotificacionesStore] Error deleting notif ${n.id}:`, error);
           })
         )

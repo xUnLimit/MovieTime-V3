@@ -7,7 +7,7 @@ import { currencyService } from '@/lib/services/currencyService';
 
 /**
  * Calcula el monto sin consumir total de todas las ventas activas en USD.
- * Lee desde dashboardStore.stats.ventasPronostico — 0 reads extra a Firestore.
+ * Lee desde dashboardStore.stats.ventasPronostico — 0 reads extra a Supabase.
  * Se recalcula automáticamente cuando el store se actualiza (create/delete/update venta).
  */
 export function useMontoSinConsumirTotal() {

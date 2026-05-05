@@ -11,7 +11,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
 import { formatearFechaHora } from '@/lib/utils/calculations';
-import { getById, COLLECTIONS } from '@/lib/firebase/firestore';
+import { getById, ENTITIES } from '@/lib/supabase/repository';
 import { MetodoPago } from '@/types';
 
 function VerMetodoPagoPageContent() {
@@ -31,7 +31,7 @@ function VerMetodoPagoPageContent() {
 
       setIsLoading(true);
       try {
-        const data = await getById<MetodoPago>(COLLECTIONS.METODOS_PAGO, id);
+        const data = await getById<MetodoPago>(ENTITIES.METODOS_PAGO, id);
         setMetodo(data);
       } catch (error) {
         console.error('Error cargando método de pago:', error);

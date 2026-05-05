@@ -18,9 +18,7 @@ import { PagoDialog } from '@/components/shared/PagoDialog';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { queryDocuments, remove, update, COLLECTIONS, getById, adjustCategoriaGastos } from '@/lib/firebase/firestore';
-import { doc as firestoreDoc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { queryDocuments, remove, update, ENTITIES, getById, adjustCategoriaGastos } from '@/lib/supabase/repository';
 import { Servicio, Categoria, MetodoPago, VentaDoc, PagoServicio } from '@/types';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import {
@@ -110,7 +108,7 @@ function ServicioDetallePageContent() {
       setIsLoadingData(true);
       try {
         // 1. Cargar el servicio (categoriaNombre ya está denormalizado)
-        const servicioData = await getById<Servicio>(COLLECTIONS.SERVICIOS, id);
+        const servicioData = await getById<Servicio>(ENTITIES.SERVICIOS, id);
         if (!servicioData) {
           toast.error('Servicio no encontrado', { description: 'No se encontró el servicio con el ID proporcionado.' });
           setServicio(null);
@@ -151,7 +149,7 @@ function ServicioDetallePageContent() {
       if (!id) return;
       try {
         // Fase 1: Cargar ventas base inmediatamente (clienteNombre ya está denormalizado en VentaDoc)
-        const ventasBase = await queryDocuments<VentaDoc>(COLLECTIONS.VENTAS, [
+        const ventasBase = await queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
           { field: 'servicioId', operator: '==', value: id },
         ]);
 
@@ -237,7 +235,7 @@ function ServicioDetallePageContent() {
   const loadMetodosPagoIfNeeded = async () => {
     if (metodosPago.length > 0) return; // Ya están cargados
     try {
-      const methods = await queryDocuments<MetodoPago>(COLLECTIONS.METODOS_PAGO, [
+      const methods = await queryDocuments<MetodoPago>(ENTITIES.METODOS_PAGO, [
         { field: 'asociadoA', operator: '==', value: 'servicio' }
       ]);
       setMetodosPago(methods);
@@ -271,7 +269,7 @@ function ServicioDetallePageContent() {
       const viejaMoneda = pagoToEdit.moneda || metodoPago?.moneda || 'USD';
       const notaPago = data.notas?.trim() ?? '';
 
-      await update(COLLECTIONS.PAGOS_SERVICIO, pagoToEdit.id, {
+      await update(ENTITIES.PAGOS_SERVICIO, pagoToEdit.id, {
         fechaInicio: data.fechaInicio,
         fechaVencimiento: data.fechaVencimiento,
         monto: data.costo,
@@ -289,10 +287,7 @@ function ServicioDetallePageContent() {
       ]);
       const montoDiffUSD = nuevoUSD - viejoUSD;
       if (montoDiffUSD !== 0 && servicio) {
-        const servicioRef = firestoreDoc(db, COLLECTIONS.SERVICIOS, id);
-        await updateDoc(servicioRef, {
-          gastosTotal: increment(montoDiffUSD)
-        });
+      // gastosTotal se deriva desde pagos_servicio en Supabase.
       }
 
       // Si es el último pago, actualizar el servicio
@@ -309,7 +304,7 @@ function ServicioDetallePageContent() {
         });
 
         // Recargar el servicio actualizado para reflejar los cambios en la UI
-        const servicioActualizado = await getById<Servicio>(COLLECTIONS.SERVICIOS, id);
+        const servicioActualizado = await getById<Servicio>(ENTITIES.SERVICIOS, id);
         if (servicioActualizado) {
           setServicio(servicioActualizado);
         }
@@ -331,15 +326,12 @@ function ServicioDetallePageContent() {
     const montoToRevert = pagoToDelete.monto ?? 0;
 
     try {
-      await remove(COLLECTIONS.PAGOS_SERVICIO, pagoToDelete.id);
+      await remove(ENTITIES.PAGOS_SERVICIO, pagoToDelete.id);
 
       // Decrementar gastosTotal del servicio y de la categoría (convertido a USD)
       const montoToRevertMoneda = pagoToDelete.moneda || metodoPago?.moneda || 'USD';
       const montoToRevertUSD = await currencyService.convertToUSD(montoToRevert, montoToRevertMoneda);
-      const servicioRef = firestoreDoc(db, COLLECTIONS.SERVICIOS, id);
-      await updateDoc(servicioRef, {
-        gastosTotal: increment(-montoToRevertUSD)
-      });
+      // gastosTotal se deriva desde pagos_servicio en Supabase.
       if (servicio?.categoriaId) {
         await adjustCategoriaGastos(servicio.categoriaId, -montoToRevertUSD);
       }
@@ -360,7 +352,7 @@ function ServicioDetallePageContent() {
           });
 
           // Recargar el servicio actualizado para reflejar los cambios en la UI
-          const servicioActualizado = await getById<Servicio>(COLLECTIONS.SERVICIOS, id);
+          const servicioActualizado = await getById<Servicio>(ENTITIES.SERVICIOS, id);
           if (servicioActualizado) {
             setServicio(servicioActualizado);
           }
@@ -396,10 +388,7 @@ function ServicioDetallePageContent() {
 
       // Incrementar gastosTotal del servicio y de la categoría (convertido a USD)
       const costoRenovacionUSD = await currencyService.convertToUSD(data.costo, data.moneda || metodoPagoSeleccionado?.moneda || 'USD');
-      const servicioRef = firestoreDoc(db, COLLECTIONS.SERVICIOS, id);
-      await updateDoc(servicioRef, {
-        gastosTotal: increment(costoRenovacionUSD)
-      });
+      // gastosTotal se deriva desde pagos_servicio en Supabase.
       if (servicio?.categoriaId) {
         await adjustCategoriaGastos(servicio.categoriaId, costoRenovacionUSD);
       }
@@ -439,7 +428,7 @@ function ServicioDetallePageContent() {
       });
 
       // Recargar el servicio actualizado para reflejar los cambios en la UI
-      const servicioActualizado = await getById<Servicio>(COLLECTIONS.SERVICIOS, id);
+      const servicioActualizado = await getById<Servicio>(ENTITIES.SERVICIOS, id);
       if (servicioActualizado) {
         setServicio(servicioActualizado);
       }

@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useVentasUsuario } from "@/hooks/use-ventas-usuario";
 import { getCurrencySymbol } from "@/lib/constants";
-import { queryDocuments, COLLECTIONS } from "@/lib/firebase/firestore";
+import { queryDocuments, ENTITIES } from "@/lib/supabase/repository";
 import { formatearFecha, formatearFechaHora } from "@/lib/utils/calculations";
 import { toast } from "sonner";
 import { useVentasStore } from "@/store/ventasStore";
@@ -109,7 +109,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
 
         const allServicios = await Promise.all(
           chunks.map((chunk) =>
-            queryDocuments<Record<string, unknown>>(COLLECTIONS.SERVICIOS, [
+            queryDocuments<Record<string, unknown>>(ENTITIES.SERVICIOS, [
               { field: "__name__", operator: "in", value: chunk },
             ]),
           ),
@@ -331,8 +331,8 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
             </div>
             <div className="mt-4">
               <p className="text-sm text-muted-foreground mb-1">Notas</p>
-              <p className="text-sm text-muted-foreground italic">
-                No hay notas.
+              <p className={`text-sm whitespace-pre-wrap ${usuario.notas?.trim() ? "text-foreground" : "text-muted-foreground italic"}`}>
+                {usuario.notas?.trim() || "No hay notas."}
               </p>
             </div>
           </Card>

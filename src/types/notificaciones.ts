@@ -6,10 +6,8 @@
  * - NotificacionServicio: For servicio (streaming service) expiration notifications
  * - Discriminator field `entidad` enables type-safe filtering and type guards
  *
- * All notification fields are DENORMALIZED to avoid additional queries:
- * - No joins needed when displaying notifications in tables
- * - Single query to notificaciones collection = complete data
- * - 50% reduction in Firebase reads vs. storing only references
+ * Notification rows carry event snapshots so tables can render without extra
+ * client-side lookups. Live data remains in the normalized Supabase tables.
  */
 
 /**
@@ -61,6 +59,7 @@ export interface NotificacionVenta extends NotificacionBase {
   fechaFin: Date; // Expiration date (required for calculations)
   precioFinal?: number; // Final price after discount
   metodoPagoId?: string; // Payment method ID (for renewals)
+  metodoPagoNombre?: string; // Payment method label snapshot
   moneda?: string; // Currency (USD, TRY, ARS, etc.)
 }
 

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { CategoriaForm } from '@/components/categorias/CategoriaForm';
-import { getById, COLLECTIONS } from '@/lib/firebase/firestore';
+import { getById, ENTITIES } from '@/lib/supabase/repository';
 import type { Categoria } from '@/types';
 import { toast } from 'sonner';
 
@@ -24,7 +24,7 @@ function EditarCategoriaPageContent() {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await getById<Categoria>(COLLECTIONS.CATEGORIAS, id);
+        const data = await getById<Categoria>(ENTITIES.CATEGORIAS, id);
         setCategoria(data);
       } catch (error) {
         console.error('Error cargando categoría:', error);

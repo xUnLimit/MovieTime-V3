@@ -6,8 +6,8 @@
  * - VentaDoc = solo metadatos y referencias (no duplica datos de pago)
  */
 
-import { queryDocuments } from '@/lib/firebase/firestore';
-import { COLLECTIONS } from '@/lib/firebase/firestore';
+import { queryDocuments } from '@/lib/supabase/repository';
+import { ENTITIES } from '@/lib/supabase/repository';
 import { VentaDoc, PagoVenta } from '@/types';
 
 /**
@@ -39,7 +39,7 @@ export async function getVentaConUltimoPago(
   // Si no se proveen los pagos, consultarlos
   let pagosList = pagos;
   if (!pagosList) {
-    pagosList = await queryDocuments<PagoVenta>(COLLECTIONS.PAGOS_VENTA, [
+    pagosList = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
       { field: 'ventaId', operator: '==', value: venta.id }
     ]);
   }
@@ -110,7 +110,7 @@ export async function getVentasConUltimoPago(
   // Cargar todos los pagos en batch
   const ventaIds = ventas.map(v => v.id);
 
-  // Firestore 'in' operator max 10 values, chunk si es necesario
+  // Supabase .in() max 10 values, chunk si es necesario
   const chunks: string[][] = [];
   for (let i = 0; i < ventaIds.length; i += 10) {
     chunks.push(ventaIds.slice(i, i + 10));
@@ -118,7 +118,7 @@ export async function getVentasConUltimoPago(
 
   const allPagos = await Promise.all(
     chunks.map(chunk =>
-      queryDocuments<PagoVenta>(COLLECTIONS.PAGOS_VENTA, [
+      queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
         { field: 'ventaId', operator: 'in', value: chunk },
       ])
     )

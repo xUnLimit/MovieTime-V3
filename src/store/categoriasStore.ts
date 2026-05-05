@@ -1,16 +1,12 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Categoria } from '@/types';
-import { getAll, getCount, create as createDoc, update, remove, COLLECTIONS, logCacheHit, queryDocuments } from '@/lib/firebase/firestore';
-import { doc as firestoreDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import type { Servicio, VentaDoc, PagoVenta, PagoServicio } from '@/types';
-import { currencyService } from '@/lib/services/currencyService';
+import { Categoria, Plan, TipoPlanConfig } from '@/types';
+import { supabase } from '@/lib/supabase/client';
+import { logCacheHit, ENTITIES } from '@/lib/supabase/repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 
-// Helper para obtener contexto de usuario
 function getLogContext() {
   const user = useAuthStore.getState().user;
   return {
@@ -26,12 +22,10 @@ interface CategoriasState {
   lastFetch: number | null;
   selectedCategoria: Categoria | null;
 
-  // Counts for metrics (free queries)
   totalCategorias: number;
   categoriasClientes: number;
   categoriasRevendedores: number;
 
-  // Actions
   fetchCategorias: (force?: boolean) => Promise<void>;
   fetchCounts: () => Promise<void>;
   createCategoria: (categoria: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -40,7 +34,7 @@ interface CategoriasState {
   setSelectedCategoria: (categoria: Categoria | null) => void;
   getCategoria: (id: string) => Categoria | undefined;
   getCategoriasByTipo: (tipo: 'cliente' | 'revendedor' | 'ambos') => Categoria[];
-  resyncContadoresCategorias: (preFetchedData?: { servicios?: Servicio[]; ventas?: VentaDoc[]; pagosVenta?: PagoVenta[]; pagosServicio?: PagoServicio[] }) => Promise<{ categoriasCorregidas: number }>;
+  resyncContadoresCategorias: () => Promise<{ categoriasCorregidas: number }>;
 }
 
 const CACHE_TIMEOUT = 5 * 60 * 1000;
@@ -59,17 +53,17 @@ export const useCategoriasStore = create<CategoriasState>()(
 
       fetchCategorias: async (force = false) => {
         const { lastFetch } = get();
-        if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
-          logCacheHit(COLLECTIONS.CATEGORIAS);
+        if (!force && lastFetch && Date.now() - lastFetch < CACHE_TIMEOUT) {
+          logCacheHit(ENTITIES.CATEGORIAS);
           return;
         }
 
         set({ isLoading: true, error: null });
         try {
-          const categorias = await getAll<Categoria>(COLLECTIONS.CATEGORIAS);
+          const categorias = await fetchCategoriasFull();
           set({ categorias, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar categorías';
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar categorias';
           console.error('Error fetching categorias:', error);
           set({ categorias: [], isLoading: false, error: errorMessage });
         }
@@ -77,12 +71,17 @@ export const useCategoriasStore = create<CategoriasState>()(
 
       fetchCounts: async () => {
         try {
-          const [totalCategorias, categoriasClientes, categoriasRevendedores] = await Promise.all([
-            getCount(COLLECTIONS.CATEGORIAS, []),
-            getCount(COLLECTIONS.CATEGORIAS, [{ field: 'tipo', operator: 'in', value: ['cliente', 'ambos'] }]),
-            getCount(COLLECTIONS.CATEGORIAS, [{ field: 'tipo', operator: 'in', value: ['revendedor', 'ambos'] }]),
-          ]);
-          set({ totalCategorias, categoriasClientes, categoriasRevendedores });
+          const [{ count: totalCategorias }, { count: categoriasClientes }, { count: categoriasRevendedores }] =
+            await Promise.all([
+              supabase.from('categorias').select('*', { count: 'exact', head: true }),
+              supabase.from('categorias').select('*', { count: 'exact', head: true }).in('tipo', ['cliente', 'ambos']),
+              supabase.from('categorias').select('*', { count: 'exact', head: true }).in('tipo', ['revendedor', 'ambos']),
+            ]);
+          set({
+            totalCategorias: totalCategorias ?? 0,
+            categoriasClientes: categoriasClientes ?? 0,
+            categoriasRevendedores: categoriasRevendedores ?? 0,
+          });
         } catch (error) {
           console.error('Error fetching counts:', error);
           set({ totalCategorias: 0, categoriasClientes: 0, categoriasRevendedores: 0 });
@@ -91,41 +90,37 @@ export const useCategoriasStore = create<CategoriasState>()(
 
       createCategoria: async (categoriaData) => {
         try {
-          // Inicializar contadores denormalizados en 0 para nueva categoría
-          const categoriaConContadores = {
-            ...categoriaData,
-            totalServicios: 0,
-            serviciosActivos: 0,
-            perfilesDisponiblesTotal: 0,
-            ventasTotales: 0,
-            ingresosTotales: 0,
-          };
+          const { data, error } = await supabase
+            .from('categorias')
+            .insert({
+              nombre: categoriaData.nombre,
+              tipo: categoriaData.tipo,
+              tipo_categoria: categoriaData.tipoCategoria,
+              notas: categoriaData.notas,
+              activo: categoriaData.activo,
+            })
+            .select('*')
+            .single();
+          if (error) throw new Error(error.message);
 
-          const id = await createDoc(COLLECTIONS.CATEGORIAS, categoriaConContadores as Omit<Categoria, 'id'>);
-
-          const newCategoria: Categoria = {
-            ...categoriaConContadores,
-            id,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
+          await upsertCategoriaPlanes(data.id, categoriaData.tiposPlanes ?? [], categoriaData.planes ?? []);
+          const [newCategoria] = await buildCategorias([data]);
 
           set((state) => ({
             categorias: [...state.categorias, newCategoria],
-            error: null
+            error: null,
           }));
 
-          // Registrar en log de actividad
           useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'creacion',
             entidad: 'categoria',
-            entidadId: id,
+            entidadId: data.id,
             entidadNombre: categoriaData.nombre,
-            detalles: `Categoría creada: "${categoriaData.nombre}"`,
+            detalles: `Categoria creada: "${categoriaData.nombre}"`,
           }).catch(() => {});
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Error al crear categoría';
+          const errorMessage = error instanceof Error ? error.message : 'Error al crear categoria';
           set({ error: errorMessage });
           console.error('Error creating categoria:', error);
           throw error;
@@ -134,67 +129,56 @@ export const useCategoriasStore = create<CategoriasState>()(
 
       updateCategoria: async (id, updates) => {
         try {
-          const oldCategoria = get().categorias.find(c => c.id === id);
-          const cambioTipo = oldCategoria && updates.tipoCategoria && oldCategoria.tipoCategoria !== updates.tipoCategoria;
+          const oldCategoria = get().categorias.find((categoria) => categoria.id === id);
+          const { data, error } = await supabase
+            .from('categorias')
+            .update({
+              ...(updates.nombre !== undefined ? { nombre: updates.nombre } : {}),
+              ...(updates.tipo !== undefined ? { tipo: updates.tipo } : {}),
+              ...(updates.tipoCategoria !== undefined ? { tipo_categoria: updates.tipoCategoria } : {}),
+              ...(updates.notas !== undefined ? { notas: updates.notas } : {}),
+              ...(updates.activo !== undefined ? { activo: updates.activo } : {}),
+            })
+            .eq('id', id)
+            .select('*')
+            .single();
+          if (error) throw new Error(error.message);
 
-          await update(COLLECTIONS.CATEGORIAS, id, updates);
-
-          // Detectar cambios para el log
-          const cambios = oldCategoria ? detectarCambios('categoria', oldCategoria, {
-            ...oldCategoria,
-            ...updates
-          }) : [];
-
-          set((state) => {
-            const updatedCategorias = state.categorias.map((cat) =>
-              cat.id === id
-                ? { ...cat, ...updates, updatedAt: new Date() }
-                : cat
+          if (updates.tiposPlanes || updates.planes) {
+            await upsertCategoriaPlanes(
+              id,
+              updates.tiposPlanes ?? oldCategoria?.tiposPlanes ?? [],
+              updates.planes ?? oldCategoria?.planes ?? []
             );
+          }
 
-            // Actualizar contadores si cambió el tipo
-            let newCategoriasClientes = state.categoriasClientes;
-            let newCategoriasRevendedores = state.categoriasRevendedores;
+          const [updatedCategoria] = await buildCategorias([data]);
+          const cambios = oldCategoria
+            ? detectarCambios(
+                'categoria',
+                oldCategoria as unknown as Record<string, unknown>,
+                updatedCategoria as unknown as Record<string, unknown>
+              )
+            : [];
 
-            if (cambioTipo && oldCategoria) {
-              const oldTipo = oldCategoria.tipoCategoria;
-              const newTipo = updates.tipoCategoria;
+          set((state) => ({
+            categorias: state.categorias.map((categoria) =>
+              categoria.id === id ? updatedCategoria : categoria
+            ),
+            error: null,
+          }));
 
-              // Decrementar contador del tipo anterior
-              if (oldTipo === 'plataforma_streaming') {
-                newCategoriasClientes--;
-              } else if (oldTipo === 'otros') {
-                newCategoriasRevendedores--;
-              }
-
-              // Incrementar contador del tipo nuevo
-              if (newTipo === 'plataforma_streaming') {
-                newCategoriasClientes++;
-              } else if (newTipo === 'otros') {
-                newCategoriasRevendedores++;
-              }
-            }
-
-            return {
-              categorias: updatedCategorias,
-              categoriasClientes: newCategoriasClientes,
-              categoriasRevendedores: newCategoriasRevendedores,
-              error: null
-            };
-          });
-
-          // Registrar en log de actividad con cambios
           useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'actualizacion',
             entidad: 'categoria',
             entidadId: id,
             entidadNombre: oldCategoria?.nombre ?? id,
-            detalles: `Categoría actualizada: "${oldCategoria?.nombre}"`,
+            detalles: `Categoria actualizada: "${oldCategoria?.nombre}"`,
             cambios: cambios.length > 0 ? cambios : undefined,
           }).catch(() => {});
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Error al actualizar categoría';
+          const errorMessage = error instanceof Error ? error.message : 'Error al actualizar categoria';
           set({ error: errorMessage });
           console.error('Error updating categoria:', error);
           throw error;
@@ -203,175 +187,190 @@ export const useCategoriasStore = create<CategoriasState>()(
 
       deleteCategoria: async (id) => {
         const currentCategorias = get().categorias;
-        const categoriaEliminada = get().categorias.find(c => c.id === id);
-
-        // Optimistic update
-        set((state) => ({
-          categorias: state.categorias.filter((cat) => cat.id !== id)
-        }));
+        const categoriaEliminada = currentCategorias.find((categoria) => categoria.id === id);
+        set((state) => ({ categorias: state.categorias.filter((categoria) => categoria.id !== id) }));
 
         try {
-          await remove(COLLECTIONS.CATEGORIAS, id);
+          const { error } = await supabase.from('categorias').delete().eq('id', id);
+          if (error) throw new Error(error.message);
 
-          // Notificar a otras páginas que se eliminó una categoría
           if (typeof window !== 'undefined') {
             window.localStorage.setItem('categoria-deleted', Date.now().toString());
             window.dispatchEvent(new Event('categoria-deleted'));
           }
 
           set({ error: null });
-
-          // Registrar en log de actividad
           useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'eliminacion',
             entidad: 'categoria',
             entidadId: id,
             entidadNombre: categoriaEliminada?.nombre ?? id,
-            detalles: `Categoría eliminada: "${categoriaEliminada?.nombre}"`,
+            detalles: `Categoria eliminada: "${categoriaEliminada?.nombre}"`,
           }).catch(() => {});
         } catch (error) {
-          // Rollback on error
-          const errorMessage = error instanceof Error ? error.message : 'Error al eliminar categoría';
+          const errorMessage = error instanceof Error ? error.message : 'Error al eliminar categoria';
           set({ categorias: currentCategorias, error: errorMessage });
           console.error('Error deleting categoria:', error);
           throw error;
         }
       },
 
-      setSelectedCategoria: (categoria) => {
-        set({ selectedCategoria: categoria });
-      },
+      setSelectedCategoria: (categoria) => set({ selectedCategoria: categoria }),
 
-      getCategoria: (id) => {
-        return get().categorias.find((cat) => cat.id === id);
-      },
+      getCategoria: (id) => get().categorias.find((categoria) => categoria.id === id),
 
-      getCategoriasByTipo: (tipo) => {
-        return get().categorias.filter(
-          (cat) => cat.tipo === tipo || cat.tipo === 'ambos'
-        );
-      },
+      getCategoriasByTipo: (tipo) =>
+        get().categorias.filter((categoria) => categoria.tipo === tipo || categoria.tipo === 'ambos'),
 
-      resyncContadoresCategorias: async (preFetchedData?: { 
-        servicios?: Servicio[], 
-        ventas?: VentaDoc[], 
-        pagosVenta?: PagoVenta[], 
-        pagosServicio?: PagoServicio[] 
-      }) => {
-        // 1. Cargar toda la data necesaria en paralelo (solo si no se provee)
-        const [servicios, ventas, pagosVenta, pagosServicio] = preFetchedData 
-          ? [
-              preFetchedData.servicios || await getAll<Servicio>(COLLECTIONS.SERVICIOS),
-              preFetchedData.ventas || await getAll<VentaDoc>(COLLECTIONS.VENTAS),
-              preFetchedData.pagosVenta || await getAll<PagoVenta>(COLLECTIONS.PAGOS_VENTA),
-              preFetchedData.pagosServicio || await queryDocuments<PagoServicio>(COLLECTIONS.PAGOS_SERVICIO, []),
-            ]
-          : await Promise.all([
-              getAll<Servicio>(COLLECTIONS.SERVICIOS),
-              getAll<VentaDoc>(COLLECTIONS.VENTAS),
-              getAll<PagoVenta>(COLLECTIONS.PAGOS_VENTA),
-              queryDocuments<PagoServicio>(COLLECTIONS.PAGOS_SERVICIO, []),
-            ]);
-
-        // 2. Agrupar por categoría
-        const contadores = new Map<string, {
-          totalServicios: number;
-          serviciosActivos: number;
-          ventasTotales: number;
-          ingresosTotales: number;
-          gastosTotal: number;
-        }>();
-
-        const getOrInit = (id: string) => {
-          if (!contadores.has(id)) {
-            contadores.set(id, { totalServicios: 0, serviciosActivos: 0, ventasTotales: 0, ingresosTotales: 0, gastosTotal: 0 });
-          }
-          return contadores.get(id)!;
-        };
-
-        // Servicios → totalServicios + serviciosActivos
-        for (const s of servicios) {
-          if (!s.categoriaId) continue;
-          if (s.enReposo) continue;
-          const c = getOrInit(s.categoriaId);
-          c.totalServicios++;
-          if (s.activo) c.serviciosActivos++;
-        }
-
-        // Ventas → ventasTotales (todas las que no sean inactivas)
-        const ventasActivas = ventas.filter(v => v.estado !== 'inactivo');
-        for (const v of ventasActivas) {
-          if (!v.categoriaId) continue;
-          getOrInit(v.categoriaId).ventasTotales++;
-        }
-
-        // PagosVenta → ingresosTotales (convertidos a USD)
-        const pagosPorVenta = new Map<string, VentaDoc>();
-        for (const v of ventas) pagosPorVenta.set(v.id, v);
-
-        const ingresosConversiones = pagosVenta.map(async (p) => {
-          const venta = pagosPorVenta.get(p.ventaId);
-          if (!venta?.categoriaId) return;
-          const moneda = p.moneda ?? 'USD';
-          const usd = await currencyService.convertToUSD(p.monto, moneda);
-          getOrInit(venta.categoriaId).ingresosTotales += usd;
-        });
-        await Promise.all(ingresosConversiones);
-
-        // PagosServicio → gastosTotal (convertidos a USD)
-        const serviciosPorId = new Map<string, Servicio>();
-        for (const s of servicios) serviciosPorId.set(s.id, s);
-
-        const gastosConversiones = pagosServicio.map(async (p) => {
-          const servicio = serviciosPorId.get(p.servicioId);
-          if (!servicio?.categoriaId) return;
-          const moneda = p.moneda ?? 'USD';
-          const usd = await currencyService.convertToUSD(p.monto, moneda);
-          getOrInit(servicio.categoriaId).gastosTotal += usd;
-        });
-        await Promise.all(gastosConversiones);
-
-        // 3. Escribir en Firestore (incluye categorías sin datos -> 0)
-        const categoriasActuales = await getAll<Categoria>(COLLECTIONS.CATEGORIAS);
-        let categoriasCorregidas = 0;
-        const updates = categoriasActuales.map((categoria) => {
-          const datos = contadores.get(categoria.id) ?? {
-            totalServicios: 0,
-            serviciosActivos: 0,
-            ventasTotales: 0,
-            ingresosTotales: 0,
-            gastosTotal: 0,
-          };
-
-          const ingresosRedondeado = Math.round(datos.ingresosTotales * 100) / 100;
-          const gastosRedondeado = Math.round(datos.gastosTotal * 100) / 100;
-          const changed =
-            (categoria.totalServicios ?? 0) !== datos.totalServicios ||
-            (categoria.serviciosActivos ?? 0) !== datos.serviciosActivos ||
-            (categoria.ventasTotales ?? 0) !== datos.ventasTotales ||
-            Math.round((categoria.ingresosTotales ?? 0) * 100) / 100 !== ingresosRedondeado ||
-            Math.round((categoria.gastosTotal ?? 0) * 100) / 100 !== gastosRedondeado;
-
-          if (changed) categoriasCorregidas++;
-
-          const ref = firestoreDoc(db, COLLECTIONS.CATEGORIAS, categoria.id);
-          return updateDoc(ref, {
-            totalServicios: datos.totalServicios,
-            serviciosActivos: datos.serviciosActivos,
-            ventasTotales: datos.ventasTotales,
-            ingresosTotales: ingresosRedondeado,
-            gastosTotal: gastosRedondeado,
-          });
-        });
-        await Promise.all(updates);
-
-        // 4. Refrescar store local
+      resyncContadoresCategorias: async () => {
+        // Category counters are derived by v_categoria_counters; a refetch is all that is needed.
         await get().fetchCategorias(true);
-
-        return { categoriasCorregidas };
+        return { categoriasCorregidas: 0 };
       },
     }),
     { name: 'categorias-store' }
   )
 );
+
+async function fetchCategoriasFull(): Promise<Categoria[]> {
+  const { data, error } = await supabase.from('categorias').select('*').order('nombre');
+  if (error) throw new Error(error.message);
+  return buildCategorias(data ?? []);
+}
+
+async function buildCategorias(
+  categoriasRows: {
+    id: string;
+    nombre: string;
+    tipo: 'cliente' | 'revendedor' | 'ambos';
+    tipo_categoria: 'plataforma_streaming' | 'otros' | null;
+    notas: string | null;
+    activo: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+  }[]
+): Promise<Categoria[]> {
+  const ids = categoriasRows.map((categoria) => categoria.id);
+  if (ids.length === 0) return [];
+
+  const [
+    tiposResult,
+    planesResult,
+    countersResult,
+    ventasResult,
+    financialResult,
+  ] = await Promise.all([
+    supabase.from('planes_tipos').select('*').in('categoria_id', ids),
+    supabase.from('planes').select('*').in('categoria_id', ids),
+    supabase.from('v_categoria_counters').select('*').in('categoria_id', ids),
+    supabase.from('v_ventas_full').select('categoria_id,estado').in('categoria_id', ids),
+    supabase.from('v_categoria_financial_metrics').select('*').in('categoria_id', ids),
+  ]);
+
+  if (tiposResult.error) throw new Error(tiposResult.error.message);
+  if (planesResult.error) throw new Error(planesResult.error.message);
+  if (countersResult.error) throw new Error(countersResult.error.message);
+  if (ventasResult.error) throw new Error(ventasResult.error.message);
+  if (financialResult.error) throw new Error(financialResult.error.message);
+
+  const tiposByCategoria = new Map<string, TipoPlanConfig[]>();
+  for (const tipo of tiposResult.data ?? []) {
+    tiposByCategoria.set(tipo.categoria_id, [
+      ...(tiposByCategoria.get(tipo.categoria_id) ?? []),
+      { id: tipo.id, nombre: tipo.nombre },
+    ]);
+  }
+
+  const planesByCategoria = new Map<string, Plan[]>();
+  for (const plan of planesResult.data ?? []) {
+    planesByCategoria.set(plan.categoria_id, [
+      ...(planesByCategoria.get(plan.categoria_id) ?? []),
+      {
+        id: plan.id,
+        nombre: plan.nombre,
+        precio: Number(plan.precio),
+        cicloPago: plan.ciclo_pago,
+        tipoPlan: plan.plan_tipo_id,
+      },
+    ]);
+  }
+
+  const countersByCategoria = new Map(
+    (countersResult.data ?? []).map((counter) => [counter.categoria_id, counter])
+  );
+  const ventasActivasByCategoria = new Map<string, number>();
+  for (const venta of ventasResult.data ?? []) {
+    if (!venta.categoria_id || venta.estado === 'inactivo') continue;
+    ventasActivasByCategoria.set(
+      venta.categoria_id,
+      (ventasActivasByCategoria.get(venta.categoria_id) ?? 0) + 1
+    );
+  }
+
+  const financialByCategoria = new Map(
+    (financialResult.data ?? []).map((row) => [row.categoria_id, row])
+  );
+
+  return categoriasRows.map((categoria) => {
+    const counters = countersByCategoria.get(categoria.id);
+    const financial = financialByCategoria.get(categoria.id);
+    return {
+      id: categoria.id,
+      nombre: categoria.nombre,
+      tipo: categoria.tipo,
+      tipoCategoria: categoria.tipo_categoria ?? undefined,
+      tiposPlanes: tiposByCategoria.get(categoria.id) ?? [],
+      planes: planesByCategoria.get(categoria.id) ?? [],
+      notas: categoria.notas ?? undefined,
+      activo: categoria.activo,
+      totalServicios: Number(counters?.total_servicios ?? 0),
+      serviciosActivos: Number(counters?.servicios_activos ?? 0),
+      perfilesDisponiblesTotal: Number(counters?.perfiles_disponibles_total ?? 0),
+      ventasTotales: ventasActivasByCategoria.get(categoria.id) ?? 0,
+      ingresosTotales: Number(financial?.ingresos_usd ?? 0),
+      gastosTotal: Number(financial?.gastos_usd ?? 0),
+      createdAt: new Date(categoria.created_at),
+      updatedAt: new Date(categoria.updated_at),
+      createdBy: categoria.created_by ?? undefined,
+    };
+  });
+}
+
+async function upsertCategoriaPlanes(
+  categoriaId: string,
+  tiposPlanes: TipoPlanConfig[],
+  planes: Plan[]
+) {
+  if (tiposPlanes.length > 0) {
+    const { error } = await supabase.from('planes_tipos').upsert(
+      tiposPlanes.map((tipo, index) => ({
+        id: tipo.id,
+        categoria_id: categoriaId,
+        nombre: tipo.nombre,
+        orden: index + 1,
+        activo: true,
+      })),
+      { onConflict: 'id' }
+    );
+    if (error) throw new Error(error.message);
+  }
+
+  if (planes.length > 0) {
+    const { error } = await supabase.from('planes').upsert(
+      planes.map((plan, index) => ({
+        id: plan.id,
+        categoria_id: categoriaId,
+        plan_tipo_id: plan.tipoPlan,
+        nombre: plan.nombre,
+        precio: plan.precio,
+        ciclo_pago: plan.cicloPago,
+        orden: index + 1,
+        activo: true,
+      })),
+      { onConflict: 'id' }
+    );
+    if (error) throw new Error(error.message);
+  }
+}

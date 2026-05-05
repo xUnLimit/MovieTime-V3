@@ -54,9 +54,7 @@ import type { NotificacionServicio } from '@/types/notificaciones';
 import { getCurrencySymbol } from '@/lib/constants';
 import { toast } from 'sonner';
 import { PagoDialog, EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
-import { queryDocuments, COLLECTIONS, update, getById, adjustCategoriaGastos } from '@/lib/firebase/firestore';
-import { doc as firestoreDoc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { queryDocuments, ENTITIES, update, getById, adjustCategoriaGastos } from '@/lib/supabase/repository';
 import { MetodoPago, Servicio } from '@/types';
 import { crearPagoRenovacion, obtenerPagosDeServicio } from '@/lib/services/pagosServicioService';
 import { currencyService } from '@/lib/services/currencyService';
@@ -358,10 +356,10 @@ export function ServiciosProximosTable({
     try {
       // Load servicio data and métodos de pago in parallel
       const [servicioData, metodos] = await Promise.all([
-        getById<Servicio>(COLLECTIONS.SERVICIOS, notif.servicioId),
+        getById<Servicio>(ENTITIES.SERVICIOS, notif.servicioId),
         metodosPagoServicio.length > 0
           ? Promise.resolve(metodosPagoServicio)
-          : queryDocuments<MetodoPago>(COLLECTIONS.METODOS_PAGO, [
+          : queryDocuments<MetodoPago>(ENTITIES.METODOS_PAGO, [
               { field: 'asociadoA', operator: '==', value: 'servicio' },
             ]),
       ]);
@@ -413,8 +411,7 @@ export function ServiciosProximosTable({
         data.costo,
         data.moneda || metodoPagoSeleccionado?.moneda || 'USD'
       );
-      const servicioRef = firestoreDoc(db, COLLECTIONS.SERVICIOS, servicioId);
-      await updateDoc(servicioRef, { gastosTotal: increment(costoUSD) });
+      // gastosTotal se deriva desde pagos_servicio en Supabase.
       if (servicioParaRenovar.categoriaId) {
         await adjustCategoriaGastos(servicioParaRenovar.categoriaId, costoUSD);
       }
@@ -443,7 +440,7 @@ export function ServiciosProximosTable({
       }).catch(() => {});
 
       // Update servicio with new dates and cost
-      await update(COLLECTIONS.SERVICIOS, servicioId, {
+      await update(ENTITIES.SERVICIOS, servicioId, {
         fechaInicio: data.fechaInicio,
         fechaVencimiento: data.fechaVencimiento,
         costoServicio: data.costo,

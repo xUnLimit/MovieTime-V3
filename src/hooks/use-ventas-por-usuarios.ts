@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { differenceInCalendarDays } from 'date-fns';
-import { COLLECTIONS, queryDocuments } from '@/lib/firebase/firestore';
+import { ENTITIES, queryDocuments } from '@/lib/supabase/repository';
 import { logVentasCacheHit } from '@/lib/utils/devLogger';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';
@@ -30,7 +30,7 @@ export function invalidateVentasPorUsuariosCache() {
   ventasCache.clear();
 }
 
-/** Query con chunks para evitar el límite de 30 del operador 'in' de Firestore */
+/** Query con chunks para evitar el límite de 30 del operador 'in' de Supabase */
 async function queryVentasPorClienteIds(clienteIds: string[]): Promise<VentaDoc[]> {
   const CHUNK_SIZE = 30;
   const chunks: string[][] = [];
@@ -39,7 +39,7 @@ async function queryVentasPorClienteIds(clienteIds: string[]): Promise<VentaDoc[
   }
   const results = await Promise.all(
     chunks.map(chunk =>
-      queryDocuments<VentaDoc>(COLLECTIONS.VENTAS, [
+      queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
         { field: 'clienteId', operator: 'in', value: chunk },
       ])
     )

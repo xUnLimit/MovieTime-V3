@@ -12,7 +12,7 @@ const sincronizarNotificacionesForzadoMock = vi.fn();
 const fetchNotificacionesMock = vi.fn();
 const addLogMock = vi.fn();
 
-vi.mock('@/lib/firebase/firestore', () => ({
+vi.mock('@/lib/supabase/repository', () => ({
   getAll: getAllMock,
   getCount: getCountMock,
   getById: getByIdMock,
@@ -21,7 +21,7 @@ vi.mock('@/lib/firebase/firestore', () => ({
   remove: removeMock,
   queryDocuments: queryDocumentsMock,
   logCacheHit: logCacheHitMock,
-  COLLECTIONS: {
+  ENTITIES: {
     USUARIOS: 'usuarios',
     VENTAS: 'ventas',
     PAGOS_VENTA: 'pagosVenta',

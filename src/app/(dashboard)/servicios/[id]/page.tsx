@@ -12,9 +12,9 @@ import { useCategoriasStore } from '@/store/categoriasStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { COLLECTIONS } from '@/lib/firebase/firestore';
+import { ENTITIES } from '@/lib/supabase/repository';
 import { Servicio } from '@/types';
-import type { FilterOption } from '@/lib/firebase/pagination';
+import type { FilterOption } from '@/lib/supabase/pagination';
 
 function ServiciosCategoriaPageContent() {
   const params = useParams();
@@ -64,7 +64,7 @@ function ServiciosCategoriaPageContent() {
     previous,
     refresh
   } = useServerPagination<Servicio>({
-    collectionName: COLLECTIONS.SERVICIOS,
+    collectionName: ENTITIES.SERVICIOS,
     filters,
     pageSize,
     orderByField: 'correo',

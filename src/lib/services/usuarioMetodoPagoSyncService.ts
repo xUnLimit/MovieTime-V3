@@ -1,10 +1,6 @@
-import { COLLECTIONS, update } from '@/lib/firebase/firestore';
+import { ENTITIES, update } from '@/lib/supabase/repository';
 import { useUsuariosStore } from '@/store/usuariosStore';
-import {
-  getUsuarioMetodoPagoMoneda,
-  getUsuarioMetodoPagoNombre,
-  USUARIO_METODO_PAGO_UPDATED_EVENT,
-} from '@/lib/utils/usuarioMetodoPago';
+import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
 
 interface SyncUsuarioMetodoPagoInput {
   usuarioId?: string | null;
@@ -14,38 +10,22 @@ interface SyncUsuarioMetodoPagoInput {
 }
 
 export async function syncUsuarioMetodoPago(input: SyncUsuarioMetodoPagoInput): Promise<void> {
-  const { usuarioId, metodoPagoId, metodoPagoNombre, moneda } = input;
+  const { usuarioId, metodoPagoId } = input;
 
-  if (!usuarioId) {
-    return;
-  }
+  if (!usuarioId) return;
 
   const nextMetodoPagoId = typeof metodoPagoId === 'string' ? metodoPagoId.trim() : '';
+  if (!nextMetodoPagoId) return;
 
-  if (!nextMetodoPagoId) {
-    return;
-  }
-
-  const nextMetodoPagoNombre = getUsuarioMetodoPagoNombre(nextMetodoPagoId, metodoPagoNombre);
-  const nextMoneda = getUsuarioMetodoPagoMoneda(nextMetodoPagoId, moneda);
-
-  const updates = {
-    metodoPagoId: nextMetodoPagoId,
-    metodoPagoNombre: nextMetodoPagoNombre,
-    moneda: nextMoneda,
-  };
-
-  await update(COLLECTIONS.USUARIOS, usuarioId, updates);
+  await update(ENTITIES.USUARIOS, usuarioId, { metodoPagoId: nextMetodoPagoId } as never);
 
   useUsuariosStore.setState((state) => ({
-    usuarios: state.usuarios.map((usuario) =>
-      usuario.id === usuarioId
-        ? { ...usuario, ...updates, updatedAt: new Date() }
-        : usuario
+    usuarios: state.usuarios.map((u) =>
+      u.id === usuarioId ? { ...u, metodoPagoId: nextMetodoPagoId, updatedAt: new Date() } : u
     ),
     selectedUsuario:
       state.selectedUsuario?.id === usuarioId
-        ? { ...state.selectedUsuario, ...updates, updatedAt: new Date() }
+        ? { ...state.selectedUsuario, metodoPagoId: nextMetodoPagoId, updatedAt: new Date() }
         : state.selectedUsuario,
   }));
 

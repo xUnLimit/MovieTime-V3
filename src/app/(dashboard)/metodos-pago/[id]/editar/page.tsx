@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
-import { getById, COLLECTIONS } from '@/lib/firebase/firestore';
+import { getById, ENTITIES } from '@/lib/supabase/repository';
 import type { MetodoPago } from '@/types';
 import { toast } from 'sonner';
 
@@ -24,7 +24,7 @@ function EditarMetodoPagoPageContent() {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await getById<MetodoPago>(COLLECTIONS.METODOS_PAGO, id);
+        const data = await getById<MetodoPago>(ENTITIES.METODOS_PAGO, id);
         setMetodoPago(data);
       } catch (error) {
         console.error('Error cargando método de pago:', error);

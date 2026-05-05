@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
 import { getDashboardStats, rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
-import { getCount, COLLECTIONS, logCacheHit, convertTimestamps } from '@/lib/firebase/firestore';
+import { getCount, ENTITIES, logCacheHit, queryDocuments } from '@/lib/supabase/repository';
 import type { DashboardStats, DashboardCounts } from '@/types/dashboard';
 import type { ActivityLog } from '@/types';
 
@@ -58,26 +56,19 @@ export const useDashboardStore = create<DashboardState>()(
           const [stats, ventasActivas, totalClientes, totalRevendedores, recentActivity] =
             await Promise.all([
               getDashboardStats(),
-              getCount(COLLECTIONS.VENTAS, [
+              getCount(ENTITIES.VENTAS, [
                 { field: 'estado', operator: '==', value: 'activo' },
               ]),
-              getCount(COLLECTIONS.USUARIOS, [
+              getCount(ENTITIES.USUARIOS, [
                 { field: 'tipo', operator: '==', value: 'cliente' },
               ]),
-              getCount(COLLECTIONS.USUARIOS, [
+              getCount(ENTITIES.USUARIOS, [
                 { field: 'tipo', operator: '==', value: 'revendedor' },
               ]),
-              getDocs(
-                query(
-                  collection(db, COLLECTIONS.ACTIVITY_LOG),
-                  orderBy('timestamp', 'desc'),
-                  limit(6)
-                )
-              ).then((snap) =>
-                snap.docs.map((d) => ({
-                  id: d.id,
-                  ...(convertTimestamps(d.data()) as Record<string, unknown>),
-                } as ActivityLog))
+              queryDocuments<ActivityLog>(ENTITIES.ACTIVITY_LOG, []).then((logs) =>
+                logs
+                  .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+                  .slice(0, 6)
               ),
             ]);
 

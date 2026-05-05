@@ -33,7 +33,7 @@ import { Servicio, MetodoPago } from "@/types";
 import { addMonths, addDays } from "date-fns";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
-import { update, getCount, COLLECTIONS } from "@/lib/firebase/firestore";
+import { update, getCount, ENTITIES } from "@/lib/supabase/repository";
 import {
   PROFILE_PREVIEW_FULL_RENDER_LIMIT,
   getProfilePreviewSample,
@@ -124,7 +124,7 @@ export function ServicioForm({
 
   useEffect(() => {
     if (!servicio?.id) return;
-    getCount(COLLECTIONS.VENTAS, [
+    getCount(ENTITIES.VENTAS, [
       { field: "servicioId", operator: "==", value: servicio.id },
       { field: "estado", operator: "!=", value: "inactivo" },
     ]).then((count) => setPerfilesOcupadosReal(count));
@@ -553,14 +553,14 @@ export function ServicioForm({
 
         // Resincronizar perfilesOcupados si el contador estaba desfasado
         if (servicio.perfilesOcupados !== perfilesOcupadosReal) {
-          await update(COLLECTIONS.SERVICIOS, servicio.id, {
+          await update(ENTITIES.SERVICIOS, servicio.id, {
             perfilesOcupados: perfilesOcupadosReal,
           });
         }
 
         // Actualizar el último pago si existe (Single Source of Truth)
         if (ultimoPago && ultimoPago.id) {
-          await update(COLLECTIONS.PAGOS_SERVICIO, ultimoPago.id, {
+          await update(ENTITIES.PAGOS_SERVICIO, ultimoPago.id, {
             fechaInicio: data.fechaInicio,
             fechaVencimiento: data.fechaVencimiento,
             monto: Number(data.costoServicio),

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
-import { getById, COLLECTIONS } from '@/lib/firebase/firestore';
+import { getById, ENTITIES } from '@/lib/supabase/repository';
 import { Usuario } from '@/types';
 import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
 
@@ -28,7 +28,7 @@ function UsuarioDetallesPageContent() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const user = await getById<Usuario>(COLLECTIONS.USUARIOS, id);
+        const user = await getById<Usuario>(ENTITIES.USUARIOS, id);
         setUsuario(user);
       } catch (error) {
         console.error('Error loading usuario:', error);

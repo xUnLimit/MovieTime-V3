@@ -54,7 +54,6 @@ export function ServiciosFilters({
           <SelectItem value="all">Todas las categorías</SelectItem>
           {categorias.map((cat) => (
             <SelectItem key={cat.id} value={cat.id}>
-              {cat.iconUrl && <span className="mr-2">{cat.iconUrl}</span>}
               {cat.nombre}
             </SelectItem>
           ))}

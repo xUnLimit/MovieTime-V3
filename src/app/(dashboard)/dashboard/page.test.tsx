@@ -130,10 +130,7 @@ describe('Dashboard sync button', () => {
     toastLoadingMock.mockReturnValue('toast-1');
 
     performGlobalSyncMock.mockResolvedValue({
-      usuariosReparados: 1,
-      serviciosCorregidos: 0,
-      serviciosRevisados: 3,
-      ventasActualizadas: 2,
+      dashboardRebuilt: true,
     });
 
     fetchCategoriasMock.mockResolvedValue(undefined);
@@ -156,7 +153,7 @@ describe('Dashboard sync button', () => {
       'Sistema sincronizado correctamente',
       expect.objectContaining({
         id: 'toast-1',
-        description: expect.stringContaining('2 venta(s) resincronizadas desde 3 servicio(s).'),
+        description: expect.stringContaining('Notificaciones regeneradas'),
       })
     );
   });
