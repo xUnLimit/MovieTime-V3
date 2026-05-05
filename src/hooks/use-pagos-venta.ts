@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { queryPagosVenta } from '@/lib/supabase/pagos-repository';
+import { fetchPagosVentaByVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
 import type { PagoVenta } from '@/types';
 
 /**
@@ -30,9 +30,7 @@ export function usePagosVenta(ventaId: string) {
     const load = async () => {
       setIsLoading(true);
       try {
-        const docs = await queryPagosVenta<PagoVenta>([
-          { field: 'ventaId', operator: '==', value: ventaId }
-        ]);
+        const docs = await fetchPagosVentaByVentaUseCase<PagoVenta>(ventaId);
 
         if (cancelled) return;
 

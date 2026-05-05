@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ENTITIES } from '@/lib/supabase/ventas-repository';
+import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas-use-cases';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { useVentasStore } from '@/store/ventasStore';
 import { normalizeSearchText } from '@/lib/utils';
@@ -52,7 +52,7 @@ function VentasPageContent() {
 
   // Paginación server-side (solo cuando NO hay búsqueda activa)
   const { data: ventasPaginadas, isLoading: isLoadingPage, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<VentaDoc>({
-    collectionName: ENTITIES.VENTAS,
+    collectionName: VENTAS_COLLECTION,
     filters,
     pageSize,
     orderByField: orderBy,

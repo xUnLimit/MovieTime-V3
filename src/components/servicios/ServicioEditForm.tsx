@@ -23,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
 import { formatearFecha } from "@/lib/utils/calculations";
-import { countVentas } from "@/lib/supabase/ventas-repository";
+import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { useCategoriasStore } from "@/store/categoriasStore";
@@ -99,10 +99,7 @@ export function ServicioEditForm({
   );
 
   useEffect(() => {
-    countVentas([
-      { field: "servicioId", operator: "==", value: servicio.id },
-      { field: "estado", operator: "!=", value: "inactivo" },
-    ]).then((count) => setPerfilesOcupadosReal(count));
+    countVentasActivasByServicioUseCase(servicio.id).then((count) => setPerfilesOcupadosReal(count));
   }, [servicio.id]);
 
   // Cargar métodos de pago al montar

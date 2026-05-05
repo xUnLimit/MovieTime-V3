@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { countActivityLogs } from '@/lib/supabase/activity-log-repository';
+import { countActivityLogsUseCase } from '@/lib/use-cases/activity-log-use-cases';
 import { activityActionColors, getActivityDisplayConfig } from '@/lib/utils/activityDisplayHelpers';
 import type { ActivityLog } from '@/types';
 import {
@@ -149,7 +149,7 @@ export function LogTimeline({
     setIsLoadingCount(true);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const count = await countActivityLogs([
+    const count = await countActivityLogsUseCase([
       { field: 'timestamp', operator: '<', value: cutoff },
     ]);
     setConfirmCount(count);

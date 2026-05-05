@@ -1,5 +1,6 @@
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { countCategorias } from '@/lib/supabase/categorias-repository';
+import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
 import {
   adjustCategoriaGastos,
   countServicios,
@@ -26,6 +27,8 @@ import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { getCurrencySymbol } from '@/lib/constants';
 import type { ActivityLog, MetodoPago, PagoServicio, Servicio } from '@/types';
 import type { ServicioPronostico } from '@/types/dashboard';
+
+export const SERVICIOS_COLLECTION = ENTITIES.SERVICIOS;
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
 type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
@@ -66,6 +69,18 @@ export function toServicioPronostico(s: Servicio): ServicioPronostico | null {
     costoServicio: s.costoServicio,
     moneda: s.moneda || 'USD',
   };
+}
+
+export function getServicioUseCase<T = Servicio>(id: string) {
+  return getServicioById<T>(id);
+}
+
+export function fetchServiciosByFiltersUseCase<T = Servicio>(filters: QueryFilter[] = []) {
+  return queryServicios<T>(filters);
+}
+
+export function fetchServiciosByCategoriaUseCase<T = Servicio>(categoriaId: string) {
+  return queryServicios<T>([{ field: 'categoriaId', operator: '==', value: categoriaId }]);
 }
 
 export async function fetchServiciosCountsUseCase() {

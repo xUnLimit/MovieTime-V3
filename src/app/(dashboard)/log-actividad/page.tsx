@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { LogTimeline } from '@/components/log-actividad/LogTimeline';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ENTITIES } from '@/lib/supabase/activity-log-repository';
+import { ACTIVITY_LOG_COLLECTION } from '@/lib/use-cases/activity-log-use-cases';
 import {
   deleteActivityLogsOlderThanUseCase,
   deleteActivityLogsUseCase,
@@ -41,7 +41,7 @@ function LogActividadPageContent() {
   }, [accionFilter, entidadFilter, usuarioFilter]);
 
   const { data: logs, isLoading, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<ActivityLog>({
-    collectionName: ENTITIES.ACTIVITY_LOG,
+    collectionName: ACTIVITY_LOG_COLLECTION,
     filters,
     pageSize,
     orderByField: 'timestamp',

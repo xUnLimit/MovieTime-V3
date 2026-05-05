@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
-import { countVentas } from "@/lib/supabase/ventas-repository";
+import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { formatearFecha } from "@/lib/utils/calculations";
 import {
@@ -122,10 +122,7 @@ export function ServicioForm({
 
   useEffect(() => {
     if (!servicio?.id) return;
-    countVentas([
-      { field: "servicioId", operator: "==", value: servicio.id },
-      { field: "estado", operator: "!=", value: "inactivo" },
-    ]).then((count) => setPerfilesOcupadosReal(count));
+    countVentasActivasByServicioUseCase(servicio.id).then((count) => setPerfilesOcupadosReal(count));
   }, [servicio?.id]);
 
   // Cargar solo métodos de pago para servicios al montar

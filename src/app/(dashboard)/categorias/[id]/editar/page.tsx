@@ -8,7 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import { CategoriaForm } from '@/components/categorias/CategoriaForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { getCategoriaById } from '@/lib/supabase/categorias-repository';
+import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import type { Categoria } from '@/types';
 import { toast } from 'sonner';
 
@@ -25,7 +25,7 @@ function EditarCategoriaPageContent() {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await getCategoriaById<Categoria>(id);
+        const data = await getCategoriaUseCase<Categoria>(id);
         setCategoria(data);
       } catch (error) {
         console.error('Error cargando categoría:', error);

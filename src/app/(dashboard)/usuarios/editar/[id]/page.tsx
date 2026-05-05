@@ -8,7 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { UsuarioForm } from '@/components/usuarios/UsuarioForm';
-import { getUsuarioById } from '@/lib/supabase/usuarios-repository';
+import { getUsuarioUseCase } from '@/lib/use-cases/usuarios-use-cases';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import type { Usuario, MetodoPago } from '@/types';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ function EditarUsuarioPageContent() {
       setLoading(true);
       try {
         const [usuarioData, metodosData] = await Promise.all([
-          getUsuarioById<Usuario>(id),
+          getUsuarioUseCase<Usuario>(id),
           fetchMetodosPagoUsuarios()
         ]);
 

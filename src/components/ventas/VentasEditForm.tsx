@@ -28,8 +28,8 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { queryServicios } from "@/lib/supabase/servicios-repository";
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
+import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { updateVentaWithLatestPagoUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
@@ -278,7 +278,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     const loadServiciosCategoria = async () => {
       setLoadingServicios(true);
       try {
-        const servicios = await queryServicios<Servicio>([
+        const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
           { field: "categoriaId", operator: "==", value: categoriaIdValue },
         ]);
         setServiciosCategoria(servicios);
@@ -455,7 +455,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     const loadPerfilesOcupados = async () => {
       if (!servicioIdValue) return;
       try {
-        const docs = await queryVentas<Record<string, unknown>>([
+        const docs = await fetchVentasByFiltersUseCase<Record<string, unknown>>([
           { field: "servicioId", operator: "==", value: servicioIdValue },
         ]);
         const ocupados = new Set<number>();
@@ -592,7 +592,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     setLoadingPerfilesDetalle(true);
     setErrorPerfilesDetalle(null);
     try {
-      const ventas = await queryVentas<VentaDoc>([
+      const ventas = await fetchVentasByFiltersUseCase<VentaDoc>([
         { field: "servicioId", operator: "==", value: servicio.id },
       ]);
 
@@ -896,7 +896,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         codigo: data.codigo || "",
         estado: data.estado || "activo",
         notas: data.notas || "",
-        // ✅ DENORMALIZED FIELDS (for notifications sync)
+        // ? DENORMALIZED FIELDS (for notifications sync)
         fechaInicio: data.fechaInicio,
         fechaFin: data.fechaFin,
         cicloPago: plan?.cicloPago || venta.cicloPago,

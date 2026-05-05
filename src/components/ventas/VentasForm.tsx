@@ -40,9 +40,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
-import { queryServicios } from "@/lib/supabase/servicios-repository";
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
+import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
+import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -242,7 +242,7 @@ export function VentasForm() {
     // Cargar métodos de pago filtrados (solo usuarios)
     const loadMetodosPagoUsuarios = async () => {
       try {
-        const metodos = await queryMetodosPago<MetodoPagoOption>([
+        const metodos = await fetchMetodosPagoByFiltersUseCase<MetodoPagoOption>([
           { field: "asociadoA", operator: "==", value: "usuario" },
         ]);
         setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION, ...metodos]);
@@ -264,7 +264,7 @@ export function VentasForm() {
     const loadServiciosCategoria = async () => {
       setLoadingServicios(true);
       try {
-        const servicios = await queryServicios<Servicio>([
+        const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
           { field: "categoriaId", operator: "==", value: categoriaId },
         ]);
         setServiciosCategoria(servicios);
@@ -282,7 +282,7 @@ export function VentasForm() {
     const loadPerfilesOcupados = async () => {
       if (!servicioId) return;
       try {
-        const docs = await queryVentas<Record<string, unknown>>([
+        const docs = await fetchVentasByFiltersUseCase<Record<string, unknown>>([
           { field: "servicioId", operator: "==", value: servicioId },
         ]);
         const ocupados = new Set<number>();
@@ -539,7 +539,7 @@ export function VentasForm() {
     setLoadingPerfilesDetalle(true);
     setErrorPerfilesDetalle(null);
     try {
-      const ventas = await queryVentas<VentaDoc>([
+      const ventas = await fetchVentasByFiltersUseCase<VentaDoc>([
         { field: "servicioId", operator: "==", value: servicio.id },
       ]);
 

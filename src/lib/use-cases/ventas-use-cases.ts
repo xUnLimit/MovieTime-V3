@@ -1,13 +1,17 @@
 import { format } from 'date-fns';
 
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
+import { timestampToDate } from '@/lib/supabase/dates';
+import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
 import {
   adjustCategoriaSuscripciones,
   adjustServiciosActivos,
   createPagoVenta,
   createVenta,
   getVentaById,
+  countVentas,
   queryPagosVenta,
+  queryVentas,
   removePagoVenta,
   removeVenta,
   updatePagoVenta,
@@ -28,6 +32,9 @@ import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import type { ActivityLog, MetodoPago, PagoVenta, VentaDoc } from '@/types';
 import type { VentaPronostico } from '@/types/dashboard';
+
+export const VENTAS_COLLECTION = ENTITIES.VENTAS;
+export { timestampToDate };
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
 type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
@@ -110,6 +117,61 @@ export function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
     precioFinal: v.precio || v.precioFinal || 0,
     moneda: v.moneda || 'USD',
   };
+}
+
+export function getVentaUseCase<T = VentaDoc>(id: string) {
+  return getVentaById<T>(id);
+}
+
+export function fetchVentasByFiltersUseCase<T = VentaDoc>(filters: QueryFilter[] = []) {
+  return queryVentas<T>(filters);
+}
+
+export function fetchVentasByClienteUseCase<T = VentaDoc>(clienteId: string) {
+  return queryVentas<T>([{ field: 'clienteId', operator: '==', value: clienteId }]);
+}
+
+export async function fetchVentasByClienteIdsUseCase<T = VentaDoc>(clienteIds: string[], chunkSize = 30): Promise<T[]> {
+  const chunks: string[][] = [];
+  for (let i = 0; i < clienteIds.length; i += chunkSize) {
+    chunks.push(clienteIds.slice(i, i + chunkSize));
+  }
+
+  const results = await Promise.all(
+    chunks.map((chunk) =>
+      queryVentas<T>([{ field: 'clienteId', operator: 'in', value: chunk }])
+    )
+  );
+  return results.flat();
+}
+
+export function fetchVentasByServicioUseCase<T = VentaDoc>(servicioId: string) {
+  return queryVentas<T>([{ field: 'servicioId', operator: '==', value: servicioId }]);
+}
+
+export function countVentasActivasByServicioUseCase(servicioId: string) {
+  return countVentas([
+    { field: 'servicioId', operator: '==', value: servicioId },
+    { field: 'estado', operator: '!=', value: 'inactivo' },
+  ]);
+}
+
+export function fetchPagosVentaByVentaUseCase<T = PagoVenta>(ventaId: string) {
+  return queryPagosVenta<T>([{ field: 'ventaId', operator: '==', value: ventaId }]);
+}
+
+export async function fetchPagosVentaByVentaIdsUseCase<T = PagoVenta>(ventaIds: string[], chunkSize = 10): Promise<T[]> {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ventaIds.length; i += chunkSize) {
+    chunks.push(ventaIds.slice(i, i + chunkSize));
+  }
+
+  const results = await Promise.all(
+    chunks.map((chunk) =>
+      queryPagosVenta<T>([{ field: 'ventaId', operator: 'in', value: chunk }])
+    )
+  );
+  return results.flat();
 }
 
 export async function createVentaUseCase(

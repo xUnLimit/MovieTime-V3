@@ -11,7 +11,7 @@ import { ServiciosCategoriaTableDetalle } from '@/components/servicios/Servicios
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ENTITIES } from '@/lib/supabase/servicios-repository';
+import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { Servicio } from '@/types';
@@ -65,7 +65,7 @@ function ServiciosCategoriaPageContent() {
     previous,
     refresh
   } = useServerPagination<Servicio>({
-    collectionName: ENTITIES.SERVICIOS,
+    collectionName: SERVICIOS_COLLECTION,
     filters,
     pageSize,
     orderByField: 'correo',

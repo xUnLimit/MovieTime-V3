@@ -10,7 +10,7 @@ import { UsuarioDetails } from '@/components/usuarios/UsuarioDetails';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { getUsuarioById } from '@/lib/supabase/usuarios-repository';
+import { getUsuarioUseCase } from '@/lib/use-cases/usuarios-use-cases';
 import { useUsuariosStore } from '@/store/usuariosStore';
 import { Usuario } from '@/types';
 import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
@@ -29,7 +29,7 @@ function UsuarioDetallesPageContent() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const user = await getUsuarioById<Usuario>(id);
+        const user = await getUsuarioUseCase<Usuario>(id);
         setUsuario(user);
       } catch (error) {
         console.error('Error loading usuario:', error);

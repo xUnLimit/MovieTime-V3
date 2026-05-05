@@ -3,6 +3,7 @@ import {
   createCategoriaRecord,
   getCategoriasCounts,
   getCategoriasFull,
+  getCategoriaById,
   removeCategoria,
   updateCategoriaRecord,
   upsertCategoriaPlanes,
@@ -15,6 +16,10 @@ type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
 
 export const fetchCategoriasFull = getCategoriasFull;
 export const fetchCategoriasCounts = getCategoriasCounts;
+
+export function getCategoriaUseCase<T = Categoria>(id: string) {
+  return getCategoriaById<T>(id);
+}
 
 export async function createCategoriaUseCase(
   categoriaData: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>,

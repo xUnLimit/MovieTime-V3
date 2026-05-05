@@ -10,7 +10,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getCategoriaById } from '@/lib/supabase/categorias-repository';
+import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { formatearFechaHora } from '@/lib/utils/calculations';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { Categoria, Plan } from '@/types';
@@ -30,7 +30,7 @@ function VerCategoriaPageContent() {
       if (!id) return;
       setIsLoading(true);
       try {
-        const data = await getCategoriaById<Categoria>(id);
+        const data = await getCategoriaUseCase<Categoria>(id);
         setCategoria(data);
       } catch (error) {
         console.error('Error cargando categoría:', error);

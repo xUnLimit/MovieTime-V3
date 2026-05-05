@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { differenceInCalendarDays } from 'date-fns';
 
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { logVentasCacheHit } from '@/lib/utils/devLogger';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';
@@ -29,23 +29,6 @@ const ventasCache = new Map<string, { data: Record<string, VentasUsuarioStats>; 
  */
 export function invalidateVentasPorUsuariosCache() {
   ventasCache.clear();
-}
-
-/** Query con chunks para evitar el límite de 30 del operador 'in' de Supabase */
-async function queryVentasPorClienteIds(clienteIds: string[]): Promise<VentaDoc[]> {
-  const CHUNK_SIZE = 30;
-  const chunks: string[][] = [];
-  for (let i = 0; i < clienteIds.length; i += CHUNK_SIZE) {
-    chunks.push(clienteIds.slice(i, i + CHUNK_SIZE));
-  }
-  const results = await Promise.all(
-    chunks.map(chunk =>
-      queryVentas<VentaDoc>([
-        { field: 'clienteId', operator: 'in', value: chunk },
-      ])
-    )
-  );
-  return results.flat();
 }
 
 /**
@@ -108,7 +91,7 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
       setIsLoading(true);
       try {
         // Paso 1: Cargar ventas base (solo metadatos) — chunks de 30 para evitar límite 'in'
-        const ventasBase = await queryVentasPorClienteIds(clienteIds);
+        const ventasBase = await fetchVentasByClienteIdsUseCase<VentaDoc>(clienteIds);
 
         if (cancelled) return;
 
@@ -171,7 +154,7 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
       setIsLoading(true);
       try {
         // chunks de 30 para evitar límite 'in'
-        const ventasBase = await queryVentasPorClienteIds(clienteIds);
+        const ventasBase = await fetchVentasByClienteIdsUseCase<VentaDoc>(clienteIds);
         const ventasConDatos = await getVentasConUltimoPago(ventasBase);
         const now = new Date();
         const result: Record<string, VentasUsuarioStats> = {};

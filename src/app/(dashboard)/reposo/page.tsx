@@ -42,9 +42,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
-import { queryNotificaciones } from "@/lib/supabase/notifications-repository";
-import { queryServicios } from '@/lib/supabase/servicios-repository';
+import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
+import { fetchNotificacionesByFiltersUseCase } from "@/lib/use-cases/notificaciones-use-cases";
+import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { useCategoriasStore } from "@/store/categoriasStore";
@@ -142,7 +142,7 @@ function ReposoPageContent() {
   const loadMetodosPago = useCallback(async () => {
     if (metodosPago.length > 0) return;
     try {
-      const methods = await queryMetodosPago<MetodoPago>([
+      const methods = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
         { field: "asociadoA", operator: "==", value: "servicio" },
       ]);
       setMetodosPago(methods);
@@ -154,7 +154,7 @@ function ReposoPageContent() {
   const fetchReposoServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      const servicios = await queryServicios<Servicio>([
+      const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
         { field: "enReposo", operator: "==", value: true },
       ]);
       const enriched = servicios.map(calcularReposoData);
@@ -196,7 +196,7 @@ function ReposoPageContent() {
 
   const limpiarNotificacionesReposo = async (servicioId: string) => {
     try {
-      const notifs = await queryNotificaciones<{ id: string }>([
+      const notifs = await fetchNotificacionesByFiltersUseCase<{ id: string }>([
         { field: "entidad", operator: "==", value: "reposo" },
         { field: "servicioId", operator: "==", value: servicioId },
       ]);

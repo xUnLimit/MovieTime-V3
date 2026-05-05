@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { queryPagosVenta, queryVentas } from '@/lib/supabase/ventas-repository';
+import { fetchPagosVentaByVentaIdsUseCase, fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';
 
-// ── Cache a nivel de módulo ────────────────────────────────
+// -- Cache a nivel de módulo --------------------------------
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
 interface CachedVentas {
@@ -73,7 +73,7 @@ export function useVentasUsuario(usuarioId: string) {
   const [renovacionesByServicio, setRenovacionesByServicio] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading]                     = useState(true);
 
-  /* ── 1. Ventas del usuario + renovaciones (con cache) ── */
+  /* -- 1. Ventas del usuario + renovaciones (con cache) -- */
   useEffect(() => {
     if (!usuarioId) {
       setVentas([]);
@@ -104,9 +104,7 @@ export function useVentasUsuario(usuarioId: string) {
       setIsLoading(true);
       try {
         // Paso 1: Cargar ventas base (solo metadatos)
-        const ventasBase = await queryVentas<VentaDoc>([
-          { field: 'clienteId', operator: '==', value: usuarioId },
-        ]);
+        const ventasBase = await fetchVentasByClienteUseCase<VentaDoc>(usuarioId);
 
 
         if (cancelled) return;
@@ -139,21 +137,7 @@ export function useVentasUsuario(usuarioId: string) {
 
         let renovaciones: Record<string, number> = {};
         if (ventaIds.length > 0) {
-          // Supabase .in() acepta max 10 valores — si hay más, partir en chunks
-          const chunks: string[][] = [];
-          for (let i = 0; i < ventaIds.length; i += 10) {
-            chunks.push(ventaIds.slice(i, i + 10));
-          }
-
-          const allPagos = await Promise.all(
-            chunks.map(chunk =>
-              queryPagosVenta<Record<string, unknown>>([
-                { field: 'ventaId', operator: 'in', value: chunk },
-              ])
-            )
-          );
-
-          const pagos = allPagos.flat();
+          const pagos = await fetchPagosVentaByVentaIdsUseCase<Record<string, unknown>>(ventaIds);
 
           // Contar renovaciones por venta (excluir pago inicial)
           const renovacionesMap: Record<string, number> = {};
@@ -198,9 +182,7 @@ export function useVentasUsuario(usuarioId: string) {
       setIsLoading(true);
 
       try {
-        const ventasBase = await queryVentas<VentaDoc>([
-          { field: 'clienteId', operator: '==', value: usuarioId }
-        ]);
+        const ventasBase = await fetchVentasByClienteUseCase<VentaDoc>(usuarioId);
         const ventasConDatos = await getVentasConUltimoPago(ventasBase);
 
         const mapped: VentaUsuarioDoc[] = ventasConDatos.map((venta) => ({
@@ -225,20 +207,7 @@ export function useVentasUsuario(usuarioId: string) {
         let renovaciones: Record<string, number> = {};
 
         if (ventaIds.length > 0) {
-          const chunks: string[][] = [];
-          for (let i = 0; i < ventaIds.length; i += 10) {
-            chunks.push(ventaIds.slice(i, i + 10));
-          }
-
-          const allPagos = await Promise.all(
-            chunks.map((chunk) =>
-              queryPagosVenta<Record<string, unknown>>([
-                { field: 'ventaId', operator: 'in', value: chunk },
-              ])
-            )
-          );
-
-          const pagos = allPagos.flat();
+          const pagos = await fetchPagosVentaByVentaIdsUseCase<Record<string, unknown>>(ventaIds);
           const renovacionesMap: Record<string, number> = {};
 
           pagos.forEach((pago) => {
@@ -263,7 +232,7 @@ export function useVentasUsuario(usuarioId: string) {
     return () => window.removeEventListener('servicio-updated', reloadFromServicioUpdate);
   }, [usuarioId]);
 
-  /* ── 2. Eliminar venta ──────────────────────────── */
+  /* -- 2. Eliminar venta ---------------------------- */
   const deleteVenta = useCallback(async (ventaId: string, servicioId?: string, perfilNumero?: number | null) => {
     const ventaEliminada = ventas.find(v => v.id === ventaId);
 

@@ -8,7 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
+import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import type { MetodoPago } from '@/types';
 import { toast } from 'sonner';
 
@@ -25,7 +25,7 @@ function EditarMetodoPagoPageContent() {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await getMetodoPagoById<MetodoPago>(id);
+        const data = await getMetodoPagoUseCase<MetodoPago>(id);
         setMetodoPago(data);
       } catch (error) {
         console.error('Error cargando método de pago:', error);

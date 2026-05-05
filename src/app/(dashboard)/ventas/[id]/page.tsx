@@ -12,10 +12,10 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
-import { getCategoriaById } from '@/lib/supabase/categorias-repository';
-import { getServicioById } from '@/lib/supabase/servicios-repository';
-import { getVentaById, timestampToDate } from '@/lib/supabase/ventas-repository';
+import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
+import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
+import { getVentaUseCase, timestampToDate } from '@/lib/use-cases/ventas-use-cases';
 import {
   deleteVentaPagoUseCase,
   getVentaConPagoActualUseCase,
@@ -77,7 +77,7 @@ function VentaDetallePageContent() {
     try {
       setLoading(true);
       // 1. Cargar la venta
-      const doc = await getVentaById<Record<string, unknown>>(id);
+      const doc = await getVentaUseCase<Record<string, unknown>>(id);
       if (!doc) {
         setVenta(null);
         setLoading(false);
@@ -114,7 +114,7 @@ function VentaDetallePageContent() {
       // Cargar la contraseña del servicio (lazy load)
       if (ventaConDatos.servicioId) {
         try {
-          const servicioDoc = await getServicioById<Record<string, unknown>>(ventaConDatos.servicioId);
+          const servicioDoc = await getServicioUseCase<Record<string, unknown>>(ventaConDatos.servicioId);
           if (servicioDoc && servicioDoc.contrasena) {
             setServicioContrasena(servicioDoc.contrasena as string);
           }
@@ -230,7 +230,7 @@ function VentaDetallePageContent() {
     try {
       // Cargar métodos de pago asociados a usuarios/clientes
       if (metodosPago.length === 0) {
-        const methods = await queryMetodosPago<MetodoPago>([
+        const methods = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
           { field: 'asociadoA', operator: '==', value: 'usuario' }
         ]);
         setMetodosPago(Array.isArray(methods) ? withPendingUserPaymentMethod(methods) : withPendingUserPaymentMethod([]));
@@ -238,7 +238,7 @@ function VentaDetallePageContent() {
 
       // Cargar planes de la categoría
       if (categoriaPlanes.length === 0 && venta?.categoriaId) {
-        const categoriaDoc = await getCategoriaById<Record<string, unknown>>(venta.categoriaId);
+        const categoriaDoc = await getCategoriaUseCase<Record<string, unknown>>(venta.categoriaId);
         if (categoriaDoc && Array.isArray(categoriaDoc.planes)) {
           setCategoriaPlanes(categoriaDoc.planes as Plan[]);
         }

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { invalidateVentasPorUsuariosCache } from '@/hooks/use-ventas-por-usuarios';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ENTITIES } from '@/lib/supabase/usuarios-repository';
+import { USUARIOS_COLLECTION } from '@/lib/use-cases/usuarios-use-cases';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { useUsuariosStore } from '@/store/usuariosStore';
 import { FilterOption } from '@/lib/supabase/pagination';
@@ -116,7 +116,7 @@ function UsuariosPageContent() {
 
   // Paginación server-side (solo cuando NO hay búsqueda activa)
   const { data: pageData, isLoading: isLoadingPage, hasMore, hasPrevious, page, next, previous, refresh } = useServerPagination<Usuario>({
-    collectionName: ENTITIES.USUARIOS,
+    collectionName: USUARIOS_COLLECTION,
     filters,
     pageSize,
   });

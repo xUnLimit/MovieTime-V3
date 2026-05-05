@@ -48,8 +48,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getCategoriaById } from '@/lib/supabase/categorias-repository';
-import { getServicioById } from '@/lib/supabase/servicios-repository';
+import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
+import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { getCurrencySymbol } from '@/lib/constants';
 import { renewVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { generarMensajeVenta, openWhatsApp } from '@/lib/utils/whatsapp';
@@ -447,7 +447,7 @@ export function VentasProximasTable() {
         fetchMetodosPagoUsuarios(),
         (async () => {
           if (notif.categoriaId) {
-            const categoriaDoc = await getCategoriaById<Record<string, unknown>>(notif.categoriaId);
+            const categoriaDoc = await getCategoriaUseCase<Record<string, unknown>>(notif.categoriaId);
             if (categoriaDoc && Array.isArray(categoriaDoc.planes)) {
               setCategoriaPlanes(categoriaDoc.planes as Plan[]);
             }
@@ -455,7 +455,7 @@ export function VentasProximasTable() {
         })(),
         (async () => {
           if (notif.servicioId) {
-            const servicioDoc = await getServicioById<Record<string, unknown>>(notif.servicioId);
+            const servicioDoc = await getServicioUseCase<Record<string, unknown>>(notif.servicioId);
             if (servicioDoc && typeof servicioDoc.tipo === 'string') {
               setServicioTipoSeleccionado(servicioDoc.tipo);
             }
@@ -526,7 +526,7 @@ export function VentasProximasTable() {
         }
         store.invalidateCache();
       }).catch(() => {});
-      // ✅ Eliminar notificaciones de esta venta (auto-cleanup al renovar)
+      // ? Eliminar notificaciones de esta venta (auto-cleanup al renovar)
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
       fetchNotificaciones(true);
 

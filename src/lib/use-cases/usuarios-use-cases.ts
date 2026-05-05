@@ -7,6 +7,7 @@ import {
   removeUsuario,
   updateUsuario,
 } from '@/lib/supabase/usuarios-repository';
+import { ENTITIES } from '@/lib/supabase/entities';
 import { queryPagosVenta, queryVentas, updatePagoVenta, updateVenta } from '@/lib/supabase/ventas-repository';
 import { adjustUsuariosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
@@ -15,6 +16,12 @@ import type { ActivityLog, Usuario } from '@/types';
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
 type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
+
+export const USUARIOS_COLLECTION = ENTITIES.USUARIOS;
+
+export function getUsuarioUseCase<T = Usuario>(id: string) {
+  return getUsuarioById<T>(id);
+}
 
 export async function fetchUsuariosCountsUseCase() {
   const today = startOfDay(new Date());

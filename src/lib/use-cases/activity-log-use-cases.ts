@@ -1,5 +1,13 @@
-import { queryActivityLogs, removeActivityLog } from '@/lib/supabase/activity-log-repository';
+import { countActivityLogs, queryActivityLogs, removeActivityLog } from '@/lib/supabase/activity-log-repository';
+import { ENTITIES } from '@/lib/supabase/entities';
+import type { QueryFilter } from '@/lib/supabase/entities';
 import type { ActivityLog } from '@/types';
+
+export const ACTIVITY_LOG_COLLECTION = ENTITIES.ACTIVITY_LOG;
+
+export function countActivityLogsUseCase(filters: QueryFilter[] = []) {
+  return countActivityLogs(filters);
+}
 
 export async function deleteActivityLogsUseCase(ids: string[]) {
   await Promise.all(ids.map((id) => removeActivityLog(id)));

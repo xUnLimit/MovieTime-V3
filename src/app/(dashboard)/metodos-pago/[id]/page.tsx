@@ -10,7 +10,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
+import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { formatearFechaHora } from '@/lib/utils/calculations';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { MetodoPago } from '@/types';
@@ -32,7 +32,7 @@ function VerMetodoPagoPageContent() {
 
       setIsLoading(true);
       try {
-        const data = await getMetodoPagoById<MetodoPago>(id);
+        const data = await getMetodoPagoUseCase<MetodoPago>(id);
         setMetodo(data);
       } catch (error) {
         console.error('Error cargando método de pago:', error);

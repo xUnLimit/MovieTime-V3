@@ -40,8 +40,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getCurrencySymbol } from '@/lib/constants';
-import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
-import { getServicioById } from '@/lib/supabase/servicios-repository';
+import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { MetodoPago, Servicio } from '@/types';
 import type { NotificacionServicio } from '@/types/notificaciones';
@@ -89,7 +89,7 @@ function getEstadoBadge(
   diasRestantes: number,
   resaltada: boolean
 ): { variant: string; text: string } {
-  const prefix = resaltada ? '⚠️ ' : '';
+  const prefix = resaltada ? '?? ' : '';
 
   if (diasRestantes < 0) {
     const dias = Math.abs(diasRestantes);
@@ -342,10 +342,10 @@ export function ServiciosProximosTable({
     try {
       // Load servicio data and métodos de pago in parallel
       const [servicioData, metodos] = await Promise.all([
-        getServicioById<Servicio>(notif.servicioId),
+        getServicioUseCase<Servicio>(notif.servicioId),
         metodosPagoServicio.length > 0
           ? Promise.resolve(metodosPagoServicio)
-          : queryMetodosPago<MetodoPago>([
+          : fetchMetodosPagoByFiltersUseCase<MetodoPago>([
               { field: 'asociadoA', operator: '==', value: 'servicio' },
             ]),
       ]);
@@ -430,7 +430,7 @@ export function ServiciosProximosTable({
           <SelectContent>
             <SelectItem value="todos">Todos los estados</SelectItem>
             <SelectItem value="vencidas">Vencidas</SelectItem>
-            <SelectItem value="proximas">Próximas (≤7 días)</SelectItem>
+            <SelectItem value="proximas">Próximas (=7 días)</SelectItem>
             <SelectItem value="normales">Normales (&gt;7 días)</SelectItem>
           </SelectContent>
         </Select>

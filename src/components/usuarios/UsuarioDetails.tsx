@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getCurrencySymbol } from "@/lib/constants";
 import { useVentasUsuario } from "@/hooks/use-ventas-usuario";
-import { queryServicios } from "@/lib/supabase/servicios-repository";
+import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { formatearFecha, formatearFechaHora } from "@/lib/utils/calculations";
 import { toast } from "sonner";
 import { useVentasStore } from "@/store/ventasStore";
@@ -111,7 +111,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
 
         const allServicios = await Promise.all(
           chunks.map((chunk) =>
-            queryServicios<Record<string, unknown>>([
+            fetchServiciosByFiltersUseCase<Record<string, unknown>>([
               { field: "__name__", operator: "in", value: chunk },
             ]),
           ),

@@ -30,9 +30,9 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
-import { getServicioById } from '@/lib/supabase/servicios-repository';
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
+import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas-use-cases';
 import {
   deleteServicioPagoUseCase,
   renewServicioUseCase,
@@ -124,7 +124,7 @@ function ServicioDetallePageContent() {
       setIsLoadingData(true);
       try {
         // 1. Cargar el servicio (categoriaNombre ya está denormalizado)
-        const servicioData = await getServicioById<Servicio>(id);
+        const servicioData = await getServicioUseCase<Servicio>(id);
         if (!servicioData) {
           toast.error('Servicio no encontrado', { description: 'No se encontró el servicio con el ID proporcionado.' });
           setServicio(null);
@@ -165,7 +165,7 @@ function ServicioDetallePageContent() {
       if (!id) return;
       try {
         // Fase 1: Cargar ventas base inmediatamente (clienteNombre ya está denormalizado en VentaDoc)
-        const ventasBase = await queryVentas<VentaDoc>([
+        const ventasBase = await fetchVentasByFiltersUseCase<VentaDoc>([
           { field: 'servicioId', operator: '==', value: id },
         ]);
 
@@ -251,7 +251,7 @@ function ServicioDetallePageContent() {
   const loadMetodosPagoIfNeeded = async () => {
     if (metodosPago.length > 0) return; // Ya están cargados
     try {
-      const methods = await queryMetodosPago<MetodoPago>([
+      const methods = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
         { field: 'asociadoA', operator: '==', value: 'servicio' }
       ]);
       setMetodosPago(methods);
