@@ -1,36 +1,19 @@
-﻿import { adjustCategoriaGastos, countServicios, createServicio, ENTITIES, getServicioById, getServicios, logCacheHit, queryServicios, removeServicio, updateServicio } from '@/lib/supabase/servicios-repository';
-import { queryPagosServicio, removePagoServicio } from '@/lib/supabase/servicios-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { countCategorias } from '@/lib/supabase/categorias-repository';
-import { adjustGastosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
-import { currencyService } from '@/lib/services/currencyService';
-import { syncServicioDependencias, resyncServiciosDenormalizedData } from '@/lib/services/servicioSyncService';
-import type { MetodoPago } from '@/types/metodos-pago';
+import { ENTITIES, getServicioById, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
+import {
+  createServicioUseCase,
+  deleteServicioUseCase,
+  fetchServiciosCountsUseCase,
+  resyncServicioReferenciasUseCase,
+  updateServicioUseCase,
+} from '@/lib/use-cases/servicios-use-cases';
+import { useActivityLogStore } from '@/store/activityLogStore';
+import { useAuthStore } from '@/store/authStore';
 import type { Servicio } from '@/types/servicios';
 import type { ServicioPronostico } from '@/types/dashboard';
 
-function toServicioPronostico(s: Servicio): ServicioPronostico | null {
-  if (!s.activo || s.enReposo || !s.fechaVencimiento || !s.cicloPago || s.costoServicio <= 0) return null;
-  return {
-    id: s.id,
-    fechaVencimiento: s.fechaVencimiento instanceof Date
-      ? s.fechaVencimiento.toISOString()
-      : String(s.fechaVencimiento),
-    cicloPago: s.cicloPago,
-    costoServicio: s.costoServicio,
-    moneda: s.moneda || 'USD',
-  };
-}
-import { crearPagoInicial } from '@/lib/services/pagosServicioService';
-import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
-
-// Helper para obtener contexto de usuario
 function getLogContext() {
   const user = useAuthStore.getState().user;
   return {
@@ -39,20 +22,46 @@ function getLogContext() {
   };
 }
 
+function syncServicioPronosticoLocal(servicioId: string, pronostico: ServicioPronostico | null | undefined) {
+  if (pronostico === undefined) return;
+
+  import('./dashboardStore').then(({ useDashboardStore }) => {
+    const store = useDashboardStore.getState();
+    const currentStats = store.stats;
+    if (!currentStats) return;
+
+    const existing = currentStats.serviciosPronostico ?? [];
+    const updated = pronostico
+      ? existing.some((servicio) => servicio.id === servicioId)
+        ? existing.map((servicio) => (servicio.id === servicioId ? pronostico : servicio))
+        : [...existing, pronostico]
+      : existing.filter((servicio) => servicio.id !== servicioId);
+
+    useDashboardStore.setState({
+      stats: { ...currentStats, serviciosPronostico: updated },
+    });
+    store.invalidateCache();
+  }).catch(() => {});
+}
+
+function dispatchServicioDeleted() {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem('servicio-deleted', Date.now().toString());
+  window.dispatchEvent(new Event('servicio-deleted'));
+}
+
 interface ServiciosState {
   servicios: Servicio[];
   isLoading: boolean;
   error: string | null;
   lastFetch: number | null;
-  lastCountsFetch: number | null; // Cache para fetchCounts
+  lastCountsFetch: number | null;
   selectedServicio: Servicio | null;
 
-  // Counts for metrics (free queries)
   totalServicios: number;
   serviciosActivos: number;
   totalCategoriasActivas: number;
 
-  // Actions
   fetchServicios: (force?: boolean) => Promise<void>;
   fetchCounts: (force?: boolean) => Promise<void>;
   createServicio: (servicio: Omit<Servicio, 'id' | 'createdAt' | 'updatedAt' | 'perfilesOcupados'>) => Promise<void>;
@@ -84,7 +93,7 @@ export const useServiciosStore = create<ServiciosState>()(
 
       fetchServicios: async (force = false) => {
         const { lastFetch } = get();
-        if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
+        if (!force && lastFetch && Date.now() - lastFetch < CACHE_TIMEOUT) {
           logCacheHit(ENTITIES.SERVICIOS);
           return;
         }
@@ -102,35 +111,15 @@ export const useServiciosStore = create<ServiciosState>()(
 
       fetchCounts: async (force = false) => {
         const { lastCountsFetch } = get();
-
-        // Cache de 5 minutos
-        if (!force && lastCountsFetch && (Date.now() - lastCountsFetch) < CACHE_TIMEOUT) {
+        if (!force && lastCountsFetch && Date.now() - lastCountsFetch < CACHE_TIMEOUT) {
           logCacheHit('servicios-counts');
           return;
         }
 
         try {
-          const [
-            totalServiciosRaw,
-            serviciosEnReposo,
-            serviciosActivosRaw,
-            serviciosEnReposoDocs,
-            totalCategoriasActivas
-          ] = await Promise.all([
-            countServicios([]),
-            countServicios([{ field: 'enReposo', operator: '==', value: true }]),
-            countServicios([{ field: 'activo', operator: '==', value: true }]),
-            queryServicios<Servicio>([{ field: 'enReposo', operator: '==', value: true }]),
-            countCategorias([{ field: 'activo', operator: '==', value: true }]),
-          ]);
-          const serviciosActivosEnReposo = serviciosEnReposoDocs.filter((s) => s.activo).length;
-          const totalServicios = Math.max(0, totalServiciosRaw - serviciosEnReposo);
-          const serviciosActivos = Math.max(0, serviciosActivosRaw - serviciosActivosEnReposo);
           set({
-            totalServicios,
-            serviciosActivos,
-            totalCategoriasActivas,
-            lastCountsFetch: Date.now()
+            ...(await fetchServiciosCountsUseCase()),
+            lastCountsFetch: Date.now(),
           });
         } catch (error) {
           console.error('Error fetching counts:', error);
@@ -140,94 +129,16 @@ export const useServiciosStore = create<ServiciosState>()(
 
       createServicio: async (servicioData) => {
         try {
-          // Obtener mÃƒÂ©todo de pago completo para denormalizar
-          let metodoPagoNombre: string | undefined;
-          let moneda: string | undefined;
-          if (servicioData.metodoPagoId) {
-            const metodoPago = await getMetodoPagoById<MetodoPago>(servicioData.metodoPagoId);
-            metodoPagoNombre = metodoPago?.nombre;
-            moneda = metodoPago?.moneda;
-          }
-
-          const id = await createServicio({
-            ...servicioData,
-            metodoPagoNombre,  // Denormalizado
-            moneda,            // Denormalizado
-            perfilesOcupados: 0,
-            gastosTotal: servicioData.costoServicio ?? 0,
+          const { servicio, pronostico } = await createServicioUseCase(servicioData, {
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          // Create initial PagoServicio record usando el servicio dedicado
-          await crearPagoInicial(
-            id,
-            servicioData.categoriaId,
-            servicioData.costoServicio ?? 0,
-            servicioData.metodoPagoId || '',
-            metodoPagoNombre || '',
-            moneda || 'USD',
-            servicioData.cicloPago ?? 'mensual',
-            servicioData.fechaInicio ?? new Date(),
-            servicioData.fechaVencimiento ?? new Date(),
-            servicioData.notas
-          );
-          // Los contadores de categoria se derivan en Supabase con vistas/triggers.
-          // Denormalizar gasto inicial en la categorÃƒÂ­a (convertido a USD)
-          if (servicioData.costoServicio) {
-            const costoUSD = await currencyService.convertToUSD(servicioData.costoServicio, moneda ?? 'USD');
-            await adjustCategoriaGastos(servicioData.categoriaId, costoUSD);
-          }
-
-          // Actualizar estadÃƒÂ­sticas del dashboard (non-blocking)
-          adjustGastosStats({
-            delta: servicioData.costoServicio ?? 0,
-            moneda: moneda ?? 'USD',
-            mes: getMesKeyFromDate(servicioData.fechaInicio ?? new Date()),
-            dia: getDiaKeyFromDate(servicioData.fechaInicio ?? new Date()),
-            categoriaId: servicioData.categoriaId,
-            categoriaNombre: servicioData.categoriaNombre,
-          }).catch((err) => console.error('[ServiciosStore] Error updating dashboard gastos:', err));
-
-          const newServicio: Servicio = {
-            ...servicioData,
-            id,
-            perfilesOcupados: 0,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          } as Servicio;
-
           set((state) => ({
-            servicios: [...state.servicios, newServicio],
-            error: null
+            servicios: [...state.servicios, servicio],
+            error: null,
           }));
-
-          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Supabase en background
-          const servicioPronostico = toServicioPronostico(newServicio);
-          if (servicioPronostico) {
-            import('./dashboardStore').then(({ useDashboardStore }) => {
-              const currentStats = useDashboardStore.getState().stats;
-              if (currentStats) {
-                const existing = currentStats.serviciosPronostico ?? [];
-                const updated = [...existing.filter(s => s.id !== newServicio.id), servicioPronostico];
-                useDashboardStore.setState({
-                  stats: { ...currentStats, serviciosPronostico: updated },
-                });
-              }
-            }).catch(() => {});
-            upsertServicioPronostico(servicioPronostico, newServicio.id).catch((err) => console.error('[ServiciosStore] Error upserting pronostico:', err));
-          }
-
-          // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'creacion',
-            entidad: 'servicio',
-            entidadId: id,
-            entidadNombre: `${servicioData.nombre} [${servicioData.correo}]`,
-            detalles: `Servicio creado: "${servicioData.nombre}" [${servicioData.correo}] (${servicioData.tipo}) Ã¢â‚¬â€ $${servicioData.costoServicio ?? 0} ${moneda ?? 'USD'} (${servicioData.cicloPago ?? 'mensual'})`,
-          }).catch(() => {});
-
-          // Ã¢Å“â€¦ Sync notifications for this new service (non-blocking)
-          sincronizarUnServicio(id).catch(() => {});
+          syncServicioPronosticoLocal(servicio.id, pronostico);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear servicio';
           set({ error: errorMessage });
@@ -238,109 +149,21 @@ export const useServiciosStore = create<ServiciosState>()(
 
       updateServicio: async (id, updates) => {
         try {
-          // Obtener el servicio directamente de Supabase (no del store local)
-          const servicio = await getServicioById<Servicio>(id);
-          if (!servicio) throw new Error('Servicio not found');
-
-          let finalUpdates = { ...updates };
-
-          // Si cambia metodoPagoId, actualizar campos denormalizados
-          if (updates.metodoPagoId !== undefined) {
-            const metodoPago = updates.metodoPagoId
-              ? await getMetodoPagoById<MetodoPago>(updates.metodoPagoId)
-              : null;
-
-            finalUpdates = {
-              ...finalUpdates,
-              metodoPagoNombre: metodoPago?.nombre,
-              moneda: metodoPago?.moneda,
-            };
-          }
-
-          await updateServicio(id, finalUpdates);
-          // Los contadores de categoria se derivan desde Supabase.
-
-          const servicioActualizado = {
-            ...servicio,
-            ...finalUpdates,
-          } as Servicio;
-
-          await syncServicioDependencias(
-            {
-              id: servicio.id,
-              nombre: servicio.nombre,
-              correo: servicio.correo,
-              contrasena: servicio.contrasena,
-              categoriaId: servicio.categoriaId,
-              categoriaNombre: servicio.categoriaNombre,
-            },
-            {
-              id: servicioActualizado.id,
-              nombre: servicioActualizado.nombre,
-              correo: servicioActualizado.correo,
-              contrasena: servicioActualizado.contrasena,
-              categoriaId: servicioActualizado.categoriaId,
-              categoriaNombre: servicioActualizado.categoriaNombre,
-            }
-          );
-
-          // Sync dashboard forecast when activo/enReposo changes
-          if (
-            (updates.activo !== undefined && updates.activo !== servicio.activo) ||
-            (updates.enReposo !== undefined && updates.enReposo !== servicio.enReposo)
-          ) {
-            const servicioPronostico = toServicioPronostico(servicioActualizado);
-
-            // Update local dashboard state immediately + invalidate cache
-            import('./dashboardStore').then(({ useDashboardStore }) => {
-              const store = useDashboardStore.getState();
-              const currentStats = store.stats;
-              if (currentStats) {
-                const existing = currentStats.serviciosPronostico ?? [];
-                const updated = servicioPronostico
-                  ? existing.some(s => s.id === id)
-                    ? existing.map(s => s.id === id ? servicioPronostico : s)
-                    : [...existing, servicioPronostico]
-                  : existing.filter(s => s.id !== id);
-                useDashboardStore.setState({
-                  stats: { ...currentStats, serviciosPronostico: updated },
-                });
-              }
-              store.invalidateCache();
-            }).catch(() => {});
-
-            upsertServicioPronostico(servicioPronostico, id).catch(() => {});
-          }
-
-          // Detectar cambios para el log
-          const cambios = detectarCambios('servicio', servicio, {
-            ...servicio,
-            ...finalUpdates
+          const { servicioActualizado, pronostico } = await updateServicioUseCase(id, updates, {
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
           set((state) => ({
-            servicios: state.servicios.map((s) =>
-              s.id === id
-                ? { ...s, ...finalUpdates, updatedAt: new Date() }
-                : s
+            servicios: state.servicios.map((servicio) =>
+              servicio.id === id ? servicioActualizado : servicio
             ),
             selectedServicio:
-              state.selectedServicio?.id === id
-                ? { ...state.selectedServicio, ...finalUpdates, updatedAt: new Date() }
-                : state.selectedServicio,
-            error: null
+              state.selectedServicio?.id === id ? servicioActualizado : state.selectedServicio,
+            error: null,
           }));
 
-          // Registrar en log de actividad con cambios
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'actualizacion',
-            entidad: 'servicio',
-            entidadId: id,
-            entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
-            detalles: `Servicio actualizado: "${servicio.nombre}" [${servicio.correo}]`,
-            cambios: cambios.length > 0 ? cambios : undefined,
-          }).catch(() => {});
+          syncServicioPronosticoLocal(id, pronostico);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar servicio';
           set({ error: errorMessage });
@@ -350,95 +173,31 @@ export const useServiciosStore = create<ServiciosState>()(
       },
 
       deleteServicio: async (id, deletePayments = false) => {
+        const currentServicios = get().servicios;
+        set((state) => ({
+          servicios: state.servicios.filter((servicio) => servicio.id !== id),
+        }));
+
         try {
-          // Obtener el servicio directamente de Supabase (no del store local)
-          const servicio = await getServicioById<Servicio>(id);
-          if (!servicio) throw new Error('Servicio not found');
+          await deleteServicioUseCase(id, {
+            deletePayments,
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
+          });
 
-          // Optimistic update del store local (si existe)
-          set((state) => ({
-            servicios: state.servicios.filter((s) => s.id !== id)
-          }));
-
-          // Calcular gastosTotal real desde pagos antes de eliminarlos
-          // (el valor denormalizado puede estar desincronizado si el usuario borrÃƒÂ³ pagos individualmente)
-          let gastosRealUSD = 0;
-          {
-            const pagosActuales = await queryPagosServicio<{ id: string; monto: number; moneda?: string }>([
-              { field: 'servicioId', operator: '==', value: id },
-            ]);
-            const conversiones = pagosActuales.map(async (p) => {
-              const usd = await currencyService.convertToUSD(p.monto, p.moneda ?? 'USD');
-              gastosRealUSD += usd;
-            });
-            await Promise.all(conversiones);
-
-            // Si se solicita, eliminar todos los pagos del servicio
-            if (deletePayments) {
-              await Promise.all(pagosActuales.map((pago) => removePagoServicio(pago.id)));
-            }
-          }
-
-          // Eliminar el servicio de Supabase
-          await removeServicio(id);
-          // Los contadores de categoria se derivan desde Supabase.
-          // Restar el gastosTotal REAL (recalculado desde pagos) de la categorÃƒÂ­a
-          if (gastosRealUSD > 0) {
-            await adjustCategoriaGastos(servicio.categoriaId, -gastosRealUSD);
-          }
-
-          // Restar de estadÃƒÂ­sticas del dashboard (non-blocking)
-          if (servicio.costoServicio) {
-            adjustGastosStats({
-              delta: -(servicio.costoServicio),
-              moneda: servicio.moneda ?? 'USD',
-              mes: getMesKeyFromDate(servicio.fechaInicio ?? new Date()),
-              dia: getDiaKeyFromDate(servicio.fechaInicio ?? new Date()),
-              categoriaId: servicio.categoriaId,
-              categoriaNombre: servicio.categoriaNombre,
-            }).catch((err) => console.error('[ServiciosStore] Error reverting dashboard gastos:', err));
-          }
-
-          // Eliminar notificaciones asociadas a este servicio
           try {
             const { useNotificacionesStore } = await import('./notificacionesStore');
             await useNotificacionesStore.getState().deleteNotificacionesPorServicio(id);
           } catch {
-            // Notifications cleanup is best-effort, don't fail the delete
+            // Notifications cleanup is best-effort.
           }
 
-          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Supabase en background
-          import('./dashboardStore').then(({ useDashboardStore }) => {
-            const currentStats = useDashboardStore.getState().stats;
-            if (currentStats) {
-              const updated = (currentStats.serviciosPronostico ?? []).filter(s => s.id !== id);
-              useDashboardStore.setState({
-                stats: { ...currentStats, serviciosPronostico: updated },
-              });
-            }
-          }).catch(() => {});
-          upsertServicioPronostico(null, id).catch((err) => console.error('[ServiciosStore] Error removing pronostico:', err));
-
-          // Notificar a otras pÃƒÂ¡ginas que se eliminÃƒÂ³ un servicio
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('servicio-deleted', Date.now().toString());
-            window.dispatchEvent(new Event('servicio-deleted'));
-          }
-
+          syncServicioPronosticoLocal(id, null);
+          dispatchServicioDeleted();
           set({ error: null });
-
-          // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'eliminacion',
-            entidad: 'servicio',
-            entidadId: id,
-            entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
-            detalles: `Servicio eliminado: "${servicio.nombre}" (${servicio.correo})`,
-          }).catch(() => {});
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar servicio';
-          set({ error: errorMessage });
+          set({ servicios: currentServicios, error: errorMessage });
           console.error('Error deleting servicio:', error);
           throw error;
         }
@@ -471,11 +230,9 @@ export const useServiciosStore = create<ServiciosState>()(
         const delta = shouldIncrement ? 1 : -1;
 
         try {
-          // Obtener servicio de Supabase si no estÃƒÂ¡ en el store
-          let servicio = get().servicios.find((s) => s.id === id);
+          let servicio = get().servicios.find((item) => item.id === id);
 
           if (!servicio) {
-            // Si no estÃƒÂ¡ en el store, obtenerlo de Supabase
             const servicioDoc = await getServicioById<Servicio>(id);
             if (!servicioDoc) {
               console.error('Servicio not found in Supabase for updatePerfilOcupado');
@@ -484,25 +241,21 @@ export const useServiciosStore = create<ServiciosState>()(
             servicio = servicioDoc;
           }
 
-          // Actualizar en el store local si existe
-          if (get().servicios.find((s) => s.id === id)) {
+          if (get().servicios.find((item) => item.id === id)) {
             set((state) => ({
-              servicios: state.servicios.map((s) =>
-                s.id === id
-                  ? { ...s, perfilesOcupados: Math.max(0, s.perfilesOcupados + delta), updatedAt: new Date() }
-                  : s
+              servicios: state.servicios.map((item) =>
+                item.id === id
+                  ? { ...item, perfilesOcupados: Math.max(0, item.perfilesOcupados + delta), updatedAt: new Date() }
+                  : item
               ),
             }));
           }
-
-          // En Supabase perfiles_ocupados se mantiene por trigger desde ventas activas.
         } catch (error) {
           console.error('Error updating perfil ocupado:', error);
-          // Rollback local si existe en el store
-          if (get().servicios.find((s) => s.id === id)) {
+          if (get().servicios.find((item) => item.id === id)) {
             set((state) => ({
-              servicios: state.servicios.map((s) =>
-                s.id === id ? { ...s, perfilesOcupados: Math.max(0, s.perfilesOcupados - delta) } : s
+              servicios: state.servicios.map((item) =>
+                item.id === id ? { ...item, perfilesOcupados: Math.max(0, item.perfilesOcupados - delta) } : item
               ),
             }));
           }
@@ -510,17 +263,14 @@ export const useServiciosStore = create<ServiciosState>()(
       },
 
       resyncPerfilesDisponiblesTotal: async () => {
-        // perfiles_ocupados is maintained by the SQL trigger recalc_perfiles_ocupados.
-        // No client-side recompute needed; a store refresh picks up the current value.
         await get().fetchServicios(true);
         return { categoriasActualizadas: 0, serviciosCorregidos: 0 };
       },
 
       resyncServicioReferencias: async () => {
-        return await resyncServiciosDenormalizedData();
+        return resyncServicioReferenciasUseCase();
       },
     }),
     { name: 'servicios-store' }
   )
 );
-

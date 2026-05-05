@@ -1,39 +1,47 @@
-﻿import { adjustCategoriaSuscripciones, adjustServiciosActivos, countVentas, createPagoVenta, createVenta, ENTITIES, getVentaById, getVentas, logCacheHit, queryPagosVenta, removePagoVenta, removeVenta, updateVenta } from '@/lib/supabase/ventas-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
+import { countVentas, ENTITIES, getVentas, logCacheHit } from '@/lib/supabase/ventas-repository';
+import {
+  createVentaUseCase,
+  deleteVentaUseCase,
+  updateVentaUseCase,
+} from '@/lib/use-cases/ventas-use-cases';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
-import { format } from 'date-fns';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { sincronizarUnaVenta } from '@/lib/services/notificationSyncService';
-import { adjustIngresosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertVentaPronostico } from '@/lib/services/dashboardStatsService';
+import type { VentaDoc } from '@/types';
 import type { VentaPronostico } from '@/types/dashboard';
-import { currencyService } from '@/lib/services/currencyService';
-import { toast } from 'sonner';
-import type { MetodoPago, PagoVenta, VentaDoc } from '@/types';
 
-function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
-  if (v.estado === 'inactivo' || !v.fechaFin || !v.cicloPago) return null;
-  return {
-    id: v.id,
-    categoriaId: v.categoriaId ?? '',
-    fechaInicio: v.fechaInicio instanceof Date ? format(v.fechaInicio, "yyyy-MM-dd'T'HH:mm:ss") : String(v.fechaInicio ?? new Date()),
-    fechaFin: v.fechaFin instanceof Date ? format(v.fechaFin, "yyyy-MM-dd'T'HH:mm:ss") : String(v.fechaFin),
-    cicloPago: v.cicloPago,
-    precioFinal: v.precio || v.precioFinal || 0,
-    moneda: v.moneda || 'USD',
-  };
-}
-
-// Helper para obtener contexto de usuario
 function getLogContext() {
   const user = useAuthStore.getState().user;
   return {
     usuarioId: user?.id ?? 'sistema',
     usuarioEmail: user?.email ?? 'sistema',
   };
+}
+
+function syncVentaPronosticoLocal(ventaId: string, pronostico: VentaPronostico | null) {
+  import('./dashboardStore').then(({ useDashboardStore }) => {
+    const currentStats = useDashboardStore.getState().stats;
+    if (!currentStats) return;
+
+    const existing = currentStats.ventasPronostico ?? [];
+    const updated = pronostico
+      ? existing.some((venta) => venta.id === ventaId)
+        ? existing.map((venta) => (venta.id === ventaId ? pronostico : venta))
+        : [...existing, pronostico]
+      : existing.filter((venta) => venta.id !== ventaId);
+
+    useDashboardStore.setState({
+      stats: { ...currentStats, ventasPronostico: updated },
+    });
+  }).catch(() => {});
+}
+
+function dispatchVentaEvent(name: 'venta-created' | 'venta-updated' | 'venta-deleted') {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(name, Date.now().toString());
+  window.dispatchEvent(new Event(name));
 }
 
 interface VentasState {
@@ -43,12 +51,10 @@ interface VentasState {
   lastFetch: number | null;
   selectedVenta: VentaDoc | null;
 
-  // Counts for metrics (free queries)
   totalVentas: number;
   ventasActivas: number;
   ventasInactivas: number;
 
-  // Actions
   fetchVentas: (force?: boolean) => Promise<void>;
   fetchCounts: () => Promise<void>;
   createVenta: (venta: Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -59,7 +65,7 @@ interface VentasState {
   getVentasByEstado: (estado: 'activo' | 'inactivo') => VentaDoc[];
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const CACHE_TIMEOUT = 5 * 60 * 1000;
 
 export const useVentasStore = create<VentasState>()(
   devtools(
@@ -75,7 +81,7 @@ export const useVentasStore = create<VentasState>()(
 
       fetchVentas: async (force = false) => {
         const { lastFetch } = get();
-        if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
+        if (!force && lastFetch && Date.now() - lastFetch < CACHE_TIMEOUT) {
           logCacheHit(ENTITIES.VENTAS);
           return;
         }
@@ -107,110 +113,18 @@ export const useVentasStore = create<VentasState>()(
 
       createVenta: async (ventaData) => {
         try {
-          // Extraer solo el campo pagos que NO va en VentaDoc
-          const {
-            pagos,
-            ...ventaDataLimpia
-          } = ventaData;
-
-          // Paso 1: Crear la venta CON todos los campos denormalizados necesarios para notificaciones
-          // Incluye: fechaInicio, fechaFin, cicloPago, precio, descuento, precioFinal, metodoPagoId, metodoPagoNombre, moneda
-          const ventaDocData = {
-            ...ventaDataLimpia,
-          };
-
-          const ventaId = await createVenta(ventaDocData);
-
-          // Paso 2: Crear el pago inicial en la colecciÃƒÂ³n separada (fuente de verdad)
-          if (pagos && pagos.length > 0) {
-            const pagoInicial = pagos[0];
-            await createPagoVenta({
-              ventaId,
-              clienteId: ventaData.clienteId || '',
-              clienteNombre: ventaData.clienteNombre,
-              categoriaId: ventaData.categoriaId,  // Denormalizado para queries
-              fecha: pagoInicial.fecha || new Date(),
-              monto: pagoInicial.total || ventaData.precioFinal,
-              precio: ventaData.precio,                         // Precio original
-              descuento: ventaData.descuento,                   // Porcentaje de descuento
-              metodoPagoId: ventaData.metodoPagoId,             // Denormalizado
-              metodoPago: ventaData.metodoPagoNombre,
-              moneda: ventaData.moneda,                         // Denormalizado
-              notas: pagoInicial.notas ?? '',
-              isPagoInicial: true,
-              cicloPago: ventaData.cicloPago,
-              fechaInicio: ventaData.fechaInicio,
-              fechaVencimiento: ventaData.fechaFin,
-            });
-          }
-
-          const newVenta: VentaDoc = {
-            ...ventaDataLimpia,
-            id: ventaId,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
+          const { venta, pronostico } = await createVentaUseCase(ventaData, {
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
+          });
 
           set((state) => ({
-            ventas: [...state.ventas, newVenta]
+            ventas: [...state.ventas, venta],
+            error: null,
           }));
 
-          // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'creacion',
-            entidad: 'venta',
-            entidadId: ventaId,
-            entidadNombre: `${ventaData.clienteNombre} Ã¢â‚¬â€ ${ventaData.servicioNombre}`,
-            detalles: `Venta creada: ${ventaData.clienteNombre} / ${ventaData.servicioNombre} Ã¢â‚¬â€ $${ventaData.precioFinal ?? 0} ${ventaData.moneda ?? 'USD'} Ã¢â‚¬â€ ${format(ventaData.fechaInicio ?? new Date(), 'dd/MM/yyyy')} al ${format(ventaData.fechaFin ?? new Date(), 'dd/MM/yyyy')} (${ventaData.cicloPago})`,
-          }).catch(() => {});
-
-          // Actualizar contadores de la categorÃƒÂ­a (convertir precio a USD)
-          if (ventaDataLimpia.categoriaId && ventaData.precioFinal) {
-            const precioFinalUSD = await currencyService.convertToUSD(ventaData.precioFinal, ventaData.moneda ?? 'USD');
-            await adjustCategoriaSuscripciones(ventaDataLimpia.categoriaId, 1, precioFinalUSD);
-          }
-
-          // Actualizar estadÃƒÂ­sticas del dashboard (non-blocking)
-          adjustIngresosStats({
-            delta: ventaData.precioFinal ?? 0,
-            moneda: ventaData.moneda ?? 'USD',
-            mes: getMesKeyFromDate(ventaData.fechaInicio ?? new Date()),
-            dia: getDiaKeyFromDate(ventaData.fechaInicio ?? new Date()),
-            categoriaId: ventaData.categoriaId ?? '',
-            categoriaNombre: ventaData.categoriaNombre ?? '',
-          }).catch((err) => console.error('[VentasStore] Error updating dashboard ingresos:', err));
-
-          // Actualizar dashboard store local INMEDIATAMENTE + upsert a Supabase en background
-          const ventaPronostico = toVentaPronostico(newVenta);
-          if (ventaPronostico) {
-            // 1. Actualizar estado local del dashboard de inmediato (antes de que el usuario navegue)
-            import('./dashboardStore').then(({ useDashboardStore }) => {
-              const currentStats = useDashboardStore.getState().stats;
-              if (currentStats) {
-                const existing = currentStats.ventasPronostico ?? [];
-                const updated = [...existing.filter(v => v.id !== newVenta.id), ventaPronostico];
-                useDashboardStore.setState({
-                  stats: { ...currentStats, ventasPronostico: updated },
-                });
-              }
-            }).catch(() => {});
-
-            // 2. Persistir a Supabase en background (non-blocking)
-            upsertVentaPronostico(ventaPronostico, newVenta.id).catch((err) => {
-              console.error('[VentasStore] Error upserting pronostico:', err);
-              toast.warning('El pronÃƒÂ³stico del dashboard puede estar desactualizado', { duration: 4000 });
-            });
-          }
-
-          // Dispatch event for cross-component updates
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('venta-created', Date.now().toString());
-            window.dispatchEvent(new Event('venta-created'));
-          }
-
-          // Ã¢Å“â€¦ Sync notifications for this new venta (non-blocking)
-          sincronizarUnaVenta(ventaId).catch(() => {});
+          syncVentaPronosticoLocal(venta.id, pronostico);
+          dispatchVentaEvent('venta-created');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear venta';
           set({ error: errorMessage });
@@ -221,154 +135,31 @@ export const useVentasStore = create<VentasState>()(
 
       updateVenta: async (id, updates) => {
         try {
-          // Obtener la venta actual para comparar valores
-          const ventaActual = get().ventas.find(v => v.id === id);
-          if (!ventaActual) {
-            const ventaDoc = await getVentaById<VentaDoc>(id);
-            if (!ventaDoc) throw new Error('Venta no encontrada');
+          const currentVenta = get().ventas.find((venta) => venta.id === id);
+          const { ventaActualizada, pronostico, serviceProfileDelta } = await updateVentaUseCase(id, updates, {
+            currentVenta,
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
+          });
+
+          if (serviceProfileDelta) {
+            const { useServiciosStore } = await import('./serviciosStore');
+            await useServiciosStore
+              .getState()
+              .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
           }
-
-          let finalUpdates = { ...updates };
-
-          // Si cambia metodoPagoId, actualizar campos denormalizados
-          if (updates.metodoPagoId !== undefined) {
-            const metodoPago = updates.metodoPagoId
-              ? await getMetodoPagoById<MetodoPago>(updates.metodoPagoId)
-              : null;
-
-            finalUpdates = {
-              ...finalUpdates,
-              metodoPagoNombre: metodoPago?.nombre,
-              moneda: metodoPago?.moneda,
-            };
-          }
-
-          await updateVenta(id, finalUpdates);
-
-          // Actualizar contadores de categorÃƒÂ­a y usuario si cambiÃƒÂ³ el estado, precio o la categorÃƒÂ­a
-          const ventaAnterior = ventaActual || await getVentaById<VentaDoc>(id);
-          if (ventaAnterior) {
-            const precioAnterior = ventaAnterior.precioFinal || 0;
-            const precioNuevo = updates.precioFinal !== undefined ? updates.precioFinal : precioAnterior;
-            const categoriaAnterior = ventaAnterior.categoriaId;
-            const categoriaNueva = updates.categoriaId || categoriaAnterior;
-            const estadoAnterior = ventaAnterior.estado || 'activo';
-            const estadoNuevo = updates.estado || estadoAnterior;
-
-            // 1. Sincronizar serviciosActivos del USUARIO si cambiÃƒÂ³ el estado
-            if (updates.estado !== undefined && estadoAnterior !== estadoNuevo) {
-              const clienteId = ventaAnterior.clienteId;
-              if (clienteId) {
-                if (estadoNuevo === 'inactivo') {
-                  // PasÃƒÂ³ de activo a inactivo -> restar 1
-                  await adjustServiciosActivos(clienteId, -1);
-                } else if (estadoAnterior === 'inactivo') {
-                  // PasÃƒÂ³ de inactivo a activo -> sumar 1
-                  await adjustServiciosActivos(clienteId, 1);
-                }
-              }
-            }
-
-            // 2. Sincronizar perfilesOcupados del SERVICIO si cambiÃƒÂ³ el estado
-            if (updates.estado !== undefined && estadoAnterior !== estadoNuevo && ventaAnterior.servicioId) {
-              // NOTE: Dynamic import is intentional to avoid a circular module dependency.
-              // serviciosStore Ã¢â€ â€™ (via syncServicioDependencias) Ã¢â€ â€™ ventasStore creates a cycle.
-              // Lazy import breaks this cycle by deferring resolution until runtime.
-              const { useServiciosStore } = await import('./serviciosStore');
-              if (estadoNuevo === 'inactivo') {
-                await useServiciosStore.getState().updatePerfilOcupado(ventaAnterior.servicioId, false);
-              } else if (estadoAnterior === 'inactivo') {
-                await useServiciosStore.getState().updatePerfilOcupado(ventaAnterior.servicioId, true);
-              }
-            }
-
-            // 3. Sincronizar contadores de la CATEGORÃƒÂA
-            if (updates.categoriaId && categoriaAnterior !== categoriaNueva) {
-              // Si cambiÃƒÂ³ la categorÃƒÂ­a: restar de la anterior y sumar a la nueva
-              if (categoriaAnterior) {
-                const precioUSD = await currencyService.convertToUSD(precioAnterior, ventaAnterior.moneda ?? 'USD');
-                await adjustCategoriaSuscripciones(categoriaAnterior, -1, -precioUSD);
-              }
-              if (categoriaNueva) {
-                const precioUSD = await currencyService.convertToUSD(precioNuevo, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
-                await adjustCategoriaSuscripciones(categoriaNueva, 1, precioUSD);
-              }
-            } else if (estadoAnterior !== estadoNuevo) {
-              // Si cambiÃƒÂ³ el estado (misma categorÃƒÂ­a): sumar/restar 1 venta e ingresos
-              if (categoriaAnterior) {
-                const precioUSD = await currencyService.convertToUSD(precioNuevo, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
-                const delta = estadoNuevo === 'inactivo' ? -1 : 1;
-                await adjustCategoriaSuscripciones(categoriaAnterior, delta, delta * precioUSD);
-              }
-            } else if (updates.precioFinal !== undefined && precioAnterior !== precioNuevo) {
-              // Si solo cambiÃƒÂ³ el precio (misma categorÃƒÂ­a, mismo estado): ajustar solo ingresos
-              const diffOriginal = precioNuevo - precioAnterior;
-              const diffUSD = await currencyService.convertToUSD(diffOriginal, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
-              if (categoriaAnterior && diffUSD !== 0) {
-                await adjustCategoriaSuscripciones(categoriaAnterior, 0, diffUSD);
-              }
-            }
-          }
-
-          // Detectar cambios para el log
-          const cambios = ventaAnterior ? detectarCambios('venta', ventaAnterior, {
-            ...ventaAnterior,
-            ...finalUpdates
-          }) : [];
 
           set((state) => ({
             ventas: state.ventas.map((venta) =>
-              venta.id === id
-                ? { ...venta, ...finalUpdates, updatedAt: new Date() }
-                : venta
-            )
+              venta.id === id ? ventaActualizada : venta
+            ),
+            selectedVenta:
+              state.selectedVenta?.id === id ? ventaActualizada : state.selectedVenta,
+            error: null,
           }));
 
-          // Registrar en log de actividad con cambios
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'actualizacion',
-            entidad: 'venta',
-            entidadId: id,
-            entidadNombre: (ventaAnterior?.clienteNombre && ventaAnterior?.servicioNombre)
-              ? `${ventaAnterior.clienteNombre} Ã¢â‚¬â€ ${ventaAnterior.servicioNombre}`
-              : '',
-            detalles: `Venta actualizada: ${ventaAnterior?.clienteNombre ?? 'Ã¢â‚¬â€'} / ${ventaAnterior?.servicioNombre ?? 'Ã¢â‚¬â€'}`,
-            cambios: cambios.length > 0 ? cambios : undefined,
-          }).catch(() => {});
-
-          // Actualizar dashboard store local INMEDIATAMENTE + upsert a Supabase en background
-          const ventaActualizada = get().ventas.find((v) => v.id === id);
-          if (ventaActualizada) {
-            const ventaPronostico = toVentaPronostico(ventaActualizada);
-            // 1. Actualizar estado local del dashboard de inmediato
-            import('./dashboardStore').then(({ useDashboardStore }) => {
-              const currentStats = useDashboardStore.getState().stats;
-              if (currentStats) {
-                const existing = currentStats.ventasPronostico ?? [];
-                const updated = ventaPronostico
-                  ? existing.some(v => v.id === id)
-                    ? existing.map(v => v.id === id ? ventaPronostico : v)
-                    : [...existing, ventaPronostico]
-                  : existing.filter(v => v.id !== id);
-                useDashboardStore.setState({
-                  stats: { ...currentStats, ventasPronostico: updated },
-                });
-              }
-            }).catch(() => {});
-
-            // 2. Persistir a Supabase en background (non-blocking)
-            upsertVentaPronostico(ventaPronostico, id).catch((err) => {
-              console.error('[VentasStore] Error upserting pronostico:', err);
-              toast.warning('El pronÃƒÂ³stico del dashboard puede estar desactualizado', { duration: 4000 });
-            });
-          }
-
-          // Dispatch event for cross-component updates
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('venta-updated', Date.now().toString());
-            window.dispatchEvent(new Event('venta-updated'));
-          }
+          syncVentaPronosticoLocal(id, pronostico);
+          dispatchVentaEvent('venta-updated');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar venta';
           set({ error: errorMessage });
@@ -378,113 +169,41 @@ export const useVentasStore = create<VentasState>()(
       },
 
       deleteVenta: async (id, servicioId?, perfilNumero?, deletePagos = false) => {
-        // Save current state for rollback
         const currentVentas = get().ventas;
+        const venta = currentVentas.find((item) => item.id === id);
 
-        // Buscar la venta en memoria primero, si no estÃƒÂ¡, buscar en Supabase
-        let ventaEliminada = currentVentas.find(v => v.id === id);
-        if (!ventaEliminada) {
-          // La pÃƒÂ¡gina de ventas usa paginaciÃƒÂ³n, el store puede no tener la venta cargada
-          const ventaDoc = await getVentaById<VentaDoc>(id);
-          if (ventaDoc) {
-            ventaEliminada = ventaDoc;
-          }
-        }
-
-        // Optimistic update
         set((state) => ({
-          ventas: state.ventas.filter((venta) => venta.id !== id)
+          ventas: state.ventas.filter((item) => item.id !== id),
         }));
 
         try {
-          // Si se solicita eliminar pagos, eliminar primero todos los PagoVenta asociados
-          if (deletePagos) {
-            const pagos = await queryPagosVenta<PagoVenta>([
-              { field: 'ventaId', operator: '==', value: id }
-            ]);
+          const { serviceProfileDelta } = await deleteVentaUseCase(id, {
+            venta,
+            servicioId,
+            perfilNumero,
+            deletePagos,
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
+          });
 
-            // Eliminar todos los pagos en paralelo
-            await Promise.all(
-              pagos.map(pago => removePagoVenta(pago.id))
-            );
-          }
-
-          // Eliminar la venta
-          await removeVenta(id);
-
-          // Update service profile occupancy if applicable
-          if (servicioId && perfilNumero) {
+          if (serviceProfileDelta) {
             const { useServiciosStore } = await import('./serviciosStore');
-            await useServiciosStore.getState().updatePerfilOcupado(servicioId, false);
+            await useServiciosStore
+              .getState()
+              .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
           }
 
-          // Decrementar serviciosActivos si la venta eliminada era activa
-          if (ventaEliminada?.clienteId && (ventaEliminada.estado ?? 'activo') !== 'inactivo') {
-            await adjustServiciosActivos(ventaEliminada.clienteId, -1);
-          }
-
-          // Decrementar contadores de la categorÃƒÂ­a (convertir precio a USD)
-          if (ventaEliminada?.categoriaId && ventaEliminada?.precioFinal) {
-            const precioFinalUSD = await currencyService.convertToUSD(ventaEliminada.precioFinal, ventaEliminada.moneda ?? 'USD');
-            await adjustCategoriaSuscripciones(
-              ventaEliminada.categoriaId,
-              -1,
-              -precioFinalUSD
-            );
-          }
-
-          // Restar de estadÃƒÂ­sticas del dashboard (non-blocking)
-          if (ventaEliminada?.precioFinal) {
-            adjustIngresosStats({
-              delta: -(ventaEliminada.precioFinal),
-              moneda: ventaEliminada.moneda ?? 'USD',
-              mes: getMesKeyFromDate(ventaEliminada.fechaInicio ?? new Date()),
-              dia: getDiaKeyFromDate(ventaEliminada.fechaInicio ?? new Date()),
-              categoriaId: ventaEliminada.categoriaId ?? '',
-              categoriaNombre: ventaEliminada.categoriaNombre ?? '',
-            }).catch((err) => console.error('[VentasStore] Error reverting dashboard ingresos:', err));
-          }
-
-          // Eliminar notificaciones asociadas a esta venta
           try {
             const { useNotificacionesStore } = await import('./notificacionesStore');
             await useNotificacionesStore.getState().deleteNotificacionesPorVenta(id);
           } catch {
-            // Notifications cleanup is best-effort, don't fail the delete
+            // Notifications cleanup is best-effort.
           }
 
-          // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'eliminacion',
-            entidad: 'venta',
-            entidadId: id,
-            entidadNombre: `${ventaEliminada?.clienteNombre ?? ''} Ã¢â‚¬â€ ${ventaEliminada?.servicioNombre ?? ''}`,
-            detalles: `Venta eliminada: ${ventaEliminada?.clienteNombre} / ${ventaEliminada?.servicioNombre}`,
-          }).catch(() => {});
-
-          // Actualizar dashboard store local INMEDIATAMENTE + persistir a Supabase en background
-          import('./dashboardStore').then(({ useDashboardStore }) => {
-            const currentStats = useDashboardStore.getState().stats;
-            if (currentStats) {
-              const updated = (currentStats.ventasPronostico ?? []).filter(v => v.id !== id);
-              useDashboardStore.setState({
-                stats: { ...currentStats, ventasPronostico: updated },
-              });
-            }
-          }).catch(() => {});
-          upsertVentaPronostico(null, id).catch((err) => {
-            console.error('[VentasStore] Error removing pronostico:', err);
-            toast.warning('El pronÃƒÂ³stico del dashboard puede estar desactualizado', { duration: 4000 });
-          });
-
-          // Notificar que se eliminÃƒÂ³ una venta
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('venta-deleted', Date.now().toString());
-            window.dispatchEvent(new Event('venta-deleted'));
-          }
+          syncVentaPronosticoLocal(id, null);
+          dispatchVentaEvent('venta-deleted');
+          set({ error: null });
         } catch (error) {
-          // Rollback on error
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar venta';
           set({ ventas: currentVentas, error: errorMessage });
           console.error('Error deleting venta:', error);
@@ -501,10 +220,10 @@ export const useVentasStore = create<VentasState>()(
       },
 
       getVentasByEstado: (estado) => {
-        return get().ventas.filter((venta) => 
+        return get().ventas.filter((venta) =>
           estado === 'activo' ? venta.estado !== 'inactivo' : venta.estado === 'inactivo'
         );
-      }
+      },
     }),
     { name: 'ventas-store' }
   )

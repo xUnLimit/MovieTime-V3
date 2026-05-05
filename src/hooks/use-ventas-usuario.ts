@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { adjustCategoriaSuscripciones, adjustServiciosActivos, queryPagosVenta, queryVentas, removePagoVenta, removeVenta } from '@/lib/supabase/ventas-repository';
-import { useServiciosStore } from '@/store/serviciosStore';
+import { queryPagosVenta, queryVentas } from '@/lib/supabase/ventas-repository';
+import { useVentasStore } from '@/store/ventasStore';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';
 
@@ -67,7 +67,7 @@ export interface VentaUsuarioDoc {
  * @param usuarioId  Ã¢â‚¬â€œ id del usuario cuyas ventas se carga
  */
 export function useVentasUsuario(usuarioId: string) {
-  const { updatePerfilOcupado } = useServiciosStore();
+  const { deleteVenta: deleteVentaFromStore } = useVentasStore();
 
   const [ventas, setVentas]                           = useState<VentaUsuarioDoc[]>([]);
   const [renovacionesByServicio, setRenovacionesByServicio] = useState<Record<string, number>>({});
@@ -271,36 +271,7 @@ export function useVentasUsuario(usuarioId: string) {
     setVentas((prev) => prev.filter((v) => v.id !== ventaId));
 
     try {
-      // Eliminar todos los pagos asociados primero
-      const pagosVenta = await queryPagosVenta<{ id: string }>([
-        { field: 'ventaId', operator: '==', value: ventaId }
-      ]);
-
-      await Promise.all(
-        pagosVenta.map(pago => removePagoVenta(pago.id))
-      );
-
-      // Eliminar la venta
-      await removeVenta(ventaId);
-
-      // Actualizar perfil ocupado del servicio
-      if (servicioId && perfilNumero) {
-        updatePerfilOcupado(servicioId, false);
-      }
-
-      // Decrementar ventasActivas si la venta eliminada era activa
-      if (ventaEliminada && (ventaEliminada.estado ?? 'activo') !== 'inactivo') {
-        await adjustServiciosActivos(usuarioId, -1);
-      }
-
-      // Decrementar contadores de la categorÃƒÂ­a
-      if (ventaEliminada?.categoriaId && ventaEliminada?.precioFinal) {
-        await adjustCategoriaSuscripciones(
-          ventaEliminada.categoriaId,
-          -1,
-          -ventaEliminada.precioFinal
-        );
-      }
+      await deleteVentaFromStore(ventaId, servicioId, perfilNumero, true);
 
       // Invalidar cache
       ventasCache.delete(usuarioId);
@@ -317,7 +288,7 @@ export function useVentasUsuario(usuarioId: string) {
       }
       throw error;
     }
-  }, [updatePerfilOcupado, ventas, usuarioId]);
+  }, [deleteVentaFromStore, ventas, usuarioId]);
 
   return {
     ventas,

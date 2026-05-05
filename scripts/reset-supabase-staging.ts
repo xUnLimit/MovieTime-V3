@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { getSupabase } from './migrate-to-supabase/clients';
+import { getSupabaseAdmin } from './supabase-admin';
 
 config({ path: '.env.local', quiet: true });
 config({ quiet: true });
@@ -41,7 +41,7 @@ function parseArgs(argv: string[]) {
 
 async function main() {
   const { apply } = parseArgs(process.argv.slice(2));
-  const supabase = getSupabase() as unknown as {
+  const supabase = getSupabaseAdmin() as unknown as {
     from: (table: string) => {
       select: (columns: string, options: { count: 'exact'; head: true }) => Promise<{ count: number | null; error: Error | null }>;
       delete: () => {
@@ -85,4 +85,3 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
-

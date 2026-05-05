@@ -2658,12 +2658,11 @@ npx supabase init
 ```text
 supabase/migrations
 supabase/functions
-scripts/migrate-to-supabase.ts
 scripts/validate-supabase-migration.ts
 ```
 
 5. Crear `.env.example` con variables Supabase.
-6. No eliminar Firebase hasta que el cutover este aprobado.
+6. Retirar dependencias legacy despues del cutover aprobado.
 
 ### Fase 0: Preparacion
 
@@ -2718,9 +2717,9 @@ No se debe bloquear el cutover por features V2 si el MVP pasa validadores y QA.
 6. Probar operador/admin.
 7. Probar que operador no puede escalar `role`.
 
-### Fase 2: Migrador
+### Fase 2: Migrador legacy
 
-1. Crear `scripts/migrate-to-supabase.ts`.
+1. Crear migrador temporal.
 2. Migrar dataset pequeno.
 3. Migrar export real en staging.
 4. Ejecutar validadores.
@@ -2916,10 +2915,9 @@ La migracion esta lista cuando:
 
 Fase 3 - Migrador ejecutada contra Supabase `amvougsdkpyptzahtram`.
 
-Scripts implementados:
+Scripts implementados durante la migracion:
 
-- `scripts/migrate-to-supabase.ts`
-- `scripts/migrate-to-supabase/`
+- Migrador legacy de importacion, retirado despues del cutover.
 - `scripts/validate-supabase-migration.ts`
 
 Dry-run final:

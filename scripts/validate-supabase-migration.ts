@@ -1,6 +1,5 @@
 import { config } from 'dotenv';
-import { getFirestore, getSupabase } from './migrate-to-supabase/clients';
-import { FIRESTORE_COLLECTIONS } from './migrate-to-supabase/types';
+import { getSupabaseAdmin } from './supabase-admin';
 
 config({ path: '.env.local', quiet: true });
 config({ quiet: true });
@@ -27,14 +26,7 @@ const ACCEPTABLE_REPORT_KEYS = new Set([
 ]);
 
 async function main() {
-  const firestore = getFirestore();
-  const supabase = getSupabase();
-
-  const firestoreCounts: Record<string, number> = {};
-  for (const [key, collectionName] of Object.entries(FIRESTORE_COLLECTIONS)) {
-    const snapshot = await firestore.collection(collectionName).count().get();
-    firestoreCounts[key] = snapshot.data().count;
-  }
+  const supabase = getSupabaseAdmin();
 
   const supabaseCounts: Record<string, number> = {};
   for (const table of TABLES) {
@@ -59,7 +51,6 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        firestoreCounts,
         supabaseCounts,
         validations,
         acceptableReports,

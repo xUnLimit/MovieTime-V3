@@ -11,16 +11,9 @@
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "migrate:supabase": "tsx scripts/migrate-to-supabase.ts",
-    "migrate:supabase:dry": "tsx scripts/migrate-to-supabase.ts --dry-run",
     "migrate:validate": "tsx scripts/validate-supabase-migration.ts",
-    "legacy:audit": "tsx scripts/audit-firebase-legacy.ts",
-    "legacy:cleanup:dry": "tsx scripts/cleanup-firebase-legacy.ts",
-    "legacy:cleanup": "tsx scripts/cleanup-firebase-legacy.ts --apply",
     "supabase:reset:dry": "tsx scripts/reset-supabase-staging.ts",
-    "supabase:reset": "tsx scripts/reset-supabase-staging.ts --confirm=RESET_SUPABASE_STAGING",
-    "auth:sync:dry": "tsx scripts/sync-supabase-auth-users.ts",
-    "auth:sync": "tsx scripts/sync-supabase-auth-users.ts --apply"
+    "supabase:reset": "tsx scripts/reset-supabase-staging.ts --confirm=RESET_SUPABASE_STAGING"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -70,7 +63,6 @@
     "@vitest/ui": "^4.0.18",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
-    "firebase-admin": "^13.8.0",
     "jsdom": "^27.4.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",

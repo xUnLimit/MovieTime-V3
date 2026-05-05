@@ -1,23 +1,33 @@
-﻿import { countUsuarios, createUsuario, ENTITIES, getUsuarioById, getUsuarios, logCacheHit, removeUsuario, updateUsuario } from '@/lib/supabase/usuarios-repository';
+import { startOfDay } from 'date-fns';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { format, startOfDay } from 'date-fns';
 
-import { queryPagosVenta, queryVentas, updatePagoVenta, updateVenta } from '@/lib/supabase/ventas-repository';
-import { adjustUsuariosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
-import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
+import { ENTITIES, getUsuarios, logCacheHit } from '@/lib/supabase/usuarios-repository';
+import {
+  createUsuarioUseCase,
+  deleteUsuarioUseCase,
+  fetchUsuariosCountsUseCase,
+  resolveUsuarioForDelete,
+  updateUsuarioUseCase,
+} from '@/lib/use-cases/usuarios-use-cases';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import type { Usuario } from '@/types';
 
-// Helper para obtener contexto de usuario
 function getLogContext() {
   const user = useAuthStore.getState().user;
   return {
     usuarioId: user?.id ?? 'sistema',
     usuarioEmail: user?.email ?? 'sistema',
   };
+}
+
+function dispatchUsuarioEvent(name: 'usuario-deleted' | 'usuario-nombre-updated') {
+  if (typeof window === 'undefined') return;
+  if (name === 'usuario-deleted') {
+    window.localStorage.setItem(name, Date.now().toString());
+  }
+  window.dispatchEvent(new Event(name));
 }
 
 interface UsuariosState {
@@ -32,7 +42,6 @@ interface UsuariosState {
   lastCountsFetch: number | null;
   selectedUsuario: Usuario | null;
 
-  // Actions
   fetchUsuarios: (force?: boolean) => Promise<void>;
   fetchCounts: () => Promise<void>;
   resyncServiciosActivos: () => Promise<{ usuariosReparados: number }>;
@@ -61,10 +70,9 @@ export const useUsuariosStore = create<UsuariosState>()(
       lastCountsFetch: null,
       selectedUsuario: null,
 
-      // Trae todos los docs Ã¢â‚¬â€ para pÃƒÂ¡ginas de detalle/ediciÃƒÂ³n
       fetchUsuarios: async (force = false) => {
         const { lastFetch } = get();
-        if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
+        if (!force && lastFetch && Date.now() - lastFetch < CACHE_TIMEOUT) {
           logCacheHit(ENTITIES.USUARIOS);
           return;
         }
@@ -80,23 +88,18 @@ export const useUsuariosStore = create<UsuariosState>()(
         }
       },
 
-      // Solo conteos Ã¢â‚¬â€ para widgets (3 lecturas totales)
       fetchCounts: async () => {
         const { lastCountsFetch } = get();
-        if (lastCountsFetch && (Date.now() - lastCountsFetch) < CACHE_TIMEOUT) {
+        if (lastCountsFetch && Date.now() - lastCountsFetch < CACHE_TIMEOUT) {
           logCacheHit('usuarios-counts');
           return;
         }
 
         try {
-          const today = startOfDay(new Date());
-          const [totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos] = await Promise.all([
-            countUsuarios([{ field: 'tipo', operator: '==', value: 'cliente' }]),
-            countUsuarios([{ field: 'tipo', operator: '==', value: 'revendedor' }]),
-            countUsuarios([{ field: 'createdAt', operator: '>=', value: today }]),
-            countUsuarios([{ field: 'serviciosActivos', operator: '>', value: 0 }]),
-          ]);
-          set({ totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos, lastCountsFetch: Date.now() });
+          set({
+            ...(await fetchUsuariosCountsUseCase()),
+            lastCountsFetch: Date.now(),
+          });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al cargar conteos';
           set({ error: errorMessage });
@@ -105,55 +108,24 @@ export const useUsuariosStore = create<UsuariosState>()(
       },
 
       resyncServiciosActivos: async () => {
-        // servicios_activos is derived by the view v_usuarios_servicios_activos.
-        // No client-side recompute needed; a store refresh picks up the current value.
         await get().fetchUsuarios(true);
         return { usuariosReparados: 0 };
       },
 
       createUsuario: async (usuarioData) => {
         try {
-          const id = await createUsuario({
-            ...usuarioData,
-            serviciosActivos: 0,
-            active: true,
+          const usuario = await createUsuarioUseCase(usuarioData, {
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          const newUsuario: Usuario = {
-            ...usuarioData,
-            id,
-            serviciosActivos: 0,
-            active: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            createdBy: ''
-          };
-
           set((state) => ({
-            usuarios: [...state.usuarios, newUsuario],
+            usuarios: [...state.usuarios, usuario],
             totalClientes: usuarioData.tipo === 'cliente' ? state.totalClientes + 1 : state.totalClientes,
             totalRevendedores: usuarioData.tipo === 'revendedor' ? state.totalRevendedores + 1 : state.totalRevendedores,
             totalNuevosHoy: state.totalNuevosHoy + 1,
-            error: null
+            error: null,
           }));
-
-          // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'creacion',
-            entidad: usuarioData.tipo === 'cliente' ? 'cliente' : 'revendedor',
-            entidadId: id,
-            entidadNombre: usuarioData.nombre,
-            detalles: `${usuarioData.tipo === 'cliente' ? 'Cliente' : 'Revendedor'} creado: "${usuarioData.nombre}"`,
-          }).catch(() => {});
-
-          // Actualizar estadÃƒÂ­sticas del dashboard (non-blocking)
-          adjustUsuariosPorMes({
-            mes: format(new Date(), 'yyyy-MM'),
-            dia: getDiaKeyFromDate(new Date()),
-            tipo: usuarioData.tipo,
-            delta: 1,
-          }).catch((err) => console.error('[UsuariosStore] Error updating dashboard stats:', err));
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear usuario';
           set({ error: errorMessage });
@@ -164,63 +136,31 @@ export const useUsuariosStore = create<UsuariosState>()(
 
       updateUsuario: async (id, updates) => {
         try {
-          const oldUsuario = get().usuarios.find(u => u.id === id);
+          const oldUsuario = get().usuarios.find((usuario) => usuario.id === id);
           const cambioTipo = oldUsuario && updates.tipo && oldUsuario.tipo !== updates.tipo;
-          const cambioServiciosActivos = oldUsuario && updates.serviciosActivos !== undefined && oldUsuario.serviciosActivos !== updates.serviciosActivos;
-          const nombreChanged = oldUsuario
-            ? updates.nombre !== undefined || updates.apellido !== undefined
-            : false;
-          const telefonoChanged = oldUsuario
-            ? updates.telefono !== undefined && updates.telefono !== oldUsuario.telefono
-            : false;
+          const cambioServiciosActivos =
+            oldUsuario && updates.serviciosActivos !== undefined && oldUsuario.serviciosActivos !== updates.serviciosActivos;
 
-          await updateUsuario(id, updates);
+          const { shouldRefreshNotificaciones, shouldDispatchUsuarioNombreUpdated } = await updateUsuarioUseCase(id, updates, {
+            oldUsuario,
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
+          });
 
-          // Si cambiÃƒÂ³ nombre o telÃƒÂ©fono, sincronizar campos denormalizados en ventas
-          // y refrescar notificaciones derivadas de esas ventas antes de resolver el guardado.
-          if ((nombreChanged || telefonoChanged) && oldUsuario) {
-            const nuevoNombre = `${updates.nombre ?? oldUsuario.nombre} ${updates.apellido ?? oldUsuario.apellido}`;
-            const nuevoTelefono = updates.telefono ?? oldUsuario.telefono;
-            const [ventasDelCliente, pagosDelCliente] = await Promise.all([
-              queryVentas<{ id: string }>([{ field: 'clienteId', operator: '==', value: id }]),
-              nombreChanged
-                ? queryPagosVenta<{ id: string }>([{ field: 'clienteId', operator: '==', value: id }])
-                : Promise.resolve([] as { id: string }[]),
-            ]);
-            const ventaUpdates: Record<string, unknown> = {};
+          if (shouldRefreshNotificaciones) {
+            const { useNotificacionesStore } = await import('@/store/notificacionesStore');
+            await useNotificacionesStore.getState().fetchNotificaciones(true);
+          }
 
-            if (nombreChanged) {
-              ventaUpdates.clienteNombre = nuevoNombre;
-            }
-
-            if (telefonoChanged) {
-              ventaUpdates.clienteTelefono = nuevoTelefono;
-            }
-
-            await Promise.all([
-              ...ventasDelCliente.map(v => updateVenta(v.id, ventaUpdates)),
-              ...pagosDelCliente.map(p => updatePagoVenta(p.id, { clienteNombre: nuevoNombre })),
-            ]);
-
-            if (ventasDelCliente.length > 0) {
-              await sincronizarNotificacionesForzado();
-              const { useNotificacionesStore } = await import('@/store/notificacionesStore');
-              await useNotificacionesStore.getState().fetchNotificaciones(true);
-            }
-
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new Event('usuario-nombre-updated'));
-            }
+          if (shouldDispatchUsuarioNombreUpdated) {
+            dispatchUsuarioEvent('usuario-nombre-updated');
           }
 
           set((state) => {
             const updatedUsuarios = state.usuarios.map((usuario) =>
-              usuario.id === id
-                ? { ...usuario, ...updates, updatedAt: new Date() }
-                : usuario
+              usuario.id === id ? { ...usuario, ...updates, updatedAt: new Date() } : usuario
             );
 
-            // Actualizar contadores si hubo cambio de tipo
             let newTotalClientes = state.totalClientes;
             let newTotalRevendedores = state.totalRevendedores;
             let newTotalUsuariosActivos = state.totalUsuariosActivos;
@@ -235,7 +175,6 @@ export const useUsuariosStore = create<UsuariosState>()(
               }
             }
 
-            // Actualizar contador de usuarios activos si cambiÃƒÂ³ serviciosActivos
             if (cambioServiciosActivos && oldUsuario) {
               const oldActivo = (oldUsuario.serviciosActivos ?? 0) > 0;
               const newActivo = (updates.serviciosActivos ?? 0) > 0;
@@ -252,27 +191,9 @@ export const useUsuariosStore = create<UsuariosState>()(
               totalClientes: newTotalClientes,
               totalRevendedores: newTotalRevendedores,
               totalUsuariosActivos: newTotalUsuariosActivos,
-              error: null
+              error: null,
             };
           });
-
-          // Detectar cambios para el log
-          const entidadTipo = (oldUsuario?.tipo ?? 'cliente') === 'cliente' ? 'cliente' : 'revendedor';
-          const cambios = oldUsuario ? detectarCambios(entidadTipo, oldUsuario, {
-            ...oldUsuario,
-            ...updates
-          }) : [];
-
-          // Registrar en log de actividad con cambios
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'actualizacion',
-            entidad: entidadTipo,
-            entidadId: id,
-            entidadNombre: oldUsuario?.nombre ?? id,
-            detalles: `Usuario actualizado: "${oldUsuario?.nombre}"`,
-            cambios: cambios.length > 0 ? cambios : undefined,
-          }).catch(() => {});
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar usuario';
           set({ error: errorMessage });
@@ -281,91 +202,43 @@ export const useUsuariosStore = create<UsuariosState>()(
         }
       },
 
-      deleteUsuario: async (id, usuarioData?: { tipo: 'cliente' | 'revendedor'; nombre?: string; createdAt?: Date; serviciosActivos?: number }) => {
-        // Si se proporciona usuarioData, usarlo; de lo contrario, buscar en usuarios locales o en Supabase
-        let deletedUser: Usuario | undefined;
-
-        if (usuarioData) {
-          // Crear un objeto Usuario mÃƒÂ­nimo con los datos proporcionados
-          deletedUser = { ...usuarioData } as Usuario;
-        } else {
-          // Intentar buscar en el store local (puede estar vacÃƒÂ­o con paginaciÃƒÂ³n)
-          const currentUsuarios = get().usuarios;
-          deletedUser = currentUsuarios.find(u => u.id === id);
-
-          if (!deletedUser) {
-            // Si no estÃƒÂ¡ en el store local, traerlo de Supabase
-            try {
-              const fetchedUser = await getUsuarioById<Usuario>(id);
-              if (!fetchedUser) {
-                throw new Error('Usuario no encontrado en Supabase');
-              }
-              deletedUser = fetchedUser;
-            } catch (error) {
-              console.error('Error fetching usuario from Supabase:', error);
-              throw new Error('Usuario no encontrado');
-            }
-          }
-        }
-
-        if (!deletedUser) {
-          throw new Error('Usuario no encontrado');
-        }
+      deleteUsuario: async (id, usuarioData) => {
+        const currentUsuarios = get().usuarios;
+        const deletedUser = await resolveUsuarioForDelete(
+          id,
+          usuarioData,
+          currentUsuarios.find((usuario) => usuario.id === id)
+        );
 
         const today = startOfDay(new Date());
-        const wasCreatedToday = deletedUser.createdAt && startOfDay(new Date(deletedUser.createdAt)).getTime() === today.getTime();
+        const wasCreatedToday =
+          deletedUser.createdAt && startOfDay(new Date(deletedUser.createdAt)).getTime() === today.getTime();
         const wasActive = (deletedUser.serviciosActivos ?? 0) > 0;
-
-        // Guardar estado actual para rollback
         const currentState = {
           totalClientes: get().totalClientes,
           totalRevendedores: get().totalRevendedores,
           totalNuevosHoy: get().totalNuevosHoy,
           totalUsuariosActivos: get().totalUsuariosActivos,
-          usuarios: get().usuarios,
+          usuarios: currentUsuarios,
         };
 
-        // Optimistic update de contadores
         set((state) => ({
-          usuarios: state.usuarios.filter((usuario) => usuario.id !== id), // Solo si estÃƒÂ¡ en memoria
-          totalClientes: deletedUser!.tipo === 'cliente' ? state.totalClientes - 1 : state.totalClientes,
-          totalRevendedores: deletedUser!.tipo === 'revendedor' ? state.totalRevendedores - 1 : state.totalRevendedores,
+          usuarios: state.usuarios.filter((usuario) => usuario.id !== id),
+          totalClientes: deletedUser.tipo === 'cliente' ? state.totalClientes - 1 : state.totalClientes,
+          totalRevendedores: deletedUser.tipo === 'revendedor' ? state.totalRevendedores - 1 : state.totalRevendedores,
           totalNuevosHoy: wasCreatedToday ? state.totalNuevosHoy - 1 : state.totalNuevosHoy,
           totalUsuariosActivos: wasActive ? state.totalUsuariosActivos - 1 : state.totalUsuariosActivos,
         }));
 
         try {
-          await removeUsuario(id);
+          await deleteUsuarioUseCase(id, deletedUser, {
+            logContext: getLogContext(),
+            recordActivityLog: useActivityLogStore.getState().addLog,
+          });
 
-          // Notificar a otras pÃƒÂ¡ginas que se eliminÃƒÂ³ un usuario
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('usuario-deleted', Date.now().toString());
-            window.dispatchEvent(new Event('usuario-deleted'));
-          }
-
+          dispatchUsuarioEvent('usuario-deleted');
           set({ error: null });
-
-          // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
-            ...getLogContext(),
-            accion: 'eliminacion',
-            entidad: (deletedUser?.tipo ?? 'cliente') === 'cliente' ? 'cliente' : 'revendedor',
-            entidadId: id,
-            entidadNombre: deletedUser?.nombre ?? id,
-            detalles: `Usuario eliminado: "${deletedUser?.nombre}"`,
-          }).catch(() => {});
-
-          // Restar de estadÃƒÂ­sticas del dashboard (non-blocking)
-          if (deletedUser?.createdAt) {
-            adjustUsuariosPorMes({
-              mes: format(new Date(deletedUser.createdAt), 'yyyy-MM'),
-              dia: getDiaKeyFromDate(new Date(deletedUser.createdAt)),
-              tipo: deletedUser.tipo,
-              delta: -1,
-            }).catch((err) => console.error('[UsuariosStore] Error reverting dashboard stats:', err));
-          }
         } catch (error) {
-          // Rollback on error - restaurar estado anterior completo
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar usuario';
           set({
             usuarios: currentState.usuarios,
@@ -389,12 +262,12 @@ export const useUsuariosStore = create<UsuariosState>()(
       },
 
       getClientes: () => {
-        return get().usuarios.filter(u => u.tipo === 'cliente');
+        return get().usuarios.filter((usuario) => usuario.tipo === 'cliente');
       },
 
       getRevendedores: () => {
-        return get().usuarios.filter(u => u.tipo === 'revendedor');
-      }
+        return get().usuarios.filter((usuario) => usuario.tipo === 'revendedor');
+      },
     }),
     { name: 'usuarios-store' }
   )

@@ -4,7 +4,8 @@ Fecha: 2026-05-05
 
 ## Objetivo
 
-Endurecer la migracion normalizada despues de alcanzar paridad visual con Firebase.
+Endurecer la migracion normalizada despues de alcanzar paridad visual con el
+sistema anterior.
 V2 reduce deuda de compatibilidad, evita dobles fuentes de verdad y deja reglas RLS
 mas explicitas antes del cutover.
 
@@ -88,11 +89,11 @@ snapshots faltantes para nuevas notificaciones:
 Tambien se agrego backfill para `notificaciones_venta.metodo_pago_nombre_snapshot`
 desde el ultimo pago registrado.
 
-### Firebase runtime
+### Runtime legado
 
-Se elimino `src/lib/firebase/*` y la dependencia cliente `firebase`.
-Firebase queda limitado a scripts legacy de migracion, auditoria y validacion via
-`firebase-admin`.
+Se elimino el runtime legacy y la aplicacion queda operando solo con Supabase.
+Los scripts de migracion/auditoria legacy tambien fueron retirados despues del
+cutover.
 
 ### Sync services
 
@@ -115,7 +116,7 @@ modulos explicitos: `entities.ts`, `record-core.ts`, `read-models.ts`,
 ## Data fixes legacy
 
 Existen migrations con reparaciones por IDs concretos porque fueron necesarias para
-igualar datos historicos de Firebase:
+igualar datos historicos del sistema anterior:
 
 - `20260505020000_pagos_servicio_categoria_snapshot.sql`
 - `20260505022000_fix_discounted_forecast_price_snapshot.sql`
@@ -155,9 +156,9 @@ Ultima validacion ejecutada en Supabase `amvougsdkpyptzahtram`:
 }
 ```
 
-Los conteos Firebase/Supabase ya no son criterio de igualdad estricta despues
-de abrir escritura en Supabase. Se conservan en el reporte para reconciliacion
-operativa y para detectar drift inesperado antes de migraciones finales futuras.
+Los conteos entre sistemas ya no son criterio de igualdad estricta despues de
+abrir escritura en Supabase. La validacion actual queda centrada en tablas
+Supabase y `run_all_validations()`.
 
 ## Deuda post-cutover no bloqueante
 
