@@ -70,7 +70,7 @@ export function MetodoPagoDialog({
       identificador: "",
       tipoCuenta: "ahorro",
       banco: "",
-      pais: "PanamÃ¡",
+      pais: "Panamá",
       moneda: "USD",
     },
   });
@@ -98,7 +98,7 @@ export function MetodoPagoDialog({
                 | "email")
             : "ahorro",
         banco: metodoPago.banco || "",
-        pais: metodoPago.pais || "PanamÃ¡",
+        pais: metodoPago.pais || "Panamá",
         moneda: metodoPago.moneda || "USD",
       });
     } else {
@@ -109,7 +109,7 @@ export function MetodoPagoDialog({
         identificador: "",
         tipoCuenta: "ahorro",
         banco: "",
-        pais: "PanamÃ¡",
+        pais: "Panamá",
         moneda: "USD",
       });
     }
@@ -130,26 +130,26 @@ export function MetodoPagoDialog({
     try {
       const metodoPagoData = {
         ...data,
-        pais: data.pais || "PanamÃ¡",
+        pais: data.pais || "Panamá",
         activo: metodoPago?.activo ?? true,
       };
 
       if (metodoPago) {
         await updateMetodoPago(metodoPago.id, metodoPagoData);
-        toast.success("MÃ©todo de pago actualizado", {
+        toast.success("Método de pago actualizado", {
           description:
-            "Los datos del mÃ©todo de pago han sido guardados correctamente.",
+            "Los datos del método de pago han sido guardados correctamente.",
         });
       } else {
         await createMetodoPago(metodoPagoData);
-        toast.success("MÃ©todo de pago creado", {
+        toast.success("Método de pago creado", {
           description:
-            "El nuevo mÃ©todo de pago ha sido registrado correctamente.",
+            "El nuevo método de pago ha sido registrado correctamente.",
         });
       }
       onOpenChange(false);
     } catch (error) {
-      toast.error("Error al guardar mÃ©todo de pago", {
+      toast.error("Error al guardar método de pago", {
         description: error instanceof Error ? error.message : undefined,
       });
     }
@@ -160,7 +160,7 @@ export function MetodoPagoDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {metodoPago ? "Editar" : "Nuevo"} MÃ©todo de Pago
+            {metodoPago ? "Editar" : "Nuevo"} Método de Pago
           </DialogTitle>
         </DialogHeader>
 
@@ -244,8 +244,8 @@ export function MetodoPagoDialog({
 
           {(tipoValue === "yappy" || tipoValue === "binance") && (
             <div className="space-y-2">
-              <Label htmlFor="pais">PaÃ­s</Label>
-              <Input id="pais" {...register("pais")} placeholder="Ej: PanamÃ¡" />
+              <Label htmlFor="pais">País</Label>
+              <Input id="pais" {...register("pais")} placeholder="Ej: Panamá" />
             </div>
           )}
 
@@ -263,8 +263,8 @@ export function MetodoPagoDialog({
 
           <div className="space-y-2">
             <Label htmlFor="identificador">
-              {tipoValue === "banco" && "NÃºmero de Cuenta"}
-              {tipoValue === "yappy" && "NÃºmero de TelÃ©fono"}
+              {tipoValue === "banco" && "Número de Cuenta"}
+              {tipoValue === "yappy" && "Número de Teléfono"}
               {tipoValue === "binance" && "Wallet Address"}
             </Label>
             <Input

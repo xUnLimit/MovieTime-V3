@@ -15,22 +15,25 @@ import { Card } from '@/components/ui/card';
 import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
 import { getCategoriaById } from '@/lib/supabase/categorias-repository';
 import { getServicioById } from '@/lib/supabase/servicios-repository';
-import { getVentaById, removePagoVenta, timestampToDate, updatePagoVenta, updateVenta } from '@/lib/supabase/ventas-repository';
+import { getVentaById, timestampToDate } from '@/lib/supabase/ventas-repository';
+import {
+  deleteVentaPagoUseCase,
+  getVentaConPagoActualUseCase,
+  renewVentaUseCase,
+  updateVentaPagoUseCase,
+} from '@/lib/use-cases/ventas-use-cases';
 import { toast } from 'sonner';
 import { PagoDialog } from '@/components/shared/PagoDialog';
 import { useTemplatesStore } from '@/store/templatesStore';
 import { generarMensajeVenta } from '@/lib/utils/whatsapp';
-import { calculateDiscountedAmount, formatearFecha, roundToDecimals } from '@/lib/utils/calculations';
+import { formatearFecha } from '@/lib/utils/calculations';
 import { VentaDoc, VentaPago, MetodoPago } from '@/types';
 import { Plan } from '@/types/categorias';
 import { VentaPagosTable } from '@/components/ventas/VentaPagosTable';
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
-import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { upsertVentaPronostico, adjustIngresosStats, getMesKeyFromDate, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
-import { syncUsuarioMetodoPago } from '@/lib/services/usuarioMetodoPagoSyncService';
 import { withPendingUserPaymentMethod } from '@/lib/utils/usuarioMetodoPago';
 
 const getCicloPagoLabel = (ciclo?: string) => {
@@ -40,7 +43,7 @@ const getCicloPagoLabel = (ciclo?: string) => {
     semestral: 'Semestral',
     anual: 'Anual',
   };
-  return ciclo ? labels[ciclo] || ciclo : 'Ã¢â‚¬â€';
+  return ciclo ? labels[ciclo] || ciclo : '—';
 };
 
 
@@ -52,11 +55,11 @@ function VentaDetallePageContent() {
   const { deleteNotificacionesPorVenta, fetchNotificaciones } = useNotificacionesStore();
   const { getTemplateByTipo } = useTemplatesStore();
 
-  // Estados locales para datos especÃƒÂ­ficos de esta venta
+  // Estados locales para datos específicos de esta venta
   const [venta, setVenta] = useState<VentaDoc | null>(null);
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]); // Para dropdown de renovaciÃƒÂ³n (lazy loaded)
-  const [categoriaPlanes, setCategoriaPlanes] = useState<Plan[]>([]); // Planes de la categorÃƒÂ­a (lazy loaded)
-  const [servicioContrasena, setServicioContrasena] = useState<string>(''); // ContraseÃƒÂ±a del servicio
+  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]); // Para dropdown de renovación (lazy loaded)
+  const [categoriaPlanes, setCategoriaPlanes] = useState<Plan[]>([]); // Planes de la categoría (lazy loaded)
+  const [servicioContrasena, setServicioContrasena] = useState<string>(''); // Contraseña del servicio
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
@@ -65,10 +68,10 @@ function VentaDetallePageContent() {
   const [pagoToEdit, setPagoToEdit] = useState<VentaPago | null>(null);
   const [pagoToDelete, setPagoToDelete] = useState<VentaPago | null>(null);
 
-  // Cargar pagos desde la colecciÃƒÂ³n pagosVenta
+  // Cargar pagos desde la colección pagosVenta
   const { pagos: pagosVenta, isLoading: loadingPagos, renovaciones, refresh: refreshPagos } = usePagosVenta(id);
 
-  // FunciÃƒÂ³n para cargar/recargar la venta con datos del ÃƒÂºltimo pago
+  // Función para cargar/recargar la venta con datos del último pago
   const loadVenta = async () => {
     if (!id) return;
     try {
@@ -108,7 +111,7 @@ function VentaDetallePageContent() {
       const ventaConDatos = await getVentaConUltimoPago(ventaBase);
       setVenta(ventaConDatos);
 
-      // Cargar la contraseÃƒÂ±a del servicio (lazy load)
+      // Cargar la contraseña del servicio (lazy load)
       if (ventaConDatos.servicioId) {
         try {
           const servicioDoc = await getServicioById<Record<string, unknown>>(ventaConDatos.servicioId);
@@ -116,13 +119,13 @@ function VentaDetallePageContent() {
             setServicioContrasena(servicioDoc.contrasena as string);
           }
         } catch (error) {
-          console.error('Error cargando contraseÃƒÂ±a del servicio:', error);
+          console.error('Error cargando contraseña del servicio:', error);
         }
       }
 
-      // Nota: No cargamos todos los datos relacionados aquÃƒÂ­.
-      // Los nombres ya estÃƒÂ¡n denormalizados en la venta.
-      // Solo cargaremos metodosPago cuando el usuario abra el diÃƒÂ¡logo de renovaciÃƒÂ³n.
+      // Nota: No cargamos todos los datos relacionados aquí.
+      // Los nombres ya están denormalizados en la venta.
+      // Solo cargaremos metodosPago cuando el usuario abra el diálogo de renovación.
     } catch (error) {
       console.error('Error cargando venta:', error);
       toast.error('Error cargando venta', { description: error instanceof Error ? error.message : undefined });
@@ -148,13 +151,13 @@ function VentaDetallePageContent() {
     return differenceInCalendarDays(venta.fechaFin, new Date());
   }, [venta?.fechaFin]);
 
-  const perfilDisplay = venta?.perfilNombre?.trim() || 'Ã¢â‚¬â€';
+  const perfilDisplay = venta?.perfilNombre?.trim() || '—';
 
   // Convertir PagoVenta[] a VentaPago[] para compatibilidad con VentaPagosTable
   const paymentRows = useMemo(() => {
     if (!venta || loadingPagos) return [];
 
-    // Usar pagos de la colecciÃƒÂ³n pagosVenta
+    // Usar pagos de la colección pagosVenta
     if (pagosVenta.length > 0) {
       return pagosVenta.map((p, index) => {
         // Si este pago no tiene fechas guardadas (legacy data), calcularlas a partir del anterior
@@ -168,7 +171,7 @@ function VentaDetallePageContent() {
             fechaVencimiento = venta.fechaFin ?? p.fecha;
           } else {
             // Para renovaciones, buscar el pago anterior (en el array ya ordenado)
-            const pagoAnterior = pagosVenta[index + 1]; // Array ya estÃƒÂ¡ ordenado desc
+            const pagoAnterior = pagosVenta[index + 1]; // Array ya está ordenado desc
             if (pagoAnterior?.fechaVencimiento) {
               fechaInicio = pagoAnterior.fechaVencimiento;
               // Calcular vencimiento basado en el ciclo
@@ -187,7 +190,7 @@ function VentaDetallePageContent() {
         return {
           id: p.id,
           fecha: p.fecha,
-          descripcion: p.isPagoInicial ? 'Pago Inicial' : `RenovaciÃƒÂ³n`,
+          descripcion: p.isPagoInicial ? 'Pago Inicial' : `Renovación`,
           precio: p.precio ?? p.monto,           // Precio original (fallback a monto si no existe)
           descuento: p.descuento ?? 0,           // Porcentaje de descuento
           total: p.monto,                        // Monto final
@@ -204,7 +207,7 @@ function VentaDetallePageContent() {
       });
     }
 
-    // Si no hay pagos en la colecciÃƒÂ³n (ej. venta reciÃƒÂ©n creada sin refresh), crear uno sintÃƒÂ©tico
+    // Si no hay pagos en la colección (ej. venta recién creada sin refresh), crear uno sintético
     return [
       {
         id: 'synthetic-initial',
@@ -221,11 +224,11 @@ function VentaDetallePageContent() {
     ];
   }, [venta, pagosVenta, loadingPagos]);
 
-  // Cargar mÃƒÂ©todos de pago y planes solo cuando se necesite (lazy loading)
+  // Cargar métodos de pago y planes solo cuando se necesite (lazy loading)
   const loadMetodosPagoYPlanes = async () => {
-    if (metodosPago.length > 0 && categoriaPlanes.length > 0) return; // Ya estÃƒÂ¡n cargados
+    if (metodosPago.length > 0 && categoriaPlanes.length > 0) return; // Ya están cargados
     try {
-      // Cargar mÃƒÂ©todos de pago asociados a usuarios/clientes
+      // Cargar métodos de pago asociados a usuarios/clientes
       if (metodosPago.length === 0) {
         const methods = await queryMetodosPago<MetodoPago>([
           { field: 'asociadoA', operator: '==', value: 'usuario' }
@@ -233,7 +236,7 @@ function VentaDetallePageContent() {
         setMetodosPago(Array.isArray(methods) ? withPendingUserPaymentMethod(methods) : withPendingUserPaymentMethod([]));
       }
 
-      // Cargar planes de la categorÃƒÂ­a
+      // Cargar planes de la categoría
       if (categoriaPlanes.length === 0 && venta?.categoriaId) {
         const categoriaDoc = await getCategoriaById<Record<string, unknown>>(venta.categoriaId);
         if (categoriaDoc && Array.isArray(categoriaDoc.planes)) {
@@ -241,7 +244,7 @@ function VentaDetallePageContent() {
         }
       }
     } catch (error) {
-      console.error('Error cargando mÃƒÂ©todos de pago y planes:', error);
+      console.error('Error cargando métodos de pago y planes:', error);
       setMetodosPago([]);
       setCategoriaPlanes([]);
     }
@@ -284,64 +287,22 @@ function VentaDetallePageContent() {
     if (!venta) return;
     try {
       const metodoPagoSeleccionado = metodosPago.find((m) => m.id === data.metodoPagoId);
-      const costo = roundToDecimals(data.costo);
-      const descuentoNumero = roundToDecimals(Number(data.descuento) || 0);
-      const monto = calculateDiscountedAmount(costo, descuentoNumero);
-      const notaPrincipal = data.notas?.trim() ?? '';
-
-      // Crear pago en la colecciÃƒÂ³n pagosVenta
-      await crearPagoRenovacion(
-        venta.id,
-        venta.clienteId || '',
-        venta.clienteNombre,
-        venta.categoriaId,                      // Denormalizado para queries
-        monto,
-        metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre || '',
-        data.metodoPagoId,                      // Denormalizado
-        data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda, // Denormalizado
-        data.periodoRenovacion as VentaDoc['cicloPago'],
-        notaPrincipal,
-        data.fechaInicio,
-        data.fechaVencimiento,
-        costo,                                 // Precio original
-        descuentoNumero                         // Porcentaje de descuento
-      );
-
-      // Actualizar fechaFin y fechaInicio en VentaDoc para que el sync de notificaciones
-      // vea la nueva fecha y no vuelva a crear la notificaciÃƒÂ³n
-      await updateVenta(id, {
-        fechaFin: data.fechaVencimiento,
-        fechaInicio: data.fechaInicio,
-        cicloPago: data.periodoRenovacion,
-        notas: notaPrincipal,
+      const renovacion = await renewVentaUseCase(venta, {
+        ...data,
+        metodoPagoNombre: metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
+        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
       });
 
-      try {
-        await syncUsuarioMetodoPago({
-          usuarioId: venta.clienteId,
-          metodoPagoId: data.metodoPagoId,
-          metodoPagoNombre: metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
-          moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
-        });
-      } catch (syncError) {
-        console.error('Error sincronizando mÃƒÂ©todo de pago del usuario:', syncError);
+      if (renovacion.syncPaymentMethodFailed) {
         toast.warning('Venta renovada con advertencia', {
-          description: 'La renovaciÃƒÂ³n se guardÃƒÂ³, pero no se pudo actualizar el mÃƒÂ©todo de pago en usuarios.',
+          description: 'La renovación se guardó, pero no se pudo actualizar el método de pago en usuarios.',
         });
       }
 
       // Actualizar ventasPronostico en el dashboard: local INMEDIATAMENTE + Supabase en background
-      const ventaPronosticoData = {
-        id: venta.id,
-        categoriaId: venta.categoriaId ?? '',
-        fechaInicio: data.fechaInicio.toISOString(),
-        fechaFin: data.fechaVencimiento.toISOString(),
-        cicloPago: data.periodoRenovacion,
-        precioFinal: monto,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda || 'USD',
-      };
+      const ventaPronosticoData = renovacion.pronostico;
 
-      // 1. Actualizar estado local del dashboard de inmediato (para que el pronÃƒÂ³stico se refleje sin recalcular)
+      // 1. Actualizar estado local del dashboard de inmediato (para que el pronóstico se refleje sin recalcular)
       import('@/store/dashboardStore').then(({ useDashboardStore }) => {
         const store = useDashboardStore.getState();
         const currentStats = store.stats;
@@ -356,60 +317,20 @@ function VentaDetallePageContent() {
         }
         store.invalidateCache();
       }).catch(() => {});
-
-      // 2. Persistir a Supabase en background (non-blocking)
-      upsertVentaPronostico(ventaPronosticoData, venta.id).catch(() => {});
-
-      // Sync dashboard ingresos for the new payment
-      adjustIngresosStats({
-        delta: monto,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda || 'USD',
-        mes: getMesKeyFromDate(data.fechaInicio),
-        dia: getDiaKeyFromDate(data.fechaInicio),
-        categoriaId: venta.categoriaId ?? '',
-        categoriaNombre: venta.categoriaNombre ?? '',
-      }).catch(() => {});
-
       // Recargar la venta actualizada (sin loading screen)
-      if (id && venta) {
-        const doc = await getVentaById<Record<string, unknown>>(id);
-        if (doc) {
-          const ventaBase: VentaDoc = {
-            id: doc.id as string,
-            clienteId: (doc.clienteId as string) || '',
-            clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-            categoriaId: (doc.categoriaId as string) || '',
-            categoriaNombre: (doc.categoriaNombre as string) || undefined,
-            servicioId: (doc.servicioId as string) || '',
-            servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-            servicioCorreo: (doc.servicioCorreo as string) || undefined,
-            servicioContrasena: (doc.servicioContrasena as string) || undefined,
-            clienteTelefono: (doc.clienteTelefono as string) || undefined,
-            estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
-            perfilNumero: (doc.perfilNumero as number) ?? null,
-            perfilNombre: (doc.perfilNombre as string) || undefined,
-            codigo: (doc.codigo as string) || undefined,
-            notas: (doc.notas as string) || undefined,
-            createdAt: (doc.createdAt as Date) || undefined,
-            updatedAt: (doc.updatedAt as Date) || undefined,
-            // Denormalized fields
-            fechaInicio: (doc.fechaInicio as Date) || new Date(),
-            fechaFin: (doc.fechaFin as Date) || new Date(),
-            cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
-          };
-          const ventaActualizada = await getVentaConUltimoPago(ventaBase);
-          setVenta(ventaActualizada);
-        }
+      if (id) {
+        const ventaActualizada = await getVentaConPagoActualUseCase(id);
+        if (ventaActualizada) setVenta(ventaActualizada);
       }
 
       // Recargar los pagos
       refreshPagos();
 
-      // Eliminar notificaciÃƒÂ³n asociada a esta venta y refrescar el store
+      // Eliminar notificación asociada a esta venta y refrescar el store
       await deleteNotificacionesPorVenta(id);
       fetchNotificaciones(true);
 
-      // Cerrar el diÃƒÂ¡logo
+      // Cerrar el diálogo
       setRenovarDialogOpen(false);
 
       // Notificar a la lista de ventas para que refresque el orden
@@ -417,14 +338,11 @@ function VentaDetallePageContent() {
         window.dispatchEvent(new Event('venta-updated'));
       }
 
-      // Si el usuario eligiÃƒÂ³ notificar por WhatsApp, agregar acciÃƒÂ³n al toast
+      // Si el usuario eligió notificar por WhatsApp, agregar acción al toast
       if (data.notificarWhatsApp && venta) {
         const templateRenovacion = getTemplateByTipo('renovacion');
         if (templateRenovacion) {
           try {
-            const costo = roundToDecimals(data.costo);
-            const descuentoNumero = roundToDecimals(Number(data.descuento) || 0);
-            const monto = calculateDiscountedAmount(costo, descuentoNumero);
             const clienteSoloNombre = venta.clienteNombre.split(' ')[0];
             const mensaje = generarMensajeVenta(templateRenovacion.contenido, {
               clienteNombre: venta.clienteNombre,
@@ -436,7 +354,7 @@ function VentaDetallePageContent() {
               contrasena: venta.servicioContrasena || servicioContrasena || '',
               codigo: venta.codigo || '',
               fechaVencimiento: data.fechaVencimiento,
-              monto,
+              monto: renovacion.monto,
             });
             const phone = venta.clienteTelefono
               ? venta.clienteTelefono.replace(/[^\d+]/g, '')
@@ -470,7 +388,7 @@ function VentaDetallePageContent() {
   };
 
   const handleEditarPago = async (pago: VentaPago) => {
-    await loadMetodosPagoYPlanes(); // Cargar mÃƒÂ©todos de pago y planes antes de abrir el diÃƒÂ¡logo
+    await loadMetodosPagoYPlanes(); // Cargar métodos de pago y planes antes de abrir el diálogo
     setPagoToEdit(pago);
     setEditarPagoDialogOpen(true);
   };
@@ -498,38 +416,15 @@ function VentaDetallePageContent() {
 
     try {
       const metodoPagoSeleccionado = metodosPago.find((m) => m.id === data.metodoPagoId);
-      const costo = roundToDecimals(data.costo);
-      const descuentoNumero = roundToDecimals(Number(data.descuento) || 0);
-      const monto = calculateDiscountedAmount(costo, descuentoNumero);
-      const notaPago = data.notas?.trim() ?? '';
-
-      // Actualizar el pago en la colecciÃƒÂ³n pagosVenta (fuente de verdad)
-      await updatePagoVenta(pagoToEdit.id, {
-        precio: costo,                              // Precio original
-        descuento: descuentoNumero,                 // Porcentaje de descuento
-        monto,                                      // Monto final
-        metodoPagoId: data.metodoPagoId,            // Denormalizado
-        metodoPago: data.metodoPagoNombre || metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,  // Denormalizado
-        cicloPago: data.periodoRenovacion as VentaDoc['cicloPago'],
-        fechaInicio: data.fechaInicio,
-        fechaVencimiento: data.fechaVencimiento,
-        notas: notaPago,
+      const updateResult = await updateVentaPagoUseCase(venta, pagoToEdit.id, {
+        ...data,
+        metodoPagoNombre: data.metodoPagoNombre || metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
+        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
       });
 
-      // Ã¢Å“â€¦ NO sincronizar con VentaDoc - PagoVenta es la fuente de verdad
-
-      try {
-        await syncUsuarioMetodoPago({
-          usuarioId: venta.clienteId,
-          metodoPagoId: data.metodoPagoId,
-          metodoPagoNombre: data.metodoPagoNombre || metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
-          moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
-        });
-      } catch (syncError) {
-        console.error('Error sincronizando mÃƒÂ©todo de pago del usuario:', syncError);
+      if (updateResult.syncPaymentMethodFailed) {
         toast.warning('Pago actualizado con advertencia', {
-          description: 'El pago se actualizÃƒÂ³, pero no se pudo reflejar el mÃƒÂ©todo de pago en usuarios.',
+          description: 'El pago se actualizó, pero no se pudo reflejar el método de pago en usuarios.',
         });
       }
 
@@ -537,35 +432,9 @@ function VentaDetallePageContent() {
       setPagoToEdit(null);
 
       // Recargar la venta actualizada (sin loading screen)
-      if (id && venta) {
-        const doc = await getVentaById<Record<string, unknown>>(id);
-        if (doc) {
-          const ventaBase: VentaDoc = {
-            id: doc.id as string,
-            clienteId: (doc.clienteId as string) || '',
-            clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-            categoriaId: (doc.categoriaId as string) || '',
-            categoriaNombre: (doc.categoriaNombre as string) || undefined,
-            servicioId: (doc.servicioId as string) || '',
-            servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-            servicioCorreo: (doc.servicioCorreo as string) || undefined,
-            servicioContrasena: (doc.servicioContrasena as string) || undefined,
-            clienteTelefono: (doc.clienteTelefono as string) || undefined,
-            estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
-            perfilNumero: (doc.perfilNumero as number) ?? null,
-            perfilNombre: (doc.perfilNombre as string) || undefined,
-            codigo: (doc.codigo as string) || undefined,
-            notas: (doc.notas as string) || undefined,
-            createdAt: (doc.createdAt as Date) || undefined,
-            updatedAt: (doc.updatedAt as Date) || undefined,
-            // Denormalized fields
-            fechaInicio: (doc.fechaInicio as Date) || new Date(),
-            fechaFin: (doc.fechaFin as Date) || new Date(),
-            cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
-          };
-          const ventaActualizada = await getVentaConUltimoPago(ventaBase);
-          setVenta(ventaActualizada);
-        }
+      if (id) {
+        const ventaActualizada = await getVentaConPagoActualUseCase(id);
+        if (ventaActualizada) setVenta(ventaActualizada);
       }
 
       // Recargar los pagos
@@ -585,54 +454,12 @@ function VentaDetallePageContent() {
     }
 
     try {
-      // Eliminar el pago de la colecciÃƒÂ³n pagosVenta (fuente de verdad)
-      await removePagoVenta(pagoToDelete.id);
-
-      // Ã¢Å“â€¦ NO sincronizar con VentaDoc - PagoVenta es la fuente de verdad
-      // El pago mÃƒÂ¡s reciente que quede seguirÃƒÂ¡ siendo la fuente de verdad
+      const { ventaActualizada } = await deleteVentaPagoUseCase(id, pagoToDelete.id);
 
       setDeletePagoDialogOpen(false);
       setPagoToDelete(null);
 
-      // Recargar la venta actualizada (sin loading screen)
-      if (id && venta) {
-        const doc = await getVentaById<Record<string, unknown>>(id);
-        if (doc) {
-          const ventaBase: VentaDoc = {
-            id: doc.id as string,
-            clienteId: (doc.clienteId as string) || '',
-            clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-            categoriaId: (doc.categoriaId as string) || '',
-            categoriaNombre: (doc.categoriaNombre as string) || undefined,
-            servicioId: (doc.servicioId as string) || '',
-            servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-            servicioCorreo: (doc.servicioCorreo as string) || undefined,
-            servicioContrasena: (doc.servicioContrasena as string) || undefined,
-            clienteTelefono: (doc.clienteTelefono as string) || undefined,
-            estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
-            perfilNumero: (doc.perfilNumero as number) ?? null,
-            perfilNombre: (doc.perfilNombre as string) || undefined,
-            codigo: (doc.codigo as string) || undefined,
-            notas: (doc.notas as string) || undefined,
-            createdAt: (doc.createdAt as Date) || undefined,
-            updatedAt: (doc.updatedAt as Date) || undefined,
-            // Denormalized fields
-            fechaInicio: (doc.fechaInicio as Date) || new Date(),
-            fechaFin: (doc.fechaFin as Date) || new Date(),
-            cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
-          };
-          const ventaActualizada = await getVentaConUltimoPago(ventaBase);
-          setVenta(ventaActualizada);
-
-          // Sincronizar fechaFin/fechaInicio/cicloPago en Supabase para que el
-          // sistema de notificaciones detecte correctamente la venta tras la eliminaciÃƒÂ³n
-          await updateVenta(id, {
-            fechaFin: ventaActualizada.fechaFin,
-            fechaInicio: ventaActualizada.fechaInicio,
-            cicloPago: ventaActualizada.cicloPago,
-          });
-        }
-      }
+      if (ventaActualizada) setVenta(ventaActualizada);
 
       // Recargar los pagos
       refreshPagos();
@@ -666,7 +493,7 @@ function VentaDetallePageContent() {
           </p>
         </div>
         <Card className="p-6">
-          <p className="text-muted-foreground">No se encontrÃƒÂ³ la venta solicitada.</p>
+          <p className="text-muted-foreground">No se encontró la venta solicitada.</p>
           <Link href="/ventas" className="inline-block mt-4 text-primary hover:underline">
             Volver a Ventas
           </Link>
@@ -701,7 +528,7 @@ function VentaDetallePageContent() {
             size="sm"
             className="bg-purple-600 hover:bg-purple-700"
             onClick={async () => {
-              await loadMetodosPagoYPlanes(); // Cargar mÃƒÂ©todos de pago y planes solo cuando se necesite
+              await loadMetodosPagoYPlanes(); // Cargar métodos de pago y planes solo cuando se necesite
               setRenovarDialogOpen(true);
             }}
           >
@@ -725,9 +552,9 @@ function VentaDetallePageContent() {
         <Card className="p-6 space-y-6">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-lg font-semibold">InformaciÃƒÂ³n General</h2>
+              <h2 className="text-lg font-semibold">Información General</h2>
               <p className="text-sm text-muted-foreground">
-                Resumen de la suscripciÃƒÂ³n del servicio {venta.servicioNombre}.
+                Resumen de la suscripción del servicio {venta.servicioNombre}.
               </p>
             </div>
             <Badge className={estadoBadgeClass}>{estadoLabel}</Badge>
@@ -745,32 +572,32 @@ function VentaDetallePageContent() {
               )}
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">MÃƒÂ©todo de Pago</p>
-              <p className="text-sm font-medium text-purple-500">{venta.metodoPagoNombre || 'Sin mÃƒÂ©todo'}</p>
+              <p className="text-xs text-muted-foreground">Método de Pago</p>
+              <p className="text-sm font-medium text-purple-500">{venta.metodoPagoNombre || 'Sin método'}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Ciclo de pago</p>
               <p className="text-sm font-medium">{getCicloPagoLabel(venta.cicloPago)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">CategorÃƒÂ­a</p>
-              <p className="text-sm font-medium">{venta.categoriaNombre || 'Sin categorÃƒÂ­a'}</p>
+              <p className="text-xs text-muted-foreground">Categoría</p>
+              <p className="text-sm font-medium">{venta.categoriaNombre || 'Sin categoría'}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Servicio</p>
               <p className="text-sm font-medium">{venta.servicioCorreo || venta.servicioNombre}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">ContraseÃƒÂ±a</p>
-              <p className="text-sm font-medium">{servicioContrasena || 'Ã¢â‚¬â€'}</p>
+              <p className="text-xs text-muted-foreground">Contraseña</p>
+              <p className="text-sm font-medium">{servicioContrasena || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Perfil</p>
               <p className="text-sm font-medium text-green-600 dark:text-green-400">{perfilDisplay}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">CÃƒÂ³digo</p>
-              <p className="text-sm font-medium">{venta.codigo || 'Ã¢â‚¬â€'}</p>
+              <p className="text-xs text-muted-foreground">Código</p>
+              <p className="text-sm font-medium">{venta.codigo || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Renovaciones</p>
@@ -783,18 +610,18 @@ function VentaDetallePageContent() {
               <p className="text-xs text-muted-foreground">Fecha de Inicio</p>
               <p className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                {venta.fechaInicio ? formatearFecha(new Date(venta.fechaInicio)) : 'Ã¢â‚¬â€'}
+                {venta.fechaInicio ? formatearFecha(new Date(venta.fechaInicio)) : '—'}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Fecha de Vencimiento</p>
               <p className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                {venta.fechaFin ? formatearFecha(new Date(venta.fechaFin)) : 'Ã¢â‚¬â€'}
+                {venta.fechaFin ? formatearFecha(new Date(venta.fechaFin)) : '—'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">DÃƒÂ­as Restantes</p>
+              <p className="text-xs text-muted-foreground">Días Restantes</p>
               <Badge
                 variant="outline"
                 className={`mt-1 font-normal ${
@@ -808,10 +635,10 @@ function VentaDetallePageContent() {
                 }`}
               >
                 {diasRestantes < 0
-                  ? `${Math.abs(diasRestantes)} dÃƒÂ­a${Math.abs(diasRestantes) !== 1 ? 's' : ''} de retraso`
+                  ? `${Math.abs(diasRestantes)} día${Math.abs(diasRestantes) !== 1 ? 's' : ''} de retraso`
                   : diasRestantes === 0
                     ? 'Vence hoy'
-                    : `${diasRestantes} dÃƒÂ­a${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`
+                    : `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`
                 }
               </Badge>
             </div>
@@ -831,7 +658,7 @@ function VentaDetallePageContent() {
               <h3 className="text-lg font-semibold">
                 {venta.estado === 'inactivo' ? 'Perfil sin Asignar' : 'Perfil Asignado'}
               </h3>
-              <p className="text-sm text-muted-foreground">InformaciÃƒÂ³n del servicio en uso</p>
+              <p className="text-sm text-muted-foreground">Información del servicio en uso</p>
             </div>
             <p className={`text-sm font-medium ${venta.estado === 'inactivo' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
               {venta.estado === 'inactivo' ? 'No asignado' : (venta.servicioCorreo || venta.servicioNombre)}
@@ -848,7 +675,7 @@ function VentaDetallePageContent() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Perfil:</span>
-              <span className="font-medium">{venta.perfilNumero ? `Perfil ${venta.perfilNumero}` : 'Ã¢â‚¬â€'}</span>
+              <span className="font-medium">{venta.perfilNumero ? `Perfil ${venta.perfilNumero}` : '—'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Asignado a:</span>
@@ -940,7 +767,7 @@ function VentaDetallePageContent() {
         onOpenChange={setDeletePagoDialogOpen}
         onConfirm={handleConfirmDeletePago}
         title="Eliminar pago"
-        description="Ã‚Â¿EstÃƒÂ¡s seguro de que deseas eliminar este pago? Esta acciÃƒÂ³n no se puede deshacer."
+        description="¿Estás seguro de que deseas eliminar este pago? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         variant="danger"
       />

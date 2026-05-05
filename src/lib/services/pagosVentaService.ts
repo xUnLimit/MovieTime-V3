@@ -43,7 +43,7 @@ export async function crearPagoInicial(
 }
 
 /**
- * Crea un pago de renovaciÃƒÂ³n para una venta existente
+ * Crea un pago de renovación para una venta existente
  */
 export async function crearPagoRenovacion(
   ventaId: string,
@@ -84,7 +84,7 @@ export async function crearPagoRenovacion(
 }
 
 /**
- * Obtiene todos los pagos de una venta especÃƒÂ­fica
+ * Obtiene todos los pagos de una venta específica
  */
 export async function obtenerPagosDeVenta(ventaId: string): Promise<PagoVenta[]> {
   const pagos = await queryPagosVenta<PagoVenta>([
@@ -103,12 +103,12 @@ export async function contarRenovacionesDeVenta(ventaId: string): Promise<number
 }
 
 /**
- * Obtiene los pagos de mÃƒÂºltiples ventas (para dashboards/reportes)
+ * Obtiene los pagos de múltiples ventas (para dashboards/reportes)
  */
 export async function obtenerPagosDeVariasVentas(ventaIds: string[]): Promise<PagoVenta[]> {
   if (ventaIds.length === 0) return [];
 
-  // Supabase .in() acepta max 10 valores Ã¢â‚¬â€ partir en chunks
+  // Supabase .in() acepta max 10 valores — partir en chunks
   const chunks: string[][] = [];
   for (let i = 0; i < ventaIds.length; i += 10) {
     chunks.push(ventaIds.slice(i, i + 10));

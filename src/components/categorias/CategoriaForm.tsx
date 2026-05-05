@@ -27,7 +27,7 @@ const categoriaSchema = z.object({
     message: "Debe seleccionar asociado a",
   }),
   tipoCategoria: z.enum(["plataforma_streaming", "otros"], {
-    message: "Debe seleccionar un tipo de categorÃ­a",
+    message: "Debe seleccionar un tipo de categoría",
   }),
   notas: z.string().optional(),
 });
@@ -180,7 +180,7 @@ export function CategoriaForm({
   const handleAgregarTipo = () => {
     const trimmed = nuevoTipoNombre.trim();
     if (!trimmed) {
-      setTipoNombreError("El nombre no puede estar vacÃ­o");
+      setTipoNombreError("El nombre no puede estar vacío");
       return;
     }
     if (
@@ -221,7 +221,7 @@ export function CategoriaForm({
     if (e) e.stopPropagation();
     const trimmed = editTipoNombre.trim();
     if (!trimmed) {
-      setEditTipoError("El nombre no puede estar vacÃ­o");
+      setEditTipoError("El nombre no puede estar vacío");
       return;
     }
     if (
@@ -300,7 +300,7 @@ export function CategoriaForm({
       case "anual":
         return "Anual";
       default:
-        return "Seleccionar perÃ­odo";
+        return "Seleccionar período";
     }
   };
 
@@ -312,7 +312,7 @@ export function CategoriaForm({
         return;
       }
       if (planes.length === 0) {
-        setPlanesError("Debe agregar al menos un plan a la categorÃ­a");
+        setPlanesError("Debe agregar al menos un plan a la categoría");
         setActiveTab("planes");
         return;
       }
@@ -339,8 +339,8 @@ export function CategoriaForm({
           ingresosTotales: 0,
           gastosTotal: 0,
         });
-        toast.success("CategorÃ­a creada", {
-          description: "La nueva categorÃ­a ha sido registrada correctamente.",
+        toast.success("Categoría creada", {
+          description: "La nueva categoría ha sido registrada correctamente.",
         });
       } else if (categoria) {
         await updateCategoria(categoria.id, {
@@ -352,17 +352,17 @@ export function CategoriaForm({
           notas: data.notas,
           activo: categoria.activo,
         });
-        toast.success("CategorÃ­a actualizada", {
+        toast.success("Categoría actualizada", {
           description:
-            "Los cambios en la categorÃ­a han sido guardados correctamente.",
+            "Los cambios en la categoría han sido guardados correctamente.",
         });
       }
       router.push(returnTo);
     } catch (error) {
       const message =
         mode === "create"
-          ? "Error al crear la categorÃ­a"
-          : "Error al actualizar la categorÃ­a";
+          ? "Error al crear la categoría"
+          : "Error al actualizar la categoría";
       toast.error(message, {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -428,7 +428,7 @@ export function CategoriaForm({
             value="general"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
-            InformaciÃ³n General
+            Información General
           </TabsTrigger>
           <TabsTrigger
             value="planes"
@@ -438,7 +438,7 @@ export function CategoriaForm({
           </TabsTrigger>
         </TabsList>
 
-        {/* â”€â”€ Tab 1: General â”€â”€ */}
+        {/* ── Tab 1: General ── */}
         <TabsContent value="general" className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre</Label>
@@ -490,7 +490,7 @@ export function CategoriaForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo de CategorÃ­a</Label>
+              <Label>Tipo de Categoría</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -533,7 +533,7 @@ export function CategoriaForm({
             <Textarea
               id="notas"
               {...register("notas")}
-              placeholder="AÃ±ade notas sobre la categorÃ­a..."
+              placeholder="Añade notas sobre la categoría..."
               rows={6}
             />
           </div>
@@ -548,7 +548,7 @@ export function CategoriaForm({
           </div>
         </TabsContent>
 
-        {/* â”€â”€ Tab 2: Tipos y Planes â”€â”€ */}
+        {/* ── Tab 2: Tipos y Planes ── */}
         <TabsContent value="planes" className="space-y-4">
           {planesError && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
@@ -557,12 +557,12 @@ export function CategoriaForm({
           )}
 
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* â”€â”€ Columna izquierda: Tipos de plan â”€â”€ */}
+            {/* ── Columna izquierda: Tipos de plan ── */}
             <div className="lg:w-[260px] shrink-0 space-y-3">
               <div className="space-y-0.5">
                 <h3 className="text-base font-semibold">Tipos de Plan</h3>
                 <p className="text-xs text-muted-foreground">
-                  Crea tus propias categorÃ­as de planes
+                  Crea tus propias categorías de planes
                 </p>
               </div>
 
@@ -734,7 +734,7 @@ export function CategoriaForm({
               <div className="h-full border-r" />
             </div>
 
-            {/* â”€â”€ Columna derecha: Planes del tipo seleccionado â”€â”€ */}
+            {/* ── Columna derecha: Planes del tipo seleccionado ── */}
             <div className="flex-1 space-y-4">
               {!tipoActual ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-lg">
@@ -751,7 +751,7 @@ export function CategoriaForm({
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="text-base font-semibold">
-                        Planes â€” {tipoActual.nombre}
+                        Planes — {tipoActual.nombre}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {planesDeTipoActual.length} plan
@@ -841,7 +841,7 @@ export function CategoriaForm({
                                     // Para que el input mantenga el "." mientras se escribe,
                                     // necesitamos que el estado sea un string o manejarlo localmente.
                                     // Dado que actualizarPlan actualiza el estado del padre,
-                                    // si el padre guarda un number, el "." se perderÃ¡ en el re-render.
+                                    // si el padre guarda un number, el "." se perderá en el re-render.
                                     // Pero vamos a intentar forzar el valor del input si termina en "."
                                     if (val.endsWith('.')) {
                                       e.target.value = val;
@@ -859,7 +859,7 @@ export function CategoriaForm({
 
                             <div className="space-y-2">
                               <Label htmlFor={`plan-ciclo-${plan.id}`}>
-                                PerÃ­odo de Tiempo
+                                Período de Tiempo
                               </Label>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -950,7 +950,7 @@ export function CategoriaForm({
                   ? "Creando..."
                   : "Guardando..."
                 : mode === "create"
-                  ? "Crear CategorÃ­a"
+                  ? "Crear Categoría"
                   : "Guardar Cambios"}
             </Button>
           </div>

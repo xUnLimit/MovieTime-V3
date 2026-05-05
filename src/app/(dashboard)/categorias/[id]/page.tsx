@@ -33,7 +33,7 @@ function VerCategoriaPageContent() {
         const data = await getCategoriaById<Categoria>(id);
         setCategoria(data);
       } catch (error) {
-        console.error('Error cargando categorÃƒÂ­a:', error);
+        console.error('Error cargando categoría:', error);
         setCategoria(null);
       } finally {
         setIsLoading(false);
@@ -46,10 +46,10 @@ function VerCategoriaPageContent() {
     if (categoria) {
       try {
         await deleteCategoria(categoria.id);
-        toast.success('CategorÃƒÂ­a eliminada', { description: 'La categorÃƒÂ­a ha sido eliminada correctamente.' });
+        toast.success('Categoría eliminada', { description: 'La categoría ha sido eliminada correctamente.' });
         router.push('/categorias');
       } catch (error) {
-        toast.error('Error al eliminar categorÃƒÂ­a', { description: error instanceof Error ? error.message : undefined });
+        toast.error('Error al eliminar categoría', { description: error instanceof Error ? error.message : undefined });
       }
     }
   };
@@ -76,7 +76,7 @@ function VerCategoriaPageContent() {
       case 'mensual': return { label: 'Mensual', short: 'mes' };
       case 'trimestral': return { label: 'Trimestral', short: 'trimestre' };
       case 'semestral': return { label: 'Semestral', short: 'semestre' };
-      case 'anual': return { label: 'Anual', short: 'aÃƒÂ±o' };
+      case 'anual': return { label: 'Anual', short: 'año' };
       default: return { label: ciclo, short: ciclo };
     }
   };
@@ -92,7 +92,7 @@ function VerCategoriaPageContent() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando categorÃƒÂ­a...</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando categoría...</h1>
         </div>
         <div className="rounded-lg border bg-card p-6">
           <p className="text-muted-foreground">Cargando datos...</p>
@@ -110,10 +110,10 @@ function VerCategoriaPageContent() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">CategorÃƒÂ­a no encontrada</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categoría no encontrada</h1>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <p className="text-muted-foreground">La categorÃƒÂ­a que buscas no existe.</p>
+          <p className="text-muted-foreground">La categoría que buscas no existe.</p>
         </div>
       </div>
     );
@@ -184,7 +184,7 @@ function VerCategoriaPageContent() {
             <p className="text-sm text-muted-foreground">
               <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
               {' / '}
-              <Link href="/categorias" className="hover:text-foreground transition-colors">CategorÃƒÂ­as</Link>
+              <Link href="/categorias" className="hover:text-foreground transition-colors">Categorías</Link>
               {' / '}
               <span className="text-foreground">{categoria.nombre}</span>
             </p>
@@ -208,8 +208,8 @@ function VerCategoriaPageContent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-lg border bg-card p-6">
           <div className="mb-5">
-            <h2 className="text-lg font-semibold">InformaciÃƒÂ³n de la CategorÃƒÂ­a</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Datos bÃƒÂ¡sicos de la categorÃƒÂ­a</p>
+            <h2 className="text-lg font-semibold">Información de la Categoría</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Datos básicos de la categoría</p>
           </div>
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
@@ -221,7 +221,7 @@ function VerCategoriaPageContent() {
               <span className="text-sm font-medium">{getTipoLabel(categoria.tipo)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Tipo de CategorÃƒÂ­a:</span>
+              <span className="text-sm text-muted-foreground">Tipo de Categoría:</span>
               <Badge variant="outline" className="text-xs">{getTipoCategoriaLabel(categoria.tipoCategoria || '')}</Badge>
             </div>
             {tiposPlanes.length > 0 && (
@@ -238,11 +238,11 @@ function VerCategoriaPageContent() {
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Fecha de creaciÃƒÂ³n:</span>
+              <span className="text-sm text-muted-foreground">Fecha de creación:</span>
               <span className="text-sm font-medium">{formatearFechaHora(new Date(categoria.createdAt))}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">ÃƒÅ¡ltima actualizaciÃƒÂ³n:</span>
+              <span className="text-sm text-muted-foreground">Última actualización:</span>
               <span className="text-sm font-medium">{formatearFechaHora(new Date(categoria.updatedAt))}</span>
             </div>
           </div>
@@ -251,13 +251,13 @@ function VerCategoriaPageContent() {
         <div className="rounded-lg border bg-card p-6 flex flex-col">
           <div className="mb-4">
             <h2 className="text-lg font-semibold">Notas</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">InformaciÃƒÂ³n adicional</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Información adicional</p>
           </div>
           <div className="flex-1 flex items-start">
             {categoria.notas ? (
               <p className="text-sm text-muted-foreground leading-relaxed">{categoria.notas}</p>
             ) : (
-              <p className="text-sm text-muted-foreground">No hay notas para esta categorÃƒÂ­a.</p>
+              <p className="text-sm text-muted-foreground">No hay notas para esta categoría.</p>
             )}
           </div>
         </div>
@@ -299,8 +299,8 @@ function VerCategoriaPageContent() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
-        title="Eliminar CategorÃƒÂ­a"
-        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar la categorÃƒÂ­a "${categoria.nombre}"? Esta acciÃƒÂ³n no se puede deshacer.`}
+        title="Eliminar Categoría"
+        description={`¿Estás seguro de que quieres eliminar la categoría "${categoria.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />
@@ -310,7 +310,7 @@ function VerCategoriaPageContent() {
 
 export default function VerCategoriaPage() {
   return (
-    <ModuleErrorBoundary moduleName="Ver CategorÃƒÂ­a">
+    <ModuleErrorBoundary moduleName="Ver Categoría">
       <VerCategoriaPageContent />
     </ModuleErrorBoundary>
   );

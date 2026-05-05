@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
 import { formatearFecha } from "@/lib/utils/calculations";
 import { countVentas } from "@/lib/supabase/ventas-repository";
-import { updatePagoServicio } from '@/lib/supabase/servicios-repository';
+import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
@@ -33,29 +33,29 @@ import type { MetodoPago, Servicio } from "@/types";
 
 const servicioEditSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  categoriaId: z.string().min(1, "Debe seleccionar una categorÃƒÂ­a"),
+  categoriaId: z.string().min(1, "Debe seleccionar una categoría"),
   tipoPlan: z.string().min(1, "Debe seleccionar un tipo de plan"),
-  correo: z.string().email("Por favor ingrese un correo electrÃƒÂ³nico vÃƒÂ¡lido"),
+  correo: z.string().email("Por favor ingrese un correo electrónico válido"),
   contrasena: z
     .string()
-    .min(6, "La contraseÃƒÂ±a debe tener al menos 6 caracteres"),
-  metodoPagoId: z.string().min(1, "Debe seleccionar un mÃƒÂ©todo de pago"),
+    .min(6, "La contraseña debe tener al menos 6 caracteres"),
+  metodoPagoId: z.string().min(1, "Debe seleccionar un método de pago"),
   costoServicio: z
     .string()
     .refine((val) => val !== "", "Por favor ingrese el costo del servicio")
-    .refine((val) => !isNaN(Number(val)), "El costo debe ser un valor numÃƒÂ©rico")
+    .refine((val) => !isNaN(Number(val)), "El costo debe ser un valor numérico")
     .refine((val) => Number(val) > 0, "El costo debe ser mayor a 0"),
   perfilesDisponibles: z
     .string()
-    .refine((val) => val !== "", "Por favor ingrese el nÃƒÂºmero de perfiles")
-    .refine((val) => !isNaN(Number(val)), "Debe ingresar un valor numÃƒÂ©rico")
+    .refine((val) => val !== "", "Por favor ingrese el número de perfiles")
+    .refine((val) => !isNaN(Number(val)), "Debe ingresar un valor numérico")
     .refine(
       (val) => Number(val) >= 1,
       "Debe tener al menos 1 perfil disponible",
     )
     .refine(
       (val) => Number.isInteger(Number(val)),
-      "El nÃƒÂºmero de perfiles debe ser un valor entero",
+      "El número de perfiles debe ser un valor entero",
     ),
   cicloPago: z.enum(["mensual", "trimestral", "semestral", "anual"]),
   fechaInicio: z.date(),
@@ -105,7 +105,7 @@ export function ServicioEditForm({
     ]).then((count) => setPerfilesOcupadosReal(count));
   }, [servicio.id]);
 
-  // Cargar mÃƒÂ©todos de pago al montar
+  // Cargar métodos de pago al montar
   useEffect(() => {
     const loadMetodosPago = async () => {
       const metodos = await fetchMetodosPagoServicios();
@@ -167,10 +167,10 @@ export function ServicioEditForm({
   const estadoValue = watch("estado");
   const notasValue = watch("notas");
 
-  // NO auto-actualizar precio cuando cambia el ciclo en modo ediciÃƒÂ³n
+  // NO auto-actualizar precio cuando cambia el ciclo en modo edición
   // El usuario puede tener un costo personalizado que no debe ser sobreescrito
 
-  // Auto-calcular fechaVencimiento cuando cambia el ciclo o la fecha de inicio (DESPUÃƒâ€°S de inicializaciÃƒÂ³n)
+  // Auto-calcular fechaVencimiento cuando cambia el ciclo o la fecha de inicio (DESPUÉS de inicialización)
   const [lastFechaInicioTime, setLastFechaInicioTime] = useState<number | null>(
     null,
   );
@@ -322,7 +322,7 @@ export function ServicioEditForm({
 
       if (!tipoPlanSeleccionado) {
         setError("tipoPlan", {
-          message: "Seleccione un tipo de plan configurado para la categorÃƒÂ­a",
+          message: "Seleccione un tipo de plan configurado para la categoría",
         });
         return;
       }
@@ -365,16 +365,19 @@ export function ServicioEditForm({
         });
       }
 
-      // Actualizar el ÃƒÂºltimo pago si existe (Single Source of Truth)
+      // Actualizar el último pago si existe (Single Source of Truth)
       if (ultimoPago && ultimoPago.id) {
-        await updatePagoServicio(ultimoPago.id, {
+        await updateServicioPagoUseCase(servicio, ultimoPago, {
           fechaInicio: data.fechaInicio,
           fechaVencimiento: data.fechaVencimiento,
-          monto: Number(data.costoServicio),
+          costo: Number(data.costoServicio),
           metodoPagoId: data.metodoPagoId,
           metodoPagoNombre: metodoPagoSeleccionado?.nombre, // Denormalizado
           moneda: metodoPagoSeleccionado?.moneda, // Denormalizado
-          cicloPago: data.cicloPago,
+          periodoRenovacion: data.cicloPago,
+        }, {
+          metodoPago: metodoPagoSeleccionado,
+          isLatestPayment: false,
         });
       }
 
@@ -410,7 +413,7 @@ export function ServicioEditForm({
       case "anual":
         return "Anual";
       default:
-        return "Seleccionar perÃƒÂ­odo";
+        return "Seleccionar período";
     }
   };
 
@@ -420,7 +423,7 @@ export function ServicioEditForm({
   );
 
   const categoriaNombre =
-    categoriaSeleccionada?.nombre ?? "Seleccionar categorÃƒÂ­a";
+    categoriaSeleccionada?.nombre ?? "Seleccionar categoría";
 
   const tiposPlanesDinamicos = useMemo(() => {
     return categoriaSeleccionada?.tiposPlanes || [];
@@ -449,7 +452,7 @@ export function ServicioEditForm({
     : null;
 
   const metodoPagoNombre =
-    metodoPagoSeleccionado?.nombre || "Seleccionar mÃƒÂ©todo de pago";
+    metodoPagoSeleccionado?.nombre || "Seleccionar método de pago";
 
   const getSimboloMoneda = (moneda?: string, pais?: string): string => {
     if (!moneda) return "$";
@@ -505,7 +508,7 @@ export function ServicioEditForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="categoria">CategorÃƒÂ­a</Label>
+          <Label htmlFor="categoria">Categoría</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -540,7 +543,7 @@ export function ServicioEditForm({
         </div>
       </div>
 
-      {/* Row 2: Email / ContraseÃƒÂ±a */}
+      {/* Row 2: Email / Contraseña */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="correo">Email</Label>
@@ -556,12 +559,12 @@ export function ServicioEditForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="contrasena">ContraseÃƒÂ±a</Label>
+          <Label htmlFor="contrasena">Contraseña</Label>
           <Input
             id="contrasena"
             type="text"
             {...register("contrasena")}
-            placeholder="Ingrese la contraseÃƒÂ±a"
+            placeholder="Ingrese la contraseña"
           />
           {errors.contrasena && (
             <p className="text-sm text-red-500">{errors.contrasena.message}</p>
@@ -569,10 +572,10 @@ export function ServicioEditForm({
         </div>
       </div>
 
-      {/* Row 3: MÃƒÂ©todo de Pago / Costo del servicio */}
+      {/* Row 3: Método de Pago / Costo del servicio */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="metodoPago">MÃƒÂ©todo de Pago</Label>
+          <Label htmlFor="metodoPago">Método de Pago</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -656,7 +659,7 @@ export function ServicioEditForm({
         </div>
       </div>
 
-      {/* Row 4: Tipo de Plan / Ciclo de FacturaciÃƒÂ³n */}
+      {/* Row 4: Tipo de Plan / Ciclo de Facturación */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="tipoPlan">Tipo de Plan</Label>
@@ -677,7 +680,7 @@ export function ServicioEditForm({
             >
               {tiposPlanesDinamicos.length === 0 ? (
                 <DropdownMenuItem disabled>
-                  Selecciona una categorÃƒÂ­a con tipos de plan
+                  Selecciona una categoría con tipos de plan
                 </DropdownMenuItem>
               ) : (
                 tiposPlanesDinamicos.map((tipo) => (
@@ -697,7 +700,7 @@ export function ServicioEditForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="ciclo">Ciclo de FacturaciÃƒÂ³n</Label>
+          <Label htmlFor="ciclo">Ciclo de Facturación</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -819,10 +822,10 @@ export function ServicioEditForm({
         </div>
       </div>
 
-      {/* Row 6: NÃƒÂºmero de perfiles / Estado */}
+      {/* Row 6: Número de perfiles / Estado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="perfiles">NÃƒÂºmero de perfiles</Label>
+          <Label htmlFor="perfiles">Número de perfiles</Label>
           <Input
             id="perfiles"
             type="text"
@@ -898,7 +901,7 @@ export function ServicioEditForm({
         <Textarea
           id="notas"
           {...register("notas")}
-          placeholder="InformaciÃƒÂ³n adicional relevante..."
+          placeholder="Información adicional relevante..."
           rows={6}
         />
       </div>

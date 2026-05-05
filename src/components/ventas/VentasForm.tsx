@@ -42,7 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
 import { queryServicios } from "@/lib/supabase/servicios-repository";
-import { adjustServiciosActivos, queryVentas } from '@/lib/supabase/ventas-repository';
+import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -89,7 +89,7 @@ interface VentaItem {
   tipo: TipoItem;
   planId: string;
   categoriaId: string;
-  categoriaNombre: string; // <- Denormalizar nombre de categorÃƒÂ­a
+  categoriaNombre: string; // <- Denormalizar nombre de categoría
   servicioId: string;
   servicioNombre: string;
   servicioCorreo?: string;
@@ -162,12 +162,12 @@ export function VentasForm() {
     state.getTemplateByTipo("suscripcion"),
   );
 
-  // Estado local para mÃƒÂ©todos de pago filtrados (solo usuarios)
+  // Estado local para métodos de pago filtrados (solo usuarios)
   const [metodosPagoUsuarios, setMetodosPagoUsuarios] = useState<
     MetodoPagoOption[]
   >([]);
 
-  // Estado local para servicios (cargados solo cuando se selecciona categorÃƒÂ­a)
+  // Estado local para servicios (cargados solo cuando se selecciona categoría)
   const [serviciosCategoria, setServiciosCategoria] = useState<Servicio[]>([]);
   const [loadingServicios, setLoadingServicios] = useState(false);
 
@@ -233,13 +233,13 @@ export function VentasForm() {
     }
   }, [estadoValue, notifyCliente]);
 
-  // Efecto inicial: solo cargar datos que no dependen de selecciÃƒÂ³n
+  // Efecto inicial: solo cargar datos que no dependen de selección
   useEffect(() => {
     fetchCategorias();
     fetchUsuarios();
     fetchTemplates();
 
-    // Cargar mÃƒÂ©todos de pago filtrados (solo usuarios)
+    // Cargar métodos de pago filtrados (solo usuarios)
     const loadMetodosPagoUsuarios = async () => {
       try {
         const metodos = await queryMetodosPago<MetodoPagoOption>([
@@ -247,14 +247,14 @@ export function VentasForm() {
         ]);
         setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION, ...metodos]);
       } catch (error) {
-        console.error("Error cargando mÃƒÂ©todos de pago:", error);
+        console.error("Error cargando métodos de pago:", error);
         setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION]);
       }
     };
     loadMetodosPagoUsuarios();
   }, [fetchCategorias, fetchUsuarios, fetchTemplates]);
 
-  // Efecto para cargar servicios cuando se selecciona una categorÃƒÂ­a
+  // Efecto para cargar servicios cuando se selecciona una categoría
   useEffect(() => {
     if (!categoriaId) {
       setServiciosCategoria([]);
@@ -314,16 +314,16 @@ export function VentasForm() {
     [categorias, categoriaId],
   );
 
-  // Usuarios (clientes + revendedores) ordenados por fecha de creaciÃƒÂ³n (mÃƒÂ¡s reciente primero)
+  // Usuarios (clientes + revendedores) ordenados por fecha de creación (más reciente primero)
   const usuariosOrdenados = useMemo(() => {
     return [...usuarios].sort((a, b) => {
       const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bDate - aDate; // MÃƒÂ¡s reciente primero
+      return bDate - aDate; // Más reciente primero
     });
   }, [usuarios]);
 
-  // Usuarios filtrados por bÃƒÂºsqueda
+  // Usuarios filtrados por búsqueda
   const usuariosFiltrados = useMemo(() => {
     if (!searchCliente) return usuariosOrdenados;
     const search = normalizeSearchText(searchCliente);
@@ -381,12 +381,12 @@ export function VentasForm() {
     [planesDisponibles, planId],
   );
 
-  // Ordenar servicios por fecha de creaciÃƒÂ³n (mÃƒÂ¡s recientes primero)
+  // Ordenar servicios por fecha de creación (más recientes primero)
   const serviciosOrdenados = useMemo(() => {
     return [...serviciosCategoria].sort((a, b) => {
       const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bDate - aDate; // MÃƒÂ¡s reciente primero
+      return bDate - aDate; // Más reciente primero
     });
   }, [serviciosCategoria]);
 
@@ -702,19 +702,19 @@ export function VentasForm() {
     "Cliente";
   const previewFechaVencimiento = previewItem?.fechaFin ?? fechaFinValue;
   const previewMonto = items.length > 0 ? totalFinal : precioFinalNumero;
-  const previewCodigo = previewItem?.codigo || watch("codigo")?.trim() || "Ã¢â‚¬â€";
-  const previewPerfilNombre = previewItem?.perfilNombre?.trim() || "Ã¢â‚¬â€";
+  const previewCodigo = previewItem?.codigo || watch("codigo")?.trim() || "—";
+  const previewPerfilNombre = previewItem?.perfilNombre?.trim() || "—";
   const previewCorreo =
-    previewServicio?.correo || previewItem?.servicioCorreo || "Ã¢â‚¬â€";
+    previewServicio?.correo || previewItem?.servicioCorreo || "—";
   const previewContrasena =
-    previewServicio?.contrasena || previewItem?.servicioContrasena || "Ã¢â‚¬â€";
+    previewServicio?.contrasena || previewItem?.servicioContrasena || "—";
   const previewCategoriaNombre =
     previewCategoria?.nombre || previewItem?.servicioNombre || "Servicio";
   const previewServicioNombre =
     previewItem?.servicioNombre || previewServicio?.nombre || "Servicio";
   const formatItemsList = (names: string[]) => {
     const cleaned = names.map((n) => n.trim()).filter(Boolean);
-    if (cleaned.length === 0) return "Ã¢â‚¬â€";
+    if (cleaned.length === 0) return "—";
     if (cleaned.length === 1) return `*${cleaned[0]}*`;
     if (cleaned.length === 2) return `*${cleaned[0]}* y *${cleaned[1]}*`;
     const first = cleaned
@@ -764,14 +764,14 @@ export function VentasForm() {
                 item.servicioNombre || servicio?.nombre || "Servicio",
               "{categoria}":
                 categoria?.nombre || item.servicioNombre || "Servicio",
-              "{correo}": servicio?.correo || item.servicioCorreo || "Ã¢â‚¬â€",
+              "{correo}": servicio?.correo || item.servicioCorreo || "—",
               "{contrasena}":
-                servicio?.contrasena || item.servicioContrasena || "Ã¢â‚¬â€",
-              "{perfil_nombre}": item.perfilNombre?.trim() || "Ã¢â‚¬â€",
-              "{codigo}": item.codigo || "Ã¢â‚¬â€",
+                servicio?.contrasena || item.servicioContrasena || "—",
+              "{perfil_nombre}": item.perfilNombre?.trim() || "—",
+              "{codigo}": item.codigo || "—",
               "{vencimiento}": item.fechaFin
                 ? formatearFechaWhatsApp(new Date(item.fechaFin))
-                : "Ã¢â‚¬â€",
+                : "—",
               "{monto}": `$${item.precioFinal?.toFixed(2) || "0.00"}`,
             };
             return replaceAllPlaceholders(block, { ...globals, ...itemValues });
@@ -786,7 +786,7 @@ export function VentasForm() {
   const previewMessage = useMemo(() => {
     const content =
       templateNotificacion?.contenido ||
-      "No hay plantilla de NotificaciÃƒÂ³n de SuscripciÃƒÂ³n configurada.";
+      "No hay plantilla de Notificación de Suscripción configurada.";
     const placeholders: Record<string, string> = {
       "{saludo}": getSaludo(),
       "{cliente}": previewClienteNombre,
@@ -799,7 +799,7 @@ export function VentasForm() {
       "{contrasena}": previewContrasena,
       "{vencimiento}": previewFechaVencimiento
         ? formatearFechaWhatsApp(new Date(previewFechaVencimiento))
-        : "Ã¢â‚¬â€",
+        : "—",
       "{monto}": `$${previewMonto.toFixed(2)}`,
       "{codigo}": previewCodigo,
     };
@@ -1053,12 +1053,12 @@ export function VentasForm() {
         });
       } catch (syncError) {
         console.error(
-          "Error sincronizando mÃƒÂ©todo de pago del usuario:",
+          "Error sincronizando método de pago del usuario:",
           syncError,
         );
         toast.warning("Venta guardada con advertencia", {
           description:
-            "La venta se creÃƒÂ³, pero no se pudo actualizar el mÃƒÂ©todo de pago en usuarios.",
+            "La venta se creó, pero no se pudo actualizar el método de pago en usuarios.",
         });
       }
 
@@ -1067,10 +1067,6 @@ export function VentasForm() {
           if (item.perfilNumero) {
             await updatePerfilOcupado(item.servicioId, true);
           }
-        }
-        // Incrementar ventasActivas en el usuario (una vez por item creado)
-        if (clienteIdValue) {
-          await adjustServiciosActivos(clienteIdValue, items.length);
         }
       }
       if (notifyCliente && estadoVenta !== "inactivo" && editedMessage) {
@@ -1219,7 +1215,7 @@ export function VentasForm() {
                                   : usuario.metodoPagoId;
                               setValue("metodoPagoId", nextMetodoPagoId);
                               clearErrors("metodoPagoId");
-                              setSearchCliente(""); // Limpiar bÃƒÂºsqueda despuÃƒÂ©s de seleccionar
+                              setSearchCliente(""); // Limpiar búsqueda después de seleccionar
                             }}
                           >
                             <div className="flex items-center gap-2">
@@ -2061,7 +2057,7 @@ export function VentasForm() {
                 </p>
               </div>
               <div className="rounded-lg border bg-background/40 p-4">
-                <p className="text-xs text-muted-foreground">MÃƒÂ©todo de pago</p>
+                <p className="text-xs text-muted-foreground">Método de pago</p>
                 <p className="text-sm font-medium">
                   {metodoPagoSeleccionado?.nombre || "Sin seleccionar"}
                 </p>
@@ -2093,7 +2089,7 @@ export function VentasForm() {
                           <p className="text-xs text-muted-foreground">
                             {item.cicloPago
                               ? `${item.cicloPago.charAt(0).toUpperCase()}${item.cicloPago.slice(1)}`
-                              : "Ã¢â‚¬â€"}
+                              : "—"}
                           </p>
                         </div>
                         <span className="text-green-500 font-semibold">
@@ -2106,7 +2102,7 @@ export function VentasForm() {
                           <p className="text-foreground font-medium">
                             {item.fechaInicio
                               ? formatearFecha(item.fechaInicio)
-                              : "Ã¢â‚¬â€"}
+                              : "—"}
                           </p>
                         </div>
                         <div>
@@ -2114,7 +2110,7 @@ export function VentasForm() {
                           <p className="text-foreground font-medium">
                             {item.fechaFin
                               ? formatearFecha(item.fechaFin)
-                              : "Ã¢â‚¬â€"}
+                              : "—"}
                           </p>
                         </div>
                         <div>
@@ -2136,13 +2132,13 @@ export function VentasForm() {
                           <p className="text-foreground font-medium">
                             {item.perfilNombre?.trim()
                               ? item.perfilNombre
-                              : "Ã¢â‚¬â€"}
+                              : "—"}
                           </p>
                         </div>
                         <div>
                           <p>Codigo</p>
                           <p className="text-foreground font-medium">
-                            {item.codigo || "Ã¢â‚¬â€"}
+                            {item.codigo || "—"}
                           </p>
                         </div>
                       </div>
@@ -2194,7 +2190,7 @@ export function VentasForm() {
               {notifyCliente && estadoValue !== "inactivo" && (
                 <div className="mt-4 space-y-2">
                   <p className="text-sm font-semibold">
-                    Editar Mensaje de NotificaciÃƒÂ³n
+                    Editar Mensaje de Notificación
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Puedes ajustar el mensaje antes de enviarlo. Los cambios no

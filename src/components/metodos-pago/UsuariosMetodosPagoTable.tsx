@@ -26,7 +26,7 @@ interface UsuariosMetodosPagoTableProps {
 
 export function UsuariosMetodosPagoTable({
   metodosPago,
-  title = "MÃ©todos de pago de Usuarios",
+  title = "Métodos de pago de Usuarios",
 }: UsuariosMetodosPagoTableProps) {
     const { deleteMetodoPago, fetchCounts } = useMetodosPagoStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -34,7 +34,7 @@ export function UsuariosMetodosPagoTable({
   const [searchQuery, setSearchQuery] = useState("");
   const [paisFilter, setPaisFilter] = useState("todos");
 
-  // Filtrar solo mÃ©todos de usuario
+  // Filtrar solo métodos de usuario
   const metodosUsuarios = useMemo(() => {
     return metodosPago.filter((m) => {
       // Si tiene asociadoA, usarlo directamente
@@ -47,13 +47,13 @@ export function UsuariosMetodosPagoTable({
     });
   }, [metodosPago]);
 
-  // Obtener paÃ­ses Ãºnicos
+  // Obtener países únicos
   const paisesUnicos = useMemo(() => {
     const paises = new Set(metodosUsuarios.map((m) => m.pais));
     return Array.from(paises).filter(Boolean);
   }, [metodosUsuarios]);
 
-  // Filtrar y ordenar mÃ©todos de pago
+  // Filtrar y ordenar métodos de pago
   const filteredMetodos = useMemo(() => {
     const filtered = metodosUsuarios.filter((metodo) => {
       const matchesSearch =
@@ -63,7 +63,7 @@ export function UsuariosMetodosPagoTable({
       const matchesPais = paisFilter === "todos" || metodo.pais === paisFilter;
       return matchesSearch && matchesPais;
     });
-    // Ordenar alfabÃ©ticamente por nombre
+    // Ordenar alfabéticamente por nombre
     return filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [metodosUsuarios, searchQuery, paisFilter]);
 
@@ -77,10 +77,10 @@ export function UsuariosMetodosPagoTable({
     if (metodoToDelete) {
       try {
         await deleteMetodoPago(metodoToDelete.id);
-        await fetchCounts(); // Actualizar mÃ©tricas
-        toast.success("MÃ©todo de pago eliminado");
+        await fetchCounts(); // Actualizar métricas
+        toast.success("Método de pago eliminado");
       } catch (error) {
-        toast.error("Error al eliminar mÃ©todo de pago", {
+        toast.error("Error al eliminar método de pago", {
           description: error instanceof Error ? error.message : undefined,
         });
       }
@@ -91,14 +91,14 @@ export function UsuariosMetodosPagoTable({
     ahorro: "Ahorro",
     corriente: "Corriente",
     wallet: "Wallet",
-    telefono: "TelÃ©fono",
+    telefono: "Teléfono",
     email: "Email",
   };
 
   const columns: Column<MetodoPago>[] = [
     {
       key: "nombre",
-      header: "MÃ©todo",
+      header: "Método",
       sortable: true,
       width: "15%",
       render: (item) => (
@@ -107,7 +107,7 @@ export function UsuariosMetodosPagoTable({
     },
     {
       key: "pais",
-      header: "PaÃ­s",
+      header: "País",
       sortable: true,
       align: "center",
       width: "12%",
@@ -166,7 +166,7 @@ export function UsuariosMetodosPagoTable({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por mÃ©todo, titular, alias..."
+              placeholder="Buscar por método, titular, alias..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -178,7 +178,7 @@ export function UsuariosMetodosPagoTable({
                 variant="outline"
                 className="w-[200px] justify-between font-normal"
               >
-                {paisFilter === "todos" ? "Todos los paÃ­ses" : paisFilter}
+                {paisFilter === "todos" ? "Todos los países" : paisFilter}
                 <svg
                   className="h-4 w-4 opacity-50"
                   fill="none"
@@ -196,7 +196,7 @@ export function UsuariosMetodosPagoTable({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
               {[
-                { value: "todos", label: "Todos los paÃ­ses" },
+                { value: "todos", label: "Todos los países" },
                 ...paisesUnicos.map((p) => ({ value: p, label: p })),
               ].map((op) => (
                 <DropdownMenuItem
@@ -229,7 +229,7 @@ export function UsuariosMetodosPagoTable({
         {filteredMetodos.length === 0 ? (
           <div className="border border-border rounded-md p-12 text-center">
             <p className="text-sm text-muted-foreground">
-              No se encontraron mÃ©todos de pago
+              No se encontraron métodos de pago
             </p>
           </div>
         ) : (
@@ -279,8 +279,8 @@ export function UsuariosMetodosPagoTable({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
-        title="Eliminar MÃ©todo de Pago"
-        description={`Â¿EstÃ¡s seguro de que quieres eliminar el mÃ©todo "${metodoToDelete?.nombre}"? Esta acciÃ³n no se puede deshacer.`}
+        title="Eliminar Método de Pago"
+        description={`¿Estás seguro de que quieres eliminar el método "${metodoToDelete?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

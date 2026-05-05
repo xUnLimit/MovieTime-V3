@@ -158,7 +158,7 @@ export function ServiciosCategoriaTable({
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <span className="text-lg">ðŸ”„</span>
+                        <span className="text-lg">🔄</span>
                         <span className="font-medium">
                           {servicio.renovaciones || 0}
                         </span>

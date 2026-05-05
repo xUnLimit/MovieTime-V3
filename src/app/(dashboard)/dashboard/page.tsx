@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 // Skeletons que usan los mismos componentes y clases exactas que cada chart real
 function IngresosVsGastosChartSkeleton() {
   // Replica exacta del estado isLoading=true del componente real:
-  // header y descripciÃ³n se muestran con texto real, solo el chart es skeleton.
+  // header y descripción se muestran con texto real, solo el chart es skeleton.
   return (
     <Card className="py-3 gap-0">
       <CardHeader className="flex flex-col gap-2 p-0 px-4 pb-2 sm:flex-row sm:items-center sm:justify-between">
@@ -32,7 +32,7 @@ function IngresosVsGastosChartSkeleton() {
 
 function CrecimientoUsuariosSkeleton() {
   // Replica exacta del estado isLoading=true del componente real:
-  // header y descripciÃ³n con texto real, solo el chart es skeleton.
+  // header y descripción con texto real, solo el chart es skeleton.
   return (
     <Card className="py-1">
       <CardHeader className="flex flex-row items-center justify-between pt-3 pb-2 px-6">
@@ -53,14 +53,14 @@ function CrecimientoUsuariosSkeleton() {
 
 function RevenueByCategorySkeleton() {
   // Replica exacta del estado isLoading=true del componente real:
-  // header y descripciÃ³n con texto real, solo el contenido es skeleton.
+  // header y descripción con texto real, solo el contenido es skeleton.
   return (
     <Card>
       <CardHeader className="pb-2">
         <div>
-          <CardTitle className="text-base">Rentabilidad por CategorÃ­a</CardTitle>
+          <CardTitle className="text-base">Rentabilidad por Categoría</CardTitle>
           <CardDescription className="text-sm">
-            Ganancia neta generada por cada categorÃ­a de servicio.
+            Ganancia neta generada por cada categoría de servicio.
           </CardDescription>
         </div>
       </CardHeader>
@@ -127,8 +127,8 @@ export default function DashboardPage() {
       if (ventasCount > 0) parts.push(`${ventasCount} venta${ventasCount > 1 ? 's' : ''} por vencer`);
       if (serviciosCount > 0) parts.push(`${serviciosCount} servicio${serviciosCount > 1 ? 's' : ''} por pagar`);
       const description = parts.length > 0
-        ? `Tienes ${parts.join(' y ')} que requieren tu atenciÃ³n.`
-        : `Tienes ${unread.length} alerta${unread.length > 1 ? 's' : ''} importante${unread.length > 1 ? 's' : ''} que requieren tu atenciÃ³n.`;
+        ? `Tienes ${parts.join(' y ')} que requieren tu atención.`
+        : `Tienes ${unread.length} alerta${unread.length > 1 ? 's' : ''} importante${unread.length > 1 ? 's' : ''} que requieren tu atención.`;
 
       toast.custom((t) => (
         <div
@@ -144,7 +144,7 @@ export default function DashboardPage() {
           <div className="grid gap-1">
             <div className={`text-sm font-semibold flex items-center gap-2 ${isRed ? 'text-red-500' : 'text-yellow-500'}`}>
               <Bell className="h-5 w-5" />
-              Â¡Notificaciones Pendientes!
+              ¡Notificaciones Pendientes!
             </div>
             <div className="text-sm opacity-90 text-foreground">
               {description}
@@ -212,7 +212,7 @@ export default function DashboardPage() {
       toast.success('Sistema sincronizado correctamente', {
         id: toastId,
         description:
-          'Notificaciones regeneradas y mÃ©tricas del dashboard reconstruidas desde la base de datos.',
+          'Notificaciones regeneradas y métricas del dashboard reconstruidas desde la base de datos.',
       });
     } catch (error) {
       console.error('Error during global sync:', error);
@@ -226,7 +226,7 @@ export default function DashboardPage() {
         <div className="space-y-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Vista general de mÃ©tricas y rendimiento
+            Vista general de métricas y rendimiento
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">

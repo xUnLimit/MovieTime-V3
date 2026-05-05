@@ -26,7 +26,7 @@ interface ServiciosMetodosPagoTableProps {
 
 export function ServiciosMetodosPagoTable({
   metodosPago,
-  title = "MÃ©todos de pago de Servicios",
+  title = "Métodos de pago de Servicios",
 }: ServiciosMetodosPagoTableProps) {
     const { deleteMetodoPago, fetchCounts } = useMetodosPagoStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -34,7 +34,7 @@ export function ServiciosMetodosPagoTable({
   const [searchQuery, setSearchQuery] = useState("");
   const [paisFilter, setPaisFilter] = useState("todos");
 
-  // Filtrar solo mÃ©todos de servicio
+  // Filtrar solo métodos de servicio
   const metodosConServicios = useMemo(() => {
     return metodosPago.filter((m) => {
       // Si tiene asociadoA, usarlo directamente
@@ -47,13 +47,13 @@ export function ServiciosMetodosPagoTable({
     });
   }, [metodosPago]);
 
-  // Obtener paÃ­ses Ãºnicos
+  // Obtener países únicos
   const paisesUnicos = useMemo(() => {
     const paises = new Set(metodosConServicios.map((m) => m.pais));
     return Array.from(paises).filter(Boolean);
   }, [metodosConServicios]);
 
-  // Filtrar y ordenar mÃ©todos de pago
+  // Filtrar y ordenar métodos de pago
   const filteredMetodos = useMemo(() => {
     const filtered = metodosConServicios.filter((metodo) => {
       const matchesSearch =
@@ -64,7 +64,7 @@ export function ServiciosMetodosPagoTable({
       const matchesPais = paisFilter === "todos" || metodo.pais === paisFilter;
       return matchesSearch && matchesPais;
     });
-    // Ordenar alfabÃ©ticamente por nombre
+    // Ordenar alfabéticamente por nombre
     return filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [metodosConServicios, searchQuery, paisFilter]);
 
@@ -78,10 +78,10 @@ export function ServiciosMetodosPagoTable({
     if (metodoToDelete) {
       try {
         await deleteMetodoPago(metodoToDelete.id);
-        await fetchCounts(); // Actualizar mÃ©tricas
-        toast.success("MÃ©todo de pago eliminado");
+        await fetchCounts(); // Actualizar métricas
+        toast.success("Método de pago eliminado");
       } catch (error) {
-        toast.error("Error al eliminar mÃ©todo de pago", {
+        toast.error("Error al eliminar método de pago", {
           description: error instanceof Error ? error.message : undefined,
         });
       }
@@ -91,7 +91,7 @@ export function ServiciosMetodosPagoTable({
   const columns: Column<MetodoPago>[] = [
     {
       key: "nombre",
-      header: "MÃ©todo",
+      header: "Método",
       sortable: true,
       width: "15%",
       render: (item) => (
@@ -100,7 +100,7 @@ export function ServiciosMetodosPagoTable({
     },
     {
       key: "pais",
-      header: "PaÃ­s",
+      header: "País",
       sortable: true,
       align: "center",
       width: "12%",
@@ -126,13 +126,13 @@ export function ServiciosMetodosPagoTable({
     },
     {
       key: "numeroTarjeta",
-      header: "Ãšltimos DÃ­gitos",
+      header: "Últimos Dígitos",
       sortable: false,
       align: "center",
       width: "13%",
       render: (item) => {
         if (item.numeroTarjeta) {
-          // Extraer Ãºltimos 4 dÃ­gitos del nÃºmero de tarjeta
+          // Extraer últimos 4 dígitos del número de tarjeta
           const digitos = item.numeroTarjeta.replace(/\D/g, "").slice(-4);
           return <span className="text-sm">{digitos}</span>;
         }
@@ -168,7 +168,7 @@ export function ServiciosMetodosPagoTable({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por mÃ©todo, titular, email..."
+              placeholder="Buscar por método, titular, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -180,7 +180,7 @@ export function ServiciosMetodosPagoTable({
                 variant="outline"
                 className="w-[200px] justify-between font-normal"
               >
-                {paisFilter === "todos" ? "Todos los paÃ­ses" : paisFilter}
+                {paisFilter === "todos" ? "Todos los países" : paisFilter}
                 <svg
                   className="h-4 w-4 opacity-50"
                   fill="none"
@@ -198,7 +198,7 @@ export function ServiciosMetodosPagoTable({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
               {[
-                { value: "todos", label: "Todos los paÃ­ses" },
+                { value: "todos", label: "Todos los países" },
                 ...paisesUnicos.map((p) => ({ value: p, label: p })),
               ].map((op) => (
                 <DropdownMenuItem
@@ -231,7 +231,7 @@ export function ServiciosMetodosPagoTable({
         {filteredMetodos.length === 0 ? (
           <div className="border border-border rounded-md p-12 text-center">
             <p className="text-sm text-muted-foreground">
-              No se encontraron mÃ©todos de pago
+              No se encontraron métodos de pago
             </p>
           </div>
         ) : (
@@ -281,8 +281,8 @@ export function ServiciosMetodosPagoTable({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
-        title="Eliminar MÃ©todo de Pago"
-        description={`Â¿EstÃ¡s seguro de que quieres eliminar el mÃ©todo "${metodoToDelete?.nombre}"? Esta acciÃ³n no se puede deshacer.`}
+        title="Eliminar Método de Pago"
+        description={`¿Estás seguro de que quieres eliminar el método "${metodoToDelete?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

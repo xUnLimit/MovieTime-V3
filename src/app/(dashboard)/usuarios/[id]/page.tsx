@@ -77,7 +77,7 @@ function UsuarioDetallesPageContent() {
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
-            No se encontrÃƒÂ³ el usuario con el ID proporcionado.
+            No se encontró el usuario con el ID proporcionado.
           </p>
           <Link
             href="/usuarios"
@@ -148,7 +148,7 @@ function UsuarioDetallesPageContent() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title={`Eliminar ${usuario.tipo === 'revendedor' ? 'Revendedor' : 'Cliente'}`}
-        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar a "${usuario.nombre} ${usuario.apellido}"? Esta acciÃƒÂ³n no se puede deshacer.`}
+        description={`¿Estás seguro de que quieres eliminar a "${usuario.nombre} ${usuario.apellido}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

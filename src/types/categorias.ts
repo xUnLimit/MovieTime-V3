@@ -3,7 +3,7 @@
 // ===========================
 
 /**
- * Tipo de plan personalizado dentro de una categorÃ­a.
+ * Tipo de plan personalizado dentro de una categoría.
  * El usuario define sus propios tipos (ej: "Pantalla Completa", "Por Perfil").
  */
 export interface TipoPlanConfig {
@@ -29,7 +29,7 @@ export interface Categoria {
   tipo: 'cliente' | 'revendedor' | 'ambos';
   tipoCategoria?: 'plataforma_streaming' | 'otros';
   /**
-   * Tipos de plan personalizados de esta categorÃ­a.
+   * Tipos de plan personalizados de esta categoría.
    * Define las etiquetas que aparecen al crear servicios y planes.
    */
   tiposPlanes?: TipoPlanConfig[];
@@ -38,12 +38,12 @@ export interface Categoria {
   activo: boolean;
 
   // Campos derivados desde vistas/consultas Supabase.
-  totalServicios: number;           // Total de servicios en esta categorÃ­a
+  totalServicios: number;           // Total de servicios en esta categoría
   serviciosActivos: number;         // Servicios con activo=true
   perfilesDisponiblesTotal: number; // Suma de (perfilesDisponibles - perfilesOcupados) de servicios activos
-  ventasTotales: number;            // Total de ventas (suscripciones) asociadas a servicios de esta categorÃ­a
-  ingresosTotales: number;          // Suma total de ingresos de ventas de esta categorÃ­a
-  gastosTotal: number;              // Suma total de gastos (pagosServicio) de esta categorÃ­a
+  ventasTotales: number;            // Total de ventas (suscripciones) asociadas a servicios de esta categoría
+  ingresosTotales: number;          // Suma total de ingresos de ventas de esta categoría
+  gastosTotal: number;              // Suma total de gastos (pagosServicio) de esta categoría
 
   createdAt: Date;
   updatedAt: Date;

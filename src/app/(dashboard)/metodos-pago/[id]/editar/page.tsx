@@ -28,8 +28,8 @@ function EditarMetodoPagoPageContent() {
         const data = await getMetodoPagoById<MetodoPago>(id);
         setMetodoPago(data);
       } catch (error) {
-        console.error('Error cargando mÃƒÂ©todo de pago:', error);
-        toast.error('Error al cargar el mÃƒÂ©todo de pago', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
+        console.error('Error cargando método de pago:', error);
+        toast.error('Error al cargar el método de pago', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
         setMetodoPago(null);
       } finally {
         setLoading(false);
@@ -50,27 +50,27 @@ function EditarMetodoPagoPageContent() {
     return (
       <div className="space-y-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">MÃƒÂ©todo de pago no encontrado</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Método de pago no encontrado</h1>
           <p className="text-sm text-muted-foreground">
             <Link href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
             <Link href="/metodos-pago" className="hover:text-foreground transition-colors">
-              MÃƒÂ©todos de Pago
+              Métodos de Pago
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
-            No se encontrÃƒÂ³ el mÃƒÂ©todo de pago con el ID proporcionado.
+            No se encontró el método de pago con el ID proporcionado.
           </p>
           <Link
             href="/metodos-pago"
             className="inline-block mt-4 text-primary hover:underline"
           >
-            Volver a MÃƒÂ©todos de Pago
+            Volver a Métodos de Pago
           </Link>
         </div>
       </div>
@@ -88,7 +88,7 @@ function EditarMetodoPagoPageContent() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar MÃƒÂ©todo de Pago</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Método de Pago</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
             <Link href="/" className="hover:text-foreground transition-colors">
@@ -96,7 +96,7 @@ function EditarMetodoPagoPageContent() {
             </Link>{' '}
             /{' '}
             <Link href="/metodos-pago" className="hover:text-foreground transition-colors">
-              MÃƒÂ©todos de Pago
+              Métodos de Pago
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
           </p>
@@ -113,7 +113,7 @@ function EditarMetodoPagoPageContent() {
 
 export default function EditarMetodoPagoPage() {
   return (
-    <ModuleErrorBoundary moduleName="Editar MÃƒÂ©todo de Pago">
+    <ModuleErrorBoundary moduleName="Editar Método de Pago">
       <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-muted-foreground">Cargando...</div></div>}>
         <EditarMetodoPagoPageContent />
       </Suspense>

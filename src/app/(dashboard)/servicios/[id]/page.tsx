@@ -31,7 +31,7 @@ function ServiciosCategoriaPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('activo');
   const [pageSize, setPageSize] = useState(10);
   const isSearchMode = searchTerm.trim().length > 0;
-  // Si hay filtros client-side activos (ciclo o perfil), necesitamos fetchAll para no perder resultados de otras pÃƒÂ¡ginas
+  // Si hay filtros client-side activos (ciclo o perfil), necesitamos fetchAll para no perder resultados de otras páginas
   const needsFullFetch = cicloFilter !== 'todos' || perfilFilter !== 'todos';
   const isFetchAllMode = isSearchMode || needsFullFetch;
 
@@ -39,7 +39,7 @@ function ServiciosCategoriaPageContent() {
     fetchCategorias();
   }, [fetchCategorias]);
 
-  // Construir filtros dinÃƒÂ¡micos
+  // Construir filtros dinámicos
   const filters = useMemo(() => {
     const baseFilters: FilterOption[] = [
       { field: 'categoriaId', operator: '==', value: categoriaId }
@@ -54,7 +54,7 @@ function ServiciosCategoriaPageContent() {
     return baseFilters;
   }, [categoriaId, estadoFilter]);
 
-  // PaginaciÃƒÂ³n con filtros (solo cuando NO hay bÃƒÂºsqueda activa)
+  // Paginación con filtros (solo cuando NO hay búsqueda activa)
   const {
     data: serviciosPaginados,
     isLoading: isLoadingPage,
@@ -72,7 +72,7 @@ function ServiciosCategoriaPageContent() {
     orderDirection: 'asc',
   });
 
-  // Modo fetchAll: cuando hay bÃƒÂºsqueda activa O filtros client-side (ciclo/perfil)
+  // Modo fetchAll: cuando hay búsqueda activa O filtros client-side (ciclo/perfil)
   const [isLoadingFetchAll, setIsLoadingFetchAll] = useState(false);
   useEffect(() => {
     if (!isFetchAllMode) return;
@@ -111,7 +111,7 @@ function ServiciosCategoriaPageContent() {
 
   const categoria = categorias.find(c => c.id === categoriaId);
 
-  // Escuchar cuando se elimina un servicio desde otra pÃƒÂ¡gina
+  // Escuchar cuando se elimina un servicio desde otra página
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'servicio-deleted') {
@@ -132,8 +132,8 @@ function ServiciosCategoriaPageContent() {
     };
   }, [refresh]);
 
-  // En modo fetchAll, los filtros ya estÃƒÂ¡n aplicados en fetchAllResults.
-  // En modo paginaciÃƒÂ³n pura (sin filtros), no se necesita filtrado adicional.
+  // En modo fetchAll, los filtros ya están aplicados en fetchAllResults.
+  // En modo paginación pura (sin filtros), no se necesita filtrado adicional.
   const serviciosFiltrados = servicios.filter(s => !s.enReposo);
 
   const handleEdit = (id: string) => {
@@ -147,7 +147,7 @@ function ServiciosCategoriaPageContent() {
   if (!categoria) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">CategorÃƒÂ­a no encontrada</p>
+        <p className="text-muted-foreground">Categoría no encontrada</p>
       </div>
     );
   }

@@ -43,13 +43,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
-import { queryNotificaciones, removeNotificacion } from "@/lib/supabase/notifications-repository";
-import { adjustCategoriaGastos, queryServicios } from '@/lib/supabase/servicios-repository';
-import { currencyService } from "@/lib/services/currencyService";
+import { queryNotificaciones } from "@/lib/supabase/notifications-repository";
+import { queryServicios } from '@/lib/supabase/servicios-repository';
+import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { crearPagoRenovacion } from "@/lib/services/pagosServicioService";
 import type { Servicio } from "@/types/servicios";
 import type { MetodoPago } from "@/types/metodos-pago";
 import { toast } from "sonner";
@@ -105,7 +104,7 @@ function ServiciosReposoMetrics({ servicios }: { servicios: ReposoServicio[] }) 
         underlineColor="bg-blue-500"
       />
       <MetricCard
-        title="PrÃƒÂ³ximos a Finalizar"
+        title="Próximos a Finalizar"
         value={proximosFinalizar}
         icon={AlertTriangle}
         iconColor="text-yellow-500"
@@ -125,7 +124,7 @@ function ServiciosReposoMetrics({ servicios }: { servicios: ReposoServicio[] }) 
 function ReposoPageContent() {
   const { updateServicio, deleteServicio, fetchCounts } = useServiciosStore();
   const { fetchCategorias } = useCategoriasStore();
-  const { fetchNotificaciones } = useNotificacionesStore();
+  const { deleteNotificacion, fetchNotificaciones } = useNotificacionesStore();
 
   const [serviciosReposo, setServiciosReposo] = useState<ReposoServicio[]>([]);
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
@@ -202,7 +201,7 @@ function ReposoPageContent() {
         { field: "servicioId", operator: "==", value: servicioId },
       ]);
       await Promise.all(
-        notifs.map((n) => removeNotificacion(n.id)),
+        notifs.map((n) => deleteNotificacion(n.id)),
       );
       fetchNotificaciones(true);
     } catch {
@@ -266,34 +265,12 @@ function ReposoPageContent() {
         notas: notaPrincipal,
       });
 
-      const renovaciones = (selectedServicio.renovaciones ?? 0) + 1;
-      await crearPagoRenovacion(
-        selectedServicio.id,
-        selectedServicio.categoriaId,
-        pagoData.costo,
-        pagoData.metodoPagoId,
-        pagoData.metodoPagoNombre || "",
-        pagoData.moneda || "USD",
-        pagoData.periodoRenovacion as
-          | "mensual"
-          | "trimestral"
-          | "semestral"
-          | "anual",
-        pagoData.fechaInicio,
-        pagoData.fechaVencimiento,
-        renovaciones,
-        notaPrincipal,
-      );
-
-      // Increment gastosTotal on servicio and categorÃƒÂ­a (converted to USD)
-      const costoUSD = await currencyService.convertToUSD(
-        pagoData.costo,
-        pagoData.moneda || "USD",
-      );
-      // gastosTotal se deriva desde pagos_servicio en Supabase.
-      if (selectedServicio.categoriaId) {
-        await adjustCategoriaGastos(selectedServicio.categoriaId, costoUSD);
-      }
+      await renewServicioUseCase(selectedServicio, {
+        ...pagoData,
+        notas: notaPrincipal,
+      }, {
+        numeroRenovacion: (selectedServicio.renovaciones ?? 0) + 1,
+      });
 
       await Promise.all([
         fetchCategorias(true),
@@ -361,7 +338,7 @@ function ReposoPageContent() {
                   "dd 'de' MMMM 'del' yyyy",
                   { locale: es },
                 )
-              : "Ã¢â‚¬â€"}
+              : "—"}
           </span>
         ),
       },
@@ -378,7 +355,7 @@ function ReposoPageContent() {
                   "dd 'de' MMMM 'del' yyyy",
                   { locale: es },
                 )
-              : "Ã¢â‚¬â€"}
+              : "—"}
           </span>
         ),
       },
@@ -401,7 +378,7 @@ function ReposoPageContent() {
       },
       {
         key: "diasRestantes",
-        header: "DÃƒÂ­as Restantes",
+        header: "Días Restantes",
         sortable: true,
         align: "center",
         render: (item) => {
@@ -414,7 +391,7 @@ function ReposoPageContent() {
                 >
                   {item.diasRestantes <= 0
                     ? "Listo"
-                    : `${item.diasRestantes} dÃƒÂ­a${item.diasRestantes !== 1 ? "s" : ""}`}
+                    : `${item.diasRestantes} día${item.diasRestantes !== 1 ? "s" : ""}`}
                 </Badge>
               );
             case "proximo_finalizar":
@@ -423,7 +400,7 @@ function ReposoPageContent() {
                   variant="outline"
                   className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-semibold"
                 >
-                  {item.diasRestantes} dÃƒÂ­a{item.diasRestantes !== 1 ? "s" : ""}
+                  {item.diasRestantes} día{item.diasRestantes !== 1 ? "s" : ""}
                 </Badge>
               );
             default:
@@ -432,7 +409,7 @@ function ReposoPageContent() {
                   variant="outline"
                   className="border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold"
                 >
-                  {item.diasRestantes} dÃƒÂ­as
+                  {item.diasRestantes} días
                 </Badge>
               );
           }
@@ -627,7 +604,7 @@ function ReposoPageContent() {
         open={activarDialogOpen}
         onOpenChange={setActivarDialogOpen}
         title="Activar servicio"
-        description={`Ã‚Â¿EstÃƒÂ¡s seguro de activar "${selectedServicio?.nombre}"? El servicio saldrÃƒÂ¡ de reposo y volverÃƒÂ¡ a estar activo.`}
+        description={`¿Estás seguro de activar "${selectedServicio?.nombre}"? El servicio saldrá de reposo y volverá a estar activo.`}
         confirmText={isActivating ? "Activando..." : "Activar"}
         onConfirm={handleActivar}
         variant="info"
@@ -655,7 +632,7 @@ function ReposoPageContent() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title="Eliminar Servicio"
-        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar el servicio "${selectedServicio?.nombre}"? Esta acciÃƒÂ³n no se puede deshacer.`}
+        description={`¿Estás seguro de que quieres eliminar el servicio "${selectedServicio?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       >
@@ -670,11 +647,11 @@ function ReposoPageContent() {
               htmlFor="delete-payments-reposo"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Eliminar tambiÃƒÂ©n los registros de pago
+              Eliminar también los registros de pago
             </Label>
             <p className="text-sm text-muted-foreground">
-              Al marcar esta opciÃƒÂ³n, se eliminarÃƒÂ¡n todos los registros de pago
-              de la base de datos. Si no se marca, se conservarÃƒÂ¡n para
+              Al marcar esta opción, se eliminarán todos los registros de pago
+              de la base de datos. Si no se marca, se conservarán para
               historial.
             </p>
           </div>

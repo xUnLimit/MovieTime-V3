@@ -79,7 +79,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
   };
 
   const handleCopy = async (value: string, label?: string) => {
-    if (!value || value === "Ã¢â‚¬â€") return;
+    if (!value || value === "—") return;
     try {
       await navigator.clipboard.writeText(value);
       toast.success(label ? `${label} copiado` : "Copiado al portapapeles");
@@ -103,7 +103,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
 
     const load = async () => {
       try {
-        // Chunks de 10 (limitaciÃƒÂ³n de 'in')
+        // Chunks de 10 (limitación de 'in')
         const chunks: string[][] = [];
         for (let i = 0; i < servicioIds.length; i += 10) {
           chunks.push(servicioIds.slice(i, i + 10));
@@ -122,8 +122,8 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
         const serviciosMap = allServicios.flat().reduce(
           (acc, s) => {
             acc[s.id as string] = {
-              correo: (s.correo as string) || "Ã¢â‚¬â€",
-              contrasena: (s.contrasena as string) || "Ã¢â‚¬â€",
+              correo: (s.correo as string) || "—",
+              contrasena: (s.contrasena as string) || "—",
               nombre: (s.nombre as string) || "Servicio",
             };
             return acc;
@@ -159,7 +159,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
       semestral: "Semestral",
       anual: "Anual",
     };
-    return ciclo ? labels[ciclo] || ciclo : "Ã¢â‚¬â€";
+    return ciclo ? labels[ciclo] || ciclo : "—";
   };
 
   const rows = useMemo(() => {
@@ -184,14 +184,14 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
 
       return {
         id: venta.id,
-        categoriaNombre: venta.categoriaNombre, // Ã¢â€ Â Denormalizado
+        categoriaNombre: venta.categoriaNombre, // <- Denormalizado
         servicioNombre: servicio?.nombre || venta.servicioNombre,
         servicioId: venta.servicioId,
         correo:
-          venta.servicioCorreo !== "Ã¢â‚¬â€"
+          venta.servicioCorreo !== "—"
             ? venta.servicioCorreo
-            : servicio?.correo || "Ã¢â‚¬â€",
-        contrasena: servicio?.contrasena || "Ã¢â‚¬â€",
+            : servicio?.correo || "—",
+        contrasena: servicio?.contrasena || "—",
         cicloPago: getCicloPagoLabel(venta.cicloPago),
         fechaInicio: venta.fechaInicio,
         fechaFin: venta.fechaFin,
@@ -221,7 +221,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
           : "Venta inactivada correctamente",
       );
     } catch {
-      toast.error("OcurriÃƒÂ³ un error al cambiar el estado");
+      toast.error("Ocurrió un error al cambiar el estado");
       throw new Error("cambio estado fallido");
     }
   };
@@ -264,7 +264,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
               </Badge>
             </div>
 
-            {/* BotÃƒÂ³n de WhatsApp */}
+            {/* Botón de WhatsApp */}
             <Button
               onClick={handleWhatsApp}
               className="w-full bg-green-700 hover:bg-green-800 text-white"
@@ -276,16 +276,16 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
           </div>
         </Card>
 
-        {/* Columna derecha: InformaciÃƒÂ³n */}
+        {/* Columna derecha: Información */}
         <div className="space-y-6">
-          {/* InformaciÃƒÂ³n de Contacto */}
+          {/* Información de Contacto */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold leading-none mb-3">
-              InformaciÃƒÂ³n de Contacto
+              Información de Contacto
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">TelÃƒÂ©fono</p>
+                <p className="text-sm text-muted-foreground mb-1">Teléfono</p>
                 <p className="text-sm font-medium">{usuario.telefono}</p>
               </div>
               {usuario.email && (
@@ -297,15 +297,15 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
             </div>
           </Card>
 
-          {/* InformaciÃƒÂ³n Adicional */}
+          {/* Información Adicional */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold leading-none mb-3">
-              InformaciÃƒÂ³n Adicional
+              Información Adicional
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">
-                  MÃƒÂ©todo de Pago
+                  Método de Pago
                 </p>
                 <p className="text-sm font-medium">
                   {getUsuarioMetodoPagoNombre(
@@ -324,7 +324,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">
-                  ÃƒÅ¡ltima actualizaciÃƒÂ³n
+                  Última actualización
                 </p>
                 <p className="text-sm font-medium">
                   {formatearFechaHora(new Date(usuario.updatedAt))}
@@ -361,11 +361,11 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-muted-foreground">
-                    CategorÃƒÂ­a
+                    Categoría
                   </TableHead>
                   <TableHead className="text-muted-foreground">Email</TableHead>
                   <TableHead className="text-center text-muted-foreground">
-                    ContraseÃƒÂ±a
+                    Contraseña
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
                     Ciclo de Pago
@@ -374,7 +374,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                     Fecha de Inicio
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
-                    Fecha de ExpiraciÃƒÂ³n
+                    Fecha de Expiración
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
                     Monto Sin Consumir
@@ -383,7 +383,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                     Renovaciones
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
-                    DÃƒÂ­as Restantes
+                    Días Restantes
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
                     Estado
@@ -432,7 +432,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() =>
-                            handleCopy(row.contrasena, "ContraseÃƒÂ±a")
+                            handleCopy(row.contrasena, "Contraseña")
                           }
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -451,7 +451,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                         <span className="font-medium">
                           {row.fechaInicio
                             ? formatearFecha(row.fechaInicio)
-                            : "Ã¢â‚¬â€"}
+                            : "—"}
                         </span>
                       </div>
                     </TableCell>
@@ -459,7 +459,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                       <div className="flex items-center justify-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">
-                          {row.fechaFin ? formatearFecha(row.fechaFin) : "Ã¢â‚¬â€"}
+                          {row.fechaFin ? formatearFecha(row.fechaFin) : "—"}
                         </span>
                       </div>
                     </TableCell>
@@ -492,14 +492,14 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                     </TableCell>
                     <TableCell className="text-center">
                       {row.estado === "Inactivo" ? (
-                        <span className="text-sm text-muted-foreground">Ã¢â‚¬â€</span>
+                        <span className="text-sm text-muted-foreground">—</span>
                       ) : row.diasRestantes < 0 ? (
                         <Badge
                           variant="outline"
                           className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 gap-1"
                         >
                           <AlertTriangle className="h-3 w-3 shrink-0" />
-                          {Math.abs(row.diasRestantes)} dÃƒÂ­a
+                          {Math.abs(row.diasRestantes)} día
                           {Math.abs(row.diasRestantes) !== 1 ? "s" : ""} de
                           retraso
                         </Badge>
@@ -515,7 +515,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                           variant="outline"
                           className="border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300"
                         >
-                          {row.diasRestantes} dÃƒÂ­a
+                          {row.diasRestantes} día
                           {row.diasRestantes !== 1 ? "s" : ""} restante
                           {row.diasRestantes !== 1 ? "s" : ""}
                         </Badge>
@@ -524,7 +524,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                           variant="outline"
                           className="border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
                         >
-                          {row.diasRestantes} dÃƒÂ­as restantes
+                          {row.diasRestantes} días restantes
                         </Badge>
                       )}
                     </TableCell>

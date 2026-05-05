@@ -8,10 +8,10 @@
  * - Real-time updates from notificacionesStore
  *
  * Badge Color Hierarchy:
- * 1. Red (ðŸ”´): Any "critica" priority notifications
+ * 1. Red (🔴): Any "critica" priority notifications
  * 2. Orange (ðŸŸ ): Any resaltadas (highlighted) notifications
- * 3. Yellow (ðŸŸ¡): Any "alta" or "media" priority notifications
- * 4. Gray (âš«): Only "baja" priority or empty
+ * 3. Yellow (🟡): Any "alta" or "media" priority notifications
+ * 4. Gray (⚫): Only "baja" priority or empty
  */
 
 'use client';
@@ -120,7 +120,7 @@ export function NotificationBell() {
           ) : (
             <div className="text-center space-y-2 py-4">
               <Bell className="h-8 w-8 mx-auto text-muted-foreground" />
-              <h4 className="font-medium leading-none">Todo al dÃ­a</h4>
+              <h4 className="font-medium leading-none">Todo al día</h4>
               <p className="text-sm text-muted-foreground">No tienes notificaciones pendientes.</p>
             </div>
           )}

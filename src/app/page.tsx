@@ -9,7 +9,7 @@ export default function Home() {
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Redirigir segÃºn estado de autenticaciÃ³n
+    // Redirigir según estado de autenticación
     if (isAuthenticated) {
       router.push('/dashboard');
     } else {

@@ -82,7 +82,7 @@ function EditarUsuarioPageContent() {
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
-            No se encontrÃƒÂ³ el usuario con el ID proporcionado.
+            No se encontró el usuario con el ID proporcionado.
           </p>
           <Link
             href="/usuarios"

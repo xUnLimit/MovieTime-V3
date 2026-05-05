@@ -21,12 +21,12 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
-            <h1 className="text-xl font-semibold">Error crÃ­tico</h1>
+            <h1 className="text-xl font-semibold">Error crítico</h1>
             <p className="text-sm text-gray-500">
-              {error.message || 'Un error inesperado ocurriÃ³ al cargar la aplicaciÃ³n.'}
+              {error.message || 'Un error inesperado ocurrió al cargar la aplicación.'}
             </p>
             {error.digest && (
-              <p className="text-xs text-gray-400">CÃ³digo: {error.digest}</p>
+              <p className="text-xs text-gray-400">Código: {error.digest}</p>
             )}
             <button
               onClick={reset}

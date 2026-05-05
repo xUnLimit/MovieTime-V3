@@ -17,7 +17,7 @@ export interface NotificacionBase {
   id: string;
   tipo: 'sistema'; // For future extensibility (could add 'user' type)
   prioridad: 'baja' | 'media' | 'alta' | 'critica';
-  titulo: string; // Generated: "Venta vence en 15 dÃ­as" or "Servicio Netflix vence en 2 dÃ­as"
+  titulo: string; // Generated: "Venta vence en 15 días" or "Servicio Netflix vence en 2 días"
   leida: boolean; // Read status
   resaltada: boolean; // Highlighted/starred for priority actions
   diasRestantes: number; // Can be negative if expired
@@ -83,7 +83,7 @@ export interface NotificacionServicio extends NotificacionBase {
   categoriaNombre: string; // Category name
   tipoServicio: string; // Service type: tipoPlanConfig.id
   correo: string; // Email del servicio
-  contrasena: string; // ContraseÃ±a del servicio
+  contrasena: string; // Contraseña del servicio
   metodoPagoNombre: string; // Payment method name
   metodoPagoTarjetaTerminacion?: string; // Last 4 digits of the service payment card
   moneda: string; // Currency (USD, TRY, ARS, etc.)

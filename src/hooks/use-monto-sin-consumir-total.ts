@@ -7,8 +7,8 @@ import { currencyService } from '@/lib/services/currencyService';
 
 /**
  * Calcula el monto sin consumir total de todas las ventas activas en USD.
- * Lee desde dashboardStore.stats.ventasPronostico â€” 0 reads extra a Supabase.
- * Se recalcula automÃ¡ticamente cuando el store se actualiza (create/delete/update venta).
+ * Lee desde dashboardStore.stats.ventasPronostico — 0 reads extra a Supabase.
+ * Se recalcula automáticamente cuando el store se actualiza (create/delete/update venta).
  */
 export function useMontoSinConsumirTotal() {
   const ventasPronostico = useDashboardStore(s => s.stats?.ventasPronostico);

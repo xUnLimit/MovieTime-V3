@@ -37,7 +37,7 @@ interface TodasCategoriasTableProps {
 
 export function TodasCategoriasTable({
   categorias,
-  title = "Todas las categorÃ­as",
+  title = "Todas las categorías",
 }: TodasCategoriasTableProps) {
     const { deleteCategoria } = useCategoriasStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -47,7 +47,7 @@ export function TodasCategoriasTable({
   const [searchQuery, setSearchQuery] = useState("");
   const [tipoFilter, setTipoFilter] = useState("todos");
 
-  // Filtrar y ordenar categorÃ­as
+  // Filtrar y ordenar categorías
   const filteredCategorias = useMemo(() => {
     const filtered = categorias.filter((categoria) => {
       const matchesSearch = categoria.nombre
@@ -59,7 +59,7 @@ export function TodasCategoriasTable({
         categoria.tipo === "ambos";
       return matchesSearch && matchesTipo;
     });
-    // Ordenar alfabÃ©ticamente por nombre
+    // Ordenar alfabéticamente por nombre
     return filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [categorias, searchQuery, tipoFilter]);
 
@@ -72,11 +72,11 @@ export function TodasCategoriasTable({
     if (categoriaToDelete) {
       try {
         await deleteCategoria(categoriaToDelete.id);
-        toast.success("CategorÃ­a eliminada", {
-          description: "La categorÃ­a ha sido eliminada correctamente.",
+        toast.success("Categoría eliminada", {
+          description: "La categoría ha sido eliminada correctamente.",
         });
       } catch (error) {
-        toast.error("Error al eliminar categorÃ­a", {
+        toast.error("Error al eliminar categoría", {
           description: error instanceof Error ? error.message : undefined,
         });
       }
@@ -108,7 +108,7 @@ export function TodasCategoriasTable({
       },
       {
         key: "categoria",
-        header: "Tipo de CategorÃ­a",
+        header: "Tipo de Categoría",
         sortable: false,
         align: "center",
         width: "25%",
@@ -264,8 +264,8 @@ export function TodasCategoriasTable({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
-        title="Eliminar CategorÃ­a"
-        description={`Â¿EstÃ¡s seguro de que quieres eliminar la categorÃ­a "${categoriaToDelete?.nombre}"? Esta acciÃ³n no se puede deshacer.`}
+        title="Eliminar Categoría"
+        description={`¿Estás seguro de que quieres eliminar la categoría "${categoriaToDelete?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

@@ -31,7 +31,7 @@ interface ClientesCategoriasTableProps {
 
 export function ClientesCategoriasTable({
   categorias,
-  title = "CategorÃ­as de Clientes",
+  title = "Categorías de Clientes",
 }: ClientesCategoriasTableProps) {
     const { deleteCategoria } = useCategoriasStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -40,17 +40,17 @@ export function ClientesCategoriasTable({
   );
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filtrar solo categorÃ­as de clientes
+  // Filtrar solo categorías de clientes
   const categoriasClientes = useMemo(() => {
     return categorias.filter((c) => c.tipo === "cliente" || c.tipo === "ambos");
   }, [categorias]);
 
-  // Aplicar filtros y ordenar alfabÃ©ticamente
+  // Aplicar filtros y ordenar alfabéticamente
   const filteredCategorias = useMemo(() => {
     const filtered = categoriasClientes.filter((categoria) => {
       return categoria.nombre.toLowerCase().includes(searchQuery.toLowerCase());
     });
-    // Ordenar alfabÃ©ticamente por nombre
+    // Ordenar alfabéticamente por nombre
     return filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [categoriasClientes, searchQuery]);
 
@@ -63,11 +63,11 @@ export function ClientesCategoriasTable({
     if (categoriaToDelete) {
       try {
         await deleteCategoria(categoriaToDelete.id);
-        toast.success("CategorÃ­a eliminada", {
-          description: "La categorÃ­a ha sido eliminada correctamente.",
+        toast.success("Categoría eliminada", {
+          description: "La categoría ha sido eliminada correctamente.",
         });
       } catch (error) {
-        toast.error("Error al eliminar categorÃ­a", {
+        toast.error("Error al eliminar categoría", {
           description: error instanceof Error ? error.message : undefined,
         });
       }
@@ -84,7 +84,7 @@ export function ClientesCategoriasTable({
     },
     {
       key: "categoria",
-      header: "Tipo de CategorÃ­a",
+      header: "Tipo de Categoría",
       sortable: false,
       align: "center",
       width: "35%",
@@ -176,8 +176,8 @@ export function ClientesCategoriasTable({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
-        title="Eliminar CategorÃ­a"
-        description={`Â¿EstÃ¡s seguro de que quieres eliminar la categorÃ­a "${categoriaToDelete?.nombre}"? Esta acciÃ³n no se puede deshacer.`}
+        title="Eliminar Categoría"
+        description={`¿Estás seguro de que quieres eliminar la categoría "${categoriaToDelete?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

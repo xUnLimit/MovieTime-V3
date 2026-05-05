@@ -9,13 +9,13 @@ interface UseServerPaginationOptions {
   pageSize?: number;
   orderByField?: string;
   orderDirection?: 'asc' | 'desc';
-  realtime?: boolean; // Nuevo parÃ¡metro para activar listeners en tiempo real
+  realtime?: boolean; // Nuevo parámetro para activar listeners en tiempo real
 }
 
 /**
- * Hook para paginaciÃ³n server-side con cursores.
- * Solo trae pageSize docs por pÃ¡gina desde Supabase.
- * Se resetea automÃ¡ticamente cuando cambian los filtros.
+ * Hook para paginación server-side con cursores.
+ * Solo trae pageSize docs por página desde Supabase.
+ * Se resetea automáticamente cuando cambian los filtros.
  */
 export function useServerPagination<T>({
   collectionName,
@@ -42,7 +42,7 @@ export function useServerPagination<T>({
     let cancelled = false;
     let currentPageIndex = pageIndex;
 
-    // Reset paginaciÃ³n si cambian los filtros, el pageSize o el orden
+    // Reset paginación si cambian los filtros, el pageSize o el orden
     const filtersChanged = prevFiltersRef.current !== filtersKey;
     const pageSizeChanged = prevPageSizeRef.current !== pageSize;
     const orderChanged = prevOrderRef.current !== orderKey;
@@ -55,7 +55,7 @@ export function useServerPagination<T>({
       currentPageIndex = 0;
       if (pageIndex !== 0) {
         setPageIndex(0);
-        return; // el cambio de pageIndex dispara otra ejecuciÃ³n
+        return; // el cambio de pageIndex dispara otra ejecución
       }
     }
 

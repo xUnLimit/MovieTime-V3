@@ -12,8 +12,8 @@ export interface Usuario {
   metodoPagoId: string;
   metodoPagoNombre: string;
   moneda?: string;                  // Denormalizado de MetodoPago
-  // Campos especÃ­ficos por tipo (opcionales):
-  serviciosActivos?: number;        // Denormalizado â€” count de ventas activas (se actualiza con increment())
+  // Campos específicos por tipo (opcionales):
+  serviciosActivos?: number;        // Denormalizado — count de ventas activas (se actualiza con increment())
   suscripcionesTotales?: number;    // Solo para revendedores (campo legacy)
   active: boolean;
   notas?: string;
@@ -21,10 +21,10 @@ export interface Usuario {
   updatedAt: Date;
   createdBy: string;
   // NOTA: montoSinConsumir NO se guarda en Supabase
-  // Se calcula dinÃ¡micamente en el cliente usando useVentasPorUsuarios
+  // Se calcula dinámicamente en el cliente usando useVentasPorUsuarios
 }
 
-// Type guards para facilitar discriminaciÃ³n
+// Type guards para facilitar discriminación
 export function esCliente(usuario: Usuario): boolean {
   return usuario.tipo === 'cliente';
 }

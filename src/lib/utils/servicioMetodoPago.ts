@@ -4,7 +4,7 @@ type ServicioMetodoPagoDisplay = Pick<MetodoPago, 'nombre' | 'banco' | 'titular'
 
 export function getServicioMetodoPagoNombre(
   metodoPago?: ServicioMetodoPagoDisplay | null,
-  fallback = 'Seleccionar mÃ©todo de pago'
+  fallback = 'Seleccionar método de pago'
 ): string {
   if (!metodoPago) return fallback;
 

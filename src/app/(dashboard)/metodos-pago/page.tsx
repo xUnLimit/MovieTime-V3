@@ -23,15 +23,15 @@ function MetodosPagoPageContent() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">MÃ©todos de Pago</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Métodos de Pago</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">MÃ©todos de Pago</span>
+            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Métodos de Pago</span>
           </p>
         </div>
         <Link href="/metodos-pago/crear" className="self-start sm:self-auto">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Nuevo MÃ©todo
+            Nuevo Método
           </Button>
         </Link>
       </div>
@@ -57,14 +57,14 @@ function MetodosPagoPageContent() {
         <TabsContent value="usuarios" className="space-y-4">
           <UsuariosMetodosPagoTable
             metodosPago={metodosPago}
-            title="MÃ©todos de pago de Usuarios"
+            title="Métodos de pago de Usuarios"
           />
         </TabsContent>
 
         <TabsContent value="servicios" className="space-y-4">
           <ServiciosMetodosPagoTable
             metodosPago={metodosPago}
-            title="MÃ©todos de pago de Servicios"
+            title="Métodos de pago de Servicios"
           />
         </TabsContent>
       </Tabs>
@@ -74,7 +74,7 @@ function MetodosPagoPageContent() {
 
 export default function MetodosPagoPage() {
   return (
-    <ModuleErrorBoundary moduleName="MÃ©todos de Pago">
+    <ModuleErrorBoundary moduleName="Métodos de Pago">
       <MetodosPagoPageContent />
     </ModuleErrorBoundary>
   );

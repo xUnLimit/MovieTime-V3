@@ -10,6 +10,7 @@ import {
   queryPagosVenta,
   removePagoVenta,
   removeVenta,
+  updatePagoVenta,
   updateVenta,
 } from '@/lib/supabase/ventas-repository';
 import {
@@ -20,7 +21,11 @@ import {
 } from '@/lib/services/dashboardStatsService';
 import { sincronizarUnaVenta } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
+import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
+import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
+import { syncUsuarioMetodoPago } from '@/lib/services/usuarioMetodoPagoSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import type { ActivityLog, MetodoPago, PagoVenta, VentaDoc } from '@/types';
 import type { VentaPronostico } from '@/types/dashboard';
 
@@ -34,6 +39,65 @@ type VentaInput = Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'> & {
     notas?: string;
   }>;
 };
+
+type VentaPagoInput = {
+  periodoRenovacion: string;
+  metodoPagoId: string;
+  metodoPagoNombre?: string;
+  moneda?: string;
+  costo: number;
+  descuento?: number;
+  fechaInicio: Date;
+  fechaVencimiento: Date;
+  notas?: string;
+};
+
+type VentaPagoResult = {
+  costo: number;
+  descuentoNumero: number;
+  monto: number;
+  notaPrincipal: string;
+  metodoPagoNombre: string;
+  moneda: string;
+  pronostico: VentaPronostico;
+  syncPaymentMethodFailed: boolean;
+};
+
+function ventaBaseFromRecord(doc: Record<string, unknown>): VentaDoc {
+  return {
+    id: doc.id as string,
+    clienteId: (doc.clienteId as string) || '',
+    clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
+    categoriaId: (doc.categoriaId as string) || '',
+    categoriaNombre: (doc.categoriaNombre as string) || undefined,
+    servicioId: (doc.servicioId as string) || '',
+    servicioNombre: (doc.servicioNombre as string) || 'Servicio',
+    servicioCorreo: (doc.servicioCorreo as string) || undefined,
+    servicioContrasena: (doc.servicioContrasena as string) || undefined,
+    clienteTelefono: (doc.clienteTelefono as string) || undefined,
+    estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
+    perfilNumero: (doc.perfilNumero as number) ?? null,
+    perfilNombre: (doc.perfilNombre as string) || undefined,
+    codigo: (doc.codigo as string) || undefined,
+    notas: (doc.notas as string) || undefined,
+    createdAt: (doc.createdAt as Date) || undefined,
+    updatedAt: (doc.updatedAt as Date) || undefined,
+    fechaInicio: (doc.fechaInicio as Date) || new Date(),
+    fechaFin: (doc.fechaFin as Date) || new Date(),
+    cicloPago: (doc.cicloPago as VentaDoc['cicloPago']) || 'mensual',
+  };
+}
+
+function getPagoValues(venta: VentaDoc, input: VentaPagoInput) {
+  const costo = roundToDecimals(input.costo);
+  const descuentoNumero = roundToDecimals(Number(input.descuento) || 0);
+  const monto = calculateDiscountedAmount(costo, descuentoNumero);
+  const notaPrincipal = input.notas?.trim() ?? '';
+  const metodoPagoNombre = input.metodoPagoNombre || venta.metodoPagoNombre || '';
+  const moneda = input.moneda || venta.moneda || 'USD';
+
+  return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda };
+}
 
 export function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
   if (v.estado === 'inactivo' || !v.fechaFin || !v.cicloPago) return null;
@@ -84,6 +148,10 @@ export async function createVentaUseCase(
     updatedAt: new Date(),
   };
 
+  if (ventaData.clienteId && (ventaData.estado ?? 'activo') !== 'inactivo') {
+    await adjustServiciosActivos(ventaData.clienteId, 1);
+  }
+
   await options.recordActivityLog?.({
     ...options.logContext,
     accion: 'creacion',
@@ -115,6 +183,194 @@ export async function createVentaUseCase(
   sincronizarUnaVenta(ventaId).catch(() => {});
 
   return { venta, pronostico };
+}
+
+export async function getVentaConPagoActualUseCase(id: string): Promise<VentaDoc | null> {
+  const doc = await getVentaById<Record<string, unknown>>(id);
+  if (!doc) return null;
+  return getVentaConUltimoPago(ventaBaseFromRecord(doc));
+}
+
+export async function renewVentaUseCase(
+  venta: VentaDoc,
+  input: VentaPagoInput,
+  options: {
+    logContext?: LogContext;
+    recordActivityLog?: RecordActivityLog;
+    logPrefix?: string;
+  } = {}
+): Promise<VentaPagoResult> {
+  if (!venta.id) throw new Error('Venta sin id');
+  const { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda } = getPagoValues(venta, input);
+
+  await crearPagoRenovacion(
+    venta.id,
+    venta.clienteId || '',
+    venta.clienteNombre,
+    venta.categoriaId || '',
+    monto,
+    metodoPagoNombre,
+    input.metodoPagoId,
+    moneda,
+    input.periodoRenovacion as VentaDoc['cicloPago'],
+    notaPrincipal,
+    input.fechaInicio,
+    input.fechaVencimiento,
+    costo,
+    descuentoNumero
+  );
+
+  await updateVenta(venta.id, {
+    fechaFin: input.fechaVencimiento,
+    fechaInicio: input.fechaInicio,
+    cicloPago: input.periodoRenovacion,
+    notas: notaPrincipal,
+  });
+
+  let syncPaymentMethodFailed = false;
+  try {
+    await syncUsuarioMetodoPago({
+      usuarioId: venta.clienteId,
+      metodoPagoId: input.metodoPagoId,
+      metodoPagoNombre,
+      moneda,
+    });
+  } catch (error) {
+    syncPaymentMethodFailed = true;
+    console.error('[VentasUseCases] Error syncing user payment method:', error);
+  }
+
+  const pronostico = {
+    id: venta.id,
+    categoriaId: venta.categoriaId ?? '',
+    fechaInicio: input.fechaInicio.toISOString(),
+    fechaFin: input.fechaVencimiento.toISOString(),
+    cicloPago: input.periodoRenovacion,
+    precioFinal: monto,
+    moneda,
+  };
+
+  upsertVentaPronostico(pronostico, venta.id).catch(() => {});
+  adjustIngresosStats({
+    delta: monto,
+    moneda,
+    mes: getMesKeyFromDate(input.fechaInicio),
+    dia: getDiaKeyFromDate(input.fechaInicio),
+    categoriaId: venta.categoriaId ?? '',
+    categoriaNombre: venta.categoriaNombre ?? '',
+  }).catch(() => {});
+
+  await options.recordActivityLog?.({
+    ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
+    accion: 'renovacion',
+    entidad: 'venta',
+    entidadId: venta.id,
+    entidadNombre: `${venta.clienteNombre} - ${venta.servicioNombre}`,
+    detalles: `${options.logPrefix ?? 'Venta renovada'}: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)} - hasta ${format(input.fechaVencimiento, 'dd/MM/yyyy')} (${input.periodoRenovacion})`,
+  });
+
+  return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, pronostico, syncPaymentMethodFailed };
+}
+
+export async function updateVentaPagoUseCase(
+  venta: VentaDoc,
+  pagoId: string,
+  input: VentaPagoInput
+) {
+  const { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda } = getPagoValues(venta, input);
+
+  await updatePagoVenta(pagoId, {
+    precio: costo,
+    descuento: descuentoNumero,
+    monto,
+    metodoPagoId: input.metodoPagoId,
+    metodoPago: metodoPagoNombre,
+    moneda,
+    cicloPago: input.periodoRenovacion as VentaDoc['cicloPago'],
+    fechaInicio: input.fechaInicio,
+    fechaVencimiento: input.fechaVencimiento,
+    notas: notaPrincipal,
+  });
+
+  let syncPaymentMethodFailed = false;
+  try {
+    await syncUsuarioMetodoPago({
+      usuarioId: venta.clienteId,
+      metodoPagoId: input.metodoPagoId,
+      metodoPagoNombre,
+      moneda,
+    });
+  } catch (error) {
+    syncPaymentMethodFailed = true;
+    console.error('[VentasUseCases] Error syncing user payment method:', error);
+  }
+
+  return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, syncPaymentMethodFailed };
+}
+
+export async function deleteVentaPagoUseCase(ventaId: string, pagoId: string) {
+  await removePagoVenta(pagoId);
+  const ventaActualizada = await getVentaConPagoActualUseCase(ventaId);
+
+  if (ventaActualizada) {
+    await updateVenta(ventaId, {
+      fechaFin: ventaActualizada.fechaFin,
+      fechaInicio: ventaActualizada.fechaInicio,
+      cicloPago: ventaActualizada.cicloPago,
+    });
+  }
+
+  return { ventaActualizada };
+}
+
+export async function updateVentaWithLatestPagoUseCase(
+  id: string,
+  updates: Partial<VentaDoc>,
+  pagoUpdates: {
+    precio: number;
+    descuento: number;
+    monto: number;
+    metodoPagoId: string;
+    metodoPago: string;
+    moneda: string;
+    cicloPago?: VentaDoc['cicloPago'];
+    fechaInicio: Date;
+    fechaVencimiento: Date;
+  },
+  options: {
+    currentVenta?: VentaDoc;
+    logContext: LogContext;
+    recordActivityLog?: RecordActivityLog;
+  }
+) {
+  const result = await updateVentaUseCase(id, updates, options);
+  const pagos = await queryPagosVenta<PagoVenta>([{ field: 'ventaId', operator: '==', value: id }]);
+
+  if (pagos.length > 0) {
+    const pagoMasReciente = [...pagos].sort((a, b) => {
+      const dateA = a.fecha instanceof Date ? a.fecha : new Date(a.fecha);
+      const dateB = b.fecha instanceof Date ? b.fecha : new Date(b.fecha);
+      return dateB.getTime() - dateA.getTime();
+    })[0];
+
+    await updatePagoVenta(pagoMasReciente.id, pagoUpdates);
+  }
+
+  if (updates.clienteId && updates.metodoPagoId) {
+    try {
+      await syncUsuarioMetodoPago({
+        usuarioId: updates.clienteId,
+        metodoPagoId: updates.metodoPagoId,
+        metodoPagoNombre: updates.metodoPagoNombre,
+        moneda: updates.moneda,
+      });
+    } catch (error) {
+      console.error('[VentasUseCases] Error syncing user payment method:', error);
+      return { ...result, syncPaymentMethodFailed: true };
+    }
+  }
+
+  return { ...result, syncPaymentMethodFailed: false };
 }
 
 export async function updateVentaUseCase(

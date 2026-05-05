@@ -35,7 +35,7 @@ function VerMetodoPagoPageContent() {
         const data = await getMetodoPagoById<MetodoPago>(id);
         setMetodo(data);
       } catch (error) {
-        console.error('Error cargando mÃƒÂ©todo de pago:', error);
+        console.error('Error cargando método de pago:', error);
         setMetodo(null);
       } finally {
         setIsLoading(false);
@@ -49,10 +49,10 @@ function VerMetodoPagoPageContent() {
     if (metodo) {
       try {
         await deleteMetodoPago(metodo.id);
-        toast.success('MÃƒÂ©todo de pago eliminado', { description: 'El mÃƒÂ©todo de pago ha sido eliminado correctamente.' });
+        toast.success('Método de pago eliminado', { description: 'El método de pago ha sido eliminado correctamente.' });
         router.push('/metodos-pago');
       } catch (error) {
-        toast.error('Error al eliminar mÃƒÂ©todo de pago', { description: error instanceof Error ? error.message : undefined });
+        toast.error('Error al eliminar método de pago', { description: error instanceof Error ? error.message : undefined });
       }
     }
   };
@@ -66,7 +66,7 @@ function VerMetodoPagoPageContent() {
     ahorro: 'Ahorro',
     corriente: 'Corriente',
     wallet: 'Wallet',
-    telefono: 'TelÃƒÂ©fono',
+    telefono: 'Teléfono',
     email: 'Email',
   };
 
@@ -87,7 +87,7 @@ function VerMetodoPagoPageContent() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando mÃƒÂ©todo de pago...</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando método de pago...</h1>
         </div>
         <div className="rounded-lg border bg-card p-6">
           <p className="text-muted-foreground">Cargando datos...</p>
@@ -105,10 +105,10 @@ function VerMetodoPagoPageContent() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">MÃƒÂ©todo de pago no encontrado</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Método de pago no encontrado</h1>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <p className="text-muted-foreground">El mÃƒÂ©todo de pago que buscas no existe.</p>
+          <p className="text-muted-foreground">El método de pago que buscas no existe.</p>
         </div>
       </div>
     );
@@ -136,7 +136,7 @@ function VerMetodoPagoPageContent() {
             <p className="text-sm text-muted-foreground">
               <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
               {' / '}
-              <Link href="/metodos-pago" className="hover:text-foreground transition-colors">MÃƒÂ©todos de Pago</Link>
+              <Link href="/metodos-pago" className="hover:text-foreground transition-colors">Métodos de Pago</Link>
               {' / '}
               <span className="text-foreground">{metodo.nombre}</span>
             </p>
@@ -156,11 +156,11 @@ function VerMetodoPagoPageContent() {
         </div>
       </div>
 
-      {/* Dos columnas: InformaciÃƒÂ³n BÃƒÂ¡sica e InformaciÃƒÂ³n Adicional */}
+      {/* Dos columnas: Información Básica e Información Adicional */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* InformaciÃƒÂ³n BÃƒÂ¡sica */}
+        {/* Información Básica */}
         <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold mb-6">InformaciÃƒÂ³n BÃƒÂ¡sica</h2>
+          <h2 className="text-lg font-semibold mb-6">Información Básica</h2>
 
           <div className="space-y-5">
             <div>
@@ -179,7 +179,7 @@ function VerMetodoPagoPageContent() {
 
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <span>PaÃƒÂ­s</span>
+                <span>País</span>
               </div>
               <p className="text-sm font-medium">{metodo.pais}</p>
             </div>
@@ -202,7 +202,7 @@ function VerMetodoPagoPageContent() {
 
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <span>ÃƒÅ¡ltima ActualizaciÃƒÂ³n</span>
+                <span>Última Actualización</span>
               </div>
               <p className="text-sm font-medium">
                 {formatearFechaHora(new Date(metodo.updatedAt))}
@@ -211,10 +211,10 @@ function VerMetodoPagoPageContent() {
           </div>
         </div>
 
-        {/* InformaciÃƒÂ³n Adicional / Datos de la Cuenta / Datos del Servicio */}
+        {/* Información Adicional / Datos de la Cuenta / Datos del Servicio */}
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold mb-6">
-            {isUsuario ? 'Datos de la Cuenta' : 'InformaciÃƒÂ³n Adicional'}
+            {isUsuario ? 'Datos de la Cuenta' : 'Información Adicional'}
           </h2>
 
           <div className="space-y-5">
@@ -229,7 +229,7 @@ function VerMetodoPagoPageContent() {
 
                 <div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <span>{metodo.banco ? 'Nombre del Banco' : 'MÃƒÂ©todo'}</span>
+                    <span>{metodo.banco ? 'Nombre del Banco' : 'Método'}</span>
                   </div>
                   <p className="text-sm font-medium">{metodo.banco || tipoMetodoPagoLabels[metodo.tipo]}</p>
                 </div>
@@ -288,11 +288,11 @@ function VerMetodoPagoPageContent() {
                 {metodo.contrasena && (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span>ContraseÃƒÂ±a</span>
+                      <span>Contraseña</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">
-                        {showPassword ? metodo.contrasena : 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢'}
+                        {showPassword ? metodo.contrasena : '••••••••'}
                       </p>
                       <Button
                         variant="ghost"
@@ -310,7 +310,7 @@ function VerMetodoPagoPageContent() {
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5 flex-shrink-0"
-                        onClick={() => copyToClipboard(metodo.contrasena!, 'ContraseÃƒÂ±a')}
+                        onClick={() => copyToClipboard(metodo.contrasena!, 'Contraseña')}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -321,13 +321,13 @@ function VerMetodoPagoPageContent() {
                 {metodo.numeroTarjeta && (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span>NÃƒÂºmero de Tarjeta</span>
+                      <span>Número de Tarjeta</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">
                         {showCardNumber
                           ? metodo.numeroTarjeta
-                          : `Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ ${metodo.numeroTarjeta.replace(/\D/g, '').slice(-4)}`
+                          : `•••• •••• •••• ${metodo.numeroTarjeta.replace(/\D/g, '').slice(-4)}`
                         }
                       </p>
                       <Button
@@ -346,7 +346,7 @@ function VerMetodoPagoPageContent() {
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5 flex-shrink-0"
-                        onClick={() => copyToClipboard(metodo.numeroTarjeta!, 'NÃƒÂºmero de tarjeta')}
+                        onClick={() => copyToClipboard(metodo.numeroTarjeta!, 'Número de tarjeta')}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -357,7 +357,7 @@ function VerMetodoPagoPageContent() {
                 {metodo.fechaExpiracion && (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span>Fecha ExpiraciÃƒÂ³n</span>
+                      <span>Fecha Expiración</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">{metodo.fechaExpiracion}</p>
@@ -365,7 +365,7 @@ function VerMetodoPagoPageContent() {
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5 flex-shrink-0"
-                        onClick={() => copyToClipboard(metodo.fechaExpiracion!, 'Fecha de expiraciÃƒÂ³n')}
+                        onClick={() => copyToClipboard(metodo.fechaExpiracion!, 'Fecha de expiración')}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -389,8 +389,8 @@ function VerMetodoPagoPageContent() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
-        title="Eliminar MÃƒÂ©todo de Pago"
-        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar el mÃƒÂ©todo "${metodo.nombre}"? Esta acciÃƒÂ³n no se puede deshacer.`}
+        title="Eliminar Método de Pago"
+        description={`¿Estás seguro de que quieres eliminar el método "${metodo.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />
@@ -400,7 +400,7 @@ function VerMetodoPagoPageContent() {
 
 export default function VerMetodoPagoPage() {
   return (
-    <ModuleErrorBoundary moduleName="Ver MÃƒÂ©todo de Pago">
+    <ModuleErrorBoundary moduleName="Ver Método de Pago">
       <VerMetodoPagoPageContent />
     </ModuleErrorBoundary>
   );

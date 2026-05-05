@@ -91,7 +91,7 @@ export function CambiarEstadoVentaDialog({
           <div className="mt-3 space-y-1 text-sm">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground w-20 shrink-0">
-                CategorÃ­a
+                Categoría
               </span>
               <span className="font-medium">{venta.categoriaNombre}</span>
             </div>
@@ -103,7 +103,7 @@ export function CambiarEstadoVentaDialog({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground w-20 shrink-0">
-                AcciÃ³n
+                Acción
               </span>
               <Badge
                 variant="outline"
@@ -123,7 +123,7 @@ export function CambiarEstadoVentaDialog({
         <div className="px-6 py-4">
           <div className="space-y-3">
             <p className="text-sm font-medium text-muted-foreground">
-              Â¿QuÃ© deseas {esActivar ? "activar" : "inactivar"}?
+              ¿Qué deseas {esActivar ? "activar" : "inactivar"}?
             </p>
             <RadioGroup
               value={alcance}
@@ -188,8 +188,8 @@ export function CambiarEstadoVentaDialog({
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {esActivar
-                      ? "Activa la venta y tambiÃ©n marca el servicio como activo."
-                      : "Inactiva la venta y tambiÃ©n marca el servicio como inactivo."}
+                      ? "Activa la venta y también marca el servicio como activo."
+                      : "Inactiva la venta y también marca el servicio como inactivo."}
                   </p>
                 </div>
               </label>

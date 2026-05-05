@@ -30,7 +30,7 @@ function sortGastos(gastos: Gasto[]) {
 async function getTipoGastoActivo(tipoGastoId: string): Promise<TipoGasto> {
   const tipoGasto = await getTipoGastoById<TipoGasto>(tipoGastoId);
   if (!tipoGasto) throw new Error('Tipo de gasto no encontrado');
-  if (!tipoGasto.activo) throw new Error('El tipo de gasto seleccionado estÃƒÂ¡ inactivo');
+  if (!tipoGasto.activo) throw new Error('El tipo de gasto seleccionado está inactivo');
   return tipoGasto;
 }
 

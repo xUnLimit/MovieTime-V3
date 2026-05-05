@@ -51,7 +51,7 @@ export function ServiciosTable({ servicios, onEdit }: ServiciosTableProps) {
           });
         }
 
-        // Refrescar categorÃ­as y contadores de servicios para actualizar widgets
+        // Refrescar categorías y contadores de servicios para actualizar widgets
         await Promise.all([
           fetchCategorias(true),
           fetchCounts(true), // Force refresh para actualizar inmediatamente
@@ -65,10 +65,10 @@ export function ServiciosTable({ servicios, onEdit }: ServiciosTableProps) {
   };
 
   const handleCopyCredentials = useCallback((servicio: Servicio) => {
-    const text = `Correo: ${servicio.correo}\nContraseÃ±a: ${servicio.contrasena}`;
+    const text = `Correo: ${servicio.correo}\nContraseña: ${servicio.contrasena}`;
     navigator.clipboard.writeText(text);
     toast.success("Credenciales copiadas", {
-      description: "El correo y contraseÃ±a han sido copiados al portapapeles.",
+      description: "El correo y contraseña han sido copiados al portapapeles.",
     });
   }, []);
 
@@ -102,7 +102,7 @@ export function ServiciosTable({ servicios, onEdit }: ServiciosTableProps) {
         key: "perfiles",
         header: "Perfiles",
         render: (item) => {
-          // Si el servicio estÃ¡ inactivo, mostrar barra vacÃ­a y 0 disponibles
+          // Si el servicio está inactivo, mostrar barra vacía y 0 disponibles
           const ocupados = !item.activo ? 0 : item.perfilesOcupados;
           const porcentaje = !item.activo
             ? 0
@@ -218,7 +218,7 @@ export function ServiciosTable({ servicios, onEdit }: ServiciosTableProps) {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title="Eliminar Servicio"
-        description={`Â¿EstÃ¡s seguro de que quieres eliminar el servicio "${servicioToDelete?.nombre}"? Esta acciÃ³n no se puede deshacer.`}
+        description={`¿Estás seguro de que quieres eliminar el servicio "${servicioToDelete?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       >
@@ -233,11 +233,11 @@ export function ServiciosTable({ servicios, onEdit }: ServiciosTableProps) {
               htmlFor="delete-payments"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Eliminar tambiÃ©n los registros de pago
+              Eliminar también los registros de pago
             </Label>
             <p className="text-sm text-muted-foreground">
-              Al marcar esta opciÃ³n, se eliminarÃ¡n todos los registros de pago
-              de la base de datos. Si no se marca, se conservarÃ¡n para
+              Al marcar esta opción, se eliminarán todos los registros de pago
+              de la base de datos. Si no se marca, se conservarán para
               historial.
             </p>
           </div>

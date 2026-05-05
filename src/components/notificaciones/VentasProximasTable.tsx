@@ -50,10 +50,8 @@ import {
 } from '@/components/ui/table';
 import { getCategoriaById } from '@/lib/supabase/categorias-repository';
 import { getServicioById } from '@/lib/supabase/servicios-repository';
-import { adjustServiciosActivos } from '@/lib/supabase/ventas-repository';
 import { getCurrencySymbol } from '@/lib/constants';
-import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
-import { upsertVentaPronostico, adjustIngresosStats, getMesKeyFromDate, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
+import { renewVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { generarMensajeVenta, openWhatsApp } from '@/lib/utils/whatsapp';
 import { PagoDialog } from '@/components/shared/PagoDialog';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
@@ -61,10 +59,7 @@ import { AccionesVentaDialog } from './AccionesVentaDialog';
 import { toast } from 'sonner';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
-import { format } from 'date-fns';
-import { syncUsuarioMetodoPago } from '@/lib/services/usuarioMetodoPagoSyncService';
 import { withPendingUserPaymentMethod } from '@/lib/utils/usuarioMetodoPago';
-import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useTemplatesStore } from '@/store/templatesStore';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
@@ -99,14 +94,14 @@ function getBellIconColor(diasRestantes: number): {
       textColor: 'text-red-600 dark:text-red-400',
     };
   } else if (diasRestantes >= 1 && diasRestantes <= 7) {
-    // De 1 a 7 dÃƒÂ­as restantes - Yellow
+    // De 1 a 7 días restantes - Yellow
     return {
       bgColor: 'bg-yellow-100 dark:bg-yellow-500/20',
       hoverBgColor: 'hover:bg-yellow-200 dark:hover:bg-yellow-500/30',
       textColor: 'text-yellow-600 dark:text-yellow-400',
     };
   } else {
-    // MÃƒÂ¡s de 7 dÃƒÂ­as - Yellow (sin verde)
+    // Más de 7 días - Yellow (sin verde)
     return {
       bgColor: 'bg-yellow-100 dark:bg-yellow-500/20',
       hoverBgColor: 'hover:bg-yellow-200 dark:hover:bg-yellow-500/30',
@@ -128,7 +123,7 @@ function getEstadoBadge(
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
-      text: `${dias} dÃƒÂ­a${dias > 1 ? 's' : ''} de retraso`,
+      text: `${dias} día${dias > 1 ? 's' : ''} de retraso`,
     };
   } else if (diasRestantes === 0) {
     return {
@@ -142,14 +137,14 @@ function getEstadoBadge(
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300',
-      text: `${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
+      text: `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
     };
   } else {
     return {
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',
-      text: `${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
+      text: `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
     };
   }
 }
@@ -354,13 +349,13 @@ export function VentasProximasTable() {
     const template = getTemplateByTipo(tipoTemplate);
 
     if (!template) {
-      toast.error(`Template de ${tipoTemplate === 'dia_pago' ? 'dÃƒÂ­a de pago' : 'notificaciÃƒÂ³n regular'} no encontrado`);
+      toast.error(`Template de ${tipoTemplate === 'dia_pago' ? 'día de pago' : 'notificación regular'} no encontrado`);
       return;
     }
 
     // Generate WhatsApp message
     try {
-      // Extract first name from full name (e.g., "Juan PÃƒÂ©rez" -> "Juan")
+      // Extract first name from full name (e.g., "Juan Pérez" -> "Juan")
       const clienteSoloNombre = notif.clienteNombre.split(' ')[0];
 
       const mensaje = generarMensajeVenta(template.contenido, {
@@ -385,7 +380,7 @@ export function VentasProximasTable() {
         // Fallback: Open WhatsApp without phone number
         const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`;
         window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-        toast.warning('TelÃƒÂ©fono del cliente no disponible. Selecciona el contacto manualmente.');
+        toast.warning('Teléfono del cliente no disponible. Selecciona el contacto manualmente.');
       }
     } catch (error) {
       console.error('Error generando mensaje WhatsApp:', error);
@@ -400,7 +395,7 @@ export function VentasProximasTable() {
     const template = getTemplateByTipo('cancelacion');
 
     if (!template) {
-      toast.error('Template de cancelaciÃƒÂ³n no encontrado');
+      toast.error('Template de cancelación no encontrado');
       return;
     }
 
@@ -429,11 +424,11 @@ export function VentasProximasTable() {
         // Fallback: Open WhatsApp without phone number
         const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`;
         window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-        toast.warning('TelÃƒÂ©fono del cliente no disponible. Selecciona el contacto manualmente.');
+        toast.warning('Teléfono del cliente no disponible. Selecciona el contacto manualmente.');
       }
     } catch (error) {
-      console.error('Error generando mensaje de cancelaciÃƒÂ³n:', error);
-      toast.error('Error generando mensaje de cancelaciÃƒÂ³n');
+      console.error('Error generando mensaje de cancelación:', error);
+      toast.error('Error generando mensaje de cancelación');
     }
   };
 
@@ -482,72 +477,41 @@ export function VentasProximasTable() {
 
     try {
       const { metodosPago } = useMetodosPagoStore.getState();
-
       const metodoPagoSeleccionado = metodosPago.find((m) => m.id === data.metodoPagoId);
-      const costo = roundToDecimals(data.costo);
-      const descuentoNumero = roundToDecimals(Number(data.descuento) || 0);
-      const monto = calculateDiscountedAmount(costo, descuentoNumero);
-      const notaPrincipal = data.notas?.trim() ?? '';
-
-      // Crear pago en la colecciÃƒÂ³n pagosVenta
-      await crearPagoRenovacion(
-        notifSeleccionada.ventaId,
-        notifSeleccionada.clienteId,
-        notifSeleccionada.clienteNombre,
-        notifSeleccionada.categoriaId || '',
-        monto,
-        metodoPagoSeleccionado?.nombre || data.metodoPagoNombre || '',
-        data.metodoPagoId,
-        data.moneda || metodoPagoSeleccionado?.moneda || notifSeleccionada.moneda || 'USD',
-        data.periodoRenovacion as VentaDoc['cicloPago'],
-        notaPrincipal,
-        data.fechaInicio,
-        data.fechaVencimiento,
-        costo,
-        descuentoNumero
-      );
-
-      // Actualizar fechaFin y notas en VentaDoc
-      await updateVenta(notifSeleccionada.ventaId, {
-        fechaFin: data.fechaVencimiento,
-        fechaInicio: data.fechaInicio,
-        notas: notaPrincipal,
+      const renovacion = await renewVentaUseCase({
+        id: notifSeleccionada.ventaId,
+        clienteId: notifSeleccionada.clienteId,
+        clienteNombre: notifSeleccionada.clienteNombre,
+        categoriaId: notifSeleccionada.categoriaId || '',
+        categoriaNombre: notifSeleccionada.categoriaNombre,
+        servicioId: notifSeleccionada.servicioId,
+        servicioNombre: notifSeleccionada.servicioNombre,
+        servicioCorreo: notifSeleccionada.servicioCorreo,
+        servicioContrasena: notifSeleccionada.servicioContrasena,
+        clienteTelefono: notifSeleccionada.clienteTelefono,
+        perfilNombre: notifSeleccionada.perfilNombre,
+        codigo: notifSeleccionada.codigo,
+        metodoPagoId: notifSeleccionada.metodoPagoId,
+        moneda: notifSeleccionada.moneda,
+        precioFinal: notifSeleccionada.precioFinal,
+        estado: 'activo',
+      } as VentaDoc, {
+        ...data,
+        metodoPagoNombre: metodoPagoSeleccionado?.nombre || data.metodoPagoNombre || '',
+        moneda: data.moneda || metodoPagoSeleccionado?.moneda || notifSeleccionada.moneda || 'USD',
+      }, {
+        logContext: getLogContext(),
+        recordActivityLog: useActivityLogStore.getState().addLog,
       });
 
-      try {
-        await syncUsuarioMetodoPago({
-          usuarioId: notifSeleccionada.clienteId,
-          metodoPagoId: data.metodoPagoId,
-          metodoPagoNombre: metodoPagoSeleccionado?.nombre || data.metodoPagoNombre || '',
-          moneda: data.moneda || metodoPagoSeleccionado?.moneda || notifSeleccionada.moneda || 'USD',
-        });
-      } catch (syncError) {
-        console.error('Error sincronizando mÃƒÂ©todo de pago del usuario:', syncError);
+      if (renovacion.syncPaymentMethodFailed) {
         toast.warning('Venta renovada con advertencia', {
-          description: 'La renovaciÃƒÂ³n se guardÃƒÂ³, pero no se pudo actualizar el mÃƒÂ©todo de pago en usuarios.',
+          description: 'La renovación se guardó, pero no se pudo actualizar el método de pago en usuarios.',
         });
       }
 
-      // Registrar en log de actividad
-      useActivityLogStore.getState().addLog({
-        ...getLogContext(),
-        accion: 'renovacion',
-        entidad: 'venta',
-        entidadId: notifSeleccionada.ventaId,
-        entidadNombre: `${notifSeleccionada.clienteNombre} Ã¢â‚¬â€ ${notifSeleccionada.servicioNombre}`,
-        detalles: `Venta renovada: ${notifSeleccionada.clienteNombre} / ${notifSeleccionada.servicioNombre} Ã¢â‚¬â€ ${getCurrencySymbol(data.moneda)}${monto.toFixed(2)} Ã¢â‚¬â€ hasta ${format(data.fechaVencimiento, 'dd/MM/yyyy')} (${data.periodoRenovacion})`,
-      }).catch(() => {});
-
       // Actualizar dashboard: local INMEDIATAMENTE + Supabase en background
-      const ventaPronosticoData = {
-        id: notifSeleccionada.ventaId,
-        categoriaId: notifSeleccionada.categoriaId || '',
-        fechaInicio: data.fechaInicio.toISOString(),
-        fechaFin: data.fechaVencimiento.toISOString(),
-        cicloPago: data.periodoRenovacion,
-        precioFinal: monto,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || notifSeleccionada.moneda || 'USD',
-      };
+      const ventaPronosticoData = renovacion.pronostico;
       import('@/store/dashboardStore').then(({ useDashboardStore }) => {
         const store = useDashboardStore.getState();
         const currentStats = store.stats;
@@ -562,19 +526,7 @@ export function VentasProximasTable() {
         }
         store.invalidateCache();
       }).catch(() => {});
-      upsertVentaPronostico(ventaPronosticoData, notifSeleccionada.ventaId).catch(() => {});
-
-      // Sync dashboard ingresos for the new payment
-      adjustIngresosStats({
-        delta: monto,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || notifSeleccionada.moneda || 'USD',
-        mes: getMesKeyFromDate(data.fechaInicio),
-        dia: getDiaKeyFromDate(data.fechaInicio),
-        categoriaId: notifSeleccionada.categoriaId || '',
-        categoriaNombre: notifSeleccionada.categoriaNombre || '',
-      }).catch(() => {});
-
-      // Ã¢Å“â€¦ Eliminar notificaciones de esta venta (auto-cleanup al renovar)
+      // ✅ Eliminar notificaciones de esta venta (auto-cleanup al renovar)
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
       fetchNotificaciones(true);
 
@@ -583,7 +535,7 @@ export function VentasProximasTable() {
 
       setRenovarDialogOpen(false);
 
-      // Si el usuario eligiÃƒÂ³ notificar por WhatsApp, usar el mensaje editado del dialog
+      // Si el usuario eligió notificar por WhatsApp, usar el mensaje editado del dialog
       if (data.notificarWhatsApp && data.mensajeWhatsApp) {
         const phone = notifSeleccionada.clienteTelefono
           ? notifSeleccionada.clienteTelefono.replace(/[^\d+]/g, '')
@@ -629,10 +581,10 @@ export function VentasProximasTable() {
 
     try {
       await toggleResaltada(notifSeleccionada.id, !notifSeleccionada.resaltada);
-      toast.success('NotificaciÃƒÂ³n resaltada para seguimiento');
+      toast.success('Notificación resaltada para seguimiento');
     } catch (error) {
       console.error('Error al resaltar:', error);
-      toast.error('Error al resaltar la notificaciÃƒÂ³n');
+      toast.error('Error al resaltar la notificación');
     }
   };
 
@@ -669,10 +621,7 @@ export function VentasProximasTable() {
         await updatePerfil(notifSeleccionada.servicioId, false);
       }
 
-      // 3. Decrement serviciosActivos counter
-      await adjustServiciosActivos(notifSeleccionada.clienteId, -1);
-
-      // 4. Delete notification
+      // 3. Delete notification
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
       fetchNotificaciones(true);
 
@@ -682,14 +631,11 @@ export function VentasProximasTable() {
         accion: 'actualizacion',
         entidad: 'venta',
         entidadId: notifSeleccionada.ventaId,
-        entidadNombre: `${notifSeleccionada.clienteNombre} Ã¢â‚¬â€ ${notifSeleccionada.servicioNombre}`,
-        detalles: `Venta cortada: ${notifSeleccionada.clienteNombre} / ${notifSeleccionada.servicioNombre} Ã¢â‚¬â€ estado cambiado a inactivo, perfil liberado`,
+        entidadNombre: `${notifSeleccionada.clienteNombre} — ${notifSeleccionada.servicioNombre}`,
+        detalles: `Venta cortada: ${notifSeleccionada.clienteNombre} / ${notifSeleccionada.servicioNombre} — estado cambiado a inactivo, perfil liberado`,
         cambios: [{ campo: 'Estado', campoKey: 'estado', anterior: 'activo', nuevo: 'inactivo', tipo: 'string' as const }],
       }).catch(() => {});
 
-      // Remove from dashboard forecast
-      upsertVentaPronostico(null, notifSeleccionada.ventaId).catch(() => {});
-      // Invalidate dashboard cache so it re-fetches on next visit
       import('@/store/dashboardStore').then(({ useDashboardStore }) => {
         useDashboardStore.getState().invalidateCache();
       }).catch(() => {});
@@ -707,13 +653,13 @@ export function VentasProximasTable() {
 
   return (
     <Card className="p-4 pb-2">
-      <h3 className="text-xl font-semibold">Ventas prÃƒÂ³ximas a vencer</h3>
+      <h3 className="text-xl font-semibold">Ventas próximas a vencer</h3>
       <div className="flex items-center gap-4 -mb-4">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por cliente o categorÃƒÂ­a..."
+            placeholder="Buscar por cliente o categoría..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="pl-9"
@@ -724,8 +670,8 @@ export function VentasProximasTable() {
         {(() => {
           const opciones = [
             { value: 'todos', label: 'Todos los estados' },
-            { value: 'proximas', label: 'PrÃƒÂ³ximas a vencer' },
-            { value: 'dia_pago', label: 'DÃƒÂ­a de pago' },
+            { value: 'proximas', label: 'Próximas a vencer' },
+            { value: 'dia_pago', label: 'Día de pago' },
             { value: 'vencidas', label: 'Vencidas' },
           ];
           const labelActual = opciones.find(o => o.value === estadoFilter)?.label ?? 'Todos los estados';
@@ -774,19 +720,19 @@ export function VentasProximasTable() {
                       Cliente
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
-                      CategorÃƒÂ­a
+                      Categoría
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
                       Email
                     </TableHead>
                     <TableHead className="h-12 w-[160px] px-4 text-center text-muted-foreground">
-                      ContraseÃƒÂ±a
+                      Contraseña
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
                       Perfil
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
-                      CÃƒÂ³digo
+                      Código
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
                       Fecha de Inicio
@@ -833,10 +779,10 @@ export function VentasProximasTable() {
                             onClick={() => !notif.resaltada && toggleLeida(notif.id, !notif.leida)}
                             title={
                               notif.resaltada
-                                ? 'NotificaciÃƒÂ³n resaltada (usa Acciones para gestionar)'
+                                ? 'Notificación resaltada (usa Acciones para gestionar)'
                                 : notif.leida
                                   ? 'Marcar como sin leer'
-                                  : 'Marcar como leÃƒÂ­da'
+                                  : 'Marcar como leída'
                             }
                           >
                             {notif.resaltada ? (
@@ -854,7 +800,7 @@ export function VentasProximasTable() {
                           {notif.clienteNombre}
                         </TableCell>
 
-                        {/* CategorÃƒÂ­a */}
+                        {/* Categoría */}
                         <TableCell className="p-4 text-center">
                           {notif.categoriaNombre}
                         </TableCell>
@@ -881,19 +827,19 @@ export function VentasProximasTable() {
                           )}
                         </TableCell>
 
-                        {/* ContraseÃƒÂ±a */}
+                        {/* Contraseña */}
                         <TableCell className="w-[160px] p-4 text-center">
                           {notif.servicioContrasena ? (
                             <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
                               <span className="min-w-0 break-all text-center font-medium leading-tight">
-                                {visiblePasswords.has(notif.id) ? notif.servicioContrasena : 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢'}
+                                {visiblePasswords.has(notif.id) ? notif.servicioContrasena : '••••••••'}
                               </span>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 flex-shrink-0"
                                 onClick={() => togglePasswordVisibility(notif.id)}
-                                title={visiblePasswords.has(notif.id) ? 'Ocultar contraseÃƒÂ±a' : 'Mostrar contraseÃƒÂ±a'}
+                                title={visiblePasswords.has(notif.id) ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                               >
                                 {visiblePasswords.has(notif.id) ? (
                                   <EyeOff className="h-3 w-3" />
@@ -905,8 +851,8 @@ export function VentasProximasTable() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 flex-shrink-0"
-                                onClick={() => copyToClipboard(notif.servicioContrasena!, 'ContraseÃƒÂ±a')}
-                                title="Copiar contraseÃƒÂ±a"
+                                onClick={() => copyToClipboard(notif.servicioContrasena!, 'Contraseña')}
+                                title="Copiar contraseña"
                               >
                                 <Copy className="h-3 w-3" />
                               </Button>
@@ -923,7 +869,7 @@ export function VentasProximasTable() {
                           </span>
                         </TableCell>
 
-                        {/* CÃƒÂ³digo */}
+                        {/* Código */}
                         <TableCell className="p-4 text-center">
                           {notif.codigo ? (
                             <div className="flex items-center justify-center gap-2">
@@ -934,8 +880,8 @@ export function VentasProximasTable() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 flex-shrink-0"
-                                onClick={() => copyToClipboard(notif.codigo!, 'CÃƒÂ³digo')}
-                                title="Copiar cÃƒÂ³digo"
+                                onClick={() => copyToClipboard(notif.codigo!, 'Código')}
+                                title="Copiar código"
                               >
                                 <Copy className="h-3 w-3" />
                               </Button>
@@ -947,7 +893,7 @@ export function VentasProximasTable() {
 
                         {/* Fecha de Inicio */}
                         <TableCell className="p-4 text-center">
-                          {notif.fechaInicio ? formatearFecha(new Date(notif.fechaInicio)) : 'Ã¢â‚¬â€'}
+                          {notif.fechaInicio ? formatearFecha(new Date(notif.fechaInicio)) : '—'}
                         </TableCell>
 
                         {/* Fecha de Vencimiento */}
@@ -1054,7 +1000,7 @@ export function VentasProximasTable() {
 
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
-                PÃƒÂ¡gina {safeCurrentPage} de {totalPages}
+                Página {safeCurrentPage} de {totalPages}
               </span>
               <div className="flex gap-2">
                 <Button

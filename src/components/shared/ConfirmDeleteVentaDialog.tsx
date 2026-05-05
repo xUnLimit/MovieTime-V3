@@ -57,7 +57,7 @@ export function ConfirmDeleteVentaDialog({
             <AlertDialogTitle>Eliminar Venta</AlertDialogTitle>
           </div>
           <AlertDialogDescription className="pt-2">
-            Â¿EstÃ¡s seguro de que quieres eliminar {ventaNombre}? Esta acciÃ³n no se puede deshacer.
+            ¿Estás seguro de que quieres eliminar {ventaNombre}? Esta acción no se puede deshacer.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -73,10 +73,10 @@ export function ConfirmDeleteVentaDialog({
               htmlFor="delete-pagos"
               className="text-sm font-medium leading-none cursor-pointer"
             >
-              Eliminar tambiÃ©n historial de pagos
+              Eliminar también historial de pagos
             </Label>
             <p className="text-sm text-muted-foreground">
-              Al marcar esta opciÃ³n, se eliminarÃ¡n todos los registros de pago de la base de datos. Si no se marca, se conservarÃ¡n para historial.
+              Al marcar esta opción, se eliminarán todos los registros de pago de la base de datos. Si no se marca, se conservarán para historial.
             </p>
           </div>
         </div>

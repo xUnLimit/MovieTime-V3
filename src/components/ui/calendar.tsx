@@ -224,13 +224,13 @@ function CalendarDayButton({
       data-disabled={modifiers.disabled}
       className={cn(
         "dark:hover:text-white flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal [&>span]:text-xs [&>span]:opacity-70",
-        // Estilos para dÃ­as seleccionados del mes actual
+        // Estilos para días seleccionados del mes actual
         "data-[selected-single=true]:data-[disabled=false]:bg-[#8A2BE2] data-[selected-single=true]:data-[disabled=false]:text-white data-[selected-single=true]:data-[disabled=false]:hover:bg-[#8A2BE2]",
         // Estilos para rangos
         "data-[range-middle=true]:bg-[#8A2BE2] data-[range-middle=true]:text-white data-[range-start=true]:bg-[#8A2BE2] data-[range-start=true]:text-white data-[range-end=true]:bg-[#8A2BE2] data-[range-end=true]:text-white",
-        // Estilos para dÃ­as del mes anterior/siguiente
+        // Estilos para días del mes anterior/siguiente
         "data-[disabled=true]:text-sidebar-foreground/50",
-        // Estilos base para dÃ­as normales
+        // Estilos base para días normales
         "text-sidebar-foreground",
         // Bordes redondeados para rangos
         "data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md",

@@ -23,7 +23,7 @@ export function ServicioDetailMetrics({
   );
   const perfilesDisponibles = totalPerfiles - perfilesOcupados;
 
-  // Calcular prÃ³ximos pagos (servicios con 7 dÃ­as restantes o menos)
+  // Calcular próximos pagos (servicios con 7 días restantes o menos)
   const proximosPagos = servicios.filter((s) => {
     const diffDias = calcularDiasRelativosCalendario(s.fechaVencimiento);
     if (diffDias === null) return false;
@@ -38,7 +38,7 @@ export function ServicioDetailMetrics({
       color: "text-blue-600",
     },
     {
-      title: "PrÃ³ximos Pagos (7 dÃ­as)",
+      title: "Próximos Pagos (7 días)",
       value: proximosPagos.toString(),
       icon: CalendarDays,
       color: "text-yellow-600",

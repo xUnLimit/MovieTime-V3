@@ -96,7 +96,7 @@
   --background: oklch(0 0 0);
   --foreground: oklch(0.98 0 0);
 
-  /* Cards - Ligeramente mÃ¡s claro que el fondo */
+  /* Cards - Ligeramente más claro que el fondo */
   --card: oklch(0.05 0 0);
   --card-foreground: oklch(0.98 0 0);
 
@@ -129,7 +129,7 @@
   --input: oklch(0.22 0.01 270);
   --ring: oklch(0.65 0.25 280);
 
-  /* Charts colors - Colores vibrantes para grÃ¡ficos */
+  /* Charts colors - Colores vibrantes para gráficos */
   --chart-1: oklch(0.55 0.2 250);
   --chart-2: oklch(0.5 0.15 180);
   --chart-3: oklch(0.65 0.2 240);
@@ -156,7 +156,7 @@
   }
 }
 
-/* View Transition: ripple desde el botÃ³n de tema */
+/* View Transition: ripple desde el botón de tema */
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) {
     animation: none;

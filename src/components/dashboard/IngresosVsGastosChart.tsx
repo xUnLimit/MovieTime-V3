@@ -45,8 +45,8 @@ export function IngresosVsGastosChart() {
     const ingresosPorDia: IngresosDia[] = stats?.ingresosPorDia ?? [];
     const currentDate = new Date();
     if (selectedMonth === 'actual') {
-      // Usar datos reales por dÃ­a desde dashboard_stats (0 reads extra)
-      // Incluye dÃ­as futuros del mes actual si tienen datos registrados
+      // Usar datos reales por día desde dashboard_stats (0 reads extra)
+      // Incluye días futuros del mes actual si tienen datos registrados
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
       const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -96,9 +96,9 @@ export function IngresosVsGastosChart() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="actual">Mes actual</SelectItem>
-            <SelectItem value="3meses">Ãšltimos 3 meses</SelectItem>
-            <SelectItem value="6meses">Ãšltimos 6 meses</SelectItem>
-            <SelectItem value="12meses">Ãšltimos 12 meses</SelectItem>
+            <SelectItem value="3meses">Últimos 3 meses</SelectItem>
+            <SelectItem value="6meses">Últimos 6 meses</SelectItem>
+            <SelectItem value="12meses">Últimos 12 meses</SelectItem>
           </SelectContent>
         </Select>
       </CardHeader>

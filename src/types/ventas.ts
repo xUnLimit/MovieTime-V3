@@ -16,20 +16,20 @@ export interface VentaPago {
 }
 
 /**
- * Documento de pago de venta en la colecciÃ³n pagosVenta
+ * Documento de pago de venta en la colección pagosVenta
  */
 export interface PagoVenta {
   id: string;
   ventaId: string;                    // Referencia a la venta
   clienteId: string;                  // Denormalizado para queries
   clienteNombre: string;              // Denormalizado
-  categoriaId?: string;               // Denormalizado para queries por categorÃ­a
-  fecha: Date;                        // Fecha en que se realizÃ³ el pago
-  monto: number;                      // Monto final (despuÃ©s de descuento)
+  categoriaId?: string;               // Denormalizado para queries por categoría
+  fecha: Date;                        // Fecha en que se realizó el pago
+  monto: number;                      // Monto final (después de descuento)
   precio?: number;                    // Precio original antes de descuento
   descuento?: number;                 // Porcentaje de descuento (0-100)
-  metodoPagoId?: string;              // Referencia al mÃ©todo de pago
-  metodoPago: string;                 // Nombre del mÃ©todo de pago (denormalizado)
+  metodoPagoId?: string;              // Referencia al método de pago
+  metodoPago: string;                 // Nombre del método de pago (denormalizado)
   moneda?: string;                    // Denormalizado de MetodoPago
   notas?: string;
   isPagoInicial: boolean;             // true para el primer pago
@@ -40,11 +40,11 @@ export interface PagoVenta {
 }
 
 /**
- * Documento de venta en la colecciÃ³n ventas
+ * Documento de venta en la colección ventas
  *
  * ARQUITECTURA: Single Source of Truth
  * - Este documento NO almacena datos de pago (precio, descuento, fechas, etc.)
- * - Esos datos viven en la colecciÃ³n `pagosVenta`
+ * - Esos datos viven en la colección `pagosVenta`
  * - Para obtener datos actuales, usar `getVentaConUltimoPago()` de ventaSyncService
  */
 export interface VentaDoc {

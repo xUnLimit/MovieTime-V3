@@ -20,21 +20,21 @@ export const CategoriasMetrics = memo(function CategoriasMetrics() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <MetricCard
-        title="Total CategorÃ­as"
+        title="Total Categorías"
         value={totalCategorias}
         icon={FolderOpen}
         iconColor="text-blue-500"
         underlineColor="bg-blue-500"
       />
       <MetricCard
-        title="CategorÃ­as de Clientes"
+        title="Categorías de Clientes"
         value={categoriasClientes}
         icon={Users}
         iconColor="text-purple-500"
         underlineColor="bg-purple-500"
       />
       <MetricCard
-        title="CategorÃ­as de Revendedores"
+        title="Categorías de Revendedores"
         value={categoriasRevendedores}
         icon={Store}
         iconColor="text-orange-500"

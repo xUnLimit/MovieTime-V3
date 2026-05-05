@@ -114,9 +114,9 @@ export function RevenueByCategory() {
     <Card>
       <CardHeader className="pb-2">
         <div>
-          <CardTitle className="text-base">Rentabilidad por CategorÃ­a</CardTitle>
+          <CardTitle className="text-base">Rentabilidad por Categoría</CardTitle>
           <CardDescription className="text-sm">
-            Ganancia neta generada por cada categorÃ­a de servicio.
+            Ganancia neta generada por cada categoría de servicio.
           </CardDescription>
         </div>
       </CardHeader>

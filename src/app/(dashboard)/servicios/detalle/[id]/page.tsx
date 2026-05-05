@@ -31,8 +31,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
-import { adjustCategoriaGastos, getServicioById, removePagoServicio, updatePagoServicio } from '@/lib/supabase/servicios-repository';
+import { getServicioById } from '@/lib/supabase/servicios-repository';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
+import {
+  deleteServicioPagoUseCase,
+  renewServicioUseCase,
+  updateServicioPagoUseCase,
+} from '@/lib/use-cases/servicios-use-cases';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { Servicio, Categoria, MetodoPago, VentaDoc, PagoServicio } from '@/types';
@@ -45,12 +50,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getCurrencySymbol } from '@/lib/constants';
 import { calcularDiasRelativosCalendario, formatearFecha, formatearFechaHora, sumInUSD, formatAggregateInUSD } from '@/lib/utils/calculations';
-import { currencyService } from '@/lib/services/currencyService';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
-import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
-import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
-import { adjustGastosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 
 interface PerfilVenta {
@@ -91,11 +91,11 @@ function ServicioDetallePageContent() {
   const id = params.id as string;
   const from = searchParams.get('from');
 
-  const { deleteServicio, updateServicio, fetchCounts } = useServiciosStore();
+  const { deleteServicio, fetchCounts } = useServiciosStore();
   const { fetchCategorias } = useCategoriasStore();
   const { deleteNotificacionesPorServicio, fetchNotificaciones } = useNotificacionesStore();
 
-  // Estados locales para los datos especÃƒÂ­ficos de esta pÃƒÂ¡gina
+  // Estados locales para los datos específicos de esta página
   const [servicio, setServicio] = useState<Servicio | null>(null);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(null);
@@ -117,28 +117,28 @@ function ServicioDetallePageContent() {
   // Usar el hook para cargar pagos (con cache)
   const { pagos: pagosServicio, isLoading: pagosHistorialLoading, renovaciones, refresh: refreshPagos } = usePagosServicio(id);
 
-  // Cargar solo el servicio (1 lectura ÃƒÂºnica)
+  // Cargar solo el servicio (1 lectura única)
   useEffect(() => {
     const loadData = async () => {
       if (!id) return;
       setIsLoadingData(true);
       try {
-        // 1. Cargar el servicio (categoriaNombre ya estÃƒÂ¡ denormalizado)
+        // 1. Cargar el servicio (categoriaNombre ya está denormalizado)
         const servicioData = await getServicioById<Servicio>(id);
         if (!servicioData) {
-          toast.error('Servicio no encontrado', { description: 'No se encontrÃƒÂ³ el servicio con el ID proporcionado.' });
+          toast.error('Servicio no encontrado', { description: 'No se encontró el servicio con el ID proporcionado.' });
           setServicio(null);
           return;
         }
         setServicio(servicioData);
 
-        // 2. Crear objeto de categorÃƒÂ­a sintÃƒÂ©tico desde datos denormalizados
+        // 2. Crear objeto de categoría sintético desde datos denormalizados
         setCategoria({
           id: servicioData.categoriaId,
           nombre: servicioData.categoriaNombre,
         } as Categoria);
 
-        // 3. Crear objeto sintÃƒÂ©tico de metodoPago desde datos denormalizados
+        // 3. Crear objeto sintético de metodoPago desde datos denormalizados
         if (servicioData.metodoPagoId) {
           setMetodoPago({
             id: servicioData.metodoPagoId,
@@ -147,10 +147,10 @@ function ServicioDetallePageContent() {
           } as MetodoPago);
         }
 
-        // Nota: metodosPago (para dropdown) se carga en lazy load al abrir diÃƒÂ¡logo de renovaciÃƒÂ³n
+        // Nota: metodosPago (para dropdown) se carga en lazy load al abrir diálogo de renovación
       } catch (error) {
         console.error('Error cargando datos del servicio:', error);
-        toast.error('Error al cargar el servicio', { description: 'OcurriÃƒÂ³ un problema al obtener los datos. Intenta nuevamente.' });
+        toast.error('Error al cargar el servicio', { description: 'Ocurrió un problema al obtener los datos. Intenta nuevamente.' });
         setServicio(null);
       } finally {
         setIsLoadingData(false);
@@ -164,14 +164,14 @@ function ServicioDetallePageContent() {
     const loadVentas = async () => {
       if (!id) return;
       try {
-        // Fase 1: Cargar ventas base inmediatamente (clienteNombre ya estÃƒÂ¡ denormalizado en VentaDoc)
+        // Fase 1: Cargar ventas base inmediatamente (clienteNombre ya está denormalizado en VentaDoc)
         const ventasBase = await queryVentas<VentaDoc>([
           { field: 'servicioId', operator: '==', value: id },
         ]);
 
         const ventasActivas = ventasBase.filter((v) => (v.estado ?? 'activo') !== 'inactivo');
 
-        // Mostrar perfiles de inmediato con los datos bÃƒÂ¡sicos de VentaDoc
+        // Mostrar perfiles de inmediato con los datos básicos de VentaDoc
         setVentasServicio(ventasActivas.map((venta) => ({
           ventaId: venta.id || undefined,
           perfilNumero: venta.perfilNumero ?? null,
@@ -209,7 +209,7 @@ function ServicioDetallePageContent() {
             codigo: venta.codigo || undefined,
             cicloPago: venta.cicloPago || undefined,
           })));
-        }).catch(() => {/* datos bÃƒÂ¡sicos ya estÃƒÂ¡n visibles, ignorar error de enriquecimiento */});
+        }).catch(() => {/* datos básicos ya están visibles, ignorar error de enriquecimiento */});
 
       } catch (error) {
         console.error('Error cargando ventas del servicio:', error);
@@ -235,7 +235,7 @@ function ServicioDetallePageContent() {
         toast.success('Servicio eliminado', { description: 'El servicio fue eliminado. Los registros de pago se conservaron.' });
       }
 
-      // Refrescar categorÃƒÂ­as y contadores de servicios para actualizar widgets
+      // Refrescar categorías y contadores de servicios para actualizar widgets
       await Promise.all([
         fetchCategorias(true),
         fetchCounts(true),
@@ -247,16 +247,16 @@ function ServicioDetallePageContent() {
     }
   };
 
-  // Lazy load de mÃƒÂ©todos de pago (solo cuando se necesita renovar)
+  // Lazy load de métodos de pago (solo cuando se necesita renovar)
   const loadMetodosPagoIfNeeded = async () => {
-    if (metodosPago.length > 0) return; // Ya estÃƒÂ¡n cargados
+    if (metodosPago.length > 0) return; // Ya están cargados
     try {
       const methods = await queryMetodosPago<MetodoPago>([
         { field: 'asociadoA', operator: '==', value: 'servicio' }
       ]);
       setMetodosPago(methods);
     } catch (error) {
-      console.error('Error cargando mÃƒÂ©todos de pago:', error);
+      console.error('Error cargando métodos de pago:', error);
       setMetodosPago([]);
     }
   };
@@ -278,53 +278,16 @@ function ServicioDetallePageContent() {
   };
 
   const handleConfirmEditarPago = async (data: PagoFormData) => {
-    if (!pagoToEdit) return;
+    if (!pagoToEdit || !servicio) return;
     try {
       const metodoPagoSeleccionado = metodosPago.find((m) => m.id === data.metodoPagoId);
-      const nuevaMoneda = data.moneda || metodoPagoSeleccionado?.moneda || 'USD';
-      const viejaMoneda = pagoToEdit.moneda || metodoPago?.moneda || 'USD';
-      const notaPago = data.notas?.trim() ?? '';
-
-      await updatePagoServicio(pagoToEdit.id, {
-        fechaInicio: data.fechaInicio,
-        fechaVencimiento: data.fechaVencimiento,
-        monto: data.costo,
-        cicloPago: data.periodoRenovacion as 'mensual' | 'trimestral' | 'semestral' | 'anual',
-        metodoPagoId: data.metodoPagoId,
-        metodoPagoNombre: data.metodoPagoNombre || metodoPagoSeleccionado?.nombre,  // Denormalizado
-        moneda: nuevaMoneda,                                                         // Denormalizado
-        notas: notaPago,
+      const esUltimoPago = pagosOrdenados[0]?.id === pagoToEdit.id;
+      const { servicioActualizado } = await updateServicioPagoUseCase(servicio, pagoToEdit, data, {
+        metodoPago: metodoPagoSeleccionado,
+        isLatestPayment: esUltimoPago,
       });
 
-      // Ajustar gastosTotal del servicio con la diferencia convertida a USD
-      const [nuevoUSD, viejoUSD] = await Promise.all([
-        currencyService.convertToUSD(data.costo, nuevaMoneda),
-        currencyService.convertToUSD(pagoToEdit.monto ?? 0, viejaMoneda),
-      ]);
-      const montoDiffUSD = nuevoUSD - viejoUSD;
-      if (montoDiffUSD !== 0 && servicio) {
-      // gastosTotal se deriva desde pagos_servicio en Supabase.
-      }
-
-      // Si es el ÃƒÂºltimo pago, actualizar el servicio
-      const esUltimoPago = pagosOrdenados[0]?.id === pagoToEdit.id;
-      if (esUltimoPago) {
-        await updateServicio(id, {
-          fechaInicio: data.fechaInicio,
-          fechaVencimiento: data.fechaVencimiento,
-          costoServicio: data.costo,
-          metodoPagoId: data.metodoPagoId || undefined,
-          metodoPagoNombre: data.metodoPagoNombre || metodoPagoSeleccionado?.nombre,  // Denormalizado
-          moneda: data.moneda || metodoPagoSeleccionado?.moneda,                      // Denormalizado
-          cicloPago: data.periodoRenovacion as 'mensual' | 'trimestral' | 'semestral' | 'anual',
-        });
-
-        // Recargar el servicio actualizado para reflejar los cambios en la UI
-        const servicioActualizado = await getServicioById<Servicio>(id);
-        if (servicioActualizado) {
-          setServicio(servicioActualizado);
-        }
-      }
+      if (servicioActualizado) setServicio(servicioActualizado);
 
       refreshPagos();
       toast.success('Pago actualizado', { description: 'Los datos del pago han sido actualizados correctamente.' });
@@ -339,129 +302,42 @@ function ServicioDetallePageContent() {
   const handleConfirmDeleteRenovacion = async () => {
     if (!pagoToDelete || !servicio) return;
     const eraUltimaRenovacion = pagosOrdenados[0]?.id === pagoToDelete.id;
-    const montoToRevert = pagoToDelete.monto ?? 0;
 
     try {
-      await removePagoServicio(pagoToDelete.id);
-
-      // Decrementar gastosTotal del servicio y de la categorÃƒÂ­a (convertido a USD)
-      const montoToRevertMoneda = pagoToDelete.moneda || metodoPago?.moneda || 'USD';
-      const montoToRevertUSD = await currencyService.convertToUSD(montoToRevert, montoToRevertMoneda);
-      // gastosTotal se deriva desde pagos_servicio en Supabase.
-      if (servicio?.categoriaId) {
-        await adjustCategoriaGastos(servicio.categoriaId, -montoToRevertUSD);
-      }
-
+      const pagosActualizados = pagosServicio.filter(p => p.id !== pagoToDelete.id);
+      const { servicioActualizado } = await deleteServicioPagoUseCase(servicio, pagoToDelete, pagosActualizados, {
+        isLatestPayment: eraUltimaRenovacion,
+        fallbackMoneda: metodoPago?.moneda,
+      });
       refreshPagos();
-
       if (eraUltimaRenovacion) {
-        // Recargar pagos para obtener el nuevo ÃƒÂºltimo
-        const pagosActualizados = pagosServicio.filter(p => p.id !== pagoToDelete.id);
-        if (pagosActualizados.length > 0) {
-          const anterior = pagosActualizados[0];
-          await updateServicio(id, {
-            fechaInicio: anterior.fechaInicio,
-            fechaVencimiento: anterior.fechaVencimiento,
-            costoServicio: anterior.monto,
-            metodoPagoId: anterior.metodoPagoId || undefined,
-            cicloPago: anterior.cicloPago,
-          });
-
-          // Recargar el servicio actualizado para reflejar los cambios en la UI
-          const servicioActualizado = await getServicioById<Servicio>(id);
-          if (servicioActualizado) {
-            setServicio(servicioActualizado);
-          }
-        }
+        if (servicioActualizado) setServicio(servicioActualizado);
       }
-      toast.success('RenovaciÃƒÂ³n eliminada', { description: 'El registro de pago ha sido eliminado del historial.' });
+      toast.success('Renovación eliminada', { description: 'El registro de pago ha sido eliminado del historial.' });
       setPagoToDelete(null);
     } catch (error) {
-      console.error('Error al eliminar renovaciÃƒÂ³n:', error);
-      toast.error('Error al eliminar renovaciÃƒÂ³n', { description: error instanceof Error ? error.message : undefined });
+      console.error('Error al eliminar renovación:', error);
+      toast.error('Error al eliminar renovación', { description: error instanceof Error ? error.message : undefined });
     }
   };
 
   const handleConfirmRenovacion = async (data: PagoFormData) => {
+    if (!servicio) return;
     try {
       const metodoPagoSeleccionado = metodosPago.find((m) => m.id === data.metodoPagoId);
-      const numeroRenovacion = renovaciones + 1;
-      const notaPrincipal = data.notas?.trim() ?? '';
+      const { servicioActualizado } = await renewServicioUseCase(servicio, data, {
+        numeroRenovacion: renovaciones + 1,
+        metodoPago: metodoPagoSeleccionado,
+      });
 
-      await crearPagoRenovacion(
-        id,
-        servicio?.categoriaId || '',
-        data.costo,
-        data.metodoPagoId,
-        data.metodoPagoNombre || metodoPagoSeleccionado?.nombre || '',
-        data.moneda || metodoPagoSeleccionado?.moneda || 'USD',
-        data.periodoRenovacion as 'mensual' | 'trimestral' | 'semestral' | 'anual',
-        data.fechaInicio,
-        data.fechaVencimiento,
-        numeroRenovacion,
-        notaPrincipal
-      );
-
-      // Incrementar gastosTotal del servicio y de la categorÃƒÂ­a (convertido a USD)
-      const costoRenovacionUSD = await currencyService.convertToUSD(data.costo, data.moneda || metodoPagoSeleccionado?.moneda || 'USD');
-      // gastosTotal se deriva desde pagos_servicio en Supabase.
-      if (servicio?.categoriaId) {
-        await adjustCategoriaGastos(servicio.categoriaId, costoRenovacionUSD);
-      }
-
-      // Sync dashboard gastos for the new payment
-      adjustGastosStats({
-        delta: data.costo,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || 'USD',
-        mes: getMesKeyFromDate(data.fechaInicio),
-        dia: getDiaKeyFromDate(data.fechaInicio),
-        categoriaId: servicio?.categoriaId,
-        categoriaNombre: servicio?.categoriaNombre,
-      }).catch(() => {});
-
-      // Update forecast with new dates
-      upsertServicioPronostico({
-        id,
-        fechaVencimiento: data.fechaVencimiento.toISOString(),
-        cicloPago: data.periodoRenovacion,
-        costoServicio: data.costo,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || 'USD',
-      }, id).catch(() => {});
       // Invalidate dashboard cache so it re-fetches on next visit
       import('@/store/dashboardStore').then(({ useDashboardStore }) => {
         useDashboardStore.getState().invalidateCache();
       }).catch(() => {});
 
-      await updateServicio(id, {
-        fechaInicio: data.fechaInicio,
-        fechaVencimiento: data.fechaVencimiento,
-        costoServicio: data.costo,
-        metodoPagoId: data.metodoPagoId || undefined,
-        metodoPagoNombre: data.metodoPagoNombre || metodoPagoSeleccionado?.nombre,  // Denormalizado
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda,                      // Denormalizado
-        cicloPago: data.periodoRenovacion as 'mensual' | 'trimestral' | 'semestral' | 'anual',
-        notas: notaPrincipal,
-      });
-
-      // Recargar el servicio actualizado para reflejar los cambios en la UI
-      const servicioActualizado = await getServicioById<Servicio>(id);
-      if (servicioActualizado) {
-        setServicio(servicioActualizado);
-      }
+      setServicio(servicioActualizado);
 
       refreshPagos();
-
-      // Registrar en log de actividad
-      const user = useAuthStore.getState().user;
-      useActivityLogStore.getState().addLog({
-        usuarioId: user?.id ?? 'sistema',
-        usuarioEmail: user?.email ?? 'sistema',
-        accion: 'renovacion',
-        entidad: 'servicio',
-        entidadId: id,
-        entidadNombre: `${servicio?.nombre ?? id} [${servicio?.correo}]`,
-        detalles: `Servicio renovado: "${servicio?.nombre}" [${servicio?.correo}] - ${getCurrencySymbol(data.moneda)}${data.costo} - hasta ${format(data.fechaVencimiento, 'dd/MM/yyyy')} (${data.periodoRenovacion})`,
-      }).catch(() => {});
 
       // Remove notification and refresh store
       await deleteNotificacionesPorServicio(id);
@@ -471,11 +347,11 @@ function ServicioDetallePageContent() {
         useCategoriasStore.getState().fetchCategorias(true);
       }).catch(() => {});
 
-      toast.success('RenovaciÃƒÂ³n registrada', { description: 'El nuevo perÃƒÂ­odo de pago se ha registrado correctamente.' });
+      toast.success('Renovación registrada', { description: 'El nuevo período de pago se ha registrado correctamente.' });
       setRenovarDialogOpen(false);
     } catch (error) {
-      console.error('Error al registrar la renovaciÃƒÂ³n:', error);
-      toast.error('Error al registrar la renovaciÃƒÂ³n', { description: error instanceof Error ? error.message : undefined });
+      console.error('Error al registrar la renovación:', error);
+      toast.error('Error al registrar la renovación', { description: error instanceof Error ? error.message : undefined });
     }
   };
 
@@ -652,7 +528,7 @@ function ServicioDetallePageContent() {
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
-          <p className="text-muted-foreground">No se encontrÃƒÂ³ el servicio con el ID proporcionado.</p>
+          <p className="text-muted-foreground">No se encontró el servicio con el ID proporcionado.</p>
           <Link href="/servicios" className="inline-block mt-4 text-primary hover:underline">
             Volver a Servicios
           </Link>
@@ -690,7 +566,7 @@ function ServicioDetallePageContent() {
                 </Link>
                 {' / '}
                 <Link href={`/servicios/${servicio.categoriaId}`} className="hover:text-foreground transition-colors">
-                  {categoria?.nombre || 'CategorÃƒÂ­a'}
+                  {categoria?.nombre || 'Categoría'}
                 </Link>
                 {' / '}
                 <span className="text-foreground">Detalles</span>
@@ -731,8 +607,8 @@ function ServicioDetallePageContent() {
                 {/* Service Info */}
                 <div className="w-full space-y-3">
                   <div className="flex items-start gap-2">
-                    <span className="text-sm text-muted-foreground mt-0.5">CategorÃƒÂ­a</span>
-                    <span className="text-sm font-medium ml-auto text-right">{categoria?.nombre || 'Sin categorÃƒÂ­a'}</span>
+                    <span className="text-sm text-muted-foreground mt-0.5">Categoría</span>
+                    <span className="text-sm font-medium ml-auto text-right">{categoria?.nombre || 'Sin categoría'}</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
@@ -741,7 +617,7 @@ function ServicioDetallePageContent() {
                   </div>
                   <div className="flex items-start gap-2">
                     <RefreshCw className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <span className="text-sm text-muted-foreground">Ciclo de FacturaciÃƒÂ³n</span>
+                    <span className="text-sm text-muted-foreground">Ciclo de Facturación</span>
                     <span className="text-sm font-medium ml-auto text-right">{getCicloPagoLabel(servicio.cicloPago ?? '')}</span>
                   </div>
                   <div className="flex items-start gap-2">
@@ -763,20 +639,20 @@ function ServicioDetallePageContent() {
                     let texto: string;
                     if (dias < 0) {
                       badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
-                      texto = `${Math.abs(dias)} dÃƒÂ­a${Math.abs(dias) !== 1 ? 's' : ''} de retraso`;
+                      texto = `${Math.abs(dias)} día${Math.abs(dias) !== 1 ? 's' : ''} de retraso`;
                     } else if (dias === 0) {
                       badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
                       texto = 'Vence hoy';
                     } else if (dias <= 7) {
                       badgeClass = 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
-                      texto = `${dias} dÃƒÂ­a${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
+                      texto = `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
                     } else {
                       badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
-                      texto = `${dias} dÃƒÂ­a${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
+                      texto = `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
                     }
                     return (
                       <div className="flex items-start gap-2">
-                        <span className="text-sm text-muted-foreground mt-0.5">DÃƒÂ­as Restantes</span>
+                        <span className="text-sm text-muted-foreground mt-0.5">Días Restantes</span>
                         <Badge variant="outline" className={`ml-auto font-normal text-sm ${badgeClass}`}>
                           {texto}
                         </Badge>
@@ -784,8 +660,8 @@ function ServicioDetallePageContent() {
                     );
                   })()}
                   <div className="flex items-start gap-2">
-                    <span className="text-sm text-muted-foreground mt-0.5">MÃƒÂ©todo de Pago</span>
-                    <span className="text-sm font-medium ml-auto text-right text-purple-600">{metodoPago?.nombre || 'Sin mÃƒÂ©todo'}</span>
+                    <span className="text-sm text-muted-foreground mt-0.5">Método de Pago</span>
+                    <span className="text-sm font-medium ml-auto text-right text-purple-600">{metodoPago?.nombre || 'Sin método'}</span>
                   </div>
                 </div>
               </div>
@@ -793,7 +669,7 @@ function ServicioDetallePageContent() {
 
             {/* Additional Info Card */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-0.5">InformaciÃƒÂ³n Adicional</h2>
+              <h2 className="text-lg font-semibold mb-0.5">Información Adicional</h2>
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Email</p>
@@ -817,7 +693,7 @@ function ServicioDetallePageContent() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">ContraseÃƒÂ±a</p>
+                  <p className="text-sm text-muted-foreground mb-1">Contraseña</p>
                   <p className="text-sm font-medium flex items-center gap-2">
                     {servicio.contrasena || 'Sin especificar'}
                     {servicio.contrasena && (
@@ -827,7 +703,7 @@ function ServicioDetallePageContent() {
                         className="h-6 w-6"
                         onClick={() => {
                           navigator.clipboard.writeText(servicio.contrasena!);
-                          toast.success('ContraseÃƒÂ±a copiada', { description: 'La contraseÃƒÂ±a se ha copiado al portapapeles.' });
+                          toast.success('Contraseña copiada', { description: 'La contraseña se ha copiado al portapapeles.' });
                         }}
                       >
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -842,7 +718,7 @@ function ServicioDetallePageContent() {
                   <p className="text-sm">{formatearFechaHora(new Date(servicio.createdAt))}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">ÃƒÅ¡ltima ActualizaciÃƒÂ³n:</p>
+                  <p className="text-sm text-muted-foreground mb-1">Última Actualización:</p>
                   <p className="text-sm">{formatearFechaHora(new Date(servicio.updatedAt))}</p>
                 </div>
               </div>
@@ -983,7 +859,7 @@ function ServicioDetallePageContent() {
                                 </span>
                               </div>
                             </div>
-                            {/* Columna 3: Perfil, CÃƒÂ³digo, DÃƒÂ­as restantes */}
+                            {/* Columna 3: Perfil, Código, Días restantes */}
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <User className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -993,7 +869,7 @@ function ServicioDetallePageContent() {
                               {venta.codigo && (
                                 <div className="flex items-center gap-2">
                                   <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                                  <span className="text-muted-foreground">CÃƒÂ³digo:</span>
+                                  <span className="text-muted-foreground">Código:</span>
                                   <span className="font-medium select-all">{venta.codigo}</span>
                                 </div>
                               )}
@@ -1003,16 +879,16 @@ function ServicioDetallePageContent() {
                                 if (diasRestantes < 0) {
                                   const d = Math.abs(diasRestantes);
                                   badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
-                                  badgeText = `${d} dÃƒÂ­a${d > 1 ? 's' : ''} de retraso`;
+                                  badgeText = `${d} día${d > 1 ? 's' : ''} de retraso`;
                                 } else if (diasRestantes === 0) {
                                   badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
                                   badgeText = 'Vence hoy';
                                 } else if (diasRestantes <= 7) {
                                   badgeClass = 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
-                                  badgeText = `${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
+                                  badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
                                 } else {
                                   badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
-                                  badgeText = `${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
+                                  badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
                                 }
                                 return (
                                   <div className="flex items-center gap-2">
@@ -1108,8 +984,8 @@ function ServicioDetallePageContent() {
                   <thead>
                     <tr className="border-b text-sm text-muted-foreground">
                       <th className="text-left py-3 font-medium">Fecha</th>
-                      <th className="text-left py-3 font-medium">DescripciÃƒÂ³n</th>
-                      <th className="text-left py-3 font-medium">Ciclo de facturaciÃƒÂ³n</th>
+                      <th className="text-left py-3 font-medium">Descripción</th>
+                      <th className="text-left py-3 font-medium">Ciclo de facturación</th>
                       <th className="text-left py-3 font-medium">Fecha de Inicio</th>
                       <th className="text-left py-3 font-medium">Fecha de Vencimiento</th>
                       <th className="text-left py-3 font-medium">Monto</th>
@@ -1210,7 +1086,7 @@ function ServicioDetallePageContent() {
         }}
         onConfirm={handleConfirmDelete}
         title="Eliminar Servicio"
-        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar el servicio "${servicio.nombre}"? Esta acciÃƒÂ³n no se puede deshacer.`}
+        description={`¿Estás seguro de que quieres eliminar el servicio "${servicio.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       >
@@ -1225,10 +1101,10 @@ function ServicioDetallePageContent() {
               htmlFor="delete-payments-detalle"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Eliminar tambiÃƒÂ©n los registros de pago
+              Eliminar también los registros de pago
             </Label>
             <p className="text-sm text-muted-foreground">
-              Al marcar esta opciÃƒÂ³n, se eliminarÃƒÂ¡n todos los registros de pago de la base de datos. Si no se marca, se conservarÃƒÂ¡n para historial.
+              Al marcar esta opción, se eliminarán todos los registros de pago de la base de datos. Si no se marca, se conservarán para historial.
             </p>
           </div>
         </div>
@@ -1241,8 +1117,8 @@ function ServicioDetallePageContent() {
           if (!open) setPagoToDelete(null);
         }}
         onConfirm={handleConfirmDeleteRenovacion}
-        title="Eliminar renovaciÃƒÂ³n"
-        description={pagoToDelete ? `Ã‚Â¿Eliminar "${pagoToDelete.descripcion}" del historial? Esta acciÃƒÂ³n no se puede deshacer.` : ''}
+        title="Eliminar renovación"
+        description={pagoToDelete ? `¿Eliminar "${pagoToDelete.descripcion}" del historial? Esta acción no se puede deshacer.` : ''}
         confirmText="Eliminar"
         variant="danger"
       />

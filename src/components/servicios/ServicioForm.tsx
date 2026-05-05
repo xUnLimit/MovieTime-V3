@@ -24,8 +24,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
-import { updatePagoServicio } from '@/lib/supabase/servicios-repository';
 import { countVentas } from "@/lib/supabase/ventas-repository";
+import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { formatearFecha } from "@/lib/utils/calculations";
 import {
   PROFILE_PREVIEW_FULL_RENDER_LIMIT,
@@ -40,29 +40,29 @@ import type { MetodoPago, Servicio } from "@/types";
 
 const servicioSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  categoriaId: z.string().min(1, "Debe seleccionar una categorÃƒÂ­a"),
+  categoriaId: z.string().min(1, "Debe seleccionar una categoría"),
   tipoPlan: z.string().min(1, "Debe seleccionar un tipo de plan"),
-  correo: z.string().email("Por favor ingrese un correo electrÃƒÂ³nico vÃƒÂ¡lido"),
+  correo: z.string().email("Por favor ingrese un correo electrónico válido"),
   contrasena: z
     .string()
-    .min(6, "La contraseÃƒÂ±a debe tener al menos 6 caracteres"),
-  metodoPagoId: z.string().min(1, "Debe seleccionar un mÃƒÂ©todo de pago"),
+    .min(6, "La contraseña debe tener al menos 6 caracteres"),
+  metodoPagoId: z.string().min(1, "Debe seleccionar un método de pago"),
   costoServicio: z
     .string()
     .refine((val) => val !== "", "Por favor ingrese el costo del servicio")
-    .refine((val) => !isNaN(Number(val)), "El costo debe ser un valor numÃƒÂ©rico")
+    .refine((val) => !isNaN(Number(val)), "El costo debe ser un valor numérico")
     .refine((val) => Number(val) > 0, "El costo debe ser mayor a 0"),
   perfilesDisponibles: z
     .string()
-    .refine((val) => val !== "", "Por favor ingrese el nÃƒÂºmero de perfiles")
-    .refine((val) => !isNaN(Number(val)), "Debe ingresar un valor numÃƒÂ©rico")
+    .refine((val) => val !== "", "Por favor ingrese el número de perfiles")
+    .refine((val) => !isNaN(Number(val)), "Debe ingresar un valor numérico")
     .refine(
       (val) => Number(val) >= 1,
       "Debe tener al menos 1 perfil disponible",
     )
     .refine(
       (val) => Number.isInteger(Number(val)),
-      "El nÃƒÂºmero de perfiles debe ser un valor entero",
+      "El número de perfiles debe ser un valor entero",
     ),
   cicloPago: z.enum(["mensual", "trimestral", "semestral", "anual"]),
   fechaInicio: z.date(),
@@ -102,7 +102,7 @@ export function ServicioForm({
   // === Edit-specific state ===
   const isEditMode = !!servicio?.id;
 
-  // Pagos del servicio (solo en modo ediciÃƒÂ³n)
+  // Pagos del servicio (solo en modo edición)
   const { pagos: pagosServicio, refresh: refreshPagos } = usePagosServicio(
     servicio?.id ?? null,
   );
@@ -128,7 +128,7 @@ export function ServicioForm({
     ]).then((count) => setPerfilesOcupadosReal(count));
   }, [servicio?.id]);
 
-  // Cargar solo mÃƒÂ©todos de pago para servicios al montar
+  // Cargar solo métodos de pago para servicios al montar
   useEffect(() => {
     const loadMetodosPago = async () => {
       const metodos = await fetchMetodosPagoServicios();
@@ -288,7 +288,7 @@ export function ServicioForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id, setValue]);
 
-  // Auto-limpiar errores solo para campos que no necesitan validaciÃƒÂ³n compleja
+  // Auto-limpiar errores solo para campos que no necesitan validación compleja
   useEffect(() => {
     if (nombreValue && nombreValue.length >= 2 && errors.nombre) {
       clearErrors("nombre");
@@ -354,13 +354,13 @@ export function ServicioForm({
   }, [perfilesDisponiblesValue, errors.perfilesDisponibles, clearErrors]);
 
   // Auto-calcular fecha de vencimiento cuando cambia el ciclo o la fecha de inicio
-  // Create mode: recalcular siempre excepto si se editÃƒÂ³ manualmente
-  // Edit mode: usar patrÃƒÂ³n cicloInicializado para no recalcular en la carga inicial
+  // Create mode: recalcular siempre excepto si se editó manualmente
+  // Edit mode: usar patrón cicloInicializado para no recalcular en la carga inicial
   useEffect(() => {
     if (!fechaInicioValue) return;
 
     if (isEditMode) {
-      // Edit mode: solo recalcular despuÃƒÂ©s de la inicializaciÃƒÂ³n
+      // Edit mode: solo recalcular después de la inicialización
       if (!cicloInicializado) return;
       const cicloChanged =
         lastCicloId !== null && lastCicloId !== cicloPagoValue;
@@ -496,7 +496,7 @@ export function ServicioForm({
 
       if (!tipoPlanSeleccionado) {
         setError("tipoPlan", {
-          message: "Seleccione un tipo de plan configurado para la categorÃƒÂ­a",
+          message: "Seleccione un tipo de plan configurado para la categoría",
         });
         return;
       }
@@ -556,16 +556,19 @@ export function ServicioForm({
           });
         }
 
-        // Actualizar el ÃƒÂºltimo pago si existe (Single Source of Truth)
+        // Actualizar el último pago si existe (Single Source of Truth)
         if (ultimoPago && ultimoPago.id) {
-          await updatePagoServicio(ultimoPago.id, {
+          await updateServicioPagoUseCase(servicio, ultimoPago, {
             fechaInicio: data.fechaInicio,
             fechaVencimiento: data.fechaVencimiento,
-            monto: Number(data.costoServicio),
+            costo: Number(data.costoServicio),
             metodoPagoId: data.metodoPagoId,
             metodoPagoNombre: metodoPagoSeleccionado?.nombre,
             moneda: metodoPagoSeleccionado?.moneda,
-            cicloPago: data.cicloPago,
+            periodoRenovacion: data.cicloPago,
+          }, {
+            metodoPago: metodoPagoSeleccionado,
+            isLatestPayment: false,
           });
         }
 
@@ -582,7 +585,7 @@ export function ServicioForm({
         });
       }
 
-      // Refrescar categorÃƒÂ­as y contadores de servicios para que se actualicen los widgets
+      // Refrescar categorías y contadores de servicios para que se actualicen los widgets
       await Promise.all([
         fetchCategorias(true),
         fetchCounts(true), // Force refresh para actualizar inmediatamente
@@ -615,7 +618,7 @@ export function ServicioForm({
       case "anual":
         return "Anual";
       default:
-        return "Seleccionar perÃƒÂ­odo";
+        return "Seleccionar período";
     }
   };
 
@@ -625,9 +628,9 @@ export function ServicioForm({
   );
 
   const categoriaNombre =
-    categoriaSeleccionada?.nombre ?? "Seleccionar categorÃƒÂ­a";
+    categoriaSeleccionada?.nombre ?? "Seleccionar categoría";
 
-  // Tipos de plan dinÃƒÂ¡micos segÃƒÂºn la categorÃƒÂ­a seleccionada
+  // Tipos de plan dinámicos según la categoría seleccionada
   const tiposPlanesDinamicos = useMemo(() => {
     return categoriaSeleccionada?.tiposPlanes || [];
   }, [categoriaSeleccionada]);
@@ -737,7 +740,7 @@ export function ServicioForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="categoria">CategorÃƒÂ­a</Label>
+              <Label htmlFor="categoria">Categoría</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -774,7 +777,7 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 2: Email / ContraseÃƒÂ±a */}
+          {/* Row 2: Email / Contraseña */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="correo">Email</Label>
@@ -790,12 +793,12 @@ export function ServicioForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contrasena">ContraseÃƒÂ±a</Label>
+              <Label htmlFor="contrasena">Contraseña</Label>
               <Input
                 id="contrasena"
                 type="text"
                 {...register("contrasena")}
-                placeholder="Ingrese la contraseÃƒÂ±a"
+                placeholder="Ingrese la contraseña"
               />
               {errors.contrasena && (
                 <p className="text-sm text-red-500">
@@ -805,10 +808,10 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 3: MÃƒÂ©todo de Pago / Costo del servicio */}
+          {/* Row 3: Método de Pago / Costo del servicio */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="metodoPago">MÃƒÂ©todo de Pago</Label>
+              <Label htmlFor="metodoPago">Método de Pago</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -877,7 +880,7 @@ export function ServicioForm({
                     if (e.ctrlKey || e.metaKey) {
                       return;
                     }
-                    // Solo permitir nÃƒÂºmeros y punto decimal
+                    // Solo permitir números y punto decimal
                     if (!/[0-9.]/.test(char)) {
                       e.preventDefault();
                     }
@@ -896,7 +899,7 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 4: Tipo de Plan / Ciclo de FacturaciÃƒÂ³n */}
+          {/* Row 4: Tipo de Plan / Ciclo de Facturación */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="tipoPlan">Tipo de Plan</Label>
@@ -917,7 +920,7 @@ export function ServicioForm({
                 >
                   {tiposPlanesDinamicos.length === 0 ? (
                     <DropdownMenuItem disabled>
-                      Selecciona una categorÃƒÂ­a con tipos de plan
+                      Selecciona una categoría con tipos de plan
                     </DropdownMenuItem>
                   ) : (
                     tiposPlanesDinamicos.map((tipo) => (
@@ -939,7 +942,7 @@ export function ServicioForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ciclo">Ciclo de FacturaciÃƒÂ³n</Label>
+              <Label htmlFor="ciclo">Ciclo de Facturación</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1068,10 +1071,10 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 6: NÃƒÂºmero de perfiles / Estado */}
+          {/* Row 6: Número de perfiles / Estado */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="perfiles">NÃƒÂºmero de perfiles</Label>
+              <Label htmlFor="perfiles">Número de perfiles</Label>
               <Input
                 id="perfiles"
                 type="text"
@@ -1100,7 +1103,7 @@ export function ServicioForm({
                   if (e.ctrlKey || e.metaKey) {
                     return;
                   }
-                  // Solo permitir nÃƒÂºmeros (sin decimales)
+                  // Solo permitir números (sin decimales)
                   if (!/[0-9]/.test(char)) {
                     e.preventDefault();
                   }
@@ -1169,10 +1172,10 @@ export function ServicioForm({
             />
           </div>
 
-          {/* DuraciÃƒÂ³n del reposo */}
+          {/* Duración del reposo */}
           {estadoValue === "reposo" && (
             <div className="space-y-2">
-              <Label htmlFor="diasReposo">DuraciÃƒÂ³n del reposo</Label>
+              <Label htmlFor="diasReposo">Duración del reposo</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1180,7 +1183,7 @@ export function ServicioForm({
                     className="w-full justify-between"
                     type="button"
                   >
-                    {watch("diasReposo") || "28"} dÃƒÂ­as
+                    {watch("diasReposo") || "28"} días
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -1193,7 +1196,7 @@ export function ServicioForm({
                       key={d}
                       onClick={() => setValue("diasReposo", d.toString())}
                     >
-                      {d} dÃƒÂ­as
+                      {d} días
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -1207,7 +1210,7 @@ export function ServicioForm({
             <Textarea
               id="notas"
               {...register("notas")}
-              placeholder="InformaciÃƒÂ³n adicional relevante..."
+              placeholder="Información adicional relevante..."
               rows={6}
             />
           </div>
@@ -1233,7 +1236,7 @@ export function ServicioForm({
               <p className="text-sm text-muted-foreground">
                 {perfilesDisponiblesValue
                   ? `${Number(perfilesDisponiblesValue) || 0} de ${Number(perfilesDisponiblesValue) || 0} perfiles actualmente disponibles.`
-                  : "Ingrese el nÃƒÂºmero de perfiles en la pestaÃƒÂ±a anterior."}
+                  : "Ingrese el número de perfiles en la pestaña anterior."}
               </p>
             </div>
 
@@ -1277,7 +1280,7 @@ export function ServicioForm({
               </h4>
 
               <div className="space-y-3">
-                {/* Fila 1: Nombre del servicio / CategorÃƒÂ­a */}
+                {/* Fila 1: Nombre del servicio / Categoría */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
@@ -1289,7 +1292,7 @@ export function ServicioForm({
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      CategorÃƒÂ­a
+                      Categoría
                     </span>
                     <span className="font-medium">
                       {categoriaNombre || "Sin especificar"}
@@ -1317,7 +1320,7 @@ export function ServicioForm({
                   </div>
                 </div>
 
-                {/* Fila 3: Email de acceso / ContraseÃƒÂ±a */}
+                {/* Fila 3: Email de acceso / Contraseña */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
@@ -1329,7 +1332,7 @@ export function ServicioForm({
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      ContraseÃƒÂ±a
+                      Contraseña
                     </span>
                     <span className="font-medium text-sm">
                       {contrasenaValue || "Sin especificar"}
@@ -1337,17 +1340,17 @@ export function ServicioForm({
                   </div>
                 </div>
 
-                {/* Fila 4: MÃƒÂ©todo de pago / Ciclo de facturaciÃƒÂ³n */}
+                {/* Fila 4: Método de pago / Ciclo de facturación */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      MÃƒÂ©todo de pago
+                      Método de pago
                     </span>
                     <span className="font-medium">{metodoPagoDisplayName}</span>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      Ciclo de facturaciÃƒÂ³n
+                      Ciclo de facturación
                     </span>
                     <span className="font-medium">
                       {getCicloLabel(cicloPagoValue)}

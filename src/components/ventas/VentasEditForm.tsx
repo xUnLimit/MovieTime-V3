@@ -29,13 +29,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { queryServicios } from "@/lib/supabase/servicios-repository";
-import { adjustServiciosActivos, queryPagosVenta, queryVentas, updatePagoVenta, updateVenta } from '@/lib/supabase/ventas-repository';
-import { upsertVentaPronostico } from "@/lib/services/dashboardStatsService";
+import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { updateVentaWithLatestPagoUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useUsuariosStore } from "@/store/usuariosStore";
-import { MetodoPago, PagoVenta, Servicio } from "@/types";
+import { MetodoPago, Servicio } from "@/types";
 import type { VentaDoc } from "@/types/ventas";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/lib/constants";
@@ -46,7 +46,6 @@ import {
 } from "@/lib/utils/calculations";
 import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { syncUsuarioMetodoPago } from "@/lib/services/usuarioMetodoPagoSyncService";
 import {
   getUsuarioMetodoPagoMoneda,
   getUsuarioMetodoPagoNombre,
@@ -58,13 +57,13 @@ import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 
 const ventaEditSchema = z.object({
   clienteId: z.string().min(1, "Seleccione un cliente"),
-  metodoPagoId: z.string().min(1, "Seleccione un mÃƒÂ©todo de pago"),
-  categoriaId: z.string().min(1, "Seleccione una categorÃƒÂ­a"),
+  metodoPagoId: z.string().min(1, "Seleccione un método de pago"),
+  categoriaId: z.string().min(1, "Seleccione una categoría"),
   servicioId: z.string().min(1, "Seleccione un servicio"),
   planId: z.string().min(1, "Seleccione un plan"),
   perfilNumero: z.string().optional(),
   perfilNombre: z.string().optional(),
-  precio: z.string().min(1, "Ingrese un precio vÃƒÂ¡lido"),
+  precio: z.string().min(1, "Ingrese un precio válido"),
   descuento: z.string().optional(),
   fechaInicio: z.date(),
   fechaFin: z.date(),
@@ -129,7 +128,7 @@ const getCicloPagoLabel = (ciclo?: string) => {
     semestral: "Semestral",
     anual: "Anual",
   };
-  return ciclo ? labels[ciclo] || ciclo : "Ã¢â‚¬â€";
+  return ciclo ? labels[ciclo] || ciclo : "—";
 };
 
 interface VentasEditFormProps {
@@ -145,7 +144,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
 
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
 
-  // Estado local para servicios (cargados solo cuando se selecciona categorÃƒÂ­a)
+  // Estado local para servicios (cargados solo cuando se selecciona categoría)
   const [serviciosCategoria, setServiciosCategoria] = useState<Servicio[]>([]);
   const [loadingServicios, setLoadingServicios] = useState(false);
 
@@ -169,13 +168,13 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   const [fechasInicializadas, setFechasInicializadas] = useState(false);
   const [searchCliente, setSearchCliente] = useState("");
 
-  // Efecto inicial: solo cargar datos que no dependen de selecciÃƒÂ³n
+  // Efecto inicial: solo cargar datos que no dependen de selección
   useEffect(() => {
     const loadData = async () => {
       fetchCategorias();
       fetchUsuarios();
 
-      // Cargar solo mÃƒÂ©todos de pago de usuarios
+      // Cargar solo métodos de pago de usuarios
       const metodos = await fetchMetodosPagoUsuarios();
       setMetodosPago(withPendingUserPaymentMethod(metodos));
     };
@@ -269,7 +268,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     (m) => m.id === metodoPagoIdValue,
   );
 
-  // Efecto para cargar servicios cuando se selecciona una categorÃƒÂ­a
+  // Efecto para cargar servicios cuando se selecciona una categoría
   useEffect(() => {
     if (!categoriaIdValue) {
       setServiciosCategoria([]);
@@ -301,7 +300,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   const serviciosOrdenados = useMemo(() => {
     return [...serviciosCategoria]
       .filter((servicio) => {
-        // Siempre mostrar el servicio actual de la venta (aunque estÃƒÂ© lleno o inactivo)
+        // Siempre mostrar el servicio actual de la venta (aunque esté lleno o inactivo)
         if (servicio.id === venta.servicioId) return true;
         // Solo mostrar servicios activos con perfiles disponibles (excluir en reposo)
         if (!servicio.activo || servicio.enReposo) return false;
@@ -371,11 +370,11 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     // Si no hay plan seleccionado, no hacer nada
     if (!planSeleccionado) return;
 
-    // Detectar si el plan cambiÃƒÂ³ manualmente
+    // Detectar si el plan cambió manualmente
     const planCambio = lastPlanId !== null && lastPlanId !== planIdValue;
 
-    // Si el plan cambiÃƒÂ³ manualmente, actualizar el precio
-    // Si aÃƒÂºn no estÃƒÂ¡ inicializado, tambiÃƒÂ©n actualizar (primera vez)
+    // Si el plan cambió manualmente, actualizar el precio
+    // Si aún no está inicializado, también actualizar (primera vez)
     if (planCambio || !precioInicializado) {
       setValue("precio", planSeleccionado.precio.toFixed(2));
     }
@@ -395,12 +394,12 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   }, [fechaInicioValue, fechaFinValue, fechasInicializadas]);
 
   useEffect(() => {
-    // Solo calcular si hay un plan seleccionado, una fecha de inicio, y ya se inicializÃƒÂ³
+    // Solo calcular si hay un plan seleccionado, una fecha de inicio, y ya se inicializó
     if (!planSeleccionado || !fechaInicioValue || !fechasInicializadas) return;
 
-    // Detectar si el plan cambiÃƒÂ³ manualmente
+    // Detectar si el plan cambió manualmente
     const planCambio = lastPlanId !== null && lastPlanId !== planIdValue;
-    // Detectar si la fecha de inicio cambiÃƒÂ³ manualmente
+    // Detectar si la fecha de inicio cambió manualmente
     const fechaInicioCambio =
       lastFechaInicioTime !== null &&
       lastFechaInicioTime !== fechaInicioValue.getTime();
@@ -425,7 +424,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     lastFechaInicioTime,
   ]);
 
-  // Efecto para pre-seleccionar el plan cuando los planes estÃƒÂ¡n disponibles (solo una vez)
+  // Efecto para pre-seleccionar el plan cuando los planes están disponibles (solo una vez)
   useEffect(() => {
     // Solo ejecutar si NO ha sido inicializado y hay planes disponibles y la venta tiene un cicloPago definido
     if (!planInicializado && planesDisponibles.length > 0 && venta.cicloPago) {
@@ -808,14 +807,14 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     if (!metodoPagoIdValue) {
       setError("metodoPagoId", {
         type: "manual",
-        message: "Seleccione un mÃƒÂ©todo de pago",
+        message: "Seleccione un método de pago",
       });
       isValid = false;
     }
     if (!categoriaIdValue) {
       setError("categoriaId", {
         type: "manual",
-        message: "Seleccione una categorÃƒÂ­a",
+        message: "Seleccione una categoría",
       });
       isValid = false;
     }
@@ -882,8 +881,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         metodoPagoSeleccionado?.moneda || venta.moneda,
       );
 
-      // Actualizar SOLO metadatos en VentaDoc + campos denormalizados para notificaciones
-      await updateVenta(venta.id, {
+      const ventaUpdates: Partial<VentaDoc> = {
         clienteId: data.clienteId,
         clienteNombre: clienteSeleccionado
           ? `${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}`
@@ -898,7 +896,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         codigo: data.codigo || "",
         estado: data.estado || "activo",
         notas: data.notas || "",
-        // Ã¢Å“â€¦ DENORMALIZED FIELDS (for notifications sync)
+        // ✅ DENORMALIZED FIELDS (for notifications sync)
         fechaInicio: data.fechaInicio,
         fechaFin: data.fechaFin,
         cicloPago: plan?.cicloPago || venta.cicloPago,
@@ -908,25 +906,12 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         precio,
         descuento,
         precioFinal: precioFinalValue,
-      });
+      };
 
-      // Actualizar el pago mÃƒÂ¡s reciente (fuente de verdad para datos de pago)
-      const todosLosPagos = await queryPagosVenta<PagoVenta>([
-        { field: "ventaId", operator: "==", value: venta.id },
-      ]);
-
-      if (todosLosPagos.length > 0) {
-        // Ordenar por fecha descendente para encontrar el mÃƒÂ¡s reciente
-        const sorted = todosLosPagos.sort((a, b) => {
-          const dateA = a.fecha instanceof Date ? a.fecha : new Date(a.fecha);
-          const dateB = b.fecha instanceof Date ? b.fecha : new Date(b.fecha);
-          return dateB.getTime() - dateA.getTime();
-        });
-
-        const pagoMasReciente = sorted[0];
-
-        // Actualizar TODOS los campos de pago (sin condicionales)
-        await updatePagoVenta(pagoMasReciente.id, {
+      const { syncPaymentMethodFailed } = await updateVentaWithLatestPagoUseCase(
+        venta.id,
+        ventaUpdates,
+        {
           precio,
           descuento,
           monto: precioFinalValue,
@@ -936,24 +921,17 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
           cicloPago: plan?.cicloPago || venta.cicloPago,
           fechaInicio: data.fechaInicio,
           fechaVencimiento: data.fechaFin,
-        });
-      }
+        },
+        {
+          currentVenta: venta as VentaDoc,
+          logContext: { usuarioId: 'sistema', usuarioEmail: 'sistema' },
+        }
+      );
 
-      try {
-        await syncUsuarioMetodoPago({
-          usuarioId: data.clienteId,
-          metodoPagoId: data.metodoPagoId,
-          metodoPagoNombre,
-          moneda: monedaMetodoPago,
-        });
-      } catch (syncError) {
-        console.error(
-          "Error sincronizando mÃƒÂ©todo de pago del usuario:",
-          syncError,
-        );
+      if (syncPaymentMethodFailed) {
         toast.warning("Venta actualizada con advertencia", {
           description:
-            "La venta se guardÃƒÂ³, pero no se pudo actualizar el mÃƒÂ©todo de pago en usuarios.",
+            "La venta se guardó, pero no se pudo actualizar el método de pago en usuarios.",
         });
       }
 
@@ -979,42 +957,11 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         await updatePerfilOcupado(nextServicioId, true);
       }
 
-      // Ajustar ventasActivas si el estado cambiÃƒÂ³ entre activo e inactivo
-      const prevEstadoActivo = (venta.estado ?? "activo") !== "inactivo";
-      const nextEstadoActivo = (data.estado ?? "activo") !== "inactivo";
-      if (prevEstadoActivo && !nextEstadoActivo) {
-        adjustServiciosActivos(venta.clienteId, -1);
-      } else if (!prevEstadoActivo && nextEstadoActivo) {
-        adjustServiciosActivos(venta.clienteId, +1);
-      }
-
-      // Sync dashboard forecast when estado changes
-      if (prevEstadoActivo !== nextEstadoActivo) {
-        const ventaPronostico = nextEstadoActivo
-          ? {
-              id: venta.id,
-              categoriaId: data.categoriaId,
-              fechaInicio:
-                data.fechaInicio instanceof Date
-                  ? data.fechaInicio.toISOString()
-                  : String(data.fechaInicio),
-              fechaFin:
-                data.fechaFin instanceof Date
-                  ? data.fechaFin.toISOString()
-                  : String(data.fechaFin),
-              cicloPago: plan?.cicloPago || venta.cicloPago || "mensual",
-              precioFinal: precioFinalValue,
-              moneda: monedaMetodoPago,
-            }
-          : null;
-        upsertVentaPronostico(ventaPronostico, venta.id).catch(() => {});
-        // Invalidate dashboard cache so it re-fetches on next visit
-        import("@/store/dashboardStore")
-          .then(({ useDashboardStore }) => {
-            useDashboardStore.getState().invalidateCache();
-          })
-          .catch(() => {});
-      }
+      import("@/store/dashboardStore")
+        .then(({ useDashboardStore }) => {
+          useDashboardStore.getState().invalidateCache();
+        })
+        .catch(() => {});
 
       toast.success("Venta actualizada", {
         description: "Los datos de la venta han sido guardados correctamente.",
@@ -1040,7 +987,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
             value="datos"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
-            InformaciÃƒÂ³n de la venta
+            Información de la venta
           </TabsTrigger>
           <TabsTrigger
             value="preview"
@@ -1163,7 +1110,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>MÃƒÂ©todo de pago</Label>
+              <Label>Método de pago</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1176,7 +1123,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
                           metodoPagoIdValue,
                           metodoPagoSeleccionado?.nombre,
                         )
-                      : "Seleccionar mÃƒÂ©todo de pago"}
+                      : "Seleccionar método de pago"}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -1207,7 +1154,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>CategorÃƒÂ­a</Label>
+              <Label>Categoría</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1217,7 +1164,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
                   >
                     {categoriaSeleccionada
                       ? categoriaSeleccionada.nombre
-                      : "Seleccionar categorÃƒÂ­a"}
+                      : "Seleccionar categoría"}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -1430,7 +1377,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
                       ? planSeleccionado.nombre
                       : categoriaIdValue
                         ? "Seleccionar plan"
-                        : "Primero selecciona categorÃƒÂ­a"}
+                        : "Primero selecciona categoría"}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -1745,7 +1692,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
                 </p>
               </div>
               <div className="rounded-lg border bg-background/40 p-4">
-                <p className="text-xs text-muted-foreground">MÃƒÂ©todo de pago</p>
+                <p className="text-xs text-muted-foreground">Método de pago</p>
                 <p className="text-sm font-medium">
                   {getUsuarioMetodoPagoNombre(
                     metodoPagoIdValue,
@@ -1785,13 +1732,13 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
                       <p className="text-foreground font-medium">
                         {fechaInicioValue
                           ? formatearFecha(fechaInicioValue)
-                          : "Ã¢â‚¬â€"}
+                          : "—"}
                       </p>
                     </div>
                     <div>
                       <p>Fecha de fin</p>
                       <p className="text-foreground font-medium">
-                        {fechaFinValue ? formatearFecha(fechaFinValue) : "Ã¢â‚¬â€"}
+                        {fechaFinValue ? formatearFecha(fechaFinValue) : "—"}
                       </p>
                     </div>
                     <div>
@@ -1812,13 +1759,13 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
                     <div>
                       <p>Nombre del perfil</p>
                       <p className="text-foreground font-medium">
-                        {perfilNombreValue?.trim() ? perfilNombreValue : "Ã¢â‚¬â€"}
+                        {perfilNombreValue?.trim() ? perfilNombreValue : "—"}
                       </p>
                     </div>
                     <div>
                       <p>Codigo</p>
                       <p className="text-foreground font-medium">
-                        {codigoValue || "Ã¢â‚¬â€"}
+                        {codigoValue || "—"}
                       </p>
                     </div>
                   </div>

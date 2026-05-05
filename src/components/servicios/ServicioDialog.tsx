@@ -28,13 +28,13 @@ import { useCategoriasStore } from "@/store/categoriasStore";
 import { toast } from "sonner";
 
 const servicioSchema = z.object({
-  categoriaId: z.string().min(1, "La categorÃ­a es requerida"),
+  categoriaId: z.string().min(1, "La categoría es requerida"),
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   tipo: z.string().min(1, "El tipo de plan es requerido"),
-  correo: z.string().email("Correo electrÃ³nico invÃ¡lido"),
+  correo: z.string().email("Correo electrónico inválido"),
   contrasena: z
     .string()
-    .min(4, "La contraseÃ±a debe tener al menos 4 caracteres"),
+    .min(4, "La contraseña debe tener al menos 4 caracteres"),
   perfilesDisponibles: z.number().min(1, "Debe haber al menos 1 perfil"),
   costoServicio: z.number().min(0.01, "El costo debe ser mayor a 0"),
   renovacionAutomatica: z.boolean(),
@@ -128,7 +128,7 @@ export function ServicioDialog({
       );
 
       if (!tipoPlanSeleccionado) {
-        toast.error("Seleccione un tipo de plan configurado para la categorÃ­a");
+        toast.error("Seleccione un tipo de plan configurado para la categoría");
         return;
       }
 
@@ -155,7 +155,7 @@ export function ServicioDialog({
         });
       }
 
-      // Refrescar categorÃ­as para actualizar contadores
+      // Refrescar categorías para actualizar contadores
       await fetchCategorias(true);
 
       onOpenChange(false);
@@ -176,7 +176,7 @@ export function ServicioDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="categoriaId">CategorÃ­a</Label>
+              <Label htmlFor="categoriaId">Categoría</Label>
               <Select
                 value={categoriaIdValue}
                 onValueChange={(value) => {
@@ -185,14 +185,14 @@ export function ServicioDialog({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar categorÃ­a" />
+                  <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
                 <SelectContent>
                   {categorias?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.nombre}
                     </SelectItem>
-                  )) || <SelectItem value="">No hay categorÃ­as</SelectItem>}
+                  )) || <SelectItem value="">No hay categorías</SelectItem>}
                 </SelectContent>
               </Select>
               {errors.categoriaId && (
@@ -227,7 +227,7 @@ export function ServicioDialog({
               <SelectContent>
                 {tiposPlanesDinamicos.length === 0 ? (
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    Selecciona una categorÃ­a con tipos de plan
+                    Selecciona una categoría con tipos de plan
                   </div>
                 ) : (
                   tiposPlanesDinamicos.map((tipo) => (
@@ -242,7 +242,7 @@ export function ServicioDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="correo">Correo ElectrÃ³nico</Label>
+              <Label htmlFor="correo">Correo Electrónico</Label>
               <Input
                 id="correo"
                 type="email"
@@ -255,12 +255,12 @@ export function ServicioDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contrasena">ContraseÃ±a</Label>
+              <Label htmlFor="contrasena">Contraseña</Label>
               <Input
                 id="contrasena"
                 type="text"
                 {...register("contrasena")}
-                placeholder="ContraseÃ±a de la cuenta"
+                placeholder="Contraseña de la cuenta"
               />
               {errors.contrasena && (
                 <p className="text-sm text-red-500">
@@ -317,10 +317,10 @@ export function ServicioDialog({
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
               <Label htmlFor="renovacionAutomatica">
-                RenovaciÃ³n AutomÃ¡tica
+                Renovación Automática
               </Label>
               <p className="text-sm text-muted-foreground">
-                El servicio se renovarÃ¡ automÃ¡ticamente
+                El servicio se renovará automáticamente
               </p>
             </div>
             <Switch
@@ -334,7 +334,7 @@ export function ServicioDialog({
 
           {renovacionAutomaticaValue && (
             <div className="space-y-2">
-              <Label htmlFor="fechaRenovacion">Fecha de RenovaciÃ³n</Label>
+              <Label htmlFor="fechaRenovacion">Fecha de Renovación</Label>
               <Input
                 id="fechaRenovacion"
                 type="date"

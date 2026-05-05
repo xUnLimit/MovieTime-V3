@@ -54,7 +54,7 @@ interface CategoriaRow {
 
 export const CategoriasTable = memo(function CategoriasTable({
   categorias,
-  title = "Todas las categorÃ­as",
+  title = "Todas las categorías",
 }: CategoriasTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,13 +112,13 @@ export const CategoriasTable = memo(function CategoriasTable({
     const categoriaData: CategoriaRow[] = categorias
       .filter((cat) => cat.activo)
       .map((categoria) => {
-        // Leer mÃ©tricas directamente de los campos denormalizados
+        // Leer métricas directamente de los campos denormalizados
         const counters = countersByCategoria.get(categoria.id);
         const totalServicios = counters?.totalServicios ?? 0;
         const serviciosActivos = counters?.serviciosActivos ?? 0;
         const perfilesDisponibles = counters?.perfilesDisponibles ?? 0;
 
-        // Todos los campos desde datos denormalizados â€” 0 queries extra
+        // Todos los campos desde datos denormalizados — 0 queries extra
         const gastosTotal = categoria.gastosTotal ?? 0;
         const ingresoTotal = categoria.ingresosTotales ?? 0;
         const suscripcionesTotales = categoria.ventasTotales ?? 0;
@@ -142,7 +142,7 @@ export const CategoriasTable = memo(function CategoriasTable({
     return categoriaData;
   }, [categorias, countersByCategoria, ventasPorCategoria]);
 
-  // Filtrar por bÃºsqueda
+  // Filtrar por búsqueda
   const filteredRows = useMemo(() => {
     return rows.filter((row) =>
       row.categoria.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -202,7 +202,7 @@ export const CategoriasTable = memo(function CategoriasTable({
     return <ArrowDown className="h-3 w-3" />;
   };
 
-  // PaginaciÃ³n
+  // Paginación
   const totalPages = Math.ceil(sortedRows.length / itemsPerPage);
   const paginatedRows = sortedRows.slice(
     (currentPage - 1) * itemsPerPage,
@@ -221,7 +221,7 @@ export const CategoriasTable = memo(function CategoriasTable({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar categorÃ­as..."
+            placeholder="Buscar categorías..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -239,7 +239,7 @@ export const CategoriasTable = memo(function CategoriasTable({
                   onClick={() => handleSort("categoria")}
                   className={`h-8 -ml-3 ${sortKey === "categoria" ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  CategorÃ­a
+                  Categoría
                   {getSortIcon("categoria")}
                 </Button>
               </TableHead>
@@ -335,7 +335,7 @@ export const CategoriasTable = memo(function CategoriasTable({
                   colSpan={10}
                   className="text-center text-muted-foreground h-24"
                 >
-                  No se encontraron categorÃ­as
+                  No se encontraron categorías
                 </TableCell>
               </TableRow>
             ) : (
@@ -518,7 +518,7 @@ export const CategoriasTable = memo(function CategoriasTable({
 
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">
-            PÃ¡gina {currentPage} de {totalPages || 1}
+            Página {currentPage} de {totalPages || 1}
           </span>
           <div className="flex gap-2">
             <Button

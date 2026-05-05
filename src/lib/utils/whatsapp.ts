@@ -3,12 +3,12 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 /**
- * Obtiene el saludo apropiado segÃºn la hora del dÃ­a
+ * Obtiene el saludo apropiado según la hora del día
  */
 export function getSaludo(): string {
   const hour = new Date().getHours();
 
-  if (hour < 12) return 'Buenos dÃ­as';
+  if (hour < 12) return 'Buenos días';
   if (hour < 19) return 'Buenas tardes';
   return 'Buenas noches';
 }
@@ -35,7 +35,7 @@ export function replacePlaceholders(
     '{items}': data.items
   };
 
-  // Si hay dÃ­as de retraso, agregar al mensaje
+  // Si hay días de retraso, agregar al mensaje
   if (data.diasRetraso !== undefined) {
     placeholders['{diasRetraso}'] = data.diasRetraso.toString();
   }
@@ -56,7 +56,7 @@ export function generateWhatsAppLink(
   phoneNumber: string,
   message: string
 ): string {
-  // Limpiar nÃºmero de telÃ©fono (solo dÃ­gitos y +)
+  // Limpiar número de teléfono (solo dígitos y +)
   const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
 
   // Codificar mensaje para URL

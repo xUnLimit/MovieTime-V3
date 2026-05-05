@@ -34,40 +34,40 @@ const usuarioSchema = z.object({
   tipoUsuario: z.enum(["cliente", "revendedor"], {
     message: "Debe seleccionar un tipo de usuario",
   }),
-  telefono: z.string().min(8, "El telÃ©fono debe tener al menos 8 dÃ­gitos"),
-  metodoPagoId: z.string().min(1, "El mÃ©todo de pago es requerido"),
+  telefono: z.string().min(8, "El teléfono debe tener al menos 8 dígitos"),
+  metodoPagoId: z.string().min(1, "El método de pago es requerido"),
   notas: z.string().optional(),
 });
 
 type UsuarioFormData = z.infer<typeof usuarioSchema>;
 
 /**
- * Formatea un telÃ©fono al guardar:
- * - "66894143" o "6689-4143" â†’ "+507 6689-4143"
- * - "+91 12345678" â†’ "+91 1234-5678" (respeta cÃ³digo de paÃ­s)
- * - "+507 6689-4143" â†’ sin cambios
+ * Formatea un teléfono al guardar:
+ * - "66894143" o "6689-4143" → "+507 6689-4143"
+ * - "+91 12345678" → "+91 1234-5678" (respeta código de país)
+ * - "+507 6689-4143" → sin cambios
  */
 function formatearTelefono(raw: string): string {
   const trimmed = raw.trim();
-  // Si ya tiene cÃ³digo de paÃ­s (+...), extraer cÃ³digo y nÃºmero local
+  // Si ya tiene código de país (+...), extraer código y número local
   if (trimmed.startsWith("+")) {
     const sinPlus = trimmed.slice(1);
     const digits = sinPlus.replace(/\D/g, "");
-    // Si tiene mÃ¡s de 8 dÃ­gitos, los Ãºltimos 8 son el nÃºmero local
+    // Si tiene más de 8 dígitos, los últimos 8 son el número local
     if (digits.length > 8) {
       const countryCode = digits.slice(0, digits.length - 8);
       const local = digits.slice(digits.length - 8);
       return "+" + countryCode + " " + local.slice(0, 4) + "-" + local.slice(4);
     }
-    // Si tiene 8 o menos despuÃ©s del +, devolver tal cual formateado
+    // Si tiene 8 o menos después del +, devolver tal cual formateado
     return trimmed;
   }
-  // Sin cÃ³digo de paÃ­s: extraer solo dÃ­gitos y asumir PanamÃ¡ (+507)
+  // Sin código de país: extraer solo dígitos y asumir Panamá (+507)
   const digits = trimmed.replace(/\D/g, "");
   if (digits.length === 8) {
     return "+507 " + digits.slice(0, 4) + "-" + digits.slice(4);
   }
-  // Si no son exactamente 8 dÃ­gitos, devolver lo que escribiÃ³ sin modificar
+  // Si no son exactamente 8 dígitos, devolver lo que escribió sin modificar
   return trimmed;
 }
 
@@ -132,9 +132,9 @@ export function UsuarioForm({
     [metodosPago, pendienteOption],
   );
 
-  // Detectar si hay cambios en el formulario (solo en modo ediciÃ³n)
+  // Detectar si hay cambios en el formulario (solo en modo edición)
   const hasChanges = useMemo(() => {
-    if (!usuario) return true; // En modo creaciÃ³n, siempre permitir guardar
+    if (!usuario) return true; // En modo creación, siempre permitir guardar
 
     const usuarioMetodoPagoId = isPendingUserPaymentMethodId(
       usuario.metodoPagoId,
@@ -210,7 +210,7 @@ export function UsuarioForm({
   }, [usuario, tipoInicial, reset]);
 
   const handleNext = async () => {
-    // Validar campos de la pestaÃ±a personal
+    // Validar campos de la pestaña personal
     const isValid = await trigger([
       "nombre",
       "apellido",
@@ -316,7 +316,7 @@ export function UsuarioForm({
             value="personal"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
-            InformaciÃ³n Personal
+            Información Personal
           </TabsTrigger>
           <TabsTrigger
             value="pago"
@@ -324,7 +324,7 @@ export function UsuarioForm({
               !isPersonalTabComplete ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
-            InformaciÃ³n de Pago
+            Información de Pago
           </TabsTrigger>
         </TabsList>
 
@@ -353,7 +353,7 @@ export function UsuarioForm({
               <Input
                 id="apellido"
                 {...register("apellido")}
-                placeholder="PÃ©rez"
+                placeholder="Pérez"
                 onChange={(e) => {
                   const value = e.target.value;
                   const capitalized =
@@ -409,7 +409,7 @@ export function UsuarioForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="telefono">TelÃ©fono</Label>
+              <Label htmlFor="telefono">Teléfono</Label>
               <Input
                 id="telefono"
                 {...register("telefono")}
@@ -436,7 +436,7 @@ export function UsuarioForm({
         <TabsContent value="pago" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="metodoPagoId">MÃ©todo de Pago</Label>
+              <Label htmlFor="metodoPagoId">Método de Pago</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -480,7 +480,7 @@ export function UsuarioForm({
             <Textarea
               id="notas"
               {...register("notas")}
-              placeholder="AÃ±ade notas sobre el mÃ©todo de pago o el cliente..."
+              placeholder="Añade notas sobre el método de pago o el cliente..."
               rows={6}
             />
           </div>

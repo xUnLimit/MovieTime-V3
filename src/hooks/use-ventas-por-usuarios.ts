@@ -12,26 +12,26 @@ import type { VentaDoc } from '@/types';
  * Resultado agregado por usuario: monto sin consumir calculado
  * a partir de sus ventas activas.
  * `serviciosActivos` ya viene denormalizado en el doc del usuario
- * como campo `ventasActivas` Ã¢â‚¬â€ no se calcula aquÃƒÂ­.
+ * como campo `ventasActivas` — no se calcula aquí.
  */
 export interface VentasUsuarioStats {
   montoSinConsumir: number;
 }
 
-// Cache a nivel de mÃƒÂ³dulo: persiste entre montajes de componentes.
+// Cache a nivel de módulo: persiste entre montajes de componentes.
 // Key = idsKey (IDs ordenados y concatenados), Value = { data, ts }
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 const ventasCache = new Map<string, { data: Record<string, VentasUsuarioStats>; ts: number }>();
 
 /**
  * Invalida el cache de ventas por usuarios.
- * ÃƒÅ¡til cuando se elimina/actualiza una venta desde otra pÃƒÂ¡gina.
+ * Útil cuando se elimina/actualiza una venta desde otra página.
  */
 export function invalidateVentasPorUsuariosCache() {
   ventasCache.clear();
 }
 
-/** Query con chunks para evitar el lÃƒÂ­mite de 30 del operador 'in' de Supabase */
+/** Query con chunks para evitar el límite de 30 del operador 'in' de Supabase */
 async function queryVentasPorClienteIds(clienteIds: string[]): Promise<VentaDoc[]> {
   const CHUNK_SIZE = 30;
   const chunks: string[][] = [];
@@ -49,9 +49,9 @@ async function queryVentasPorClienteIds(clienteIds: string[]): Promise<VentaDoc[
 }
 
 /**
- * Revisa si hubo un cambio en ventas (via localStorage) mÃƒÂ¡s reciente que el cache.
- * localStorage.setItem NO dispara el evento 'storage' en la misma pestaÃƒÂ±a,
- * asÃƒÂ­ que debemos checar manualmente al montar.
+ * Revisa si hubo un cambio en ventas (via localStorage) más reciente que el cache.
+ * localStorage.setItem NO dispara el evento 'storage' en la misma pestaña,
+ * así que debemos checar manualmente al montar.
  */
 function shouldInvalidateCache(cachedTs: number): boolean {
   if (typeof window === 'undefined') return false;
@@ -66,11 +66,11 @@ function shouldInvalidateCache(cachedTs: number): boolean {
 }
 
 /**
- * Carga solo las ventas activas de los usuarios de la pÃƒÂ¡gina actual
+ * Carga solo las ventas activas de los usuarios de la página actual
  * usando una query `clienteId in [ids]`.
  * Calcula montoSinConsumir por usuario.
  *
- * @param clienteIds Ã¢â‚¬â€œ IDs de los usuarios visibles en la pÃƒÂ¡gina (mÃƒÂ¡x 10)
+ * @param clienteIds – IDs de los usuarios visibles en la página (máx 10)
  */
 export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = {}) {
   const [stats, setStats] = useState<Record<string, VentasUsuarioStats>>({});
@@ -80,17 +80,17 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
   const idsKey = clienteIds.join(',');
 
   useEffect(() => {
-    // No disparar hasta que los datos de la pÃƒÂ¡gina estÃƒÂ©n listos
+    // No disparar hasta que los datos de la página estén listos
     if (!enabled) return;
 
-    // Sin IDs clientes Ã¢â€ â€™ no hay nada que consultar
+    // Sin IDs clientes -> no hay nada que consultar
     if (clienteIds.length === 0) {
       setStats({});
       return;
     }
 
     // Cache hit: mismo set de IDs dentro del TTL
-    // PERO invalidar si hubo cambios en ventas despuÃƒÂ©s del cache (misma pestaÃƒÂ±a)
+    // PERO invalidar si hubo cambios en ventas después del cache (misma pestaña)
     const cached = ventasCache.get(idsKey);
     if (cached && Date.now() - cached.ts < CACHE_TTL) {
       if (shouldInvalidateCache(cached.ts)) {
@@ -107,7 +107,7 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
     const load = async () => {
       setIsLoading(true);
       try {
-        // Paso 1: Cargar ventas base (solo metadatos) Ã¢â‚¬â€ chunks de 30 para evitar lÃƒÂ­mite 'in'
+        // Paso 1: Cargar ventas base (solo metadatos) — chunks de 30 para evitar límite 'in'
         const ventasBase = await queryVentasPorClienteIds(clienteIds);
 
         if (cancelled) return;
@@ -158,8 +158,8 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey, enabled]);
 
-  // Escuchar eventos de creaciÃƒÂ³n/eliminaciÃƒÂ³n de ventas para recargar SI estamos activos
-  // (Estos eventos solo funcionan cuando el cambio ocurre en la MISMA pÃƒÂ¡gina, ej: eliminar desde UsuarioDetails)
+  // Escuchar eventos de creación/eliminación de ventas para recargar SI estamos activos
+  // (Estos eventos solo funcionan cuando el cambio ocurre en la MISMA página, ej: eliminar desde UsuarioDetails)
   useEffect(() => {
     const reloadVentas = async () => {
       if (!enabled || clienteIds.length === 0) return;
@@ -170,7 +170,7 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
 
       setIsLoading(true);
       try {
-        // chunks de 30 para evitar lÃƒÂ­mite 'in'
+        // chunks de 30 para evitar límite 'in'
         const ventasBase = await queryVentasPorClienteIds(clienteIds);
         const ventasConDatos = await getVentasConUltimoPago(ventasBase);
         const now = new Date();

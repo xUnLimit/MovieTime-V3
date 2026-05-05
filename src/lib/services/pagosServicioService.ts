@@ -3,7 +3,7 @@ import { PagoServicio } from '@/types';
 
 /**
  * Servicio para gestionar pagos de servicios (PagoServicio collection)
- * Single Source of Truth: Todos los datos de pago viven aquÃƒÂ­
+ * Single Source of Truth: Todos los datos de pago viven aquí
  */
 
 /**
@@ -39,7 +39,7 @@ export async function crearPagoInicial(
 }
 
 /**
- * Crear un pago de renovaciÃƒÂ³n
+ * Crear un pago de renovación
  */
 export async function crearPagoRenovacion(
   servicioId: string,
@@ -58,7 +58,7 @@ export async function crearPagoRenovacion(
     servicioId,
     categoriaId,
     fecha: new Date(), // Fecha de registro del pago
-    descripcion: `RenovaciÃƒÂ³n #${numeroRenovacion}`,
+    descripcion: `Renovación #${numeroRenovacion}`,
     cicloPago,
     fechaInicio,
     fechaVencimiento,
@@ -72,14 +72,14 @@ export async function crearPagoRenovacion(
 }
 
 /**
- * Obtener todos los pagos de un servicio especÃƒÂ­fico
+ * Obtener todos los pagos de un servicio específico
  */
 export async function obtenerPagosDeServicio(servicioId: string): Promise<PagoServicio[]> {
   const docs = await queryPagosServicio<PagoServicio>([
     { field: 'servicioId', operator: '==', value: servicioId },
   ]);
 
-  // Ordenar por fecha descendente (mÃƒÂ¡s reciente primero)
+  // Ordenar por fecha descendente (más reciente primero)
   return docs.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 }
 
@@ -92,8 +92,8 @@ export async function contarRenovacionesDeServicio(servicioId: string): Promise<
 }
 
 /**
- * Obtener pagos de varios servicios (batch query con chunking automÃƒÂ¡tico)
- * Supabase .in() tiene lÃƒÂ­mite de 10 valores
+ * Obtener pagos de varios servicios (batch query con chunking automático)
+ * Supabase .in() tiene límite de 10 valores
  */
 export async function obtenerPagosDeVariosServicios(servicioIds: string[]): Promise<PagoServicio[]> {
   if (servicioIds.length === 0) return [];

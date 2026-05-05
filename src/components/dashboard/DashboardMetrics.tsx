@@ -32,7 +32,7 @@ export function DashboardMetrics() {
   if (error) {
     return (
       <p className="text-sm text-red-500">
-        Error al cargar mÃ©tricas del dashboard. Intenta recargar la pÃ¡gina.
+        Error al cargar métricas del dashboard. Intenta recargar la página.
       </p>
     );
   }

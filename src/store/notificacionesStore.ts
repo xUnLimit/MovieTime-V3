@@ -117,7 +117,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
   },
 
   /**
-   * Fetch count metrics using getCount() Ã¢â‚¬â€ free on Spark plan, 0 document reads
+   * Fetch count metrics using getCount() — free on Spark plan, 0 document reads
    */
   fetchCounts: async () => {
     try {

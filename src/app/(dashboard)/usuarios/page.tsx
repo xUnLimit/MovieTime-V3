@@ -33,7 +33,7 @@ interface MetodoPagoFilterOption {
 }
 
 const ALL_PAYMENT_METHODS_VALUE = 'todos';
-const ALL_PAYMENT_METHODS_LABEL = 'Todos los mÃƒÂ©todos';
+const ALL_PAYMENT_METHODS_LABEL = 'Todos los métodos';
 
 function UsuariosPageContent() {
   const router = useRouter();
@@ -97,7 +97,7 @@ function UsuariosPageContent() {
     return metodoPagoFilter;
   }, [metodoPagoFilter, metodoPagoOptions]);
 
-  // Filtros segÃƒÂºn tab activo
+  // Filtros según tab activo
   const filters: FilterOption[] = useMemo(() => {
     const nextFilters: FilterOption[] = [];
 
@@ -114,14 +114,14 @@ function UsuariosPageContent() {
     return nextFilters;
   }, [activeTab, selectedMetodoPagoFilter]);
 
-  // PaginaciÃƒÂ³n server-side (solo cuando NO hay bÃƒÂºsqueda activa)
+  // Paginación server-side (solo cuando NO hay búsqueda activa)
   const { data: pageData, isLoading: isLoadingPage, hasMore, hasPrevious, page, next, previous, refresh } = useServerPagination<Usuario>({
     collectionName: ENTITIES.USUARIOS,
     filters,
     pageSize,
   });
 
-  // Modo bÃƒÂºsqueda: fetchAll con cache y filtrar en memoria
+  // Modo búsqueda: fetchAll con cache y filtrar en memoria
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   useEffect(() => {
     if (!isSearchMode) return;
@@ -169,7 +169,7 @@ function UsuariosPageContent() {
   const isLoading = isSearchMode ? isLoadingSearch : isLoadingPage;
   const displayData = isSearchMode ? searchResults : pageData;
 
-  // Total segÃƒÂºn tab (para calcular pÃƒÂ¡ginas)
+  // Total según tab (para calcular páginas)
   const totalCurrentTab = activeTab === 'clientes' ? totalClientes : activeTab === 'revendedores' ? totalRevendedores : totalClientes + totalRevendedores;
   const totalPages = isSearchMode
     ? Math.max(1, Math.ceil(searchResults.length / pageSize))
@@ -183,8 +183,8 @@ function UsuariosPageContent() {
     fetchCounts();
   }, [fetchCounts]);
 
-  // Escuchar cuando se elimina una venta en la MISMA pÃƒÂ¡gina (ej: desde UsuarioDetails)
-  // La sincronizaciÃƒÂ³n entre pÃƒÂ¡ginas diferentes ya la maneja useVentasPorUsuarios via shouldInvalidateCache()
+  // Escuchar cuando se elimina una venta en la MISMA página (ej: desde UsuarioDetails)
+  // La sincronización entre páginas diferentes ya la maneja useVentasPorUsuarios via shouldInvalidateCache()
   useEffect(() => {
     const handleVentaDeleted = () => {
       invalidateVentasPorUsuariosCache();

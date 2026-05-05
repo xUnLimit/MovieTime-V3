@@ -18,7 +18,7 @@ function CrearMetodoPagoPageContent() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nuevo MÃ©todo de Pago</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nuevo Método de Pago</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
             <Link href="/" className="hover:text-foreground transition-colors">
@@ -26,7 +26,7 @@ function CrearMetodoPagoPageContent() {
             </Link>{' '}
             /{' '}
             <Link href="/metodos-pago" className="hover:text-foreground transition-colors">
-              MÃ©todos de Pago
+              Métodos de Pago
             </Link>{' '}
             / <span className="text-foreground">Crear</span>
           </p>
@@ -43,7 +43,7 @@ function CrearMetodoPagoPageContent() {
 
 export default function CrearMetodoPagoPage() {
   return (
-    <ModuleErrorBoundary moduleName="Nuevo MÃ©todo de Pago">
+    <ModuleErrorBoundary moduleName="Nuevo Método de Pago">
       <CrearMetodoPagoPageContent />
     </ModuleErrorBoundary>
   );

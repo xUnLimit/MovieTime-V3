@@ -143,7 +143,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
               <Input
                 id="nombre"
                 {...register('nombre')}
-                placeholder="Ej: NotificaciÃ³n de Vencimiento"
+                placeholder="Ej: Notificación de Vencimiento"
               />
               {errors.nombre && (
                 <p className="text-sm text-red-500">{errors.nombre.message}</p>
@@ -160,11 +160,11 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="notificacion_regular">NotificaciÃ³n Regular</SelectItem>
-                  <SelectItem value="dia_pago">DÃ­a de Pago</SelectItem>
-                  <SelectItem value="renovacion">RenovaciÃ³n</SelectItem>
-                  <SelectItem value="suscripcion">SuscripciÃ³n</SelectItem>
-                  <SelectItem value="cancelacion">CancelaciÃ³n</SelectItem>
+                  <SelectItem value="notificacion_regular">Notificación Regular</SelectItem>
+                  <SelectItem value="dia_pago">Día de Pago</SelectItem>
+                  <SelectItem value="renovacion">Renovación</SelectItem>
+                  <SelectItem value="suscripcion">Suscripción</SelectItem>
+                  <SelectItem value="cancelacion">Cancelación</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -175,7 +175,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
             <Textarea
               id="contenido"
               {...register('contenido')}
-              placeholder="Escribe el mensaje aquÃ­. Usa placeholders como {cliente}, {servicio}, etc."
+              placeholder="Escribe el mensaje aquí. Usa placeholders como {cliente}, {servicio}, etc."
               rows={8}
             />
             {errors.contenido && (

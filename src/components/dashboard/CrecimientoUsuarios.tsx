@@ -40,7 +40,7 @@ export function CrecimientoUsuarios() {
     const currentDate = new Date();
 
     if (selectedPeriod === 'actual') {
-      // Usar datos reales por dÃ­a desde dashboard_stats (0 reads extra)
+      // Usar datos reales por día desde dashboard_stats (0 reads extra)
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
       const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -80,11 +80,11 @@ export function CrecimientoUsuarios() {
 
   const header = (
     <CardHeader className="flex flex-row items-center justify-between pt-3 pb-2 px-6">
-      {/* pt-3 = padding arriba del tÃ­tulo (12px, igual que Actividad Reciente) */}
-      {/* pb-2 = espacio entre tÃ­tulo y grÃ¡fica (8px) */}
-      {/* px-6 = separaciÃ³n del borde izquierdo/derecho (24px) */}
+      {/* pt-3 = padding arriba del título (12px, igual que Actividad Reciente) */}
+      {/* pb-2 = espacio entre título y gráfica (8px) */}
+      {/* px-6 = separación del borde izquierdo/derecho (24px) */}
       <div className="space-y-0.5">
-        {/* space-y-0.5 = espacio mÃ­nimo entre tÃ­tulo y descripciÃ³n (2px, igual que Ingresos por CategorÃ­a) */}
+        {/* space-y-0.5 = espacio mínimo entre título y descripción (2px, igual que Ingresos por Categoría) */}
         <CardTitle className="text-base">Crecimiento de Usuarios</CardTitle>
         <CardDescription className="text-sm">
           Nuevos clientes y revendedores adquiridos por mes.
@@ -92,13 +92,13 @@ export function CrecimientoUsuarios() {
       </div>
       <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
         <SelectTrigger className="w-[140px] h-7 text-xs">
-          <SelectValue placeholder="PerÃ­odo" />
+          <SelectValue placeholder="Período" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="actual">Mes actual</SelectItem>
-          <SelectItem value="3meses">Ãšltimos 3 meses</SelectItem>
-          <SelectItem value="6meses">Ãšltimos 6 meses</SelectItem>
-          <SelectItem value="12meses">Ãšltimos 12 meses</SelectItem>
+          <SelectItem value="3meses">Últimos 3 meses</SelectItem>
+          <SelectItem value="6meses">Últimos 6 meses</SelectItem>
+          <SelectItem value="12meses">Últimos 12 meses</SelectItem>
         </SelectContent>
       </Select>
     </CardHeader>
@@ -108,16 +108,16 @@ export function CrecimientoUsuarios() {
     <Card className="py-1"> {/* py-1 = padding vertical del Card (4px arriba + 4px abajo) */}
       {header}
       <CardContent className="pt-0 px-6 pb-2">
-        {/* pt-0 = sin espacio arriba (grÃ¡fica pegada al tÃ­tulo) */}
-        {/* px-6 = separaciÃ³n del borde (24px) */}
-        {/* pb-2 = espacio abajo de la grÃ¡fica (8px) */}
+        {/* pt-0 = sin espacio arriba (gráfica pegada al título) */}
+        {/* px-6 = separación del borde (24px) */}
+        {/* pb-2 = espacio abajo de la gráfica (8px) */}
         {isLoading ? (
           <Skeleton className="w-full h-[240px] rounded-lg" />
         ) : (
         <ResponsiveContainer width="100%" height={240}>
-          {/* height={240} = ALTURA DE LA GRÃFICA - aumentado para acercar leyenda al borde inferior */}
+          {/* height={240} = ALTURA DE LA GRÁFICA - aumentado para acercar leyenda al borde inferior */}
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            {/* margin.left: 0 = sin margen negativo para que se vean los nÃºmeros del eje Y */}
+            {/* margin.left: 0 = sin margen negativo para que se vean los números del eje Y */}
             {/* margin.bottom: 0 = sin espacio abajo para pegar la leyenda */}
             <defs>
               <linearGradient id="colorClientes" x1="0" y1="0" x2="0" y2="1">
@@ -152,7 +152,7 @@ export function CrecimientoUsuarios() {
               width={35}
               tick={{ fill: axisColor }}
             />
-            {/* width={35} = ancho del eje Y para que quepan los nÃºmeros */}
+            {/* width={35} = ancho del eje Y para que quepan los números */}
             <Tooltip
               contentStyle={{
                 backgroundColor: tooltipBg,
@@ -169,10 +169,10 @@ export function CrecimientoUsuarios() {
               animationDuration={0}
             />
             {/* Leyenda (Clientes / Revendedores) */}
-            {/* verticalAlign="bottom" = posiciÃ³n abajo del todo */}
+            {/* verticalAlign="bottom" = posición abajo del todo */}
             {/* height={30} = altura reservada para la leyenda */}
             {/* iconType="circle" = iconos circulares (no cuadrados) */}
-            {/* wrapperStyle = tamaÃ±o texto + separaciÃ³n arriba */}
+            {/* wrapperStyle = tamaño texto + separación arriba */}
             <Legend
               verticalAlign="bottom"
               height={30}

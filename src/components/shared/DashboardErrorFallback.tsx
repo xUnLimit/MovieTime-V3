@@ -23,11 +23,11 @@ export function DashboardErrorFallback({ error, reset }: DashboardErrorFallbackP
       <Card className="max-w-md w-full p-6 space-y-4">
         <div className="flex items-center gap-3 text-red-600">
           <AlertCircle className="h-8 w-8" />
-          <h2 className="text-2xl font-bold">Error en la aplicaciÃ³n</h2>
+          <h2 className="text-2xl font-bold">Error en la aplicación</h2>
         </div>
         
         <p className="text-muted-foreground">
-          Ha ocurrido un error inesperado. Por favor, intenta recargar la pÃ¡gina.
+          Ha ocurrido un error inesperado. Por favor, intenta recargar la página.
         </p>
 
         {error && (
@@ -41,7 +41,7 @@ export function DashboardErrorFallback({ error, reset }: DashboardErrorFallbackP
 
         <Button onClick={handleReload} className="w-full">
           <RefreshCw className="mr-2 h-4 w-4" />
-          Recargar pÃ¡gina
+          Recargar página
         </Button>
       </Card>
     </div>

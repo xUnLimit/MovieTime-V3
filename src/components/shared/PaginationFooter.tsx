@@ -57,7 +57,7 @@ export function PaginationFooter({
 
       <div className="flex items-center justify-between sm:justify-end gap-4">
         <span className="text-sm text-muted-foreground">
-          PÃ¡gina {page} de {totalPages}
+          Página {page} de {totalPages}
         </span>
         <div className="flex gap-2">
           <Button

@@ -7,7 +7,7 @@ import { useVentasStore } from '@/store/ventasStore';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import type { VentaDoc } from '@/types';
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ Cache a nivel de mÃƒÂ³dulo Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── Cache a nivel de módulo ────────────────────────────────
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
 interface CachedVentas {
@@ -42,7 +42,7 @@ export interface VentaUsuarioDoc {
   id: string;
   clienteId: string;
   categoriaId: string;
-  categoriaNombre: string; // Ã¢â€ Â Denormalizado (guardado en el doc de Venta)
+  categoriaNombre: string; // <- Denormalizado (guardado en el doc de Venta)
   servicioId: string;
   servicioNombre: string;
   servicioCorreo: string;
@@ -60,11 +60,11 @@ export interface VentaUsuarioDoc {
 
 /**
  * Carga las ventas de un solo usuario, el historial de renovaciones
- * de los servicios asociados, y expone una funciÃƒÂ³n para eliminar ventas.
+ * de los servicios asociados, y expone una función para eliminar ventas.
  *
  * Cache: 5 minutos. Query de renovaciones optimizada (single query con 'in').
  *
- * @param usuarioId  Ã¢â‚¬â€œ id del usuario cuyas ventas se carga
+ * @param usuarioId  – id del usuario cuyas ventas se carga
  */
 export function useVentasUsuario(usuarioId: string) {
   const { deleteVenta: deleteVentaFromStore } = useVentasStore();
@@ -73,7 +73,7 @@ export function useVentasUsuario(usuarioId: string) {
   const [renovacionesByServicio, setRenovacionesByServicio] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading]                     = useState(true);
 
-  /* Ã¢â€â‚¬Ã¢â€â‚¬ 1. Ventas del usuario + renovaciones (con cache) Ã¢â€â‚¬Ã¢â€â‚¬ */
+  /* ── 1. Ventas del usuario + renovaciones (con cache) ── */
   useEffect(() => {
     if (!usuarioId) {
       setVentas([]);
@@ -87,7 +87,7 @@ export function useVentasUsuario(usuarioId: string) {
     if (cached && Date.now() - cached.ts < CACHE_TTL && !shouldInvalidateUsuarioVentasCache(cached.ts)) {
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          '%c[VentasUsuarioCache]%c HIT Ã‚Â· user ' + usuarioId.slice(0, 8) + ' Ã‚Â· age ' + Math.round((Date.now() - cached.ts) / 1000) + 's',
+          '%c[VentasUsuarioCache]%c HIT · user ' + usuarioId.slice(0, 8) + ' · age ' + Math.round((Date.now() - cached.ts) / 1000) + 's',
           'background:#4CAF50;color:#fff;padding:2px 6px;border-radius:3px;font-weight:600',
           'color:#4CAF50;font-weight:600'
         );
@@ -120,10 +120,10 @@ export function useVentasUsuario(usuarioId: string) {
           id:              venta.id,
           clienteId:       venta.clienteId || '',
           categoriaId:     venta.categoriaId,
-          categoriaNombre: venta.categoriaNombre || 'Sin categorÃƒÂ­a',
+          categoriaNombre: venta.categoriaNombre || 'Sin categoría',
           servicioId:      venta.servicioId,
           servicioNombre:  venta.servicioNombre,
-          servicioCorreo:  venta.servicioCorreo || 'Ã¢â‚¬â€',
+          servicioCorreo:  venta.servicioCorreo || '—',
           perfilNumero:    venta.perfilNumero ?? null,
           cicloPago:       venta.cicloPago,
           fechaInicio:     venta.fechaInicio ?? null,
@@ -139,7 +139,7 @@ export function useVentasUsuario(usuarioId: string) {
 
         let renovaciones: Record<string, number> = {};
         if (ventaIds.length > 0) {
-          // Supabase .in() acepta max 10 valores Ã¢â‚¬â€ si hay mÃƒÂ¡s, partir en chunks
+          // Supabase .in() acepta max 10 valores — si hay más, partir en chunks
           const chunks: string[][] = [];
           for (let i = 0; i < ventaIds.length; i += 10) {
             chunks.push(ventaIds.slice(i, i + 10));
@@ -207,10 +207,10 @@ export function useVentasUsuario(usuarioId: string) {
           id:              venta.id,
           clienteId:       venta.clienteId || '',
           categoriaId:     venta.categoriaId,
-          categoriaNombre: venta.categoriaNombre || 'Sin categorÃƒÂ­a',
+          categoriaNombre: venta.categoriaNombre || 'Sin categoría',
           servicioId:      venta.servicioId,
           servicioNombre:  venta.servicioNombre,
-          servicioCorreo:  venta.servicioCorreo || 'Ã¢â‚¬â€',
+          servicioCorreo:  venta.servicioCorreo || '—',
           perfilNumero:    venta.perfilNumero ?? null,
           cicloPago:       venta.cicloPago,
           fechaInicio:     venta.fechaInicio ?? null,
@@ -263,7 +263,7 @@ export function useVentasUsuario(usuarioId: string) {
     return () => window.removeEventListener('servicio-updated', reloadFromServicioUpdate);
   }, [usuarioId]);
 
-  /* Ã¢â€â‚¬Ã¢â€â‚¬ 2. Eliminar venta Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+  /* ── 2. Eliminar venta ──────────────────────────── */
   const deleteVenta = useCallback(async (ventaId: string, servicioId?: string, perfilNumero?: number | null) => {
     const ventaEliminada = ventas.find(v => v.id === ventaId);
 
@@ -276,7 +276,7 @@ export function useVentasUsuario(usuarioId: string) {
       // Invalidar cache
       ventasCache.delete(usuarioId);
 
-      // Notificar a otras ventanas/tabs que se eliminÃƒÂ³ una venta
+      // Notificar a otras ventanas/tabs que se eliminó una venta
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('venta-deleted', Date.now().toString());
         window.dispatchEvent(new Event('venta-deleted'));

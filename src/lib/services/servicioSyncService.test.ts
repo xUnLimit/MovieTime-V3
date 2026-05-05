@@ -114,7 +114,7 @@ describe('servicioSyncService', () => {
       expect(syncNotificacionesMock).toHaveBeenCalledTimes(1);
       expect(fetchNotificacionesMock).toHaveBeenCalledWith(true);
       expect(fetchCountsMock).toHaveBeenCalledTimes(1);
-      // V2: sale display fields come from views â€” no writes to ventas
+      // V2: sale display fields come from views — no writes to ventas
       expect(result).toEqual({ serviciosRevisados: 2, ventasActualizadas: 0 });
     });
 

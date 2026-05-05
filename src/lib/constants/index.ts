@@ -34,12 +34,12 @@ export const NAVIGATION_ITEMS = [
     icon: 'CreditCard'
   },
   {
-    label: 'CategorÃ­as',
+    label: 'Categorías',
     href: '/categorias',
     icon: 'Folder'
   },
   {
-    label: 'MÃ©todos de Pago',
+    label: 'Métodos de Pago',
     href: '/metodos-pago',
     icon: 'Wallet'
   },
@@ -101,10 +101,10 @@ export const DIAS_NOTIFICACION = [100, 11, 8, 7, 3, 2, 1] as const;
 // ===========================
 
 export const MONEDAS = [
-  { value: 'USD', label: 'USD - DÃ³lar', symbol: '$' },
+  { value: 'USD', label: 'USD - Dólar', symbol: '$' },
   { value: 'PAB', label: 'PAB - Balboa', symbol: 'B/.' },
-  { value: 'EUR', label: 'EUR - Euro', symbol: 'â‚¬' },
-  { value: 'NGN', label: 'NGN - Naira', symbol: 'â‚¦' }
+  { value: 'EUR', label: 'EUR - Euro', symbol: '€' },
+  { value: 'NGN', label: 'NGN - Naira', symbol: '₦' }
 ] as const;
 
 // ===========================
@@ -123,7 +123,7 @@ export const TIPOS_CUENTA = [
   { value: 'ahorro', label: 'Ahorro' },
   { value: 'corriente', label: 'Corriente' },
   { value: 'wallet', label: 'Wallet' },
-  { value: 'telefono', label: 'TelÃ©fono' }
+  { value: 'telefono', label: 'Teléfono' }
 ] as const;
 
 // ===========================
@@ -131,11 +131,11 @@ export const TIPOS_CUENTA = [
 // ===========================
 
 export const TIPOS_TEMPLATE = [
-  { value: 'notificacion_regular', label: 'NotificaciÃ³n Regular' },
-  { value: 'dia_pago', label: 'DÃ­a de Pago' },
-  { value: 'renovacion', label: 'RenovaciÃ³n' },
+  { value: 'notificacion_regular', label: 'Notificación Regular' },
+  { value: 'dia_pago', label: 'Día de Pago' },
+  { value: 'renovacion', label: 'Renovación' },
   { value: 'venta', label: 'Nueva Venta' },
-  { value: 'cancelacion', label: 'CancelaciÃ³n' }
+  { value: 'cancelacion', label: 'Cancelación' }
 ] as const;
 
 // ===========================
@@ -143,14 +143,14 @@ export const TIPOS_TEMPLATE = [
 // ===========================
 
 export const PLACEHOLDERS_DISPONIBLES = [
-  { placeholder: '{saludo}', descripcion: 'Saludo segÃºn hora del dÃ­a' },
+  { placeholder: '{saludo}', descripcion: 'Saludo según hora del día' },
   { placeholder: '{cliente}', descripcion: 'Nombre del cliente' },
-  { placeholder: '{categoria}', descripcion: 'CategorÃ­a del servicio' },
+  { placeholder: '{categoria}', descripcion: 'Categoría del servicio' },
   { placeholder: '{correo}', descripcion: 'Correo de acceso' },
-  { placeholder: '{contrasena}', descripcion: 'ContraseÃ±a de acceso' },
+  { placeholder: '{contrasena}', descripcion: 'Contraseña de acceso' },
   { placeholder: '{vencimiento}', descripcion: 'Fecha de vencimiento' },
   { placeholder: '{monto}', descripcion: 'Monto a pagar' },
-  { placeholder: '{diasRetraso}', descripcion: 'DÃ­as de retraso (si aplica)' }
+  { placeholder: '{diasRetraso}', descripcion: 'Días de retraso (si aplica)' }
 ] as const;
 
 // ===========================
@@ -195,7 +195,7 @@ export const PRIORIDADES_NOTIFICACION = [
   { value: 'baja', label: 'Baja', color: 'gray' },
   { value: 'media', label: 'Media', color: 'blue' },
   { value: 'alta', label: 'Alta', color: 'orange' },
-  { value: 'critica', label: 'CrÃ­tica', color: 'red' }
+  { value: 'critica', label: 'Crítica', color: 'red' }
 ] as const;
 
 // ===========================
@@ -205,12 +205,12 @@ export const PRIORIDADES_NOTIFICACION = [
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',
   PAB: 'B/.',
-  EUR: 'â‚¬',
-  GBP: 'Â£',
-  JPY: 'Â¥',
-  CNY: 'Â¥',
-  INR: 'â‚¹',
-  NGN: 'â‚¦',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  CNY: '¥',
+  INR: '₹',
+  NGN: '₦',
   BRL: 'R$',
   MXN: '$',
   CAD: 'C$',
@@ -220,12 +220,12 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   CLP: '$',
   COP: '$',
   PEN: 'S/',
-  CRC: 'â‚¡',
+  CRC: '₡',
   VES: 'Bs.',
-  TRY: 'â‚º',
-  EGP: 'EÂ£',
-  BTC: 'â‚¿',
-  ETH: 'Îž',
+  TRY: '₺',
+  EGP: 'E£',
+  BTC: '₿',
+  ETH: 'Ξ',
   USDT: '$',
   USDC: '$',
 };

@@ -34,7 +34,7 @@ export const ServiciosCategoriaMetrics = memo(
 
           setProximosPagos(servicios.length);
         } catch (error) {
-          console.error("Error fetching prÃƒÂ³ximos pagos:", error);
+          console.error("Error fetching próximos pagos:", error);
           setProximosPagos(0);
         } finally {
           fetchingRef.current = false;
@@ -55,7 +55,7 @@ export const ServiciosCategoriaMetrics = memo(
             iconColor="text-blue-500"
           />
           <MetricCard
-            title="PrÃƒÂ³ximos Pagos (7 dÃƒÂ­as)"
+            title="Próximos Pagos (7 días)"
             value={0}
             icon={Calendar}
             underlineColor="bg-yellow-500"
@@ -78,7 +78,7 @@ export const ServiciosCategoriaMetrics = memo(
           iconColor="text-blue-500"
         />
         <MetricCard
-          title="PrÃƒÂ³ximos Pagos (7 dÃƒÂ­as)"
+          title="Próximos Pagos (7 días)"
           value={proximosPagos}
           icon={Calendar}
           underlineColor="bg-yellow-500"

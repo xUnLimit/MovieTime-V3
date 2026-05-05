@@ -40,7 +40,7 @@ const navigationSections: NavSection[] = [
     ]
   },
   {
-    label: 'GESTIÃ“N',
+    label: 'GESTIÓN',
     items: [
       {
         name: 'Usuarios',
@@ -60,7 +60,7 @@ const navigationSections: NavSection[] = [
     ]
   },
   {
-    label: 'ADMINISTRACIÃ“N',
+    label: 'ADMINISTRACIÓN',
     items: [
       {
         name: 'Notificaciones',
@@ -68,12 +68,12 @@ const navigationSections: NavSection[] = [
         icon: Bell
       },
       {
-        name: 'CategorÃ­as',
+        name: 'Categorías',
         href: '/categorias',
         icon: Folder
       },
       {
-        name: 'MÃ©todos de Pago',
+        name: 'Métodos de Pago',
         href: '/metodos-pago',
         icon: Wallet
       }
@@ -183,7 +183,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
     const x = Math.round(rect.left + rect.width / 2);
     const y = Math.round(rect.top + rect.height / 2);
 
-    // Calcular distancia exacta hasta la esquina mÃ¡s lejana de la pantalla
+    // Calcular distancia exacta hasta la esquina más lejana de la pantalla
     const w = window.innerWidth;
     const h = window.innerHeight;
     const endRadius = Math.ceil(Math.hypot(Math.max(x, w - x), Math.max(y, h - y)));
@@ -201,8 +201,8 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       }
     });
 
-    // Sincronizar next-themes solo despuÃ©s de que la animaciÃ³n termine
-    // para evitar el re-render de React durante la transiciÃ³n
+    // Sincronizar next-themes solo después de que la animación termine
+    // para evitar el re-render de React durante la transición
     transition.finished.then(() => {
       try { localStorage.setItem('theme', nextTheme); } catch {}
       setTheme(nextTheme);
@@ -220,9 +220,9 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
         width: isMobile ? '200px' : (collapsed ? '48px' : '200px')
       }}
     >
-      {/* Header - Logo y TÃ­tulo */}
+      {/* Header - Logo y Título */}
       <div className="relative h-16 border-b border-sidebar-border overflow-hidden flex-shrink-0">
-        {/* Logo - posiciÃ³n absoluta fija, siempre centrado en los 48px del ancho colapsado */}
+        {/* Logo - posición absoluta fija, siempre centrado en los 48px del ancho colapsado */}
         <div
           className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center text-sidebar-foreground"
           style={{
@@ -254,7 +254,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
           MovieTime PTY
         </span>
 
-        {/* BotÃ³n cerrar en mobile */}
+        {/* Botón cerrar en mobile */}
         {isMobile && (
           <button
             onClick={onMobileClose}
@@ -269,7 +269,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2">
         {filteredSections.map((section, sectionIdx) => (
           <div key={sectionIdx} className="mb-4">
-            {/* Label de secciÃ³n */}
+            {/* Label de sección */}
             {section.label && (
               <div className="px-3 mb-2 h-5 overflow-hidden">
                 <p
@@ -303,12 +303,12 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
                     )}
                     title={(!isMobile && collapsed) ? item.name : undefined}
                   >
-                    {/* Icono - PosiciÃ³n ABSOLUTA FIJA */}
+                    {/* Icono - Posición ABSOLUTA FIJA */}
                     <div className="absolute left-0 w-11 h-9 flex items-center justify-center">
                       <Icon className={cn("h-4 w-4", isActive && "text-primary")} />
                     </div>
 
-                    {/* Texto - PosiciÃ³n ABSOLUTA FIJA */}
+                    {/* Texto - Posición ABSOLUTA FIJA */}
                     <span
                       className="absolute left-11 text-sm whitespace-nowrap flex items-center gap-2"
                       style={{
@@ -330,7 +330,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
               })}
             </div>
 
-            {/* Separador - POSICIÃ“N FIJA */}
+            {/* Separador - POSICIÓN FIJA */}
             {sectionIdx < navigationSections.length - 1 && (
               <div className="h-px w-full bg-sidebar-border my-4" />
             )}
@@ -341,7 +341,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       {/* Footer */}
       <div className="border-t border-sidebar-border mt-auto flex-shrink-0">
         <div className="p-2 space-y-1">
-          {/* BotÃ³n Tema */}
+          {/* Botón Tema */}
           <button
             ref={themeButtonRef}
             onClick={toggleTheme}
@@ -367,7 +367,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
             </span>
           </button>
 
-          {/* BotÃ³n Colapsar - solo en desktop */}
+          {/* Botón Colapsar - solo en desktop */}
           {!isMobile && (
             <button
               onClick={() => setCollapsed(!collapsed)}

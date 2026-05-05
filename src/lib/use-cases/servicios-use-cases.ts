@@ -9,6 +9,7 @@ import {
   queryServicios,
   removePagoServicio,
   removeServicio,
+  updatePagoServicio,
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
 import {
@@ -17,16 +18,42 @@ import {
   getMesKeyFromDate,
   upsertServicioPronostico,
 } from '@/lib/services/dashboardStatsService';
-import { crearPagoInicial } from '@/lib/services/pagosServicioService';
+import { crearPagoInicial, crearPagoRenovacion } from '@/lib/services/pagosServicioService';
 import { resyncServiciosDenormalizedData, syncServicioDependencias } from '@/lib/services/servicioSyncService';
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import type { ActivityLog, MetodoPago, Servicio } from '@/types';
+import { getCurrencySymbol } from '@/lib/constants';
+import type { ActivityLog, MetodoPago, PagoServicio, Servicio } from '@/types';
 import type { ServicioPronostico } from '@/types/dashboard';
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
 type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
+
+type ServicioPagoInput = {
+  periodoRenovacion: string;
+  metodoPagoId: string;
+  costo: number;
+  descuento?: number;
+  fechaInicio: Date;
+  fechaVencimiento: Date;
+  notas?: string;
+  metodoPagoNombre?: string;
+  moneda?: string;
+};
+
+function normalizeServicioPagoInput(
+  input: ServicioPagoInput,
+  metodoPago?: MetodoPago | null,
+  fallbackMoneda = 'USD'
+) {
+  return {
+    notaPrincipal: input.notas?.trim() ?? '',
+    metodoPagoNombre: input.metodoPagoNombre || metodoPago?.nombre || '',
+    moneda: input.moneda || metodoPago?.moneda || fallbackMoneda || 'USD',
+    cicloPago: input.periodoRenovacion as 'mensual' | 'trimestral' | 'semestral' | 'anual',
+  };
+}
 
 export function toServicioPronostico(s: Servicio): ServicioPronostico | null {
   if (!s.activo || s.enReposo || !s.fechaVencimiento || !s.cicloPago || s.costoServicio <= 0) return null;
@@ -266,6 +293,181 @@ export async function deleteServicioUseCase(
   });
 
   return { servicio };
+}
+
+export async function renewServicioUseCase(
+  servicio: Servicio,
+  input: ServicioPagoInput,
+  options: {
+    numeroRenovacion?: number;
+    metodoPago?: MetodoPago | null;
+    logContext?: LogContext;
+    recordActivityLog?: RecordActivityLog;
+    logPrefix?: string;
+  }
+) {
+  const { notaPrincipal, metodoPagoNombre, moneda, cicloPago } = normalizeServicioPagoInput(
+    input,
+    options.metodoPago,
+    servicio.moneda
+  );
+
+  const numeroRenovacion = options.numeroRenovacion ?? (
+    await queryPagosServicio<PagoServicio>([{ field: 'servicioId', operator: '==', value: servicio.id }])
+  ).filter((pago) => !pago.isPagoInicial && pago.descripcion !== 'Pago inicial').length + 1;
+
+  await crearPagoRenovacion(
+    servicio.id,
+    servicio.categoriaId || '',
+    input.costo,
+    input.metodoPagoId,
+    metodoPagoNombre,
+    moneda,
+    cicloPago,
+    input.fechaInicio,
+    input.fechaVencimiento,
+    numeroRenovacion,
+    notaPrincipal
+  );
+
+  const costoUSD = await currencyService.convertToUSD(input.costo, moneda);
+  if (servicio.categoriaId) {
+    await adjustCategoriaGastos(servicio.categoriaId, costoUSD);
+  }
+
+  adjustGastosStats({
+    delta: input.costo,
+    moneda,
+    mes: getMesKeyFromDate(input.fechaInicio),
+    dia: getDiaKeyFromDate(input.fechaInicio),
+    categoriaId: servicio.categoriaId,
+    categoriaNombre: servicio.categoriaNombre,
+  }).catch(() => {});
+
+  const pronostico = {
+    id: servicio.id,
+    fechaVencimiento: input.fechaVencimiento.toISOString(),
+    cicloPago: input.periodoRenovacion,
+    costoServicio: input.costo,
+    moneda,
+  };
+  upsertServicioPronostico(pronostico, servicio.id).catch(() => {});
+
+  await updateServicio(servicio.id, {
+    fechaInicio: input.fechaInicio,
+    fechaVencimiento: input.fechaVencimiento,
+    costoServicio: input.costo,
+    metodoPagoId: input.metodoPagoId || undefined,
+    metodoPagoNombre,
+    moneda,
+    cicloPago,
+    notas: notaPrincipal,
+  });
+
+  await options.recordActivityLog?.({
+    ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
+    accion: 'renovacion',
+    entidad: 'servicio',
+    entidadId: servicio.id,
+    entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
+    detalles: `${options.logPrefix ?? 'Servicio renovado'}: "${servicio.nombre}" [${servicio.correo}] - ${getCurrencySymbol(moneda)}${input.costo} - hasta ${input.fechaVencimiento.toLocaleDateString('es-PA')} (${input.periodoRenovacion})`,
+  });
+
+  return {
+    servicioActualizado: {
+      ...servicio,
+      fechaInicio: input.fechaInicio,
+      fechaVencimiento: input.fechaVencimiento,
+      costoServicio: input.costo,
+      metodoPagoId: input.metodoPagoId || undefined,
+      metodoPagoNombre,
+      moneda,
+      cicloPago,
+      notas: notaPrincipal,
+      updatedAt: new Date(),
+    } as Servicio,
+    pronostico,
+  };
+}
+
+export async function updateServicioPagoUseCase(
+  servicio: Servicio,
+  pago: PagoServicio,
+  input: ServicioPagoInput,
+  options: {
+    metodoPago?: MetodoPago | null;
+    isLatestPayment: boolean;
+  }
+) {
+  const { notaPrincipal, metodoPagoNombre, moneda, cicloPago } = normalizeServicioPagoInput(
+    input,
+    options.metodoPago,
+    pago.moneda || servicio.moneda
+  );
+
+  await updatePagoServicio(pago.id, {
+    fechaInicio: input.fechaInicio,
+    fechaVencimiento: input.fechaVencimiento,
+    monto: input.costo,
+    cicloPago,
+    metodoPagoId: input.metodoPagoId,
+    metodoPagoNombre,
+    moneda,
+    notas: notaPrincipal,
+  });
+
+  let servicioActualizado: Servicio | null = null;
+  if (options.isLatestPayment) {
+    await updateServicio(servicio.id, {
+      fechaInicio: input.fechaInicio,
+      fechaVencimiento: input.fechaVencimiento,
+      costoServicio: input.costo,
+      metodoPagoId: input.metodoPagoId || undefined,
+      metodoPagoNombre,
+      moneda,
+      cicloPago,
+    });
+
+    servicioActualizado = await getServicioById<Servicio>(servicio.id);
+  }
+
+  return { servicioActualizado };
+}
+
+export async function deleteServicioPagoUseCase(
+  servicio: Servicio,
+  pago: PagoServicio,
+  remainingPayments: PagoServicio[],
+  options: {
+    isLatestPayment: boolean;
+    fallbackMoneda?: string;
+  }
+) {
+  await removePagoServicio(pago.id);
+
+  const montoToRevertUSD = await currencyService.convertToUSD(
+    pago.monto ?? 0,
+    pago.moneda || options.fallbackMoneda || 'USD'
+  );
+  if (servicio.categoriaId) {
+    await adjustCategoriaGastos(servicio.categoriaId, -montoToRevertUSD);
+  }
+
+  let servicioActualizado: Servicio | null = null;
+  if (options.isLatestPayment && remainingPayments.length > 0) {
+    const anterior = remainingPayments[0];
+    await updateServicio(servicio.id, {
+      fechaInicio: anterior.fechaInicio,
+      fechaVencimiento: anterior.fechaVencimiento,
+      costoServicio: anterior.monto,
+      metodoPagoId: anterior.metodoPagoId || undefined,
+      cicloPago: anterior.cicloPago,
+    });
+
+    servicioActualizado = await getServicioById<Servicio>(servicio.id);
+  }
+
+  return { servicioActualizado };
 }
 
 export const resyncServicioReferenciasUseCase = resyncServiciosDenormalizedData;

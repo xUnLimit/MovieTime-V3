@@ -6,10 +6,10 @@ import { queryPagosVenta } from '@/lib/supabase/pagos-repository';
 import type { PagoVenta } from '@/types';
 
 /**
- * Hook para cargar los pagos de una venta especÃƒÂ­fica
+ * Hook para cargar los pagos de una venta específica
  *
  * @param ventaId - ID de la venta
- * @returns Pagos ordenados por fecha (mÃƒÂ¡s reciente primero), loading state, y count de renovaciones
+ * @returns Pagos ordenados por fecha (más reciente primero), loading state, y count de renovaciones
  */
 export function usePagosVenta(ventaId: string) {
   const [pagos, setPagos] = useState<PagoVenta[]>([]);
@@ -36,11 +36,11 @@ export function usePagosVenta(ventaId: string) {
 
         if (cancelled) return;
 
-        // Ordenar por fecha (mÃƒÂ¡s reciente primero)
+        // Ordenar por fecha (más reciente primero)
         const sorted = docs.sort((a, b) => {
           const dateA = a.fecha instanceof Date ? a.fecha : new Date(a.fecha);
           const dateB = b.fecha instanceof Date ? b.fecha : new Date(b.fecha);
-          return dateB.getTime() - dateA.getTime(); // MÃƒÂ¡s reciente primero
+          return dateB.getTime() - dateA.getTime(); // Más reciente primero
         });
 
         setPagos(sorted);

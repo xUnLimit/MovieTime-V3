@@ -15,25 +15,25 @@ interface TemplateEditorProps {
 }
 
 const TIPO_TEMPLATES: { value: TipoTemplate; label: string }[] = [
-  { value: 'notificacion_regular', label: 'NotificaciÃ³n Regular' },
-  { value: 'dia_pago', label: 'NotificaciÃ³n DÃ­a de Pago' },
-  { value: 'renovacion', label: 'NotificaciÃ³n de RenovaciÃ³n' },
-  { value: 'suscripcion', label: 'NotificaciÃ³n de SuscripciÃ³n' },
-  { value: 'cancelacion', label: 'CancelaciÃ³n de Servicio' },
+  { value: 'notificacion_regular', label: 'Notificación Regular' },
+  { value: 'dia_pago', label: 'Notificación Día de Pago' },
+  { value: 'renovacion', label: 'Notificación de Renovación' },
+  { value: 'suscripcion', label: 'Notificación de Suscripción' },
+  { value: 'cancelacion', label: 'Cancelación de Servicio' },
 ];
 
 const PLACEHOLDERS = [
-  { key: '{saludo}', description: 'El saludo (Buenos dÃ­as, tardes, etc.)', icon: User },
+  { key: '{saludo}', description: 'El saludo (Buenos días, tardes, etc.)', icon: User },
   { key: '{cliente}', description: 'El nombre completo del cliente', icon: User },
   { key: '{nombre_cliente}', description: 'El primer nombre del cliente', icon: User },
   { key: '{{#items}}\n...\n{{/items}}', description: 'Bloque repetible por item (escribe el contenido en el medio)', icon: Calendar },
   { key: '{items}', description: 'Lista de servicios en formato: *A*, *B* y *C*', icon: Calendar },
   { key: '{servicio}', description: 'El nombre del servicio', icon: Calendar },
-  { key: '{categoria}', description: 'La categorÃ­a del servicio', icon: Calendar },
+  { key: '{categoria}', description: 'La categoría del servicio', icon: Calendar },
   { key: '{perfil_nombre}', description: 'El nombre del perfil', icon: User },
-  { key: '{correo}', description: 'El correo electrÃ³nico del servicio', icon: Mail },
-  { key: '{contrasena}', description: 'La contraseÃ±a del servicio', icon: Lock },
-  { key: '{codigo}', description: 'El cÃ³digo de la venta', icon: Lock },
+  { key: '{correo}', description: 'El correo electrónico del servicio', icon: Mail },
+  { key: '{contrasena}', description: 'La contraseña del servicio', icon: Lock },
+  { key: '{codigo}', description: 'El código de la venta', icon: Lock },
   { key: '{vencimiento}', description: 'La fecha de vencimiento', icon: Calendar },
   { key: '{monto}', description: 'El monto a pagar', icon: DollarSign },
 ];
@@ -119,7 +119,7 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
                 <div>
                   <h2 className="text-lg font-semibold">Plantilla de {tipo.label}</h2>
                   <p className="text-sm text-muted-foreground">
-                    Edita el mensaje para notificar sobre vencimientos prÃ³ximos.
+                    Edita el mensaje para notificar sobre vencimientos próximos.
                   </p>
                 </div>
 
@@ -129,7 +129,7 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
                     <Textarea
                       value={contenido}
                       onChange={(e) => setContenido(e.target.value)}
-                      placeholder="Escribe aquÃ­ el contenido del mensaje..."
+                      placeholder="Escribe aquí el contenido del mensaje..."
                       className="h-[320px] text-sm leading-normal resize-none"
                     />
                   </div>
@@ -148,7 +148,7 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
                   <div>
                     <h3 className="text-lg font-semibold">Placeholders Disponibles</h3>
                     <p className="text-sm text-muted-foreground">
-                      Usa estos placeholders en tu mensaje. SerÃ¡n reemplazados por los valores reales.
+                      Usa estos placeholders en tu mensaje. Serán reemplazados por los valores reales.
                     </p>
                   </div>
 

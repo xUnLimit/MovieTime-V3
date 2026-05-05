@@ -105,7 +105,7 @@ function EditarVentaPageContent() {
         {venta ? (
           <VentasEditForm venta={venta} />
         ) : (
-          <p className="text-sm text-muted-foreground">No se encontrÃƒÂ³ la venta solicitada.</p>
+          <p className="text-sm text-muted-foreground">No se encontró la venta solicitada.</p>
         )}
       </div>
     </div>

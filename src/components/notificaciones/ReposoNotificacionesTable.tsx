@@ -69,13 +69,13 @@ function getEstadoBadge(diasRestantes: number) {
   if (diasRestantes <= 7) {
     return (
       <Badge variant="outline" className="border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300">
-        {diasRestantes} dÃ­a{diasRestantes !== 1 ? 's' : ''} restante{diasRestantes !== 1 ? 's' : ''}
+        {diasRestantes} día{diasRestantes !== 1 ? 's' : ''} restante{diasRestantes !== 1 ? 's' : ''}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="border-blue-500/40 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
-      {diasRestantes} dÃ­as restantes
+      {diasRestantes} días restantes
     </Badge>
   );
 }
@@ -143,7 +143,7 @@ export function ReposoNotificacionesTable() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por categorÃ­a o correo..."
+            placeholder="Buscar por categoría o correo..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
             className="pl-9"
@@ -156,8 +156,8 @@ export function ReposoNotificacionesTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos los estados</SelectItem>
-            <SelectItem value="en_reposo">En reposo (&gt;7 dÃ­as)</SelectItem>
-            <SelectItem value="proximos">PrÃ³ximos (â‰¤7 dÃ­as)</SelectItem>
+            <SelectItem value="en_reposo">En reposo (&gt;7 días)</SelectItem>
+            <SelectItem value="proximos">Próximos (≤7 días)</SelectItem>
             <SelectItem value="completado">Completado</SelectItem>
           </SelectContent>
         </Select>
@@ -173,7 +173,7 @@ export function ReposoNotificacionesTable() {
                   Tipo
                 </TableHead>
                 <TableHead className="h-12 px-4 text-center text-muted-foreground">
-                  CategorÃ­a
+                  Categoría
                 </TableHead>
                 <TableHead className="h-12 px-4 text-center text-muted-foreground">
                   Correo
@@ -218,7 +218,7 @@ export function ReposoNotificacionesTable() {
                               : `${bellColors.bgColor} ${bellColors.hoverBgColor}`
                           } hover:scale-105`}
                           onClick={() => toggleLeida(notif.id, !notif.leida)}
-                          title={notif.leida ? 'Marcar como no leÃ­da' : 'Marcar como leÃ­da'}
+                          title={notif.leida ? 'Marcar como no leída' : 'Marcar como leída'}
                         >
                           {notif.leida ? (
                             <BellOff className="h-4 w-4 transition-all duration-200 ease-in-out text-gray-400 dark:text-gray-500" />
@@ -228,14 +228,14 @@ export function ReposoNotificacionesTable() {
                         </Button>
                       </TableCell>
 
-                      {/* CategorÃ­a */}
+                      {/* Categoría */}
                       <TableCell className="p-4 text-center">
                         {notif.categoriaNombre}
                       </TableCell>
 
                       {/* Correo */}
                       <TableCell className="p-4 text-center text-sm">
-                        {notif.correo ?? 'â€”'}
+                        {notif.correo ?? '—'}
                       </TableCell>
 
                       {/* Fecha Inicio */}
@@ -254,7 +254,7 @@ export function ReposoNotificacionesTable() {
 
                       {/* Fecha Fin Reposo */}
                       <TableCell className="p-4 text-center text-sm">
-                        {notif.fechaFinReposo ? formatearFecha(notif.fechaFinReposo instanceof Date ? notif.fechaFinReposo.toISOString() : String(notif.fechaFinReposo)) : 'â€”'}
+                        {notif.fechaFinReposo ? formatearFecha(notif.fechaFinReposo instanceof Date ? notif.fechaFinReposo.toISOString() : String(notif.fechaFinReposo)) : '—'}
                       </TableCell>
 
                       {/* Estado */}
@@ -309,7 +309,7 @@ export function ReposoNotificacionesTable() {
 
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              PÃ¡gina {currentPage} de {Math.max(1, totalPages)}
+              Página {currentPage} de {Math.max(1, totalPages)}
             </span>
             <div className="flex gap-2">
               <Button
