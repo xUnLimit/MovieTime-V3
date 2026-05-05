@@ -255,7 +255,7 @@ function DataTableComponent<T extends Record<string, unknown>>({
 
           <div className="flex items-center justify-between sm:justify-end gap-4">
             <span className="text-sm text-muted-foreground">
-              Página {currentPage} de {totalPages}
+              PÃ¡gina {currentPage} de {totalPages}
             </span>
             <div className="flex gap-2">
               <Button

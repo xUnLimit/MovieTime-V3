@@ -55,10 +55,10 @@ export function AccionesServicioDialog({
 
   const estadoTexto =
     diasRestantes < 0
-      ? `${Math.abs(diasRestantes)} día${Math.abs(diasRestantes) !== 1 ? 's' : ''} vencido`
+      ? `${Math.abs(diasRestantes)} dÃ­a${Math.abs(diasRestantes) !== 1 ? 's' : ''} vencido`
       : diasRestantes === 0
         ? 'Vence hoy'
-        : `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`;
+        : `${diasRestantes} dÃ­a${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`;
 
   const handleConfirmar = async () => {
     setIsSubmitting(true);
@@ -97,7 +97,7 @@ export function AccionesServicioDialog({
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted">
                 <Scissors className="h-4 w-4 text-muted-foreground" />
               </div>
-              {'Cortar — Servicio'}
+              {'Cortar â€” Servicio'}
             </DialogTitle>
           </DialogHeader>
 
@@ -124,13 +124,13 @@ export function AccionesServicioDialog({
         <div className="px-6 py-4">
           {yaResaltada ? (
             <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">¿Qué acción deseas realizar?</p>
+              <p className="text-sm font-medium text-muted-foreground">Â¿QuÃ© acciÃ³n deseas realizar?</p>
               <RadioGroup
                 value={accion}
                 onValueChange={(v) => setAccion(v as 'cortar' | 'descartar')}
                 className="space-y-2"
               >
-                {/* Opción Cortar */}
+                {/* OpciÃ³n Cortar */}
                 <label
                   htmlFor="opt-cortar-sr"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -146,12 +146,12 @@ export function AccionesServicioDialog({
                       <span className="text-sm font-medium">Cortar servicio ahora</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Inactivar servicio + eliminar notificación
+                      Inactivar servicio + eliminar notificaciÃ³n
                     </p>
                   </div>
                 </label>
 
-                {/* Opción Descartar resaltado */}
+                {/* OpciÃ³n Descartar resaltado */}
                 <label
                   htmlFor="opt-descartar-sr"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -167,7 +167,7 @@ export function AccionesServicioDialog({
                       <span className="text-sm font-medium">Descartar resaltado</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Quita el resaltado naranja, la notificación vuelve a su estado normal
+                      Quita el resaltado naranja, la notificaciÃ³n vuelve a su estado normal
                     </p>
                   </div>
                 </label>
@@ -175,13 +175,13 @@ export function AccionesServicioDialog({
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">¿Qué acción deseas realizar?</p>
+              <p className="text-sm font-medium text-muted-foreground">Â¿QuÃ© acciÃ³n deseas realizar?</p>
               <RadioGroup
                 value={accion}
                 onValueChange={(v) => setAccion(v as 'cortar' | 'resaltar')}
                 className="space-y-2"
               >
-                {/* Opción Cortar */}
+                {/* OpciÃ³n Cortar */}
                 <label
                   htmlFor="opt-cortar-s"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -197,12 +197,12 @@ export function AccionesServicioDialog({
                       <span className="text-sm font-medium">Cortar servicio ahora</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Inactivar servicio + eliminar notificación
+                      Inactivar servicio + eliminar notificaciÃ³n
                     </p>
                   </div>
                 </label>
 
-                {/* Opción Resaltar */}
+                {/* OpciÃ³n Resaltar */}
                 <label
                   htmlFor="opt-resaltar-s"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -218,7 +218,7 @@ export function AccionesServicioDialog({
                       <span className="text-sm font-medium">Resaltar para seguimiento</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Marca la notificación en naranja para no perderla de vista
+                      Marca la notificaciÃ³n en naranja para no perderla de vista
                     </p>
                   </div>
                 </label>

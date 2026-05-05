@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
-import { memo, useEffect, useState, useRef } from "react";
-import { Categoria } from "@/types";
+import { memo, useEffect, useRef, useState } from "react";
+import { Calendar, Monitor } from "lucide-react";
+
 import { MetricCard } from "@/components/shared/MetricCard";
-import { Monitor, Calendar } from "lucide-react";
-import { queryDocuments, ENTITIES } from "@/lib/supabase/servicios-repository";
-import { Servicio } from "@/types";
+import { queryServicios } from '@/lib/supabase/servicios-repository';
+import { Categoria, Servicio } from "@/types";
 
 interface ServiciosCategoriaMetricsProps {
   categoria: Categoria | undefined;
@@ -27,17 +27,14 @@ export const ServiciosCategoriaMetrics = memo(
           const en7Dias = new Date();
           en7Dias.setDate(en7Dias.getDate() + 7);
 
-          const servicios = await queryDocuments<Servicio>(
-            ENTITIES.SERVICIOS,
-            [
-              { field: "categoriaId", operator: "==", value: categoria.id },
-              { field: "fechaVencimiento", operator: "<=", value: en7Dias },
-            ],
-          );
+          const servicios = await queryServicios<Servicio>([
+            { field: "categoriaId", operator: "==", value: categoria.id },
+            { field: "fechaVencimiento", operator: "<=", value: en7Dias },
+          ]);
 
           setProximosPagos(servicios.length);
         } catch (error) {
-          console.error("Error fetching próximos pagos:", error);
+          console.error("Error fetching prÃƒÂ³ximos pagos:", error);
           setProximosPagos(0);
         } finally {
           fetchingRef.current = false;
@@ -58,7 +55,7 @@ export const ServiciosCategoriaMetrics = memo(
             iconColor="text-blue-500"
           />
           <MetricCard
-            title="Próximos Pagos (7 días)"
+            title="PrÃƒÂ³ximos Pagos (7 dÃƒÂ­as)"
             value={0}
             icon={Calendar}
             underlineColor="bg-yellow-500"
@@ -81,7 +78,7 @@ export const ServiciosCategoriaMetrics = memo(
           iconColor="text-blue-500"
         />
         <MetricCard
-          title="Próximos Pagos (7 días)"
+          title="PrÃƒÂ³ximos Pagos (7 dÃƒÂ­as)"
           value={proximosPagos}
           icon={Calendar}
           underlineColor="bg-yellow-500"

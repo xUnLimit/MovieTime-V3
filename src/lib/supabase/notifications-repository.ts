@@ -2,19 +2,28 @@ import { supabase } from './client';
 import { toCamelCase } from './mappers';
 import { reviveDates, toNullableDateOnly } from './dates';
 import { snakeField } from './filters';
-import type { PublicViewName, QueryBuilder, QueryFilter } from './entities';
-
-export {
-  getAll,
-  getById,
-  queryDocuments,
-  getCount,
-  create,
-  update,
-  remove,
+import { ENTITIES, type PublicViewName, type QueryBuilder, type QueryFilter } from './entities';
+import {
+  getById as coreGetById,
+  queryDocuments as coreQueryDocuments,
+  getCount as coreGetCount,
+  create as coreCreate,
+  update as coreUpdate,
+  remove as coreRemove,
   logCacheHit,
 } from './record-core';
-export { ENTITIES } from './entities';
+
+export { logCacheHit };
+
+export const getNotificacionById = <T>(id: string) => coreGetById<T>(ENTITIES.NOTIFICACIONES, id);
+export const queryNotificaciones = <T>(filters: QueryFilter[] = []) =>
+  coreQueryDocuments<T>(ENTITIES.NOTIFICACIONES, filters);
+export const countNotificaciones = (filters: QueryFilter[] = []) => coreGetCount(ENTITIES.NOTIFICACIONES, filters);
+export const createNotificacion = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
+  coreCreate(ENTITIES.NOTIFICACIONES, payload);
+export const updateNotificacion = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
+  coreUpdate(ENTITIES.NOTIFICACIONES, id, payload);
+export const removeNotificacion = (id: string) => coreRemove(ENTITIES.NOTIFICACIONES, id);
 
 export async function queryNotifications<T>(filters: QueryFilter[]): Promise<T[]> {
   const entidad = filters.find((filter) => filter.field === 'entidad' && filter.operator === '==')

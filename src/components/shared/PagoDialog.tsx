@@ -35,9 +35,9 @@ const pagoDialogSchema = z.object({
   periodoRenovacion: z
     .string()
     .refine((v) => ['mensual', 'trimestral', 'semestral', 'anual'].includes(v), {
-      message: 'Seleccione el ciclo de facturación',
+      message: 'Seleccione el ciclo de facturaciÃ³n',
     }),
-  metodoPagoId: z.string().min(1, 'El método de pago es requerido'),
+  metodoPagoId: z.string().min(1, 'El mÃ©todo de pago es requerido'),
   costo: z.number().min(0, 'El costo debe ser mayor a 0'),
   descuento: z.number().min(0).max(100).optional(),
   fechaInicio: z.date(),
@@ -85,7 +85,7 @@ interface VentaDialogProps extends BaseProps {
   };
   pago?: {
     id?: string; // ID del pago (para editar)
-    descripcion?: string; // Descripción del pago (para logs)
+    descripcion?: string; // DescripciÃ³n del pago (para logs)
     metodoPagoId?: string | null;
     cicloPago?: 'mensual' | 'trimestral' | 'semestral' | 'anual' | null;
     precio: number;
@@ -200,7 +200,7 @@ export function PagoDialog(props: PagoDialogProps) {
   const metodoPagoSeleccionado = metodosPagoOrdenados.find((m) => m.id === metodoPagoIdValue);
   const metodoPagoDisplayName = isVenta
     ? getUsuarioMetodoPagoNombre(metodoPagoIdValue, metodoPagoSeleccionado?.nombre)
-    : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar método');
+    : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar mÃ©todo');
   const currencySymbol = getCurrencySymbol(getUsuarioMetodoPagoMoneda(metodoPagoIdValue, metodoPagoSeleccionado?.moneda));
   const costoNormalizado = roundToDecimals(Number(costoValue) || 0);
   const descuentoNumero = Number(descuentoValue) || 0;
@@ -286,7 +286,7 @@ export function PagoDialog(props: PagoDialogProps) {
     }
   }, [periodoValue, fechaInicioValue, setValue]);
 
-  // Generar vista previa del mensaje cuando notificarWhatsApp está activo
+  // Generar vista previa del mensaje cuando notificarWhatsApp estÃ¡ activo
   useEffect(() => {
     if (!isVenta || !notificarWhatsAppValue || isEdit) {
       setPreviewMessage('');
@@ -295,7 +295,7 @@ export function PagoDialog(props: PagoDialogProps) {
 
     const template = getTemplateByTipo('renovacion');
     if (!template) {
-      setPreviewMessage('Template de renovación no encontrado');
+      setPreviewMessage('Template de renovaciÃ³n no encontrado');
       return;
     }
 
@@ -306,7 +306,7 @@ export function PagoDialog(props: PagoDialogProps) {
         clienteNombre: props.clienteNombre || 'Cliente',
         clienteSoloNombre: props.clienteSoloNombre,
         servicioNombre: props.servicioNombre || 'Servicio',
-        categoriaNombre: props.categoriaNombre || 'Categoría',
+        categoriaNombre: props.categoriaNombre || 'CategorÃ­a',
         perfilNombre: props.perfilNombre || '',
         correo: props.correo || '',
         contrasena: props.contrasena || '',
@@ -364,7 +364,7 @@ export function PagoDialog(props: PagoDialogProps) {
   ]);
 
   const onSubmit = async (data: PagoDialogFormData) => {
-    // Agregar campos denormalizados del método de pago
+    // Agregar campos denormalizados del mÃ©todo de pago
     const metodoPago = metodosFiltrados.find(m => m.id === data.metodoPagoId);
     const costo = roundToDecimals(data.costo);
     const descuento = data.descuento === undefined ? undefined : roundToDecimals(data.descuento);
@@ -395,10 +395,10 @@ export function PagoDialog(props: PagoDialogProps) {
     : (isEdit ? `Editar pago del servicio: ${servicio?.nombre || ''}` : `Renovar Servicio: ${servicio?.nombre || ''}`);
   const description = isVenta
     ? (isEdit
-        ? 'Actualiza la información del pago seleccionado.'
+        ? 'Actualiza la informaciÃ³n del pago seleccionado.'
         : 'Registre un nuevo pago para esta venta para extender su fecha de vencimiento.')
     : (isEdit
-        ? `Corrija los datos del último pago registrado (${(pago as PagoServicio | null)?.descripcion ?? 'Pago'}) si se ingresó algo incorrecto.`
+        ? `Corrija los datos del Ãºltimo pago registrado (${(pago as PagoServicio | null)?.descripcion ?? 'Pago'}) si se ingresÃ³ algo incorrecto.`
         : 'Registre un nuevo pago para este servicio para extender su fecha de vencimiento.');
 
   const submitDisabled = isSubmitting || (!isVenta && isEdit && !hasChanges);
@@ -412,7 +412,7 @@ export function PagoDialog(props: PagoDialogProps) {
 
   const renderPeriodoField = () => (
     <div className="space-y-2">
-      <Label htmlFor="periodoRenovacion">Ciclo de facturación</Label>
+      <Label htmlFor="periodoRenovacion">Ciclo de facturaciÃ³n</Label>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -457,7 +457,7 @@ export function PagoDialog(props: PagoDialogProps) {
 
   const renderMetodoField = () => (
     <div className="space-y-2">
-      <Label htmlFor="metodoPagoId">Método de pago</Label>
+      <Label htmlFor="metodoPagoId">MÃ©todo de pago</Label>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -467,7 +467,7 @@ export function PagoDialog(props: PagoDialogProps) {
           >
             <span className="min-w-0 truncate text-left">{metodoPagoIdValue
               ? metodoPagoDisplayName
-              : 'Seleccionar método'}
+              : 'Seleccionar mÃ©todo'}
             </span>
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -510,7 +510,7 @@ export function PagoDialog(props: PagoDialogProps) {
           }}
           onChange={(e) => {
             const val = e.target.value.replace(',', '.');
-            // Permitir solo números decimales parciales válidos (ej: "10.", "10.5")
+            // Permitir solo nÃºmeros decimales parciales vÃ¡lidos (ej: "10.", "10.5")
             if (/^\d*\.?\d*$/.test(val)) {
               setCostoInput(val);
               const parsed = parseFloat(val);
@@ -556,7 +556,7 @@ export function PagoDialog(props: PagoDialogProps) {
           }}
           onChange={(e) => {
             const val = e.target.value.replace(',', '.');
-            // Permitir solo números decimales parciales válidos
+            // Permitir solo nÃºmeros decimales parciales vÃ¡lidos
             if (/^\d*\.?\d*$/.test(val)) {
               setDescuentoInput(val);
               const parsed = parseFloat(val);
@@ -734,7 +734,7 @@ export function PagoDialog(props: PagoDialogProps) {
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Confirmar Renovación
+                  Confirmar RenovaciÃ³n
                 </>
               )}
             </Button>

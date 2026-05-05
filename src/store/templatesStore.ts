@@ -1,10 +1,11 @@
+﻿import { createTemplate, ENTITIES, getTemplates, logCacheHit, removeTemplate, updateTemplate } from '@/lib/supabase/templates-repository';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { TemplateMensaje, TipoTemplate } from '@/types';
-import { getAll, create as createDoc, update, remove, ENTITIES, logCacheHit } from '@/lib/supabase/templates-repository';
+
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import type { TemplateMensaje, TipoTemplate } from '@/types';
 
 // Helper para obtener contexto de usuario
 function getLogContext() {
@@ -52,7 +53,7 @@ export const useTemplatesStore = create<TemplatesState>()(
 
           set({ isLoading: true, error: null });
           try {
-            const templates = await getAll<TemplateMensaje>(ENTITIES.TEMPLATES);
+            const templates = await getTemplates<TemplateMensaje>();
             set({ templates, isLoading: false, error: null, lastFetch: Date.now() });
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar templates';
@@ -63,7 +64,7 @@ export const useTemplatesStore = create<TemplatesState>()(
 
         createTemplate: async (templateData) => {
           try {
-            const id = await createDoc(ENTITIES.TEMPLATES, templateData as Omit<TemplateMensaje, 'id'>);
+            const id = await createTemplate(templateData as Omit<TemplateMensaje, 'id'>);
 
             const newTemplate: TemplateMensaje = {
               ...templateData,
@@ -95,7 +96,7 @@ export const useTemplatesStore = create<TemplatesState>()(
           const oldTemplate = get().templates.find(t => t.id === id);
 
           try {
-            await update(ENTITIES.TEMPLATES, id, updates);
+            await updateTemplate(id, updates);
 
             // Detectar cambios para el log
             const cambios = oldTemplate ? detectarCambios('template', oldTemplate, {
@@ -131,7 +132,7 @@ export const useTemplatesStore = create<TemplatesState>()(
           const templateEliminado = get().templates.find(t => t.id === id);
 
           try {
-            await remove(ENTITIES.TEMPLATES, id);
+            await removeTemplate(id);
 
             set((state) => ({
               templates: state.templates.filter((template) => template.id !== id)

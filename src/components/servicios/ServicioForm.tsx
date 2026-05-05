@@ -1,70 +1,68 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { addDays, addMonths } from "date-fns";
+import { CalendarIcon, ChevronDown, Users } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { toast } from "sonner";
-import { ChevronDown, Users, Calendar as CalendarIcon } from "lucide-react";
-import { formatearFecha } from "@/lib/utils/calculations";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useCategoriasStore } from "@/store/categoriasStore";
-import { useMetodosPagoStore } from "@/store/metodosPagoStore";
-import { useRouter } from "next/navigation";
-import { Servicio, MetodoPago } from "@/types";
-import { addMonths, addDays } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
-import { usePagosServicio } from "@/hooks/use-pagos-servicio";
-import { update, getCount, ENTITIES } from "@/lib/supabase/servicios-repository";
+import { updatePagoServicio } from '@/lib/supabase/servicios-repository';
+import { countVentas } from "@/lib/supabase/ventas-repository";
+import { formatearFecha } from "@/lib/utils/calculations";
 import {
   PROFILE_PREVIEW_FULL_RENDER_LIMIT,
   getProfilePreviewSample,
 } from "@/lib/utils/perfiles";
 import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
+import { usePagosServicio } from "@/hooks/use-pagos-servicio";
+import { useCategoriasStore } from "@/store/categoriasStore";
+import { useMetodosPagoStore } from "@/store/metodosPagoStore";
+import { useServiciosStore } from "@/store/serviciosStore";
+import type { MetodoPago, Servicio } from "@/types";
 
 const servicioSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  categoriaId: z.string().min(1, "Debe seleccionar una categoría"),
+  categoriaId: z.string().min(1, "Debe seleccionar una categorÃƒÂ­a"),
   tipoPlan: z.string().min(1, "Debe seleccionar un tipo de plan"),
-  correo: z.string().email("Por favor ingrese un correo electrónico válido"),
+  correo: z.string().email("Por favor ingrese un correo electrÃƒÂ³nico vÃƒÂ¡lido"),
   contrasena: z
     .string()
-    .min(6, "La contraseña debe tener al menos 6 caracteres"),
-  metodoPagoId: z.string().min(1, "Debe seleccionar un método de pago"),
+    .min(6, "La contraseÃƒÂ±a debe tener al menos 6 caracteres"),
+  metodoPagoId: z.string().min(1, "Debe seleccionar un mÃƒÂ©todo de pago"),
   costoServicio: z
     .string()
     .refine((val) => val !== "", "Por favor ingrese el costo del servicio")
-    .refine((val) => !isNaN(Number(val)), "El costo debe ser un valor numérico")
+    .refine((val) => !isNaN(Number(val)), "El costo debe ser un valor numÃƒÂ©rico")
     .refine((val) => Number(val) > 0, "El costo debe ser mayor a 0"),
   perfilesDisponibles: z
     .string()
-    .refine((val) => val !== "", "Por favor ingrese el número de perfiles")
-    .refine((val) => !isNaN(Number(val)), "Debe ingresar un valor numérico")
+    .refine((val) => val !== "", "Por favor ingrese el nÃƒÂºmero de perfiles")
+    .refine((val) => !isNaN(Number(val)), "Debe ingresar un valor numÃƒÂ©rico")
     .refine(
       (val) => Number(val) >= 1,
       "Debe tener al menos 1 perfil disponible",
     )
     .refine(
       (val) => Number.isInteger(Number(val)),
-      "El número de perfiles debe ser un valor entero",
+      "El nÃƒÂºmero de perfiles debe ser un valor entero",
     ),
   cicloPago: z.enum(["mensual", "trimestral", "semestral", "anual"]),
   fechaInicio: z.date(),
@@ -104,7 +102,7 @@ export function ServicioForm({
   // === Edit-specific state ===
   const isEditMode = !!servicio?.id;
 
-  // Pagos del servicio (solo en modo edición)
+  // Pagos del servicio (solo en modo ediciÃƒÂ³n)
   const { pagos: pagosServicio, refresh: refreshPagos } = usePagosServicio(
     servicio?.id ?? null,
   );
@@ -124,13 +122,13 @@ export function ServicioForm({
 
   useEffect(() => {
     if (!servicio?.id) return;
-    getCount(ENTITIES.VENTAS, [
+    countVentas([
       { field: "servicioId", operator: "==", value: servicio.id },
       { field: "estado", operator: "!=", value: "inactivo" },
     ]).then((count) => setPerfilesOcupadosReal(count));
   }, [servicio?.id]);
 
-  // Cargar solo métodos de pago para servicios al montar
+  // Cargar solo mÃƒÂ©todos de pago para servicios al montar
   useEffect(() => {
     const loadMetodosPago = async () => {
       const metodos = await fetchMetodosPagoServicios();
@@ -290,7 +288,7 @@ export function ServicioForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id, setValue]);
 
-  // Auto-limpiar errores solo para campos que no necesitan validación compleja
+  // Auto-limpiar errores solo para campos que no necesitan validaciÃƒÂ³n compleja
   useEffect(() => {
     if (nombreValue && nombreValue.length >= 2 && errors.nombre) {
       clearErrors("nombre");
@@ -356,13 +354,13 @@ export function ServicioForm({
   }, [perfilesDisponiblesValue, errors.perfilesDisponibles, clearErrors]);
 
   // Auto-calcular fecha de vencimiento cuando cambia el ciclo o la fecha de inicio
-  // Create mode: recalcular siempre excepto si se editó manualmente
-  // Edit mode: usar patrón cicloInicializado para no recalcular en la carga inicial
+  // Create mode: recalcular siempre excepto si se editÃƒÂ³ manualmente
+  // Edit mode: usar patrÃƒÂ³n cicloInicializado para no recalcular en la carga inicial
   useEffect(() => {
     if (!fechaInicioValue) return;
 
     if (isEditMode) {
-      // Edit mode: solo recalcular después de la inicialización
+      // Edit mode: solo recalcular despuÃƒÂ©s de la inicializaciÃƒÂ³n
       if (!cicloInicializado) return;
       const cicloChanged =
         lastCicloId !== null && lastCicloId !== cicloPagoValue;
@@ -498,7 +496,7 @@ export function ServicioForm({
 
       if (!tipoPlanSeleccionado) {
         setError("tipoPlan", {
-          message: "Seleccione un tipo de plan configurado para la categoría",
+          message: "Seleccione un tipo de plan configurado para la categorÃƒÂ­a",
         });
         return;
       }
@@ -553,14 +551,14 @@ export function ServicioForm({
 
         // Resincronizar perfilesOcupados si el contador estaba desfasado
         if (servicio.perfilesOcupados !== perfilesOcupadosReal) {
-          await update(ENTITIES.SERVICIOS, servicio.id, {
+          await updateServicio(servicio.id, {
             perfilesOcupados: perfilesOcupadosReal,
           });
         }
 
-        // Actualizar el último pago si existe (Single Source of Truth)
+        // Actualizar el ÃƒÂºltimo pago si existe (Single Source of Truth)
         if (ultimoPago && ultimoPago.id) {
-          await update(ENTITIES.PAGOS_SERVICIO, ultimoPago.id, {
+          await updatePagoServicio(ultimoPago.id, {
             fechaInicio: data.fechaInicio,
             fechaVencimiento: data.fechaVencimiento,
             monto: Number(data.costoServicio),
@@ -584,7 +582,7 @@ export function ServicioForm({
         });
       }
 
-      // Refrescar categorías y contadores de servicios para que se actualicen los widgets
+      // Refrescar categorÃƒÂ­as y contadores de servicios para que se actualicen los widgets
       await Promise.all([
         fetchCategorias(true),
         fetchCounts(true), // Force refresh para actualizar inmediatamente
@@ -617,7 +615,7 @@ export function ServicioForm({
       case "anual":
         return "Anual";
       default:
-        return "Seleccionar período";
+        return "Seleccionar perÃƒÂ­odo";
     }
   };
 
@@ -627,9 +625,9 @@ export function ServicioForm({
   );
 
   const categoriaNombre =
-    categoriaSeleccionada?.nombre ?? "Seleccionar categoría";
+    categoriaSeleccionada?.nombre ?? "Seleccionar categorÃƒÂ­a";
 
-  // Tipos de plan dinámicos según la categoría seleccionada
+  // Tipos de plan dinÃƒÂ¡micos segÃƒÂºn la categorÃƒÂ­a seleccionada
   const tiposPlanesDinamicos = useMemo(() => {
     return categoriaSeleccionada?.tiposPlanes || [];
   }, [categoriaSeleccionada]);
@@ -739,7 +737,7 @@ export function ServicioForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="categoria">Categoría</Label>
+              <Label htmlFor="categoria">CategorÃƒÂ­a</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -776,7 +774,7 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 2: Email / Contraseña */}
+          {/* Row 2: Email / ContraseÃƒÂ±a */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="correo">Email</Label>
@@ -792,12 +790,12 @@ export function ServicioForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contrasena">Contraseña</Label>
+              <Label htmlFor="contrasena">ContraseÃƒÂ±a</Label>
               <Input
                 id="contrasena"
                 type="text"
                 {...register("contrasena")}
-                placeholder="Ingrese la contraseña"
+                placeholder="Ingrese la contraseÃƒÂ±a"
               />
               {errors.contrasena && (
                 <p className="text-sm text-red-500">
@@ -807,10 +805,10 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 3: Método de Pago / Costo del servicio */}
+          {/* Row 3: MÃƒÂ©todo de Pago / Costo del servicio */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="metodoPago">Método de Pago</Label>
+              <Label htmlFor="metodoPago">MÃƒÂ©todo de Pago</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -879,7 +877,7 @@ export function ServicioForm({
                     if (e.ctrlKey || e.metaKey) {
                       return;
                     }
-                    // Solo permitir números y punto decimal
+                    // Solo permitir nÃƒÂºmeros y punto decimal
                     if (!/[0-9.]/.test(char)) {
                       e.preventDefault();
                     }
@@ -898,7 +896,7 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 4: Tipo de Plan / Ciclo de Facturación */}
+          {/* Row 4: Tipo de Plan / Ciclo de FacturaciÃƒÂ³n */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="tipoPlan">Tipo de Plan</Label>
@@ -919,7 +917,7 @@ export function ServicioForm({
                 >
                   {tiposPlanesDinamicos.length === 0 ? (
                     <DropdownMenuItem disabled>
-                      Selecciona una categoría con tipos de plan
+                      Selecciona una categorÃƒÂ­a con tipos de plan
                     </DropdownMenuItem>
                   ) : (
                     tiposPlanesDinamicos.map((tipo) => (
@@ -941,7 +939,7 @@ export function ServicioForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ciclo">Ciclo de Facturación</Label>
+              <Label htmlFor="ciclo">Ciclo de FacturaciÃƒÂ³n</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1070,10 +1068,10 @@ export function ServicioForm({
             </div>
           </div>
 
-          {/* Row 6: Número de perfiles / Estado */}
+          {/* Row 6: NÃƒÂºmero de perfiles / Estado */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="perfiles">Número de perfiles</Label>
+              <Label htmlFor="perfiles">NÃƒÂºmero de perfiles</Label>
               <Input
                 id="perfiles"
                 type="text"
@@ -1102,7 +1100,7 @@ export function ServicioForm({
                   if (e.ctrlKey || e.metaKey) {
                     return;
                   }
-                  // Solo permitir números (sin decimales)
+                  // Solo permitir nÃƒÂºmeros (sin decimales)
                   if (!/[0-9]/.test(char)) {
                     e.preventDefault();
                   }
@@ -1171,10 +1169,10 @@ export function ServicioForm({
             />
           </div>
 
-          {/* Duración del reposo */}
+          {/* DuraciÃƒÂ³n del reposo */}
           {estadoValue === "reposo" && (
             <div className="space-y-2">
-              <Label htmlFor="diasReposo">Duración del reposo</Label>
+              <Label htmlFor="diasReposo">DuraciÃƒÂ³n del reposo</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1182,7 +1180,7 @@ export function ServicioForm({
                     className="w-full justify-between"
                     type="button"
                   >
-                    {watch("diasReposo") || "28"} días
+                    {watch("diasReposo") || "28"} dÃƒÂ­as
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -1195,7 +1193,7 @@ export function ServicioForm({
                       key={d}
                       onClick={() => setValue("diasReposo", d.toString())}
                     >
-                      {d} días
+                      {d} dÃƒÂ­as
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -1209,7 +1207,7 @@ export function ServicioForm({
             <Textarea
               id="notas"
               {...register("notas")}
-              placeholder="Información adicional relevante..."
+              placeholder="InformaciÃƒÂ³n adicional relevante..."
               rows={6}
             />
           </div>
@@ -1235,7 +1233,7 @@ export function ServicioForm({
               <p className="text-sm text-muted-foreground">
                 {perfilesDisponiblesValue
                   ? `${Number(perfilesDisponiblesValue) || 0} de ${Number(perfilesDisponiblesValue) || 0} perfiles actualmente disponibles.`
-                  : "Ingrese el número de perfiles en la pestaña anterior."}
+                  : "Ingrese el nÃƒÂºmero de perfiles en la pestaÃƒÂ±a anterior."}
               </p>
             </div>
 
@@ -1279,7 +1277,7 @@ export function ServicioForm({
               </h4>
 
               <div className="space-y-3">
-                {/* Fila 1: Nombre del servicio / Categoría */}
+                {/* Fila 1: Nombre del servicio / CategorÃƒÂ­a */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
@@ -1291,7 +1289,7 @@ export function ServicioForm({
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      Categoría
+                      CategorÃƒÂ­a
                     </span>
                     <span className="font-medium">
                       {categoriaNombre || "Sin especificar"}
@@ -1319,7 +1317,7 @@ export function ServicioForm({
                   </div>
                 </div>
 
-                {/* Fila 3: Email de acceso / Contraseña */}
+                {/* Fila 3: Email de acceso / ContraseÃƒÂ±a */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
@@ -1331,7 +1329,7 @@ export function ServicioForm({
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      Contraseña
+                      ContraseÃƒÂ±a
                     </span>
                     <span className="font-medium text-sm">
                       {contrasenaValue || "Sin especificar"}
@@ -1339,17 +1337,17 @@ export function ServicioForm({
                   </div>
                 </div>
 
-                {/* Fila 4: Método de pago / Ciclo de facturación */}
+                {/* Fila 4: MÃƒÂ©todo de pago / Ciclo de facturaciÃƒÂ³n */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      Método de pago
+                      MÃƒÂ©todo de pago
                     </span>
                     <span className="font-medium">{metodoPagoDisplayName}</span>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">
-                      Ciclo de facturación
+                      Ciclo de facturaciÃƒÂ³n
                     </span>
                     <span className="font-medium">
                       {getCicloLabel(cicloPagoValue)}

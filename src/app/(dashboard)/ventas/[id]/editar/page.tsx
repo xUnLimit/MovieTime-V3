@@ -1,13 +1,14 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { VentasEditForm, VentaEditData } from '@/components/ventas/VentasEditForm';
+
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { ENTITIES, getById } from '@/lib/supabase/ventas-repository';
+import { Button } from '@/components/ui/button';
+import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
+import { getVentaById } from '@/lib/supabase/ventas-repository';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { VentaDoc } from '@/types';
 import { toast } from 'sonner';
@@ -20,7 +21,7 @@ function EditarVentaPageContent() {
   useEffect(() => {
     const loadVenta = async () => {
       try {
-        const doc = await getById<Record<string, unknown>>(ENTITIES.VENTAS, id);
+        const doc = await getVentaById<Record<string, unknown>>(id);
         if (!doc) {
           setVenta(null);
           return;
@@ -104,7 +105,7 @@ function EditarVentaPageContent() {
         {venta ? (
           <VentasEditForm venta={venta} />
         ) : (
-          <p className="text-sm text-muted-foreground">No se encontró la venta solicitada.</p>
+          <p className="text-sm text-muted-foreground">No se encontrÃƒÂ³ la venta solicitada.</p>
         )}
       </div>
     </div>

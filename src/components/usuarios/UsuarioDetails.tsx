@@ -1,26 +1,27 @@
-"use client";
+﻿"use client";
 
-import { Usuario } from "@/types";
+
+import { useEffect, useMemo, useState } from "react";
+import { differenceInCalendarDays } from "date-fns";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Copy,
+  MessageCircle,
+  Monitor,
+  MoreHorizontal,
+  RefreshCw,
+  ShoppingCart,
+  User,
+  XCircle,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  User,
-  MessageCircle,
-  Monitor,
-  Calendar,
-  Clock,
-  MoreHorizontal,
-  RefreshCw,
-  Copy,
-  AlertTriangle,
-  ShoppingCart,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
-import { differenceInCalendarDays } from "date-fns";
 import {
   Table,
   TableBody,
@@ -36,15 +37,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useVentasUsuario } from "@/hooks/use-ventas-usuario";
 import { getCurrencySymbol } from "@/lib/constants";
-import { queryDocuments, ENTITIES } from "@/lib/supabase/usuarios-repository";
+import { useVentasUsuario } from "@/hooks/use-ventas-usuario";
+import { queryServicios } from "@/lib/supabase/servicios-repository";
 import { formatearFecha, formatearFechaHora } from "@/lib/utils/calculations";
 import { toast } from "sonner";
 import { useVentasStore } from "@/store/ventasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { CambiarEstadoVentaDialog } from "./CambiarEstadoVentaDialog";
 import { getUsuarioMetodoPagoNombre } from "@/lib/utils/usuarioMetodoPago";
+import type { Usuario } from "@/types";
 
 interface UsuarioDetailsProps {
   usuario: Usuario;
@@ -77,7 +79,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
   };
 
   const handleCopy = async (value: string, label?: string) => {
-    if (!value || value === "—") return;
+    if (!value || value === "Ã¢â‚¬â€") return;
     try {
       await navigator.clipboard.writeText(value);
       toast.success(label ? `${label} copiado` : "Copiado al portapapeles");
@@ -101,7 +103,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
 
     const load = async () => {
       try {
-        // Chunks de 10 (limitación de 'in')
+        // Chunks de 10 (limitaciÃƒÂ³n de 'in')
         const chunks: string[][] = [];
         for (let i = 0; i < servicioIds.length; i += 10) {
           chunks.push(servicioIds.slice(i, i + 10));
@@ -109,7 +111,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
 
         const allServicios = await Promise.all(
           chunks.map((chunk) =>
-            queryDocuments<Record<string, unknown>>(ENTITIES.SERVICIOS, [
+            queryServicios<Record<string, unknown>>([
               { field: "__name__", operator: "in", value: chunk },
             ]),
           ),
@@ -120,8 +122,8 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
         const serviciosMap = allServicios.flat().reduce(
           (acc, s) => {
             acc[s.id as string] = {
-              correo: (s.correo as string) || "—",
-              contrasena: (s.contrasena as string) || "—",
+              correo: (s.correo as string) || "Ã¢â‚¬â€",
+              contrasena: (s.contrasena as string) || "Ã¢â‚¬â€",
               nombre: (s.nombre as string) || "Servicio",
             };
             return acc;
@@ -157,7 +159,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
       semestral: "Semestral",
       anual: "Anual",
     };
-    return ciclo ? labels[ciclo] || ciclo : "—";
+    return ciclo ? labels[ciclo] || ciclo : "Ã¢â‚¬â€";
   };
 
   const rows = useMemo(() => {
@@ -182,14 +184,14 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
 
       return {
         id: venta.id,
-        categoriaNombre: venta.categoriaNombre, // ← Denormalizado
+        categoriaNombre: venta.categoriaNombre, // Ã¢â€ Â Denormalizado
         servicioNombre: servicio?.nombre || venta.servicioNombre,
         servicioId: venta.servicioId,
         correo:
-          venta.servicioCorreo !== "—"
+          venta.servicioCorreo !== "Ã¢â‚¬â€"
             ? venta.servicioCorreo
-            : servicio?.correo || "—",
-        contrasena: servicio?.contrasena || "—",
+            : servicio?.correo || "Ã¢â‚¬â€",
+        contrasena: servicio?.contrasena || "Ã¢â‚¬â€",
         cicloPago: getCicloPagoLabel(venta.cicloPago),
         fechaInicio: venta.fechaInicio,
         fechaFin: venta.fechaFin,
@@ -219,7 +221,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
           : "Venta inactivada correctamente",
       );
     } catch {
-      toast.error("Ocurrió un error al cambiar el estado");
+      toast.error("OcurriÃƒÂ³ un error al cambiar el estado");
       throw new Error("cambio estado fallido");
     }
   };
@@ -262,7 +264,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
               </Badge>
             </div>
 
-            {/* Botón de WhatsApp */}
+            {/* BotÃƒÂ³n de WhatsApp */}
             <Button
               onClick={handleWhatsApp}
               className="w-full bg-green-700 hover:bg-green-800 text-white"
@@ -274,16 +276,16 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
           </div>
         </Card>
 
-        {/* Columna derecha: Información */}
+        {/* Columna derecha: InformaciÃƒÂ³n */}
         <div className="space-y-6">
-          {/* Información de Contacto */}
+          {/* InformaciÃƒÂ³n de Contacto */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold leading-none mb-3">
-              Información de Contacto
+              InformaciÃƒÂ³n de Contacto
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Teléfono</p>
+                <p className="text-sm text-muted-foreground mb-1">TelÃƒÂ©fono</p>
                 <p className="text-sm font-medium">{usuario.telefono}</p>
               </div>
               {usuario.email && (
@@ -295,15 +297,15 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
             </div>
           </Card>
 
-          {/* Información Adicional */}
+          {/* InformaciÃƒÂ³n Adicional */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold leading-none mb-3">
-              Información Adicional
+              InformaciÃƒÂ³n Adicional
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">
-                  Método de Pago
+                  MÃƒÂ©todo de Pago
                 </p>
                 <p className="text-sm font-medium">
                   {getUsuarioMetodoPagoNombre(
@@ -322,7 +324,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">
-                  Última actualización
+                  ÃƒÅ¡ltima actualizaciÃƒÂ³n
                 </p>
                 <p className="text-sm font-medium">
                   {formatearFechaHora(new Date(usuario.updatedAt))}
@@ -359,11 +361,11 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-muted-foreground">
-                    Categoría
+                    CategorÃƒÂ­a
                   </TableHead>
                   <TableHead className="text-muted-foreground">Email</TableHead>
                   <TableHead className="text-center text-muted-foreground">
-                    Contraseña
+                    ContraseÃƒÂ±a
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
                     Ciclo de Pago
@@ -372,7 +374,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                     Fecha de Inicio
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
-                    Fecha de Expiración
+                    Fecha de ExpiraciÃƒÂ³n
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
                     Monto Sin Consumir
@@ -381,7 +383,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                     Renovaciones
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
-                    Días Restantes
+                    DÃƒÂ­as Restantes
                   </TableHead>
                   <TableHead className="text-center text-muted-foreground">
                     Estado
@@ -430,7 +432,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() =>
-                            handleCopy(row.contrasena, "Contraseña")
+                            handleCopy(row.contrasena, "ContraseÃƒÂ±a")
                           }
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -449,7 +451,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                         <span className="font-medium">
                           {row.fechaInicio
                             ? formatearFecha(row.fechaInicio)
-                            : "—"}
+                            : "Ã¢â‚¬â€"}
                         </span>
                       </div>
                     </TableCell>
@@ -457,7 +459,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                       <div className="flex items-center justify-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">
-                          {row.fechaFin ? formatearFecha(row.fechaFin) : "—"}
+                          {row.fechaFin ? formatearFecha(row.fechaFin) : "Ã¢â‚¬â€"}
                         </span>
                       </div>
                     </TableCell>
@@ -490,14 +492,14 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                     </TableCell>
                     <TableCell className="text-center">
                       {row.estado === "Inactivo" ? (
-                        <span className="text-sm text-muted-foreground">—</span>
+                        <span className="text-sm text-muted-foreground">Ã¢â‚¬â€</span>
                       ) : row.diasRestantes < 0 ? (
                         <Badge
                           variant="outline"
                           className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 gap-1"
                         >
                           <AlertTriangle className="h-3 w-3 shrink-0" />
-                          {Math.abs(row.diasRestantes)} día
+                          {Math.abs(row.diasRestantes)} dÃƒÂ­a
                           {Math.abs(row.diasRestantes) !== 1 ? "s" : ""} de
                           retraso
                         </Badge>
@@ -513,7 +515,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                           variant="outline"
                           className="border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300"
                         >
-                          {row.diasRestantes} día
+                          {row.diasRestantes} dÃƒÂ­a
                           {row.diasRestantes !== 1 ? "s" : ""} restante
                           {row.diasRestantes !== 1 ? "s" : ""}
                         </Badge>
@@ -522,7 +524,7 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                           variant="outline"
                           className="border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
                         >
-                          {row.diasRestantes} días restantes
+                          {row.diasRestantes} dÃƒÂ­as restantes
                         </Badge>
                       )}
                     </TableCell>

@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Si ya está autenticado, redirigir al dashboard
+    // Si ya estÃ¡ autenticado, redirigir al dashboard
     if (isHydrated && isAuthenticated) {
       router.push('/dashboard');
     }
@@ -34,16 +34,16 @@ export default function LoginPage() {
     e.preventDefault();
 
     if (!email || !password) {
-      toast.error('Campos incompletos', { description: 'Por favor ingresa tu email y contraseña para continuar.' });
+      toast.error('Campos incompletos', { description: 'Por favor ingresa tu email y contraseÃ±a para continuar.' });
       return;
     }
 
     try {
       await login(email, password, rememberMe);
-      toast.success('Inicio de sesión exitoso', { description: 'Bienvenido de vuelta al sistema.' });
+      toast.success('Inicio de sesiÃ³n exitoso', { description: 'Bienvenido de vuelta al sistema.' });
       router.push('/dashboard');
     } catch (error) {
-      toast.error('Credenciales inválidas', { description: error instanceof Error ? error.message : undefined });
+      toast.error('Credenciales invÃ¡lidas', { description: error instanceof Error ? error.message : undefined });
     }
   };
 
@@ -53,14 +53,14 @@ export default function LoginPage() {
         <CardHeader className="space-y-1 text-center pb-4">
           <CardTitle className="text-xl font-semibold">Bienvenido</CardTitle>
           <CardDescription className="text-sm">
-            Inicia sesión con tu correo y contraseña
+            Inicia sesiÃ³n con tu correo y contraseÃ±a
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-normal">
-                Correo Electrónico
+                Correo ElectrÃ³nico
               </Label>
               <Input
                 id="email"
@@ -75,7 +75,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-normal">
-                Contraseña
+                ContraseÃ±a
               </Label>
               <div className="relative">
                 <Input
@@ -121,7 +121,7 @@ export default function LoginPage() {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Iniciando Sesión...' : 'Iniciar Sesión'}
+              {isLoading ? 'Iniciando SesiÃ³n...' : 'Iniciar SesiÃ³n'}
             </Button>
           </form>
         </CardContent>

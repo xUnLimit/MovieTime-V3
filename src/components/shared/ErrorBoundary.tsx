@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
-                <CardTitle className="text-red-600">Algo salió mal</CardTitle>
+                <CardTitle className="text-red-600">Algo saliÃ³ mal</CardTitle>
               </div>
               <CardDescription>
                 Ha ocurrido un error inesperado. Por favor, intenta nuevamente.

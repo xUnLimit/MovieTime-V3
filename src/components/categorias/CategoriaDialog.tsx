@@ -85,12 +85,12 @@ export function CategoriaDialog({
     try {
       if (categoria) {
         await updateCategoria(categoria.id, data);
-        toast.success("Categoría actualizada", {
+        toast.success("CategorÃ­a actualizada", {
           description:
-            "Los cambios en la categoría han sido guardados correctamente.",
+            "Los cambios en la categorÃ­a han sido guardados correctamente.",
         });
       } else {
-        // Inicializar campos denormalizados para nueva categoría
+        // Inicializar campos denormalizados para nueva categorÃ­a
         await createCategoria({
           ...data,
           totalServicios: 0,
@@ -100,13 +100,13 @@ export function CategoriaDialog({
           ingresosTotales: 0,
           gastosTotal: 0,
         });
-        toast.success("Categoría creada", {
-          description: "La nueva categoría ha sido registrada correctamente.",
+        toast.success("CategorÃ­a creada", {
+          description: "La nueva categorÃ­a ha sido registrada correctamente.",
         });
       }
       onOpenChange(false);
     } catch (error) {
-      toast.error("Error al guardar categoría", {
+      toast.error("Error al guardar categorÃ­a", {
         description: error instanceof Error ? error.message : undefined,
       });
     }
@@ -116,7 +116,7 @@ export function CategoriaDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{categoria ? "Editar" : "Nueva"} Categoría</DialogTitle>
+          <DialogTitle>{categoria ? "Editar" : "Nueva"} CategorÃ­a</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

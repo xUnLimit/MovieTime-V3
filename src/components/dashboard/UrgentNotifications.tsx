@@ -23,18 +23,18 @@ const priorityColors: Record<string, string> = {
 };
 
 const priorityLabels: Record<string, string> = {
-  '100_dias': '100 días',
-  '11_dias': '11 días',
-  '8_dias': '8 días',
-  '7_dias': '7 días',
-  '3_dias': '3 días',
-  '2_dias': '2 días',
-  '1_dia': '1 día',
+  '100_dias': '100 dÃ­as',
+  '11_dias': '11 dÃ­as',
+  '8_dias': '8 dÃ­as',
+  '7_dias': '7 dÃ­as',
+  '3_dias': '3 dÃ­as',
+  '2_dias': '2 dÃ­as',
+  '1_dia': '1 dÃ­a',
   vencido: 'Vencido',
 };
 
 export function UrgentNotifications({ notificaciones }: UrgentNotificationsProps) {
-  // Filtrar notificaciones urgentes no leídas
+  // Filtrar notificaciones urgentes no leÃ­das
   const urgentNotifications = notificaciones
     .filter((n) => !n.leida && ['100_dias', '11_dias', '8_dias', 'vencido'].includes(n.prioridad))
     .slice(0, 5);

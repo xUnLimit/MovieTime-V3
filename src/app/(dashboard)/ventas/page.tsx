@@ -1,19 +1,20 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
 import { ConfirmDeleteVentaDialog } from '@/components/shared/ConfirmDeleteVentaDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { VentasTable } from '@/components/ventas/VentasTable';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VentasMetrics } from '@/components/ventas/VentasMetrics';
+import { VentasTable } from '@/components/ventas/VentasTable';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { useVentasStore } from '@/store/ventasStore';
-import { useCategoriasStore } from '@/store/categoriasStore';
-import { toast } from 'sonner';
 import { ENTITIES } from '@/lib/supabase/ventas-repository';
+import { useCategoriasStore } from '@/store/categoriasStore';
+import { useVentasStore } from '@/store/ventasStore';
 import { normalizeSearchText } from '@/lib/utils';
 import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
@@ -35,7 +36,7 @@ function VentasPageContent() {
   const [deleteVentaPerfilNumero, setDeleteVentaPerfilNumero] = useState<number | null | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Construir filtros basados en el tab activo y categoría seleccionada
+  // Construir filtros basados en el tab activo y categorÃƒÂ­a seleccionada
   const filters = useMemo((): FilterOption[] => {
     const f: FilterOption[] = [];
     if (activeTab === 'activas') {
@@ -49,7 +50,7 @@ function VentasPageContent() {
     return f;
   }, [activeTab, isCategoriaFiltered, selectedCategoriaId]);
 
-  // Paginación server-side (solo cuando NO hay búsqueda activa)
+  // PaginaciÃƒÂ³n server-side (solo cuando NO hay bÃƒÂºsqueda activa)
   const { data: ventasPaginadas, isLoading: isLoadingPage, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<VentaDoc>({
     collectionName: ENTITIES.VENTAS,
     filters,
@@ -58,10 +59,10 @@ function VentasPageContent() {
     orderDirection: 'desc',
   });
 
-  // Cargar categorías al montar
+  // Cargar categorÃƒÂ­as al montar
   useEffect(() => { fetchCategorias(); }, [fetchCategorias]);
 
-  // Recargar ventas si se actualizó el nombre de un cliente desde el módulo de usuarios
+  // Recargar ventas si se actualizÃƒÂ³ el nombre de un cliente desde el mÃƒÂ³dulo de usuarios
   useEffect(() => {
     const handler = () => {
       fetchVentas(true);
@@ -71,7 +72,7 @@ function VentasPageContent() {
     return () => window.removeEventListener('usuario-nombre-updated', handler);
   }, [fetchVentas, refresh]);
 
-  // Modo búsqueda/filtro: fetchAll con cache y filtrar en memoria
+  // Modo bÃƒÂºsqueda/filtro: fetchAll con cache y filtrar en memoria
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   useEffect(() => {
     if (!isSearchMode) return;
@@ -114,7 +115,7 @@ function VentasPageContent() {
   const ventasParaMostrar = isSearchMode ? searchResults : ventasPaginadas;
   const isLoadingVentas = isSearchMode ? isLoadingSearch : isLoadingPage;
 
-  // Cargar datos del último pago desde PagoVenta
+  // Cargar datos del ÃƒÂºltimo pago desde PagoVenta
   const [ventasConUltimoPago, setVentasConUltimoPago] = useState<VentaConUltimoPago[]>([]);
   const [loadingDatos, setLoadingDatos] = useState(false);
 
@@ -130,7 +131,7 @@ function VentasPageContent() {
         const ventasConPagoActual = await getVentasConUltimoPago(ventasParaMostrar);
         setVentasConUltimoPago(ventasConPagoActual);
       } catch (error) {
-        console.error('Error cargando datos del último pago de ventas:', error);
+        console.error('Error cargando datos del ÃƒÂºltimo pago de ventas:', error);
         setVentasConUltimoPago(ventasParaMostrar as VentaConUltimoPago[]);
       } finally {
         setLoadingDatos(false);
@@ -167,7 +168,7 @@ function VentasPageContent() {
       setDeleteVentaServicioId(undefined);
       setDeleteVentaPerfilNumero(undefined);
       setDeleteDialogOpen(false);
-      // Refrescar la lista y las métricas después de eliminar
+      // Refrescar la lista y las mÃƒÂ©tricas despuÃƒÂ©s de eliminar
       refresh();
       fetchCounts();
     } catch (error) {
@@ -176,7 +177,7 @@ function VentasPageContent() {
     }
   };
 
-  // Escuchar eventos de cambios en ventas desde otros módulos
+  // Escuchar eventos de cambios en ventas desde otros mÃƒÂ³dulos
   useEffect(() => {
     const handleVentaChange = () => {
       refresh();
@@ -249,7 +250,7 @@ function VentasPageContent() {
             onCategoriaChange={(id) => { setSelectedCategoriaId(id); }}
             orderBy={orderBy}
             onOrderByChange={setOrderBy}
-            // Paginación (oculta en modo búsqueda/filtro)
+            // PaginaciÃƒÂ³n (oculta en modo bÃƒÂºsqueda/filtro)
             hasMore={isSearchMode ? false : hasMore}
             hasPrevious={isSearchMode ? false : hasPrevious}
             page={isSearchMode ? 1 : page}

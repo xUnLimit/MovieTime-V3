@@ -64,14 +64,14 @@ export function UserMenu() {
           {user.role === 'admin' && (
             <DropdownMenuItem onSelect={() => setConfiguracionOpen(true)}>
               <Settings className="mr-2 h-4 w-4" />
-              <span>Configuración</span>
+              <span>ConfiguraciÃ³n</span>
             </DropdownMenuItem>
           )}
 
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Cerrar sesión</span>
+            <span>Cerrar sesiÃ³n</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

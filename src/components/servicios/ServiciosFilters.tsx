@@ -48,10 +48,10 @@ export function ServiciosFilters({
 
       <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
         <SelectTrigger>
-          <SelectValue placeholder="Todas las categorías" />
+          <SelectValue placeholder="Todas las categorÃ­as" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todas las categorías</SelectItem>
+          <SelectItem value="all">Todas las categorÃ­as</SelectItem>
           {categorias.map((cat) => (
             <SelectItem key={cat.id} value={cat.id}>
               {cat.nombre}

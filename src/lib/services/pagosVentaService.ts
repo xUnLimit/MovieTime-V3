@@ -1,4 +1,4 @@
-import { create as createDoc, queryDocuments, ENTITIES } from '@/lib/supabase/pagos-repository';
+﻿import { createPagoVenta, queryPagosVenta } from '@/lib/supabase/pagos-repository';
 import { PagoVenta } from '@/types';
 
 /**
@@ -22,7 +22,7 @@ export async function crearPagoInicial(
   fechaInicio?: Date,
   fechaVencimiento?: Date
 ): Promise<string> {
-  const pagoId = await createDoc(ENTITIES.PAGOS_VENTA, {
+  const pagoId = await createPagoVenta({
     ventaId,
     clienteId,
     clienteNombre,
@@ -43,7 +43,7 @@ export async function crearPagoInicial(
 }
 
 /**
- * Crea un pago de renovación para una venta existente
+ * Crea un pago de renovaciÃƒÂ³n para una venta existente
  */
 export async function crearPagoRenovacion(
   ventaId: string,
@@ -61,7 +61,7 @@ export async function crearPagoRenovacion(
   precio?: number,          // Precio original
   descuento?: number        // Porcentaje de descuento
 ): Promise<string> {
-  const pagoId = await createDoc(ENTITIES.PAGOS_VENTA, {
+  const pagoId = await createPagoVenta({
     ventaId,
     clienteId,
     clienteNombre,
@@ -84,10 +84,10 @@ export async function crearPagoRenovacion(
 }
 
 /**
- * Obtiene todos los pagos de una venta específica
+ * Obtiene todos los pagos de una venta especÃƒÂ­fica
  */
 export async function obtenerPagosDeVenta(ventaId: string): Promise<PagoVenta[]> {
-  const pagos = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
+  const pagos = await queryPagosVenta<PagoVenta>([
     { field: 'ventaId', operator: '==', value: ventaId }
   ]);
 
@@ -103,12 +103,12 @@ export async function contarRenovacionesDeVenta(ventaId: string): Promise<number
 }
 
 /**
- * Obtiene los pagos de múltiples ventas (para dashboards/reportes)
+ * Obtiene los pagos de mÃƒÂºltiples ventas (para dashboards/reportes)
  */
 export async function obtenerPagosDeVariasVentas(ventaIds: string[]): Promise<PagoVenta[]> {
   if (ventaIds.length === 0) return [];
 
-  // Supabase .in() acepta max 10 valores — partir en chunks
+  // Supabase .in() acepta max 10 valores Ã¢â‚¬â€ partir en chunks
   const chunks: string[][] = [];
   for (let i = 0; i < ventaIds.length; i += 10) {
     chunks.push(ventaIds.slice(i, i + 10));
@@ -116,7 +116,7 @@ export async function obtenerPagosDeVariasVentas(ventaIds: string[]): Promise<Pa
 
   const allPagos = await Promise.all(
     chunks.map(chunk =>
-      queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
+      queryPagosVenta<PagoVenta>([
         { field: 'ventaId', operator: 'in', value: chunk },
       ])
     )

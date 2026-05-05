@@ -1,25 +1,40 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { differenceInDays, startOfDay, format } from "date-fns";
+import { differenceInDays, format, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import {
-  Clock,
   AlertTriangle,
   CheckCircle2,
+  Clock,
+  Eye,
+  MoreHorizontal,
   Power,
   RefreshCw,
-  Trash2,
   Search,
-  MoreHorizontal,
-  Eye,
+  Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
+import { MetricCard } from "@/components/shared/MetricCard";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { DataTable, type Column } from "@/components/shared/DataTable";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
+import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -27,33 +42,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MetricCard } from "@/components/shared/MetricCard";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  PagoDialog,
-  EnrichedPagoDialogFormData,
-} from "@/components/shared/PagoDialog";
-import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
-import { DataTable, Column } from "@/components/shared/DataTable";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useCategoriasStore } from "@/store/categoriasStore";
-import {
-  ENTITIES,
-  queryDocuments,
-  remove,
-  adjustCategoriaGastos,
-} from "@/lib/supabase/servicios-repository";
+import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
+import { queryNotificaciones, removeNotificacion } from "@/lib/supabase/notifications-repository";
+import { adjustCategoriaGastos, queryServicios } from '@/lib/supabase/servicios-repository';
 import { currencyService } from "@/lib/services/currencyService";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
+import { useCategoriasStore } from "@/store/categoriasStore";
+import { useServiciosStore } from "@/store/serviciosStore";
 import { crearPagoRenovacion } from "@/lib/services/pagosServicioService";
 import type { Servicio } from "@/types/servicios";
 import type { MetodoPago } from "@/types/metodos-pago";
@@ -110,7 +105,7 @@ function ServiciosReposoMetrics({ servicios }: { servicios: ReposoServicio[] }) 
         underlineColor="bg-blue-500"
       />
       <MetricCard
-        title="Próximos a Finalizar"
+        title="PrÃƒÂ³ximos a Finalizar"
         value={proximosFinalizar}
         icon={AlertTriangle}
         iconColor="text-yellow-500"
@@ -148,10 +143,9 @@ function ReposoPageContent() {
   const loadMetodosPago = useCallback(async () => {
     if (metodosPago.length > 0) return;
     try {
-      const methods = await queryDocuments<MetodoPago>(
-        ENTITIES.METODOS_PAGO,
-        [{ field: "asociadoA", operator: "==", value: "servicio" }],
-      );
+      const methods = await queryMetodosPago<MetodoPago>([
+        { field: "asociadoA", operator: "==", value: "servicio" },
+      ]);
       setMetodosPago(methods);
     } catch {
       setMetodosPago([]);
@@ -161,7 +155,7 @@ function ReposoPageContent() {
   const fetchReposoServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      const servicios = await queryDocuments<Servicio>(ENTITIES.SERVICIOS, [
+      const servicios = await queryServicios<Servicio>([
         { field: "enReposo", operator: "==", value: true },
       ]);
       const enriched = servicios.map(calcularReposoData);
@@ -203,15 +197,12 @@ function ReposoPageContent() {
 
   const limpiarNotificacionesReposo = async (servicioId: string) => {
     try {
-      const notifs = await queryDocuments<{ id: string }>(
-        ENTITIES.NOTIFICACIONES,
-        [
-          { field: "entidad", operator: "==", value: "reposo" },
-          { field: "servicioId", operator: "==", value: servicioId },
-        ],
-      );
+      const notifs = await queryNotificaciones<{ id: string }>([
+        { field: "entidad", operator: "==", value: "reposo" },
+        { field: "servicioId", operator: "==", value: servicioId },
+      ]);
       await Promise.all(
-        notifs.map((n) => remove(ENTITIES.NOTIFICACIONES, n.id)),
+        notifs.map((n) => removeNotificacion(n.id)),
       );
       fetchNotificaciones(true);
     } catch {
@@ -294,7 +285,7 @@ function ReposoPageContent() {
         notaPrincipal,
       );
 
-      // Increment gastosTotal on servicio and categoría (converted to USD)
+      // Increment gastosTotal on servicio and categorÃƒÂ­a (converted to USD)
       const costoUSD = await currencyService.convertToUSD(
         pagoData.costo,
         pagoData.moneda || "USD",
@@ -370,7 +361,7 @@ function ReposoPageContent() {
                   "dd 'de' MMMM 'del' yyyy",
                   { locale: es },
                 )
-              : "—"}
+              : "Ã¢â‚¬â€"}
           </span>
         ),
       },
@@ -387,7 +378,7 @@ function ReposoPageContent() {
                   "dd 'de' MMMM 'del' yyyy",
                   { locale: es },
                 )
-              : "—"}
+              : "Ã¢â‚¬â€"}
           </span>
         ),
       },
@@ -410,7 +401,7 @@ function ReposoPageContent() {
       },
       {
         key: "diasRestantes",
-        header: "Días Restantes",
+        header: "DÃƒÂ­as Restantes",
         sortable: true,
         align: "center",
         render: (item) => {
@@ -423,7 +414,7 @@ function ReposoPageContent() {
                 >
                   {item.diasRestantes <= 0
                     ? "Listo"
-                    : `${item.diasRestantes} día${item.diasRestantes !== 1 ? "s" : ""}`}
+                    : `${item.diasRestantes} dÃƒÂ­a${item.diasRestantes !== 1 ? "s" : ""}`}
                 </Badge>
               );
             case "proximo_finalizar":
@@ -432,7 +423,7 @@ function ReposoPageContent() {
                   variant="outline"
                   className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-semibold"
                 >
-                  {item.diasRestantes} día{item.diasRestantes !== 1 ? "s" : ""}
+                  {item.diasRestantes} dÃƒÂ­a{item.diasRestantes !== 1 ? "s" : ""}
                 </Badge>
               );
             default:
@@ -441,7 +432,7 @@ function ReposoPageContent() {
                   variant="outline"
                   className="border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold"
                 >
-                  {item.diasRestantes} días
+                  {item.diasRestantes} dÃƒÂ­as
                 </Badge>
               );
           }
@@ -636,7 +627,7 @@ function ReposoPageContent() {
         open={activarDialogOpen}
         onOpenChange={setActivarDialogOpen}
         title="Activar servicio"
-        description={`¿Estás seguro de activar "${selectedServicio?.nombre}"? El servicio saldrá de reposo y volverá a estar activo.`}
+        description={`Ã‚Â¿EstÃƒÂ¡s seguro de activar "${selectedServicio?.nombre}"? El servicio saldrÃƒÂ¡ de reposo y volverÃƒÂ¡ a estar activo.`}
         confirmText={isActivating ? "Activando..." : "Activar"}
         onConfirm={handleActivar}
         variant="info"
@@ -664,7 +655,7 @@ function ReposoPageContent() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title="Eliminar Servicio"
-        description={`¿Estás seguro de que quieres eliminar el servicio "${selectedServicio?.nombre}"? Esta acción no se puede deshacer.`}
+        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar el servicio "${selectedServicio?.nombre}"? Esta acciÃƒÂ³n no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       >
@@ -679,11 +670,11 @@ function ReposoPageContent() {
               htmlFor="delete-payments-reposo"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Eliminar también los registros de pago
+              Eliminar tambiÃƒÂ©n los registros de pago
             </Label>
             <p className="text-sm text-muted-foreground">
-              Al marcar esta opción, se eliminarán todos los registros de pago
-              de la base de datos. Si no se marca, se conservarán para
+              Al marcar esta opciÃƒÂ³n, se eliminarÃƒÂ¡n todos los registros de pago
+              de la base de datos. Si no se marca, se conservarÃƒÂ¡n para
               historial.
             </p>
           </div>

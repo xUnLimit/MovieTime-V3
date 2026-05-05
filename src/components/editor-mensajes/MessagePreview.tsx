@@ -43,7 +43,7 @@ export function MessagePreview({ open, onOpenChange, template }: MessagePreviewP
           <div>
             <h3 className="font-semibold mb-2">{template.nombre}</h3>
             <p className="text-sm text-muted-foreground">
-              Completa los placeholders para ver cómo se verá el mensaje final
+              Completa los placeholders para ver cÃ³mo se verÃ¡ el mensaje final
             </p>
           </div>
 

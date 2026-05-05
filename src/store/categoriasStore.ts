@@ -1,11 +1,12 @@
+﻿import { ENTITIES, logCacheHit } from '@/lib/supabase/categorias-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Categoria, Plan, TipoPlanConfig } from '@/types';
+
 import { supabase } from '@/lib/supabase/client';
-import { logCacheHit, ENTITIES } from '@/lib/supabase/categorias-repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import type { Categoria, Plan, TipoPlanConfig } from '@/types';
 
 function getLogContext() {
   const user = useAuthStore.getState().user;

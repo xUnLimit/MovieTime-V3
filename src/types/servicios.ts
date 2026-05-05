@@ -39,7 +39,7 @@ export interface Servicio {
   createdBy: string;
 }
 
-/** Registro de un pago/renovación del servicio para el historial */
+/** Registro de un pago/renovaciÃ³n del servicio para el historial */
 export interface PagoServicio {
   id: string;
   servicioId: string;
@@ -48,11 +48,11 @@ export interface PagoServicio {
   metodoPagoNombre?: string;  // Denormalizado de MetodoPago
   moneda?: string;
   isPagoInicial?: boolean;
-  /** Fecha en que se registró el pago */
+  /** Fecha en que se registrÃ³ el pago */
   fecha: Date;
-  /** "Pago inicial" o "Renovación #1", "Renovación #2", etc. */
+  /** "Pago inicial" o "RenovaciÃ³n #1", "RenovaciÃ³n #2", etc. */
   descripcion: string;
-  /** Ciclo de facturación de este pago (mensual, trimestral, semestral, anual) */
+  /** Ciclo de facturaciÃ³n de este pago (mensual, trimestral, semestral, anual) */
   cicloPago?: 'mensual' | 'trimestral' | 'semestral' | 'anual';
   fechaInicio: Date;
   fechaVencimiento: Date;

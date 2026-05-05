@@ -33,7 +33,7 @@ export const MetricCard = memo(function MetricCard({
   trend,
   loading = false,
 }: MetricCardProps) {
-  // Layout original con borde izquierdo — estado loading usa contenido invisible + skeleton absoluto
+  // Layout original con borde izquierdo â€” estado loading usa contenido invisible + skeleton absoluto
   if (loading) {
     return (
       <Card className={`py-3 gap-0 relative ${borderColor ? `border-l-4 ${borderColor}` : ''}`}>
@@ -59,7 +59,7 @@ export const MetricCard = memo(function MetricCard({
     );
   }
 
-  // Si tiene underlineColor, usa el layout con línea inferior
+  // Si tiene underlineColor, usa el layout con lÃ­nea inferior
   if (underlineColor) {
     return (
       <Card className="pt-3 pb-0 gap-0 overflow-hidden flex flex-col">

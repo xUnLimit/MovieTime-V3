@@ -1,14 +1,15 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { PagoVenta } from '@/types';
-import { queryDocuments, ENTITIES } from '@/lib/supabase/pagos-repository';
+
+import { queryPagosVenta } from '@/lib/supabase/pagos-repository';
+import type { PagoVenta } from '@/types';
 
 /**
- * Hook para cargar los pagos de una venta específica
+ * Hook para cargar los pagos de una venta especÃƒÂ­fica
  *
  * @param ventaId - ID de la venta
- * @returns Pagos ordenados por fecha (más reciente primero), loading state, y count de renovaciones
+ * @returns Pagos ordenados por fecha (mÃƒÂ¡s reciente primero), loading state, y count de renovaciones
  */
 export function usePagosVenta(ventaId: string) {
   const [pagos, setPagos] = useState<PagoVenta[]>([]);
@@ -29,17 +30,17 @@ export function usePagosVenta(ventaId: string) {
     const load = async () => {
       setIsLoading(true);
       try {
-        const docs = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
+        const docs = await queryPagosVenta<PagoVenta>([
           { field: 'ventaId', operator: '==', value: ventaId }
         ]);
 
         if (cancelled) return;
 
-        // Ordenar por fecha (más reciente primero)
+        // Ordenar por fecha (mÃƒÂ¡s reciente primero)
         const sorted = docs.sort((a, b) => {
           const dateA = a.fecha instanceof Date ? a.fecha : new Date(a.fecha);
           const dateB = b.fecha instanceof Date ? b.fecha : new Date(b.fecha);
-          return dateB.getTime() - dateA.getTime(); // Más reciente primero
+          return dateB.getTime() - dateA.getTime(); // MÃƒÂ¡s reciente primero
         });
 
         setPagos(sorted);

@@ -1,7 +1,7 @@
 import { CambioLog } from '@/types';
 
 /**
- * Configuración de campos trackeables por entidad
+ * ConfiguraciÃ³n de campos trackeables por entidad
  */
 const TRACKEABLE_FIELDS: Record<string, Record<string, { label: string; tipo: CambioLog['tipo'] }>> = {
   servicio: {
@@ -12,8 +12,8 @@ const TRACKEABLE_FIELDS: Record<string, Record<string, { label: string; tipo: Ca
     perfilesOcupados: { label: 'Perfiles Ocupados', tipo: 'number' },
     fechaVencimiento: { label: 'Fecha Vencimiento', tipo: 'date' },
     costoServicio: { label: 'Costo', tipo: 'money' },
-    categoriaNombre: { label: 'Categoría', tipo: 'string' },
-    metodoPagoNombre: { label: 'Método de Pago', tipo: 'string' },
+    categoriaNombre: { label: 'CategorÃ­a', tipo: 'string' },
+    metodoPagoNombre: { label: 'MÃ©todo de Pago', tipo: 'string' },
   },
   venta: {
     estado: { label: 'Estado', tipo: 'string' },
@@ -25,27 +25,27 @@ const TRACKEABLE_FIELDS: Record<string, Record<string, { label: string; tipo: Ca
   usuario: {
     nombre: { label: 'Nombre', tipo: 'string' },
     email: { label: 'Email', tipo: 'string' },
-    telefono: { label: 'Teléfono', tipo: 'string' },
+    telefono: { label: 'TelÃ©fono', tipo: 'string' },
     montoSinConsumir: { label: 'Monto Sin Consumir', tipo: 'money' },
     serviciosActivos: { label: 'Servicios Activos', tipo: 'number' },
   },
   cliente: {
     nombre: { label: 'Nombre', tipo: 'string' },
     email: { label: 'Email', tipo: 'string' },
-    telefono: { label: 'Teléfono', tipo: 'string' },
+    telefono: { label: 'TelÃ©fono', tipo: 'string' },
     montoSinConsumir: { label: 'Monto Sin Consumir', tipo: 'money' },
     serviciosActivos: { label: 'Servicios Activos', tipo: 'number' },
   },
   revendedor: {
     nombre: { label: 'Nombre', tipo: 'string' },
     email: { label: 'Email', tipo: 'string' },
-    telefono: { label: 'Teléfono', tipo: 'string' },
+    telefono: { label: 'TelÃ©fono', tipo: 'string' },
     montoSinConsumir: { label: 'Monto Sin Consumir', tipo: 'money' },
     serviciosActivos: { label: 'Servicios Activos', tipo: 'number' },
   },
   categoria: {
     nombre: { label: 'Nombre', tipo: 'string' },
-    descripcion: { label: 'Descripción', tipo: 'string' },
+    descripcion: { label: 'DescripciÃ³n', tipo: 'string' },
     tipoCategoria: { label: 'Tipo', tipo: 'string' },
   },
   metodo_pago: {

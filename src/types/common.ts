@@ -7,8 +7,8 @@ export type AccionLog = 'creacion' | 'actualizacion' | 'eliminacion' | 'renovaci
 export type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'usuario' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
 
 export interface CambioLog {
-  campo: string;        // Nombre del campo en español (ej: "Precio", "Estado")
-  campoKey: string;     // Key técnico del campo (ej: "precio", "estado")
+  campo: string;        // Nombre del campo en espaÃ±ol (ej: "Precio", "Estado")
+  campoKey: string;     // Key tÃ©cnico del campo (ej: "precio", "estado")
   anterior: unknown;    // Valor anterior
   nuevo: unknown;       // Valor nuevo
   tipo?: 'string' | 'number' | 'boolean' | 'date' | 'money' | 'object';  // Para formateo

@@ -32,7 +32,7 @@ const getCicloPagoLabel = (ciclo?: string | null) => {
     semestral: "Semestral",
     anual: "Anual",
   };
-  return ciclo ? labels[ciclo] || ciclo : "—";
+  return ciclo ? labels[ciclo] || ciclo : "â€”";
 };
 
 export const VentaPagosTable = memo(function VentaPagosTable({
@@ -86,9 +86,9 @@ export const VentaPagosTable = memo(function VentaPagosTable({
               <th className="text-left py-3 font-medium whitespace-nowrap">
                 Fecha de Pago
               </th>
-              <th className="text-left py-3 font-medium">Descripción</th>
+              <th className="text-left py-3 font-medium">DescripciÃ³n</th>
               <th className="text-left py-3 font-medium">
-                Ciclo de facturación
+                Ciclo de facturaciÃ³n
               </th>
               <th className="text-left py-3 font-medium whitespace-nowrap">
                 Fecha de Inicio
@@ -117,19 +117,19 @@ export const VentaPagosTable = memo(function VentaPagosTable({
                   className="border-b text-sm"
                 >
                   <td className="py-3 whitespace-nowrap">
-                    {pago.fecha ? formatearFecha(new Date(pago.fecha)) : "—"}
+                    {pago.fecha ? formatearFecha(new Date(pago.fecha)) : "â€”"}
                   </td>
                   <td className="py-3 font-medium">{pago.descripcion}</td>
                   <td className="py-3">{getCicloPagoLabel(pago.cicloPago)}</td>
                   <td className="py-3 whitespace-nowrap">
                     {pago.fechaInicio
                       ? formatearFecha(new Date(pago.fechaInicio))
-                      : "—"}
+                      : "â€”"}
                   </td>
                   <td className="py-3 whitespace-nowrap">
                     {pago.fechaVencimiento
                       ? formatearFecha(new Date(pago.fechaVencimiento))
-                      : "—"}
+                      : "â€”"}
                   </td>
                   <td className="py-3 text-center">
                     {rowCurrency} {pago.precio.toFixed(2)}
@@ -170,7 +170,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
                       </DropdownMenu>
                     ) : (
                       <div className="h-7 flex items-center justify-center text-muted-foreground">
-                        —
+                        â€”
                       </div>
                     )}
                   </td>

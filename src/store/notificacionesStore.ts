@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Notificaciones Store - Zustand
  *
  * Manages notification state and persistence
@@ -15,13 +15,8 @@
  */
 
 import { create } from 'zustand';
-import {
-  ENTITIES,
-  queryDocuments,
-  getCount,
-  update,
-  remove,
-} from '@/lib/supabase/notifications-repository';
+
+import { countNotificaciones, queryNotificaciones, removeNotificacion, updateNotificacion } from '@/lib/supabase/notifications-repository';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
 import { esNotificacionVenta, esNotificacionServicio, esNotificacionReposo } from '@/types/notificaciones';
 
@@ -89,7 +84,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     set({ isLoading: true, error: null });
 
     try {
-      const notificaciones = (await queryDocuments(ENTITIES.NOTIFICACIONES, [])) as (
+      const notificaciones = (await queryNotificaciones([])) as (
         Notificacion & { id: string }
       )[];
 
@@ -122,15 +117,15 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
   },
 
   /**
-   * Fetch count metrics using getCount() — free on Spark plan, 0 document reads
+   * Fetch count metrics using getCount() Ã¢â‚¬â€ free on Spark plan, 0 document reads
    */
   fetchCounts: async () => {
     try {
       const [totalNotificaciones, ventasProximas, serviciosProximas, reposoCompletados] = await Promise.all([
-        getCount(ENTITIES.NOTIFICACIONES),
-        getCount(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'venta' }]),
-        getCount(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'servicio' }]),
-        getCount(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'reposo' }]),
+        countNotificaciones(),
+        countNotificaciones([{ field: 'entidad', operator: '==', value: 'venta' }]),
+        countNotificaciones([{ field: 'entidad', operator: '==', value: 'servicio' }]),
+        countNotificaciones([{ field: 'entidad', operator: '==', value: 'reposo' }]),
       ]);
 
       set({
@@ -164,7 +159,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     set({ notificaciones: updatedNotifs });
 
     try {
-      await update(ENTITIES.NOTIFICACIONES, notifId, {
+      await updateNotificacion(notifId, {
         leida,
         updatedAt: new Date(),
       });
@@ -189,7 +184,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     set({ notificaciones: updatedNotifs });
 
     try {
-      await update(ENTITIES.NOTIFICACIONES, notifId, {
+      await updateNotificacion(notifId, {
         resaltada,
         updatedAt: new Date(),
       });
@@ -225,7 +220,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     });
 
     try {
-      await remove(ENTITIES.NOTIFICACIONES, notifId);
+      await removeNotificacion(notifId);
     } catch (error) {
       // Rollback on error
       set({
@@ -275,7 +270,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
       // Delete all notifications for this venta
       await Promise.all(
         notifsToDelete.map((n) =>
-          remove(ENTITIES.NOTIFICACIONES, n.id).catch((error) => {
+          removeNotificacion(n.id).catch((error) => {
             console.error(`[NotificacionesStore] Error deleting notif ${n.id}:`, error);
           })
         )
@@ -329,7 +324,7 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
       // Delete all notifications for this servicio
       await Promise.all(
         notifsToDelete.map((n) =>
-          remove(ENTITIES.NOTIFICACIONES, n.id).catch((error) => {
+          removeNotificacion(n.id).catch((error) => {
             console.error(`[NotificacionesStore] Error deleting notif ${n.id}:`, error);
           })
         )

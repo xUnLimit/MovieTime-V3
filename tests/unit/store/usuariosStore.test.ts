@@ -13,19 +13,23 @@ const fetchNotificacionesMock = vi.fn();
 const addLogMock = vi.fn();
 
 vi.mock('@/lib/supabase/usuarios-repository', () => ({
-  getAll: getAllMock,
-  getCount: getCountMock,
-  getById: getByIdMock,
-  create: createDocMock,
-  update: updateMock,
-  remove: removeMock,
-  queryDocuments: queryDocumentsMock,
+  getUsuarios: getAllMock,
+  countUsuarios: getCountMock,
+  getUsuarioById: getByIdMock,
+  createUsuario: createDocMock,
+  updateUsuario: updateMock,
+  removeUsuario: removeMock,
   logCacheHit: logCacheHitMock,
   ENTITIES: {
     USUARIOS: 'usuarios',
-    VENTAS: 'ventas',
-    PAGOS_VENTA: 'pagosVenta',
   },
+}));
+
+vi.mock('@/lib/supabase/ventas-repository', () => ({
+  queryVentas: queryDocumentsMock,
+  queryPagosVenta: queryDocumentsMock,
+  updateVenta: updateMock,
+  updatePagoVenta: updateMock,
 }));
 
 vi.mock('@/lib/services/dashboardStatsService', () => ({
@@ -120,10 +124,10 @@ describe('useUsuariosStore.updateUsuario', () => {
       telefono: '+507 6999-1111',
     });
 
-    expect(updateMock).toHaveBeenCalledWith('usuarios', 'cliente-1', {
+    expect(updateMock).toHaveBeenCalledWith('cliente-1', {
       telefono: '+507 6999-1111',
     });
-    expect(updateMock).toHaveBeenCalledWith('ventas', 'venta-1', {
+    expect(updateMock).toHaveBeenCalledWith('venta-1', {
       clienteTelefono: '+507 6999-1111',
     });
     expect(sincronizarNotificacionesForzadoMock).toHaveBeenCalledTimes(1);

@@ -107,7 +107,7 @@ export function TodosUsuariosTable({
 
   const selectedMetodoPagoLabel =
     metodoPagoOptions.find((option) => option.value === metodoPagoFilter)
-      ?.label ?? "Todos los métodos";
+      ?.label ?? "Todos los mÃ©todos";
 
   const handleDelete = (usuario: UsuarioDisplay) => {
     setUsuarioToDelete(usuario);
@@ -167,7 +167,7 @@ export function TodosUsuariosTable({
     },
     {
       key: "metodoPagoNombre",
-      header: "Método de Pago",
+      header: "MÃ©todo de Pago",
       sortable: false,
       align: "center",
       width: "16%",
@@ -250,7 +250,7 @@ export function TodosUsuariosTable({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nombre o teléfono..."
+              placeholder="Buscar por nombre o telÃ©fono..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-9"
@@ -355,7 +355,7 @@ export function TodosUsuariosTable({
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title={`Eliminar ${usuarioToDelete?.tipo || "Usuario"}`}
-        description={`¿Estás seguro de que quieres eliminar a "${usuarioToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        description={`Â¿EstÃ¡s seguro de que quieres eliminar a "${usuarioToDelete?.nombre}"? Esta acciÃ³n no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

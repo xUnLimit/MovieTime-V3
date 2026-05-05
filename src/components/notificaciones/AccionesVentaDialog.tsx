@@ -1,13 +1,13 @@
 /**
  * AccionesVentaDialog Component
  *
- * Modal de acciones para notificaciones de ventas según diseño v2.1
+ * Modal de acciones para notificaciones de ventas segÃºn diseÃ±o v2.1
  *
  * Flujo 1 - Venta NO Resaltada:
  *   Opciones: Cortar o Resaltar (RadioGroup)
  *
  * Flujo 2 - Venta YA Resaltada:
- *   Confirmación directa para cortar
+ *   ConfirmaciÃ³n directa para cortar
  */
 
 'use client';
@@ -68,10 +68,10 @@ export function AccionesVentaDialog({
 
   const estadoTexto =
     diasRestantes < 0
-      ? `${Math.abs(diasRestantes)} día${Math.abs(diasRestantes) !== 1 ? 's' : ''} vencida`
+      ? `${Math.abs(diasRestantes)} dÃ­a${Math.abs(diasRestantes) !== 1 ? 's' : ''} vencida`
       : diasRestantes === 0
         ? 'Vence hoy'
-        : `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`;
+        : `${diasRestantes} dÃ­a${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`;
 
   const handleConfirmar = async () => {
     setIsSubmitting(true);
@@ -110,7 +110,7 @@ export function AccionesVentaDialog({
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted">
                 <Scissors className="h-4 w-4 text-muted-foreground" />
               </div>
-              {'Cortar — Venta'}
+              {'Cortar â€” Venta'}
             </DialogTitle>
           </DialogHeader>
 
@@ -136,15 +136,15 @@ export function AccionesVentaDialog({
         {/* Cuerpo del modal */}
         <div className="px-6 py-4">
           {yaResaltada ? (
-            // Flujo 2: Resaltada — elegir entre Cortar o Descartar resaltado
+            // Flujo 2: Resaltada â€” elegir entre Cortar o Descartar resaltado
             <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">¿Qué acción deseas realizar?</p>
+              <p className="text-sm font-medium text-muted-foreground">Â¿QuÃ© acciÃ³n deseas realizar?</p>
               <RadioGroup
                 value={accion}
                 onValueChange={(v) => setAccion(v as 'cortar' | 'descartar')}
                 className="space-y-2"
               >
-                {/* Opción Cortar */}
+                {/* OpciÃ³n Cortar */}
                 <label
                   htmlFor="opt-cortar-r"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -160,12 +160,12 @@ export function AccionesVentaDialog({
                       <span className="text-sm font-medium">Cortar venta ahora</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Inactivar venta + liberar perfil + eliminar notificación
+                      Inactivar venta + liberar perfil + eliminar notificaciÃ³n
                     </p>
                   </div>
                 </label>
 
-                {/* Opción Descartar resaltado */}
+                {/* OpciÃ³n Descartar resaltado */}
                 <label
                   htmlFor="opt-descartar"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -181,22 +181,22 @@ export function AccionesVentaDialog({
                       <span className="text-sm font-medium">Descartar resaltado</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Quita el resaltado naranja, la notificación vuelve a su estado normal
+                      Quita el resaltado naranja, la notificaciÃ³n vuelve a su estado normal
                     </p>
                   </div>
                 </label>
               </RadioGroup>
             </div>
           ) : (
-            // Flujo 1: Normal — elegir entre Cortar o Resaltar
+            // Flujo 1: Normal â€” elegir entre Cortar o Resaltar
             <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">¿Qué acción deseas realizar?</p>
+              <p className="text-sm font-medium text-muted-foreground">Â¿QuÃ© acciÃ³n deseas realizar?</p>
               <RadioGroup
                 value={accion}
                 onValueChange={(v) => setAccion(v as 'cortar' | 'resaltar')}
                 className="space-y-2"
               >
-                {/* Opción Cortar */}
+                {/* OpciÃ³n Cortar */}
                 <label
                   htmlFor="opt-cortar"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -212,12 +212,12 @@ export function AccionesVentaDialog({
                       <span className="text-sm font-medium">Cortar venta ahora</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Inactivar venta + liberar perfil + eliminar notificación
+                      Inactivar venta + liberar perfil + eliminar notificaciÃ³n
                     </p>
                   </div>
                 </label>
 
-                {/* Opción Resaltar */}
+                {/* OpciÃ³n Resaltar */}
                 <label
                   htmlFor="opt-resaltar"
                   className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
@@ -233,7 +233,7 @@ export function AccionesVentaDialog({
                       <span className="text-sm font-medium">Resaltar para seguimiento</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Marca la notificación en naranja para no perderla de vista
+                      Marca la notificaciÃ³n en naranja para no perderla de vista
                     </p>
                   </div>
                 </label>

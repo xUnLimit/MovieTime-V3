@@ -1,20 +1,19 @@
-/**
- * Servicio centralizado para manejar la relación entre Ventas y PagosVenta
+﻿/**
+ * Servicio centralizado para manejar la relaciÃƒÂ³n entre Ventas y PagosVenta
  *
  * ARQUITECTURA: Single Source of Truth
- * - PagoVenta (más reciente) = fuente de verdad para datos actuales
+ * - PagoVenta (mÃƒÂ¡s reciente) = fuente de verdad para datos actuales
  * - VentaDoc = solo metadatos y referencias (no duplica datos de pago)
  */
 
-import { queryDocuments } from '@/lib/supabase/ventas-repository';
-import { ENTITIES } from '@/lib/supabase/ventas-repository';
+import { queryPagosVenta } from '@/lib/supabase/ventas-repository';
 import { VentaDoc, PagoVenta } from '@/types';
 
 /**
- * Tipo extendido que combina VentaDoc con datos del último pago (más reciente)
+ * Tipo extendido que combina VentaDoc con datos del ÃƒÂºltimo pago (mÃƒÂ¡s reciente)
  */
 export interface VentaConUltimoPago extends VentaDoc {
-  // Datos del último pago (vienen del pago más reciente, NO de VentaDoc)
+  // Datos del ÃƒÂºltimo pago (vienen del pago mÃƒÂ¡s reciente, NO de VentaDoc)
   precio: number;
   descuento: number;
   precioFinal: number;
@@ -26,11 +25,11 @@ export interface VentaConUltimoPago extends VentaDoc {
 }
 
 /**
- * Obtiene una venta con los datos de su último pago (más reciente)
+ * Obtiene una venta con los datos de su ÃƒÂºltimo pago (mÃƒÂ¡s reciente)
  *
  * @param venta - Documento de venta base
  * @param pagos - Array de pagos de la venta (opcional, si no se provee se consulta)
- * @returns Venta con datos del último pago
+ * @returns Venta con datos del ÃƒÂºltimo pago
  */
 export async function getVentaConUltimoPago(
   venta: VentaDoc,
@@ -39,12 +38,12 @@ export async function getVentaConUltimoPago(
   // Si no se proveen los pagos, consultarlos
   let pagosList = pagos;
   if (!pagosList) {
-    pagosList = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
+    pagosList = await queryPagosVenta<PagoVenta>([
       { field: 'ventaId', operator: '==', value: venta.id }
     ]);
   }
 
-  // Ordenar por fechaVencimiento descendente para encontrar el pago vigente (más reciente)
+  // Ordenar por fechaVencimiento descendente para encontrar el pago vigente (mÃƒÂ¡s reciente)
   const sorted = pagosList.sort((a, b) => {
     // Manejar casos donde fechaVencimiento puede ser undefined/null
     const dateA = a.fechaVencimiento
@@ -78,7 +77,7 @@ export async function getVentaConUltimoPago(
     };
   }
 
-  // Combinar venta con datos del pago más reciente
+  // Combinar venta con datos del pago mÃƒÂ¡s reciente
   return {
     ...venta,
     precio: pagoMasReciente.precio ?? pagoMasReciente.monto,
@@ -96,11 +95,11 @@ export async function getVentaConUltimoPago(
 }
 
 /**
- * Obtiene múltiples ventas con los datos de su último pago
+ * Obtiene mÃƒÂºltiples ventas con los datos de su ÃƒÂºltimo pago
  * Optimizado para cargar pagos en batch
  *
  * @param ventas - Array de ventas
- * @returns Array de ventas con datos del último pago
+ * @returns Array de ventas con datos del ÃƒÂºltimo pago
  */
 export async function getVentasConUltimoPago(
   ventas: VentaDoc[]
@@ -118,7 +117,7 @@ export async function getVentasConUltimoPago(
 
   const allPagos = await Promise.all(
     chunks.map(chunk =>
-      queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
+      queryPagosVenta<PagoVenta>([
         { field: 'ventaId', operator: 'in', value: chunk },
       ])
     )
@@ -133,12 +132,12 @@ export async function getVentasConUltimoPago(
     pagosPorVenta.set(pago.ventaId, [...existing, pago]);
   });
 
-  // Combinar cada venta con su pago más reciente
+  // Combinar cada venta con su pago mÃƒÂ¡s reciente
   return ventas.map(venta => {
     const pagosVenta = pagosPorVenta.get(venta.id) ?? [];
     const renovaciones = pagosVenta.filter(p => p.isPagoInicial === false).length;
 
-    // Ordenar por fechaVencimiento descendente para encontrar el pago vigente (más reciente)
+    // Ordenar por fechaVencimiento descendente para encontrar el pago vigente (mÃƒÂ¡s reciente)
     const sorted = pagosVenta.sort((a, b) => {
       const dateA = a.fechaVencimiento
         ? (a.fechaVencimiento instanceof Date ? a.fechaVencimiento : new Date(a.fechaVencimiento))

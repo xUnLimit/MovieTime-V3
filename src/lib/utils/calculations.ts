@@ -15,7 +15,7 @@ export function calcularFechaVencimiento(
 }
 
 /**
- * Calcula el porcentaje de consumo de una suscripción basado en fechas
+ * Calcula el porcentaje de consumo de una suscripciÃ³n basado en fechas
  */
 export function calcularConsumo(
   fechaInicio: Date,
@@ -33,7 +33,7 @@ export function calcularConsumo(
 }
 
 /**
- * Calcula el monto restante de una suscripción
+ * Calcula el monto restante de una suscripciÃ³n
  */
 export function calcularMontoRestante(
   montoTotal: number,
@@ -43,8 +43,8 @@ export function calcularMontoRestante(
 }
 
 /**
- * Calcula el monto sin consumir de una venta basado en días calendar
- * Usa differenceInCalendarDays para consistencia con módulo de Usuarios
+ * Calcula el monto sin consumir de una venta basado en dÃ­as calendar
+ * Usa differenceInCalendarDays para consistencia con mÃ³dulo de Usuarios
  */
 export function calcularMontoSinConsumir(
   fechaInicio: Date,
@@ -53,7 +53,7 @@ export function calcularMontoSinConsumir(
 ): number {
   const hoy = new Date();
 
-  // Calcular días usando differenceInCalendarDays (días completos)
+  // Calcular dÃ­as usando differenceInCalendarDays (dÃ­as completos)
   const totalDias = Math.max(differenceInCalendarDays(fechaFin, fechaInicio), 0);
   const diasRestantes = Math.max(differenceInCalendarDays(fechaFin, hoy), 0);
 
@@ -67,7 +67,7 @@ export function calcularMontoSinConsumir(
 }
 
 /**
- * Determina el estado de una suscripción basado en fecha de vencimiento
+ * Determina el estado de una suscripciÃ³n basado en fecha de vencimiento
  */
 export function calcularEstadoSuscripcion(fechaVencimiento: Date): EstadoSuscripcion {
   const hoy = new Date();
@@ -86,7 +86,7 @@ export function calcularDiasRelativosCalendario(
 }
 
 /**
- * Calcula los días de retraso de una suscripción vencida
+ * Calcula los dÃ­as de retraso de una suscripciÃ³n vencida
  */
 export function calcularDiasRetraso(fechaVencimiento: Date): number {
   const dias = calcularDiasRelativosCalendario(fechaVencimiento);
@@ -94,7 +94,7 @@ export function calcularDiasRetraso(fechaVencimiento: Date): number {
 }
 
 /**
- * Calcula días restantes hasta el vencimiento
+ * Calcula dÃ­as restantes hasta el vencimiento
  */
 export function calcularDiasRestantes(fechaVencimiento: Date): number {
   const dias = calcularDiasRelativosCalendario(fechaVencimiento);
@@ -102,7 +102,7 @@ export function calcularDiasRestantes(fechaVencimiento: Date): number {
 }
 
 /**
- * Formatea un número como moneda USD
+ * Formatea un nÃºmero como moneda USD
  */
 export function formatearMoneda(monto: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -113,7 +113,7 @@ export function formatearMoneda(monto: number): string {
 }
 
 /**
- * Redondea números decimales para evitar ruido de coma flotante en montos y porcentajes.
+ * Redondea nÃºmeros decimales para evitar ruido de coma flotante en montos y porcentajes.
  */
 export function roundToDecimals(value: number, decimals = 2): number {
   const factor = 10 ** decimals;
@@ -121,7 +121,7 @@ export function roundToDecimals(value: number, decimals = 2): number {
 }
 
 /**
- * Calcula un monto final después de descuento y lo normaliza a 2 decimales.
+ * Calcula un monto final despuÃ©s de descuento y lo normaliza a 2 decimales.
  */
 export function calculateDiscountedAmount(baseAmount: number, discountPercentage = 0): number {
   return roundToDecimals(Math.max(baseAmount * (1 - discountPercentage / 100), 0));
@@ -186,7 +186,7 @@ export function calcularCostoServicio(
 }
 
 /**
- * Calcula la comisión de un revendedor
+ * Calcula la comisiÃ³n de un revendedor
  */
 export function calcularComision(
   monto: number,
@@ -207,7 +207,7 @@ export function calcularRentabilidad(
 }
 
 /**
- * Determina el color del badge según estado de suscripción
+ * Determina el color del badge segÃºn estado de suscripciÃ³n
  */
 export function getColorEstado(estado: EstadoSuscripcion): string {
   const colores: Record<EstadoSuscripcion, string> = {
@@ -221,7 +221,7 @@ export function getColorEstado(estado: EstadoSuscripcion): string {
 }
 
 /**
- * Determina el color del badge según días de retraso
+ * Determina el color del badge segÃºn dÃ­as de retraso
  */
 export function getColorDiasRetraso(dias: number): string {
   if (dias >= 100) return 'bg-red-600';
@@ -235,11 +235,11 @@ export function getColorDiasRetraso(dias: number): string {
 }
 
 /**
- * Obtiene el texto descriptivo de días de retraso
+ * Obtiene el texto descriptivo de dÃ­as de retraso
  */
 export function getTextoDiasRetraso(dias: number): string {
-  if (dias >= 100) return `${dias} días vencido`;
-  if (dias >= 1) return `${dias} días para vencer`;
+  if (dias >= 100) return `${dias} dÃ­as vencido`;
+  if (dias >= 1) return `${dias} dÃ­as para vencer`;
   return 'Activo';
 }
 
@@ -266,7 +266,7 @@ export function deriveTopLevelFromPagos(pagos: Array<{
   const latest = sorted[0];
   return {
     metodoPagoId: latest.metodoPagoId ?? null,
-    metodoPagoNombre: latest.metodoPagoNombre ?? 'Sin método',
+    metodoPagoNombre: latest.metodoPagoNombre ?? 'Sin mÃ©todo',
     moneda: latest.moneda ?? 'USD',
     cicloPago: latest.cicloPago ?? null,
     fechaInicio: latest.fechaInicio ?? null,

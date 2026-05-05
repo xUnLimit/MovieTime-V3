@@ -21,7 +21,7 @@ function CategoriasPageContent() {
     fetchCounts();
   }, [fetchCategorias, fetchCounts]);
 
-  // Escuchar cuando se elimina una categoría desde otra página
+  // Escuchar cuando se elimina una categorÃ­a desde otra pÃ¡gina
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'categoria-deleted') {
@@ -48,15 +48,15 @@ function CategoriasPageContent() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categorías</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">CategorÃ­as</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Categorías</span>
+            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">CategorÃ­as</span>
           </p>
         </div>
         <Link href="/categorias/crear" className="self-start sm:self-auto">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Nueva Categoría
+            Nueva CategorÃ­a
           </Button>
         </Link>
       </div>
@@ -88,21 +88,21 @@ function CategoriasPageContent() {
         <TabsContent value="todos" className="space-y-4">
           <TodasCategoriasTable
             categorias={categorias}
-            title="Todas las categorías"
+            title="Todas las categorÃ­as"
           />
         </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">
           <ClientesCategoriasTable
             categorias={categorias}
-            title="Categorías de Clientes"
+            title="CategorÃ­as de Clientes"
           />
         </TabsContent>
 
         <TabsContent value="revendedores" className="space-y-4">
           <RevendedoresCategoriasTable
             categorias={categorias}
-            title="Categorías de Revendedores"
+            title="CategorÃ­as de Revendedores"
           />
         </TabsContent>
       </Tabs>
@@ -112,7 +112,7 @@ function CategoriasPageContent() {
 
 export default function CategoriasPage() {
   return (
-    <ModuleErrorBoundary moduleName="Categorías">
+    <ModuleErrorBoundary moduleName="CategorÃ­as">
       <CategoriasPageContent />
     </ModuleErrorBoundary>
   );

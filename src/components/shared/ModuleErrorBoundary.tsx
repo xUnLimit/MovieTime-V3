@@ -38,8 +38,8 @@ export function ModuleErrorBoundary({
             Error en {moduleName}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Ha ocurrido un error al cargar este módulo. Por favor, intenta recargar
-            la página o contacta al soporte si el problema persiste.
+            Ha ocurrido un error al cargar este mÃ³dulo. Por favor, intenta recargar
+            la pÃ¡gina o contacta al soporte si el problema persiste.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export function ModuleErrorBoundary({
             }}
             variant="outline"
           >
-            Recargar página
+            Recargar pÃ¡gina
           </Button>
           <Button
             onClick={() => (window.location.href = '/dashboard')}

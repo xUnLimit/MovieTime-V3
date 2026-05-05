@@ -1,13 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+
+import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { UsuarioForm } from '@/components/usuarios/UsuarioForm';
-import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { getById, ENTITIES } from '@/lib/supabase/usuarios-repository';
+import { getUsuarioById } from '@/lib/supabase/usuarios-repository';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import type { Usuario, MetodoPago } from '@/types';
 import { toast } from 'sonner';
@@ -28,7 +29,7 @@ function EditarUsuarioPageContent() {
       setLoading(true);
       try {
         const [usuarioData, metodosData] = await Promise.all([
-          getById<Usuario>(ENTITIES.USUARIOS, id),
+          getUsuarioById<Usuario>(id),
           fetchMetodosPagoUsuarios()
         ]);
 
@@ -81,7 +82,7 @@ function EditarUsuarioPageContent() {
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
-            No se encontró el usuario con el ID proporcionado.
+            No se encontrÃƒÂ³ el usuario con el ID proporcionado.
           </p>
           <Link
             href="/usuarios"

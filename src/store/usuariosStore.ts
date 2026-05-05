@@ -1,13 +1,15 @@
+﻿import { countUsuarios, createUsuario, ENTITIES, getUsuarioById, getUsuarios, logCacheHit, removeUsuario, updateUsuario } from '@/lib/supabase/usuarios-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { startOfDay, format } from 'date-fns';
-import { Usuario } from '@/types';
-import { getAll, getCount, getById, create as createDoc, update, remove, queryDocuments, ENTITIES, logCacheHit } from '@/lib/supabase/usuarios-repository';
+import { format, startOfDay } from 'date-fns';
+
+import { queryPagosVenta, queryVentas, updatePagoVenta, updateVenta } from '@/lib/supabase/ventas-repository';
 import { adjustUsuariosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import type { Usuario } from '@/types';
 
 // Helper para obtener contexto de usuario
 function getLogContext() {
@@ -59,7 +61,7 @@ export const useUsuariosStore = create<UsuariosState>()(
       lastCountsFetch: null,
       selectedUsuario: null,
 
-      // Trae todos los docs — para páginas de detalle/edición
+      // Trae todos los docs Ã¢â‚¬â€ para pÃƒÂ¡ginas de detalle/ediciÃƒÂ³n
       fetchUsuarios: async (force = false) => {
         const { lastFetch } = get();
         if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
@@ -69,7 +71,7 @@ export const useUsuariosStore = create<UsuariosState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const usuarios = await getAll<Usuario>(ENTITIES.USUARIOS);
+          const usuarios = await getUsuarios<Usuario>();
           set({ usuarios, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar usuarios';
@@ -78,7 +80,7 @@ export const useUsuariosStore = create<UsuariosState>()(
         }
       },
 
-      // Solo conteos — para widgets (3 lecturas totales)
+      // Solo conteos Ã¢â‚¬â€ para widgets (3 lecturas totales)
       fetchCounts: async () => {
         const { lastCountsFetch } = get();
         if (lastCountsFetch && (Date.now() - lastCountsFetch) < CACHE_TIMEOUT) {
@@ -89,10 +91,10 @@ export const useUsuariosStore = create<UsuariosState>()(
         try {
           const today = startOfDay(new Date());
           const [totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos] = await Promise.all([
-            getCount(ENTITIES.USUARIOS, [{ field: 'tipo', operator: '==', value: 'cliente' }]),
-            getCount(ENTITIES.USUARIOS, [{ field: 'tipo', operator: '==', value: 'revendedor' }]),
-            getCount(ENTITIES.USUARIOS, [{ field: 'createdAt', operator: '>=', value: today }]),
-            getCount(ENTITIES.USUARIOS, [{ field: 'serviciosActivos', operator: '>', value: 0 }]),
+            countUsuarios([{ field: 'tipo', operator: '==', value: 'cliente' }]),
+            countUsuarios([{ field: 'tipo', operator: '==', value: 'revendedor' }]),
+            countUsuarios([{ field: 'createdAt', operator: '>=', value: today }]),
+            countUsuarios([{ field: 'serviciosActivos', operator: '>', value: 0 }]),
           ]);
           set({ totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos, lastCountsFetch: Date.now() });
         } catch (error) {
@@ -111,7 +113,7 @@ export const useUsuariosStore = create<UsuariosState>()(
 
       createUsuario: async (usuarioData) => {
         try {
-          const id = await createDoc(ENTITIES.USUARIOS, {
+          const id = await createUsuario({
             ...usuarioData,
             serviciosActivos: 0,
             active: true,
@@ -145,7 +147,7 @@ export const useUsuariosStore = create<UsuariosState>()(
             detalles: `${usuarioData.tipo === 'cliente' ? 'Cliente' : 'Revendedor'} creado: "${usuarioData.nombre}"`,
           }).catch(() => {});
 
-          // Actualizar estadísticas del dashboard (non-blocking)
+          // Actualizar estadÃƒÂ­sticas del dashboard (non-blocking)
           adjustUsuariosPorMes({
             mes: format(new Date(), 'yyyy-MM'),
             dia: getDiaKeyFromDate(new Date()),
@@ -172,17 +174,17 @@ export const useUsuariosStore = create<UsuariosState>()(
             ? updates.telefono !== undefined && updates.telefono !== oldUsuario.telefono
             : false;
 
-          await update(ENTITIES.USUARIOS, id, updates);
+          await updateUsuario(id, updates);
 
-          // Si cambió nombre o teléfono, sincronizar campos denormalizados en ventas
+          // Si cambiÃƒÂ³ nombre o telÃƒÂ©fono, sincronizar campos denormalizados en ventas
           // y refrescar notificaciones derivadas de esas ventas antes de resolver el guardado.
           if ((nombreChanged || telefonoChanged) && oldUsuario) {
             const nuevoNombre = `${updates.nombre ?? oldUsuario.nombre} ${updates.apellido ?? oldUsuario.apellido}`;
             const nuevoTelefono = updates.telefono ?? oldUsuario.telefono;
             const [ventasDelCliente, pagosDelCliente] = await Promise.all([
-              queryDocuments<{ id: string }>(ENTITIES.VENTAS, [{ field: 'clienteId', operator: '==', value: id }]),
+              queryVentas<{ id: string }>([{ field: 'clienteId', operator: '==', value: id }]),
               nombreChanged
-                ? queryDocuments<{ id: string }>(ENTITIES.PAGOS_VENTA, [{ field: 'clienteId', operator: '==', value: id }])
+                ? queryPagosVenta<{ id: string }>([{ field: 'clienteId', operator: '==', value: id }])
                 : Promise.resolve([] as { id: string }[]),
             ]);
             const ventaUpdates: Record<string, unknown> = {};
@@ -196,8 +198,8 @@ export const useUsuariosStore = create<UsuariosState>()(
             }
 
             await Promise.all([
-              ...ventasDelCliente.map(v => update(ENTITIES.VENTAS, v.id, ventaUpdates)),
-              ...pagosDelCliente.map(p => update(ENTITIES.PAGOS_VENTA, p.id, { clienteNombre: nuevoNombre })),
+              ...ventasDelCliente.map(v => updateVenta(v.id, ventaUpdates)),
+              ...pagosDelCliente.map(p => updatePagoVenta(p.id, { clienteNombre: nuevoNombre })),
             ]);
 
             if (ventasDelCliente.length > 0) {
@@ -233,7 +235,7 @@ export const useUsuariosStore = create<UsuariosState>()(
               }
             }
 
-            // Actualizar contador de usuarios activos si cambió serviciosActivos
+            // Actualizar contador de usuarios activos si cambiÃƒÂ³ serviciosActivos
             if (cambioServiciosActivos && oldUsuario) {
               const oldActivo = (oldUsuario.serviciosActivos ?? 0) > 0;
               const newActivo = (updates.serviciosActivos ?? 0) > 0;
@@ -284,17 +286,17 @@ export const useUsuariosStore = create<UsuariosState>()(
         let deletedUser: Usuario | undefined;
 
         if (usuarioData) {
-          // Crear un objeto Usuario mínimo con los datos proporcionados
+          // Crear un objeto Usuario mÃƒÂ­nimo con los datos proporcionados
           deletedUser = { ...usuarioData } as Usuario;
         } else {
-          // Intentar buscar en el store local (puede estar vacío con paginación)
+          // Intentar buscar en el store local (puede estar vacÃƒÂ­o con paginaciÃƒÂ³n)
           const currentUsuarios = get().usuarios;
           deletedUser = currentUsuarios.find(u => u.id === id);
 
           if (!deletedUser) {
-            // Si no está en el store local, traerlo de Supabase
+            // Si no estÃƒÂ¡ en el store local, traerlo de Supabase
             try {
-              const fetchedUser = await getById<Usuario>(ENTITIES.USUARIOS, id);
+              const fetchedUser = await getUsuarioById<Usuario>(id);
               if (!fetchedUser) {
                 throw new Error('Usuario no encontrado en Supabase');
               }
@@ -325,7 +327,7 @@ export const useUsuariosStore = create<UsuariosState>()(
 
         // Optimistic update de contadores
         set((state) => ({
-          usuarios: state.usuarios.filter((usuario) => usuario.id !== id), // Solo si está en memoria
+          usuarios: state.usuarios.filter((usuario) => usuario.id !== id), // Solo si estÃƒÂ¡ en memoria
           totalClientes: deletedUser!.tipo === 'cliente' ? state.totalClientes - 1 : state.totalClientes,
           totalRevendedores: deletedUser!.tipo === 'revendedor' ? state.totalRevendedores - 1 : state.totalRevendedores,
           totalNuevosHoy: wasCreatedToday ? state.totalNuevosHoy - 1 : state.totalNuevosHoy,
@@ -333,9 +335,9 @@ export const useUsuariosStore = create<UsuariosState>()(
         }));
 
         try {
-          await remove(ENTITIES.USUARIOS, id);
+          await removeUsuario(id);
 
-          // Notificar a otras páginas que se eliminó un usuario
+          // Notificar a otras pÃƒÂ¡ginas que se eliminÃƒÂ³ un usuario
           if (typeof window !== 'undefined') {
             window.localStorage.setItem('usuario-deleted', Date.now().toString());
             window.dispatchEvent(new Event('usuario-deleted'));
@@ -353,7 +355,7 @@ export const useUsuariosStore = create<UsuariosState>()(
             detalles: `Usuario eliminado: "${deletedUser?.nombre}"`,
           }).catch(() => {});
 
-          // Restar de estadísticas del dashboard (non-blocking)
+          // Restar de estadÃƒÂ­sticas del dashboard (non-blocking)
           if (deletedUser?.createdAt) {
             adjustUsuariosPorMes({
               mes: format(new Date(deletedUser.createdAt), 'yyyy-MM'),

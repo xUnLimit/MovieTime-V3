@@ -1,38 +1,10 @@
-"use client";
+﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { WheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type WheelEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { addMonths } from "date-fns";
 import { es } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Card } from "@/components/ui/card";
-import { cn, normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import {
   CalendarIcon,
   ChevronDown,
@@ -40,26 +12,40 @@ import {
   Eye,
   Loader2,
   MessageCircle,
+  Pencil,
   Plus,
   Search,
   Trash2,
   User,
-  Pencil,
 } from "lucide-react";
-import { useCategoriasStore } from "@/store/categoriasStore";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useUsuariosStore } from "@/store/usuariosStore";
-import { useTemplatesStore } from "@/store/templatesStore";
-import { useVentasStore } from "@/store/ventasStore";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import type { Servicio } from "@/types/servicios";
-import type { VentaDoc } from "@/types/ventas";
+import { z } from "zod";
+
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
-  ENTITIES,
-  queryDocuments,
-  adjustServiciosActivos,
-} from "@/lib/supabase/ventas-repository";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
+import { queryServicios } from "@/lib/supabase/servicios-repository";
+import { adjustServiciosActivos, queryVentas } from '@/lib/supabase/ventas-repository';
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { formatearFechaWhatsApp, getSaludo } from "@/lib/utils/whatsapp";
 import { getCurrencySymbol } from "@/lib/constants";
 import {
@@ -67,6 +53,7 @@ import {
   formatearFecha,
   roundToDecimals,
 } from "@/lib/utils/calculations";
+import { cn, normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import { syncUsuarioMetodoPago } from "@/lib/services/usuarioMetodoPagoSyncService";
 import {
   getUsuarioMetodoPagoNombre,
@@ -76,6 +63,12 @@ import {
   PENDING_USER_PAYMENT_NAME,
 } from "@/lib/utils/usuarioMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
+import { useCategoriasStore } from "@/store/categoriasStore";
+import { useServiciosStore } from "@/store/serviciosStore";
+import { useTemplatesStore } from "@/store/templatesStore";
+import { useUsuariosStore } from "@/store/usuariosStore";
+import { useVentasStore } from "@/store/ventasStore";
+import type { Servicio, VentaDoc } from "@/types";
 
 const ventaSchema = z.object({
   clienteId: z.string().min(1, "Seleccione un cliente"),
@@ -96,7 +89,7 @@ interface VentaItem {
   tipo: TipoItem;
   planId: string;
   categoriaId: string;
-  categoriaNombre: string; // <- Denormalizar nombre de categoría
+  categoriaNombre: string; // <- Denormalizar nombre de categorÃƒÂ­a
   servicioId: string;
   servicioNombre: string;
   servicioCorreo?: string;
@@ -169,12 +162,12 @@ export function VentasForm() {
     state.getTemplateByTipo("suscripcion"),
   );
 
-  // Estado local para métodos de pago filtrados (solo usuarios)
+  // Estado local para mÃƒÂ©todos de pago filtrados (solo usuarios)
   const [metodosPagoUsuarios, setMetodosPagoUsuarios] = useState<
     MetodoPagoOption[]
   >([]);
 
-  // Estado local para servicios (cargados solo cuando se selecciona categoría)
+  // Estado local para servicios (cargados solo cuando se selecciona categorÃƒÂ­a)
   const [serviciosCategoria, setServiciosCategoria] = useState<Servicio[]>([]);
   const [loadingServicios, setLoadingServicios] = useState(false);
 
@@ -240,29 +233,28 @@ export function VentasForm() {
     }
   }, [estadoValue, notifyCliente]);
 
-  // Efecto inicial: solo cargar datos que no dependen de selección
+  // Efecto inicial: solo cargar datos que no dependen de selecciÃƒÂ³n
   useEffect(() => {
     fetchCategorias();
     fetchUsuarios();
     fetchTemplates();
 
-    // Cargar métodos de pago filtrados (solo usuarios)
+    // Cargar mÃƒÂ©todos de pago filtrados (solo usuarios)
     const loadMetodosPagoUsuarios = async () => {
       try {
-        const metodos = await queryDocuments<MetodoPagoOption>(
-          ENTITIES.METODOS_PAGO,
-          [{ field: "asociadoA", operator: "==", value: "usuario" }],
-        );
+        const metodos = await queryMetodosPago<MetodoPagoOption>([
+          { field: "asociadoA", operator: "==", value: "usuario" },
+        ]);
         setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION, ...metodos]);
       } catch (error) {
-        console.error("Error cargando métodos de pago:", error);
+        console.error("Error cargando mÃƒÂ©todos de pago:", error);
         setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION]);
       }
     };
     loadMetodosPagoUsuarios();
   }, [fetchCategorias, fetchUsuarios, fetchTemplates]);
 
-  // Efecto para cargar servicios cuando se selecciona una categoría
+  // Efecto para cargar servicios cuando se selecciona una categorÃƒÂ­a
   useEffect(() => {
     if (!categoriaId) {
       setServiciosCategoria([]);
@@ -272,10 +264,9 @@ export function VentasForm() {
     const loadServiciosCategoria = async () => {
       setLoadingServicios(true);
       try {
-        const servicios = await queryDocuments<Servicio>(
-          ENTITIES.SERVICIOS,
-          [{ field: "categoriaId", operator: "==", value: categoriaId }],
-        );
+        const servicios = await queryServicios<Servicio>([
+          { field: "categoriaId", operator: "==", value: categoriaId },
+        ]);
         setServiciosCategoria(servicios);
       } catch (error) {
         console.error("Error cargando servicios:", error);
@@ -291,10 +282,9 @@ export function VentasForm() {
     const loadPerfilesOcupados = async () => {
       if (!servicioId) return;
       try {
-        const docs = await queryDocuments<Record<string, unknown>>(
-          ENTITIES.VENTAS,
-          [{ field: "servicioId", operator: "==", value: servicioId }],
-        );
+        const docs = await queryVentas<Record<string, unknown>>([
+          { field: "servicioId", operator: "==", value: servicioId },
+        ]);
         const ocupados = new Set<number>();
         docs.forEach((doc) => {
           const estado = (doc.estado as string | undefined) ?? "activo";
@@ -324,16 +314,16 @@ export function VentasForm() {
     [categorias, categoriaId],
   );
 
-  // Usuarios (clientes + revendedores) ordenados por fecha de creación (más reciente primero)
+  // Usuarios (clientes + revendedores) ordenados por fecha de creaciÃƒÂ³n (mÃƒÂ¡s reciente primero)
   const usuariosOrdenados = useMemo(() => {
     return [...usuarios].sort((a, b) => {
       const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bDate - aDate; // Más reciente primero
+      return bDate - aDate; // MÃƒÂ¡s reciente primero
     });
   }, [usuarios]);
 
-  // Usuarios filtrados por búsqueda
+  // Usuarios filtrados por bÃƒÂºsqueda
   const usuariosFiltrados = useMemo(() => {
     if (!searchCliente) return usuariosOrdenados;
     const search = normalizeSearchText(searchCliente);
@@ -391,12 +381,12 @@ export function VentasForm() {
     [planesDisponibles, planId],
   );
 
-  // Ordenar servicios por fecha de creación (más recientes primero)
+  // Ordenar servicios por fecha de creaciÃƒÂ³n (mÃƒÂ¡s recientes primero)
   const serviciosOrdenados = useMemo(() => {
     return [...serviciosCategoria].sort((a, b) => {
       const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bDate - aDate; // Más reciente primero
+      return bDate - aDate; // MÃƒÂ¡s reciente primero
     });
   }, [serviciosCategoria]);
 
@@ -549,7 +539,7 @@ export function VentasForm() {
     setLoadingPerfilesDetalle(true);
     setErrorPerfilesDetalle(null);
     try {
-      const ventas = await queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
+      const ventas = await queryVentas<VentaDoc>([
         { field: "servicioId", operator: "==", value: servicio.id },
       ]);
 
@@ -712,19 +702,19 @@ export function VentasForm() {
     "Cliente";
   const previewFechaVencimiento = previewItem?.fechaFin ?? fechaFinValue;
   const previewMonto = items.length > 0 ? totalFinal : precioFinalNumero;
-  const previewCodigo = previewItem?.codigo || watch("codigo")?.trim() || "—";
-  const previewPerfilNombre = previewItem?.perfilNombre?.trim() || "—";
+  const previewCodigo = previewItem?.codigo || watch("codigo")?.trim() || "Ã¢â‚¬â€";
+  const previewPerfilNombre = previewItem?.perfilNombre?.trim() || "Ã¢â‚¬â€";
   const previewCorreo =
-    previewServicio?.correo || previewItem?.servicioCorreo || "—";
+    previewServicio?.correo || previewItem?.servicioCorreo || "Ã¢â‚¬â€";
   const previewContrasena =
-    previewServicio?.contrasena || previewItem?.servicioContrasena || "—";
+    previewServicio?.contrasena || previewItem?.servicioContrasena || "Ã¢â‚¬â€";
   const previewCategoriaNombre =
     previewCategoria?.nombre || previewItem?.servicioNombre || "Servicio";
   const previewServicioNombre =
     previewItem?.servicioNombre || previewServicio?.nombre || "Servicio";
   const formatItemsList = (names: string[]) => {
     const cleaned = names.map((n) => n.trim()).filter(Boolean);
-    if (cleaned.length === 0) return "—";
+    if (cleaned.length === 0) return "Ã¢â‚¬â€";
     if (cleaned.length === 1) return `*${cleaned[0]}*`;
     if (cleaned.length === 2) return `*${cleaned[0]}* y *${cleaned[1]}*`;
     const first = cleaned
@@ -774,14 +764,14 @@ export function VentasForm() {
                 item.servicioNombre || servicio?.nombre || "Servicio",
               "{categoria}":
                 categoria?.nombre || item.servicioNombre || "Servicio",
-              "{correo}": servicio?.correo || item.servicioCorreo || "—",
+              "{correo}": servicio?.correo || item.servicioCorreo || "Ã¢â‚¬â€",
               "{contrasena}":
-                servicio?.contrasena || item.servicioContrasena || "—",
-              "{perfil_nombre}": item.perfilNombre?.trim() || "—",
-              "{codigo}": item.codigo || "—",
+                servicio?.contrasena || item.servicioContrasena || "Ã¢â‚¬â€",
+              "{perfil_nombre}": item.perfilNombre?.trim() || "Ã¢â‚¬â€",
+              "{codigo}": item.codigo || "Ã¢â‚¬â€",
               "{vencimiento}": item.fechaFin
                 ? formatearFechaWhatsApp(new Date(item.fechaFin))
-                : "—",
+                : "Ã¢â‚¬â€",
               "{monto}": `$${item.precioFinal?.toFixed(2) || "0.00"}`,
             };
             return replaceAllPlaceholders(block, { ...globals, ...itemValues });
@@ -796,7 +786,7 @@ export function VentasForm() {
   const previewMessage = useMemo(() => {
     const content =
       templateNotificacion?.contenido ||
-      "No hay plantilla de Notificación de Suscripción configurada.";
+      "No hay plantilla de NotificaciÃƒÂ³n de SuscripciÃƒÂ³n configurada.";
     const placeholders: Record<string, string> = {
       "{saludo}": getSaludo(),
       "{cliente}": previewClienteNombre,
@@ -809,7 +799,7 @@ export function VentasForm() {
       "{contrasena}": previewContrasena,
       "{vencimiento}": previewFechaVencimiento
         ? formatearFechaWhatsApp(new Date(previewFechaVencimiento))
-        : "—",
+        : "Ã¢â‚¬â€",
       "{monto}": `$${previewMonto.toFixed(2)}`,
       "{codigo}": previewCodigo,
     };
@@ -1063,12 +1053,12 @@ export function VentasForm() {
         });
       } catch (syncError) {
         console.error(
-          "Error sincronizando método de pago del usuario:",
+          "Error sincronizando mÃƒÂ©todo de pago del usuario:",
           syncError,
         );
         toast.warning("Venta guardada con advertencia", {
           description:
-            "La venta se creó, pero no se pudo actualizar el método de pago en usuarios.",
+            "La venta se creÃƒÂ³, pero no se pudo actualizar el mÃƒÂ©todo de pago en usuarios.",
         });
       }
 
@@ -1229,7 +1219,7 @@ export function VentasForm() {
                                   : usuario.metodoPagoId;
                               setValue("metodoPagoId", nextMetodoPagoId);
                               clearErrors("metodoPagoId");
-                              setSearchCliente(""); // Limpiar búsqueda después de seleccionar
+                              setSearchCliente(""); // Limpiar bÃƒÂºsqueda despuÃƒÂ©s de seleccionar
                             }}
                           >
                             <div className="flex items-center gap-2">
@@ -2071,7 +2061,7 @@ export function VentasForm() {
                 </p>
               </div>
               <div className="rounded-lg border bg-background/40 p-4">
-                <p className="text-xs text-muted-foreground">Método de pago</p>
+                <p className="text-xs text-muted-foreground">MÃƒÂ©todo de pago</p>
                 <p className="text-sm font-medium">
                   {metodoPagoSeleccionado?.nombre || "Sin seleccionar"}
                 </p>
@@ -2103,7 +2093,7 @@ export function VentasForm() {
                           <p className="text-xs text-muted-foreground">
                             {item.cicloPago
                               ? `${item.cicloPago.charAt(0).toUpperCase()}${item.cicloPago.slice(1)}`
-                              : "—"}
+                              : "Ã¢â‚¬â€"}
                           </p>
                         </div>
                         <span className="text-green-500 font-semibold">
@@ -2116,7 +2106,7 @@ export function VentasForm() {
                           <p className="text-foreground font-medium">
                             {item.fechaInicio
                               ? formatearFecha(item.fechaInicio)
-                              : "—"}
+                              : "Ã¢â‚¬â€"}
                           </p>
                         </div>
                         <div>
@@ -2124,7 +2114,7 @@ export function VentasForm() {
                           <p className="text-foreground font-medium">
                             {item.fechaFin
                               ? formatearFecha(item.fechaFin)
-                              : "—"}
+                              : "Ã¢â‚¬â€"}
                           </p>
                         </div>
                         <div>
@@ -2146,13 +2136,13 @@ export function VentasForm() {
                           <p className="text-foreground font-medium">
                             {item.perfilNombre?.trim()
                               ? item.perfilNombre
-                              : "—"}
+                              : "Ã¢â‚¬â€"}
                           </p>
                         </div>
                         <div>
                           <p>Codigo</p>
                           <p className="text-foreground font-medium">
-                            {item.codigo || "—"}
+                            {item.codigo || "Ã¢â‚¬â€"}
                           </p>
                         </div>
                       </div>
@@ -2204,7 +2194,7 @@ export function VentasForm() {
               {notifyCliente && estadoValue !== "inactivo" && (
                 <div className="mt-4 space-y-2">
                   <p className="text-sm font-semibold">
-                    Editar Mensaje de Notificación
+                    Editar Mensaje de NotificaciÃƒÂ³n
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Puedes ajustar el mensaje antes de enviarlo. Los cambios no

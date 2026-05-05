@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ServiciosProximosTable Component
  *
  * Displays servicio (streaming service) notifications with NO additional queries
@@ -11,18 +11,19 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
+
+import { PagoDialog, type EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -31,40 +32,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  BellRing,
-  BellOff,
-  Search,
-  MoreHorizontal,
-  Copy,
-  Eye,
-  EyeOff,
-  AlertTriangle,
-  ExternalLink,
-  RefreshCw,
-  ChevronDown,
-} from 'lucide-react';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
-import type { NotificacionServicio } from '@/types/notificaciones';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { getCurrencySymbol } from '@/lib/constants';
-import { toast } from 'sonner';
-import { PagoDialog, EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
-import { queryDocuments, ENTITIES, update, getById, adjustCategoriaGastos } from '@/lib/supabase/servicios-repository';
+import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
+import { adjustCategoriaGastos, getServicioById, updateServicio } from '@/lib/supabase/servicios-repository';
 import { MetodoPago, Servicio } from '@/types';
+import type { NotificacionServicio } from '@/types/notificaciones';
 import { crearPagoRenovacion, obtenerPagosDeServicio } from '@/lib/services/pagosServicioService';
 import { currencyService } from '@/lib/services/currencyService';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { format } from 'date-fns';
 import { adjustGastosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
 import { AccionesServicioDialog } from './AccionesServicioDialog';
-import { Scissors } from 'lucide-react';
+import { AlertTriangle, BellOff, BellRing, ChevronDown, Copy, ExternalLink, Eye, EyeOff, MoreHorizontal, RefreshCw, Scissors, Search } from 'lucide-react';
 import { filtrarServiciosNotificaciones } from './serviciosNotificacionesFilters';
 
 /**
@@ -103,7 +92,7 @@ function getEstadoBadge(
   diasRestantes: number,
   resaltada: boolean
 ): { variant: string; text: string } {
-  const prefix = resaltada ? '⚠️ ' : '';
+  const prefix = resaltada ? 'Ã¢Å¡Â Ã¯Â¸Â ' : '';
 
   if (diasRestantes < 0) {
     const dias = Math.abs(diasRestantes);
@@ -111,7 +100,7 @@ function getEstadoBadge(
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
-      text: `${prefix}${dias} día${dias > 1 ? 's' : ''} de retraso`,
+      text: `${prefix}${dias} dÃƒÂ­a${dias > 1 ? 's' : ''} de retraso`,
     };
   } else if (diasRestantes === 0) {
     return {
@@ -125,14 +114,14 @@ function getEstadoBadge(
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300',
-      text: `${prefix}${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
+      text: `${prefix}${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
     };
   } else {
     return {
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',
-      text: `${prefix}${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
+      text: `${prefix}${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
     };
   }
 }
@@ -158,9 +147,9 @@ function formatearFecha(fecha: Date): string {
 
   const dia = fecha.getDate();
   const mes = meses[fecha.getMonth()];
-  const año = fecha.getFullYear();
+  const anio = fecha.getFullYear();
 
-  return `${dia} de ${mes} del ${año}`;
+  return `${dia} de ${mes} del ${anio}`;
 }
 
 interface ServiciosProximosTableProps {
@@ -171,7 +160,7 @@ interface ServiciosProximosTableProps {
 
 export function ServiciosProximosTable({
   soloAutorrenovables = false,
-  title = 'Servicios próximos a vencer',
+  title = 'Servicios prÃƒÂ³ximos a vencer',
   emptyMessage = 'No se encontraron notificaciones de servicios',
 }: ServiciosProximosTableProps = {}) {
   const { notificaciones, toggleLeida, toggleResaltada, deleteNotificacionesPorServicio, fetchNotificaciones } = useNotificacionesStore();
@@ -249,7 +238,7 @@ export function ServiciosProximosTable({
 
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">
-          PÃ¡gina {currentPage} de {totalPages}
+          PÃƒÆ’Ã‚Â¡gina {currentPage} de {totalPages}
         </span>
         <div className="flex gap-2">
           <Button
@@ -329,9 +318,9 @@ export function ServiciosProximosTable({
     if (!notifParaAcciones) return;
     try {
       await toggleResaltada(notifParaAcciones.id, true);
-      toast.success('Notificación resaltada', { description: 'La notificación ha sido marcada para seguimiento.' });
+      toast.success('NotificaciÃƒÂ³n resaltada', { description: 'La notificaciÃƒÂ³n ha sido marcada para seguimiento.' });
     } catch {
-      toast.error('Error al actualizar notificación', { description: 'No se pudo cambiar el estado de la notificación. Intenta nuevamente.' });
+      toast.error('Error al actualizar notificaciÃƒÂ³n', { description: 'No se pudo cambiar el estado de la notificaciÃƒÂ³n. Intenta nuevamente.' });
     }
   };
 
@@ -342,9 +331,9 @@ export function ServiciosProximosTable({
     if (!notifParaAcciones) return;
     try {
       await toggleResaltada(notifParaAcciones.id, false);
-      toast.success('Notificación desmarcada', { description: 'La notificación ya no está marcada para seguimiento.' });
+      toast.success('NotificaciÃƒÂ³n desmarcada', { description: 'La notificaciÃƒÂ³n ya no estÃƒÂ¡ marcada para seguimiento.' });
     } catch {
-      toast.error('Error al actualizar notificación', { description: 'No se pudo cambiar el estado de la notificación. Intenta nuevamente.' });
+      toast.error('Error al actualizar notificaciÃƒÂ³n', { description: 'No se pudo cambiar el estado de la notificaciÃƒÂ³n. Intenta nuevamente.' });
     }
   };
 
@@ -354,12 +343,12 @@ export function ServiciosProximosTable({
   const handleRenovar = async (notif: NotificacionServicio & { id: string }) => {
     setIsLoadingRenovar(true);
     try {
-      // Load servicio data and métodos de pago in parallel
+      // Load servicio data and mÃƒÂ©todos de pago in parallel
       const [servicioData, metodos] = await Promise.all([
-        getById<Servicio>(ENTITIES.SERVICIOS, notif.servicioId),
+        getServicioById<Servicio>(notif.servicioId),
         metodosPagoServicio.length > 0
           ? Promise.resolve(metodosPagoServicio)
-          : queryDocuments<MetodoPago>(ENTITIES.METODOS_PAGO, [
+          : queryMetodosPago<MetodoPago>([
               { field: 'asociadoA', operator: '==', value: 'servicio' },
             ]),
       ]);
@@ -406,7 +395,7 @@ export function ServiciosProximosTable({
         notaPrincipal
       );
 
-      // Increment gastosTotal on servicio and categoría (converted to USD)
+      // Increment gastosTotal on servicio and categorÃƒÂ­a (converted to USD)
       const costoUSD = await currencyService.convertToUSD(
         data.costo,
         data.moneda || metodoPagoSeleccionado?.moneda || 'USD'
@@ -440,7 +429,7 @@ export function ServiciosProximosTable({
       }).catch(() => {});
 
       // Update servicio with new dates and cost
-      await update(ENTITIES.SERVICIOS, servicioId, {
+      await updateServicio(servicioId, {
         fechaInicio: data.fechaInicio,
         fechaVencimiento: data.fechaVencimiento,
         costoServicio: data.costo,
@@ -460,7 +449,7 @@ export function ServiciosProximosTable({
         entidad: 'servicio',
         entidadId: servicioId,
         entidadNombre: `${servicioParaRenovar.nombre ?? servicioId} [${servicioParaRenovar.correo}]`,
-        detalles: `Servicio renovado desde notificaciones: "${servicioParaRenovar.nombre}" [${servicioParaRenovar.correo}] — ${getCurrencySymbol(data.moneda)}${data.costo} — hasta ${format(data.fechaVencimiento, 'dd/MM/yyyy')} (${data.periodoRenovacion})`,
+        detalles: `Servicio renovado desde notificaciones: "${servicioParaRenovar.nombre}" [${servicioParaRenovar.correo}] Ã¢â‚¬â€ ${getCurrencySymbol(data.moneda)}${data.costo} Ã¢â‚¬â€ hasta ${format(data.fechaVencimiento, 'dd/MM/yyyy')} (${data.periodoRenovacion})`,
       }).catch(() => {});
 
       // Remove notification and refresh store
@@ -471,13 +460,13 @@ export function ServiciosProximosTable({
         useCategoriasStore.getState().fetchCategorias(true);
       }).catch(() => {});
 
-      toast.success('Renovación registrada', { description: 'El nuevo período de pago se ha registrado correctamente.' });
+      toast.success('RenovaciÃƒÂ³n registrada', { description: 'El nuevo perÃƒÂ­odo de pago se ha registrado correctamente.' });
       setRenovarDialogOpen(false);
       setNotifParaRenovar(null);
       setServicioParaRenovar(null);
     } catch (error) {
-      console.error('Error al registrar la renovación:', error);
-      toast.error('Error al registrar la renovación', { description: error instanceof Error ? error.message : undefined });
+      console.error('Error al registrar la renovaciÃƒÂ³n:', error);
+      toast.error('Error al registrar la renovaciÃƒÂ³n', { description: error instanceof Error ? error.message : undefined });
     }
   };
 
@@ -489,7 +478,7 @@ export function ServiciosProximosTable({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por categoría o email..."
+            placeholder="Buscar por categorÃƒÂ­a o email..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="pl-9"
@@ -504,8 +493,8 @@ export function ServiciosProximosTable({
           <SelectContent>
             <SelectItem value="todos">Todos los estados</SelectItem>
             <SelectItem value="vencidas">Vencidas</SelectItem>
-            <SelectItem value="proximas">Próximas (≤7 días)</SelectItem>
-            <SelectItem value="normales">Normales (&gt;7 días)</SelectItem>
+            <SelectItem value="proximas">PrÃƒÂ³ximas (Ã¢â€°Â¤7 dÃƒÂ­as)</SelectItem>
+            <SelectItem value="normales">Normales (&gt;7 dÃƒÂ­as)</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -527,16 +516,16 @@ export function ServiciosProximosTable({
                       Tipo
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
-                      Categoría
+                      CategorÃƒÂ­a
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
                       Email
                     </TableHead>
                     <TableHead className="h-12 w-[160px] px-4 text-center text-muted-foreground">
-                      Contraseña
+                      ContraseÃƒÂ±a
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
-                      Método de Pago
+                      MÃƒÂ©todo de Pago
                     </TableHead>
                     <TableHead className="h-12 px-4 text-center text-muted-foreground">
                       Fecha de Vencimiento
@@ -580,10 +569,10 @@ export function ServiciosProximosTable({
                             onClick={() => !notif.resaltada && toggleLeida(notif.id, !notif.leida)}
                             title={
                               notif.resaltada
-                                ? 'Notificación resaltada (click en Acciones para gestionar)'
+                                ? 'NotificaciÃƒÂ³n resaltada (click en Acciones para gestionar)'
                                 : notif.leida
                                   ? 'Marcar como sin leer'
-                                  : 'Marcar como leída'
+                                  : 'Marcar como leÃƒÂ­da'
                             }
                           >
                             {notif.resaltada ? (
@@ -596,7 +585,7 @@ export function ServiciosProximosTable({
                           </Button>
                         </TableCell>
 
-                        {/* Categoría */}
+                        {/* CategorÃƒÂ­a */}
                         <TableCell className="p-4 text-center">
                           {notif.categoriaNombre}
                         </TableCell>
@@ -619,18 +608,18 @@ export function ServiciosProximosTable({
                           </div>
                         </TableCell>
 
-                        {/* Contraseña */}
+                        {/* ContraseÃƒÂ±a */}
                         <TableCell className="w-[160px] p-4 text-center">
                           <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
                             <span className="min-w-0 break-all text-center font-medium leading-tight">
-                              {visiblePasswords.has(notif.id) ? notif.contrasena : '••••••••'}
+                              {visiblePasswords.has(notif.id) ? notif.contrasena : 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢'}
                             </span>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 flex-shrink-0"
                               onClick={() => togglePasswordVisibility(notif.id)}
-                              title={visiblePasswords.has(notif.id) ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                              title={visiblePasswords.has(notif.id) ? 'Ocultar contraseÃƒÂ±a' : 'Mostrar contraseÃƒÂ±a'}
                             >
                               {visiblePasswords.has(notif.id) ? (
                                 <EyeOff className="h-3 w-3" />
@@ -642,15 +631,15 @@ export function ServiciosProximosTable({
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 flex-shrink-0"
-                              onClick={() => copyToClipboard(notif.contrasena, 'Contraseña')}
-                              title="Copiar contraseña"
+                              onClick={() => copyToClipboard(notif.contrasena, 'ContraseÃƒÂ±a')}
+                              title="Copiar contraseÃƒÂ±a"
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
 
-                        {/* Método de Pago */}
+                        {/* MÃƒÂ©todo de Pago */}
                         <TableCell className="p-4 text-center">
                           {notif.metodoPagoNombre ? (
                             <div className="flex items-center justify-center gap-2 whitespace-nowrap">
@@ -659,7 +648,7 @@ export function ServiciosProximosTable({
                               </span>
                               {notif.metodoPagoTarjetaTerminacion && (
                                 <span className="text-xs text-muted-foreground">
-                                  •••• {notif.metodoPagoTarjetaTerminacion}
+                                  Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ {notif.metodoPagoTarjetaTerminacion}
                                 </span>
                               )}
                             </div>
@@ -749,7 +738,7 @@ export function ServiciosProximosTable({
 
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
-                Página {currentPage} de {totalPages}
+                PÃƒÂ¡gina {currentPage} de {totalPages}
               </span>
               <div className="flex gap-2">
                 <Button

@@ -36,7 +36,7 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios }: Cam
                 </span>
               </div>
 
-              {/* Comparación compacta */}
+              {/* ComparaciÃ³n compacta */}
               <div className="flex items-center gap-4">
                 {/* Valor Anterior */}
                 <div className="flex-1 min-w-0">
@@ -78,10 +78,10 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios }: Cam
 }
 
 /**
- * Formatea valores según su tipo
+ * Formatea valores segÃºn su tipo
  */
 function formatValue(value: unknown, tipo?: CambioLog['tipo'], campoKey?: string): string {
-  if (value === null || value === undefined) return '(vacío)';
+  if (value === null || value === undefined) return '(vacÃ­o)';
 
   switch (tipo) {
     case 'date':

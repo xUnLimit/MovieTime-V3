@@ -52,7 +52,7 @@ interface VentasTableProps {
   onCategoriaChange?: (id: string) => void;
   orderBy?: "createdAt" | "updatedAt";
   onOrderByChange?: (value: "createdAt" | "updatedAt") => void;
-  // Paginación
+  // PaginaciÃ³n
   hasMore: boolean;
   hasPrevious: boolean;
   page: number;
@@ -89,7 +89,7 @@ const getCicloPagoLabel = (ciclo?: string) => {
     semestral: "Semestral",
     anual: "Anual",
   };
-  return ciclo ? labels[ciclo] || ciclo : "—";
+  return ciclo ? labels[ciclo] || ciclo : "â€”";
 };
 
 export function VentasTable({
@@ -119,7 +119,7 @@ export function VentasTable({
       const moneda = venta.moneda || "USD";
       const monto = venta.precioFinal ?? 0;
 
-      // Calcular monto sin consumir usando función estandarizada
+      // Calcular monto sin consumir usando funciÃ³n estandarizada
       const montoSinConsumir =
         venta.fechaInicio && venta.fechaFin
           ? calcularMontoSinConsumir(
@@ -161,8 +161,8 @@ export function VentasTable({
     });
   }, [ventas]);
 
-  // El filtrado por searchQuery lo maneja el page (búsqueda global).
-  // Aquí solo usamos rows directamente.
+  // El filtrado por searchQuery lo maneja el page (bÃºsqueda global).
+  // AquÃ­ solo usamos rows directamente.
   const filteredRows = rows;
 
   const columns: Column<VentaRow>[] = [
@@ -235,7 +235,7 @@ export function VentasTable({
       align: "center",
       render: (item) => (
         <div className="text-center">
-          {item.fechaInicio ? formatearFecha(item.fechaInicio) : "—"}
+          {item.fechaInicio ? formatearFecha(item.fechaInicio) : "â€”"}
         </div>
       ),
     },
@@ -247,7 +247,7 @@ export function VentasTable({
       align: "center",
       render: (item) => (
         <div className="text-center">
-          {item.fechaVencimiento ? formatearFecha(item.fechaVencimiento) : "—"}
+          {item.fechaVencimiento ? formatearFecha(item.fechaVencimiento) : "â€”"}
         </div>
       ),
     },
@@ -348,9 +348,9 @@ export function VentasTable({
               <ListFilter className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="truncate">
                 {selectedCategoriaId === "todas"
-                  ? "Todas las categorías"
+                  ? "Todas las categorÃ­as"
                   : (categorias.find((c) => c.id === selectedCategoriaId)
-                      ?.nombre ?? "Categoría")}
+                      ?.nombre ?? "CategorÃ­a")}
               </span>
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -361,7 +361,7 @@ export function VentasTable({
                 <Check className="h-4 w-4 mr-2" />
               )}
               <span className={selectedCategoriaId !== "todas" ? "pl-6" : ""}>
-                Todas las categorías
+                Todas las categorÃ­as
               </span>
             </DropdownMenuItem>
             {[...categorias]
@@ -391,7 +391,7 @@ export function VentasTable({
             >
               <ArrowUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="truncate">
-                {orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
+                {orderBy === "createdAt" ? "MÃ¡s recientes" : "Ãšltima actividad"}
               </span>
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -400,13 +400,13 @@ export function VentasTable({
             <DropdownMenuItem onClick={() => onOrderByChange?.("createdAt")}>
               {orderBy === "createdAt" && <Check className="h-4 w-4 mr-2" />}
               <span className={orderBy !== "createdAt" ? "pl-6" : ""}>
-                Más recientes
+                MÃ¡s recientes
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onOrderByChange?.("updatedAt")}>
               {orderBy === "updatedAt" && <Check className="h-4 w-4 mr-2" />}
               <span className={orderBy !== "updatedAt" ? "pl-6" : ""}>
-                Última actividad
+                Ãšltima actividad
               </span>
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -20,13 +20,13 @@ export default function DashboardLayout({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
-    // Solo redirigir después de que Zustand se haya hidratado
+    // Solo redirigir despuÃ©s de que Zustand se haya hidratado
     if (isHydrated && !isAuthenticated) {
       router.push('/login');
     }
   }, [isAuthenticated, isHydrated, router]);
 
-  // Sincronizar notificaciones cuando el usuario está autenticado
+  // Sincronizar notificaciones cuando el usuario estÃ¡ autenticado
   useEffect(() => {
     if (isHydrated && isAuthenticated) {
       sincronizarNotificaciones().catch((error) => {
@@ -44,7 +44,7 @@ export default function DashboardLayout({
     );
   }
 
-  // Si ya se hidrató pero no está autenticado, mostrar loader mientras redirige
+  // Si ya se hidratÃ³ pero no estÃ¡ autenticado, mostrar loader mientras redirige
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -71,7 +71,7 @@ export default function DashboardLayout({
             <button
               onClick={() => setMobileSidebarOpen(true)}
               className="flex items-center justify-center h-9 w-9 rounded-lg text-foreground hover:bg-muted transition-colors"
-              aria-label="Abrir menú"
+              aria-label="Abrir menÃº"
             >
               <Menu className="h-5 w-5" />
             </button>

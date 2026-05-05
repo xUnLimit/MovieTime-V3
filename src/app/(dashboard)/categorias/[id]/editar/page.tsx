@@ -1,13 +1,14 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+
 import { CategoriaForm } from '@/components/categorias/CategoriaForm';
-import { getById, ENTITIES } from '@/lib/supabase/categorias-repository';
+import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { Button } from '@/components/ui/button';
+import { getCategoriaById } from '@/lib/supabase/categorias-repository';
 import type { Categoria } from '@/types';
 import { toast } from 'sonner';
 
@@ -24,11 +25,11 @@ function EditarCategoriaPageContent() {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await getById<Categoria>(ENTITIES.CATEGORIAS, id);
+        const data = await getCategoriaById<Categoria>(id);
         setCategoria(data);
       } catch (error) {
-        console.error('Error cargando categoría:', error);
-        toast.error('Error al cargar la categoría', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
+        console.error('Error cargando categorÃƒÂ­a:', error);
+        toast.error('Error al cargar la categorÃƒÂ­a', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
         setCategoria(null);
       } finally {
         setLoading(false);
@@ -49,27 +50,27 @@ function EditarCategoriaPageContent() {
     return (
       <div className="space-y-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categoría no encontrada</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">CategorÃƒÂ­a no encontrada</h1>
           <p className="text-sm text-muted-foreground">
             <Link href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
             <Link href="/categorias" className="hover:text-foreground transition-colors">
-              Categorías
+              CategorÃƒÂ­as
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
-            No se encontró la categoría con el ID proporcionado.
+            No se encontrÃƒÂ³ la categorÃƒÂ­a con el ID proporcionado.
           </p>
           <Link
             href="/categorias"
             className="inline-block mt-4 text-primary hover:underline"
           >
-            Volver a Categorías
+            Volver a CategorÃƒÂ­as
           </Link>
         </div>
       </div>
@@ -87,7 +88,7 @@ function EditarCategoriaPageContent() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Categoría</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar CategorÃƒÂ­a</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
             <Link href="/" className="hover:text-foreground transition-colors">
@@ -95,7 +96,7 @@ function EditarCategoriaPageContent() {
             </Link>{' '}
             /{' '}
             <Link href="/categorias" className="hover:text-foreground transition-colors">
-              Categorías
+              CategorÃƒÂ­as
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
           </p>
@@ -112,7 +113,7 @@ function EditarCategoriaPageContent() {
 
 export default function EditarCategoriaPage() {
   return (
-    <ModuleErrorBoundary moduleName="Editar Categoría">
+    <ModuleErrorBoundary moduleName="Editar CategorÃƒÂ­a">
       <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-muted-foreground">Cargando...</div></div>}>
         <EditarCategoriaPageContent />
       </Suspense>

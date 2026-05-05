@@ -1,4 +1,5 @@
-import { ENTITIES, getAll, queryDocuments } from '@/lib/supabase/servicios-repository';
+﻿import { getServicios } from '@/lib/supabase/servicios-repository';
+import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { sincronizarUnServicio, sincronizarUnaVenta, sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { Servicio, VentaDoc } from '@/types';
@@ -48,7 +49,7 @@ export async function syncServicioDependencias(
   const { refreshNotifications = true, emitEvents = true } = options;
   let ventasDelServicioIds: string[] = [];
 
-  const ventasDelServicio = await queryDocuments<{ id: string }>(ENTITIES.VENTAS, [
+  const ventasDelServicio = await queryVentas<{ id: string }>([
     { field: 'servicioId', operator: '==', value: nextServicio.id },
   ]);
   ventasDelServicioIds = ventasDelServicio.map((venta) => venta.id);
@@ -85,7 +86,7 @@ export async function resyncServiciosDenormalizedData(preFetchedData?: {
   serviciosRevisados: number;
   ventasActualizadas: number;
 }> {
-  const servicios = preFetchedData?.servicios || await getAll<Servicio>(ENTITIES.SERVICIOS);
+  const servicios = preFetchedData?.servicios || await getServicios<Servicio>();
   void preFetchedData?.ventas;
 
   await sincronizarNotificacionesForzado();

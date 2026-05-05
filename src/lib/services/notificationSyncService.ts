@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Notification Synchronization Service
  *
  * Purpose: Keep notifications collection in sync with ventas and servicios expirations
  *
  * Optimization:
  * - One query per entity (not two): Uses single query with fechaFin/fechaVencimiento <= (today + 7 days)
- * - This single query includes both próximas AND vencidas (because vencidas are subset of próximas)
+ * - This single query includes both prÃƒÂ³ximas AND vencidas (because vencidas are subset of prÃƒÂ³ximas)
  * - No duplicate queries for vencidas (saves 50% of sync queries)
  * - Run once per day via localStorage cache
  *
@@ -14,14 +14,10 @@
  */
 
 import { addDays, differenceInDays, startOfDay } from 'date-fns';
-import {
-  ENTITIES,
-  queryDocuments,
-  getById,
-  create,
-  update,
-  remove,
-} from '@/lib/supabase/notifications-repository';
+import { createNotificacion, queryNotificaciones, removeNotificacion, updateNotificacion } from '@/lib/supabase/notifications-repository';
+import { getMetodoPagoById, queryMetodosPago } from '@/lib/supabase/catalogos-repository';
+import { getServicioById, queryServicios } from '@/lib/supabase/servicios-repository';
+import { getVentaById, queryVentas } from '@/lib/supabase/ventas-repository';
 import type {
   Notificacion,
   NotificacionVenta,
@@ -80,17 +76,17 @@ function generarTitulo(diasRestantes: number, entidad: 'venta' | 'servicio'): st
   if (diasRestantes < 0) {
     const diasVencidos = Math.abs(diasRestantes);
     return entidad === 'venta'
-      ? `Venta vencida hace ${diasVencidos} día${diasVencidos > 1 ? 's' : ''}`
-      : `Servicio vencido hace ${diasVencidos} día${diasVencidos > 1 ? 's' : ''}`;
+      ? `Venta vencida hace ${diasVencidos} dÃƒÂ­a${diasVencidos > 1 ? 's' : ''}`
+      : `Servicio vencido hace ${diasVencidos} dÃƒÂ­a${diasVencidos > 1 ? 's' : ''}`;
   }
 
   if (diasRestantes === 0) {
-    return entidad === 'venta' ? 'Venta vence hoy ⚠️' : 'Servicio vence hoy ⚠️';
+    return entidad === 'venta' ? 'Venta vence hoy Ã¢Å¡Â Ã¯Â¸Â' : 'Servicio vence hoy Ã¢Å¡Â Ã¯Â¸Â';
   }
 
   return entidad === 'venta'
-    ? `Venta vence en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}`
-    : `Servicio vence en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}`;
+    ? `Venta vence en ${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''}`
+    : `Servicio vence en ${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''}`;
 }
 
 function obtenerTerminacionTarjeta(metodoPago?: Pick<MetodoPago, 'numeroTarjeta'> | null): string {
@@ -117,7 +113,7 @@ async function procesarNotificacionVenta(
   forzarActualizacion = false,
   metodosPagoById?: Map<string, MetodoPago>
 ): Promise<void> {
-  // Validate required denormalized field (fechaFin es el único crítico para calcular diasRestantes)
+  // Validate required denormalized field (fechaFin es el ÃƒÂºnico crÃƒÂ­tico para calcular diasRestantes)
   if (!venta.fechaFin) {
     console.warn(
       `[NotificationSync] Venta ${venta.id} missing fechaFin. Skipping.`
@@ -174,7 +170,7 @@ async function procesarNotificacionVenta(
     if (forzarActualizacion || notifExistente.diasRestantes !== diasRestantes) {
       const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
 
-      await update(ENTITIES.NOTIFICACIONES, notifExistente.id, {
+      await updateNotificacion(notifExistente.id, {
         ...datosNotificacion,
         leida: aumentoPrioridad ? false : notifExistente.leida, // Mark as unread if priority increased
         resaltada: notifExistente.resaltada, // Always preserve highlighted state
@@ -182,7 +178,7 @@ async function procesarNotificacionVenta(
     }
   } else {
     // Create new notification
-    await create(ENTITIES.NOTIFICACIONES, datosNotificacion as Record<string, unknown>);
+    await createNotificacion(datosNotificacion as Record<string, unknown>);
   }
 }
 
@@ -208,7 +204,7 @@ async function procesarNotificacionServicio(
   const diasRestantes = differenceInDays(startOfDay(new Date(servicio.fechaVencimiento)), startOfDay(new Date()));
   const nuevaPrioridad = calcularPrioridad(diasRestantes);
   const metodoPago = servicio.metodoPagoId
-    ? metodosPagoById?.get(servicio.metodoPagoId) ?? await getById<MetodoPago>(ENTITIES.METODOS_PAGO, servicio.metodoPagoId)
+    ? metodosPagoById?.get(servicio.metodoPagoId) ?? await getMetodoPagoById<MetodoPago>(servicio.metodoPagoId)
     : null;
   const metodoPagoTarjetaTerminacion = obtenerTerminacionTarjeta(metodoPago);
   const renovacionAutomatica = servicio.renovacionAutomatica === true;
@@ -257,7 +253,7 @@ async function procesarNotificacionServicio(
     if (debeActualizar) {
       const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
 
-      await update(ENTITIES.NOTIFICACIONES, notifExistente.id, {
+      await updateNotificacion(notifExistente.id, {
         ...datosNotificacion,
         leida: aumentoPrioridad ? false : notifExistente.leida,
         resaltada: notifExistente.resaltada, // Always preserve highlighted state
@@ -265,7 +261,7 @@ async function procesarNotificacionServicio(
     }
   } else {
     // Create new
-    await create(ENTITIES.NOTIFICACIONES, datosNotificacion as Record<string, unknown>);
+    await createNotificacion(datosNotificacion as Record<string, unknown>);
   }
 }
 
@@ -287,8 +283,8 @@ async function procesarNotificacionReposo(
 
   const nuevaPrioridad = diasRestantes <= 0 ? 'critica' : diasRestantes <= 3 ? 'alta' : 'media';
   const titulo = diasRestantes <= 0
-    ? `Reposo completado — ${servicio.nombre}`
-    : `Reposo finaliza en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''} — ${servicio.nombre}`;
+    ? `Reposo completado Ã¢â‚¬â€ ${servicio.nombre}`
+    : `Reposo finaliza en ${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} Ã¢â‚¬â€ ${servicio.nombre}`;
 
   const datosNotificacion: Omit<NotificacionReposo, 'id' | 'createdAt'> = {
     entidad: 'reposo',
@@ -319,14 +315,14 @@ async function procesarNotificacionReposo(
 
     if (debeActualizar) {
       const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
-      await update(ENTITIES.NOTIFICACIONES, notifExistente.id, {
+      await updateNotificacion(notifExistente.id, {
         ...datosNotificacion,
         leida: aumentoPrioridad ? false : notifExistente.leida,
         resaltada: notifExistente.resaltada,
       });
     }
   } else {
-    await create(ENTITIES.NOTIFICACIONES, datosNotificacion as Record<string, unknown>);
+    await createNotificacion(datosNotificacion as Record<string, unknown>);
   }
 }
 
@@ -355,7 +351,7 @@ async function limpiarNotificacionesHuerfanas(
 
     if (huerfanas.length > 0) {
       // Use parallel deletion
-      await Promise.all(huerfanas.map(notif => remove(ENTITIES.NOTIFICACIONES, notif.id)));
+      await Promise.all(huerfanas.map(notif => removeNotificacion(notif.id)));
     }
   } catch (error) {
     // Cleanup is best-effort, don't fail the sync
@@ -388,7 +384,7 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
       marcarSincronizado();
     }
 
-    // 0️⃣ BULK FETCH: Fetch all existing notifications and items in parallel
+    // 0Ã¯Â¸ÂÃ¢Æ’Â£ BULK FETCH: Fetch all existing notifications and items in parallel
     const fechaLimite = addDays(new Date(), 7);
 
     const [
@@ -400,21 +396,21 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
       serviciosEnReposo,
       metodosPago
     ] = await Promise.all([
-      queryDocuments(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'venta' }]) as Promise<(NotificacionVenta & { id: string })[]>,
-      queryDocuments(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'servicio' }]) as Promise<(NotificacionServicio & { id: string })[]>,
-      queryDocuments(ENTITIES.NOTIFICACIONES, [{ field: 'entidad', operator: '==', value: 'reposo' }]) as Promise<(NotificacionReposo & { id: string })[]>,
-      queryDocuments(ENTITIES.VENTAS, [
+      queryNotificaciones([{ field: 'entidad', operator: '==', value: 'venta' }]) as Promise<(NotificacionVenta & { id: string })[]>,
+      queryNotificaciones([{ field: 'entidad', operator: '==', value: 'servicio' }]) as Promise<(NotificacionServicio & { id: string })[]>,
+      queryNotificaciones([{ field: 'entidad', operator: '==', value: 'reposo' }]) as Promise<(NotificacionReposo & { id: string })[]>,
+      queryVentas([
         { field: 'estado', operator: '==', value: 'activo' },
         { field: 'fechaFin', operator: '<=', value: fechaLimite },
       ]) as Promise<VentaDoc[]>,
-      queryDocuments(ENTITIES.SERVICIOS, [
+      queryServicios([
         { field: 'activo', operator: '==', value: true },
         { field: 'fechaVencimiento', operator: '<=', value: fechaLimite },
       ]) as Promise<Servicio[]>,
-      queryDocuments(ENTITIES.SERVICIOS, [
+      queryServicios([
         { field: 'enReposo', operator: '==', value: true },
       ]) as Promise<Servicio[]>,
-      queryDocuments(ENTITIES.METODOS_PAGO) as Promise<MetodoPago[]>,
+      queryMetodosPago() as Promise<MetodoPago[]>,
     ]);
 
     // Create maps for O(1) lookups
@@ -425,7 +421,7 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
 
     let huboFallosParciales = false;
 
-    // 1️⃣ Process Ventas (Parallel)
+    // 1Ã¯Â¸ÂÃ¢Æ’Â£ Process Ventas (Parallel)
     const promesasVentas = ventasProximas.map(venta => 
       procesarNotificacionVenta(venta, mapNotifVentas.get(venta.id), forzarActualizacion, mapMetodosPago)
         .catch(error => {
@@ -434,7 +430,7 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
         })
     );
 
-    // 2️⃣ Process Servicios (Parallel)
+    // 2Ã¯Â¸ÂÃ¢Æ’Â£ Process Servicios (Parallel)
     const promesasServicios = serviciosProximos.map(servicio => 
       procesarNotificacionServicio(servicio, mapNotifServicios.get(servicio.id), forzarActualizacion, mapMetodosPago)
         .catch(error => {
@@ -443,7 +439,7 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
         })
     );
 
-    // 3️⃣ Process Reposo (Parallel)
+    // 3Ã¯Â¸ÂÃ¢Æ’Â£ Process Reposo (Parallel)
     const promesasReposo = serviciosEnReposo.map(servicio => 
       procesarNotificacionReposo(servicio, mapNotifReposo.get(servicio.id), forzarActualizacion)
         .catch(error => {
@@ -455,7 +451,7 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
     // Run all updates in parallel
     await Promise.all([...promesasVentas, ...promesasServicios, ...promesasReposo]);
 
-    // 4️⃣ Cleanup orphan notifications (Optimized with pre-fetched data)
+    // 4Ã¯Â¸ÂÃ¢Æ’Â£ Cleanup orphan notifications (Optimized with pre-fetched data)
     await limpiarNotificacionesHuerfanas(
       ventasProximas, 
       serviciosProximos, 
@@ -468,14 +464,14 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
     // If any individual item failed, revert the sync marker so it retries today
     if (huboFallosParciales && !forzarActualizacion && typeof window !== 'undefined') {
       localStorage.removeItem('lastNotificationSync');
-      console.warn('[NotificationSync] Partial failures detected — sync will retry on next load.');
+      console.warn('[NotificationSync] Partial failures detected Ã¢â‚¬â€ sync will retry on next load.');
     }
 
   } catch (error) {
     if (!forzarActualizacion && typeof window !== 'undefined') {
       localStorage.removeItem('lastNotificationSync');
     }
-    console.error('[NotificationSync] ❌ Error during synchronization:', error);
+    console.error('[NotificationSync] Ã¢ÂÅ’ Error during synchronization:', error);
     throw error;
   } finally {
     sincronizandoEnCurso = false;
@@ -507,8 +503,8 @@ export async function sincronizarNotificacionesForzado(): Promise<void> {
 export async function sincronizarUnaVenta(ventaId: string): Promise<void> {
   try {
     const [venta, notificacionesExistentes] = await Promise.all([
-      getById<VentaDoc>(ENTITIES.VENTAS, ventaId),
-      queryDocuments(ENTITIES.NOTIFICACIONES, [
+      getVentaById<VentaDoc>(ventaId),
+      queryNotificaciones([
         { field: 'entidad', operator: '==', value: 'venta' },
         { field: 'ventaId', operator: '==', value: ventaId }
       ]) as Promise<(NotificacionVenta & { id: string })[]>
@@ -517,7 +513,7 @@ export async function sincronizarUnaVenta(ventaId: string): Promise<void> {
     if (!venta || venta.estado === 'inactivo') {
       // If venta doesn't exist or is inactive, remove any existing notifications
       if (notificacionesExistentes.length > 0) {
-        await Promise.all(notificacionesExistentes.map((n: NotificacionVenta & { id: string }) => remove(ENTITIES.NOTIFICACIONES, n.id)));
+        await Promise.all(notificacionesExistentes.map((n: NotificacionVenta & { id: string }) => removeNotificacion(n.id)));
       }
       return;
     }
@@ -527,7 +523,7 @@ export async function sincronizarUnaVenta(ventaId: string): Promise<void> {
     const esProxima = venta.fechaFin && startOfDay(new Date(venta.fechaFin)) <= startOfDay(fechaLimite);
 
     if (esProxima) {
-      const metodosPago = await queryDocuments(ENTITIES.METODOS_PAGO) as MetodoPago[];
+      const metodosPago = await queryMetodosPago() as MetodoPago[];
       await procesarNotificacionVenta(
         venta,
         notificacionesExistentes[0],
@@ -535,8 +531,8 @@ export async function sincronizarUnaVenta(ventaId: string): Promise<void> {
         new Map(metodosPago.map((metodo) => [metodo.id, metodo]))
       );
     } else if (notificacionesExistentes.length > 0) {
-      // If it was próxima but now it's not (e.g., renewed far into future), remove it
-      await Promise.all(notificacionesExistentes.map((n: NotificacionVenta & { id: string }) => remove(ENTITIES.NOTIFICACIONES, n.id)));
+      // If it was prÃƒÂ³xima but now it's not (e.g., renewed far into future), remove it
+      await Promise.all(notificacionesExistentes.map((n: NotificacionVenta & { id: string }) => removeNotificacion(n.id)));
     }
   } catch (error) {
     console.error(`[NotificationSync] Error in surgical sync for venta ${ventaId}:`, error);
@@ -550,12 +546,12 @@ export async function sincronizarUnaVenta(ventaId: string): Promise<void> {
 export async function sincronizarUnServicio(servicioId: string): Promise<void> {
   try {
     const [servicio, notifServicioExistentes, notifReposoExistentes] = await Promise.all([
-      getById<Servicio>(ENTITIES.SERVICIOS, servicioId),
-      queryDocuments(ENTITIES.NOTIFICACIONES, [
+      getServicioById<Servicio>(servicioId),
+      queryNotificaciones([
         { field: 'entidad', operator: '==', value: 'servicio' },
         { field: 'servicioId', operator: '==', value: servicioId }
       ]) as Promise<(NotificacionServicio & { id: string })[]>,
-      queryDocuments(ENTITIES.NOTIFICACIONES, [
+      queryNotificaciones([
         { field: 'entidad', operator: '==', value: 'reposo' },
         { field: 'servicioId', operator: '==', value: servicioId }
       ]) as Promise<(NotificacionReposo & { id: string })[]>
@@ -565,7 +561,7 @@ export async function sincronizarUnServicio(servicioId: string): Promise<void> {
       // If service deleted, remove all related notifications
       const allToDel: (Notificacion & { id: string })[] = [...notifServicioExistentes, ...notifReposoExistentes];
       if (allToDel.length > 0) {
-        await Promise.all(allToDel.map((n: Notificacion & { id: string }) => remove(ENTITIES.NOTIFICACIONES, n.id)));
+        await Promise.all(allToDel.map((n: Notificacion & { id: string }) => removeNotificacion(n.id)));
       }
       return;
     }
@@ -578,14 +574,14 @@ export async function sincronizarUnServicio(servicioId: string): Promise<void> {
     if (esProximo) {
       await procesarNotificacionServicio(servicio, notifServicioExistentes[0], true);
     } else if (notifServicioExistentes.length > 0) {
-      await Promise.all(notifServicioExistentes.map((n: NotificacionServicio & { id: string }) => remove(ENTITIES.NOTIFICACIONES, n.id)));
+      await Promise.all(notifServicioExistentes.map((n: NotificacionServicio & { id: string }) => removeNotificacion(n.id)));
     }
 
     // 2. Check for reposo notification
     if (servicio.enReposo && servicio.fechaFinReposo) {
       await procesarNotificacionReposo(servicio, notifReposoExistentes[0], true);
     } else if (notifReposoExistentes.length > 0) {
-      await Promise.all(notifReposoExistentes.map((n: NotificacionReposo & { id: string }) => remove(ENTITIES.NOTIFICACIONES, n.id)));
+      await Promise.all(notifReposoExistentes.map((n: NotificacionReposo & { id: string }) => removeNotificacion(n.id)));
     }
   } catch (error) {
     console.error(`[NotificationSync] Error in surgical sync for servicio ${servicioId}:`, error);

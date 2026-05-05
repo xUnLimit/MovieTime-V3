@@ -1,16 +1,17 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { UsuarioDetails } from '@/components/usuarios/UsuarioDetails';
-import { useUsuariosStore } from '@/store/usuariosStore';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { toast } from 'sonner';
-import { getById, ENTITIES } from '@/lib/supabase/usuarios-repository';
+import { getUsuarioById } from '@/lib/supabase/usuarios-repository';
+import { useUsuariosStore } from '@/store/usuariosStore';
 import { Usuario } from '@/types';
 import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
 
@@ -28,7 +29,7 @@ function UsuarioDetallesPageContent() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const user = await getById<Usuario>(ENTITIES.USUARIOS, id);
+        const user = await getUsuarioById<Usuario>(id);
         setUsuario(user);
       } catch (error) {
         console.error('Error loading usuario:', error);
@@ -76,7 +77,7 @@ function UsuarioDetallesPageContent() {
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
-            No se encontró el usuario con el ID proporcionado.
+            No se encontrÃƒÂ³ el usuario con el ID proporcionado.
           </p>
           <Link
             href="/usuarios"
@@ -147,7 +148,7 @@ function UsuarioDetallesPageContent() {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title={`Eliminar ${usuario.tipo === 'revendedor' ? 'Revendedor' : 'Cliente'}`}
-        description={`¿Estás seguro de que quieres eliminar a "${usuario.nombre} ${usuario.apellido}"? Esta acción no se puede deshacer.`}
+        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar a "${usuario.nombre} ${usuario.apellido}"? Esta acciÃƒÂ³n no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

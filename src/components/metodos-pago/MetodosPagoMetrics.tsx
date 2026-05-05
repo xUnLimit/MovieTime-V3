@@ -16,7 +16,7 @@ export const MetodosPagoMetrics = memo(function MetodosPagoMetrics() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <MetricCard
-        title="Total Métodos"
+        title="Total MÃ©todos"
         value={totalMetodos}
         icon={CreditCard}
         iconColor="text-blue-500"

@@ -25,7 +25,7 @@ export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListPro
   const handleToggleActive = async (template: TemplateMensaje) => {
     try {
       await updateTemplate(template.id, { activo: !template.activo });
-      toast.success(`Template ${template.activo ? 'desactivado' : 'activado'}`, { description: template.activo ? 'El template ha sido desactivado y no se usará en notificaciones.' : 'El template está activo y listo para usarse.' });
+      toast.success(`Template ${template.activo ? 'desactivado' : 'activado'}`, { description: template.activo ? 'El template ha sido desactivado y no se usarÃ¡ en notificaciones.' : 'El template estÃ¡ activo y listo para usarse.' });
     } catch (error) {
       toast.error('Error al actualizar template', { description: error instanceof Error ? error.message : undefined });
     }
@@ -58,11 +58,11 @@ export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListPro
 
   const getTipoLabel = (tipo: TemplateMensaje['tipo']) => {
     const labels = {
-      notificacion_regular: 'Notificación Regular',
-      dia_pago: 'Día de Pago',
-      renovacion: 'Renovación',
-      suscripcion: 'Suscripción',
-      cancelacion: 'Cancelación',
+      notificacion_regular: 'NotificaciÃ³n Regular',
+      dia_pago: 'DÃ­a de Pago',
+      renovacion: 'RenovaciÃ³n',
+      suscripcion: 'SuscripciÃ³n',
+      cancelacion: 'CancelaciÃ³n',
     };
     return labels[tipo];
   };
@@ -148,7 +148,7 @@ export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListPro
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title="Eliminar Template"
-        description={`¿Estás seguro de que quieres eliminar el template "${templateToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        description={`Â¿EstÃ¡s seguro de que quieres eliminar el template "${templateToDelete?.nombre}"? Esta acciÃ³n no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />

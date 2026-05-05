@@ -1,16 +1,9 @@
+﻿import { createGasto, ENTITIES, getGastoById, getGastos, getTipoGastoById, logCacheHit, removeGasto, updateGasto } from '@/lib/supabase/catalogos-repository';
+import { format } from 'date-fns';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { format } from 'date-fns';
-import { Gasto, TipoGasto } from '@/types';
-import {
-  ENTITIES,
-  create as createDoc,
-  getAll,
-  getById,
-  logCacheHit,
-  remove,
-  update,
-} from '@/lib/supabase/catalogos-repository';
+import type { Gasto, TipoGasto } from '@/types';
+
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
@@ -35,9 +28,9 @@ function sortGastos(gastos: Gasto[]) {
 }
 
 async function getTipoGastoActivo(tipoGastoId: string): Promise<TipoGasto> {
-  const tipoGasto = await getById<TipoGasto>(ENTITIES.TIPOS_GASTO, tipoGastoId);
+  const tipoGasto = await getTipoGastoById<TipoGasto>(tipoGastoId);
   if (!tipoGasto) throw new Error('Tipo de gasto no encontrado');
-  if (!tipoGasto.activo) throw new Error('El tipo de gasto seleccionado está inactivo');
+  if (!tipoGasto.activo) throw new Error('El tipo de gasto seleccionado estÃƒÂ¡ inactivo');
   return tipoGasto;
 }
 
@@ -87,7 +80,7 @@ export const useGastosStore = create<GastosState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const gastos = await getAll<Gasto>(ENTITIES.GASTOS);
+          const gastos = await getGastos<Gasto>();
           set({
             gastos: sortGastos(gastos),
             isLoading: false,
@@ -112,7 +105,7 @@ export const useGastosStore = create<GastosState>()(
             detalle: gastoData.detalle?.trim() || undefined,
           };
 
-          gastoId = await createDoc(ENTITIES.GASTOS, gastoToCreate as Omit<Gasto, 'id'>);
+          gastoId = await createGasto(gastoToCreate as Omit<Gasto, 'id'>);
 
           const newGasto: Gasto = {
             ...gastoData,
@@ -141,7 +134,7 @@ export const useGastosStore = create<GastosState>()(
           }).catch(() => {});
         } catch (error) {
           if (gastoId) {
-            await remove(ENTITIES.GASTOS, gastoId).catch(() => {});
+            await removeGasto(gastoId).catch(() => {});
           }
           const errorMessage = error instanceof Error ? error.message : 'Error al crear gasto';
           set({ error: errorMessage });
@@ -151,7 +144,7 @@ export const useGastosStore = create<GastosState>()(
       },
 
       updateGasto: async (id, updates) => {
-        const gastoActual = get().gastos.find((gasto) => gasto.id === id) ?? await getById<Gasto>(ENTITIES.GASTOS, id);
+        const gastoActual = get().gastos.find((gasto) => gasto.id === id) ?? await getGastoById<Gasto>(id);
         if (!gastoActual) throw new Error('Gasto no encontrado');
 
         const finalUpdates: Partial<Gasto> = {
@@ -186,7 +179,7 @@ export const useGastosStore = create<GastosState>()(
           }
 
           try {
-            await update(ENTITIES.GASTOS, id, finalUpdates);
+            await updateGasto(id, finalUpdates);
           } catch (persistError) {
             if (requiereRecalculoDashboard) {
               await syncDashboardGasto(gastoActualizado, -1).catch(() => {});
@@ -230,13 +223,13 @@ export const useGastosStore = create<GastosState>()(
       },
 
       deleteGasto: async (id) => {
-        const gasto = get().gastos.find((item) => item.id === id) ?? await getById<Gasto>(ENTITIES.GASTOS, id);
+        const gasto = get().gastos.find((item) => item.id === id) ?? await getGastoById<Gasto>(id);
         if (!gasto) throw new Error('Gasto no encontrado');
 
         try {
           await syncDashboardGasto(gasto, -1);
           try {
-            await remove(ENTITIES.GASTOS, id);
+            await removeGasto(id);
           } catch (persistError) {
             await syncDashboardGasto(gasto, 1).catch(() => {});
             throw persistError;

@@ -1,7 +1,8 @@
+﻿import { createActivityLog, ENTITIES, getActivityLogs, logCacheHit, removeActivityLog } from '@/lib/supabase/activity-log-repository';
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { ActivityLog, AccionLog, EntidadLog } from '@/types';
-import { getAll, create as createDoc, remove, ENTITIES, logCacheHit } from '@/lib/supabase/activity-log-repository';
+import type { AccionLog, ActivityLog, EntidadLog } from '@/types';
 
 interface ActivityLogState {
   logs: ActivityLog[];
@@ -37,7 +38,7 @@ export const useActivityLogStore = create<ActivityLogState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const logs = (await getAll<ActivityLog>(ENTITIES.ACTIVITY_LOG))
+          const logs = (await getActivityLogs<ActivityLog>())
             .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
           set({ logs, isLoading: false, error: null, lastFetch: Date.now() });
@@ -50,7 +51,7 @@ export const useActivityLogStore = create<ActivityLogState>()(
 
       addLog: async (logData) => {
         try {
-          const id = await createDoc(ENTITIES.ACTIVITY_LOG, {
+          const id = await createActivityLog({
             ...logData,
             timestamp: new Date().toISOString()
           });
@@ -74,7 +75,7 @@ export const useActivityLogStore = create<ActivityLogState>()(
         set({ isLoading: true });
         try {
           const logs = get().logs;
-          await Promise.all(logs.map(log => remove(ENTITIES.ACTIVITY_LOG, log.id)));
+          await Promise.all(logs.map(log => removeActivityLog(log.id)));
           set({ logs: [], isLoading: false });
         } catch (error) {
           console.error('Error clearing logs:', error);

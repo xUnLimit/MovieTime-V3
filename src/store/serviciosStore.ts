@@ -1,10 +1,15 @@
+﻿import { adjustCategoriaGastos, countServicios, createServicio, ENTITIES, getServicioById, getServicios, logCacheHit, queryServicios, removeServicio, updateServicio } from '@/lib/supabase/servicios-repository';
+import { queryPagosServicio, removePagoServicio } from '@/lib/supabase/servicios-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Servicio, MetodoPago } from '@/types';
-import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustCategoriaGastos, queryDocuments } from '@/lib/supabase/servicios-repository';
+
+import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
+import { countCategorias } from '@/lib/supabase/categorias-repository';
 import { adjustGastosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
 import { currencyService } from '@/lib/services/currencyService';
 import { syncServicioDependencias, resyncServiciosDenormalizedData } from '@/lib/services/servicioSyncService';
+import type { MetodoPago } from '@/types/metodos-pago';
+import type { Servicio } from '@/types/servicios';
 import type { ServicioPronostico } from '@/types/dashboard';
 
 function toServicioPronostico(s: Servicio): ServicioPronostico | null {
@@ -86,7 +91,7 @@ export const useServiciosStore = create<ServiciosState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const servicios = await getAll<Servicio>(ENTITIES.SERVICIOS);
+          const servicios = await getServicios<Servicio>();
           set({ servicios, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar servicios';
@@ -112,11 +117,11 @@ export const useServiciosStore = create<ServiciosState>()(
             serviciosEnReposoDocs,
             totalCategoriasActivas
           ] = await Promise.all([
-            getCount(ENTITIES.SERVICIOS, []),
-            getCount(ENTITIES.SERVICIOS, [{ field: 'enReposo', operator: '==', value: true }]),
-            getCount(ENTITIES.SERVICIOS, [{ field: 'activo', operator: '==', value: true }]),
-            queryDocuments<Servicio>(ENTITIES.SERVICIOS, [{ field: 'enReposo', operator: '==', value: true }]),
-            getCount(ENTITIES.CATEGORIAS, [{ field: 'activo', operator: '==', value: true }]),
+            countServicios([]),
+            countServicios([{ field: 'enReposo', operator: '==', value: true }]),
+            countServicios([{ field: 'activo', operator: '==', value: true }]),
+            queryServicios<Servicio>([{ field: 'enReposo', operator: '==', value: true }]),
+            countCategorias([{ field: 'activo', operator: '==', value: true }]),
           ]);
           const serviciosActivosEnReposo = serviciosEnReposoDocs.filter((s) => s.activo).length;
           const totalServicios = Math.max(0, totalServiciosRaw - serviciosEnReposo);
@@ -135,16 +140,16 @@ export const useServiciosStore = create<ServiciosState>()(
 
       createServicio: async (servicioData) => {
         try {
-          // Obtener método de pago completo para denormalizar
+          // Obtener mÃƒÂ©todo de pago completo para denormalizar
           let metodoPagoNombre: string | undefined;
           let moneda: string | undefined;
           if (servicioData.metodoPagoId) {
-            const metodoPago = await getById<MetodoPago>(ENTITIES.METODOS_PAGO, servicioData.metodoPagoId);
+            const metodoPago = await getMetodoPagoById<MetodoPago>(servicioData.metodoPagoId);
             metodoPagoNombre = metodoPago?.nombre;
             moneda = metodoPago?.moneda;
           }
 
-          const id = await createDoc(ENTITIES.SERVICIOS, {
+          const id = await createServicio({
             ...servicioData,
             metodoPagoNombre,  // Denormalizado
             moneda,            // Denormalizado
@@ -166,13 +171,13 @@ export const useServiciosStore = create<ServiciosState>()(
             servicioData.notas
           );
           // Los contadores de categoria se derivan en Supabase con vistas/triggers.
-          // Denormalizar gasto inicial en la categoría (convertido a USD)
+          // Denormalizar gasto inicial en la categorÃƒÂ­a (convertido a USD)
           if (servicioData.costoServicio) {
             const costoUSD = await currencyService.convertToUSD(servicioData.costoServicio, moneda ?? 'USD');
             await adjustCategoriaGastos(servicioData.categoriaId, costoUSD);
           }
 
-          // Actualizar estadísticas del dashboard (non-blocking)
+          // Actualizar estadÃƒÂ­sticas del dashboard (non-blocking)
           adjustGastosStats({
             delta: servicioData.costoServicio ?? 0,
             moneda: moneda ?? 'USD',
@@ -218,10 +223,10 @@ export const useServiciosStore = create<ServiciosState>()(
             entidad: 'servicio',
             entidadId: id,
             entidadNombre: `${servicioData.nombre} [${servicioData.correo}]`,
-            detalles: `Servicio creado: "${servicioData.nombre}" [${servicioData.correo}] (${servicioData.tipo}) — $${servicioData.costoServicio ?? 0} ${moneda ?? 'USD'} (${servicioData.cicloPago ?? 'mensual'})`,
+            detalles: `Servicio creado: "${servicioData.nombre}" [${servicioData.correo}] (${servicioData.tipo}) Ã¢â‚¬â€ $${servicioData.costoServicio ?? 0} ${moneda ?? 'USD'} (${servicioData.cicloPago ?? 'mensual'})`,
           }).catch(() => {});
 
-          // ✅ Sync notifications for this new service (non-blocking)
+          // Ã¢Å“â€¦ Sync notifications for this new service (non-blocking)
           sincronizarUnServicio(id).catch(() => {});
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear servicio';
@@ -234,7 +239,7 @@ export const useServiciosStore = create<ServiciosState>()(
       updateServicio: async (id, updates) => {
         try {
           // Obtener el servicio directamente de Supabase (no del store local)
-          const servicio = await getById<Servicio>(ENTITIES.SERVICIOS, id);
+          const servicio = await getServicioById<Servicio>(id);
           if (!servicio) throw new Error('Servicio not found');
 
           let finalUpdates = { ...updates };
@@ -242,7 +247,7 @@ export const useServiciosStore = create<ServiciosState>()(
           // Si cambia metodoPagoId, actualizar campos denormalizados
           if (updates.metodoPagoId !== undefined) {
             const metodoPago = updates.metodoPagoId
-              ? await getById<MetodoPago>(ENTITIES.METODOS_PAGO, updates.metodoPagoId)
+              ? await getMetodoPagoById<MetodoPago>(updates.metodoPagoId)
               : null;
 
             finalUpdates = {
@@ -252,7 +257,7 @@ export const useServiciosStore = create<ServiciosState>()(
             };
           }
 
-          await update(ENTITIES.SERVICIOS, id, finalUpdates);
+          await updateServicio(id, finalUpdates);
           // Los contadores de categoria se derivan desde Supabase.
 
           const servicioActualizado = {
@@ -347,7 +352,7 @@ export const useServiciosStore = create<ServiciosState>()(
       deleteServicio: async (id, deletePayments = false) => {
         try {
           // Obtener el servicio directamente de Supabase (no del store local)
-          const servicio = await getById<Servicio>(ENTITIES.SERVICIOS, id);
+          const servicio = await getServicioById<Servicio>(id);
           if (!servicio) throw new Error('Servicio not found');
 
           // Optimistic update del store local (si existe)
@@ -356,13 +361,12 @@ export const useServiciosStore = create<ServiciosState>()(
           }));
 
           // Calcular gastosTotal real desde pagos antes de eliminarlos
-          // (el valor denormalizado puede estar desincronizado si el usuario borró pagos individualmente)
+          // (el valor denormalizado puede estar desincronizado si el usuario borrÃƒÂ³ pagos individualmente)
           let gastosRealUSD = 0;
           {
-            const pagosActuales = await queryDocuments<{ id: string; monto: number; moneda?: string }>(
-              ENTITIES.PAGOS_SERVICIO,
-              [{ field: 'servicioId', operator: '==', value: id }]
-            );
+            const pagosActuales = await queryPagosServicio<{ id: string; monto: number; moneda?: string }>([
+              { field: 'servicioId', operator: '==', value: id },
+            ]);
             const conversiones = pagosActuales.map(async (p) => {
               const usd = await currencyService.convertToUSD(p.monto, p.moneda ?? 'USD');
               gastosRealUSD += usd;
@@ -371,20 +375,19 @@ export const useServiciosStore = create<ServiciosState>()(
 
             // Si se solicita, eliminar todos los pagos del servicio
             if (deletePayments) {
-              const { remove: removeDoc } = await import('@/lib/supabase/servicios-repository');
-              await Promise.all(pagosActuales.map(pago => removeDoc(ENTITIES.PAGOS_SERVICIO, pago.id)));
+              await Promise.all(pagosActuales.map((pago) => removePagoServicio(pago.id)));
             }
           }
 
           // Eliminar el servicio de Supabase
-          await remove(ENTITIES.SERVICIOS, id);
+          await removeServicio(id);
           // Los contadores de categoria se derivan desde Supabase.
-          // Restar el gastosTotal REAL (recalculado desde pagos) de la categoría
+          // Restar el gastosTotal REAL (recalculado desde pagos) de la categorÃƒÂ­a
           if (gastosRealUSD > 0) {
             await adjustCategoriaGastos(servicio.categoriaId, -gastosRealUSD);
           }
 
-          // Restar de estadísticas del dashboard (non-blocking)
+          // Restar de estadÃƒÂ­sticas del dashboard (non-blocking)
           if (servicio.costoServicio) {
             adjustGastosStats({
               delta: -(servicio.costoServicio),
@@ -416,7 +419,7 @@ export const useServiciosStore = create<ServiciosState>()(
           }).catch(() => {});
           upsertServicioPronostico(null, id).catch((err) => console.error('[ServiciosStore] Error removing pronostico:', err));
 
-          // Notificar a otras páginas que se eliminó un servicio
+          // Notificar a otras pÃƒÂ¡ginas que se eliminÃƒÂ³ un servicio
           if (typeof window !== 'undefined') {
             window.localStorage.setItem('servicio-deleted', Date.now().toString());
             window.dispatchEvent(new Event('servicio-deleted'));
@@ -468,12 +471,12 @@ export const useServiciosStore = create<ServiciosState>()(
         const delta = shouldIncrement ? 1 : -1;
 
         try {
-          // Obtener servicio de Supabase si no está en el store
+          // Obtener servicio de Supabase si no estÃƒÂ¡ en el store
           let servicio = get().servicios.find((s) => s.id === id);
 
           if (!servicio) {
-            // Si no está en el store, obtenerlo de Supabase
-            const servicioDoc = await getById<Servicio>(ENTITIES.SERVICIOS, id);
+            // Si no estÃƒÂ¡ en el store, obtenerlo de Supabase
+            const servicioDoc = await getServicioById<Servicio>(id);
             if (!servicioDoc) {
               console.error('Servicio not found in Supabase for updatePerfilOcupado');
               return;

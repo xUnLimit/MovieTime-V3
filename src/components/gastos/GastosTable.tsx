@@ -95,11 +95,11 @@ export function GastosTable({
     },
     {
       key: 'detalle',
-      header: 'Descripción',
+      header: 'DescripciÃ³n',
       width: '30%',
       render: (item) => (
         <span className={item.detalle ? '' : 'text-muted-foreground'}>
-          {item.detalle || 'Sin descripción'}
+          {item.detalle || 'Sin descripciÃ³n'}
         </span>
       ),
     },
@@ -151,7 +151,7 @@ export function GastosTable({
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por tipo o descripción..."
+              placeholder="Buscar por tipo o descripciÃ³n..."
               className="pl-9"
             />
           </div>
@@ -260,7 +260,7 @@ export function GastosTable({
         }}
         onConfirm={handleConfirmDelete}
         title="Eliminar gasto"
-        description="Esta acción revertirá el impacto del gasto en el dashboard. ¿Deseas continuar?"
+        description="Esta acciÃ³n revertirÃ¡ el impacto del gasto en el dashboard. Â¿Deseas continuar?"
         confirmText="Eliminar"
         variant="danger"
         loading={isDeleting}

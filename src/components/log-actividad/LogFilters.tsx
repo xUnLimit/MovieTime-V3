@@ -101,8 +101,8 @@ export function LogFilters({
               revendedor: 'Revendedor',
               servicio: 'Servicio',
               usuario: 'Usuario',
-              categoria: 'Categoría',
-              metodo_pago: 'Método de Pago',
+              categoria: 'CategorÃ­a',
+              metodo_pago: 'MÃ©todo de Pago',
               gasto: 'Gasto',
               template: 'Template',
             }[entidadFilter] || 'Todas las entidades'}
@@ -129,10 +129,10 @@ export function LogFilters({
             Usuario
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setEntidadFilter('categoria')}>
-            Categoría
+            CategorÃ­a
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setEntidadFilter('metodo_pago')}>
-            Método de Pago
+            MÃ©todo de Pago
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setEntidadFilter('gasto')}>
             Gasto
@@ -147,10 +147,10 @@ export function LogFilters({
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="gap-2 justify-between w-[200px]">
             {accionFilter === 'all' ? 'Todas las acciones' : {
-              creacion: 'Creación',
-              actualizacion: 'Actualización',
-              eliminacion: 'Eliminación',
-              renovacion: 'Renovación',
+              creacion: 'CreaciÃ³n',
+              actualizacion: 'ActualizaciÃ³n',
+              eliminacion: 'EliminaciÃ³n',
+              renovacion: 'RenovaciÃ³n',
             }[accionFilter] || 'Todas las acciones'}
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
@@ -160,16 +160,16 @@ export function LogFilters({
             Todas las acciones
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setAccionFilter('creacion')}>
-            Creación
+            CreaciÃ³n
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setAccionFilter('actualizacion')}>
-            Actualización
+            ActualizaciÃ³n
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setAccionFilter('eliminacion')}>
-            Eliminación
+            EliminaciÃ³n
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setAccionFilter('renovacion')}>
-            Renovación
+            RenovaciÃ³n
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -193,13 +193,13 @@ export function LogFilters({
             Limpiar logs seleccionados ({selectedCount} en total)
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRequestDeleteByDays(7)}>
-            Eliminar Logs de +7 días
+            Eliminar Logs de +7 dÃ­as
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRequestDeleteByDays(14)}>
-            Eliminar Logs de +14 días
+            Eliminar Logs de +14 dÃ­as
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRequestDeleteByDays(30)}>
-            Eliminar Logs de +30 días
+            Eliminar Logs de +30 dÃ­as
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

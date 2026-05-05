@@ -1,8 +1,9 @@
+﻿import { ENTITIES, logCacheHit } from '@/lib/supabase/catalogos-repository';
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Configuracion, TasasCambio } from '@/types';
 import { supabase } from '@/lib/supabase/client';
-import { logCacheHit, ENTITIES } from '@/lib/supabase/catalogos-repository';
+import type { Configuracion, TasasCambio } from '@/types';
 
 interface ConfigState {
   config: Configuracion | null;

@@ -39,14 +39,14 @@ function NotificacionesMetrics() {
         underlineColor="bg-blue-500"
       />
       <MetricCard
-        title="Ventas Próximas"
+        title="Ventas PrÃ³ximas"
         value={ventasProximas}
         icon={ShoppingCart}
         iconColor="text-red-500"
         underlineColor="bg-red-500"
       />
       <MetricCard
-        title="Servicios Próximos"
+        title="Servicios PrÃ³ximos"
         value={serviciosProximos}
         icon={Server}
         iconColor="text-orange-500"
@@ -104,10 +104,10 @@ function NotificacionesPageContent() {
       await sincronizarNotificacionesForzado();
       await fetchNotificaciones(true);
       await fetchCounts();
-      toast.success('Sincronización completada', { description: 'Las notificaciones han sido actualizadas correctamente.' });
+      toast.success('SincronizaciÃ³n completada', { description: 'Las notificaciones han sido actualizadas correctamente.' });
     } catch (error) {
       console.error('Error during sync:', error);
-      toast.error('Error durante sincronización', { description: 'No se pudo completar la sincronización. Intenta nuevamente.' });
+      toast.error('Error durante sincronizaciÃ³n', { description: 'No se pudo completar la sincronizaciÃ³n. Intenta nuevamente.' });
     } finally {
       setIsSyncing(false);
     }
@@ -135,14 +135,14 @@ function NotificacionesPageContent() {
       {/* Metrics - matching CategoriasMetrics style */}
       <NotificacionesMetrics />
 
-      {/* Tabs - matching Categorías tabs style */}
+      {/* Tabs - matching CategorÃ­as tabs style */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex w-fit max-w-full flex-wrap items-end justify-start gap-x-0 gap-y-1 overflow-visible border-b border-border">
           <TabsTrigger
             value="ventas"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm whitespace-nowrap"
           >
-            Ventas Próximas
+            Ventas PrÃ³ximas
             {ventasProximas > 0 && (
               <span className="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
                 {ventasProximas}
@@ -153,7 +153,7 @@ function NotificacionesPageContent() {
             value="servicios"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm whitespace-nowrap"
           >
-            Servicios Próximos
+            Servicios PrÃ³ximos
             {serviciosProximos > 0 && (
               <span className="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
                 {serviciosProximos}

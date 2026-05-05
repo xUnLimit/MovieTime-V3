@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const queryDocumentsMock = vi.fn();
-const getAllMock = vi.fn();
+const queryVentasMock = vi.fn();
+const getServiciosMock = vi.fn();
 const syncNotificacionesMock = vi.fn();
 const syncUnServicioMock = vi.fn();
 const syncUnaVentaMock = vi.fn();
@@ -9,12 +9,14 @@ const fetchNotificacionesMock = vi.fn();
 const fetchCountsMock = vi.fn();
 
 vi.mock('@/lib/supabase/servicios-repository', () => ({
-  queryDocuments: queryDocumentsMock,
-  getAll: getAllMock,
+  getServicios: getServiciosMock,
   ENTITIES: {
-    VENTAS: 'ventas',
     SERVICIOS: 'servicios',
   },
+}));
+
+vi.mock('@/lib/supabase/ventas-repository', () => ({
+  queryVentas: queryVentasMock,
 }));
 
 vi.mock('@/lib/services/notificationSyncService', () => ({
@@ -35,8 +37,8 @@ vi.mock('@/store/notificacionesStore', () => ({
 describe('servicioSyncService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    queryDocumentsMock.mockResolvedValue([]);
-    getAllMock.mockResolvedValue([]);
+    queryVentasMock.mockResolvedValue([]);
+    getServiciosMock.mockResolvedValue([]);
     syncNotificacionesMock.mockResolvedValue(undefined);
     syncUnServicioMock.mockResolvedValue(undefined);
     syncUnaVentaMock.mockResolvedValue(undefined);
@@ -47,7 +49,7 @@ describe('servicioSyncService', () => {
   describe('syncServicioDependencias', () => {
     it('regenera notificaciones del servicio y sus ventas asociadas', async () => {
       const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
-      queryDocumentsMock.mockResolvedValue([{ id: 'venta-1' }, { id: 'venta-2' }]);
+      queryVentasMock.mockResolvedValue([{ id: 'venta-1' }, { id: 'venta-2' }]);
 
       const { syncServicioDependencias } = await import('./servicioSyncService');
 
@@ -70,7 +72,7 @@ describe('servicioSyncService', () => {
         }
       );
 
-      expect(queryDocumentsMock).toHaveBeenCalledWith('ventas', [
+      expect(queryVentasMock).toHaveBeenCalledWith([
         { field: 'servicioId', operator: '==', value: 'servicio-1' },
       ]);
       expect(syncUnServicioMock).toHaveBeenCalledWith('servicio-1');
@@ -85,7 +87,7 @@ describe('servicioSyncService', () => {
     });
 
     it('no llama a sincronizarUnaVenta si el servicio no tiene ventas asociadas', async () => {
-      queryDocumentsMock.mockResolvedValue([]);
+      queryVentasMock.mockResolvedValue([]);
 
       const { syncServicioDependencias } = await import('./servicioSyncService');
 
@@ -101,7 +103,7 @@ describe('servicioSyncService', () => {
 
   describe('resyncServiciosDenormalizedData', () => {
     it('fuerza notificaciones y refresca el store, sin escribir campos en ventas', async () => {
-      getAllMock.mockResolvedValue([
+      getServiciosMock.mockResolvedValue([
         { id: 'servicio-1', nombre: 'Netflix', correo: 'a@demo.com', contrasena: '1234', categoriaId: 'cat-1', categoriaNombre: 'Streaming' },
         { id: 'servicio-2', nombre: 'Disney', correo: 'b@demo.com', contrasena: '5678', categoriaId: 'cat-2', categoriaNombre: 'Kids' },
       ]);
@@ -112,12 +114,12 @@ describe('servicioSyncService', () => {
       expect(syncNotificacionesMock).toHaveBeenCalledTimes(1);
       expect(fetchNotificacionesMock).toHaveBeenCalledWith(true);
       expect(fetchCountsMock).toHaveBeenCalledTimes(1);
-      // V2: sale display fields come from views — no writes to ventas
+      // V2: sale display fields come from views â€” no writes to ventas
       expect(result).toEqual({ serviciosRevisados: 2, ventasActualizadas: 0 });
     });
 
     it('devuelve serviciosRevisados=0 cuando no hay servicios', async () => {
-      getAllMock.mockResolvedValue([]);
+      getServiciosMock.mockResolvedValue([]);
 
       const { resyncServiciosDenormalizedData } = await import('./servicioSyncService');
       const result = await resyncServiciosDenormalizedData();

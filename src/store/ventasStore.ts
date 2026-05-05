@@ -1,7 +1,8 @@
+﻿import { adjustCategoriaSuscripciones, adjustServiciosActivos, countVentas, createPagoVenta, createVenta, ENTITIES, getVentaById, getVentas, logCacheHit, queryPagosVenta, removePagoVenta, removeVenta, updateVenta } from '@/lib/supabase/ventas-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { VentaDoc, MetodoPago, PagoVenta } from '@/types';
-import { getAll, getById, getCount, create as createDoc, update, remove, ENTITIES, logCacheHit, adjustServiciosActivos, queryDocuments, adjustCategoriaSuscripciones } from '@/lib/supabase/ventas-repository';
+
+import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { format } from 'date-fns';
@@ -11,6 +12,7 @@ import { adjustIngresosStats, getMesKeyFromDate, getDiaKeyFromDate, upsertVentaP
 import type { VentaPronostico } from '@/types/dashboard';
 import { currencyService } from '@/lib/services/currencyService';
 import { toast } from 'sonner';
+import type { MetodoPago, PagoVenta, VentaDoc } from '@/types';
 
 function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
   if (v.estado === 'inactivo' || !v.fechaFin || !v.cicloPago) return null;
@@ -80,7 +82,7 @@ export const useVentasStore = create<VentasState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const ventas = await getAll<VentaDoc>(ENTITIES.VENTAS);
+          const ventas = await getVentas<VentaDoc>();
           set({ ventas, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar ventas';
@@ -92,9 +94,9 @@ export const useVentasStore = create<VentasState>()(
       fetchCounts: async () => {
         try {
           const [totalVentas, ventasActivas, ventasInactivas] = await Promise.all([
-            getCount(ENTITIES.VENTAS, []),
-            getCount(ENTITIES.VENTAS, [{ field: 'estado', operator: '==', value: 'activo' }]),
-            getCount(ENTITIES.VENTAS, [{ field: 'estado', operator: '==', value: 'inactivo' }]),
+            countVentas([]),
+            countVentas([{ field: 'estado', operator: '==', value: 'activo' }]),
+            countVentas([{ field: 'estado', operator: '==', value: 'inactivo' }]),
           ]);
           set({ totalVentas, ventasActivas, ventasInactivas });
         } catch (error) {
@@ -117,12 +119,12 @@ export const useVentasStore = create<VentasState>()(
             ...ventaDataLimpia,
           };
 
-          const ventaId = await createDoc(ENTITIES.VENTAS, ventaDocData);
+          const ventaId = await createVenta(ventaDocData);
 
-          // Paso 2: Crear el pago inicial en la colección separada (fuente de verdad)
+          // Paso 2: Crear el pago inicial en la colecciÃƒÂ³n separada (fuente de verdad)
           if (pagos && pagos.length > 0) {
             const pagoInicial = pagos[0];
-            await createDoc(ENTITIES.PAGOS_VENTA, {
+            await createPagoVenta({
               ventaId,
               clienteId: ventaData.clienteId || '',
               clienteNombre: ventaData.clienteNombre,
@@ -159,17 +161,17 @@ export const useVentasStore = create<VentasState>()(
             accion: 'creacion',
             entidad: 'venta',
             entidadId: ventaId,
-            entidadNombre: `${ventaData.clienteNombre} — ${ventaData.servicioNombre}`,
-            detalles: `Venta creada: ${ventaData.clienteNombre} / ${ventaData.servicioNombre} — $${ventaData.precioFinal ?? 0} ${ventaData.moneda ?? 'USD'} — ${format(ventaData.fechaInicio ?? new Date(), 'dd/MM/yyyy')} al ${format(ventaData.fechaFin ?? new Date(), 'dd/MM/yyyy')} (${ventaData.cicloPago})`,
+            entidadNombre: `${ventaData.clienteNombre} Ã¢â‚¬â€ ${ventaData.servicioNombre}`,
+            detalles: `Venta creada: ${ventaData.clienteNombre} / ${ventaData.servicioNombre} Ã¢â‚¬â€ $${ventaData.precioFinal ?? 0} ${ventaData.moneda ?? 'USD'} Ã¢â‚¬â€ ${format(ventaData.fechaInicio ?? new Date(), 'dd/MM/yyyy')} al ${format(ventaData.fechaFin ?? new Date(), 'dd/MM/yyyy')} (${ventaData.cicloPago})`,
           }).catch(() => {});
 
-          // Actualizar contadores de la categoría (convertir precio a USD)
+          // Actualizar contadores de la categorÃƒÂ­a (convertir precio a USD)
           if (ventaDataLimpia.categoriaId && ventaData.precioFinal) {
             const precioFinalUSD = await currencyService.convertToUSD(ventaData.precioFinal, ventaData.moneda ?? 'USD');
             await adjustCategoriaSuscripciones(ventaDataLimpia.categoriaId, 1, precioFinalUSD);
           }
 
-          // Actualizar estadísticas del dashboard (non-blocking)
+          // Actualizar estadÃƒÂ­sticas del dashboard (non-blocking)
           adjustIngresosStats({
             delta: ventaData.precioFinal ?? 0,
             moneda: ventaData.moneda ?? 'USD',
@@ -197,7 +199,7 @@ export const useVentasStore = create<VentasState>()(
             // 2. Persistir a Supabase en background (non-blocking)
             upsertVentaPronostico(ventaPronostico, newVenta.id).catch((err) => {
               console.error('[VentasStore] Error upserting pronostico:', err);
-              toast.warning('El pronóstico del dashboard puede estar desactualizado', { duration: 4000 });
+              toast.warning('El pronÃƒÂ³stico del dashboard puede estar desactualizado', { duration: 4000 });
             });
           }
 
@@ -207,7 +209,7 @@ export const useVentasStore = create<VentasState>()(
             window.dispatchEvent(new Event('venta-created'));
           }
 
-          // ✅ Sync notifications for this new venta (non-blocking)
+          // Ã¢Å“â€¦ Sync notifications for this new venta (non-blocking)
           sincronizarUnaVenta(ventaId).catch(() => {});
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear venta';
@@ -222,7 +224,7 @@ export const useVentasStore = create<VentasState>()(
           // Obtener la venta actual para comparar valores
           const ventaActual = get().ventas.find(v => v.id === id);
           if (!ventaActual) {
-            const ventaDoc = await getById<VentaDoc>(ENTITIES.VENTAS, id);
+            const ventaDoc = await getVentaById<VentaDoc>(id);
             if (!ventaDoc) throw new Error('Venta no encontrada');
           }
 
@@ -231,7 +233,7 @@ export const useVentasStore = create<VentasState>()(
           // Si cambia metodoPagoId, actualizar campos denormalizados
           if (updates.metodoPagoId !== undefined) {
             const metodoPago = updates.metodoPagoId
-              ? await getById<MetodoPago>(ENTITIES.METODOS_PAGO, updates.metodoPagoId)
+              ? await getMetodoPagoById<MetodoPago>(updates.metodoPagoId)
               : null;
 
             finalUpdates = {
@@ -241,10 +243,10 @@ export const useVentasStore = create<VentasState>()(
             };
           }
 
-          await update(ENTITIES.VENTAS, id, finalUpdates);
+          await updateVenta(id, finalUpdates);
 
-          // Actualizar contadores de categoría y usuario si cambió el estado, precio o la categoría
-          const ventaAnterior = ventaActual || await getById<VentaDoc>(ENTITIES.VENTAS, id);
+          // Actualizar contadores de categorÃƒÂ­a y usuario si cambiÃƒÂ³ el estado, precio o la categorÃƒÂ­a
+          const ventaAnterior = ventaActual || await getVentaById<VentaDoc>(id);
           if (ventaAnterior) {
             const precioAnterior = ventaAnterior.precioFinal || 0;
             const precioNuevo = updates.precioFinal !== undefined ? updates.precioFinal : precioAnterior;
@@ -253,24 +255,24 @@ export const useVentasStore = create<VentasState>()(
             const estadoAnterior = ventaAnterior.estado || 'activo';
             const estadoNuevo = updates.estado || estadoAnterior;
 
-            // 1. Sincronizar serviciosActivos del USUARIO si cambió el estado
+            // 1. Sincronizar serviciosActivos del USUARIO si cambiÃƒÂ³ el estado
             if (updates.estado !== undefined && estadoAnterior !== estadoNuevo) {
               const clienteId = ventaAnterior.clienteId;
               if (clienteId) {
                 if (estadoNuevo === 'inactivo') {
-                  // Pasó de activo a inactivo -> restar 1
+                  // PasÃƒÂ³ de activo a inactivo -> restar 1
                   await adjustServiciosActivos(clienteId, -1);
                 } else if (estadoAnterior === 'inactivo') {
-                  // Pasó de inactivo a activo -> sumar 1
+                  // PasÃƒÂ³ de inactivo a activo -> sumar 1
                   await adjustServiciosActivos(clienteId, 1);
                 }
               }
             }
 
-            // 2. Sincronizar perfilesOcupados del SERVICIO si cambió el estado
+            // 2. Sincronizar perfilesOcupados del SERVICIO si cambiÃƒÂ³ el estado
             if (updates.estado !== undefined && estadoAnterior !== estadoNuevo && ventaAnterior.servicioId) {
               // NOTE: Dynamic import is intentional to avoid a circular module dependency.
-              // serviciosStore → (via syncServicioDependencias) → ventasStore creates a cycle.
+              // serviciosStore Ã¢â€ â€™ (via syncServicioDependencias) Ã¢â€ â€™ ventasStore creates a cycle.
               // Lazy import breaks this cycle by deferring resolution until runtime.
               const { useServiciosStore } = await import('./serviciosStore');
               if (estadoNuevo === 'inactivo') {
@@ -280,9 +282,9 @@ export const useVentasStore = create<VentasState>()(
               }
             }
 
-            // 3. Sincronizar contadores de la CATEGORÍA
+            // 3. Sincronizar contadores de la CATEGORÃƒÂA
             if (updates.categoriaId && categoriaAnterior !== categoriaNueva) {
-              // Si cambió la categoría: restar de la anterior y sumar a la nueva
+              // Si cambiÃƒÂ³ la categorÃƒÂ­a: restar de la anterior y sumar a la nueva
               if (categoriaAnterior) {
                 const precioUSD = await currencyService.convertToUSD(precioAnterior, ventaAnterior.moneda ?? 'USD');
                 await adjustCategoriaSuscripciones(categoriaAnterior, -1, -precioUSD);
@@ -292,14 +294,14 @@ export const useVentasStore = create<VentasState>()(
                 await adjustCategoriaSuscripciones(categoriaNueva, 1, precioUSD);
               }
             } else if (estadoAnterior !== estadoNuevo) {
-              // Si cambió el estado (misma categoría): sumar/restar 1 venta e ingresos
+              // Si cambiÃƒÂ³ el estado (misma categorÃƒÂ­a): sumar/restar 1 venta e ingresos
               if (categoriaAnterior) {
                 const precioUSD = await currencyService.convertToUSD(precioNuevo, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
                 const delta = estadoNuevo === 'inactivo' ? -1 : 1;
                 await adjustCategoriaSuscripciones(categoriaAnterior, delta, delta * precioUSD);
               }
             } else if (updates.precioFinal !== undefined && precioAnterior !== precioNuevo) {
-              // Si solo cambió el precio (misma categoría, mismo estado): ajustar solo ingresos
+              // Si solo cambiÃƒÂ³ el precio (misma categorÃƒÂ­a, mismo estado): ajustar solo ingresos
               const diffOriginal = precioNuevo - precioAnterior;
               const diffUSD = await currencyService.convertToUSD(diffOriginal, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
               if (categoriaAnterior && diffUSD !== 0) {
@@ -329,9 +331,9 @@ export const useVentasStore = create<VentasState>()(
             entidad: 'venta',
             entidadId: id,
             entidadNombre: (ventaAnterior?.clienteNombre && ventaAnterior?.servicioNombre)
-              ? `${ventaAnterior.clienteNombre} — ${ventaAnterior.servicioNombre}`
+              ? `${ventaAnterior.clienteNombre} Ã¢â‚¬â€ ${ventaAnterior.servicioNombre}`
               : '',
-            detalles: `Venta actualizada: ${ventaAnterior?.clienteNombre ?? '—'} / ${ventaAnterior?.servicioNombre ?? '—'}`,
+            detalles: `Venta actualizada: ${ventaAnterior?.clienteNombre ?? 'Ã¢â‚¬â€'} / ${ventaAnterior?.servicioNombre ?? 'Ã¢â‚¬â€'}`,
             cambios: cambios.length > 0 ? cambios : undefined,
           }).catch(() => {});
 
@@ -358,7 +360,7 @@ export const useVentasStore = create<VentasState>()(
             // 2. Persistir a Supabase en background (non-blocking)
             upsertVentaPronostico(ventaPronostico, id).catch((err) => {
               console.error('[VentasStore] Error upserting pronostico:', err);
-              toast.warning('El pronóstico del dashboard puede estar desactualizado', { duration: 4000 });
+              toast.warning('El pronÃƒÂ³stico del dashboard puede estar desactualizado', { duration: 4000 });
             });
           }
 
@@ -379,11 +381,11 @@ export const useVentasStore = create<VentasState>()(
         // Save current state for rollback
         const currentVentas = get().ventas;
 
-        // Buscar la venta en memoria primero, si no está, buscar en Supabase
+        // Buscar la venta en memoria primero, si no estÃƒÂ¡, buscar en Supabase
         let ventaEliminada = currentVentas.find(v => v.id === id);
         if (!ventaEliminada) {
-          // La página de ventas usa paginación, el store puede no tener la venta cargada
-          const ventaDoc = await getById<VentaDoc>(ENTITIES.VENTAS, id);
+          // La pÃƒÂ¡gina de ventas usa paginaciÃƒÂ³n, el store puede no tener la venta cargada
+          const ventaDoc = await getVentaById<VentaDoc>(id);
           if (ventaDoc) {
             ventaEliminada = ventaDoc;
           }
@@ -397,18 +399,18 @@ export const useVentasStore = create<VentasState>()(
         try {
           // Si se solicita eliminar pagos, eliminar primero todos los PagoVenta asociados
           if (deletePagos) {
-            const pagos = await queryDocuments<PagoVenta>(ENTITIES.PAGOS_VENTA, [
+            const pagos = await queryPagosVenta<PagoVenta>([
               { field: 'ventaId', operator: '==', value: id }
             ]);
 
             // Eliminar todos los pagos en paralelo
             await Promise.all(
-              pagos.map(pago => remove(ENTITIES.PAGOS_VENTA, pago.id))
+              pagos.map(pago => removePagoVenta(pago.id))
             );
           }
 
           // Eliminar la venta
-          await remove(ENTITIES.VENTAS, id);
+          await removeVenta(id);
 
           // Update service profile occupancy if applicable
           if (servicioId && perfilNumero) {
@@ -421,7 +423,7 @@ export const useVentasStore = create<VentasState>()(
             await adjustServiciosActivos(ventaEliminada.clienteId, -1);
           }
 
-          // Decrementar contadores de la categoría (convertir precio a USD)
+          // Decrementar contadores de la categorÃƒÂ­a (convertir precio a USD)
           if (ventaEliminada?.categoriaId && ventaEliminada?.precioFinal) {
             const precioFinalUSD = await currencyService.convertToUSD(ventaEliminada.precioFinal, ventaEliminada.moneda ?? 'USD');
             await adjustCategoriaSuscripciones(
@@ -431,7 +433,7 @@ export const useVentasStore = create<VentasState>()(
             );
           }
 
-          // Restar de estadísticas del dashboard (non-blocking)
+          // Restar de estadÃƒÂ­sticas del dashboard (non-blocking)
           if (ventaEliminada?.precioFinal) {
             adjustIngresosStats({
               delta: -(ventaEliminada.precioFinal),
@@ -457,7 +459,7 @@ export const useVentasStore = create<VentasState>()(
             accion: 'eliminacion',
             entidad: 'venta',
             entidadId: id,
-            entidadNombre: `${ventaEliminada?.clienteNombre ?? ''} — ${ventaEliminada?.servicioNombre ?? ''}`,
+            entidadNombre: `${ventaEliminada?.clienteNombre ?? ''} Ã¢â‚¬â€ ${ventaEliminada?.servicioNombre ?? ''}`,
             detalles: `Venta eliminada: ${ventaEliminada?.clienteNombre} / ${ventaEliminada?.servicioNombre}`,
           }).catch(() => {});
 
@@ -473,10 +475,10 @@ export const useVentasStore = create<VentasState>()(
           }).catch(() => {});
           upsertVentaPronostico(null, id).catch((err) => {
             console.error('[VentasStore] Error removing pronostico:', err);
-            toast.warning('El pronóstico del dashboard puede estar desactualizado', { duration: 4000 });
+            toast.warning('El pronÃƒÂ³stico del dashboard puede estar desactualizado', { duration: 4000 });
           });
 
-          // Notificar que se eliminó una venta
+          // Notificar que se eliminÃƒÂ³ una venta
           if (typeof window !== 'undefined') {
             window.localStorage.setItem('venta-deleted', Date.now().toString());
             window.dispatchEvent(new Event('venta-deleted'));

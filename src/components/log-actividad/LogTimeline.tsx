@@ -1,20 +1,21 @@
-'use client';
+﻿'use client';
 
-import { ActivityLog } from '@/types';
-import { DataTable, Column } from '@/components/shared/DataTable';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LogFilters } from './LogFilters';
-import { CambiosModal } from './CambiosModal';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useState } from 'react';
-import { Eye, AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Eye, Loader2 } from 'lucide-react';
+
+import { CambiosModal } from '@/components/log-actividad/CambiosModal';
+import { LogFilters } from '@/components/log-actividad/LogFilters';
+import { DataTable, type Column } from '@/components/shared/DataTable';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
-import { getActivityDisplayConfig, activityActionColors } from '@/lib/utils/activityDisplayHelpers';
-import { getCount, ENTITIES } from '@/lib/supabase/activity-log-repository';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { countActivityLogs } from '@/lib/supabase/activity-log-repository';
+import { activityActionColors, getActivityDisplayConfig } from '@/lib/utils/activityDisplayHelpers';
+import type { ActivityLog } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +36,7 @@ interface LogTimelineProps {
   setEntidadFilter: (value: string) => void;
   usuarioFilter: string;
   setUsuarioFilter: (value: string) => void;
-  // Paginación
+  // PaginaciÃƒÂ³n
   hasMore: boolean;
   hasPrevious: boolean;
   page: number;
@@ -76,7 +77,7 @@ export function LogTimeline({
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
   const [cambiosModalOpen, setCambiosModalOpen] = useState(false);
 
-  // Modal de confirmación para limpiar por días
+  // Modal de confirmaciÃƒÂ³n para limpiar por dÃƒÂ­as
   const [confirmDays, setConfirmDays] = useState<number | null>(null);
   const [confirmCount, setConfirmCount] = useState<number | null>(null);
   const [isLoadingCount, setIsLoadingCount] = useState(false);
@@ -94,10 +95,10 @@ export function LogTimeline({
 
   const getActionLabel = (accion: ActivityLog['accion']) => {
     const labels = {
-      creacion: 'Creación',
-      actualizacion: 'Actualización',
-      eliminacion: 'Eliminación',
-      renovacion: 'Renovación',
+      creacion: 'CreaciÃƒÂ³n',
+      actualizacion: 'ActualizaciÃƒÂ³n',
+      eliminacion: 'EliminaciÃƒÂ³n',
+      renovacion: 'RenovaciÃƒÂ³n',
     };
     return labels[accion];
   };
@@ -108,8 +109,8 @@ export function LogTimeline({
       revendedor: 'Revendedor',
       servicio: 'Servicio',
       usuario: 'Usuario',
-      categoria: 'Categoría',
-      metodo_pago: 'Método de Pago',
+      categoria: 'CategorÃƒÂ­a',
+      metodo_pago: 'MÃƒÂ©todo de Pago',
       gasto: 'Gasto',
       venta: 'Venta',
       template: 'Template',
@@ -148,7 +149,7 @@ export function LogTimeline({
     setIsLoadingCount(true);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const count = await getCount(ENTITIES.ACTIVITY_LOG, [
+    const count = await countActivityLogs([
       { field: 'timestamp', operator: '<', value: cutoff },
     ]);
     setConfirmCount(count);
@@ -213,7 +214,7 @@ export function LogTimeline({
     },
     {
       key: 'accion',
-      header: 'Acción',
+      header: 'AcciÃƒÂ³n',
       sortable: true,
       align: 'center',
       width: '12%',
@@ -267,7 +268,7 @@ export function LogTimeline({
               Ver ({item.cambios.length})
             </Button>
           ) : (
-            <span className="text-xs text-muted-foreground/40">—</span>
+            <span className="text-xs text-muted-foreground/40">Ã¢â‚¬â€</span>
           )}
         </div>
       ),
@@ -334,17 +335,17 @@ export function LogTimeline({
         />
       )}
 
-      {/* Modal de confirmación para limpiar por días */}
+      {/* Modal de confirmaciÃƒÂ³n para limpiar por dÃƒÂ­as */}
       <Dialog open={confirmDays !== null} onOpenChange={(open) => { if (!open && !isDeleting) { setConfirmDays(null); setConfirmCount(null); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              ¿Estás seguro de limpiar los logs?
+              Ã‚Â¿EstÃƒÂ¡s seguro de limpiar los logs?
             </DialogTitle>
             <DialogDescription className="pt-1">
-              Esta acción eliminará permanentemente todos los registros con más de{' '}
-              <span className="font-semibold text-foreground">{confirmDays} días</span> de antigüedad.
+              Esta acciÃƒÂ³n eliminarÃƒÂ¡ permanentemente todos los registros con mÃƒÂ¡s de{' '}
+              <span className="font-semibold text-foreground">{confirmDays} dÃƒÂ­as</span> de antigÃƒÂ¼edad.
               {isLoadingCount ? (
                 <span className="flex items-center gap-1.5 mt-2 text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -352,9 +353,9 @@ export function LogTimeline({
                 </span>
               ) : confirmCount !== null ? (
                 <span className="block mt-2">
-                  Se eliminarán{' '}
+                  Se eliminarÃƒÂ¡n{' '}
                   <span className="font-semibold text-red-500">{confirmCount} {confirmCount === 1 ? 'registro' : 'registros'}</span>.{' '}
-                  Esta acción no se puede deshacer.
+                  Esta acciÃƒÂ³n no se puede deshacer.
                 </span>
               ) : null}
             </DialogDescription>
@@ -375,7 +376,7 @@ export function LogTimeline({
               {isDeleting ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Eliminando...</>
               ) : (
-                'Sí, limpiar logs'
+                'SÃƒÂ­, limpiar logs'
               )}
             </Button>
           </DialogFooter>

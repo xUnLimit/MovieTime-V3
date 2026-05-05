@@ -1,10 +1,11 @@
+﻿import { countMetodosPago, createMetodoPago, ENTITIES, getMetodosPago, logCacheHit, queryMetodosPago, removeMetodoPago, updateMetodoPago } from '@/lib/supabase/catalogos-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { MetodoPago } from '@/types';
-import { getAll, getCount, queryDocuments, create as createDoc, update, remove, ENTITIES, logCacheHit } from '@/lib/supabase/catalogos-repository';
+
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import type { MetodoPago } from '@/types';
 
 // Helper para obtener contexto de usuario
 function getLogContext() {
@@ -69,11 +70,11 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const metodosPago = (await getAll<MetodoPago>(ENTITIES.METODOS_PAGO))
+          const metodosPago = (await getMetodosPago<MetodoPago>())
             .filter(isVisibleMetodoPago);
           set({ metodosPago, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar métodos de pago';
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar mÃƒÂ©todos de pago';
           console.error('Error fetching metodos pago:', error);
           set({ metodosPago: [], isLoading: false, error: errorMessage });
         }
@@ -81,7 +82,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
       fetchMetodosPagoUsuarios: async () => {
         try {
-          const metodos = await queryDocuments<MetodoPago>(ENTITIES.METODOS_PAGO, [
+          const metodos = await queryMetodosPago<MetodoPago>([
             { field: 'asociadoA', operator: '==', value: 'usuario' },
             { field: 'activo', operator: '==', value: true }
           ]);
@@ -94,7 +95,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
       fetchMetodosPagoServicios: async () => {
         try {
-          const metodos = await queryDocuments<MetodoPago>(ENTITIES.METODOS_PAGO, [
+          const metodos = await queryMetodosPago<MetodoPago>([
             { field: 'asociadoA', operator: '==', value: 'servicio' },
             { field: 'activo', operator: '==', value: true }
           ]);
@@ -108,9 +109,9 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
       fetchCounts: async () => {
         try {
           const [totalMetodos, metodosUsuarios, metodosServicios] = await Promise.all([
-            getCount(ENTITIES.METODOS_PAGO, [{ field: 'asociadoA', operator: 'in', value: ['usuario', 'servicio'] }]),
-            getCount(ENTITIES.METODOS_PAGO, [{ field: 'asociadoA', operator: '==', value: 'usuario' }]),
-            getCount(ENTITIES.METODOS_PAGO, [{ field: 'asociadoA', operator: '==', value: 'servicio' }]),
+            countMetodosPago([{ field: 'asociadoA', operator: 'in', value: ['usuario', 'servicio'] }]),
+            countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'usuario' }]),
+            countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'servicio' }]),
           ]);
           set({ totalMetodos, metodosUsuarios, metodosServicios });
         } catch (error) {
@@ -121,7 +122,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
       createMetodoPago: async (metodoData) => {
         try {
-          const id = await createDoc(ENTITIES.METODOS_PAGO, metodoData as Omit<MetodoPago, 'id'>);
+          const id = await createMetodoPago(metodoData as Omit<MetodoPago, 'id'>);
 
           const newMetodo: MetodoPago = {
             ...metodoData,
@@ -141,7 +142,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             entidad: 'metodo_pago',
             entidadId: id,
             entidadNombre: metodoData.nombre,
-            detalles: `Método de pago creado: "${metodoData.nombre}"`,
+            detalles: `MÃƒÂ©todo de pago creado: "${metodoData.nombre}"`,
           }).catch(() => {});
         } catch (error) {
           console.error('Error creating metodo pago:', error);
@@ -156,9 +157,9 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
           const cambioNombre = oldMetodo && updates.nombre !== undefined && oldMetodo.nombre !== updates.nombre;
           const cambioMoneda = oldMetodo && updates.moneda !== undefined && oldMetodo.moneda !== updates.moneda;
 
-          await update(ENTITIES.METODOS_PAGO, id, updates);
+          await updateMetodoPago(id, updates);
 
-          // Si cambió el nombre o la moneda, sincronizar en cascada todas las entidades que usan este método
+          // Si cambiÃƒÂ³ el nombre o la moneda, sincronizar en cascada todas las entidades que usan este mÃƒÂ©todo
           if ((cambioNombre || cambioMoneda) && oldMetodo) {
             const { syncMetodoPagoDependencias } = await import('@/lib/services/metodoPagoSyncService');
             await syncMetodoPagoDependencias({
@@ -183,7 +184,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
                 : metodo
             );
 
-            // Actualizar contadores si cambió el asociadoA
+            // Actualizar contadores si cambiÃƒÂ³ el asociadoA
             let newMetodosUsuarios = state.metodosUsuarios;
             let newMetodosServicios = state.metodosServicios;
 
@@ -211,7 +212,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             entidad: 'metodo_pago',
             entidadId: id,
             entidadNombre: oldMetodo?.nombre ?? id,
-            detalles: `Método de pago actualizado: "${oldMetodo?.nombre}"`,
+            detalles: `MÃƒÂ©todo de pago actualizado: "${oldMetodo?.nombre}"`,
             cambios: cambios.length > 0 ? cambios : undefined,
           }).catch(() => {});
         } catch (error) {
@@ -223,10 +224,10 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
       toggleActivo: async (id) => {
         try {
           const metodo = get().metodosPago.find((m) => m.id === id);
-          if (!metodo) throw new Error('Método de pago no encontrado');
+          if (!metodo) throw new Error('MÃƒÂ©todo de pago no encontrado');
 
           const newActivo = !metodo.activo;
-          await update(ENTITIES.METODOS_PAGO, id, { activo: newActivo });
+          await updateMetodoPago(id, { activo: newActivo });
 
           set((state) => ({
             metodosPago: state.metodosPago.map((m) =>
@@ -245,7 +246,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
         const metodoEliminado = get().metodosPago.find(m => m.id === id);
 
         try {
-          await remove(ENTITIES.METODOS_PAGO, id);
+          await removeMetodoPago(id);
 
           set((state) => ({
             metodosPago: state.metodosPago.filter((metodo) => metodo.id !== id)
@@ -258,7 +259,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             entidad: 'metodo_pago',
             entidadId: id,
             entidadNombre: metodoEliminado?.nombre ?? id,
-            detalles: `Método de pago eliminado: "${metodoEliminado?.nombre}"`,
+            detalles: `MÃƒÂ©todo de pago eliminado: "${metodoEliminado?.nombre}"`,
           }).catch(() => {});
         } catch (error) {
           console.error('Error deleting metodo pago:', error);

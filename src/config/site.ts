@@ -6,7 +6,7 @@
 
 export const siteConfig = {
   name: 'MovieTime PTY',
-  description: 'Sistema de gestión de servicios de streaming en Panamá',
+  description: 'Sistema de gestiÃ³n de servicios de streaming en PanamÃ¡',
   url: 'http://localhost:3000',
   ogImage: '',
   links: {

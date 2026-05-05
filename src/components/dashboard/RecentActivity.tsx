@@ -14,27 +14,27 @@ export function RecentActivity() {
 
   return (
     <Card className="flex flex-col py-1">
-      {/* py-1 = padding vertical del Card (4px arriba + 4px abajo, igual que Ingresos por Categoría) */}
+      {/* py-1 = padding vertical del Card (4px arriba + 4px abajo, igual que Ingresos por CategorÃ­a) */}
       {/* flex flex-col = layout vertical para organizar contenido */}
       <CardHeader className="pt-3 px-6 pb-2">
-        {/* pt-3 = padding arriba del título (12px, igual que Ingresos por Categoría) */}
-        {/* px-6 = separación del borde (24px) */}
-        {/* pb-2 = espacio entre título y contenido (8px, igual que Ingresos por Categoría) */}
+        {/* pt-3 = padding arriba del tÃ­tulo (12px, igual que Ingresos por CategorÃ­a) */}
+        {/* px-6 = separaciÃ³n del borde (24px) */}
+        {/* pb-2 = espacio entre tÃ­tulo y contenido (8px, igual que Ingresos por CategorÃ­a) */}
         <div className="space-y-0.5">
-          {/* space-y-0.5 = espacio mínimo entre título y descripción (2px) */}
+          {/* space-y-0.5 = espacio mÃ­nimo entre tÃ­tulo y descripciÃ³n (2px) */}
           <CardTitle className="text-base">Actividad Reciente</CardTitle>
           <CardDescription className="text-sm">
-            Un vistazo a las últimas acciones realizadas.
+            Un vistazo a las Ãºltimas acciones realizadas.
           </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="-mt-4 pt-0 px-6 pb-2 flex-1 flex flex-col">
         {/* -mt-4 = margen negativo arriba para subir actividades (16px hacia arriba) */}
         {/* pt-0 = sin espacio arriba */}
-        {/* px-6 = separación del borde (24px) */}
+        {/* px-6 = separaciÃ³n del borde (24px) */}
         {/* pb-2 = espacio abajo (8px) */}
         {/* flex-1 = ocupa todo el espacio vertical disponible */}
-        {/* flex flex-col = layout en columna (actividades arriba, botón abajo) */}
+        {/* flex flex-col = layout en columna (actividades arriba, botÃ³n abajo) */}
         <div className="space-y-1.5 pt-0">
           {/* space-y-1.5 = espacio vertical entre elementos (6px) */}
           {isLoading ? (

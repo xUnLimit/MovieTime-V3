@@ -3,11 +3,11 @@ import { obtenerPagosDeServicio, contarRenovacionesDeServicio } from '@/lib/serv
 import { PagoServicio } from '@/types';
 
 /**
- * Hook para cargar pagos de un servicio desde la colección pagosServicio
- * Con cache de 5 minutos a nivel de módulo
+ * Hook para cargar pagos de un servicio desde la colecciÃ³n pagosServicio
+ * Con cache de 5 minutos a nivel de mÃ³dulo
  */
 
-// Cache a nivel de módulo (compartido entre todas las instancias del hook)
+// Cache a nivel de mÃ³dulo (compartido entre todas las instancias del hook)
 const pagosCache = new Map<string, { data: PagoServicio[]; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 

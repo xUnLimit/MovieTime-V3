@@ -1,13 +1,14 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+
 import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
-import { getById, ENTITIES } from '@/lib/supabase/catalogos-repository';
+import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { Button } from '@/components/ui/button';
+import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import type { MetodoPago } from '@/types';
 import { toast } from 'sonner';
 
@@ -24,11 +25,11 @@ function EditarMetodoPagoPageContent() {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await getById<MetodoPago>(ENTITIES.METODOS_PAGO, id);
+        const data = await getMetodoPagoById<MetodoPago>(id);
         setMetodoPago(data);
       } catch (error) {
-        console.error('Error cargando método de pago:', error);
-        toast.error('Error al cargar el método de pago', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
+        console.error('Error cargando mÃƒÂ©todo de pago:', error);
+        toast.error('Error al cargar el mÃƒÂ©todo de pago', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
         setMetodoPago(null);
       } finally {
         setLoading(false);
@@ -49,27 +50,27 @@ function EditarMetodoPagoPageContent() {
     return (
       <div className="space-y-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Método de pago no encontrado</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">MÃƒÂ©todo de pago no encontrado</h1>
           <p className="text-sm text-muted-foreground">
             <Link href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
             <Link href="/metodos-pago" className="hover:text-foreground transition-colors">
-              Métodos de Pago
+              MÃƒÂ©todos de Pago
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
-            No se encontró el método de pago con el ID proporcionado.
+            No se encontrÃƒÂ³ el mÃƒÂ©todo de pago con el ID proporcionado.
           </p>
           <Link
             href="/metodos-pago"
             className="inline-block mt-4 text-primary hover:underline"
           >
-            Volver a Métodos de Pago
+            Volver a MÃƒÂ©todos de Pago
           </Link>
         </div>
       </div>
@@ -87,7 +88,7 @@ function EditarMetodoPagoPageContent() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Método de Pago</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar MÃƒÂ©todo de Pago</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
             <Link href="/" className="hover:text-foreground transition-colors">
@@ -95,7 +96,7 @@ function EditarMetodoPagoPageContent() {
             </Link>{' '}
             /{' '}
             <Link href="/metodos-pago" className="hover:text-foreground transition-colors">
-              Métodos de Pago
+              MÃƒÂ©todos de Pago
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
           </p>
@@ -112,7 +113,7 @@ function EditarMetodoPagoPageContent() {
 
 export default function EditarMetodoPagoPage() {
   return (
-    <ModuleErrorBoundary moduleName="Editar Método de Pago">
+    <ModuleErrorBoundary moduleName="Editar MÃƒÂ©todo de Pago">
       <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-muted-foreground">Cargando...</div></div>}>
         <EditarMetodoPagoPageContent />
       </Suspense>

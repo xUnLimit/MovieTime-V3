@@ -1,4 +1,4 @@
-import { ENTITIES, update } from '@/lib/supabase/usuarios-repository';
+﻿import { updateUsuario } from '@/lib/supabase/usuarios-repository';
 import { useUsuariosStore } from '@/store/usuariosStore';
 import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
 
@@ -17,7 +17,7 @@ export async function syncUsuarioMetodoPago(input: SyncUsuarioMetodoPagoInput): 
   const nextMetodoPagoId = typeof metodoPagoId === 'string' ? metodoPagoId.trim() : '';
   if (!nextMetodoPagoId) return;
 
-  await update(ENTITIES.USUARIOS, usuarioId, { metodoPagoId: nextMetodoPagoId } as never);
+  await updateUsuario(usuarioId, { metodoPagoId: nextMetodoPagoId } as never);
 
   useUsuariosStore.setState((state) => ({
     usuarios: state.usuarios.map((u) =>

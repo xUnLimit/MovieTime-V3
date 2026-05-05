@@ -11,16 +11,16 @@ const recentLogs = new Map<string, number>();
 const LOG_DEBOUNCE_MS = 500; // 500ms es suficiente para capturar duplicados de Strict Mode
 
 /**
- * Crea una key normalizada para el log, ignorando valores variables como duración
+ * Crea una key normalizada para el log, ignorando valores variables como duraciÃ³n
  * Esto permite que logs con diferentes duraciones (43ms vs 45ms) se consideren iguales.
  */
 function getLogKey(message: string): string {
   // Normalizar mensaje removiendo:
-  // - Duraciones en ms: "· 45ms" → ""
-  // - Edad de cache: "· age 3s" → ""
+  // - Duraciones en ms: "Â· 45ms" â†’ ""
+  // - Edad de cache: "Â· age 3s" â†’ ""
   return message
-    .replace(/\s*·\s*\d+ms$/i, '')
-    .replace(/\s*·\s*age\s+\d+s$/i, '')
+    .replace(/\s*Â·\s*\d+ms$/i, '')
+    .replace(/\s*Â·\s*age\s+\d+s$/i, '')
     .trim();
 }
 
@@ -29,7 +29,7 @@ function shouldLog(message: string): boolean {
   const now = Date.now();
   const lastLogTime = recentLogs.get(key);
 
-  // Si se logueó el mismo mensaje hace menos de LOG_DEBOUNCE_MS, ignorar
+  // Si se logueÃ³ el mismo mensaje hace menos de LOG_DEBOUNCE_MS, ignorar
   if (lastLogTime && (now - lastLogTime) < LOG_DEBOUNCE_MS) {
     return false;
   }
@@ -37,7 +37,7 @@ function shouldLog(message: string): boolean {
   // Registrar este log
   recentLogs.set(key, now);
 
-  // Limpiar logs antiguos después de 2 segundos
+  // Limpiar logs antiguos despuÃ©s de 2 segundos
   setTimeout(() => {
     const currentTime = recentLogs.get(key);
     if (currentTime === now) {
@@ -49,23 +49,23 @@ function shouldLog(message: string): boolean {
 }
 
 /**
- * Log de éxito de cache (verde)
+ * Log de Ã©xito de cache (verde)
  */
 export function logCacheHit(collectionName: string, details?: string) {
   if (process.env.NODE_ENV !== 'development') return;
 
-  const message = `[Cache] Hit (${collectionName})${details ? ' · ' + details : ''}`;
+  const message = `[Cache] Hit (${collectionName})${details ? ' Â· ' + details : ''}`;
   if (!shouldLog(message)) return;
 
   console.log(
-    '%c[Cache]%c Hit (' + collectionName + ')' + (details ? ' · ' + details : '') + ' → sin lectura a Supabase',
+    '%c[Cache]%c Hit (' + collectionName + ')' + (details ? ' Â· ' + details : '') + ' â†’ sin lectura a Supabase',
     'background:#FF9800;color:#fff;padding:2px 6px;border-radius:3px;font-weight:600',
     'color:#FF9800;font-weight:600'
   );
 }
 
 /**
- * Log de operación Supabase (azul/verde/morado según tipo)
+ * Log de operaciÃ³n Supabase (azul/verde/morado segÃºn tipo)
  */
 export function logSupabaseOp(
   operation: 'getAll' | 'getById' | 'query' | 'paginated' | 'count',
@@ -89,24 +89,24 @@ export function logSupabaseOp(
   const color = colors[operation];
 
   console.log(
-    '%c[Supabase]%c ' + operation + ' (' + collectionName + ') → ' + details + ' · ' + duration + 'ms',
+    '%c[Supabase]%c ' + operation + ' (' + collectionName + ') â†’ ' + details + ' Â· ' + duration + 'ms',
     `background:${color};color:#fff;padding:2px 6px;border-radius:3px;font-weight:600`,
     `color:${color};font-weight:600`
   );
 }
 
 /**
- * Log específico para cache de ventas
+ * Log especÃ­fico para cache de ventas
  */
 export function logVentasCacheHit(clientCount: number, ageSeconds: number) {
   if (process.env.NODE_ENV !== 'development') return;
 
-  // Incluir age en el mensaje base para la deduplicación
-  const message = `[VentasCache] HIT · ${clientCount} IDs · age ${ageSeconds}s`;
+  // Incluir age en el mensaje base para la deduplicaciÃ³n
+  const message = `[VentasCache] HIT Â· ${clientCount} IDs Â· age ${ageSeconds}s`;
   if (!shouldLog(message)) return;
 
   console.log(
-    '%c[VentasCache]%c HIT · ' + clientCount + ' IDs · age ' + ageSeconds + 's',
+    '%c[VentasCache]%c HIT Â· ' + clientCount + ' IDs Â· age ' + ageSeconds + 's',
     'background:#4CAF50;color:#fff;padding:2px 6px;border-radius:3px;font-weight:600',
     'color:#4CAF50;font-weight:600'
   );

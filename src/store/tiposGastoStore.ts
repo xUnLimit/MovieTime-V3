@@ -1,15 +1,8 @@
+﻿import { countTiposGasto, createTipoGasto, ENTITIES, getTiposGasto, logCacheHit, queryGastos, updateGasto, updateTipoGasto } from '@/lib/supabase/catalogos-repository';
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Gasto, TipoGasto } from '@/types';
-import {
-  ENTITIES,
-  create as createDoc,
-  getAll,
-  getCount,
-  logCacheHit,
-  queryDocuments,
-  update,
-} from '@/lib/supabase/catalogos-repository';
+import type { Gasto, TipoGasto } from '@/types';
 
 const CACHE_TIMEOUT = 5 * 60 * 1000;
 
@@ -52,7 +45,7 @@ export const useTiposGastoStore = create<TiposGastoState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const tiposGasto = await getAll<TipoGasto>(ENTITIES.TIPOS_GASTO);
+          const tiposGasto = await getTiposGasto<TipoGasto>();
           set({
             tiposGasto: sortTiposGasto(tiposGasto),
             isLoading: false,
@@ -69,8 +62,8 @@ export const useTiposGastoStore = create<TiposGastoState>()(
       fetchCounts: async () => {
         try {
           const [totalTipos, tiposActivos] = await Promise.all([
-            getCount(ENTITIES.TIPOS_GASTO, []),
-            getCount(ENTITIES.TIPOS_GASTO, [{ field: 'activo', operator: '==', value: true }]),
+            countTiposGasto([]),
+            countTiposGasto([{ field: 'activo', operator: '==', value: true }]),
           ]);
           set({ totalTipos, tiposActivos });
         } catch (error) {
@@ -92,7 +85,7 @@ export const useTiposGastoStore = create<TiposGastoState>()(
           throw new Error('Ya existe un tipo de gasto con ese nombre');
         }
 
-        const id = await createDoc(ENTITIES.TIPOS_GASTO, {
+        const id = await createTipoGasto({
           ...tipoGastoData,
           nombre: normalizedNombre,
         } as Omit<TipoGasto, 'id'>);
@@ -135,16 +128,16 @@ export const useTiposGastoStore = create<TiposGastoState>()(
           ...(normalizedNombre !== undefined ? { nombre: normalizedNombre } : {}),
         };
 
-        await update(ENTITIES.TIPOS_GASTO, id, finalUpdates);
+        await updateTipoGasto(id, finalUpdates);
 
         if (finalUpdates.nombre && finalUpdates.nombre !== tipoActual.nombre) {
-          const gastosRelacionados = await queryDocuments<Gasto>(ENTITIES.GASTOS, [
+          const gastosRelacionados = await queryGastos<Gasto>([
             { field: 'tipoGastoId', operator: '==', value: id },
           ]);
 
           await Promise.all(
             gastosRelacionados.map((gasto) =>
-              update(ENTITIES.GASTOS, gasto.id, { tipoGastoNombre: finalUpdates.nombre })
+              updateGasto(gasto.id, { tipoGastoNombre: finalUpdates.nombre })
             )
           );
 

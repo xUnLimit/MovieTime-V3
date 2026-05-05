@@ -23,7 +23,7 @@ function ServiciosPageContent() {
     fetchDashboardStats();
   }, [fetchCategorias, fetchServicios, fetchDashboardStats]);
 
-  // Refrescar cuando el usuario vuelve a la página
+  // Refrescar cuando el usuario vuelve a la pÃ¡gina
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -39,7 +39,7 @@ function ServiciosPageContent() {
     };
   }, [fetchCategorias, fetchServicios, fetchDashboardStats]);
 
-  // Refrescar cuando se navega de vuelta a esta página desde otra ruta
+  // Refrescar cuando se navega de vuelta a esta pÃ¡gina desde otra ruta
   useEffect(() => {
     const handleFocus = () => {
       fetchCategorias(true);
@@ -53,7 +53,7 @@ function ServiciosPageContent() {
     };
   }, [fetchCategorias, fetchServicios, fetchDashboardStats]);
 
-  // Escuchar cuando se elimina un servicio desde otra página
+  // Escuchar cuando se elimina un servicio desde otra pÃ¡gina
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'servicio-deleted') {
@@ -97,7 +97,7 @@ function ServiciosPageContent() {
 
       <CategoriasTable
         categorias={categorias}
-        title="Todas las categorías"
+        title="Todas las categorÃ­as"
       />
     </div>
   );

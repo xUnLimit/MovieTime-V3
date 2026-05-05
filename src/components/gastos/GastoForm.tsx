@@ -39,7 +39,7 @@ const gastoSchema = z.object({
   monto: z.string()
     .min(1, 'El monto es obligatorio')
     .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0, 'El monto debe ser mayor a 0'),
-  detalle: z.string().trim().max(300, 'La descripción no puede exceder 300 caracteres').optional(),
+  detalle: z.string().trim().max(300, 'La descripciÃ³n no puede exceder 300 caracteres').optional(),
 });
 
 type GastoFormValues = z.infer<typeof gastoSchema>;
@@ -231,7 +231,7 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto }: GastoFormPr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="detalle">Descripción</Label>
+            <Label htmlFor="detalle">DescripciÃ³n</Label>
             <Textarea
               id="detalle"
               {...register('detalle')}

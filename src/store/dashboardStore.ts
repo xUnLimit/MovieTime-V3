@@ -1,7 +1,8 @@
+﻿import { countUsuarios, countVentas, logCacheHit, queryActivityLogs } from '@/lib/supabase/dashboard-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+
 import { getDashboardStats, rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
-import { getCount, ENTITIES, logCacheHit, queryDocuments } from '@/lib/supabase/dashboard-repository';
 import type { DashboardStats, DashboardCounts } from '@/types/dashboard';
 import type { ActivityLog } from '@/types';
 
@@ -56,16 +57,16 @@ export const useDashboardStore = create<DashboardState>()(
           const [stats, ventasActivas, totalClientes, totalRevendedores, recentActivity] =
             await Promise.all([
               getDashboardStats(),
-              getCount(ENTITIES.VENTAS, [
+              countVentas([
                 { field: 'estado', operator: '==', value: 'activo' },
               ]),
-              getCount(ENTITIES.USUARIOS, [
+              countUsuarios([
                 { field: 'tipo', operator: '==', value: 'cliente' },
               ]),
-              getCount(ENTITIES.USUARIOS, [
+              countUsuarios([
                 { field: 'tipo', operator: '==', value: 'revendedor' },
               ]),
-              queryDocuments<ActivityLog>(ENTITIES.ACTIVITY_LOG, []).then((logs) =>
+              queryActivityLogs<ActivityLog>([]).then((logs) =>
                 logs
                   .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
                   .slice(0, 6)

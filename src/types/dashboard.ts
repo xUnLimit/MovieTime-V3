@@ -25,7 +25,7 @@ export interface DashboardStats {
   // Chart: Revenue by category with month breakdown (for year filter)
   ingresosCategoriasPorMes?: IngresoCategoriaMes[];
 
-  // Financial forecast (next 4 months, pre-computed — no extra reads on load)
+  // Financial forecast (next 4 months, pre-computed â€” no extra reads on load)
   pronostico?: PronosticoMensual[];
 
   // Denormalized source data for forecast calculation (client-side, no reads)
@@ -39,8 +39,8 @@ export interface DashboardStats {
 export interface VentaPronostico {
   id: string;
   categoriaId: string;    // needed for per-category monto sin consumir
-  fechaInicio: string;    // ISO string — needed for monto sin consumir ratio
-  fechaFin: string;       // ISO string — stored as text in Supabase
+  fechaInicio: string;    // ISO string â€” needed for monto sin consumir ratio
+  fechaFin: string;       // ISO string â€” stored as text in Supabase
   cicloPago: string;
   precioFinal: number;
   moneda: string;
@@ -82,16 +82,16 @@ export interface IngresosMes {
 export interface IngresoCategoria {
   categoriaId: string;
   nombre: string;
-  total: number; // USD — ingresos (pagosVenta)
-  gastos?: number; // USD — gastos (pagosServicio)
+  total: number; // USD â€” ingresos (pagosVenta)
+  gastos?: number; // USD â€” gastos (pagosServicio)
 }
 
 export interface IngresoCategoriaMes {
   mes: string;       // "YYYY-MM"
   categoriaId: string;
   nombre: string;
-  total: number;     // USD — ingresos
-  gastos: number;    // USD — gastos
+  total: number;     // USD â€” ingresos
+  gastos: number;    // USD â€” gastos
 }
 
 export interface DashboardCounts {

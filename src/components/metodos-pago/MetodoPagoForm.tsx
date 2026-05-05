@@ -28,7 +28,7 @@ const metodoPagoSchemaComplete = z
     asociadoA: z.enum(["usuario", "servicio"] as const, {
       message: "Debe seleccionar asociado a",
     }),
-    pais: z.string().min(2, "El país es requerido"),
+    pais: z.string().min(2, "El paÃ­s es requerido"),
     moneda: z.string().min(2, "La moneda es requerida"),
     alias: z.string().optional(),
     titular: z.string().min(2, "El titular es requerido"),
@@ -64,13 +64,13 @@ const metodoPagoSchemaComplete = z
       if (!data.numeroTarjeta || data.numeroTarjeta.length < 19) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Número de tarjeta inválido (mínimo 16 dígitos)",
+          message: "NÃºmero de tarjeta invÃ¡lido (mÃ­nimo 16 dÃ­gitos)",
           path: ["numeroTarjeta"],
         });
       } else if (data.numeroTarjeta.length > 24) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Número de tarjeta inválido (máximo 19 dígitos)",
+          message: "NÃºmero de tarjeta invÃ¡lido (mÃ¡ximo 19 dÃ­gitos)",
           path: ["numeroTarjeta"],
         });
       }
@@ -78,13 +78,13 @@ const metodoPagoSchemaComplete = z
       if (!data.fechaExpiracion || data.fechaExpiracion.length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "La fecha de expiración es requerida",
+          message: "La fecha de expiraciÃ³n es requerida",
           path: ["fechaExpiracion"],
         });
       } else if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(data.fechaExpiracion)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Formato inválido (MM/YY)",
+          message: "Formato invÃ¡lido (MM/YY)",
           path: ["fechaExpiracion"],
         });
       }
@@ -93,21 +93,21 @@ const metodoPagoSchemaComplete = z
 
 type FormData = z.infer<typeof metodoPagoSchemaComplete>;
 
-// Lista de países con sus monedas
+// Lista de paÃ­ses con sus monedas
 const PAISES_MONEDAS = [
-  { pais: "Panamá", moneda: "USD" },
+  { pais: "PanamÃ¡", moneda: "USD" },
   { pais: "Argentina", moneda: "ARS" },
   { pais: "Chile", moneda: "CLP" },
   { pais: "Colombia", moneda: "COP" },
   { pais: "Costa Rica", moneda: "CRC" },
   { pais: "Ecuador", moneda: "USD" },
   { pais: "Egipto", moneda: "EGP" },
-  { pais: "España", moneda: "EUR" },
+  { pais: "EspaÃ±a", moneda: "EUR" },
   { pais: "Estados Unidos", moneda: "USD" },
-  { pais: "México", moneda: "MXN" },
+  { pais: "MÃ©xico", moneda: "MXN" },
   { pais: "Nigeria", moneda: "NGN" },
-  { pais: "Perú", moneda: "PEN" },
-  { pais: "Turquía", moneda: "TRY" },
+  { pais: "PerÃº", moneda: "PEN" },
+  { pais: "TurquÃ­a", moneda: "TRY" },
   { pais: "Venezuela", moneda: "VES" },
 ];
 
@@ -269,7 +269,7 @@ export function MetodoPagoForm({
     notasValue,
   ]);
 
-  // Auto-limpiar errores - Tab Básica
+  // Auto-limpiar errores - Tab BÃ¡sica
   useEffect(() => {
     if (nombreValue && nombreValue.length >= 2 && errors.nombre) {
       clearErrors("nombre");
@@ -360,7 +360,7 @@ export function MetodoPagoForm({
     }
   }, [paisValue, setValue]);
 
-  // Validación entre tabs
+  // ValidaciÃ³n entre tabs
   const handleTabChange = async (value: string) => {
     if (value === "adicional" && !isBasicaTabComplete) {
       const isValid = await trigger(["nombre", "asociadoA", "pais", "moneda"]);
@@ -415,10 +415,10 @@ export function MetodoPagoForm({
             metodoPagoData.fechaExpiracion = data.fechaExpiracion;
         }
         await createMetodoPago(metodoPagoData);
-        await fetchCounts(); // Actualizar métricas
-        toast.success("Método de pago creado", {
+        await fetchCounts(); // Actualizar mÃ©tricas
+        toast.success("MÃ©todo de pago creado", {
           description:
-            "El nuevo método de pago ha sido registrado correctamente.",
+            "El nuevo mÃ©todo de pago ha sido registrado correctamente.",
         });
       } else if (metodoPago) {
         const updates: Partial<MetodoPago> = {
@@ -442,18 +442,18 @@ export function MetodoPagoForm({
             updates.fechaExpiracion = data.fechaExpiracion;
         }
         await updateMetodoPago(metodoPago.id, updates);
-        await fetchCounts(); // Actualizar métricas
-        toast.success("Método de pago actualizado", {
+        await fetchCounts(); // Actualizar mÃ©tricas
+        toast.success("MÃ©todo de pago actualizado", {
           description:
-            "Los datos del método de pago han sido guardados correctamente.",
+            "Los datos del mÃ©todo de pago han sido guardados correctamente.",
         });
       }
       router.push(returnTo);
     } catch (error) {
       const message =
         mode === "create"
-          ? "Error al crear el método de pago"
-          : "Error al actualizar el método de pago";
+          ? "Error al crear el mÃ©todo de pago"
+          : "Error al actualizar el mÃ©todo de pago";
       toast.error(message, {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -485,7 +485,7 @@ export function MetodoPagoForm({
       case "wallet":
         return "Wallet";
       case "telefono":
-        return "Teléfono";
+        return "TelÃ©fono";
       case "email":
         return "Email";
       default:
@@ -494,7 +494,7 @@ export function MetodoPagoForm({
   };
 
   const onError = (errors: FieldErrors<FormData>) => {
-    // Si hay errores en campos de información adicional, cambiar a ese tab
+    // Si hay errores en campos de informaciÃ³n adicional, cambiar a ese tab
     const additionalFields = [
       "titular",
       "tipoCuenta",
@@ -525,7 +525,7 @@ export function MetodoPagoForm({
             value="basica"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
-            Información Básica
+            InformaciÃ³n BÃ¡sica
           </TabsTrigger>
           <TabsTrigger
             value="adicional"
@@ -533,19 +533,19 @@ export function MetodoPagoForm({
               !isBasicaTabComplete ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
-            Información Adicional
+            InformaciÃ³n Adicional
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="basica" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Nombre del Método */}
+            {/* Nombre del MÃ©todo */}
             <div className="space-y-2">
-              <Label htmlFor="nombre">Nombre del Método</Label>
+              <Label htmlFor="nombre">Nombre del MÃ©todo</Label>
               <Input
                 id="nombre"
                 {...register("nombre")}
-                placeholder="Ingrese el nombre del método"
+                placeholder="Ingrese el nombre del mÃ©todo"
                 onChange={(e) => {
                   const value = e.target.value;
                   const capitalized =
@@ -597,9 +597,9 @@ export function MetodoPagoForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* País */}
+            {/* PaÃ­s */}
             <div className="space-y-2">
-              <Label htmlFor="pais">País</Label>
+              <Label htmlFor="pais">PaÃ­s</Label>
               <DropdownMenu
                 onOpenChange={(open) => {
                   if (!open) {
@@ -613,7 +613,7 @@ export function MetodoPagoForm({
                     className="w-full justify-between"
                     type="button"
                   >
-                    {paisValue || "Seleccionar país"}
+                    {paisValue || "Seleccionar paÃ­s"}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -628,7 +628,7 @@ export function MetodoPagoForm({
                     <div className="relative">
                       <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Buscar país..."
+                        placeholder="Buscar paÃ­s..."
                         value={paisSearch}
                         onChange={(e) => setPaisSearch(e.target.value)}
                         className="h-8 pl-8"
@@ -698,7 +698,7 @@ export function MetodoPagoForm({
             <Input
               id="alias"
               {...register("alias")}
-              placeholder="Ingrese un alias para identificar este método de pago"
+              placeholder="Ingrese un alias para identificar este mÃ©todo de pago"
             />
           </div>
 
@@ -733,7 +733,7 @@ export function MetodoPagoForm({
             )}
           </div>
 
-          {/* Campos condicionales según asociadoA */}
+          {/* Campos condicionales segÃºn asociadoA */}
           {asociadoAValue === "usuario" && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -773,7 +773,7 @@ export function MetodoPagoForm({
                       <DropdownMenuItem
                         onClick={() => setValue("tipoCuenta", "telefono")}
                       >
-                        Teléfono
+                        TelÃ©fono
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setValue("tipoCuenta", "wallet")}
@@ -826,14 +826,14 @@ export function MetodoPagoForm({
                   )}
                 </div>
 
-                {/* Contraseña */}
+                {/* ContraseÃ±a */}
                 <div className="space-y-2">
-                  <Label htmlFor="contrasena">Contraseña</Label>
+                  <Label htmlFor="contrasena">ContraseÃ±a</Label>
                   <Input
                     id="contrasena"
                     type="text"
                     {...register("contrasena")}
-                    placeholder="Ingrese la contraseña"
+                    placeholder="Ingrese la contraseÃ±a"
                   />
                   {errors.contrasena && (
                     <p className="text-sm text-red-500">
@@ -844,24 +844,24 @@ export function MetodoPagoForm({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Número de Tarjeta */}
+                {/* NÃºmero de Tarjeta */}
                 <div className="space-y-2">
-                  <Label htmlFor="numeroTarjeta">Número de Tarjeta</Label>
+                  <Label htmlFor="numeroTarjeta">NÃºmero de Tarjeta</Label>
                   <Input
                     id="numeroTarjeta"
                     {...register("numeroTarjeta")}
                     placeholder="1234 5678 9012 3456"
                     maxLength={24}
                     onChange={(e) => {
-                      // Eliminar todos los espacios y caracteres no numéricos
+                      // Eliminar todos los espacios y caracteres no numÃ©ricos
                       let value = e.target.value.replace(/\D/g, "");
 
-                      // Limitar a 19 dígitos
+                      // Limitar a 19 dÃ­gitos
                       if (value.length > 19) {
                         value = value.slice(0, 19);
                       }
 
-                      // Agregar espacios cada 4 dígitos
+                      // Agregar espacios cada 4 dÃ­gitos
                       const formatted =
                         value.match(/.{1,4}/g)?.join(" ") || value;
 
@@ -896,9 +896,9 @@ export function MetodoPagoForm({
                   )}
                 </div>
 
-                {/* Fecha de Expiración */}
+                {/* Fecha de ExpiraciÃ³n */}
                 <div className="space-y-2">
-                  <Label htmlFor="fechaExpiracion">Fecha de Expiración</Label>
+                  <Label htmlFor="fechaExpiracion">Fecha de ExpiraciÃ³n</Label>
                   <Input
                     id="fechaExpiracion"
                     placeholder="MM/YY"
@@ -917,13 +917,13 @@ export function MetodoPagoForm({
 
                       const limitedDigits = digits.slice(0, 4);
 
-                      // Si está borrando y solo quedan 2 dígitos, NO agregar la /
+                      // Si estÃ¡ borrando y solo quedan 2 dÃ­gitos, NO agregar la /
                       if (isDeleting && limitedDigits.length <= 2) {
                         setValue("fechaExpiracion", limitedDigits);
                         return;
                       }
 
-                      // Solo agregar / cuando hay más de 2 dígitos (escribiendo)
+                      // Solo agregar / cuando hay mÃ¡s de 2 dÃ­gitos (escribiendo)
                       let formatted = limitedDigits;
                       if (limitedDigits.length > 2) {
                         formatted =
@@ -953,7 +953,7 @@ export function MetodoPagoForm({
             <Textarea
               id="notas"
               {...register("notas")}
-              placeholder="Información adicional relevante..."
+              placeholder="InformaciÃ³n adicional relevante..."
               rows={6}
             />
           </div>
@@ -972,7 +972,7 @@ export function MetodoPagoForm({
                   ? "Creando..."
                   : "Guardando..."
                 : mode === "create"
-                  ? "Crear Método de Pago"
+                  ? "Crear MÃ©todo de Pago"
                   : "Guardar Cambios"}
             </Button>
           </div>

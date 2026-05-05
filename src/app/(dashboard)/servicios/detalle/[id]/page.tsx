@@ -1,24 +1,40 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import {
+  ArrowLeft,
+  Calendar,
+  ChevronDown,
+  DollarSign,
+  ExternalLink,
+  Lock,
+  Monitor,
+  Pencil,
+  RefreshCw,
+  Tag,
+  Trash2,
+  User,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { PagoDialog } from '@/components/shared/PagoDialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Pencil, Trash2, RefreshCw, User, ChevronDown, DollarSign, Monitor, Calendar, Tag, Lock, ExternalLink } from 'lucide-react';
-import { useServiciosStore } from '@/store/serviciosStore';
+import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
+import { adjustCategoriaGastos, getServicioById, removePagoServicio, updatePagoServicio } from '@/lib/supabase/servicios-repository';
+import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { useCategoriasStore } from '@/store/categoriasStore';
-import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { PagoDialog } from '@/components/shared/PagoDialog';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { queryDocuments, remove, update, ENTITIES, getById, adjustCategoriaGastos } from '@/lib/supabase/servicios-repository';
+import { useServiciosStore } from '@/store/serviciosStore';
 import { Servicio, Categoria, MetodoPago, VentaDoc, PagoServicio } from '@/types';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import {
@@ -79,7 +95,7 @@ function ServicioDetallePageContent() {
   const { fetchCategorias } = useCategoriasStore();
   const { deleteNotificacionesPorServicio, fetchNotificaciones } = useNotificacionesStore();
 
-  // Estados locales para los datos específicos de esta página
+  // Estados locales para los datos especÃƒÂ­ficos de esta pÃƒÂ¡gina
   const [servicio, setServicio] = useState<Servicio | null>(null);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(null);
@@ -101,28 +117,28 @@ function ServicioDetallePageContent() {
   // Usar el hook para cargar pagos (con cache)
   const { pagos: pagosServicio, isLoading: pagosHistorialLoading, renovaciones, refresh: refreshPagos } = usePagosServicio(id);
 
-  // Cargar solo el servicio (1 lectura única)
+  // Cargar solo el servicio (1 lectura ÃƒÂºnica)
   useEffect(() => {
     const loadData = async () => {
       if (!id) return;
       setIsLoadingData(true);
       try {
-        // 1. Cargar el servicio (categoriaNombre ya está denormalizado)
-        const servicioData = await getById<Servicio>(ENTITIES.SERVICIOS, id);
+        // 1. Cargar el servicio (categoriaNombre ya estÃƒÂ¡ denormalizado)
+        const servicioData = await getServicioById<Servicio>(id);
         if (!servicioData) {
-          toast.error('Servicio no encontrado', { description: 'No se encontró el servicio con el ID proporcionado.' });
+          toast.error('Servicio no encontrado', { description: 'No se encontrÃƒÂ³ el servicio con el ID proporcionado.' });
           setServicio(null);
           return;
         }
         setServicio(servicioData);
 
-        // 2. Crear objeto de categoría sintético desde datos denormalizados
+        // 2. Crear objeto de categorÃƒÂ­a sintÃƒÂ©tico desde datos denormalizados
         setCategoria({
           id: servicioData.categoriaId,
           nombre: servicioData.categoriaNombre,
         } as Categoria);
 
-        // 3. Crear objeto sintético de metodoPago desde datos denormalizados
+        // 3. Crear objeto sintÃƒÂ©tico de metodoPago desde datos denormalizados
         if (servicioData.metodoPagoId) {
           setMetodoPago({
             id: servicioData.metodoPagoId,
@@ -131,10 +147,10 @@ function ServicioDetallePageContent() {
           } as MetodoPago);
         }
 
-        // Nota: metodosPago (para dropdown) se carga en lazy load al abrir diálogo de renovación
+        // Nota: metodosPago (para dropdown) se carga en lazy load al abrir diÃƒÂ¡logo de renovaciÃƒÂ³n
       } catch (error) {
         console.error('Error cargando datos del servicio:', error);
-        toast.error('Error al cargar el servicio', { description: 'Ocurrió un problema al obtener los datos. Intenta nuevamente.' });
+        toast.error('Error al cargar el servicio', { description: 'OcurriÃƒÂ³ un problema al obtener los datos. Intenta nuevamente.' });
         setServicio(null);
       } finally {
         setIsLoadingData(false);
@@ -148,14 +164,14 @@ function ServicioDetallePageContent() {
     const loadVentas = async () => {
       if (!id) return;
       try {
-        // Fase 1: Cargar ventas base inmediatamente (clienteNombre ya está denormalizado en VentaDoc)
-        const ventasBase = await queryDocuments<VentaDoc>(ENTITIES.VENTAS, [
+        // Fase 1: Cargar ventas base inmediatamente (clienteNombre ya estÃƒÂ¡ denormalizado en VentaDoc)
+        const ventasBase = await queryVentas<VentaDoc>([
           { field: 'servicioId', operator: '==', value: id },
         ]);
 
         const ventasActivas = ventasBase.filter((v) => (v.estado ?? 'activo') !== 'inactivo');
 
-        // Mostrar perfiles de inmediato con los datos básicos de VentaDoc
+        // Mostrar perfiles de inmediato con los datos bÃƒÂ¡sicos de VentaDoc
         setVentasServicio(ventasActivas.map((venta) => ({
           ventaId: venta.id || undefined,
           perfilNumero: venta.perfilNumero ?? null,
@@ -193,7 +209,7 @@ function ServicioDetallePageContent() {
             codigo: venta.codigo || undefined,
             cicloPago: venta.cicloPago || undefined,
           })));
-        }).catch(() => {/* datos básicos ya están visibles, ignorar error de enriquecimiento */});
+        }).catch(() => {/* datos bÃƒÂ¡sicos ya estÃƒÂ¡n visibles, ignorar error de enriquecimiento */});
 
       } catch (error) {
         console.error('Error cargando ventas del servicio:', error);
@@ -219,7 +235,7 @@ function ServicioDetallePageContent() {
         toast.success('Servicio eliminado', { description: 'El servicio fue eliminado. Los registros de pago se conservaron.' });
       }
 
-      // Refrescar categorías y contadores de servicios para actualizar widgets
+      // Refrescar categorÃƒÂ­as y contadores de servicios para actualizar widgets
       await Promise.all([
         fetchCategorias(true),
         fetchCounts(true),
@@ -231,16 +247,16 @@ function ServicioDetallePageContent() {
     }
   };
 
-  // Lazy load de métodos de pago (solo cuando se necesita renovar)
+  // Lazy load de mÃƒÂ©todos de pago (solo cuando se necesita renovar)
   const loadMetodosPagoIfNeeded = async () => {
-    if (metodosPago.length > 0) return; // Ya están cargados
+    if (metodosPago.length > 0) return; // Ya estÃƒÂ¡n cargados
     try {
-      const methods = await queryDocuments<MetodoPago>(ENTITIES.METODOS_PAGO, [
+      const methods = await queryMetodosPago<MetodoPago>([
         { field: 'asociadoA', operator: '==', value: 'servicio' }
       ]);
       setMetodosPago(methods);
     } catch (error) {
-      console.error('Error cargando métodos de pago:', error);
+      console.error('Error cargando mÃƒÂ©todos de pago:', error);
       setMetodosPago([]);
     }
   };
@@ -269,7 +285,7 @@ function ServicioDetallePageContent() {
       const viejaMoneda = pagoToEdit.moneda || metodoPago?.moneda || 'USD';
       const notaPago = data.notas?.trim() ?? '';
 
-      await update(ENTITIES.PAGOS_SERVICIO, pagoToEdit.id, {
+      await updatePagoServicio(pagoToEdit.id, {
         fechaInicio: data.fechaInicio,
         fechaVencimiento: data.fechaVencimiento,
         monto: data.costo,
@@ -290,7 +306,7 @@ function ServicioDetallePageContent() {
       // gastosTotal se deriva desde pagos_servicio en Supabase.
       }
 
-      // Si es el último pago, actualizar el servicio
+      // Si es el ÃƒÂºltimo pago, actualizar el servicio
       const esUltimoPago = pagosOrdenados[0]?.id === pagoToEdit.id;
       if (esUltimoPago) {
         await updateServicio(id, {
@@ -304,7 +320,7 @@ function ServicioDetallePageContent() {
         });
 
         // Recargar el servicio actualizado para reflejar los cambios en la UI
-        const servicioActualizado = await getById<Servicio>(ENTITIES.SERVICIOS, id);
+        const servicioActualizado = await getServicioById<Servicio>(id);
         if (servicioActualizado) {
           setServicio(servicioActualizado);
         }
@@ -326,9 +342,9 @@ function ServicioDetallePageContent() {
     const montoToRevert = pagoToDelete.monto ?? 0;
 
     try {
-      await remove(ENTITIES.PAGOS_SERVICIO, pagoToDelete.id);
+      await removePagoServicio(pagoToDelete.id);
 
-      // Decrementar gastosTotal del servicio y de la categoría (convertido a USD)
+      // Decrementar gastosTotal del servicio y de la categorÃƒÂ­a (convertido a USD)
       const montoToRevertMoneda = pagoToDelete.moneda || metodoPago?.moneda || 'USD';
       const montoToRevertUSD = await currencyService.convertToUSD(montoToRevert, montoToRevertMoneda);
       // gastosTotal se deriva desde pagos_servicio en Supabase.
@@ -339,7 +355,7 @@ function ServicioDetallePageContent() {
       refreshPagos();
 
       if (eraUltimaRenovacion) {
-        // Recargar pagos para obtener el nuevo último
+        // Recargar pagos para obtener el nuevo ÃƒÂºltimo
         const pagosActualizados = pagosServicio.filter(p => p.id !== pagoToDelete.id);
         if (pagosActualizados.length > 0) {
           const anterior = pagosActualizados[0];
@@ -352,17 +368,17 @@ function ServicioDetallePageContent() {
           });
 
           // Recargar el servicio actualizado para reflejar los cambios en la UI
-          const servicioActualizado = await getById<Servicio>(ENTITIES.SERVICIOS, id);
+          const servicioActualizado = await getServicioById<Servicio>(id);
           if (servicioActualizado) {
             setServicio(servicioActualizado);
           }
         }
       }
-      toast.success('Renovación eliminada', { description: 'El registro de pago ha sido eliminado del historial.' });
+      toast.success('RenovaciÃƒÂ³n eliminada', { description: 'El registro de pago ha sido eliminado del historial.' });
       setPagoToDelete(null);
     } catch (error) {
-      console.error('Error al eliminar renovación:', error);
-      toast.error('Error al eliminar renovación', { description: error instanceof Error ? error.message : undefined });
+      console.error('Error al eliminar renovaciÃƒÂ³n:', error);
+      toast.error('Error al eliminar renovaciÃƒÂ³n', { description: error instanceof Error ? error.message : undefined });
     }
   };
 
@@ -386,7 +402,7 @@ function ServicioDetallePageContent() {
         notaPrincipal
       );
 
-      // Incrementar gastosTotal del servicio y de la categoría (convertido a USD)
+      // Incrementar gastosTotal del servicio y de la categorÃƒÂ­a (convertido a USD)
       const costoRenovacionUSD = await currencyService.convertToUSD(data.costo, data.moneda || metodoPagoSeleccionado?.moneda || 'USD');
       // gastosTotal se deriva desde pagos_servicio en Supabase.
       if (servicio?.categoriaId) {
@@ -428,7 +444,7 @@ function ServicioDetallePageContent() {
       });
 
       // Recargar el servicio actualizado para reflejar los cambios en la UI
-      const servicioActualizado = await getById<Servicio>(ENTITIES.SERVICIOS, id);
+      const servicioActualizado = await getServicioById<Servicio>(id);
       if (servicioActualizado) {
         setServicio(servicioActualizado);
       }
@@ -455,11 +471,11 @@ function ServicioDetallePageContent() {
         useCategoriasStore.getState().fetchCategorias(true);
       }).catch(() => {});
 
-      toast.success('Renovación registrada', { description: 'El nuevo período de pago se ha registrado correctamente.' });
+      toast.success('RenovaciÃƒÂ³n registrada', { description: 'El nuevo perÃƒÂ­odo de pago se ha registrado correctamente.' });
       setRenovarDialogOpen(false);
     } catch (error) {
-      console.error('Error al registrar la renovación:', error);
-      toast.error('Error al registrar la renovación', { description: error instanceof Error ? error.message : undefined });
+      console.error('Error al registrar la renovaciÃƒÂ³n:', error);
+      toast.error('Error al registrar la renovaciÃƒÂ³n', { description: error instanceof Error ? error.message : undefined });
     }
   };
 
@@ -636,7 +652,7 @@ function ServicioDetallePageContent() {
           </p>
         </div>
         <div className="bg-card border border-border rounded-lg p-6">
-          <p className="text-muted-foreground">No se encontró el servicio con el ID proporcionado.</p>
+          <p className="text-muted-foreground">No se encontrÃƒÂ³ el servicio con el ID proporcionado.</p>
           <Link href="/servicios" className="inline-block mt-4 text-primary hover:underline">
             Volver a Servicios
           </Link>
@@ -674,7 +690,7 @@ function ServicioDetallePageContent() {
                 </Link>
                 {' / '}
                 <Link href={`/servicios/${servicio.categoriaId}`} className="hover:text-foreground transition-colors">
-                  {categoria?.nombre || 'Categoría'}
+                  {categoria?.nombre || 'CategorÃƒÂ­a'}
                 </Link>
                 {' / '}
                 <span className="text-foreground">Detalles</span>
@@ -715,8 +731,8 @@ function ServicioDetallePageContent() {
                 {/* Service Info */}
                 <div className="w-full space-y-3">
                   <div className="flex items-start gap-2">
-                    <span className="text-sm text-muted-foreground mt-0.5">Categoría</span>
-                    <span className="text-sm font-medium ml-auto text-right">{categoria?.nombre || 'Sin categoría'}</span>
+                    <span className="text-sm text-muted-foreground mt-0.5">CategorÃƒÂ­a</span>
+                    <span className="text-sm font-medium ml-auto text-right">{categoria?.nombre || 'Sin categorÃƒÂ­a'}</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
@@ -725,7 +741,7 @@ function ServicioDetallePageContent() {
                   </div>
                   <div className="flex items-start gap-2">
                     <RefreshCw className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <span className="text-sm text-muted-foreground">Ciclo de Facturación</span>
+                    <span className="text-sm text-muted-foreground">Ciclo de FacturaciÃƒÂ³n</span>
                     <span className="text-sm font-medium ml-auto text-right">{getCicloPagoLabel(servicio.cicloPago ?? '')}</span>
                   </div>
                   <div className="flex items-start gap-2">
@@ -747,20 +763,20 @@ function ServicioDetallePageContent() {
                     let texto: string;
                     if (dias < 0) {
                       badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
-                      texto = `${Math.abs(dias)} día${Math.abs(dias) !== 1 ? 's' : ''} de retraso`;
+                      texto = `${Math.abs(dias)} dÃƒÂ­a${Math.abs(dias) !== 1 ? 's' : ''} de retraso`;
                     } else if (dias === 0) {
                       badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
                       texto = 'Vence hoy';
                     } else if (dias <= 7) {
                       badgeClass = 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
-                      texto = `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
+                      texto = `${dias} dÃƒÂ­a${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
                     } else {
                       badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
-                      texto = `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
+                      texto = `${dias} dÃƒÂ­a${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
                     }
                     return (
                       <div className="flex items-start gap-2">
-                        <span className="text-sm text-muted-foreground mt-0.5">Días Restantes</span>
+                        <span className="text-sm text-muted-foreground mt-0.5">DÃƒÂ­as Restantes</span>
                         <Badge variant="outline" className={`ml-auto font-normal text-sm ${badgeClass}`}>
                           {texto}
                         </Badge>
@@ -768,8 +784,8 @@ function ServicioDetallePageContent() {
                     );
                   })()}
                   <div className="flex items-start gap-2">
-                    <span className="text-sm text-muted-foreground mt-0.5">Método de Pago</span>
-                    <span className="text-sm font-medium ml-auto text-right text-purple-600">{metodoPago?.nombre || 'Sin método'}</span>
+                    <span className="text-sm text-muted-foreground mt-0.5">MÃƒÂ©todo de Pago</span>
+                    <span className="text-sm font-medium ml-auto text-right text-purple-600">{metodoPago?.nombre || 'Sin mÃƒÂ©todo'}</span>
                   </div>
                 </div>
               </div>
@@ -777,7 +793,7 @@ function ServicioDetallePageContent() {
 
             {/* Additional Info Card */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-0.5">Información Adicional</h2>
+              <h2 className="text-lg font-semibold mb-0.5">InformaciÃƒÂ³n Adicional</h2>
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Email</p>
@@ -801,7 +817,7 @@ function ServicioDetallePageContent() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Contraseña</p>
+                  <p className="text-sm text-muted-foreground mb-1">ContraseÃƒÂ±a</p>
                   <p className="text-sm font-medium flex items-center gap-2">
                     {servicio.contrasena || 'Sin especificar'}
                     {servicio.contrasena && (
@@ -811,7 +827,7 @@ function ServicioDetallePageContent() {
                         className="h-6 w-6"
                         onClick={() => {
                           navigator.clipboard.writeText(servicio.contrasena!);
-                          toast.success('Contraseña copiada', { description: 'La contraseña se ha copiado al portapapeles.' });
+                          toast.success('ContraseÃƒÂ±a copiada', { description: 'La contraseÃƒÂ±a se ha copiado al portapapeles.' });
                         }}
                       >
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -826,7 +842,7 @@ function ServicioDetallePageContent() {
                   <p className="text-sm">{formatearFechaHora(new Date(servicio.createdAt))}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Última Actualización:</p>
+                  <p className="text-sm text-muted-foreground mb-1">ÃƒÅ¡ltima ActualizaciÃƒÂ³n:</p>
                   <p className="text-sm">{formatearFechaHora(new Date(servicio.updatedAt))}</p>
                 </div>
               </div>
@@ -967,7 +983,7 @@ function ServicioDetallePageContent() {
                                 </span>
                               </div>
                             </div>
-                            {/* Columna 3: Perfil, Código, Días restantes */}
+                            {/* Columna 3: Perfil, CÃƒÂ³digo, DÃƒÂ­as restantes */}
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <User className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -977,7 +993,7 @@ function ServicioDetallePageContent() {
                               {venta.codigo && (
                                 <div className="flex items-center gap-2">
                                   <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                                  <span className="text-muted-foreground">Código:</span>
+                                  <span className="text-muted-foreground">CÃƒÂ³digo:</span>
                                   <span className="font-medium select-all">{venta.codigo}</span>
                                 </div>
                               )}
@@ -987,16 +1003,16 @@ function ServicioDetallePageContent() {
                                 if (diasRestantes < 0) {
                                   const d = Math.abs(diasRestantes);
                                   badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
-                                  badgeText = `${d} día${d > 1 ? 's' : ''} de retraso`;
+                                  badgeText = `${d} dÃƒÂ­a${d > 1 ? 's' : ''} de retraso`;
                                 } else if (diasRestantes === 0) {
                                   badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
                                   badgeText = 'Vence hoy';
                                 } else if (diasRestantes <= 7) {
                                   badgeClass = 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
-                                  badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
+                                  badgeText = `${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
                                 } else {
                                   badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
-                                  badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
+                                  badgeText = `${diasRestantes} dÃƒÂ­a${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
                                 }
                                 return (
                                   <div className="flex items-center gap-2">
@@ -1092,8 +1108,8 @@ function ServicioDetallePageContent() {
                   <thead>
                     <tr className="border-b text-sm text-muted-foreground">
                       <th className="text-left py-3 font-medium">Fecha</th>
-                      <th className="text-left py-3 font-medium">Descripción</th>
-                      <th className="text-left py-3 font-medium">Ciclo de facturación</th>
+                      <th className="text-left py-3 font-medium">DescripciÃƒÂ³n</th>
+                      <th className="text-left py-3 font-medium">Ciclo de facturaciÃƒÂ³n</th>
                       <th className="text-left py-3 font-medium">Fecha de Inicio</th>
                       <th className="text-left py-3 font-medium">Fecha de Vencimiento</th>
                       <th className="text-left py-3 font-medium">Monto</th>
@@ -1194,7 +1210,7 @@ function ServicioDetallePageContent() {
         }}
         onConfirm={handleConfirmDelete}
         title="Eliminar Servicio"
-        description={`¿Estás seguro de que quieres eliminar el servicio "${servicio.nombre}"? Esta acción no se puede deshacer.`}
+        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar el servicio "${servicio.nombre}"? Esta acciÃƒÂ³n no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       >
@@ -1209,10 +1225,10 @@ function ServicioDetallePageContent() {
               htmlFor="delete-payments-detalle"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Eliminar también los registros de pago
+              Eliminar tambiÃƒÂ©n los registros de pago
             </Label>
             <p className="text-sm text-muted-foreground">
-              Al marcar esta opción, se eliminarán todos los registros de pago de la base de datos. Si no se marca, se conservarán para historial.
+              Al marcar esta opciÃƒÂ³n, se eliminarÃƒÂ¡n todos los registros de pago de la base de datos. Si no se marca, se conservarÃƒÂ¡n para historial.
             </p>
           </div>
         </div>
@@ -1225,8 +1241,8 @@ function ServicioDetallePageContent() {
           if (!open) setPagoToDelete(null);
         }}
         onConfirm={handleConfirmDeleteRenovacion}
-        title="Eliminar renovación"
-        description={pagoToDelete ? `¿Eliminar "${pagoToDelete.descripcion}" del historial? Esta acción no se puede deshacer.` : ''}
+        title="Eliminar renovaciÃƒÂ³n"
+        description={pagoToDelete ? `Ã‚Â¿Eliminar "${pagoToDelete.descripcion}" del historial? Esta acciÃƒÂ³n no se puede deshacer.` : ''}
         confirmText="Eliminar"
         variant="danger"
       />

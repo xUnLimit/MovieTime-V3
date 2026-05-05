@@ -14,7 +14,7 @@ export interface VentasMetrics {
 /**
  * Calculate metrics for ventas with multi-currency support
  * All monetary totals are converted to USD for accurate aggregation
- * @param ventas - Array of VentaDoc records (con datos del último pago)
+ * @param ventas - Array of VentaDoc records (con datos del Ãºltimo pago)
  * @param pagosVentas - Array of PagoVenta records (all payments including renewals)
  * @returns Calculated metrics (monetary values in USD)
  */

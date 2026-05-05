@@ -34,31 +34,31 @@ function parsNombreLimpio(entidadNombre: string): string {
 
 /**
  * Intenta extraer el nombre de la entidad desde el campo detalles
- * cuando entidadNombre está vacío (logs viejos).
+ * cuando entidadNombre estÃ¡ vacÃ­o (logs viejos).
  * Soporta formatos:
- *   "Venta renovada: Nombre Cliente / Servicio — ..."
- *   'Servicio renovado: "Spotify - Familiar" — ...'
- *   "Venta creada: Nombre / Servicio — ..."
+ *   "Venta renovada: Nombre Cliente / Servicio â€” ..."
+ *   'Servicio renovado: "Spotify - Familiar" â€” ...'
+ *   "Venta creada: Nombre / Servicio â€” ..."
  */
 function parseNombreDesdeDetalles(detalles: string): string | null {
-  // Formato venta: "... : Nombre Cliente / Nombre Servicio —"
-  const ventaMatch = detalles.match(/:\s*(.+?)\s*\/\s*(.+?)\s*—/);
-  if (ventaMatch) return `${ventaMatch[1].trim()} — ${ventaMatch[2].trim()}`;
+  // Formato venta: "... : Nombre Cliente / Nombre Servicio â€”"
+  const ventaMatch = detalles.match(/:\s*(.+?)\s*\/\s*(.+?)\s*â€”/);
+  if (ventaMatch) return `${ventaMatch[1].trim()} â€” ${ventaMatch[2].trim()}`;
 
-  // Formato servicio con comillas: '... : "Nombre Servicio" —'
+  // Formato servicio con comillas: '... : "Nombre Servicio" â€”'
   const servicioQuotedMatch = detalles.match(/:\s*"([^"]+)"/);
   if (servicioQuotedMatch) return servicioQuotedMatch[1].trim();
 
-  // Formato servicio sin comillas: "... : Nombre Servicio —"
-  const servicioMatch = detalles.match(/:\s*(.+?)\s*—/);
+  // Formato servicio sin comillas: "... : Nombre Servicio â€”"
+  const servicioMatch = detalles.match(/:\s*(.+?)\s*â€”/);
   if (servicioMatch) return servicioMatch[1].trim();
 
   return null;
 }
 
-/** Extrae info de renovación: monto, hasta, periodo */
+/** Extrae info de renovaciÃ³n: monto, hasta, periodo */
 function parseRenovacion(detalles: string): { monto?: string; hasta?: string; periodo?: string } {
-  // Captura símbolo(s) no-alfanumérico(s) + número (ej: "₦2500", "$15.00", "B/.10")
+  // Captura sÃ­mbolo(s) no-alfanumÃ©rico(s) + nÃºmero (ej: "â‚¦2500", "$15.00", "B/.10")
   const montoMatch = detalles.match(/([^\w\s,]+)([0-9]+(?:\.[0-9]+)?)/);
   const hastaMatch = detalles.match(/hasta\s+([\d/]+)/);
   const periodoMatch = detalles.match(/\((\w+)\)/);
@@ -74,7 +74,7 @@ function getCamposLabel(log: ActivityLog): string | null {
   if (!log.cambios || log.cambios.length === 0) return null;
   const campos = log.cambios.map(c => c.campo);
   if (campos.length <= 3) return campos.join(', ');
-  return `${campos.slice(0, 3).join(', ')}…`;
+  return `${campos.slice(0, 3).join(', ')}â€¦`;
 }
 
 function getReposoTransition(log: ActivityLog): { anterior: boolean; nuevo: boolean } | null {
@@ -94,15 +94,15 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
   const detalles = log.detalles ?? '';
   const colorClass = activityActionColors[log.accion] || 'bg-muted/50 text-muted-foreground';
 
-  // Usar entidadNombre si tiene valor real (descartar vacíos, "undefined", "—", " — ", etc.)
+  // Usar entidadNombre si tiene valor real (descartar vacÃ­os, "undefined", "â€”", " â€” ", etc.)
   const nombreRaw = log.entidadNombre ?? '';
   const nombreEsValido = nombreRaw.trim() !== ''
     && nombreRaw !== 'undefined'
-    && !/^[\s—\-–]+$/.test(nombreRaw)   // descarta " — ", "—", "--", etc.
+    && !/^[\sâ€”\-â€“]+$/.test(nombreRaw)   // descarta " â€” ", "â€”", "--", etc.
     && !nombreRaw.includes('undefined');
   const rawNombre = nombreEsValido
     ? nombreRaw
-    : (parseNombreDesdeDetalles(detalles) ?? '—');
+    : (parseNombreDesdeDetalles(detalles) ?? 'â€”');
 
   const nombreLimpio = parsNombreLimpio(rawNombre);
   const nameEl = <span className="font-semibold">{nombreLimpio}</span>;
@@ -119,12 +119,12 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
 
   const entidadLabels: Record<string, string> = {
     venta: 'Venta', servicio: 'Servicio', usuario: 'Usuario',
-    cliente: 'Cliente', revendedor: 'Revendedor', categoria: 'Categoría',
-    metodo_pago: 'Método de pago', template: 'Template',
+    cliente: 'Cliente', revendedor: 'Revendedor', categoria: 'CategorÃ­a',
+    metodo_pago: 'MÃ©todo de pago', template: 'Template',
   };
   const label = entidadLabels[log.entidad] ?? log.entidad;
 
-  // Género gramatical por entidad para conjugar correctamente
+  // GÃ©nero gramatical por entidad para conjugar correctamente
   const femenino = new Set(['venta', 'categoria']);
   const gen = (masc: string, fem: string) => femenino.has(log.entidad) ? fem : masc;
 
@@ -135,12 +135,12 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
         : (iconMap[log.entidad] ?? Plus);
 
       if (log.entidad === 'venta') {
-        return { icon, color: colorClass, message: <><span>Venta creada —</span> {nameEl}</> };
+        return { icon, color: colorClass, message: <><span>Venta creada â€”</span> {nameEl}</> };
       }
       if (log.entidad === 'servicio') {
-        return { icon, color: colorClass, message: <><span>Servicio creado —</span> {nameEl}{correoEl}</> };
+        return { icon, color: colorClass, message: <><span>Servicio creado â€”</span> {nameEl}{correoEl}</> };
       }
-      return { icon, color: colorClass, message: <><span>{label} {gen('creado', 'creada')} —</span> {nameEl}</> };
+      return { icon, color: colorClass, message: <><span>{label} {gen('creado', 'creada')} â€”</span> {nameEl}</> };
     }
 
     case 'actualizacion': {
@@ -149,19 +149,19 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
         if (reposoTransition.nuevo) {
           const reposoColor = 'bg-yellow-500/10 text-yellow-500';
           if (log.entidad === 'servicio') {
-            return { icon: Pause, color: reposoColor, message: <><span>Servicio en reposo —</span> {nameEl}{correoEl}</> };
+            return { icon: Pause, color: reposoColor, message: <><span>Servicio en reposo â€”</span> {nameEl}{correoEl}</> };
           }
-          return { icon: Pause, color: reposoColor, message: <><span>{label} en reposo —</span> {nameEl}</> };
+          return { icon: Pause, color: reposoColor, message: <><span>{label} en reposo â€”</span> {nameEl}</> };
         }
 
         const reactivadoColor = 'bg-emerald-500/10 text-emerald-500';
         if (log.entidad === 'servicio') {
-          return { icon: Play, color: reactivadoColor, message: <><span>Servicio reactivado —</span> {nameEl}{correoEl}</> };
+          return { icon: Play, color: reactivadoColor, message: <><span>Servicio reactivado â€”</span> {nameEl}{correoEl}</> };
         }
-        return { icon: Play, color: reactivadoColor, message: <><span>{label} reactivado —</span> {nameEl}</> };
+        return { icon: Play, color: reactivadoColor, message: <><span>{label} reactivado â€”</span> {nameEl}</> };
       }
 
-      // Detectar si es un "corte" (activo: true → false) o (estado → inactivo)
+      // Detectar si es un "corte" (activo: true â†’ false) o (estado â†’ inactivo)
       const esCorte = log.cambios?.some(c =>
         (c.campoKey === 'activo' && c.nuevo === false) ||
         (c.campoKey === 'estado' && c.nuevo === 'inactivo')
@@ -171,12 +171,12 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
         const cortarIcon = Scissors;
         const cortarColor = 'bg-orange-500/10 text-orange-500';
         if (log.entidad === 'servicio') {
-          return { icon: cortarIcon, color: cortarColor, message: <><span>Servicio cortado —</span> {nameEl}{correoEl}</> };
+          return { icon: cortarIcon, color: cortarColor, message: <><span>Servicio cortado â€”</span> {nameEl}{correoEl}</> };
         }
         if (log.entidad === 'venta') {
-          return { icon: cortarIcon, color: cortarColor, message: <><span>Venta cortada —</span> {nameEl}</> };
+          return { icon: cortarIcon, color: cortarColor, message: <><span>Venta cortada â€”</span> {nameEl}</> };
         }
-        return { icon: cortarIcon, color: cortarColor, message: <><span>{label} {gen('cortado', 'cortada')} —</span> {nameEl}</> };
+        return { icon: cortarIcon, color: cortarColor, message: <><span>{label} {gen('cortado', 'cortada')} â€”</span> {nameEl}</> };
       }
 
       const icon = iconMap[log.entidad] ?? Edit;
@@ -186,12 +186,12 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
         : null;
 
       if (log.entidad === 'servicio') {
-        return { icon, color: colorClass, message: <><span>Servicio editado —</span> {nameEl}{correoEl}{camposEl}</> };
+        return { icon, color: colorClass, message: <><span>Servicio editado â€”</span> {nameEl}{correoEl}{camposEl}</> };
       }
       if (log.entidad === 'venta') {
-        return { icon, color: colorClass, message: <><span>Venta editada —</span> {nameEl}{camposEl}</> };
+        return { icon, color: colorClass, message: <><span>Venta editada â€”</span> {nameEl}{camposEl}</> };
       }
-      return { icon, color: colorClass, message: <><span>{label} {gen('editado', 'editada')} —</span> {nameEl}{camposEl}</> };
+      return { icon, color: colorClass, message: <><span>{label} {gen('editado', 'editada')} â€”</span> {nameEl}{camposEl}</> };
     }
 
     case 'eliminacion': {
@@ -199,31 +199,31 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
         ? UserMinus
         : Trash2;
       if (log.entidad === 'servicio') {
-        return { icon, color: colorClass, message: <><span>Servicio eliminado —</span> {nameEl}{correoEl}</> };
+        return { icon, color: colorClass, message: <><span>Servicio eliminado â€”</span> {nameEl}{correoEl}</> };
       }
       if (log.entidad === 'venta') {
-        return { icon, color: colorClass, message: <><span>Venta eliminada —</span> {nameEl}</> };
+        return { icon, color: colorClass, message: <><span>Venta eliminada â€”</span> {nameEl}</> };
       }
-      return { icon, color: colorClass, message: <><span>{label} {gen('eliminado', 'eliminada')} —</span> {nameEl}</> };
+      return { icon, color: colorClass, message: <><span>{label} {gen('eliminado', 'eliminada')} â€”</span> {nameEl}</> };
     }
 
     case 'renovacion': {
       const { monto, hasta, periodo } = parseRenovacion(detalles);
       const renDetallesEl = monto
-        ? <span className="text-muted-foreground text-xs ml-1">{monto}{hasta ? ` · hasta ${hasta}` : ''}{periodo ? ` (${periodo})` : ''}</span>
+        ? <span className="text-muted-foreground text-xs ml-1">{monto}{hasta ? ` Â· hasta ${hasta}` : ''}{periodo ? ` (${periodo})` : ''}</span>
         : null;
 
       if (log.entidad === 'servicio') {
-        return { icon: RefreshCw, color: colorClass, message: <><span>Servicio renovado —</span> {nameEl}{correoEl}{renDetallesEl}</> };
+        return { icon: RefreshCw, color: colorClass, message: <><span>Servicio renovado â€”</span> {nameEl}{correoEl}{renDetallesEl}</> };
       }
       if (log.entidad === 'venta') {
-        return { icon: RefreshCw, color: colorClass, message: <><span>Venta renovada —</span> {nameEl}{renDetallesEl}</> };
+        return { icon: RefreshCw, color: colorClass, message: <><span>Venta renovada â€”</span> {nameEl}{renDetallesEl}</> };
       }
-      return { icon: RefreshCw, color: colorClass, message: <><span>{label} {gen('renovado', 'renovada')} —</span> {nameEl}{renDetallesEl}</> };
+      return { icon: RefreshCw, color: colorClass, message: <><span>{label} {gen('renovado', 'renovada')} â€”</span> {nameEl}{renDetallesEl}</> };
     }
 
     default: {
-      return { icon: RotateCcw, color: colorClass, message: <>{log.accion} {label} — {nameEl}</> };
+      return { icon: RotateCcw, color: colorClass, message: <>{log.accion} {label} â€” {nameEl}</> };
     }
   }
 }

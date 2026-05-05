@@ -22,8 +22,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 
 const tipoGastoSchema = z.object({
-  nombre: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres').max(80, 'Máximo 80 caracteres'),
-  descripcion: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
+  nombre: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres').max(80, 'MÃ¡ximo 80 caracteres'),
+  descripcion: z.string().trim().max(200, 'MÃ¡ximo 200 caracteres').optional(),
   activo: z.boolean(),
 });
 
@@ -106,19 +106,19 @@ export function TipoGastoDialog({ open, onOpenChange, tipoGasto }: TipoGastoDial
         <DialogHeader>
           <DialogTitle>{tipoGasto ? 'Editar Tipo de Gasto' : 'Nuevo Tipo de Gasto'}</DialogTitle>
           <DialogDescription>
-            Crea y organiza los tipos de gasto disponibles para este módulo.
+            Crea y organiza los tipos de gasto disponibles para este mÃ³dulo.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre</Label>
-            <Input id="nombre" {...register('nombre')} placeholder="Ej: Internet, transporte, nómina" />
+            <Input id="nombre" {...register('nombre')} placeholder="Ej: Internet, transporte, nÃ³mina" />
             {errors.nombre && <p className="text-sm text-red-500">{errors.nombre.message}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descripcion">Descripción</Label>
+            <Label htmlFor="descripcion">DescripciÃ³n</Label>
             <Textarea
               id="descripcion"
               {...register('descripcion')}

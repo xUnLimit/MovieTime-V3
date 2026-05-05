@@ -1,17 +1,18 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, Trash2, Eye, EyeOff, Copy } from 'lucide-react';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
-import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Copy, Edit, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { formatearFechaHora } from '@/lib/utils/calculations';
-import { getById, ENTITIES } from '@/lib/supabase/catalogos-repository';
+import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { MetodoPago } from '@/types';
 
 function VerMetodoPagoPageContent() {
@@ -31,10 +32,10 @@ function VerMetodoPagoPageContent() {
 
       setIsLoading(true);
       try {
-        const data = await getById<MetodoPago>(ENTITIES.METODOS_PAGO, id);
+        const data = await getMetodoPagoById<MetodoPago>(id);
         setMetodo(data);
       } catch (error) {
-        console.error('Error cargando método de pago:', error);
+        console.error('Error cargando mÃƒÂ©todo de pago:', error);
         setMetodo(null);
       } finally {
         setIsLoading(false);
@@ -48,10 +49,10 @@ function VerMetodoPagoPageContent() {
     if (metodo) {
       try {
         await deleteMetodoPago(metodo.id);
-        toast.success('Método de pago eliminado', { description: 'El método de pago ha sido eliminado correctamente.' });
+        toast.success('MÃƒÂ©todo de pago eliminado', { description: 'El mÃƒÂ©todo de pago ha sido eliminado correctamente.' });
         router.push('/metodos-pago');
       } catch (error) {
-        toast.error('Error al eliminar método de pago', { description: error instanceof Error ? error.message : undefined });
+        toast.error('Error al eliminar mÃƒÂ©todo de pago', { description: error instanceof Error ? error.message : undefined });
       }
     }
   };
@@ -65,7 +66,7 @@ function VerMetodoPagoPageContent() {
     ahorro: 'Ahorro',
     corriente: 'Corriente',
     wallet: 'Wallet',
-    telefono: 'Teléfono',
+    telefono: 'TelÃƒÂ©fono',
     email: 'Email',
   };
 
@@ -86,7 +87,7 @@ function VerMetodoPagoPageContent() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando método de pago...</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando mÃƒÂ©todo de pago...</h1>
         </div>
         <div className="rounded-lg border bg-card p-6">
           <p className="text-muted-foreground">Cargando datos...</p>
@@ -104,10 +105,10 @@ function VerMetodoPagoPageContent() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Método de pago no encontrado</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">MÃƒÂ©todo de pago no encontrado</h1>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <p className="text-muted-foreground">El método de pago que buscas no existe.</p>
+          <p className="text-muted-foreground">El mÃƒÂ©todo de pago que buscas no existe.</p>
         </div>
       </div>
     );
@@ -135,7 +136,7 @@ function VerMetodoPagoPageContent() {
             <p className="text-sm text-muted-foreground">
               <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
               {' / '}
-              <Link href="/metodos-pago" className="hover:text-foreground transition-colors">Métodos de Pago</Link>
+              <Link href="/metodos-pago" className="hover:text-foreground transition-colors">MÃƒÂ©todos de Pago</Link>
               {' / '}
               <span className="text-foreground">{metodo.nombre}</span>
             </p>
@@ -155,11 +156,11 @@ function VerMetodoPagoPageContent() {
         </div>
       </div>
 
-      {/* Dos columnas: Información Básica e Información Adicional */}
+      {/* Dos columnas: InformaciÃƒÂ³n BÃƒÂ¡sica e InformaciÃƒÂ³n Adicional */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Información Básica */}
+        {/* InformaciÃƒÂ³n BÃƒÂ¡sica */}
         <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold mb-6">Información Básica</h2>
+          <h2 className="text-lg font-semibold mb-6">InformaciÃƒÂ³n BÃƒÂ¡sica</h2>
 
           <div className="space-y-5">
             <div>
@@ -178,7 +179,7 @@ function VerMetodoPagoPageContent() {
 
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <span>País</span>
+                <span>PaÃƒÂ­s</span>
               </div>
               <p className="text-sm font-medium">{metodo.pais}</p>
             </div>
@@ -201,7 +202,7 @@ function VerMetodoPagoPageContent() {
 
             <div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <span>Última Actualización</span>
+                <span>ÃƒÅ¡ltima ActualizaciÃƒÂ³n</span>
               </div>
               <p className="text-sm font-medium">
                 {formatearFechaHora(new Date(metodo.updatedAt))}
@@ -210,10 +211,10 @@ function VerMetodoPagoPageContent() {
           </div>
         </div>
 
-        {/* Información Adicional / Datos de la Cuenta / Datos del Servicio */}
+        {/* InformaciÃƒÂ³n Adicional / Datos de la Cuenta / Datos del Servicio */}
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold mb-6">
-            {isUsuario ? 'Datos de la Cuenta' : 'Información Adicional'}
+            {isUsuario ? 'Datos de la Cuenta' : 'InformaciÃƒÂ³n Adicional'}
           </h2>
 
           <div className="space-y-5">
@@ -228,7 +229,7 @@ function VerMetodoPagoPageContent() {
 
                 <div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <span>{metodo.banco ? 'Nombre del Banco' : 'Método'}</span>
+                    <span>{metodo.banco ? 'Nombre del Banco' : 'MÃƒÂ©todo'}</span>
                   </div>
                   <p className="text-sm font-medium">{metodo.banco || tipoMetodoPagoLabels[metodo.tipo]}</p>
                 </div>
@@ -287,11 +288,11 @@ function VerMetodoPagoPageContent() {
                 {metodo.contrasena && (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span>Contraseña</span>
+                      <span>ContraseÃƒÂ±a</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">
-                        {showPassword ? metodo.contrasena : '••••••••'}
+                        {showPassword ? metodo.contrasena : 'Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢'}
                       </p>
                       <Button
                         variant="ghost"
@@ -309,7 +310,7 @@ function VerMetodoPagoPageContent() {
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5 flex-shrink-0"
-                        onClick={() => copyToClipboard(metodo.contrasena!, 'Contraseña')}
+                        onClick={() => copyToClipboard(metodo.contrasena!, 'ContraseÃƒÂ±a')}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -320,13 +321,13 @@ function VerMetodoPagoPageContent() {
                 {metodo.numeroTarjeta && (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span>Número de Tarjeta</span>
+                      <span>NÃƒÂºmero de Tarjeta</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">
                         {showCardNumber
                           ? metodo.numeroTarjeta
-                          : `•••• •••• •••• ${metodo.numeroTarjeta.replace(/\D/g, '').slice(-4)}`
+                          : `Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ ${metodo.numeroTarjeta.replace(/\D/g, '').slice(-4)}`
                         }
                       </p>
                       <Button
@@ -345,7 +346,7 @@ function VerMetodoPagoPageContent() {
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5 flex-shrink-0"
-                        onClick={() => copyToClipboard(metodo.numeroTarjeta!, 'Número de tarjeta')}
+                        onClick={() => copyToClipboard(metodo.numeroTarjeta!, 'NÃƒÂºmero de tarjeta')}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -356,7 +357,7 @@ function VerMetodoPagoPageContent() {
                 {metodo.fechaExpiracion && (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span>Fecha Expiración</span>
+                      <span>Fecha ExpiraciÃƒÂ³n</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium">{metodo.fechaExpiracion}</p>
@@ -364,7 +365,7 @@ function VerMetodoPagoPageContent() {
                         variant="ghost"
                         size="icon"
                         className="h-5 w-5 flex-shrink-0"
-                        onClick={() => copyToClipboard(metodo.fechaExpiracion!, 'Fecha de expiración')}
+                        onClick={() => copyToClipboard(metodo.fechaExpiracion!, 'Fecha de expiraciÃƒÂ³n')}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -388,8 +389,8 @@ function VerMetodoPagoPageContent() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
-        title="Eliminar Método de Pago"
-        description={`¿Estás seguro de que quieres eliminar el método "${metodo.nombre}"? Esta acción no se puede deshacer.`}
+        title="Eliminar MÃƒÂ©todo de Pago"
+        description={`Ã‚Â¿EstÃƒÂ¡s seguro de que quieres eliminar el mÃƒÂ©todo "${metodo.nombre}"? Esta acciÃƒÂ³n no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
       />
@@ -399,7 +400,7 @@ function VerMetodoPagoPageContent() {
 
 export default function VerMetodoPagoPage() {
   return (
-    <ModuleErrorBoundary moduleName="Ver Método de Pago">
+    <ModuleErrorBoundary moduleName="Ver MÃƒÂ©todo de Pago">
       <VerMetodoPagoPageContent />
     </ModuleErrorBoundary>
   );

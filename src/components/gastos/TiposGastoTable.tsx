@@ -27,7 +27,7 @@ export function TiposGastoTable({
   tiposGasto,
   onEdit,
   onToggleActivo,
-  title = 'Catálogo de tipos de gasto',
+  title = 'CatÃ¡logo de tipos de gasto',
 }: TiposGastoTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -50,11 +50,11 @@ export function TiposGastoTable({
     },
     {
       key: 'descripcion',
-      header: 'Descripción',
+      header: 'DescripciÃ³n',
       width: '25%',
       render: (item) => (
         <span className={item.descripcion ? '' : 'text-muted-foreground'}>
-          {item.descripcion || 'Sin descripción'}
+          {item.descripcion || 'Sin descripciÃ³n'}
         </span>
       ),
     },
@@ -83,7 +83,7 @@ export function TiposGastoTable({
     try {
       await onToggleActivo(tipoGasto);
       toast.success(tipoGasto.activo ? 'Tipo inactivado' : 'Tipo activado', {
-        description: 'El catálogo fue actualizado correctamente.',
+        description: 'El catÃ¡logo fue actualizado correctamente.',
       });
     } catch (error) {
       toast.error('Error al actualizar tipo de gasto', {

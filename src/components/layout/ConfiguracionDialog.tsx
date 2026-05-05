@@ -49,9 +49,9 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Configuración</DialogTitle>
+          <DialogTitle>ConfiguraciÃ³n</DialogTitle>
           <DialogDescription>
-            Ajusta cómo se visualizan los datos en el dashboard.
+            Ajusta cÃ³mo se visualizan los datos en el dashboard.
           </DialogDescription>
         </DialogHeader>
 
@@ -63,7 +63,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
               onValueChange={(val) => setSelectedYear(parseInt(val, 10))}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seleccionar año" />
+                <SelectValue placeholder="Seleccionar aÃ±o" />
               </SelectTrigger>
               <SelectContent>
                 {availableYears.map((year) => (
@@ -74,7 +74,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Los widgets mostrarán ingresos y gastos acumulados desde enero de{' '}
+              Los widgets mostrarÃ¡n ingresos y gastos acumulados desde enero de{' '}
               {selectedYear} hasta hoy.
             </p>
           </div>

@@ -7,17 +7,14 @@ const updateMock = vi.fn();
 const removeMock = vi.fn();
 
 vi.mock('@/lib/supabase/notifications-repository', () => ({
-  ENTITIES: {
-    METODOS_PAGO: 'metodosPago',
-    NOTIFICACIONES: 'notificaciones',
-    SERVICIOS: 'servicios',
-    VENTAS: 'ventas',
-  },
-  create: createMock,
-  getById: getByIdMock,
-  queryDocuments: queryDocumentsMock,
-  remove: removeMock,
-  update: updateMock,
+  createNotificacion: createMock,
+  queryNotificaciones: queryDocumentsMock,
+  removeNotificacion: removeMock,
+  updateNotificacion: updateMock,
+}));
+
+vi.mock('@/lib/supabase/servicios-repository', () => ({
+  getServicioById: getByIdMock,
 }));
 
 const servicioBase = {
@@ -65,7 +62,6 @@ describe('notificationSyncService', () => {
     await sincronizarUnServicio('servicio-1');
 
     expect(createMock).toHaveBeenCalledWith(
-      'notificaciones',
       expect.objectContaining({
         entidad: 'servicio',
         servicioId: 'servicio-1',
@@ -101,7 +97,6 @@ describe('notificationSyncService', () => {
     await sincronizarUnServicio('servicio-1');
 
     expect(updateMock).toHaveBeenCalledWith(
-      'notificaciones',
       'notificacion-1',
       expect.objectContaining({
         renovacionAutomatica: false,

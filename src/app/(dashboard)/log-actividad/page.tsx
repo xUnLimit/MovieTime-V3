@@ -1,11 +1,12 @@
-'use client';
+﻿'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
+
 import { LogTimeline } from '@/components/log-actividad/LogTimeline';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ENTITIES, remove, queryDocuments } from '@/lib/supabase/activity-log-repository';
+import { ENTITIES, queryActivityLogs, removeActivityLog } from '@/lib/supabase/activity-log-repository';
 import { ActivityLog } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
 import { toast } from 'sonner';
@@ -43,7 +44,7 @@ function LogActividadPageContent() {
     orderDirection: 'desc',
   });
 
-  // Filtrado client-side solo para búsqueda de texto (no se puede hacer server-side)
+  // Filtrado client-side solo para bÃƒÂºsqueda de texto (no se puede hacer server-side)
   const filteredLogs = useMemo(() => {
     if (!searchTerm) return logs;
     return logs.filter((log) => {
@@ -58,7 +59,7 @@ function LogActividadPageContent() {
   // Delete handlers
   const handleDeleteSelected = async (ids: string[]) => {
     try {
-      await Promise.all(ids.map(id => remove(ENTITIES.ACTIVITY_LOG, id)));
+      await Promise.all(ids.map(id => removeActivityLog(id)));
       toast.success('Registros eliminados', { description: `${ids.length} registro(s) han sido eliminados del log de actividad.` });
       refresh();
     } catch (error) {
@@ -71,11 +72,11 @@ function LogActividadPageContent() {
     try {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
-      const oldLogs = await queryDocuments<ActivityLog>(ENTITIES.ACTIVITY_LOG, [
+      const oldLogs = await queryActivityLogs<ActivityLog>([
         { field: 'timestamp', operator: '<', value: cutoff }
       ]);
-      await Promise.all(oldLogs.map(log => remove(ENTITIES.ACTIVITY_LOG, log.id)));
-      toast.success('Registros antiguos eliminados', { description: `${oldLogs.length} registro(s) anterior(es) al período seleccionado han sido eliminados.` });
+      await Promise.all(oldLogs.map(log => removeActivityLog(log.id)));
+      toast.success('Registros antiguos eliminados', { description: `${oldLogs.length} registro(s) anterior(es) al perÃƒÂ­odo seleccionado han sido eliminados.` });
       refresh();
     } catch (error) {
       console.error('Error deleting old logs:', error);
@@ -103,7 +104,7 @@ function LogActividadPageContent() {
         setEntidadFilter={setEntidadFilter}
         usuarioFilter={usuarioFilter}
         setUsuarioFilter={setUsuarioFilter}
-        // Paginación
+        // PaginaciÃƒÂ³n
         hasMore={hasMore}
         hasPrevious={hasPrevious}
         page={page}
