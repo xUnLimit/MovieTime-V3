@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { ENTITIES, getServicioById, getServicios, logCacheHit, updateServicio as updateServicioRecord } from '@/lib/supabase/servicios-repository';
+import { ENTITIES, getServicioById, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
 import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas-use-cases';
 import {
   createServicioUseCase,
@@ -261,8 +261,6 @@ export const useServiciosStore = create<ServiciosState>()(
           } catch (countError) {
             console.error('Error counting active ventas for perfil ocupado:', countError);
           }
-
-          await updateServicioRecord(id, { perfilesOcupados: realCount });
 
           if (get().servicios.find((item) => item.id === id)) {
             set((state) => ({

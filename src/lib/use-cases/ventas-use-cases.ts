@@ -16,9 +16,8 @@ import {
   removePagoVenta,
   removeVenta,
   updateLatestVentaPeriodo,
-  updatePagoVenta,
   updateVenta,
-  updateVentaPeriodoById,
+  updateVentaPaymentAndPeriod,
 } from '@/lib/supabase/ventas-repository';
 import {
   adjustIngresosStats,
@@ -397,18 +396,8 @@ export async function updateVentaPagoUseCase(
   const { usd, rate } = await getUsdValues(monto, moneda);
   const pago = await getPagoVentaById<PagoVenta & { ventaPeriodoId?: string }>(pagoId);
 
-  await updatePagoVenta(pagoId, {
-    monto_original: monto,
-    moneda_original: moneda,
-    monto_usd: usd,
-    exchange_rate: rate,
-    metodo_pago_id: input.metodoPagoId || null,
-    metodo_pago_nombre_snapshot: metodoPagoNombre || null,
-    notas: notaPrincipal,
-  });
-
   if (pago?.ventaPeriodoId) {
-    await updateVentaPeriodoById(pago.ventaPeriodoId, {
+    await updateVentaPaymentAndPeriod(pagoId, {
       precio: costo,
       descuento: descuentoNumero,
       monto,
@@ -418,6 +407,9 @@ export async function updateVentaPagoUseCase(
       cicloPago: (input.periodoRenovacion || 'mensual') as NonNullable<VentaDoc['cicloPago']>,
       fechaInicio: input.fechaInicio,
       fechaVencimiento: input.fechaVencimiento,
+      metodoPagoId: input.metodoPagoId,
+      metodoPagoNombre,
+      notas: notaPrincipal,
     });
   }
 
@@ -474,18 +466,6 @@ export async function updateVentaWithLatestPagoUseCase(
   const { usd, rate } = await getUsdValues(pagoUpdates.monto, pagoUpdates.moneda);
   const cicloPago = (pagoUpdates.cicloPago || 'mensual') as NonNullable<VentaDoc['cicloPago']>;
 
-  await updateLatestVentaPeriodo(id, {
-    precio: pagoUpdates.precio,
-    descuento: pagoUpdates.descuento,
-    monto: pagoUpdates.monto,
-    moneda: pagoUpdates.moneda,
-    montoUsd: usd,
-    exchangeRate: rate,
-    cicloPago,
-    fechaInicio: pagoUpdates.fechaInicio,
-    fechaVencimiento: pagoUpdates.fechaVencimiento,
-  });
-
   const pagos = await queryPagosVenta<PagoVenta>([{ field: 'ventaId', operator: '==', value: id }]);
 
   if (pagos.length > 0) {
@@ -495,13 +475,30 @@ export async function updateVentaWithLatestPagoUseCase(
       return dateB.getTime() - dateA.getTime();
     })[0];
 
-    await updatePagoVenta(pagoMasReciente.id, {
-      monto_original: pagoUpdates.monto,
-      moneda_original: pagoUpdates.moneda,
-      monto_usd: usd,
-      exchange_rate: rate,
-      metodo_pago_id: pagoUpdates.metodoPagoId || null,
-      metodo_pago_nombre_snapshot: pagoUpdates.metodoPago || null,
+    await updateVentaPaymentAndPeriod(pagoMasReciente.id, {
+      precio: pagoUpdates.precio,
+      descuento: pagoUpdates.descuento,
+      monto: pagoUpdates.monto,
+      moneda: pagoUpdates.moneda,
+      montoUsd: usd,
+      exchangeRate: rate,
+      cicloPago,
+      fechaInicio: pagoUpdates.fechaInicio,
+      fechaVencimiento: pagoUpdates.fechaVencimiento,
+      metodoPagoId: pagoUpdates.metodoPagoId,
+      metodoPagoNombre: pagoUpdates.metodoPago,
+    });
+  } else {
+    await updateLatestVentaPeriodo(id, {
+      precio: pagoUpdates.precio,
+      descuento: pagoUpdates.descuento,
+      monto: pagoUpdates.monto,
+      moneda: pagoUpdates.moneda,
+      montoUsd: usd,
+      exchangeRate: rate,
+      cicloPago,
+      fechaInicio: pagoUpdates.fechaInicio,
+      fechaVencimiento: pagoUpdates.fechaVencimiento,
     });
   }
 

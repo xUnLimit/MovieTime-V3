@@ -50,12 +50,15 @@ function LogActividadPageContent() {
 
   // Filtrado client-side solo para búsqueda de texto (no se puede hacer server-side)
   const filteredLogs = useMemo(() => {
-    if (!searchTerm) return logs;
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    if (!normalizedSearchTerm) return logs;
     return logs.filter((log) => {
       return (
-        log.entidadNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.usuarioEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.detalles?.toLowerCase().includes(searchTerm.toLowerCase())
+        log.id.toLowerCase().includes(normalizedSearchTerm) ||
+        log.entidadId.toLowerCase().includes(normalizedSearchTerm) ||
+        log.entidadNombre?.toLowerCase().includes(normalizedSearchTerm) ||
+        log.usuarioEmail?.toLowerCase().includes(normalizedSearchTerm) ||
+        log.detalles?.toLowerCase().includes(normalizedSearchTerm)
       );
     });
   }, [logs, searchTerm]);
@@ -96,6 +99,7 @@ function LogActividadPageContent() {
 
       <LogTimeline
         logs={filteredLogs}
+        unfilteredPageCount={logs.length}
         isLoading={isLoading}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}

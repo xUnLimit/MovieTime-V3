@@ -56,17 +56,29 @@ function parseNombreDesdeDetalles(detalles: string): string | null {
   return null;
 }
 
+const RENEWAL_CURRENCY_PATTERN = '(?:Bs\\.?|Fr\\.?|B\\/\\.|[RC]\\$|S\\/|[A-Z]{2,5}|[^\\w\\s,.-]+)';
+const RENEWAL_AMOUNT_PATTERN = '[0-9]+(?:[.,][0-9]+)?';
+const SPACED_CURRENCY_PATTERN = /^(?:[A-Z]{2,5}|Bs\.?|Fr\.?)$/i;
+
+function formatRenewalAmount(currency: string, amount: string) {
+  const normalizedCurrency = /^[A-Z]{2,5}$/i.test(currency) && !/^(?:Bs|Fr)\.?$/i.test(currency)
+    ? currency.toUpperCase()
+    : currency;
+
+  return SPACED_CURRENCY_PATTERN.test(normalizedCurrency)
+    ? `${normalizedCurrency} ${amount}`
+    : `${normalizedCurrency}${amount}`;
+}
+
 /** Extrae info de renovación: monto, hasta, periodo */
 function parseRenovacion(detalles: string): { monto?: string; hasta?: string; periodo?: string } {
-  // Captura codigos ISO o simbolos de moneda (ej: "USD 10.00", "$15.00", "B/.10")
-  const montoMatch = detalles.match(/-\s*([A-Z]{2,5}|B\/\.|[^\w\s,.-]+)\s*([0-9]+(?:[.,][0-9]+)?)\s*-\s*hasta/i)
-    ?? detalles.match(/([A-Z]{2,5}|B\/\.|[^\w\s,.-]+)\s*([0-9]+(?:[.,][0-9]+)?)/i);
+  // Captura codigos ISO, simbolos y prefijos mixtos (ej: "USD 10.00", "$15.00", "R$ 20", "Bs. 30")
+  const montoMatch = detalles.match(new RegExp(`-\\s*(${RENEWAL_CURRENCY_PATTERN})\\s*(${RENEWAL_AMOUNT_PATTERN})\\s*-\\s*hasta`, 'i'))
+    ?? detalles.match(new RegExp(`(${RENEWAL_CURRENCY_PATTERN})\\s*(${RENEWAL_AMOUNT_PATTERN})`, 'i'));
   const hastaMatch = detalles.match(/hasta\s+([\d/]+)/);
   const periodoMatch = detalles.match(/\((\w+)\)/);
   return {
-    monto: montoMatch
-      ? /^[A-Z]/i.test(montoMatch[1]) ? `${montoMatch[1].toUpperCase()} ${montoMatch[2]}` : `${montoMatch[1]}${montoMatch[2]}`
-      : undefined,
+    monto: montoMatch ? formatRenewalAmount(montoMatch[1], montoMatch[2]) : undefined,
     hasta: hastaMatch?.[1],
     periodo: periodoMatch?.[1],
   };

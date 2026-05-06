@@ -49,33 +49,10 @@ export const updatePagoServicio = <T extends Record<string, unknown>>(id: string
   update(ENTITIES.PAGOS_SERVICIO, id, payload);
 
 export async function removePagoServicio(id: string): Promise<void> {
-  const { data: pago, error: selectError } = await supabase
-    .from('pagos_servicio')
-    .select('servicio_periodo_id')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (selectError) throw new Error(selectError.message);
-
-  await remove(ENTITIES.PAGOS_SERVICIO, id);
-
-  const periodoId = (pago as { servicio_periodo_id?: string } | null)?.servicio_periodo_id;
-  if (!periodoId) return;
-
-  const { count, error: countError } = await supabase
-    .from('pagos_servicio')
-    .select('*', { count: 'exact', head: true })
-    .eq('servicio_periodo_id', periodoId);
-
-  if (countError) throw new Error(countError.message);
-  if ((count ?? 0) > 0) return;
-
-  const { error: deleteError } = await supabase
-    .from('servicio_periodos')
-    .delete()
-    .eq('id', periodoId);
-
-  if (deleteError) throw new Error(deleteError.message);
+  const { error } = await rpcClient.rpc('delete_servicio_payment_and_empty_period', {
+    p_pago_id: id,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export type ServicioPeriodoUpdate = {
@@ -129,6 +106,32 @@ export async function updateServicioPeriodoById(
     .from('servicio_periodos')
     .update(periodUpdate as never)
     .eq('id', periodoId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function updateServicioPaymentAndPeriod(
+  pagoId: string,
+  payload: ServicioPeriodoUpdate & {
+    metodoPagoId?: string | null;
+    metodoPagoNombre?: string | null;
+    notas?: string | null;
+  }
+): Promise<void> {
+  const { error } = await rpcClient.rpc('update_servicio_payment_and_period', {
+    p_pago_id: pagoId,
+    p_fecha_inicio: toDateOnly(payload.fechaInicio),
+    p_fecha_vencimiento: toDateOnly(payload.fechaVencimiento),
+    p_ciclo_pago: payload.cicloPago,
+    p_costo_original: payload.costo,
+    p_moneda_original: payload.moneda,
+    p_costo_usd: payload.costoUsd,
+    p_exchange_rate: payload.exchangeRate,
+    p_renovacion_automatica: payload.renovacionAutomatica ?? false,
+    p_metodo_pago_id: payload.metodoPagoId || null,
+    p_metodo_pago_nombre_snapshot: payload.metodoPagoNombre || null,
+    p_pago_notas: payload.notas ?? null,
+  });
 
   if (error) throw new Error(error.message);
 }

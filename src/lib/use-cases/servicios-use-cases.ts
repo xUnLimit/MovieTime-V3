@@ -12,9 +12,8 @@ import {
   removePagoServicio,
   removeServicio,
   updateLatestServicioPeriodo,
-  updatePagoServicio,
   updateServicio,
-  updateServicioPeriodoById,
+  updateServicioPaymentAndPeriod,
 } from '@/lib/supabase/servicios-repository';
 import { toDateOnly, toIso } from '@/lib/supabase/dates';
 import {
@@ -69,7 +68,6 @@ const SERVICIO_TABLE_UPDATE_KEYS = new Set([
   'correo',
   'contrasena',
   'perfilesDisponibles',
-  'perfilesOcupados',
   'activo',
   'enReposo',
   'diasReposo',
@@ -499,18 +497,8 @@ export async function updateServicioPagoUseCase(
   const { usd, rate } = await getUsdValues(input.costo, moneda);
   const pagoActual = await getPagoServicioById<PagoServicio & { servicioPeriodoId?: string }>(pago.id);
 
-  await updatePagoServicio(pago.id, {
-    monto_original: input.costo,
-    moneda_original: moneda,
-    monto_usd: usd,
-    exchange_rate: rate,
-    metodo_pago_id: input.metodoPagoId || null,
-    metodo_pago_nombre_snapshot: metodoPagoNombre || null,
-    notas: notaPrincipal,
-  });
-
   if (pagoActual?.servicioPeriodoId) {
-    await updateServicioPeriodoById(pagoActual.servicioPeriodoId, {
+    await updateServicioPaymentAndPeriod(pago.id, {
       fechaInicio: input.fechaInicio,
       fechaVencimiento: input.fechaVencimiento,
       cicloPago,
@@ -519,6 +507,9 @@ export async function updateServicioPagoUseCase(
       costoUsd: usd,
       exchangeRate: rate,
       renovacionAutomatica: servicio.renovacionAutomatica,
+      metodoPagoId: input.metodoPagoId,
+      metodoPagoNombre,
+      notas: notaPrincipal,
     });
   }
 

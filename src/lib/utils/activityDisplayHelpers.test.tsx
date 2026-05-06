@@ -39,4 +39,20 @@ describe('getActivityDisplayConfig', () => {
 
     expect(html).toContain('$10.00');
   });
+
+  it.each([
+    ['R$ 20.50', 'R$20.50'],
+    ['C$ 15.00', 'C$15.00'],
+    ['S/ 32.90', 'S/32.90'],
+    ['Bs. 120,00', 'Bs. 120,00'],
+    ['Fr 40.00', 'Fr 40.00'],
+  ])('shows mixed renewal currency %s', (rawAmount, expectedAmount) => {
+    const { message } = getActivityDisplayConfig(
+      makeRenewalLog(`Venta renovada: Alvin Rodriguez / Youtube Premium - Familiar - ${rawAmount} - hasta 02/06/2026 (mensual)`)
+    );
+
+    const html = renderToStaticMarkup(<>{message}</>);
+
+    expect(html).toContain(expectedAmount);
+  });
 });

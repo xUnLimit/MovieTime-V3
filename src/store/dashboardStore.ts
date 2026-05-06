@@ -1,4 +1,4 @@
-﻿import { countUsuarios, countVentas, logCacheHit, queryActivityLogs } from '@/lib/supabase/dashboard-repository';
+import { countUsuarios, countVentas, logCacheHit, queryRecentActivityLogs } from '@/lib/supabase/dashboard-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
@@ -66,11 +66,7 @@ export const useDashboardStore = create<DashboardState>()(
               countUsuarios([
                 { field: 'tipo', operator: '==', value: 'revendedor' },
               ]),
-              queryActivityLogs<ActivityLog>([]).then((logs) =>
-                logs
-                  .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-                  .slice(0, 6)
-              ),
+              queryRecentActivityLogs<ActivityLog>(6),
             ]);
 
           set({

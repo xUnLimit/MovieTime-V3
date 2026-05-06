@@ -27,6 +27,7 @@ import {
 
 interface LogTimelineProps {
   logs: ActivityLog[];
+  unfilteredPageCount?: number;
   isLoading: boolean;
   searchTerm: string;
   setSearchTerm: (value: string) => void;
@@ -53,6 +54,7 @@ interface LogTimelineProps {
 
 export function LogTimeline({
   logs,
+  unfilteredPageCount = logs.length,
   isLoading,
   searchTerm,
   setSearchTerm,
@@ -172,6 +174,8 @@ export function LogTimeline({
   };
 
   const isAllSelected = logs.length > 0 && selectedLogs.size === logs.length;
+  const hasSearchTerm = searchTerm.trim().length > 0;
+  const searchFilteredCurrentPage = hasSearchTerm && unfilteredPageCount > 0 && logs.length === 0;
 
   const columns: Column<ActivityLog>[] = [
     {
@@ -300,9 +304,33 @@ export function LogTimeline({
             <p className="text-sm text-muted-foreground">Cargando logs...</p>
           </div>
         ) : logs.length === 0 ? (
-          <div className="border border-border rounded-md p-12 text-center">
-            <p className="text-sm text-muted-foreground">No hay actividad registrada</p>
-          </div>
+          <>
+            <div className="border border-border rounded-md p-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                {searchFilteredCurrentPage
+                  ? 'No hay coincidencias en esta página'
+                  : 'No hay actividad registrada'}
+              </p>
+              {searchFilteredCurrentPage ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  La búsqueda se aplica sobre los registros cargados. Usa la paginación para revisar más páginas.
+                </p>
+              ) : null}
+            </div>
+
+            {searchFilteredCurrentPage ? (
+              <PaginationFooter
+                page={page}
+                totalPages={hasMore ? page + 1 : page}
+                hasPrevious={hasPrevious}
+                hasMore={hasMore}
+                onPrevious={onPrevious}
+                onNext={onNext}
+                pageSize={pageSize}
+                onPageSizeChange={onPageSizeChange}
+              />
+            ) : null}
+          </>
         ) : (
           <>
             <DataTable

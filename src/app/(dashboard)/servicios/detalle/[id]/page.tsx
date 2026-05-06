@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
@@ -1157,7 +1157,9 @@ function ServicioDetallePageContent() {
 export default function ServicioDetallePage() {
   return (
     <ModuleErrorBoundary moduleName="Detalle de Servicio">
-      <ServicioDetallePageContent />
+      <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-muted-foreground">Cargando...</div></div>}>
+        <ServicioDetallePageContent />
+      </Suspense>
     </ModuleErrorBoundary>
   );
 }

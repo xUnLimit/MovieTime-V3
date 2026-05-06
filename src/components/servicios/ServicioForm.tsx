@@ -545,14 +545,6 @@ export function ServicioForm({
           ...servicio,
           ...servicioData,
         });
-
-        // Resincronizar perfilesOcupados si el contador estaba desfasado
-        if (servicio.perfilesOcupados !== perfilesOcupadosReal) {
-          await updateServicio(servicio.id, {
-            perfilesOcupados: perfilesOcupadosReal,
-          });
-        }
-
         // Actualizar el último pago si existe (Single Source of Truth)
         if (ultimoPago && ultimoPago.id) {
           await updateServicioPagoUseCase(servicio, ultimoPago, {

@@ -42,7 +42,6 @@ export function normalizeWritePayload(
       'correo',
       'contrasena',
       'perfiles_disponibles',
-      'perfiles_ocupados',
       'activo',
       'en_reposo',
       'dias_reposo',
