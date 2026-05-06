@@ -14,7 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { countActivityLogsUseCase } from '@/lib/use-cases/activity-log-use-cases';
-import { activityActionColors, getActivityDisplayConfig } from '@/lib/utils/activityDisplayHelpers';
+import {
+  activityActionColors,
+  getActivityDisplayConfig,
+  isCorteActivityLog,
+} from '@/lib/utils/activityDisplayHelpers';
 import type { ActivityLog } from '@/types';
 import {
   Dialog,
@@ -88,24 +92,32 @@ export function LogTimeline({
   const [isLoadingCount, setIsLoadingCount] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const getActionBadgeStyle = (accion: ActivityLog['accion']) => {
+  const getActionBadgeStyle = (item: ActivityLog) => {
+    if (isCorteActivityLog(item)) {
+      return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30';
+    }
+
     const styles: Record<string, string> = {
       creacion:     'bg-green-100 text-green-700 border-green-300 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
       actualizacion:'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
+      corte:        'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30',
       eliminacion:  'bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
       renovacion:   'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30',
     };
-    return styles[accion] ?? activityActionColors[accion] ?? '';
+    return styles[item.accion] ?? activityActionColors[item.accion] ?? '';
   };
 
-  const getActionLabel = (accion: ActivityLog['accion']) => {
+  const getActionLabel = (item: ActivityLog) => {
+    if (isCorteActivityLog(item)) return 'Corte';
+
     const labels = {
       creacion: 'Creación',
       actualizacion: 'Actualización',
+      corte: 'Corte',
       eliminacion: 'Eliminación',
       renovacion: 'Renovación',
     };
-    return labels[accion];
+    return labels[item.accion];
   };
 
   const getEntityLabel = (entidad: ActivityLog['entidad']) => {
@@ -259,8 +271,8 @@ export function LogTimeline({
       align: 'center',
       width: '12%',
       render: (item) => (
-        <Badge variant="outline" className={getActionBadgeStyle(item.accion)}>
-          {getActionLabel(item.accion)}
+        <Badge variant="outline" className={getActionBadgeStyle(item)}>
+          {getActionLabel(item)}
         </Badge>
       ),
     },

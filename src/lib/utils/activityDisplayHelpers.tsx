@@ -9,6 +9,7 @@ import {
 export const activityActionColors: Record<string, string> = {
   creacion:     'bg-green-500/10 text-green-500',
   actualizacion:'bg-blue-500/10 text-blue-500',
+  corte:        'bg-orange-500/10 text-orange-500',
   eliminacion:  'bg-red-500/10 text-red-500',
   renovacion:   'bg-purple-500/10 text-purple-500',
 };
@@ -90,6 +91,22 @@ function getCamposLabel(log: ActivityLog): string | null {
   const campos = log.cambios.map(c => c.campo);
   if (campos.length <= 3) return campos.join(', ');
   return `${campos.slice(0, 3).join(', ')}…`;
+}
+
+export function isCorteActivityLog(log: ActivityLog): boolean {
+  if (log.accion === 'corte') return true;
+  if (log.accion !== 'actualizacion') return false;
+
+  const detalles = log.detalles?.toLowerCase() ?? '';
+  const operacion = typeof log.metadata?.operacion === 'string'
+    ? log.metadata.operacion.toLowerCase()
+    : '';
+  const cambioDeCorte = log.cambios?.some(c =>
+    (c.campoKey === 'activo' && c.nuevo === false) ||
+    (c.campoKey === 'estado' && c.nuevo === 'inactivo')
+  ) ?? false;
+
+  return cambioDeCorte || operacion.includes('corte') || detalles.includes('cortad');
 }
 
 function getReposoTransition(log: ActivityLog): { anterior: boolean; nuevo: boolean } | null {
@@ -177,10 +194,7 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
       }
 
       // Detectar si es un "corte" (activo: true → false) o (estado → inactivo)
-      const esCorte = log.cambios?.some(c =>
-        (c.campoKey === 'activo' && c.nuevo === false) ||
-        (c.campoKey === 'estado' && c.nuevo === 'inactivo')
-      ) ?? detalles.toLowerCase().includes('cortad');
+      const esCorte = isCorteActivityLog(log);
 
       if (esCorte) {
         const cortarIcon = Scissors;
@@ -207,6 +221,18 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
         return { icon, color: colorClass, message: <><span>Venta editada —</span> {nameEl}{camposEl}</> };
       }
       return { icon, color: colorClass, message: <><span>{label} {gen('editado', 'editada')} —</span> {nameEl}{camposEl}</> };
+    }
+
+    case 'corte': {
+      const cortarIcon = Scissors;
+      const cortarColor = activityActionColors.corte;
+      if (log.entidad === 'servicio') {
+        return { icon: cortarIcon, color: cortarColor, message: <><span>Servicio cortado —</span> {nameEl}{correoEl}</> };
+      }
+      if (log.entidad === 'venta') {
+        return { icon: cortarIcon, color: cortarColor, message: <><span>Venta cortada —</span> {nameEl}</> };
+      }
+      return { icon: cortarIcon, color: cortarColor, message: <><span>{label} {gen('cortado', 'cortada')} —</span> {nameEl}</> };
     }
 
     case 'eliminacion': {

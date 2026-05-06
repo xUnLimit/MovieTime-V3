@@ -3,7 +3,7 @@
 // ===========================
 
 // Activity Log Types
-export type AccionLog = 'creacion' | 'actualizacion' | 'eliminacion' | 'renovacion';
+export type AccionLog = 'creacion' | 'actualizacion' | 'corte' | 'eliminacion' | 'renovacion';
 export type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'usuario' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
 
 export interface CambioLog {
@@ -23,7 +23,7 @@ export interface ActivityLog {
   entidadId: string;
   entidadNombre: string;
   detalles: string;     // Texto resumido (backward compatible)
-  cambios?: CambioLog[]; // Solo presente en actualizaciones
+  cambios?: CambioLog[]; // Solo presente en actualizaciones/cortes
   metadata?: Record<string, unknown>; // Datos estructurados para auditoria robusta
   timestamp: Date;
 }

@@ -21,14 +21,12 @@ import {
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { generarMensajeVenta, openWhatsApp } from '@/lib/utils/whatsapp';
 import { withPendingUserPaymentMethod } from '@/lib/utils/usuarioMetodoPago';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useServiciosStore } from '@/store/serviciosStore';
 import { useTemplatesStore } from '@/store/templatesStore';
 import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, VentaDoc } from '@/types';
@@ -411,38 +409,8 @@ export function VentasProximasTable() {
         estado: 'inactivo',
       });
 
-      if (notifSeleccionada.servicioId) {
-        const updatePerfil = useServiciosStore.getState().updatePerfilOcupado;
-        await updatePerfil(notifSeleccionada.servicioId, false);
-      }
-
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
       fetchNotificaciones(true);
-
-      safeAsyncSideEffect(
-        useActivityLogStore.getState().addLog({
-          ...getLogContext(),
-          accion: 'actualizacion',
-          entidad: 'venta',
-          entidadId: notifSeleccionada.ventaId,
-          entidadNombre: `${notifSeleccionada.clienteNombre} — ${notifSeleccionada.servicioNombre}`,
-          detalles: `Venta cortada: ${notifSeleccionada.clienteNombre} / ${notifSeleccionada.servicioNombre} — estado cambiado a inactivo, perfil liberado`,
-          cambios: [
-            {
-              campo: 'Estado',
-              campoKey: 'estado',
-              anterior: 'activo',
-              nuevo: 'inactivo',
-              tipo: 'string' as const,
-            },
-          ],
-        }),
-        {
-          operation: 'addActivityLog',
-          entity: 'venta',
-          entityId: notifSeleccionada.ventaId,
-        }
-      );
 
       invalidateDashboardCache({
         entity: 'venta',

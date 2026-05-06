@@ -593,6 +593,7 @@ export async function updateVentaUseCase(
   const categoriaNueva = updates.categoriaId || categoriaAnterior;
   const estadoAnterior = ventaAnterior.estado || 'activo';
   const estadoNuevo = updates.estado || estadoAnterior;
+  const esCorteVenta = estadoAnterior !== estadoNuevo && estadoNuevo === 'inactivo';
 
   let serviceProfileDelta: { servicioId: string; shouldIncrement: boolean } | null = null;
 
@@ -650,13 +651,15 @@ export async function updateVentaUseCase(
 
   await options.recordActivityLog?.({
     ...options.logContext,
-    accion: 'actualizacion',
+    accion: esCorteVenta ? 'corte' : 'actualizacion',
     entidad: 'venta',
     entidadId: id,
     entidadNombre: (ventaAnterior.clienteNombre && ventaAnterior.servicioNombre)
       ? `${ventaAnterior.clienteNombre} - ${ventaAnterior.servicioNombre}`
       : '',
-    detalles: `Venta actualizada: ${ventaAnterior.clienteNombre ?? '-'} / ${ventaAnterior.servicioNombre ?? '-'}`,
+    detalles: esCorteVenta
+      ? `Venta cortada: ${ventaAnterior.clienteNombre ?? '-'} / ${ventaAnterior.servicioNombre ?? '-'} - estado cambiado a inactivo, perfil liberado`
+      : `Venta actualizada: ${ventaAnterior.clienteNombre ?? '-'} / ${ventaAnterior.servicioNombre ?? '-'}`,
     cambios: cambios.length > 0 ? cambios : undefined,
     metadata: {
       cambiosCount: cambios.length,

@@ -3283,6 +3283,7 @@ export type Database = {
       accion_log_enum:
         | "creacion"
         | "actualizacion"
+        | "corte"
         | "eliminacion"
         | "renovacion"
       asociado_a_enum: "usuario" | "servicio"
@@ -3448,6 +3449,7 @@ export const Constants = {
       accion_log_enum: [
         "creacion",
         "actualizacion",
+        "corte",
         "eliminacion",
         "renovacion",
       ],

@@ -53,6 +53,7 @@ const entityLabels: Record<string, string> = {
 const actionLabels: Record<string, string> = {
   creacion: 'Creación',
   actualizacion: 'Actualización',
+  corte: 'Corte',
   eliminacion: 'Eliminación',
   renovacion: 'Renovación',
 };
