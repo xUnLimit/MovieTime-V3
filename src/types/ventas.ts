@@ -32,6 +32,8 @@ export interface PagoVenta {
   metodoPago: string;                 // Nombre del método de pago (denormalizado)
   moneda?: string;                    // Denormalizado de MetodoPago
   notas?: string;
+  descripcion?: string;                // "Pago inicial" o "Renovacion #1", "Renovacion #2", etc.
+  numeroPeriodo?: number;              // 1 = pago inicial, 2+ = renovaciones
   isPagoInicial: boolean;             // true para el primer pago
   cicloPago?: 'mensual' | 'trimestral' | 'semestral' | 'anual';
   fechaInicio?: Date;                 // Fecha de inicio del periodo cubierto por este pago

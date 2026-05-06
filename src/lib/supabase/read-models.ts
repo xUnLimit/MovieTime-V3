@@ -55,9 +55,17 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
   }
 
   if (collectionName === ENTITIES.PAGOS_VENTA) {
+    const numeroPeriodo = Number(camel.numeroPeriodo ?? (camel.isPagoInicial === false ? 2 : 1));
+    const isPagoInicial = Boolean(camel.isPagoInicial ?? numeroPeriodo === 1);
+    const descripcion = isPagoInicial
+      ? 'Pago inicial'
+      : `Renovación #${Math.max(numeroPeriodo - 1, 1)}`;
+
     return {
       ...camel,
       fecha: camel.fecha ?? camel.fechaPago,
+      descripcion: camel.descripcion ?? descripcion,
+      numeroPeriodo,
       monto: Number(camel.monto ?? camel.montoOriginal ?? 0),
       precio: Number(camel.precio ?? camel.precioOriginal ?? camel.montoOriginal ?? 0),
       descuento: Number(camel.descuento ?? 0),
@@ -66,7 +74,7 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
       cicloPago: camel.cicloPago ?? camel.periodoCicloPago,
       fechaInicio: camel.fechaInicio ?? camel.periodoInicio,
       fechaVencimiento: camel.fechaVencimiento ?? camel.periodoFin,
-      isPagoInicial: camel.isPagoInicial ?? camel.numeroPeriodo === 1,
+      isPagoInicial,
     } as T;
   }
 

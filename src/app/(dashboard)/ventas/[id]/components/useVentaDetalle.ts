@@ -161,7 +161,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
         return {
           id: p.id,
           fecha: p.fecha,
-          descripcion: p.isPagoInicial ? 'Pago Inicial' : 'Renovación',
+          descripcion: p.descripcion ?? (p.isPagoInicial ? 'Pago Inicial' : 'Renovación'),
           precio: p.precio ?? p.monto,
           descuento: p.descuento ?? 0,
           total: p.monto,
