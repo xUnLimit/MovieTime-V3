@@ -58,12 +58,15 @@ function parseNombreDesdeDetalles(detalles: string): string | null {
 
 /** Extrae info de renovación: monto, hasta, periodo */
 function parseRenovacion(detalles: string): { monto?: string; hasta?: string; periodo?: string } {
-  // Captura símbolo(s) no-alfanumérico(s) + número (ej: "₦2500", "$15.00", "B/.10")
-  const montoMatch = detalles.match(/([^\w\s,]+)([0-9]+(?:\.[0-9]+)?)/);
+  // Captura codigos ISO o simbolos de moneda (ej: "USD 10.00", "$15.00", "B/.10")
+  const montoMatch = detalles.match(/-\s*([A-Z]{2,5}|B\/\.|[^\w\s,.-]+)\s*([0-9]+(?:[.,][0-9]+)?)\s*-\s*hasta/i)
+    ?? detalles.match(/([A-Z]{2,5}|B\/\.|[^\w\s,.-]+)\s*([0-9]+(?:[.,][0-9]+)?)/i);
   const hastaMatch = detalles.match(/hasta\s+([\d/]+)/);
   const periodoMatch = detalles.match(/\((\w+)\)/);
   return {
-    monto: montoMatch ? `${montoMatch[1]}${montoMatch[2]}` : undefined,
+    monto: montoMatch
+      ? /^[A-Z]/i.test(montoMatch[1]) ? `${montoMatch[1].toUpperCase()} ${montoMatch[2]}` : `${montoMatch[1]}${montoMatch[2]}`
+      : undefined,
     hasta: hastaMatch?.[1],
     periodo: periodoMatch?.[1],
   };
