@@ -7,11 +7,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { calcularDiasRestantes, formatearFecha } from "@/lib/utils/calculations";
 import type {
   PerfilDetalleVisual,
   PerfilesDetalleResumen,
   ServicioPerfilDetalle,
 } from "@/features/ventas/ventas-form-shared";
+
+const CICLO_LABEL: Record<string, string> = {
+  mensual: "Mensual",
+  trimestral: "Trimestral",
+  semestral: "Semestral",
+  anual: "Anual",
+};
 
 interface VentaPerfilDetalleDialogProps {
   open: boolean;
@@ -91,6 +99,21 @@ export function VentaPerfilDetalleDialog({
                             {perfil.clienteNombre}
                           </p>
                         ) : null}
+                        {perfil.estado === "ocupado" && perfil.fechaFin ? (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Vence: {formatearFecha(perfil.fechaFin)}{" "}
+                            <span className={cn(
+                              "font-medium",
+                              calcularDiasRestantes(perfil.fechaFin) <= 7
+                                ? "text-red-400"
+                                : calcularDiasRestantes(perfil.fechaFin) <= 30
+                                  ? "text-yellow-400"
+                                  : "text-muted-foreground",
+                            )}>
+                              ({calcularDiasRestantes(perfil.fechaFin)}d)
+                            </span>
+                          </p>
+                        ) : null}
                       </div>
                       <div className="flex min-h-[40px] shrink-0 flex-col items-end justify-between gap-2 self-stretch">
                         <span
@@ -110,6 +133,11 @@ export function VentaPerfilDetalleDialog({
                               ? "Pendiente"
                               : "Disponible"}
                         </span>
+                        {perfil.estado === "ocupado" && perfil.cicloPago ? (
+                          <p className="text-right text-xs text-muted-foreground">
+                            {CICLO_LABEL[perfil.cicloPago] ?? perfil.cicloPago}
+                          </p>
+                        ) : null}
                         {perfil.estado === "pendiente" ? (
                           <p className="text-right text-xs text-purple-300">
                             {pendingLabel}

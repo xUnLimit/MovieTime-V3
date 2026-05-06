@@ -80,9 +80,13 @@ interface VentaCreateItemSectionProps {
   itemErrors: VentaItemErrors;
   items: VentaItem[];
   loadingServicios: boolean;
+  loadingVentasRanking: boolean;
   notasItem: string;
   onAddItem: () => void;
   onCategoriaSelect: (categoriaId: string) => void;
+  onTipoPlanSelect: (tipoPlanId: string) => void;
+  tipoPlanId: string;
+  tiposPlanes: { id: string; nombre: string }[];
   onDescuentoChange: (value: string) => void;
   onEditItem: (item: VentaItem) => void;
   onEstadoChange: (estado: "activo" | "inactivo") => void;
@@ -133,9 +137,13 @@ export function VentaCreateItemSection({
   itemErrors,
   items,
   loadingServicios,
+  loadingVentasRanking,
   notasItem,
   onAddItem,
   onCategoriaSelect,
+  onTipoPlanSelect,
+  tipoPlanId,
+  tiposPlanes,
   onDescuentoChange,
   onEditItem,
   onEstadoChange,
@@ -178,7 +186,7 @@ export function VentaCreateItemSection({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${tiposPlanes.length > 1 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
         <div className="space-y-2">
           <Label>Categoria</Label>
           <DropdownMenu>
@@ -214,25 +222,42 @@ export function VentaCreateItemSection({
           ) : null}
         </div>
 
-        <VentaServicioSelector
-          categoriaId={categoriaId}
-          servicioId={servicioId}
-          servicioSeleccionado={servicioSeleccionado}
-          servicios={serviciosVentana}
-          totalServicios={serviciosFiltradosTotal}
-          visibleRows={SERVICIOS_DROPDOWN_VISIBLE_ROWS}
-          loading={loadingServicios}
-          error={itemErrors.servicio}
-          getSlotsDisponibles={getSlotsDisponibles}
-          getDisponiblesColorClass={getDisponiblesColorClass}
-          onOpenPerfilDetalle={onOpenPerfilDetalle}
-          onScroll={onServiciosScroll}
-          onWheel={onServiciosWheel}
-          onSelectServicio={onServicioSelect}
-        />
-      </div>
+        {tiposPlanes.length > 1 ? (
+          <div className="space-y-2">
+            <Label>Tipo de plan</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="w-full justify-between"
+                  disabled={!categoriaId}
+                >
+                  {tipoPlanId
+                    ? tiposPlanes.find((t) => t.id === tipoPlanId)?.nombre
+                    : categoriaId
+                      ? "Seleccionar tipo"
+                      : "Primero selecciona categoria"}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-[var(--radix-dropdown-menu-trigger-width)]"
+              >
+                {tiposPlanes.map((tipo) => (
+                  <DropdownMenuItem
+                    key={tipo.id}
+                    onClick={() => onTipoPlanSelect(tipo.id)}
+                  >
+                    {tipo.nombre}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : null}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label>Plan</Label>
           <DropdownMenu>
@@ -241,15 +266,15 @@ export function VentaCreateItemSection({
                 variant="outline"
                 type="button"
                 className="w-full justify-between"
-                disabled={!categoriaId || !servicioId}
+                disabled={!categoriaId || (tiposPlanes.length > 1 && !tipoPlanId)}
               >
                 {planId
                   ? planSeleccionado?.nombre
-                  : categoriaId
-                    ? servicioId
+                  : tiposPlanes.length > 1 && !tipoPlanId
+                    ? "Primero selecciona tipo"
+                    : categoriaId
                       ? "Seleccionar plan"
-                      : "Primero selecciona servicio"
-                    : "Primero selecciona categoria"}
+                      : "Primero selecciona categoria"}
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
@@ -271,6 +296,26 @@ export function VentaCreateItemSection({
             <p className="text-sm text-red-500">{itemErrors.plan}</p>
           ) : null}
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <VentaServicioSelector
+          categoriaId={categoriaId}
+          planId={planId}
+          servicioId={servicioId}
+          servicioSeleccionado={servicioSeleccionado}
+          servicios={serviciosVentana}
+          totalServicios={serviciosFiltradosTotal}
+          visibleRows={SERVICIOS_DROPDOWN_VISIBLE_ROWS}
+          loading={loadingServicios || loadingVentasRanking}
+          error={itemErrors.servicio}
+          getSlotsDisponibles={getSlotsDisponibles}
+          getDisponiblesColorClass={getDisponiblesColorClass}
+          onOpenPerfilDetalle={onOpenPerfilDetalle}
+          onScroll={onServiciosScroll}
+          onWheel={onServiciosWheel}
+          onSelectServicio={onServicioSelect}
+        />
 
         <div className="space-y-2">
           <Label>Perfil</Label>

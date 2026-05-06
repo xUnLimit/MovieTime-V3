@@ -45,6 +45,8 @@ export interface PerfilDetalleOcupado {
   clienteNombre?: string;
   perfilNombre?: string;
   createdAt?: Date;
+  fechaFin?: Date;
+  cicloPago?: string;
 }
 
 export interface PerfilDetalleVisual {
@@ -52,6 +54,8 @@ export interface PerfilDetalleVisual {
   estado: "disponible" | "ocupado" | "pendiente";
   perfilNombre: string;
   clienteNombre?: string;
+  fechaFin?: Date;
+  cicloPago?: string;
 }
 
 export interface PerfilesDetalleResumen {

@@ -13,7 +13,7 @@ AS $$
       pt.categoria_id,
       jsonb_agg(
         jsonb_build_object('id', pt.id, 'nombre', pt.nombre)
-        ORDER BY pt.nombre
+        ORDER BY pt.orden, pt.nombre
       ) AS tipos_planes
     FROM planes_tipos pt
     WHERE pt.activo = true
@@ -30,7 +30,7 @@ AS $$
           'cicloPago', p.ciclo_pago,
           'tipoPlan', p.plan_tipo_id
         )
-        ORDER BY p.nombre
+        ORDER BY p.orden, p.nombre
       ) AS planes
     FROM planes p
     WHERE p.activo = true

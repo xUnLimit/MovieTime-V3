@@ -44,12 +44,13 @@ import {
   PENDING_USER_PAYMENT_NAME,
 } from "@/lib/utils/usuarioMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
+import { rankServicios } from "@/lib/utils/servicioRanking";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useTemplatesStore } from "@/store/templatesStore";
 import { useUsuariosStore } from "@/store/usuariosStore";
 import { useVentasStore } from "@/store/ventasStore";
-import type { Plan, Servicio } from "@/types";
+import type { Plan, Servicio, VentaDoc } from "@/types";
 
 const PENDING_METODO_PAGO_OPTION: MetodoPagoUsuarioOption = {
   id: PENDING_USER_PAYMENT_ID,
@@ -81,6 +82,7 @@ export function VentasForm() {
   const [activeTab, setActiveTab] = useState<"datos" | "preview">("datos");
   const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
   const [categoriaId, setCategoriaId] = useState("");
+  const [tipoPlanId, setTipoPlanId] = useState("");
   const [servicioId, setServicioId] = useState("");
   const [planId, setPlanId] = useState("");
   const [precio, setPrecio] = useState("");
@@ -99,6 +101,8 @@ export function VentasForm() {
   const [notifyCliente, setNotifyCliente] = useState(false);
   const [editedMessage, setEditedMessage] = useState("");
   const [searchCliente, setSearchCliente] = useState("");
+  const [ventasActivasPorServicio, setVentasActivasPorServicio] = useState<Record<string, VentaDoc[]>>({});
+  const [loadingVentasRanking, setLoadingVentasRanking] = useState(false);
   const [serviciosWindowStart, setServiciosWindowStart] = useState(0);
 
   const {
@@ -178,35 +182,53 @@ export function VentasForm() {
   }, [categoriaId]);
 
   useEffect(() => {
-    const loadPerfilesOcupados = async () => {
-      if (!servicioId) return;
-      try {
-        const docs = await fetchVentasByFiltersUseCase<Record<string, unknown>>([
-          { field: "servicioId", operator: "==", value: servicioId },
-        ]);
-        const ocupados = new Set<number>();
-        docs.forEach((doc) => {
-          const estado = (doc.estado as string | undefined) ?? "activo";
-          if (estado === "inactivo") return;
-          const perfil =
-            (doc.perfilNumero as number | null | undefined) ?? null;
-          if (perfil) ocupados.add(perfil);
-        });
-        setPerfilesOcupadosVenta((prev) => ({
-          ...prev,
-          [servicioId]: ocupados,
-        }));
-      } catch (error) {
-        console.error("Error cargando perfiles ocupados por ventas:", error);
-        setPerfilesOcupadosVenta((prev) => ({
-          ...prev,
-          [servicioId]: new Set(),
-        }));
-      }
-    };
+    const tipoPlan = categorias
+      .flatMap((c) => c.planes ?? [])
+      .find((p) => p.id === planId)?.tipoPlan;
 
-    loadPerfilesOcupados();
-  }, [servicioId]);
+    const candidateIds = serviciosCategoria
+      .filter((s) => tipoPlan && s.tipo === tipoPlan && s.activo && !s.enReposo)
+      .map((s) => s.id);
+
+    if (!planId || candidateIds.length === 0) {
+      setVentasActivasPorServicio({});
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingVentasRanking(true);
+
+    fetchVentasByFiltersUseCase<VentaDoc>([
+      { field: "servicioId", operator: "in", value: candidateIds },
+      { field: "estado", operator: "!=", value: "inactivo" },
+    ])
+      .then((docs) => {
+        if (cancelled) return;
+        const grouped: Record<string, VentaDoc[]> = Object.fromEntries(
+          candidateIds.map((id) => [id, []])
+        );
+        docs.forEach((doc) => {
+          if (grouped[doc.servicioId]) grouped[doc.servicioId].push(doc);
+        });
+        setVentasActivasPorServicio(grouped);
+        const ocupados: Record<string, Set<number>> = {};
+        Object.entries(grouped).forEach(([sid, ventas]) => {
+          ocupados[sid] = new Set(
+            ventas.map((v) => v.perfilNumero).filter((n): n is number => n != null)
+          );
+        });
+        setPerfilesOcupadosVenta(ocupados);
+      })
+      .catch(() => {
+        if (!cancelled) setVentasActivasPorServicio({});
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingVentasRanking(false);
+      });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId]);
 
   const categoriaSeleccionada = useMemo(
     () => categorias.find((c) => c.id === categoriaId),
@@ -261,24 +283,21 @@ export function VentasForm() {
     (s) => s.id === servicioId,
   );
 
-  const tipoItem = useMemo<TipoVentaItem | null>(() => {
-    if (!servicioSeleccionado?.tipo) return null;
-    return "perfil";
-  }, [servicioSeleccionado?.tipo]);
-
   const planesDisponibles = useMemo(() => {
-    if (!categoriaSeleccionada?.planes || !servicioSeleccionado?.tipo)
-      return [];
-    const tipoServicio = servicioSeleccionado.tipo;
-    return categoriaSeleccionada.planes.filter(
-      (plan) => plan.tipoPlan === tipoServicio,
-    );
-  }, [categoriaSeleccionada, servicioSeleccionado?.tipo]);
+    const planes = categoriaSeleccionada?.planes ?? [];
+    if (!tipoPlanId) return planes;
+    return planes.filter((p) => p.tipoPlan === tipoPlanId);
+  }, [categoriaSeleccionada, tipoPlanId]);
 
   const planSeleccionado = useMemo(
-    () => planesDisponibles.find((plan) => plan.id === planId),
-    [planesDisponibles, planId],
+    () => categoriaSeleccionada?.planes?.find((p) => p.id === planId) ?? undefined,
+    [categoriaSeleccionada, planId],
   );
+
+  const tipoItem = useMemo<TipoVentaItem | null>(() => {
+    if (!planSeleccionado) return null;
+    return "perfil";
+  }, [planSeleccionado]);
 
   // Ordenar servicios por fecha de creación (más recientes primero)
   const serviciosOrdenados = useMemo(() => {
@@ -298,35 +317,44 @@ export function VentasForm() {
     }, {});
   }, [items]);
 
-  // Filtrar servicios: solo activos con perfiles disponibles
-  const serviciosFiltrados = useMemo(() => {
+  // Filtrar servicios: solo activos con perfiles disponibles y tipo compatible con el plan
+  const serviciosFiltradosPorTipo = useMemo(() => {
+    if (!planSeleccionado) return [];
     return serviciosOrdenados.filter((servicio) => {
-      // Debe estar activo y no en reposo
       if (!servicio.activo || servicio.enReposo) return false;
-
-      // Debe tener perfiles disponibles (considerando los ya ocupados en la venta actual)
+      if (servicio.tipo !== planSeleccionado.tipoPlan) return false;
       const ocupadosActual = servicio.perfilesOcupados || 0;
       const ocupadosEnVenta = perfilesUsados[servicio.id]?.size || 0;
       const disponibles =
         (servicio.perfilesDisponibles || 0) - ocupadosActual - ocupadosEnVenta;
-
       return disponibles > 0;
     });
-  }, [serviciosOrdenados, perfilesUsados]);
+  }, [serviciosOrdenados, planSeleccionado, perfilesUsados]);
+
+  const serviciosRankeados = useMemo(
+    () =>
+      rankServicios(
+        serviciosFiltradosPorTipo,
+        ventasActivasPorServicio,
+        planSeleccionado?.cicloPago ?? "mensual",
+        fechaInicioValue ?? new Date(),
+      ),
+    [serviciosFiltradosPorTipo, ventasActivasPorServicio, planSeleccionado, fechaInicioValue],
+  );
 
   const maxServiciosWindowStart = useMemo(
     () =>
-      Math.max(serviciosFiltrados.length - SERVICIOS_DROPDOWN_VISIBLE_ROWS, 0),
-    [serviciosFiltrados.length],
+      Math.max(serviciosRankeados.length - SERVICIOS_DROPDOWN_VISIBLE_ROWS, 0),
+    [serviciosRankeados.length],
   );
 
   const serviciosVentana = useMemo(
     () =>
-      serviciosFiltrados.slice(
+      serviciosRankeados.slice(
         serviciosWindowStart,
         serviciosWindowStart + SERVICIOS_DROPDOWN_VISIBLE_ROWS,
       ),
-    [serviciosFiltrados, serviciosWindowStart],
+    [serviciosRankeados, serviciosWindowStart],
   );
 
   useEffect(() => {
@@ -792,6 +820,7 @@ export function VentasForm() {
 
   const handleSelectCategoria = (nextCategoriaId: string) => {
     setCategoriaId(nextCategoriaId);
+    setTipoPlanId("");
     setServicioId("");
     setPlanId("");
     setPrecio("");
@@ -805,27 +834,39 @@ export function VentasForm() {
     }));
   };
 
-  const handleSelectServicio = (servicio: Servicio) => {
-    setServicioId(servicio.id);
+  const handleSelectTipoPlan = (id: string) => {
+    setTipoPlanId(id);
     setPlanId("");
-    setPrecio("");
-    setDescuento("");
+    setServicioId("");
     setPerfilNumero("");
     setPerfilNombre("");
-    setNotasItem("");
+    setPrecio("");
+    setItemErrors((prev) => ({ ...prev, plan: undefined, servicio: undefined, perfil: undefined }));
+  };
+
+  const handleSelectServicio = (servicio: Servicio) => {
+    setServicioId(servicio.id);
+    setPerfilNumero("");
+    setPerfilNombre("");
     setItemErrors((prev) => ({
       ...prev,
       servicio: undefined,
+      perfil: undefined,
     }));
   };
 
   const handleSelectPlan = (plan: Plan) => {
     setPlanId(plan.id);
+    setServicioId("");
+    setPerfilNumero("");
+    setPerfilNombre("");
     setPrecio(plan.precio.toFixed(2));
     setItemErrors((prev) => ({
       ...prev,
       plan: undefined,
       precio: undefined,
+      servicio: undefined,
+      perfil: undefined,
     }));
     if (fechaInicioValue) {
       const meses = MESES_POR_CICLO[plan.cicloPago] ?? 1;
@@ -933,9 +974,13 @@ export function VentasForm() {
               itemErrors={itemErrors}
               items={items}
               loadingServicios={loadingServicios}
+              loadingVentasRanking={loadingVentasRanking}
               notasItem={notasItem}
               onAddItem={handleAddItem}
               onCategoriaSelect={handleSelectCategoria}
+              onTipoPlanSelect={handleSelectTipoPlan}
+              tipoPlanId={tipoPlanId}
+              tiposPlanes={categoriaSeleccionada?.tiposPlanes ?? []}
               onDescuentoChange={setDescuento}
               onEditItem={handleEditItem}
               onEstadoChange={(estado) => setValue("estado", estado)}
@@ -965,7 +1010,7 @@ export function VentasForm() {
               precioFinalNumero={precioFinalNumero}
               servicioId={servicioId}
               servicioSeleccionado={servicioSeleccionado}
-              serviciosFiltradosTotal={serviciosFiltrados.length}
+              serviciosFiltradosTotal={serviciosRankeados.length}
               serviciosVentana={serviciosVentana}
               simboloMoneda={simboloMoneda}
               subtotal={subtotal}

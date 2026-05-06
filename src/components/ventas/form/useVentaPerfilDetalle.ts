@@ -57,6 +57,8 @@ export function useVentaPerfilDetalle(pendingProfiles: PendingVentaPerfil[]) {
             clienteNombre: venta.clienteNombre || "Cliente sin nombre",
             perfilNombre: venta.perfilNombre || `Perfil ${perfilNumero}`,
             createdAt: venta.createdAt,
+            fechaFin: venta.fechaFin ? new Date(venta.fechaFin as unknown as string) : undefined,
+            cicloPago: venta.cicloPago,
           });
         }
       });
@@ -127,6 +129,8 @@ export function useVentaPerfilDetalle(pendingProfiles: PendingVentaPerfil[]) {
           estado: "ocupado",
           perfilNombre: ocupado.perfilNombre || `Perfil ${numero}`,
           clienteNombre: ocupado.clienteNombre,
+          fechaFin: ocupado.fechaFin,
+          cicloPago: ocupado.cicloPago,
         };
       }
 

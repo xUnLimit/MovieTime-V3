@@ -14,6 +14,7 @@ import type { Servicio } from "@/types";
 
 interface VentaServicioSelectorProps {
   categoriaId?: string;
+  planId?: string;
   servicioId?: string;
   servicioSeleccionado?: Servicio;
   servicios: Servicio[];
@@ -31,6 +32,7 @@ interface VentaServicioSelectorProps {
 
 export function VentaServicioSelector({
   categoriaId,
+  planId,
   servicioId,
   servicioSeleccionado,
   servicios,
@@ -57,16 +59,18 @@ export function VentaServicioSelector({
               variant="outline"
               type="button"
               className="w-full justify-start pr-16 text-left"
-              disabled={!categoriaId || loading}
+              disabled={!planId || loading}
             >
               <span className="truncate">
                 {loading
                   ? "Cargando servicios..."
                   : servicioId
                     ? `${servicioSeleccionado?.nombre} - ${servicioSeleccionado?.correo}`
-                    : categoriaId
+                    : planId
                       ? "Seleccionar servicio"
-                      : "Primero selecciona categoria"}
+                      : categoriaId
+                        ? "Primero selecciona plan"
+                        : "Primero selecciona categoria"}
               </span>
             </Button>
           </DropdownMenuTrigger>
