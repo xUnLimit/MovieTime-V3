@@ -14,7 +14,6 @@ export interface Usuario {
   moneda?: string;                  // Denormalizado de MetodoPago
   // Campos específicos por tipo (opcionales):
   serviciosActivos?: number;        // Denormalizado — count de ventas activas (se actualiza con increment())
-  suscripcionesTotales?: number;    // Solo para revendedores (campo legacy)
   active: boolean;
   notas?: string;
   createdAt: Date;

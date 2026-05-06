@@ -105,7 +105,7 @@ export function PagoDialog(props: PagoDialogProps) {
 
   const metodosFiltrados = useMemo(() => {
     const metodosBase = metodosPago.filter((m) =>
-      m.activo && (isVenta ? m.asociadoA === 'usuario' : (m.asociadoA === 'servicio' || !m.asociadoA))
+      m.activo && (isVenta ? m.asociadoA === 'usuario' : m.asociadoA === 'servicio')
     );
 
     return isVenta ? withPendingUserPaymentMethod(metodosBase) : metodosBase;

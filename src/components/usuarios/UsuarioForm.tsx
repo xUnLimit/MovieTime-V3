@@ -126,7 +126,7 @@ export function UsuarioForm({
     () => [
       pendienteOption,
       ...metodosPago
-        .filter((metodo) => metodo.asociadoA === "usuario" || !metodo.asociadoA)
+        .filter((metodo) => metodo.asociadoA === "usuario")
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
     ],
     [metodosPago, pendienteOption],

@@ -36,15 +36,7 @@ export function UsuariosMetodosPagoTable({
 
   // Filtrar solo métodos de usuario
   const metodosUsuarios = useMemo(() => {
-    return metodosPago.filter((m) => {
-      // Si tiene asociadoA, usarlo directamente
-      if (m.asociadoA) {
-        return m.asociadoA === "usuario";
-      }
-      // Si no tiene asociadoA, inferir por tipoCuenta (legacy)
-      // Si tiene tipoCuenta, es usuario. Si no tiene, es servicio.
-      return !!m.tipoCuenta;
-    });
+    return metodosPago.filter((m) => m.asociadoA === "usuario");
   }, [metodosPago]);
 
   // Obtener países únicos

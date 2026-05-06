@@ -114,7 +114,7 @@ function VerMetodoPagoPageContent() {
     );
   }
 
-  const isUsuario = metodo.asociadoA === 'usuario' || !!metodo.tipoCuenta;
+  const isUsuario = metodo.asociadoA === 'usuario';
 
   return (
     <div className="space-y-5">

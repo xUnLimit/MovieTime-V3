@@ -59,7 +59,7 @@ export async function fetchUsuariosCountsUseCase() {
 }
 
 export async function createUsuarioUseCase(
-  usuarioData: Omit<Usuario, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos' | 'suscripcionesTotales'>,
+  usuarioData: Omit<Usuario, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos'>,
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
   const id = await createUsuario(getUsuarioSqlPayload({ ...usuarioData, active: true }));

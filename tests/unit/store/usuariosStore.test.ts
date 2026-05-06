@@ -102,7 +102,6 @@ describe('useUsuariosStore.updateUsuario', () => {
           createdAt: new Date('2026-04-01T00:00:00.000Z'),
           updatedAt: new Date('2026-04-01T00:00:00.000Z'),
           serviciosActivos: 1,
-          suscripcionesTotales: 0,
         },
       ],
       totalClientes: 1,

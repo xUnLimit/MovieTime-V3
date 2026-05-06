@@ -45,7 +45,7 @@ interface CategoriaRow {
   totalServicios: number;
   serviciosActivos: number;
   perfilesDisponibles: number;
-  suscripcionesTotales: number;
+  ventasTotales: number;
   ingresoTotal: number;
   gastosTotal: number;
   gananciaTotal: number;
@@ -121,7 +121,7 @@ export const CategoriasTable = memo(function CategoriasTable({
         // Todos los campos desde datos denormalizados — 0 queries extra
         const gastosTotal = categoria.gastosTotal ?? 0;
         const ingresoTotal = categoria.ingresosTotales ?? 0;
-        const suscripcionesTotales = categoria.ventasTotales ?? 0;
+        const ventasTotales = categoria.ventasTotales ?? 0;
         const gananciaTotal = ingresoTotal - gastosTotal;
         const montoSinConsumir =
           ventasPorCategoria[categoria.id]?.montoSinConsumir ?? 0;
@@ -131,7 +131,7 @@ export const CategoriasTable = memo(function CategoriasTable({
           totalServicios,
           serviciosActivos,
           perfilesDisponibles,
-          suscripcionesTotales,
+          ventasTotales,
           ingresoTotal,
           gastosTotal,
           gananciaTotal,
@@ -276,11 +276,11 @@ export const CategoriasTable = memo(function CategoriasTable({
               <TableHead className="text-center">
                 <Button
                   variant="ghost"
-                  onClick={() => handleSort("suscripcionesTotales")}
-                  className={`h-8 w-full justify-center ${sortKey === "suscripcionesTotales" ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => handleSort("ventasTotales")}
+                  className={`h-8 w-full justify-center ${sortKey === "ventasTotales" ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  Suscripciones Activas
-                  {getSortIcon("suscripcionesTotales")}
+                  Ventas Totales
+                  {getSortIcon("ventasTotales")}
                 </Button>
               </TableHead>
               <TableHead className="text-center">
@@ -399,12 +399,12 @@ export const CategoriasTable = memo(function CategoriasTable({
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <ShoppingCart
-                          className={`h-4 w-4 ${row.suscripcionesTotales > 0 ? "text-purple-500" : "text-muted-foreground"}`}
+                          className={`h-4 w-4 ${row.ventasTotales > 0 ? "text-purple-500" : "text-muted-foreground"}`}
                         />
                         <span
-                          className={`font-medium ${row.suscripcionesTotales > 0 ? "" : "text-muted-foreground"}`}
+                          className={`font-medium ${row.ventasTotales > 0 ? "" : "text-muted-foreground"}`}
                         >
-                          {row.suscripcionesTotales}
+                          {row.ventasTotales}
                         </span>
                       </div>
                     </TableCell>

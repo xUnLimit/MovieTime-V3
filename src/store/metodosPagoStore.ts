@@ -47,10 +47,6 @@ interface MetodosPagoState {
 
 const CACHE_TIMEOUT = CACHE_TTL_MS;
 
-function isVisibleMetodoPago(metodo: MetodoPago): boolean {
-  return metodo.alias !== 'legacy-placeholder';
-}
-
 export const useMetodosPagoStore = create<MetodosPagoState>()(
   devtools(
     (set, get) => ({
@@ -72,8 +68,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const metodosPago = (await getMetodosPago<MetodoPago>())
-            .filter(isVisibleMetodoPago);
+          const metodosPago = await getMetodosPago<MetodoPago>();
           set({ metodosPago, isLoading: false, error: null, lastFetch: Date.now() });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar métodos de pago';

@@ -4,7 +4,7 @@ import { ENTITIES } from './entities';
 import { normalizeWritePayload } from './write-utils';
 
 describe('normalizeWritePayload', () => {
-  it('maps legacy service tipo to plan_tipo_id without warning-only leftovers', () => {
+  it('maps service tipo alias to plan_tipo_id without warning-only leftovers', () => {
     const payload = normalizeWritePayload(
       ENTITIES.SERVICIOS,
       {
@@ -26,11 +26,11 @@ describe('normalizeWritePayload', () => {
     expect(payload).not.toHaveProperty('tipo');
   });
 
-  it('keeps explicit planTipoId over legacy service tipo', () => {
+  it('keeps explicit planTipoId over service tipo alias', () => {
     const payload = normalizeWritePayload(
       ENTITIES.SERVICIOS,
       {
-        tipo: 'legacy-tipo',
+        tipo: 'tipo-plan-anterior',
         planTipoId: 'plan-tipo-actual',
       },
       'update'

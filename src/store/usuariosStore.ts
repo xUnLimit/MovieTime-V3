@@ -46,7 +46,7 @@ interface UsuariosState {
   fetchUsuarios: (force?: boolean) => Promise<void>;
   fetchCounts: () => Promise<void>;
   resyncServiciosActivos: () => Promise<{ usuariosReparados: number }>;
-  createUsuario: (usuario: Omit<Usuario, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos' | 'suscripcionesTotales'>) => Promise<void>;
+  createUsuario: (usuario: Omit<Usuario, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos'>) => Promise<void>;
   updateUsuario: (id: string, updates: Partial<Usuario>) => Promise<void>;
   deleteUsuario: (id: string, usuarioData?: { tipo: 'cliente' | 'revendedor'; nombre?: string; createdAt?: Date; serviciosActivos?: number }) => Promise<void>;
   setSelectedUsuario: (usuario: Usuario | null) => void;

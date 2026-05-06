@@ -11,11 +11,7 @@ export function getMetodoPagoDefaultValues(
   if (mode === "edit" && metodoPago) {
     return {
       nombre: metodoPago.nombre,
-      asociadoA:
-        metodoPago.asociadoA ||
-        ((!metodoPago.tipoCuenta ? "servicio" : "usuario") as
-          | "servicio"
-          | "usuario"),
+      asociadoA: metodoPago.asociadoA,
       pais: metodoPago.pais,
       moneda: metodoPago.moneda || "USD",
       alias: metodoPago.alias || "",
@@ -75,11 +71,7 @@ export function hasMetodoPagoFormChanges(
   if (values.pais !== metodoPago.pais) return true;
   if (values.moneda !== (metodoPago.moneda || "USD")) return true;
   if (values.titular !== metodoPago.titular) return true;
-  if (
-    values.asociadoA !==
-    (metodoPago.asociadoA || (!metodoPago.tipoCuenta ? "servicio" : "usuario"))
-  )
-    return true;
+  if (values.asociadoA !== metodoPago.asociadoA) return true;
   if ((values.alias || "") !== (metodoPago.alias || "")) return true;
   if ((values.notas || "") !== (metodoPago.notas || "")) return true;
   if (values.asociadoA === "usuario") {

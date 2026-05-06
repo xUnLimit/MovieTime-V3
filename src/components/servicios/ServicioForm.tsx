@@ -561,7 +561,7 @@ export function ServicioForm({
   const metodosPagoActivos = useMemo(
     () =>
       metodosPago
-        .filter((m) => m.activo && (!m.asociadoA || m.asociadoA === "servicio"))
+        .filter((m) => m.activo && m.asociadoA === "servicio")
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
     [metodosPago],
   );
