@@ -1,5 +1,6 @@
 import { supabase } from './client';
 import { toDateOnly, toIso } from './dates';
+import { assertRpcStringId } from '@/lib/utils/safety';
 
 type RpcResult = {
   data: unknown;
@@ -36,7 +37,7 @@ export async function createPagoServicio(payload: Record<string, unknown>): Prom
   });
 
   if (error) throw new Error(error.message);
-  return String(data);
+  return assertRpcStringId(data, 'create_servicio_payment');
 }
 
 export async function createPagoVenta(payload: Record<string, unknown>): Promise<string> {
@@ -67,7 +68,7 @@ export async function createPagoVenta(payload: Record<string, unknown>): Promise
   });
 
   if (error) throw new Error(error.message);
-  return String(data);
+  return assertRpcStringId(data, 'create_venta_payment');
 }
 
 async function convertAmountToUSD(amount: number, moneda: string) {
@@ -75,6 +76,6 @@ async function convertAmountToUSD(amount: number, moneda: string) {
   const usd = await currencyService.convertToUSD(amount, moneda);
   return {
     usd,
-    rate: moneda === 'USD' || amount === 0 ? 1 : amount / usd,
+    rate: moneda === 'USD' || amount === 0 || usd === 0 ? 1 : amount / usd,
   };
 }

@@ -41,9 +41,13 @@ async function main() {
   const { data, error } = await rpc.rpc('run_all_validations');
   if (error) throw new Error(`run_all_validations failed: ${error.message}`);
   const validations = normalizeValidations(data);
+  const { data: securityData, error: securityError } = await rpc.rpc('run_security_audit_validations');
+  if (securityError) throw new Error(`run_security_audit_validations failed: ${securityError.message}`);
+  const securityValidations = normalizeValidations(securityData);
   const blockingFailures = Object.entries(validations).filter(
     ([key, value]) => value > 0 && !ACCEPTABLE_REPORT_KEYS.has(key)
   );
+  const securityFailures = Object.entries(securityValidations).filter(([, value]) => value > 0);
   const acceptableReports = Object.fromEntries(
     Object.entries(validations).filter(([key, value]) => value > 0 && ACCEPTABLE_REPORT_KEYS.has(key))
   );
@@ -53,16 +57,18 @@ async function main() {
       {
         supabaseCounts,
         validations,
+        securityValidations,
         acceptableReports,
         blockingFailures: Object.fromEntries(blockingFailures),
-        status: blockingFailures.length === 0 ? 'passed' : 'failed',
+        securityFailures: Object.fromEntries(securityFailures),
+        status: blockingFailures.length === 0 && securityFailures.length === 0 ? 'passed' : 'failed',
       },
       null,
       2
     )
   );
 
-  if (blockingFailures.length > 0) {
+  if (blockingFailures.length > 0 || securityFailures.length > 0) {
     process.exit(1);
   }
 }

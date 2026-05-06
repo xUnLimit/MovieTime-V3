@@ -5,6 +5,8 @@ import { devtools } from 'zustand/middleware';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { MetodoPago } from '@/types';
 
 // Helper para obtener contexto de usuario
@@ -43,7 +45,7 @@ interface MetodosPagoState {
   getMetodosPagoServicios: () => MetodoPago[];
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 function isVisibleMetodoPago(metodo: MetodoPago): boolean {
   return metodo.alias !== 'legacy-placeholder';
@@ -136,14 +138,14 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
           }));
 
           // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
+          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'creacion',
             entidad: 'metodo_pago',
             entidadId: id,
             entidadNombre: metodoData.nombre,
             detalles: `Método de pago creado: "${metodoData.nombre}"`,
-          }).catch(() => {});
+          }), { operation: 'addActivityLog', entity: 'metodo_pago', entityId: id });
         } catch (error) {
           console.error('Error creating metodo pago:', error);
           throw error;
@@ -206,7 +208,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
           });
 
           // Registrar en log de actividad con cambios
-          useActivityLogStore.getState().addLog({
+          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'actualizacion',
             entidad: 'metodo_pago',
@@ -214,7 +216,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             entidadNombre: oldMetodo?.nombre ?? id,
             detalles: `Método de pago actualizado: "${oldMetodo?.nombre}"`,
             cambios: cambios.length > 0 ? cambios : undefined,
-          }).catch(() => {});
+          }), { operation: 'addActivityLog', entity: 'metodo_pago', entityId: id });
         } catch (error) {
           console.error('Error updating metodo pago:', error);
           throw error;
@@ -253,14 +255,14 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
           }));
 
           // Registrar en log de actividad
-          useActivityLogStore.getState().addLog({
+          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'eliminacion',
             entidad: 'metodo_pago',
             entidadId: id,
             entidadNombre: metodoEliminado?.nombre ?? id,
             detalles: `Método de pago eliminado: "${metodoEliminado?.nombre}"`,
-          }).catch(() => {});
+          }), { operation: 'addActivityLog', entity: 'metodo_pago', entityId: id });
         } catch (error) {
           console.error('Error deleting metodo pago:', error);
           throw error;

@@ -1,0 +1,278 @@
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import Link from 'next/link';
+import {
+  Calendar,
+  ChevronDown,
+  DollarSign,
+  ExternalLink,
+  Lock,
+  RefreshCw,
+  Tag,
+  User,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { getCurrencySymbol } from '@/lib/constants';
+import { calcularDiasRelativosCalendario } from '@/lib/utils/calculations';
+
+import type { PerfilDetalle, ServicioDetalle } from './types';
+
+interface ServicioProfilesSectionProps {
+  expandedProfileNumber: number | null;
+  metodoPagoMoneda?: string;
+  perfilesDisponibles: number;
+  profilePage: number;
+  profilePageCount: number;
+  profileSearch: string;
+  servicio: ServicioDetalle;
+  showProfileControls: boolean;
+  visiblePerfiles: PerfilDetalle[];
+  getCicloPagoLabel: (ciclo: string) => string;
+  onNextPage: () => void;
+  onPreviousPage: () => void;
+  onProfileSearchChange: (value: string) => void;
+  onToggleProfile: (profileNumber: number) => void;
+}
+
+export function ServicioProfilesSection({
+  expandedProfileNumber,
+  getCicloPagoLabel,
+  metodoPagoMoneda,
+  onNextPage,
+  onPreviousPage,
+  onProfileSearchChange,
+  onToggleProfile,
+  perfilesDisponibles,
+  profilePage,
+  profilePageCount,
+  profileSearch,
+  servicio,
+  showProfileControls,
+  visiblePerfiles,
+}: ServicioProfilesSectionProps) {
+  return (
+    <Card className="h-full p-6">
+      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Perfiles</h2>
+          <p className="text-sm text-muted-foreground">
+            {servicio.activo ? `${perfilesDisponibles} de ${servicio.perfilesDisponibles} perfiles disponibles` : 'Servicio inactivo'}
+          </p>
+        </div>
+        {showProfileControls && (
+          <div className="w-full sm:w-64">
+            <Input
+              value={profileSearch}
+              onChange={(event) => onProfileSearchChange(event.target.value)}
+              placeholder="Buscar persona..."
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {visiblePerfiles.map((perfil) => {
+          const venta = perfil.venta;
+          const ventaCurrency = getCurrencySymbol(venta?.moneda || metodoPagoMoneda);
+          const diasRestantes = venta?.fechaFin
+            ? calcularDiasRelativosCalendario(venta.fechaFin)
+            : null;
+          return (
+            <div
+              key={perfil.numero}
+              className={`rounded-lg border px-4 py-3 ${
+                perfil.estado === 'ocupado' ? 'bg-green-950/30 border-green-900/50' :
+                perfil.estado === 'inactivo' ? 'bg-muted/30 border-muted opacity-50' :
+                'bg-muted/50 border-border'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => perfil.estado === 'ocupado' && onToggleProfile(perfil.numero)}
+                className="w-full flex items-center justify-between"
+                disabled={perfil.estado === 'inactivo'}
+              >
+                <div className="flex items-center gap-3">
+                  <User className={`h-5 w-5 ${
+                    perfil.estado === 'ocupado' ? 'text-green-500' :
+                    perfil.estado === 'inactivo' ? 'text-gray-600' :
+                    'text-blue-500'
+                  }`} />
+                  <span className={`font-medium ${perfil.estado === 'inactivo' ? 'text-gray-600' : ''}`}>
+                    {perfil.estado === 'ocupado' && perfil.clienteNombre
+                      ? perfil.clienteNombre
+                      : perfil.nombre}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {perfil.estado === 'inactivo' ? (
+                    <Badge variant="secondary" className="bg-gray-200 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-700">
+                      Inactivo
+                    </Badge>
+                  ) : perfil.estado === 'disponible' ? (
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-600 dark:text-white dark:hover:bg-green-700">
+                      Disponible
+                    </Badge>
+                  ) : (
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedProfileNumber === perfil.numero ? 'rotate-180' : ''}`} />
+                  )}
+                </div>
+              </button>
+
+              {perfil.estado === 'ocupado' && expandedProfileNumber === perfil.numero && venta && (
+                <div className="mt-4 space-y-3">
+                  <div className="pt-3 border-t border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-muted-foreground">Detalles de la venta:</p>
+                      {venta.ventaId && (
+                        <Link href={`/ventas/${venta.ventaId}`}>
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Ver venta
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium truncate">{venta.clienteNombre || 'Sin cliente'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium">{ventaCurrency} {(venta.precioFinal ?? 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium">Desc: {(venta.descuento ?? 0).toFixed(2)}%</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-muted-foreground">Ciclo:</span>
+                          <span className="font-medium">{venta.cicloPago ? getCicloPagoLabel(venta.cicloPago) : '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium">
+                            Inicio: {venta.fechaInicio ? format(new Date(venta.fechaInicio), 'd MMM yyyy', { locale: es }) : '-'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium">
+                            Vence: {venta.fechaFin ? format(new Date(venta.fechaFin), 'd MMM yyyy', { locale: es }) : '-'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-muted-foreground">Perfil:</span>
+                          <span className="font-medium truncate">{venta.perfilNombre || '-'}</span>
+                        </div>
+                        {venta.codigo && (
+                          <div className="flex items-center gap-2">
+                            <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-muted-foreground">Código:</span>
+                            <span className="font-medium select-all">{venta.codigo}</span>
+                          </div>
+                        )}
+                        {diasRestantes !== null && (() => {
+                          let badgeClass: string;
+                          let badgeText: string;
+                          if (diasRestantes < 0) {
+                            const d = Math.abs(diasRestantes);
+                            badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
+                            badgeText = `${d} día${d > 1 ? 's' : ''} de retraso`;
+                          } else if (diasRestantes === 0) {
+                            badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
+                            badgeText = 'Vence hoy';
+                          } else if (diasRestantes <= 7) {
+                            badgeClass = 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
+                            badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
+                          } else {
+                            badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
+                            badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
+                          }
+                          return (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className={badgeClass}>
+                                {badgeText}
+                              </Badge>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border border-neutral-800 bg-black p-3">
+                    <p className="text-sm text-muted-foreground mb-2">Notas de la venta:</p>
+                    <div className="text-sm whitespace-pre-line">
+                      {venta.notas ? venta.notas : 'Sin notas'}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-2 flex items-center justify-between text-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-600"></div>
+            <span className="text-muted-foreground">En uso</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+            <span className="text-muted-foreground">Disponible</span>
+          </div>
+          {!servicio.activo && (
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span className="text-muted-foreground">Inactivo</span>
+            </div>
+          )}
+        </div>
+        {showProfileControls ? (
+          <div className="flex items-center gap-2">
+            <span className="whitespace-nowrap text-muted-foreground mr-2">
+              Pagina {Math.min(profilePage + 1, profilePageCount)} de {profilePageCount}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 px-2"
+              onClick={onPreviousPage}
+              disabled={profilePage === 0}
+            >
+              Anterior
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 px-2"
+              onClick={onNextPage}
+              disabled={profilePage >= profilePageCount - 1}
+            >
+              Siguiente
+            </Button>
+          </div>
+        ) : (
+          <span className="text-muted-foreground" />
+        )}
+      </div>
+    </Card>
+  );
+}

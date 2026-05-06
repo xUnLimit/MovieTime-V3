@@ -2,9 +2,11 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { TipoGasto } from '@/types';
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 function sortTiposGasto(tiposGasto: TipoGasto[]) {
   return [...tiposGasto].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
@@ -131,7 +133,7 @@ export const useTiposGastoStore = create<TiposGastoState>()(
         await updateTipoGasto(id, finalUpdates);
 
         if (finalUpdates.nombre && finalUpdates.nombre !== tipoActual.nombre) {
-          import('./gastosStore')
+          safeAsyncSideEffect(import('./gastosStore')
             .then(({ useGastosStore }) => {
               useGastosStore.setState((state) => ({
                 gastos: state.gastos.map((gasto) =>
@@ -140,8 +142,11 @@ export const useTiposGastoStore = create<TiposGastoState>()(
                     : gasto
                 ),
               }));
-            })
-            .catch(() => {});
+            }), {
+              operation: 'syncTipoGastoNombreLocal',
+              entity: 'tipo_gasto',
+              entityId: id,
+            });
         }
 
         set((state) => {

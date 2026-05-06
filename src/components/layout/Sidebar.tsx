@@ -345,6 +345,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
           <button
             ref={themeButtonRef}
             onClick={toggleTheme}
+            aria-label="Cambiar tema"
             className={cn(
               "relative flex items-center h-9 w-full rounded-lg overflow-hidden",
               "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

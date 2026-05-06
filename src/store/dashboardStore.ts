@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import { getDashboardStats, rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { DashboardStats, DashboardCounts } from '@/types/dashboard';
 import type { ActivityLog } from '@/types';
 
@@ -24,7 +25,7 @@ interface DashboardState {
   invalidateCache: () => void;
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 const EMPTY_COUNTS: DashboardCounts = {
   ventasActivas: 0,

@@ -259,9 +259,12 @@ export function LogTimeline({
       header: 'Cambios',
       align: 'center',
       width: '12%',
-      render: (item) => (
-        <div className="flex items-center justify-center">
-          {item.cambios && item.cambios.length > 0 ? (
+      render: (item) => {
+        const cambiosCount = item.cambios?.length ?? 0;
+        const hasMetadata = item.metadata && Object.keys(item.metadata).length > 0;
+        return (
+          <div className="flex items-center justify-center">
+            {cambiosCount > 0 || hasMetadata ? (
             <Button
               variant="ghost"
               size="sm"
@@ -269,13 +272,14 @@ export function LogTimeline({
               className="h-8 px-3 text-xs font-medium text-purple-600 hover:bg-purple-500/10 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-colors"
             >
               <Eye className="h-4 w-4 mr-1.5" />
-              Ver ({item.cambios.length})
+              {cambiosCount > 0 ? `Ver (${cambiosCount})` : 'Metadata'}
             </Button>
           ) : (
             <span className="text-xs text-muted-foreground/40">—</span>
           )}
-        </div>
-      ),
+          </div>
+        );
+      },
     },
   ];
 
@@ -354,12 +358,13 @@ export function LogTimeline({
       </div>
 
       {/* Modal de cambios */}
-      {selectedLog && selectedLog.cambios && (
+      {selectedLog && (
         <CambiosModal
           open={cambiosModalOpen}
           onOpenChange={setCambiosModalOpen}
           entidadNombre={selectedLog.entidadNombre}
-          cambios={selectedLog.cambios}
+          cambios={selectedLog.cambios ?? []}
+          metadata={selectedLog.metadata}
         />
       )}
 

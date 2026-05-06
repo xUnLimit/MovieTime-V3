@@ -1,6 +1,7 @@
 import { supabase } from './client';
 import { toSnakeCase } from './mappers';
 import { ENTITIES, type CollectionName, type PublicTableName } from './entities';
+import { assertRecordId } from '@/lib/utils/safety';
 
 export async function insertRawRow(
   table: PublicTableName,
@@ -13,7 +14,7 @@ export async function insertRawRow(
     .select('id')
     .single();
   if (error) throw new Error(error.message);
-  return (data as { id: string }).id;
+  return assertRecordId(data, `insert ${table}`);
 }
 
 export function normalizeWritePayload(

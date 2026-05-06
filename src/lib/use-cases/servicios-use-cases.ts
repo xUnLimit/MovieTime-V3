@@ -27,6 +27,8 @@ import { resyncServiciosDenormalizedData, syncServicioDependencias } from '@/lib
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { sumPaymentsInUSD } from '@/lib/utils/payments';
+import { safeAsyncSideEffect, toMoneyNumber } from '@/lib/utils/safety';
 import { getCurrencySymbol } from '@/lib/constants';
 import type { ActivityLog, MetodoPago, PagoServicio, Servicio } from '@/types';
 import type { ServicioPronostico } from '@/types/dashboard';
@@ -106,10 +108,11 @@ function hasServicioPeriodoUpdates(updates: Partial<Servicio>): boolean {
 }
 
 async function getUsdValues(amount: number, moneda: string) {
-  const usd = await currencyService.convertToUSD(amount, moneda);
+  const normalizedAmount = toMoneyNumber(amount);
+  const usd = await currencyService.convertToUSD(normalizedAmount, moneda);
   return {
     usd,
-    rate: moneda === 'USD' || amount === 0 || usd === 0 ? 1 : amount / usd,
+    rate: moneda === 'USD' || normalizedAmount === 0 || usd === 0 ? 1 : normalizedAmount / usd,
   };
 }
 
@@ -235,9 +238,22 @@ export async function createServicioUseCase(
     entidadId: id,
     entidadNombre: `${servicioData.nombre} [${servicioData.correo}]`,
     detalles: `Servicio creado: "${servicioData.nombre}" [${servicioData.correo}] (${servicioData.tipo}) - $${servicioData.costoServicio ?? 0} ${moneda ?? 'USD'} (${servicioData.cicloPago ?? 'mensual'})`,
+    metadata: {
+      costoServicio: costo,
+      moneda: monedaOriginal,
+      cicloPago: servicioData.cicloPago ?? 'mensual',
+      categoriaId: servicioData.categoriaId,
+      fechaInicio: toDateOnly(servicioData.fechaInicio ?? new Date()),
+      fechaVencimiento: toDateOnly(servicioData.fechaVencimiento ?? new Date()),
+      origen: 'createServicioUseCase',
+    },
   });
 
-  sincronizarUnServicio(id).catch(() => {});
+  safeAsyncSideEffect(sincronizarUnServicio(id), {
+    operation: 'sincronizarUnServicio',
+    entity: 'servicio',
+    entityId: id,
+  });
 
   return { servicio, pronostico };
 }
@@ -313,7 +329,11 @@ export async function updateServicioUseCase(
     (updates.enReposo !== undefined && updates.enReposo !== servicio.enReposo);
   const pronostico = shouldSyncPronostico ? toServicioPronostico(servicioActualizado) : undefined;
   if (shouldSyncPronostico) {
-    upsertServicioPronostico(pronostico ?? null, id).catch(() => {});
+    safeAsyncSideEffect(upsertServicioPronostico(pronostico ?? null, id), {
+      operation: 'upsertServicioPronostico',
+      entity: 'servicio',
+      entityId: id,
+    });
   }
 
   const cambios = detectarCambios(
@@ -330,6 +350,10 @@ export async function updateServicioUseCase(
     entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
     detalles: `Servicio actualizado: "${servicio.nombre}" [${servicio.correo}]`,
     cambios: cambios.length > 0 ? cambios : undefined,
+    metadata: {
+      cambiosCount: cambios.length,
+      origen: 'updateServicioUseCase',
+    },
   });
 
   return { servicioAnterior: servicio, servicioActualizado, finalUpdates, pronostico };
@@ -346,14 +370,12 @@ export async function deleteServicioUseCase(
   const servicio = await getServicioById<Servicio>(id);
   if (!servicio) throw new Error('Servicio not found');
 
-  let gastosRealUSD = 0;
   const pagosActuales = await queryPagosServicio<{ id: string; monto: number; moneda?: string }>([
     { field: 'servicioId', operator: '==', value: id },
   ]);
-  await Promise.all(
-    pagosActuales.map(async (pago) => {
-      gastosRealUSD += await currencyService.convertToUSD(pago.monto, pago.moneda ?? 'USD');
-    })
+  const gastosRealUSD = await sumPaymentsInUSD(
+    pagosActuales,
+    (monto, moneda) => currencyService.convertToUSD(monto, moneda)
   );
 
   if (options.deletePayments) {
@@ -388,6 +410,12 @@ export async function deleteServicioUseCase(
     entidadId: id,
     entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
     detalles: `Servicio eliminado: "${servicio.nombre}" (${servicio.correo})`,
+    metadata: {
+      gastosRealUSD,
+      categoriaId: servicio.categoriaId,
+      deletePayments: options.deletePayments ?? false,
+      origen: 'deleteServicioUseCase',
+    },
   });
 
   return { servicio };
@@ -434,14 +462,18 @@ export async function renewServicioUseCase(
     await adjustCategoriaGastos(servicio.categoriaId, costoUSD);
   }
 
-  adjustGastosStats({
+  safeAsyncSideEffect(adjustGastosStats({
     delta: input.costo,
     moneda,
     mes: getMesKeyFromDate(input.fechaInicio),
     dia: getDiaKeyFromDate(input.fechaInicio),
     categoriaId: servicio.categoriaId,
     categoriaNombre: servicio.categoriaNombre,
-  }).catch(() => {});
+  }), {
+    operation: 'adjustGastosStats',
+    entity: 'servicio',
+    entityId: servicio.id,
+  });
 
   const pronostico = {
     id: servicio.id,
@@ -450,7 +482,11 @@ export async function renewServicioUseCase(
     costoServicio: input.costo,
     moneda,
   };
-  upsertServicioPronostico(pronostico, servicio.id).catch(() => {});
+  safeAsyncSideEffect(upsertServicioPronostico(pronostico, servicio.id), {
+    operation: 'upsertServicioPronostico',
+    entity: 'servicio',
+    entityId: servicio.id,
+  });
 
   await updateServicio(servicio.id, getServicioTableUpdates({ notas: notaPrincipal }));
 
@@ -461,6 +497,15 @@ export async function renewServicioUseCase(
     entidadId: servicio.id,
     entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
     detalles: `${options.logPrefix ?? 'Servicio renovado'}: "${servicio.nombre}" [${servicio.correo}] - ${getCurrencySymbol(moneda)}${input.costo} - hasta ${input.fechaVencimiento.toLocaleDateString('es-PA')} (${input.periodoRenovacion})`,
+    metadata: {
+      costoServicio: input.costo,
+      moneda,
+      cicloPago: input.periodoRenovacion,
+      fechaInicio: toDateOnly(input.fechaInicio),
+      fechaVencimiento: toDateOnly(input.fechaVencimiento),
+      numeroRenovacion,
+      origen: 'renewServicioUseCase',
+    },
   });
 
   return {
@@ -517,7 +562,11 @@ export async function updateServicioPagoUseCase(
   if (options.isLatestPayment) {
     servicioActualizado = await getServicioById<Servicio>(servicio.id);
     const pronostico = servicioActualizado ? toServicioPronostico(servicioActualizado) : null;
-    upsertServicioPronostico(pronostico, servicio.id).catch(() => {});
+    safeAsyncSideEffect(upsertServicioPronostico(pronostico, servicio.id), {
+      operation: 'upsertServicioPronostico',
+      entity: 'servicio',
+      entityId: servicio.id,
+    });
   }
 
   return { servicioActualizado };
@@ -547,7 +596,11 @@ export async function deleteServicioPagoUseCase(
   if (options.isLatestPayment) {
     servicioActualizado = await getServicioById<Servicio>(servicio.id);
     const pronostico = servicioActualizado ? toServicioPronostico(servicioActualizado) : null;
-    upsertServicioPronostico(pronostico, servicio.id).catch(() => {});
+    safeAsyncSideEffect(upsertServicioPronostico(pronostico, servicio.id), {
+      operation: 'upsertServicioPronostico',
+      entity: 'servicio',
+      entityId: servicio.id,
+    });
   }
 
   return { servicioActualizado };

@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { AccionLog, ActivityLog, EntidadLog } from '@/types';
 
 interface ActivityLogState {
@@ -19,7 +20,7 @@ interface ActivityLogState {
   getRecentLogs: (limit: number) => ActivityLog[];
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useActivityLogStore = create<ActivityLogState>()(
   devtools(

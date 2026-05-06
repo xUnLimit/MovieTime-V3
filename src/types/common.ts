@@ -24,6 +24,7 @@ export interface ActivityLog {
   entidadNombre: string;
   detalles: string;     // Texto resumido (backward compatible)
   cambios?: CambioLog[]; // Solo presente en actualizaciones
+  metadata?: Record<string, unknown>; // Datos estructurados para auditoria robusta
   timestamp: Date;
 }
 

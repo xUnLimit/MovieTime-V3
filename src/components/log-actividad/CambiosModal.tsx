@@ -11,9 +11,12 @@ interface CambiosModalProps {
   onOpenChange: (open: boolean) => void;
   entidadNombre: string;
   cambios: CambioLog[];
+  metadata?: Record<string, unknown>;
 }
 
-export function CambiosModal({ open, onOpenChange, entidadNombre, cambios }: CambiosModalProps) {
+export function CambiosModal({ open, onOpenChange, entidadNombre, cambios, metadata }: CambiosModalProps) {
+  const metadataEntries = getMetadataEntries(metadata);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -71,6 +74,28 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios }: Cam
               </div>
             </div>
           ))}
+
+          {metadataEntries.length > 0 ? (
+            <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
+              <div className="mb-3">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Metadata estructurada
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {metadataEntries.map(([key, value]) => (
+                  <div key={key} className="rounded-md border bg-card px-3 py-2">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {formatMetadataKey(key)}
+                    </p>
+                    <p className="mt-1 truncate text-sm text-foreground" title={formatMetadataValue(value)}>
+                      {formatMetadataValue(value)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
@@ -109,6 +134,28 @@ export function formatCambioValue(value: unknown, tipo?: CambioLog['tipo'], camp
     default:
       return String(value);
   }
+}
+
+export function getMetadataEntries(metadata?: Record<string, unknown>): [string, unknown][] {
+  if (!metadata) return [];
+  return Object.entries(metadata).filter(([, value]) => value !== undefined);
+}
+
+export function formatMetadataKey(key: string): string {
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+export function formatMetadataValue(value: unknown): string {
+  if (value === null || value === undefined) return '(vacío)';
+  if (value instanceof Date) return format(value, 'dd/MM/yyyy', { locale: es });
+  if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+  if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
 }
 
 function parseCambioDate(value: unknown): Date | null {

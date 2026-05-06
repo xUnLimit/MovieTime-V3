@@ -56,6 +56,7 @@ export function NotificationBell() {
         <Button
           variant="ghost"
           className="relative h-10 w-10 rounded-full hover:bg-muted/50"
+          aria-label="Abrir notificaciones"
           title="Notificaciones"
         >
           <Bell className={`h-6 w-6 ${bellColor}`} />

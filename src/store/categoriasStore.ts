@@ -11,6 +11,7 @@ import {
 import { ENTITIES, logCacheHit } from '@/lib/supabase/categorias-repository';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Categoria } from '@/types';
 
 function getLogContext() {
@@ -43,7 +44,7 @@ interface CategoriasState {
   resyncContadoresCategorias: () => Promise<{ categoriasCorregidas: number }>;
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useCategoriasStore = create<CategoriasState>()(
   devtools(

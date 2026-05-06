@@ -9,6 +9,7 @@ import {
   updateWhatsappPrefix,
   upsertExchangeRates,
 } from '@/lib/supabase/config-repository';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Configuracion, TasasCambio } from '@/types';
 
 interface ConfigState {
@@ -25,7 +26,7 @@ interface ConfigState {
   updatePrefijoWhatsApp: (prefijo: string) => Promise<void>;
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useConfigStore = create<ConfigState>()(
   devtools(

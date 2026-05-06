@@ -5,10 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchPagosVentaByVentaIdsUseCase, fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
 // -- Cache a nivel de módulo --------------------------------
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = CACHE_TTL_MS;
 
 interface CachedVentas {
   data: VentaUsuarioDoc[];

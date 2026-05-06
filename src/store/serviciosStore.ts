@@ -10,10 +10,11 @@ import {
   resyncServicioReferenciasUseCase,
   updateServicioUseCase,
 } from '@/lib/use-cases/servicios-use-cases';
+import { syncServicioPronosticoLocal } from '@/lib/commands/client-cache';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Servicio } from '@/types/servicios';
-import type { ServicioPronostico } from '@/types/dashboard';
 
 function getLogContext() {
   const user = useAuthStore.getState().user;
@@ -21,28 +22,6 @@ function getLogContext() {
     usuarioId: user?.id ?? 'sistema',
     usuarioEmail: user?.email ?? 'sistema',
   };
-}
-
-function syncServicioPronosticoLocal(servicioId: string, pronostico: ServicioPronostico | null | undefined) {
-  if (pronostico === undefined) return;
-
-  import('./dashboardStore').then(({ useDashboardStore }) => {
-    const store = useDashboardStore.getState();
-    const currentStats = store.stats;
-    if (!currentStats) return;
-
-    const existing = currentStats.serviciosPronostico ?? [];
-    const updated = pronostico
-      ? existing.some((servicio) => servicio.id === servicioId)
-        ? existing.map((servicio) => (servicio.id === servicioId ? pronostico : servicio))
-        : [...existing, pronostico]
-      : existing.filter((servicio) => servicio.id !== servicioId);
-
-    useDashboardStore.setState({
-      stats: { ...currentStats, serviciosPronostico: updated },
-    });
-    store.invalidateCache();
-  }).catch(() => {});
 }
 
 function dispatchServicioDeleted() {
@@ -77,7 +56,7 @@ interface ServiciosState {
   resyncServicioReferencias: () => Promise<{ serviciosRevisados: number; ventasActualizadas: number }>;
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useServiciosStore = create<ServiciosState>()(
   devtools(

@@ -12,6 +12,7 @@
 import { supabase } from './client';
 import { toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
+import { assertRecordId, assertRpcStringId } from '@/lib/utils/safety';
 
 export { logCacheHit, adjustCategoriaGastos };
 
@@ -39,7 +40,7 @@ export async function createServicioWithInitialPayment(
 ): Promise<string> {
   const { data, error } = await rpcClient.rpc('create_servicio_with_initial_payment', payload);
   if (error) throw new Error(error.message);
-  return String(data);
+  return assertRpcStringId(data, 'create_servicio_with_initial_payment');
 }
 
 export const queryPagosServicio = <T>(filters: QueryFilter[] = []) =>
@@ -79,9 +80,9 @@ export async function updateLatestServicioPeriodo(
     .maybeSingle();
 
   if (selectError) throw new Error(selectError.message);
-  if (!latestPeriod) return;
+  const periodoId = assertRecordId(latestPeriod, 'select latest servicio_periodo');
 
-  await updateServicioPeriodoById((latestPeriod as { id: string }).id, payload);
+  await updateServicioPeriodoById(periodoId, payload);
 }
 
 export async function updateServicioPeriodoById(

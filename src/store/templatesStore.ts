@@ -5,6 +5,8 @@ import { devtools, persist } from 'zustand/middleware';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { TemplateMensaje, TipoTemplate } from '@/types';
 
 // Helper para obtener contexto de usuario
@@ -32,7 +34,7 @@ interface TemplatesState {
   getTemplateByTipo: (tipo: TipoTemplate) => TemplateMensaje | undefined;
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useTemplatesStore = create<TemplatesState>()(
   devtools(
@@ -78,14 +80,14 @@ export const useTemplatesStore = create<TemplatesState>()(
             }));
 
             // Registrar en log de actividad
-            useActivityLogStore.getState().addLog({
+            safeAsyncSideEffect(useActivityLogStore.getState().addLog({
               ...getLogContext(),
               accion: 'creacion',
               entidad: 'template',
               entidadId: id,
               entidadNombre: templateData.nombre,
               detalles: `Template creado: "${templateData.nombre}" (${templateData.tipo})`,
-            }).catch(() => {});
+            }), { operation: 'addActivityLog', entity: 'template', entityId: id });
           } catch (error) {
             console.error('Error creating template:', error);
             throw error;
@@ -113,7 +115,7 @@ export const useTemplatesStore = create<TemplatesState>()(
             }));
 
             // Registrar en log de actividad con cambios
-            useActivityLogStore.getState().addLog({
+            safeAsyncSideEffect(useActivityLogStore.getState().addLog({
               ...getLogContext(),
               accion: 'actualizacion',
               entidad: 'template',
@@ -121,7 +123,7 @@ export const useTemplatesStore = create<TemplatesState>()(
               entidadNombre: oldTemplate?.nombre ?? id,
               detalles: `Template actualizado: "${oldTemplate?.nombre}"`,
               cambios: cambios.length > 0 ? cambios : undefined,
-            }).catch(() => {});
+            }), { operation: 'addActivityLog', entity: 'template', entityId: id });
           } catch (error) {
             console.error('Error updating template:', error);
             throw error;
@@ -139,14 +141,14 @@ export const useTemplatesStore = create<TemplatesState>()(
             }));
 
             // Registrar en log de actividad
-            useActivityLogStore.getState().addLog({
+            safeAsyncSideEffect(useActivityLogStore.getState().addLog({
               ...getLogContext(),
               accion: 'eliminacion',
               entidad: 'template',
               entidadId: id,
               entidadNombre: templateEliminado?.nombre ?? id,
               detalles: `Template eliminado: "${templateEliminado?.nombre}"`,
-            }).catch(() => {});
+            }), { operation: 'addActivityLog', entity: 'template', entityId: id });
           } catch (error) {
             console.error('Error deleting template:', error);
             throw error;

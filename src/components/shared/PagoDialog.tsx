@@ -3,23 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, ChevronDown, Pencil, RefreshCw, MessageCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Pencil, RefreshCw } from 'lucide-react';
 import { addMonths } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { MetodoPago, PagoServicio, Servicio } from '@/types';
-import { Plan } from '@/types/categorias';
+import type { PagoServicio } from '@/types';
 import { getCurrencySymbol } from '@/lib/constants';
-import { calculateDiscountedAmount, formatearFecha, roundToDecimals } from '@/lib/utils/calculations';
+import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import { generarMensajeVenta } from '@/lib/utils/whatsapp';
 import { useTemplatesStore } from '@/store/templatesStore';
 import {
@@ -30,79 +22,19 @@ import {
   withPendingUserPaymentMethod,
 } from '@/lib/utils/usuarioMetodoPago';
 import { getServicioMetodoPagoNombre } from '@/lib/utils/servicioMetodoPago';
+import {
+  CostoField,
+  DateField,
+  DescuentoField,
+  MetodoPagoField,
+  NotesField,
+  PeriodoField,
+} from './pago-dialog/fields';
+import { PreviewSection } from './pago-dialog/PreviewSection';
+import { pagoDialogSchema, type PagoDialogFormData } from './pago-dialog/schema';
+import type { PagoDialogProps } from './pago-dialog/types';
 
-const pagoDialogSchema = z.object({
-  periodoRenovacion: z
-    .string()
-    .refine((v) => ['mensual', 'trimestral', 'semestral', 'anual'].includes(v), {
-      message: 'Seleccione el ciclo de facturación',
-    }),
-  metodoPagoId: z.string().min(1, 'El método de pago es requerido'),
-  costo: z.number().min(0, 'El costo debe ser mayor a 0'),
-  descuento: z.number().min(0).max(100).optional(),
-  fechaInicio: z.date(),
-  fechaVencimiento: z.date(),
-  notas: z.string().optional(),
-  notificarWhatsApp: z.boolean().optional(),
-});
-
-type PagoDialogFormData = z.infer<typeof pagoDialogSchema>;
-
-export type EnrichedPagoDialogFormData = PagoDialogFormData & {
-  metodoPagoNombre?: string;
-  moneda?: string;
-  mensajeWhatsApp?: string;
-};
-
-type PagoDialogMode = 'edit' | 'renew';
-
-interface BaseProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  metodosPago: MetodoPago[];
-  mode: PagoDialogMode;
-  onConfirm: (data: EnrichedPagoDialogFormData) => void;
-  categoriaPlanes?: Plan[];
-  tipoPlan?: Plan['tipoPlan'];
-  clienteNombre?: string;
-  clienteSoloNombre?: string;
-  servicioNombre?: string;
-  categoriaNombre?: string;
-  perfilNombre?: string;
-  correo?: string;
-  contrasena?: string;
-  codigo?: string;
-}
-
-interface VentaDialogProps extends BaseProps {
-  context: 'venta';
-  venta: {
-    clienteNombre: string;
-    metodoPagoId?: string;
-    precioFinal: number;
-    fechaFin: Date;
-    notas?: string;
-  };
-  pago?: {
-    id?: string; // ID del pago (para editar)
-    descripcion?: string; // Descripción del pago (para logs)
-    metodoPagoId?: string | null;
-    cicloPago?: 'mensual' | 'trimestral' | 'semestral' | 'anual' | null;
-    precio: number;
-    descuento?: number | null;
-    fechaInicio?: Date | null;
-    fechaVencimiento?: Date | null;
-    notas?: string | null;
-  } | null;
-}
-
-interface ServicioDialogProps extends BaseProps {
-  context: 'servicio';
-  servicio: Servicio;
-  pago?: PagoServicio | null;
-}
-
-type PagoDialogProps = VentaDialogProps | ServicioDialogProps;
+export type { EnrichedPagoDialogFormData } from './pago-dialog/types';
 
 export function PagoDialog(props: PagoDialogProps) {
   const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
@@ -119,13 +51,6 @@ export function PagoDialog(props: PagoDialogProps) {
   const pago = props.pago ?? null;
   const { metodosPago } = props;
   const { getTemplateByTipo } = useTemplatesStore();
-  const getPrecioPorCiclo = (ciclo?: Plan['cicloPago']) => {
-    if (!ciclo || !props.categoriaPlanes?.length) return null;
-    const match = props.categoriaPlanes.find((plan) =>
-      plan.cicloPago === ciclo && (!props.tipoPlan || plan.tipoPlan === props.tipoPlan)
-    );
-    return match?.precio ?? null;
-  };
 
   const defaultMetodoPagoId = isVenta
     ? (venta?.metodoPagoId || PENDING_USER_PAYMENT_ID)
@@ -411,170 +336,53 @@ export function PagoDialog(props: PagoDialogProps) {
     : 'Edita la nota principal que se conservara para futuras renovaciones...';
 
   const renderPeriodoField = () => (
-    <div className="space-y-2">
-      <Label htmlFor="periodoRenovacion">Ciclo de facturación</Label>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            type="button"
-            className="h-9 w-full justify-between gap-2 border-input bg-transparent dark:bg-input/30 dark:hover:bg-input/50"
-          >
-            {periodoValue === 'mensual' ? 'Mensual' : periodoValue === 'trimestral' ? 'Trimestral' : periodoValue === 'semestral' ? 'Semestral' : periodoValue === 'anual' ? 'Anual' : 'Seleccionar ciclo'}
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-          {(() => {
-            const order: Plan['cicloPago'][] = ['mensual', 'trimestral', 'semestral', 'anual'];
-            const planes = props.categoriaPlanes
-              ? props.categoriaPlanes.filter((plan) => !props.tipoPlan || plan.tipoPlan === props.tipoPlan)
-              : [];
-            const ciclosDisponibles = planes.length > 0
-              ? order.filter((ciclo) => planes.some((p) => p.cicloPago === ciclo))
-              : order;
-            return ciclosDisponibles.map((ciclo) => (
-              <DropdownMenuItem
-                key={ciclo}
-                onClick={() => {
-                  setValue('periodoRenovacion', ciclo);
-                  const precio = getPrecioPorCiclo(ciclo);
-                  if (precio !== null) setValue('costo', precio);
-                  clearErrors('periodoRenovacion');
-                }}
-              >
-                {ciclo === 'mensual' ? 'Mensual' : ciclo === 'trimestral' ? 'Trimestral' : ciclo === 'semestral' ? 'Semestral' : 'Anual'}
-              </DropdownMenuItem>
-            ));
-          })()}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {errors.periodoRenovacion && (
-        <p className="text-sm text-red-500">{errors.periodoRenovacion.message}</p>
-      )}
-    </div>
+    <PeriodoField
+      periodoValue={periodoValue}
+      categoriaPlanes={props.categoriaPlanes}
+      tipoPlan={props.tipoPlan}
+      setValue={setValue}
+      clearErrors={clearErrors}
+      errors={errors}
+    />
   );
 
   const renderMetodoField = () => (
-    <div className="space-y-2">
-      <Label htmlFor="metodoPagoId">Método de pago</Label>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            type="button"
-            className="h-9 w-full justify-between gap-2 border-input bg-transparent dark:bg-input/30 dark:hover:bg-input/50"
-          >
-            <span className="min-w-0 truncate text-left">{metodoPagoIdValue
-              ? metodoPagoDisplayName
-              : 'Seleccionar método'}
-            </span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-          {metodosPagoOrdenados.map((m) => (
-            <DropdownMenuItem key={m.id} onClick={() => { setValue('metodoPagoId', m.id); clearErrors('metodoPagoId'); }}>
-              <span className="block w-full truncate">
-                {isVenta ? m.nombre : getServicioMetodoPagoNombre(m)}
-              </span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {errors.metodoPagoId && (
-        <p className="text-sm text-red-500">{errors.metodoPagoId.message}</p>
-      )}
-    </div>
+    <MetodoPagoField
+      isVenta={isVenta}
+      metodoPagoIdValue={metodoPagoIdValue}
+      metodoPagoDisplayName={metodoPagoDisplayName}
+      metodosPagoOrdenados={metodosPagoOrdenados}
+      setValue={setValue}
+      clearErrors={clearErrors}
+      errors={errors}
+    />
   );
 
   const renderCostoField = (label: string) => (
-    <div className="space-y-2">
-      <Label htmlFor="costo">{label}</Label>
-      <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent dark:bg-input/30 px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] outline-none">
-        <span className="text-muted-foreground shrink-0 pr-2">{currencySymbol}</span>
-        <input
-          id="costo"
-          type="text"
-          inputMode="decimal"
-          value={isCostoFocused ? costoInput : costoNormalizado.toFixed(2)}
-          onFocus={() => {
-            setIsCostoFocused(true);
-            setCostoInput(costoValue !== undefined ? costoValue.toString() : '');
-          }}
-          onBlur={(e) => {
-            const val = e.target.value.replace(',', '.');
-            const normalizedValue = roundToDecimals(parseFloat(val) || 0);
-            setValue('costo', normalizedValue);
-            setIsCostoFocused(false);
-          }}
-          onChange={(e) => {
-            const val = e.target.value.replace(',', '.');
-            // Permitir solo números decimales parciales válidos (ej: "10.", "10.5")
-            if (/^\d*\.?\d*$/.test(val)) {
-              setCostoInput(val);
-              const parsed = parseFloat(val);
-              if (!isNaN(parsed)) {
-                setValue('costo', parsed);
-              } else if (val === '' || val === '.') {
-                setValue('costo', 0);
-              }
-            }
-          }}
-          className="flex-1 min-w-0 bg-transparent outline-none text-base md:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-        />
-      </div>
-      {errors.costo && (
-        <p className="text-sm text-red-500">{errors.costo.message}</p>
-      )}
-    </div>
+    <CostoField
+      label={label}
+      currencySymbol={currencySymbol}
+      isCostoFocused={isCostoFocused}
+      costoInput={costoInput}
+      costoValue={costoValue}
+      costoNormalizado={costoNormalizado}
+      setIsCostoFocused={setIsCostoFocused}
+      setCostoInput={setCostoInput}
+      setValue={setValue}
+      errors={errors}
+    />
   );
 
   const renderDescuentoField = () => (
-    <div className="space-y-2">
-      <Label htmlFor="descuento">Descuento %</Label>
-      <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent dark:bg-input/30 px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] outline-none">
-        <input
-          id="descuento"
-          type="text"
-          inputMode="decimal"
-          value={isDescuentoFocused ? descuentoInput : (descuentoValue ?? 0).toString()}
-          onFocus={() => {
-            setIsDescuentoFocused(true);
-            if (descuentoValue === 0) {
-              setDescuentoInput('');
-              setValue('descuento', undefined);
-            } else {
-              setDescuentoInput(descuentoValue?.toString() || '');
-            }
-          }}
-          onBlur={(e) => {
-            const val = e.target.value.replace(',', '.');
-            const parsed = parseFloat(val);
-            setValue('descuento', isNaN(parsed) ? undefined : parsed);
-            setIsDescuentoFocused(false);
-          }}
-          onChange={(e) => {
-            const val = e.target.value.replace(',', '.');
-            // Permitir solo números decimales parciales válidos
-            if (/^\d*\.?\d*$/.test(val)) {
-              setDescuentoInput(val);
-              const parsed = parseFloat(val);
-              if (!isNaN(parsed)) {
-                setValue('descuento', parsed);
-              } else if (val === '' || val === '.') {
-                setValue('descuento', undefined);
-              }
-            }
-          }}
-          className="flex-1 min-w-0 bg-transparent outline-none text-base md:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-        />
-        <span className="text-muted-foreground shrink-0 pl-2">%</span>
-      </div>
-      {errors.descuento && (
-        <p className="text-sm text-red-500">{errors.descuento.message}</p>
-      )}
-    </div>
+    <DescuentoField
+      isDescuentoFocused={isDescuentoFocused}
+      descuentoInput={descuentoInput}
+      descuentoValue={descuentoValue}
+      setIsDescuentoFocused={setIsDescuentoFocused}
+      setDescuentoInput={setDescuentoInput}
+      setValue={setValue}
+      errors={errors}
+    />
   );
 
   return (
@@ -616,109 +424,38 @@ export function PagoDialog(props: PagoDialogProps) {
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Fecha de Inicio</Label>
-              <Popover open={fechaInicioOpen} onOpenChange={setFechaInicioOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !fechaInicioValue && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fechaInicioValue ? (
-                      formatearFecha(fechaInicioValue)
-                    ) : (
-                      <span>Seleccionar fecha</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fechaInicioValue}
-                    onSelect={(date) => {
-                      setValue('fechaInicio', date || new Date());
-                    }}
-                    defaultMonth={fechaInicioValue ?? new Date()}
-                    locale={es}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <DateField
+              label="Fecha de Inicio"
+              fieldName="fechaInicio"
+              value={fechaInicioValue}
+              open={fechaInicioOpen}
+              setOpen={setFechaInicioOpen}
+              setValue={setValue}
+            />
 
-            <div className="space-y-2">
-              <Label>Fecha de Vencimiento</Label>
-              <Popover open={fechaVencimientoOpen} onOpenChange={setFechaVencimientoOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !fechaVencimientoValue && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fechaVencimientoValue ? (
-                      formatearFecha(fechaVencimientoValue)
-                    ) : (
-                      <span>Seleccionar fecha</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fechaVencimientoValue}
-                    onSelect={(date) => {
-                      setValue('fechaVencimiento', date || new Date());
-                    }}
-                    defaultMonth={fechaVencimientoValue ?? new Date()}
-                    locale={es}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notas">{notasLabel}</Label>
-            <Textarea
-              id="notas"
-              {...register('notas')}
-              placeholder={notasPlaceholder}
-              rows={3}
+            <DateField
+              label="Fecha de Vencimiento"
+              fieldName="fechaVencimiento"
+              value={fechaVencimientoValue}
+              open={fechaVencimientoOpen}
+              setOpen={setFechaVencimientoOpen}
+              setValue={setValue}
             />
           </div>
 
-          {!isEdit && isVenta && (
-            <div className="rounded-lg border bg-background/40 p-3">
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={Boolean(notificarWhatsAppValue)}
-                  onCheckedChange={(checked) => setValue('notificarWhatsApp', checked as boolean)}
-                />
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <MessageCircle className="h-4 w-4 text-green-500" />
-                  <span>Notificar al cliente por WhatsApp</span>
-                </div>
-              </div>
+          <NotesField
+            label={notasLabel}
+            placeholder={notasPlaceholder}
+            register={register}
+          />
 
-              {notificarWhatsAppValue && (
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm font-semibold">Vista Previa del Mensaje</p>
-                  <p className="text-xs text-muted-foreground">Puedes ajustar el mensaje antes de enviarlo. Los cambios no se guardan en las plantillas.</p>
-                  <Textarea
-                    value={previewMessage}
-                    onChange={(e) => setPreviewMessage(e.target.value)}
-                    rows={10}
-                    className="min-h-[220px] resize-y text-sm leading-relaxed"
-                  />
-                </div>
-              )}
-            </div>
+          {!isEdit && isVenta && (
+            <PreviewSection
+              notificarWhatsAppValue={notificarWhatsAppValue}
+              previewMessage={previewMessage}
+              setPreviewMessage={setPreviewMessage}
+              setValue={setValue}
+            />
           )}
 
           <div className="flex gap-3 justify-end pt-2">

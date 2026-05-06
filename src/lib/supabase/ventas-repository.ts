@@ -13,6 +13,7 @@
 import { supabase } from './client';
 import { timestampToDate, toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
+import { assertRecordId, assertRpcStringId } from '@/lib/utils/safety';
 
 export { logCacheHit, adjustServiciosActivos, adjustCategoriaSuscripciones, timestampToDate };
 
@@ -40,7 +41,7 @@ export async function createVentaWithInitialPayment(
 ): Promise<string> {
   const { data, error } = await rpcClient.rpc('create_venta_with_initial_payment', payload);
   if (error) throw new Error(error.message);
-  return String(data);
+  return assertRpcStringId(data, 'create_venta_with_initial_payment');
 }
 
 export const getPagoVentaById = <T>(id: string) => getById<T>(ENTITIES.PAGOS_VENTA, id);
@@ -83,9 +84,9 @@ export async function updateLatestVentaPeriodo(
     .maybeSingle();
 
   if (selectError) throw new Error(selectError.message);
-  if (!latestPeriod) return;
+  const periodoId = assertRecordId(latestPeriod, 'select latest venta_periodo');
 
-  await updateVentaPeriodoById((latestPeriod as { id: string }).id, payload);
+  await updateVentaPeriodoById(periodoId, payload);
 }
 
 export async function updateVentaPeriodoById(

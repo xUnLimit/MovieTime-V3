@@ -1,0 +1,153 @@
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { DollarSign, Pencil, Trash2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { getCurrencySymbol } from '@/lib/constants';
+import { formatAggregateInUSD } from '@/lib/utils/calculations';
+import type { MetodoPago, PagoServicio } from '@/types';
+
+import type { MetodoPagoDetalle, PagoAction } from './types';
+
+interface ServicioPaymentsHistoryProps {
+  isCalculatingTotal: boolean;
+  isLoading: boolean;
+  metodoPago: MetodoPagoDetalle | null;
+  metodosPago: MetodoPago[];
+  pagosOrdenados: PagoServicio[];
+  totalGastadoUSD: number;
+  getCicloPagoLabel: (ciclo: string) => string;
+  onDeleteRenovacion: PagoAction;
+  onEditarPago: PagoAction;
+}
+
+export function ServicioPaymentsHistory({
+  getCicloPagoLabel,
+  isCalculatingTotal,
+  isLoading,
+  metodoPago,
+  metodosPago,
+  onDeleteRenovacion,
+  onEditarPago,
+  pagosOrdenados,
+  totalGastadoUSD,
+}: ServicioPaymentsHistoryProps) {
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-2">
+        <DollarSign className="h-5 w-5" />
+        <h2 className="text-lg font-semibold">Historial de pagos del servicio</h2>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '24%' }} />
+            <col style={{ width: '26%' }} />
+            <col style={{ width: '24%' }} />
+            <col style={{ width: '26%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '10%' }} />
+          </colgroup>
+          <thead>
+            <tr className="border-b text-sm text-muted-foreground">
+              <th className="text-left py-3 font-medium">Fecha</th>
+              <th className="text-left py-3 font-medium">Descripción</th>
+              <th className="text-left py-3 font-medium">Ciclo de facturación</th>
+              <th className="text-left py-3 font-medium">Fecha de Inicio</th>
+              <th className="text-left py-3 font-medium">Fecha de Vencimiento</th>
+              <th className="text-left py-3 font-medium">Monto</th>
+              <th className="text-center py-3 font-medium w-[10%]">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                  Cargando historial de pagos...
+                </td>
+              </tr>
+            ) : (
+              <>
+                {pagosOrdenados.map((pago) => {
+                  const esInicial = pago.isPagoInicial || pago.descripcion === 'Pago inicial';
+                  const pagoMetodo = pago.metodoPagoId
+                    ? metodosPago.find((m) => m.id === pago.metodoPagoId)
+                    : undefined;
+                  const pagoCurrency = getCurrencySymbol(pago.moneda || pagoMetodo?.moneda || metodoPago?.moneda);
+                  return (
+                    <tr key={pago.id} className="border-b text-sm">
+                      <td className="py-3">
+                        {format(new Date(pago.fecha), 'd MMM yyyy', { locale: es })}
+                      </td>
+                      <td className="py-3">{pago.descripcion}</td>
+                      <td className="py-3">
+                        {getCicloPagoLabel(pago.cicloPago ?? '') || '-'}
+                      </td>
+                      <td className="py-3">
+                        {format(new Date(pago.fechaInicio), 'd MMM yyyy', { locale: es })}
+                      </td>
+                      <td className="py-3">
+                        {format(new Date(pago.fechaVencimiento), 'd MMM yyyy', { locale: es })}
+                      </td>
+                      <td className="py-3 text-left">
+                        {pagoCurrency} {pago.monto.toFixed(2)}
+                      </td>
+                      <td className="py-3 text-center">
+                        {pago.id === pagosOrdenados[0]?.id && !esInicial ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <span className="text-lg">...</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="center">
+                              <DropdownMenuItem onClick={() => onEditarPago(pago)}>
+                                <Pencil className="h-3.5 w-3.5 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => onDeleteRenovacion(pago)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <div className="h-8 flex items-center justify-center text-muted-foreground">-</div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 pt-4 border-t -mx-6 px-6">
+        <div className="flex justify-end items-center mt-2">
+          <span className="text-sm text-muted-foreground mr-2">Total Gastado:</span>
+          <span className="text-lg font-semibold text-purple-600">
+            {isCalculatingTotal ? (
+              <span className="text-xs">Calculando...</span>
+            ) : (
+              formatAggregateInUSD(totalGastadoUSD)
+            )}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+}

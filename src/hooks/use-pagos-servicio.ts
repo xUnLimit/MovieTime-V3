@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { obtenerPagosDeServicio, contarRenovacionesDeServicio } from '@/lib/services/pagosServicioService';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import { PagoServicio } from '@/types';
 
 /**
@@ -9,7 +10,7 @@ import { PagoServicio } from '@/types';
 
 // Cache a nivel de módulo (compartido entre todas las instancias del hook)
 const pagosCache = new Map<string, { data: PagoServicio[]; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = CACHE_TTL_MS;
 
 export function usePagosServicio(servicioId: string | null) {
   const [pagos, setPagos] = useState<PagoServicio[]>([]);

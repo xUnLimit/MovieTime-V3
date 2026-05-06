@@ -1,0 +1,214 @@
+import Link from 'next/link';
+import {
+  AlertTriangle,
+  BellOff,
+  BellRing,
+  Copy,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  MoreHorizontal,
+  PowerOff,
+  RefreshCw,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { getCurrencySymbol } from '@/lib/constants';
+
+import {
+  formatearFecha,
+  getBellIconColor,
+  getEstadoBadge,
+} from './helpers';
+import type {
+  CopyToClipboardHandler,
+  NotificacionServicioConId,
+  ServicioNotificationAction,
+  ToggleLeidaHandler,
+} from './types';
+
+interface ServiciosProximosTableRowProps {
+  notif: NotificacionServicioConId;
+  visiblePasswords: ReadonlySet<string>;
+  onToggleLeida: ToggleLeidaHandler;
+  onCopyToClipboard: CopyToClipboardHandler;
+  onTogglePasswordVisibility: (notifId: string) => void;
+  onRenovar: ServicioNotificationAction;
+  onAcciones: ServicioNotificationAction;
+}
+
+export function ServiciosProximosTableRow({
+  notif,
+  visiblePasswords,
+  onToggleLeida,
+  onCopyToClipboard,
+  onTogglePasswordVisibility,
+  onRenovar,
+  onAcciones,
+}: ServiciosProximosTableRowProps) {
+  const bellColors = getBellIconColor(notif.diasRestantes);
+  const estadoBadge = getEstadoBadge(notif.diasRestantes, notif.resaltada);
+  const isPasswordVisible = visiblePasswords.has(notif.id);
+
+  return (
+    <TableRow
+      className={`border-b transition-colors hover:bg-muted/50 ${
+        notif.resaltada ? 'bg-orange-50/50 dark:bg-orange-500/5' : ''
+      }`}
+    >
+      <TableCell className="p-4 text-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
+            notif.resaltada
+              ? 'bg-orange-100 dark:bg-orange-500/20 hover:bg-orange-200 dark:hover:bg-orange-500/30'
+              : notif.leida
+                ? 'bg-gray-100 dark:bg-gray-500/20 hover:bg-gray-200 dark:hover:bg-gray-500/30'
+                : `${bellColors.bgColor} ${bellColors.hoverBgColor}`
+          } hover:scale-105`}
+          onClick={() => !notif.resaltada && onToggleLeida(notif.id, !notif.leida)}
+          title={
+            notif.resaltada
+              ? 'Notificación resaltada (click en Acciones para gestionar)'
+              : notif.leida
+                ? 'Marcar como sin leer'
+                : 'Marcar como leída'
+          }
+        >
+          {notif.resaltada ? (
+            <AlertTriangle className="h-4 w-4 transition-all duration-200 ease-in-out text-orange-500" />
+          ) : notif.leida ? (
+            <BellOff className="h-4 w-4 transition-all duration-200 ease-in-out text-gray-400 dark:text-gray-500" />
+          ) : (
+            <BellRing
+              className={`h-4 w-4 transition-all duration-200 ease-in-out ${bellColors.textColor}`}
+            />
+          )}
+        </Button>
+      </TableCell>
+
+      <TableCell className="p-4 text-center">
+        {notif.categoriaNombre}
+      </TableCell>
+
+      <TableCell className="p-4 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <span className="font-medium truncate max-w-[200px]">
+            {notif.correo}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 flex-shrink-0"
+            onClick={() => onCopyToClipboard(notif.correo, 'Email')}
+            title="Copiar email"
+          >
+            <Copy className="h-3 w-3" />
+          </Button>
+        </div>
+      </TableCell>
+
+      <TableCell className="w-[160px] p-4 text-center">
+        <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
+          <span className="min-w-0 break-all text-center font-medium leading-tight">
+            {isPasswordVisible ? notif.contrasena : '••••••••'}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 flex-shrink-0"
+            onClick={() => onTogglePasswordVisibility(notif.id)}
+            title={
+              isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'
+            }
+          >
+            {isPasswordVisible ? (
+              <EyeOff className="h-3 w-3" />
+            ) : (
+              <Eye className="h-3 w-3" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 flex-shrink-0"
+            onClick={() => onCopyToClipboard(notif.contrasena, 'Contraseña')}
+            title="Copiar contraseña"
+          >
+            <Copy className="h-3 w-3" />
+          </Button>
+        </div>
+      </TableCell>
+
+      <TableCell className="p-4 text-center">
+        {notif.metodoPagoNombre ? (
+          <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+            <span className="font-medium truncate max-w-[140px]">
+              {notif.metodoPagoNombre}
+            </span>
+            {notif.metodoPagoTarjetaTerminacion && (
+              <span className="text-xs text-muted-foreground">
+                •••• {notif.metodoPagoTarjetaTerminacion}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+
+      <TableCell className="p-4 text-center">
+        {formatearFecha(new Date(notif.fechaVencimiento))}
+      </TableCell>
+
+      <TableCell className="p-4 text-center">
+        {getCurrencySymbol(notif.moneda)}
+        {notif.costoServicio.toFixed(2)}
+      </TableCell>
+
+      <TableCell className="p-4 text-center">
+        <Badge
+          variant="outline"
+          className={`font-normal ${estadoBadge.variant}`}
+        >
+          {estadoBadge.text}
+        </Badge>
+      </TableCell>
+
+      <TableCell className="p-4 text-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onRenovar(notif)}>
+              <RefreshCw className="h-4 w-4 mr-2 text-purple-600" />
+              <span className="text-purple-600">Renovar</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onAcciones(notif)}>
+              <PowerOff className="h-4 w-4 mr-2 text-red-600" />
+              <span className="text-red-600">Inactivar</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href={`/servicios/detalle/${notif.servicioId}`}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Ver Servicio
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
+}

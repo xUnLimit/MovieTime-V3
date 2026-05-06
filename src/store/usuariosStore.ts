@@ -12,6 +12,7 @@ import {
 } from '@/lib/use-cases/usuarios-use-cases';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Usuario } from '@/types';
 
 function getLogContext() {
@@ -54,7 +55,7 @@ interface UsuariosState {
   getRevendedores: () => Usuario[];
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useUsuariosStore = create<UsuariosState>()(
   devtools(

@@ -7,10 +7,11 @@ import {
   deleteVentaUseCase,
   updateVentaUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
+import { syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
-import type { VentaPronostico } from '@/types/dashboard';
 
 function getLogContext() {
   const user = useAuthStore.getState().user;
@@ -18,24 +19,6 @@ function getLogContext() {
     usuarioId: user?.id ?? 'sistema',
     usuarioEmail: user?.email ?? 'sistema',
   };
-}
-
-function syncVentaPronosticoLocal(ventaId: string, pronostico: VentaPronostico | null) {
-  import('./dashboardStore').then(({ useDashboardStore }) => {
-    const currentStats = useDashboardStore.getState().stats;
-    if (!currentStats) return;
-
-    const existing = currentStats.ventasPronostico ?? [];
-    const updated = pronostico
-      ? existing.some((venta) => venta.id === ventaId)
-        ? existing.map((venta) => (venta.id === ventaId ? pronostico : venta))
-        : [...existing, pronostico]
-      : existing.filter((venta) => venta.id !== ventaId);
-
-    useDashboardStore.setState({
-      stats: { ...currentStats, ventasPronostico: updated },
-    });
-  }).catch(() => {});
 }
 
 function dispatchVentaEvent(name: 'venta-created' | 'venta-updated' | 'venta-deleted') {
@@ -65,7 +48,7 @@ interface VentasState {
   getVentasByEstado: (estado: 'activo' | 'inactivo') => VentaDoc[];
 }
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useVentasStore = create<VentasState>()(
   devtools(

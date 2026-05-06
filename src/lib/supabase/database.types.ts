@@ -27,6 +27,7 @@ export type Database = {
           entidad_id: string
           entidad_nombre: string
           id: string
+          metadata: Json | null
           timestamp: string
           usuario_email: string
           usuario_id: string | null
@@ -39,6 +40,7 @@ export type Database = {
           entidad_id: string
           entidad_nombre: string
           id?: string
+          metadata?: Json | null
           timestamp?: string
           usuario_email: string
           usuario_id?: string | null
@@ -51,6 +53,7 @@ export type Database = {
           entidad_id?: string
           entidad_nombre?: string
           id?: string
+          metadata?: Json | null
           timestamp?: string
           usuario_email?: string
           usuario_id?: string | null

@@ -177,6 +177,21 @@ export const TIPOS_CATEGORIA = [
 // ===========================
 
 export const ITEMS_PER_PAGE = 10;
+export const DEFAULT_PAGE_SIZE = 10;
+
+// ===========================
+// CACHE
+// ===========================
+
+export const CACHE_TTL_MS = 5 * 60 * 1000;
+
+// ===========================
+// REPOSO
+// ===========================
+
+export const REPOSO_MIN_DAYS = 28;
+export const REPOSO_MAX_DAYS = 31;
+export const REPOSO_DAY_OPTIONS = [7, 28, 29, 30, 31] as const;
 
 // ===========================
 // ROLES

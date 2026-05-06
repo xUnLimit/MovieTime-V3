@@ -32,6 +32,7 @@ import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { syncUsuarioMetodoPago } from '@/lib/services/usuarioMetodoPagoSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
+import { safeAsyncSideEffect, toMoneyNumber } from '@/lib/utils/safety';
 import { isPendingUserPaymentMethodId } from '@/lib/utils/usuarioMetodoPago';
 import type { ActivityLog, MetodoPago, PagoVenta, VentaDoc } from '@/types';
 import type { VentaPronostico } from '@/types/dashboard';
@@ -101,10 +102,11 @@ function getVentaTableUpdates(updates: Partial<VentaDoc>): Partial<VentaDoc> {
 }
 
 async function getUsdValues(amount: number, moneda: string) {
-  const usd = await currencyService.convertToUSD(amount, moneda);
+  const normalizedAmount = toMoneyNumber(amount);
+  const usd = await currencyService.convertToUSD(normalizedAmount, moneda);
   return {
     usd,
-    rate: moneda === 'USD' || amount === 0 || usd === 0 ? 1 : amount / usd,
+    rate: moneda === 'USD' || normalizedAmount === 0 || usd === 0 ? 1 : normalizedAmount / usd,
   };
 }
 
@@ -150,7 +152,7 @@ function getPagoValues(venta: VentaDoc, input: VentaPagoInput) {
 }
 
 export function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
-  const precioFinal = v.precio || v.precioFinal || 0;
+  const precioFinal = v.precioFinal ?? v.precio ?? 0;
   if (v.estado === 'inactivo' || !v.fechaFin || !v.cicloPago || precioFinal <= 0) return null;
   return {
     id: v.id,
@@ -279,6 +281,16 @@ export async function createVentaUseCase(
     entidadId: ventaId,
     entidadNombre: `${ventaData.clienteNombre} - ${ventaData.servicioNombre}`,
     detalles: `Venta creada: ${ventaData.clienteNombre} / ${ventaData.servicioNombre} - $${ventaData.precioFinal ?? 0} ${ventaData.moneda ?? 'USD'} - ${format(ventaData.fechaInicio ?? new Date(), 'dd/MM/yyyy')} al ${format(ventaData.fechaFin ?? new Date(), 'dd/MM/yyyy')} (${ventaData.cicloPago})`,
+    metadata: {
+      precioFinal: ventaData.precioFinal ?? 0,
+      moneda: ventaData.moneda ?? 'USD',
+      cicloPago: ventaData.cicloPago,
+      fechaInicio: toDateOnly(ventaData.fechaInicio ?? new Date()),
+      fechaFin: toDateOnly(ventaData.fechaFin ?? new Date()),
+      clienteId: ventaData.clienteId,
+      servicioId: ventaData.servicioId,
+      origen: 'createVentaUseCase',
+    },
   });
 
   if (ventaDataLimpia.categoriaId && ventaData.precioFinal) {
@@ -300,7 +312,11 @@ export async function createVentaUseCase(
     console.error('[VentasUseCases] Error upserting pronostico:', err);
   });
 
-  sincronizarUnaVenta(ventaId).catch(() => {});
+  safeAsyncSideEffect(sincronizarUnaVenta(ventaId), {
+    operation: 'sincronizarUnaVenta',
+    entity: 'venta',
+    entityId: ventaId,
+  });
 
   return { venta, pronostico };
 }
@@ -365,15 +381,23 @@ export async function renewVentaUseCase(
     moneda,
   };
 
-  upsertVentaPronostico(pronostico, venta.id).catch(() => {});
-  adjustIngresosStats({
+  safeAsyncSideEffect(upsertVentaPronostico(pronostico, venta.id), {
+    operation: 'upsertVentaPronostico',
+    entity: 'venta',
+    entityId: venta.id,
+  });
+  safeAsyncSideEffect(adjustIngresosStats({
     delta: monto,
     moneda,
     mes: getMesKeyFromDate(input.fechaInicio),
     dia: getDiaKeyFromDate(input.fechaInicio),
     categoriaId: venta.categoriaId ?? '',
     categoriaNombre: venta.categoriaNombre ?? '',
-  }).catch(() => {});
+  }), {
+    operation: 'adjustIngresosStats',
+    entity: 'venta',
+    entityId: venta.id,
+  });
 
   await options.recordActivityLog?.({
     ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
@@ -382,6 +406,15 @@ export async function renewVentaUseCase(
     entidadId: venta.id,
     entidadNombre: `${venta.clienteNombre} - ${venta.servicioNombre}`,
     detalles: `${options.logPrefix ?? 'Venta renovada'}: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)} - hasta ${format(input.fechaVencimiento, 'dd/MM/yyyy')} (${input.periodoRenovacion})`,
+    metadata: {
+      monto,
+      moneda,
+      cicloPago: input.periodoRenovacion,
+      fechaInicio: toDateOnly(input.fechaInicio),
+      fechaFin: toDateOnly(input.fechaVencimiento),
+      descuento: descuentoNumero,
+      origen: 'renewVentaUseCase',
+    },
   });
 
   return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, pronostico, syncPaymentMethodFailed };
@@ -428,7 +461,11 @@ export async function updateVentaPagoUseCase(
 
   const ventaActualizada = await getVentaConPagoActualUseCase(venta.id);
   const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
-  upsertVentaPronostico(pronostico, venta.id).catch(() => {});
+  safeAsyncSideEffect(upsertVentaPronostico(pronostico, venta.id), {
+    operation: 'upsertVentaPronostico',
+    entity: 'venta',
+    entityId: venta.id,
+  });
 
   return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, syncPaymentMethodFailed, pronostico };
 }
@@ -437,7 +474,11 @@ export async function deleteVentaPagoUseCase(ventaId: string, pagoId: string) {
   await removePagoVenta(pagoId);
   const ventaActualizada = await getVentaConPagoActualUseCase(ventaId);
   const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
-  upsertVentaPronostico(pronostico, ventaId).catch(() => {});
+  safeAsyncSideEffect(upsertVentaPronostico(pronostico, ventaId), {
+    operation: 'upsertVentaPronostico',
+    entity: 'venta',
+    entityId: ventaId,
+  });
 
   return { ventaActualizada, pronostico };
 }
@@ -617,6 +658,10 @@ export async function updateVentaUseCase(
       : '',
     detalles: `Venta actualizada: ${ventaAnterior.clienteNombre ?? '-'} / ${ventaAnterior.servicioNombre ?? '-'}`,
     cambios: cambios.length > 0 ? cambios : undefined,
+    metadata: {
+      cambiosCount: cambios.length,
+      origen: 'updateVentaUseCase',
+    },
   });
 
   const pronostico = toVentaPronostico(ventaActualizada);
@@ -678,6 +723,13 @@ export async function deleteVentaUseCase(
     entidadId: id,
     entidadNombre: `${ventaEliminada?.clienteNombre ?? ''} - ${ventaEliminada?.servicioNombre ?? ''}`,
     detalles: `Venta eliminada: ${ventaEliminada?.clienteNombre} / ${ventaEliminada?.servicioNombre}`,
+    metadata: {
+      precioFinal: ventaEliminada?.precioFinal ?? null,
+      moneda: ventaEliminada?.moneda ?? null,
+      categoriaId: ventaEliminada?.categoriaId ?? null,
+      deletePagos: options.deletePagos ?? false,
+      origen: 'deleteVentaUseCase',
+    },
   });
 
   upsertVentaPronostico(null, id).catch((err) => {

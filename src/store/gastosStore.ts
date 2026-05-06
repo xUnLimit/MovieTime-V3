@@ -7,9 +7,12 @@ import type { Gasto, TipoGasto } from '@/types';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { invalidateDashboardCache as invalidateDashboardCacheCommand } from '@/lib/commands/client-cache';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import { adjustGastosStats, getDiaKeyFromDate, getMesKeyFromDate } from '@/lib/services/dashboardStatsService';
 
-const CACHE_TIMEOUT = 5 * 60 * 1000;
+const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 function getLogContext() {
   const user = useAuthStore.getState().user;
@@ -44,11 +47,15 @@ async function syncDashboardGasto(gasto: Pick<Gasto, 'fecha' | 'monto'>, sign: 1
 }
 
 function invalidateDashboardCache() {
-  import('./dashboardStore')
-    .then(({ useDashboardStore }) => {
-      useDashboardStore.getState().invalidateCache();
-    })
-    .catch(() => {});
+  invalidateDashboardCacheCommand({ entity: 'gasto' });
+}
+
+async function logBestEffortFailure(promise: Promise<unknown>, operation: string) {
+  try {
+    await promise;
+  } catch (error) {
+    console.error(`[GastosStore] ${operation} failed`, error);
+  }
 }
 
 interface GastosState {
@@ -123,17 +130,17 @@ export const useGastosStore = create<GastosState>()(
 
           invalidateDashboardCache();
 
-          useActivityLogStore.getState().addLog({
+          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'creacion',
             entidad: 'gasto',
             entidadId: gastoId,
             entidadNombre: tipoGasto.nombre,
             detalles: `Gasto registrado: ${tipoGasto.nombre} - $${newGasto.monto.toFixed(2)} USD (${format(newGasto.fecha, 'dd/MM/yyyy')})`,
-          }).catch(() => {});
+          }), { operation: 'addActivityLog', entity: 'gasto', entityId: gastoId });
         } catch (error) {
           if (gastoId) {
-            await removeGasto(gastoId).catch(() => {});
+            await logBestEffortFailure(removeGasto(gastoId), 'rollback removeGasto');
           }
           const errorMessage = error instanceof Error ? error.message : 'Error al crear gasto';
           set({ error: errorMessage });
@@ -172,7 +179,7 @@ export const useGastosStore = create<GastosState>()(
             try {
               await syncDashboardGasto(gastoActualizado, 1);
             } catch (dashboardError) {
-              await syncDashboardGasto(gastoActual, 1).catch(() => {});
+              await logBestEffortFailure(syncDashboardGasto(gastoActual, 1), 'rollback dashboard gasto anterior');
               throw dashboardError;
             }
           }
@@ -183,8 +190,8 @@ export const useGastosStore = create<GastosState>()(
             await updateGasto(id, writeUpdates);
           } catch (persistError) {
             if (requiereRecalculoDashboard) {
-              await syncDashboardGasto(gastoActualizado, -1).catch(() => {});
-              await syncDashboardGasto(gastoActual, 1).catch(() => {});
+              await logBestEffortFailure(syncDashboardGasto(gastoActualizado, -1), 'rollback dashboard gasto actualizado');
+              await logBestEffortFailure(syncDashboardGasto(gastoActual, 1), 'restore dashboard gasto anterior');
             }
             throw persistError;
           }
@@ -206,7 +213,7 @@ export const useGastosStore = create<GastosState>()(
             gastoActual as unknown as Record<string, unknown>,
             gastoActualizado as unknown as Record<string, unknown>
           );
-          useActivityLogStore.getState().addLog({
+          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'actualizacion',
             entidad: 'gasto',
@@ -214,7 +221,7 @@ export const useGastosStore = create<GastosState>()(
             entidadNombre: gastoActualizado.tipoGastoNombre,
             detalles: `Gasto actualizado: ${gastoActualizado.tipoGastoNombre}`,
             cambios: cambios.length > 0 ? cambios : undefined,
-          }).catch(() => {});
+          }), { operation: 'addActivityLog', entity: 'gasto', entityId: id });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar gasto';
           set({ error: errorMessage });
@@ -232,7 +239,7 @@ export const useGastosStore = create<GastosState>()(
           try {
             await removeGasto(id);
           } catch (persistError) {
-            await syncDashboardGasto(gasto, 1).catch(() => {});
+            await logBestEffortFailure(syncDashboardGasto(gasto, 1), 'rollback dashboard deleteGasto');
             throw persistError;
           }
 
@@ -242,14 +249,14 @@ export const useGastosStore = create<GastosState>()(
 
           invalidateDashboardCache();
 
-          useActivityLogStore.getState().addLog({
+          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
             ...getLogContext(),
             accion: 'eliminacion',
             entidad: 'gasto',
             entidadId: id,
             entidadNombre: gasto.tipoGastoNombre,
             detalles: `Gasto eliminado: ${gasto.tipoGastoNombre} - $${gasto.monto.toFixed(2)} USD`,
-          }).catch(() => {});
+          }), { operation: 'addActivityLog', entity: 'gasto', entityId: id });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar gasto';
           set({ error: errorMessage });

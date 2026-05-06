@@ -6,6 +6,7 @@ import { differenceInCalendarDays } from 'date-fns';
 import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { logVentasCacheHit } from '@/lib/utils/devLogger';
 import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
 /**
@@ -20,7 +21,7 @@ export interface VentasUsuarioStats {
 
 // Cache a nivel de módulo: persiste entre montajes de componentes.
 // Key = idsKey (IDs ordenados y concatenados), Value = { data, ts }
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = CACHE_TTL_MS;
 const ventasCache = new Map<string, { data: Record<string, VentasUsuarioStats>; ts: number }>();
 
 /**

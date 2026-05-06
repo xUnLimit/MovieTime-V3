@@ -17,6 +17,7 @@
 import { create } from 'zustand';
 
 import { countNotificaciones, queryNotificaciones, removeNotificacion, updateNotificacion } from '@/lib/supabase/notifications-repository';
+import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
 import { esNotificacionVenta, esNotificacionServicio, esNotificacionReposo } from '@/types/notificaciones';
 
@@ -51,7 +52,7 @@ interface NotificacionesState {
   getNotificacionesResaltadas: () => (Notificacion & { id: string })[];
 }
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = CACHE_TTL_MS;
 
 export const useNotificacionesStore = create<NotificacionesState>((set, get) => ({
   // Initial state

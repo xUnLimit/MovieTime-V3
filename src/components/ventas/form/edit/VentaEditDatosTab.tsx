@@ -1,0 +1,497 @@
+import { useState, type KeyboardEvent, type WheelEvent } from "react";
+import { es } from "date-fns/locale";
+import { CalendarIcon, ChevronDown } from "lucide-react";
+import type {
+  FieldErrors,
+  UseFormClearErrors,
+  UseFormRegister,
+  UseFormSetValue,
+} from "react-hook-form";
+
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
+import { formatearFecha } from "@/lib/utils/calculations";
+import { cn } from "@/lib/utils";
+import {
+  isPendingUserPaymentMethodId,
+  PENDING_USER_PAYMENT_ID,
+} from "@/lib/utils/usuarioMetodoPago";
+import { VentaClientePagoFields } from "@/components/ventas/form/VentaClientePagoFields";
+import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSelector";
+import type { Categoria, MetodoPago, Plan, Servicio, Usuario } from "@/types";
+
+const CODIGO_CONTROL_KEYS = [
+  "Backspace",
+  "Delete",
+  "Tab",
+  "Escape",
+  "Enter",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+];
+
+function handleCodigoKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  const char = event.key;
+  if (CODIGO_CONTROL_KEYS.includes(char)) return;
+  if (event.ctrlKey || event.metaKey) return;
+  if (!/[0-9]/.test(char)) {
+    event.preventDefault();
+  }
+}
+
+interface VentaEditDatosTabProps {
+  register: UseFormRegister<VentaEditFormData>;
+  setValue: UseFormSetValue<VentaEditFormData>;
+  clearErrors: UseFormClearErrors<VentaEditFormData>;
+  errors: FieldErrors<VentaEditFormData>;
+  clienteSeleccionado?: Usuario;
+  usuariosFiltrados: Usuario[];
+  searchCliente: string;
+  metodoPagoIdValue: string;
+  metodoPagoNombre?: string;
+  metodosPagoOrdenados: MetodoPago[];
+  onSearchClienteChange: (value: string) => void;
+  categoriaIdValue: string;
+  categoriaSeleccionada?: Categoria;
+  categoriasOrdenadas: Categoria[];
+  servicioIdValue: string;
+  servicioSeleccionado?: Servicio;
+  serviciosVentana: Servicio[];
+  totalServicios: number;
+  visibleServiciosRows: number;
+  loadingServicios: boolean;
+  getSlotsDisponibles: (servicioId: string) => number;
+  getDisponiblesColorClass: (disponibles: number, total: number) => string;
+  onOpenPerfilDetalle: (servicio: Servicio) => Promise<void> | void;
+  onScrollServicios: (direction: "up" | "down") => void;
+  onWheelServicios: (event: WheelEvent<HTMLDivElement>) => void;
+  planSeleccionado?: Plan;
+  planesDisponibles: Plan[];
+  perfilNumeroValue?: string;
+  perfilesDropdown: number[];
+  fechaInicioValue?: Date;
+  fechaFinValue?: Date;
+  simboloMoneda: string;
+  precioFinal: number;
+  estadoValue: VentaEditFormData["estado"];
+}
+
+export function VentaEditDatosTab({
+  register,
+  setValue,
+  clearErrors,
+  errors,
+  clienteSeleccionado,
+  usuariosFiltrados,
+  searchCliente,
+  metodoPagoIdValue,
+  metodoPagoNombre,
+  metodosPagoOrdenados,
+  onSearchClienteChange,
+  categoriaIdValue,
+  categoriaSeleccionada,
+  categoriasOrdenadas,
+  servicioIdValue,
+  servicioSeleccionado,
+  serviciosVentana,
+  totalServicios,
+  visibleServiciosRows,
+  loadingServicios,
+  getSlotsDisponibles,
+  getDisponiblesColorClass,
+  onOpenPerfilDetalle,
+  onScrollServicios,
+  onWheelServicios,
+  planSeleccionado,
+  planesDisponibles,
+  perfilNumeroValue,
+  perfilesDropdown,
+  fechaInicioValue,
+  fechaFinValue,
+  simboloMoneda,
+  precioFinal,
+  estadoValue,
+}: VentaEditDatosTabProps) {
+  const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
+  const [fechaFinOpen, setFechaFinOpen] = useState(false);
+
+  return (
+    <>
+      <VentaClientePagoFields
+        clienteSeleccionado={clienteSeleccionado}
+        usuariosFiltrados={usuariosFiltrados}
+        searchCliente={searchCliente}
+        metodoPagoId={metodoPagoIdValue}
+        metodoPagoNombre={metodoPagoNombre}
+        metodosPago={metodosPagoOrdenados}
+        clienteError={errors.clienteId?.message}
+        metodoPagoError={errors.metodoPagoId?.message}
+        onSearchClienteChange={onSearchClienteChange}
+        onSelectUsuario={(usuario) => {
+          setValue("clienteId", usuario.id);
+          setValue(
+            "metodoPagoId",
+            isPendingUserPaymentMethodId(usuario.metodoPagoId)
+              ? PENDING_USER_PAYMENT_ID
+              : usuario.metodoPagoId,
+          );
+          clearErrors("clienteId");
+          clearErrors("metodoPagoId");
+          onSearchClienteChange("");
+        }}
+        onSelectMetodoPago={(metodoId) => {
+          setValue("metodoPagoId", metodoId);
+          clearErrors("metodoPagoId");
+        }}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Categoría</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full justify-between"
+              >
+                {categoriaSeleccionada
+                  ? categoriaSeleccionada.nombre
+                  : "Seleccionar categoría"}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[var(--radix-dropdown-menu-trigger-width)]"
+            >
+              {categoriasOrdenadas.map((categoria) => (
+                <DropdownMenuItem
+                  key={categoria.id}
+                  onClick={() => {
+                    setValue("categoriaId", categoria.id);
+                    setValue("servicioId", "");
+                    setValue("planId", "");
+                    setValue("perfilNumero", "");
+                    clearErrors("categoriaId");
+                  }}
+                >
+                  {categoria.nombre}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {errors.categoriaId && (
+            <p className="text-sm text-red-500">
+              {errors.categoriaId.message}
+            </p>
+          )}
+        </div>
+
+        <VentaServicioSelector
+          categoriaId={categoriaIdValue}
+          servicioId={servicioIdValue}
+          servicioSeleccionado={servicioSeleccionado}
+          servicios={serviciosVentana}
+          totalServicios={totalServicios}
+          visibleRows={visibleServiciosRows}
+          loading={loadingServicios}
+          error={errors.servicioId?.message}
+          getSlotsDisponibles={getSlotsDisponibles}
+          getDisponiblesColorClass={getDisponiblesColorClass}
+          onOpenPerfilDetalle={(servicio) => {
+            void onOpenPerfilDetalle(servicio);
+          }}
+          onScroll={onScrollServicios}
+          onWheel={onWheelServicios}
+          onSelectServicio={(servicio) => {
+            setValue("servicioId", servicio.id);
+            setValue("perfilNumero", "");
+            clearErrors("servicioId");
+          }}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Plan</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full justify-between"
+                disabled={!categoriaIdValue}
+              >
+                {planSeleccionado
+                  ? planSeleccionado.nombre
+                  : categoriaIdValue
+                    ? "Seleccionar plan"
+                    : "Primero selecciona categoría"}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[var(--radix-dropdown-menu-trigger-width)]"
+            >
+              {planesDisponibles.map((plan) => (
+                <DropdownMenuItem
+                  key={plan.id}
+                  onClick={() => {
+                    setValue("planId", plan.id);
+                    clearErrors("planId");
+                  }}
+                >
+                  {plan.nombre}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {errors.planId && (
+            <p className="text-sm text-red-500">{errors.planId.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Perfil</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full justify-between"
+                disabled={
+                  !servicioIdValue || getSlotsDisponibles(servicioIdValue) <= 0
+                }
+              >
+                {perfilNumeroValue
+                  ? `Perfil ${perfilNumeroValue}`
+                  : getSlotsDisponibles(servicioIdValue) > 0
+                    ? "Seleccionar perfil"
+                    : "No hay perfiles disponibles"}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[var(--radix-dropdown-menu-trigger-width)] p-0"
+            >
+              <div className="p-1">
+                {getSlotsDisponibles(servicioIdValue) <= 0 ? (
+                  <p className="px-2 py-3 text-xs text-muted-foreground">
+                    No hay perfiles disponibles.
+                  </p>
+                ) : perfilesDropdown.length === 0 ? (
+                  <p className="px-2 py-3 text-xs text-muted-foreground">
+                    No hay perfiles libres.
+                  </p>
+                ) : (
+                  perfilesDropdown.map((numero) => (
+                    <DropdownMenuItem
+                      key={numero}
+                      onClick={() => {
+                        setValue("perfilNumero", String(numero));
+                        clearErrors("perfilNumero");
+                      }}
+                    >
+                      Perfil {numero}
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {errors.perfilNumero && (
+            <p className="text-sm text-red-500">
+              {errors.perfilNumero.message}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Precio</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
+              {simboloMoneda}
+            </span>
+            <Input
+              type="text"
+              inputMode="decimal"
+              className="pl-10"
+              {...register("precio")}
+            />
+          </div>
+          {errors.precio && (
+            <p className="text-sm text-red-500">{errors.precio.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Descuento %</Label>
+          <Input type="text" inputMode="decimal" {...register("descuento")} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Fecha de inicio</Label>
+          <Popover open={fechaInicioOpen} onOpenChange={setFechaInicioOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !fechaInicioValue && "text-muted-foreground",
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {fechaInicioValue
+                  ? formatearFecha(fechaInicioValue)
+                  : "Seleccionar fecha"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={fechaInicioValue}
+                onSelect={(date) => setValue("fechaInicio", date || new Date())}
+                defaultMonth={fechaInicioValue ?? new Date()}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+          {errors.fechaInicio && (
+            <p className="text-sm text-red-500">
+              {errors.fechaInicio.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Fecha de fin</Label>
+          <Popover open={fechaFinOpen} onOpenChange={setFechaFinOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !fechaFinValue && "text-muted-foreground",
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {fechaFinValue
+                  ? formatearFecha(fechaFinValue)
+                  : "Seleccionar fecha"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={fechaFinValue}
+                onSelect={(date) => setValue("fechaFin", date || new Date())}
+                defaultMonth={fechaFinValue ?? new Date()}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+          {errors.fechaFin && (
+            <p className="text-sm text-red-500">{errors.fechaFin.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Nombre del Perfil</Label>
+          <Input
+            type="text"
+            {...register("perfilNombre")}
+            placeholder="Ej: Perfil Kids"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Codigo</Label>
+          <Input
+            type="text"
+            inputMode="numeric"
+            {...register("codigo")}
+            onKeyDown={handleCodigoKeyDown}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Precio final</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
+              {simboloMoneda}
+            </span>
+            <Input
+              type="text"
+              value={precioFinal.toFixed(2)}
+              readOnly
+              tabIndex={-1}
+              className="pl-10 pointer-events-none bg-muted/40"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Estado</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full justify-between"
+              >
+                {estadoValue === "inactivo" ? "Inactivo" : "Activo"}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[var(--radix-dropdown-menu-trigger-width)]"
+            >
+              <DropdownMenuItem onClick={() => setValue("estado", "activo")}>
+                Activo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setValue("estado", "inactivo")}>
+                Inactivo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Notas</Label>
+        <Textarea
+          rows={4}
+          {...register("notas")}
+          placeholder="Notas adicionales"
+        />
+      </div>
+    </>
+  );
+}
