@@ -8,7 +8,6 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
 import { getCurrencySymbol } from '@/lib/constants';
-import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import {
   deleteServicioPagoUseCase,
@@ -117,8 +116,8 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
           perfilNumero: venta.perfilNumero ?? null,
           clienteNombre: venta.clienteNombre || undefined,
           createdAt: venta.createdAt,
-          precioFinal: 0,
-          descuento: 0,
+          precioFinal: venta.precioFinal ?? venta.precio ?? 0,
+          descuento: venta.descuento ?? 0,
           fechaInicio: venta.fechaInicio ?? undefined,
           fechaFin: venta.fechaFin ?? undefined,
           notas: venta.notas || '',
@@ -129,27 +128,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
           codigo: venta.codigo || undefined,
           cicloPago: venta.cicloPago || undefined,
         })));
-
-        // Fase 2: Enriquecer con datos de pagos en background (precio, fechas actualizadas)
-        getVentasConUltimoPago(ventasActivas).then((ventasConDatos) => {
-          setVentasServicio(ventasConDatos.map((venta) => ({
-            ventaId: venta.id || undefined,
-            perfilNumero: venta.perfilNumero ?? null,
-            clienteNombre: venta.clienteNombre || undefined,
-            createdAt: venta.createdAt,
-            precioFinal: venta.precioFinal ?? venta.precio ?? 0,
-            descuento: venta.descuento ?? 0,
-            fechaInicio: venta.fechaInicio ?? undefined,
-            fechaFin: venta.fechaFin ?? undefined,
-            notas: venta.notas || '',
-            servicioNombre: venta.servicioNombre,
-            servicioCorreo: venta.servicioCorreo || '',
-            moneda: venta.moneda || undefined,
-            perfilNombre: venta.perfilNombre || undefined,
-            codigo: venta.codigo || undefined,
-            cicloPago: venta.cicloPago || undefined,
-          })));
-        }).catch(() => {/* datos básicos ya están visibles, ignorar error de enriquecimiento */});
 
       } catch (error) {
         console.error('Error cargando ventas del servicio:', error);

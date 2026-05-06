@@ -184,8 +184,31 @@ function applyFilters<T>(
     if (filter.operator === '>') current = current.gt(field, value) as QueryResult<T>;
     if (filter.operator === '>=') current = current.gte(field, value) as QueryResult<T>;
     if (filter.operator === 'in') current = current.in(field, value) as QueryResult<T>;
+    if (filter.operator === 'is') current = current.is(field, value as null | boolean) as QueryResult<T>;
+    if (filter.operator === 'ilike') current = current.ilike(field, String(value)) as QueryResult<T>;
+    if (filter.operator === 'orIlike') current = current.or(buildOrIlikeFilter(collectionName, filter.value)) as QueryResult<T>;
   }
   return current;
+}
+
+function buildOrIlikeFilter(collectionName: CollectionName, value: unknown): string {
+  if (!value || typeof value !== 'object' || !Array.isArray((value as { fields?: unknown }).fields)) {
+    throw new Error('Filtro orIlike invalido');
+  }
+
+  const fields = (value as { fields: unknown[] }).fields.filter(
+    (field): field is string => typeof field === 'string' && field.length > 0
+  );
+  const term = String((value as { value?: unknown }).value ?? '');
+  const pattern = `%${escapeIlikeTerm(term)}%`;
+
+  return fields
+    .map((field) => `${readField(collectionName, field)}.ilike.${pattern}`)
+    .join(',');
+}
+
+function escapeIlikeTerm(value: string): string {
+  return value.trim().replace(/[,%()]/g, ' ').replace(/[%_\\]/g, '\\$&');
 }
 
 async function enrichCollectionRows<T>(collectionName: CollectionName, rows: T[]): Promise<T[]> {
@@ -212,6 +235,7 @@ async function getUsuariosDerivedCount(filters: QueryFilter[]): Promise<number> 
     if (filter.operator === '>') query = query.gt(field, value) as typeof query;
     if (filter.operator === '>=') query = query.gte(field, value) as typeof query;
     if (filter.operator === 'in') query = query.in(field, value) as typeof query;
+    if (filter.operator === 'is') query = query.is(field, value as null | boolean) as typeof query;
   }
 
   const { count, error } = await query;

@@ -335,7 +335,7 @@ export function VentasProximasTable() {
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
       fetchNotificaciones(true);
 
-      await fetchVentas(true);
+      void fetchVentas(true);
 
       setRenovarDialogOpen(false);
 
@@ -419,7 +419,7 @@ export function VentasProximasTable() {
 
       toast.success('Venta cortada exitosamente');
 
-      await fetchVentas(true);
+      void fetchVentas(true);
     } catch (error) {
       console.error('Error cortando venta:', error);
       toast.error('Error al cortar la venta');

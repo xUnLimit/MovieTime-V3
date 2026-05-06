@@ -1,9 +1,8 @@
-import { rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 
 export interface GlobalSyncResult {
-  /** Whether the dashboard rebuild RPC completed successfully. */
+  /** The dashboard now reads live SQL; cache rebuild is no longer part of sync. */
   dashboardRebuilt: boolean;
 }
 
@@ -16,8 +15,8 @@ export interface GlobalSyncResult {
  *   nothing to recompute from the client.
  * - Sale/service display data is read from views, not denormalized columns.
  *
- * The only useful operations left are regenerating notifications and rebuilding
- * the cached dashboard stats from the SQL source of truth.
+ * The only useful operations left are regenerating notifications and refreshing
+ * local notification state. Dashboard data is read live from SQL.
  */
 export async function performGlobalSync(): Promise<GlobalSyncResult> {
   await sincronizarNotificacionesForzado();
@@ -27,7 +26,5 @@ export async function performGlobalSync(): Promise<GlobalSyncResult> {
     useNotificacionesStore.getState().fetchCounts(),
   ]);
 
-  await rebuildDashboardStats();
-
-  return { dashboardRebuilt: true };
+  return { dashboardRebuilt: false };
 }

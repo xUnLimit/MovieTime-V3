@@ -1,8 +1,8 @@
-import { countUsuarios, countVentas, logCacheHit, queryRecentActivityLogs } from '@/lib/supabase/dashboard-repository';
+import { logCacheHit } from '@/lib/supabase/dashboard-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { getDashboardStats, rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
+import { getDashboardHome, getDashboardStats, rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { DashboardStats, DashboardCounts } from '@/types/dashboard';
 import type { ActivityLog } from '@/types';
@@ -18,7 +18,7 @@ interface DashboardState {
   lastStatsFetch: number | null;
 
   fetchDashboard: (force?: boolean) => Promise<void>;
-  /** Solo carga el doc config/dashboard_stats (sin counts de usuarios ni actividad) */
+  /** Solo carga métricas financieras del dashboard (sin counts de usuarios ni actividad) */
   fetchDashboardStats: (force?: boolean) => Promise<void>;
   recalculateDashboard: () => Promise<void>;
   /** Invalidate cache so the dashboard re-fetches on next visit */
@@ -55,24 +55,11 @@ export const useDashboardStore = create<DashboardState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const [stats, ventasActivas, totalClientes, totalRevendedores, recentActivity] =
-            await Promise.all([
-              getDashboardStats(),
-              countVentas([
-                { field: 'estado', operator: '==', value: 'activo' },
-              ]),
-              countUsuarios([
-                { field: 'tipo', operator: '==', value: 'cliente' },
-              ]),
-              countUsuarios([
-                { field: 'tipo', operator: '==', value: 'revendedor' },
-              ]),
-              queryRecentActivityLogs<ActivityLog>(6),
-            ]);
+          const { stats, counts, recentActivity } = await getDashboardHome();
 
           set({
             stats,
-            counts: { ventasActivas, totalClientes, totalRevendedores },
+            counts,
             recentActivity,
             isLoading: false,
             error: null,
@@ -109,7 +96,7 @@ export const useDashboardStore = create<DashboardState>()(
         set({ isRecalculating: true, error: null });
         try {
           await rebuildDashboardStats();
-          // Force-refresh after rebuild so UI reflects new data immediately
+          // Force-refresh after admin repair so UI reflects the live SQL read model.
           await get().fetchDashboard(true);
         } catch (error) {
           const errorMessage =

@@ -35,6 +35,14 @@ export const updateServicio = <T extends Record<string, unknown>>(id: string, pa
   update(ENTITIES.SERVICIOS, id, payload);
 export const removeServicio = (id: string) => remove(ENTITIES.SERVICIOS, id);
 
+export async function removeServicioWithPayments(id: string, deletePayments: boolean): Promise<void> {
+  const { error } = await rpcClient.rpc('delete_servicio_with_payments', {
+    p_servicio_id: id,
+    p_delete_payments: deletePayments,
+  });
+  if (error) throw new Error(error.message);
+}
+
 export async function createServicioWithInitialPayment(
   payload: Record<string, unknown>
 ): Promise<string> {

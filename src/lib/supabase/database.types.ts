@@ -2688,6 +2688,7 @@ export type Database = {
           nombre: string | null
           notas: string | null
           perfiles_disponibles: number | null
+          perfiles_libres: number | null
           perfiles_ocupados: number | null
           plan_tipo_id: string | null
           updated_at: string | null
@@ -2811,6 +2812,7 @@ export type Database = {
           perfiles_ocupados: number | null
           plan_tipo_id: string | null
           plan_tipo_nombre: string | null
+          renovaciones: number | null
           ultima_fecha_inicio: string | null
           ultima_fecha_vencimiento: string | null
           ultima_moneda: string | null
@@ -2820,6 +2822,8 @@ export type Database = {
             | null
           ultimo_costo_original: number | null
           ultimo_costo_usd: number | null
+          ultimo_metodo_pago_id: string | null
+          ultimo_metodo_pago_nombre: string | null
           ultimo_numero_periodo: number | null
           ultimo_periodo_id: string | null
           updated_at: string | null
@@ -3081,6 +3085,7 @@ export type Database = {
           notas: string | null
           perfil_nombre: string | null
           perfil_numero: number | null
+          renovaciones: number | null
           servicio_correo: string | null
           servicio_id: string | null
           servicio_nombre: string | null
@@ -3094,6 +3099,10 @@ export type Database = {
           ultimo_periodo_id: string | null
           ultimo_plan_nombre: string | null
           ultimo_plan_tipo_nombre: string | null
+          ultimo_precio_original: number | null
+          ultimo_descuento: number | null
+          ultimo_metodo_pago_id: string | null
+          ultimo_metodo_pago_nombre: string | null
           ultimo_total_original: number | null
           ultimo_total_usd: number | null
           updated_at: string | null
@@ -3276,6 +3285,34 @@ export type Database = {
         Returns: undefined
       }
       is_authenticated: { Args: never; Returns: boolean }
+      get_dashboard_stats_live: {
+        Args: never
+        Returns: {
+          id: string
+          ingresos_total: number
+          gastos_total: number
+          usuarios_por_mes: Json
+          usuarios_por_dia: Json
+          ingresos_por_mes: Json
+          ingresos_por_dia: Json
+          ingresos_por_categoria: Json
+          ingresos_categorias_por_mes: Json
+          ventas_pronostico: Json
+          servicios_pronostico: Json
+          updated_at: string
+        }[]
+      }
+      get_categorias_full: { Args: never; Returns: Json }
+      get_categorias_counts: { Args: never; Returns: Json }
+      get_dashboard_home: { Args: never; Returns: Json }
+      delete_venta_with_payments: {
+        Args: { p_venta_id: string; p_delete_payments?: boolean }
+        Returns: undefined
+      }
+      delete_servicio_with_payments: {
+        Args: { p_servicio_id: string; p_delete_payments?: boolean }
+        Returns: undefined
+      }
       rebuild_dashboard_financial_stats: { Args: never; Returns: undefined }
       run_all_validations: { Args: never; Returns: Json }
     }

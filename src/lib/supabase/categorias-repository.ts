@@ -11,6 +11,7 @@
 } from './record-core';
 import { supabase } from './client';
 import { ENTITIES, type QueryFilter } from './entities';
+import type { Json } from './database.types';
 import type { Categoria, Plan, TipoPlanConfig } from '@/types';
 
 export { logCacheHit, adjustCategoriaGastos, adjustCategoriaSuscripciones };
@@ -39,23 +40,22 @@ type CategoriaRow = {
 };
 
 export async function getCategoriasFull(): Promise<Categoria[]> {
-  const { data, error } = await supabase.from('categorias').select('*').order('nombre');
+  const { data, error } = await supabase.rpc('get_categorias_full');
   if (error) throw new Error(error.message);
-  return buildCategorias(data ?? []);
+  return jsonCategorias(data);
 }
 
 export async function getCategoriasCounts() {
-  const [{ count: totalCategorias }, { count: categoriasClientes }, { count: categoriasRevendedores }] =
-    await Promise.all([
-      supabase.from('categorias').select('*', { count: 'exact', head: true }),
-      supabase.from('categorias').select('*', { count: 'exact', head: true }).eq('tipo', 'cliente'),
-      supabase.from('categorias').select('*', { count: 'exact', head: true }).eq('tipo', 'revendedor'),
-    ]);
+  const { data, error } = await supabase.rpc('get_categorias_counts');
+  if (error) throw new Error(error.message);
+  const counts = data && typeof data === 'object' && !Array.isArray(data)
+    ? data as Record<string, unknown>
+    : {};
 
   return {
-    totalCategorias: totalCategorias ?? 0,
-    categoriasClientes: categoriasClientes ?? 0,
-    categoriasRevendedores: categoriasRevendedores ?? 0,
+    totalCategorias: Number(counts.totalCategorias ?? 0),
+    categoriasClientes: Number(counts.categoriasClientes ?? 0),
+    categoriasRevendedores: Number(counts.categoriasRevendedores ?? 0),
   };
 }
 
@@ -211,6 +211,34 @@ export async function upsertCategoriaPlanes(categoriaId: string, tiposPlanes: Ti
     );
     if (error) throw new Error(error.message);
   }
+}
+
+function jsonCategorias(data: Json | null): Categoria[] {
+  if (!Array.isArray(data)) return [];
+  return data.map((row) => {
+    const record = row as Record<string, unknown>;
+    return {
+      id: String(record.id),
+      nombre: String(record.nombre ?? ''),
+      tipo: record.tipo === 'revendedor' ? 'revendedor' : 'cliente',
+      tipoCategoria: record.tipoCategoria === 'plataforma_streaming' || record.tipoCategoria === 'otros'
+        ? record.tipoCategoria
+        : undefined,
+      tiposPlanes: Array.isArray(record.tiposPlanes) ? record.tiposPlanes as TipoPlanConfig[] : [],
+      planes: Array.isArray(record.planes) ? record.planes as Plan[] : [],
+      notas: typeof record.notas === 'string' ? record.notas : undefined,
+      activo: Boolean(record.activo),
+      totalServicios: Number(record.totalServicios ?? 0),
+      serviciosActivos: Number(record.serviciosActivos ?? 0),
+      perfilesDisponiblesTotal: Number(record.perfilesDisponiblesTotal ?? 0),
+      ventasTotales: Number(record.ventasTotales ?? 0),
+      ingresosTotales: Number(record.ingresosTotales ?? 0),
+      gastosTotal: Number(record.gastosTotal ?? 0),
+      createdAt: record.createdAt ? new Date(String(record.createdAt)) : new Date(0),
+      updatedAt: record.updatedAt ? new Date(String(record.updatedAt)) : new Date(0),
+      createdBy: typeof record.createdBy === 'string' ? record.createdBy : undefined,
+    };
+  });
 }
 
 async function deactivateMissingCategoriaPlanes(

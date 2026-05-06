@@ -18,7 +18,6 @@ import { USUARIOS_COLLECTION } from '@/lib/use-cases/usuarios-use-cases';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { useUsuariosStore } from '@/store/usuariosStore';
 import { FilterOption } from '@/lib/supabase/pagination';
-import { normalizePhoneSearch, normalizeSearchText } from '@/lib/utils';
 import {
   getUsuarioMetodoPagoNombre,
   isPendingUserPaymentMethodId,
@@ -37,7 +36,7 @@ const ALL_PAYMENT_METHODS_LABEL = 'Todos los métodos';
 
 function UsuariosPageContent() {
   const router = useRouter();
-  const { totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos, fetchCounts, fetchUsuarios, usuarios } = useUsuariosStore();
+  const { totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos, fetchCounts } = useUsuariosStore();
   const { fetchMetodosPagoUsuarios } = useMetodosPagoStore();
 
   const [activeTab, setActiveTab] = useState('todos');
@@ -108,72 +107,40 @@ function UsuariosPageContent() {
     }
 
     if (selectedMetodoPagoFilter !== ALL_PAYMENT_METHODS_VALUE) {
-      nextFilters.push({ field: 'metodoPagoId', operator: '==', value: selectedMetodoPagoFilter });
+      nextFilters.push(
+        isPendingUserPaymentMethodId(selectedMetodoPagoFilter)
+          ? { field: 'metodoPagoId', operator: 'is', value: null }
+          : { field: 'metodoPagoId', operator: '==', value: selectedMetodoPagoFilter }
+      );
+    }
+
+    if (isSearchMode) {
+      nextFilters.push({
+        field: '__search__',
+        operator: 'orIlike',
+        value: {
+          fields: ['nombre', 'apellido', 'telefono'],
+          value: searchQuery,
+        },
+      });
     }
 
     return nextFilters;
-  }, [activeTab, selectedMetodoPagoFilter]);
+  }, [activeTab, isSearchMode, searchQuery, selectedMetodoPagoFilter]);
 
-  // Paginación server-side (solo cuando NO hay búsqueda activa)
+  // Paginación server-side con filtros y búsqueda en SQL.
   const { data: pageData, isLoading: isLoadingPage, hasMore, hasPrevious, page, next, previous, refresh } = useServerPagination<Usuario>({
     collectionName: USUARIOS_COLLECTION,
     filters,
     pageSize,
   });
 
-  // Modo búsqueda: fetchAll con cache y filtrar en memoria
-  const [isLoadingSearch, setIsLoadingSearch] = useState(false);
-  useEffect(() => {
-    if (!isSearchMode) return;
-    let cancelled = false;
-    const load = async () => {
-      setIsLoadingSearch(true);
-      await fetchUsuarios();
-      if (!cancelled) setIsLoadingSearch(false);
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [isSearchMode, fetchUsuarios]);
-
-  const searchResults = useMemo(() => {
-    if (!isSearchMode) return [];
-    const q = normalizeSearchText(searchQuery);
-    const phoneQuery = normalizePhoneSearch(searchQuery);
-    const base = activeTab === 'clientes'
-      ? usuarios.filter(u => u.tipo === 'cliente')
-      : activeTab === 'revendedores'
-        ? usuarios.filter(u => u.tipo === 'revendedor')
-        : usuarios;
-    return base.filter(u => {
-      const metodoMatches = selectedMetodoPagoFilter === ALL_PAYMENT_METHODS_VALUE
-        ? true
-        : isPendingUserPaymentMethodId(selectedMetodoPagoFilter)
-          ? isPendingUserPaymentMethodId(u.metodoPagoId)
-          : u.metodoPagoId === selectedMetodoPagoFilter;
-      const nombreCompleto = normalizeSearchText(`${u.nombre} ${u.apellido ?? ''}`);
-      const nombre = normalizeSearchText(u.nombre);
-      const apellido = normalizeSearchText(u.apellido);
-      const telefono = normalizePhoneSearch(u.telefono);
-      return (
-        metodoMatches &&
-        (
-          nombreCompleto.includes(q) ||
-          nombre.includes(q) ||
-          apellido.includes(q) ||
-          (phoneQuery.length > 0 && telefono.includes(phoneQuery))
-        )
-      );
-    });
-  }, [isSearchMode, searchQuery, usuarios, activeTab, selectedMetodoPagoFilter]);
-
-  const isLoading = isSearchMode ? isLoadingSearch : isLoadingPage;
-  const displayData = isSearchMode ? searchResults : pageData;
+  const isLoading = isLoadingPage;
+  const displayData = pageData;
 
   // Total según tab (para calcular páginas)
   const totalCurrentTab = activeTab === 'clientes' ? totalClientes : activeTab === 'revendedores' ? totalRevendedores : totalClientes + totalRevendedores;
-  const totalPages = isSearchMode
-    ? Math.max(1, Math.ceil(searchResults.length / pageSize))
-    : selectedMetodoPagoFilter === ALL_PAYMENT_METHODS_VALUE
+  const totalPages = selectedMetodoPagoFilter === ALL_PAYMENT_METHODS_VALUE && !isSearchMode
       ? Math.max(1, Math.ceil(totalCurrentTab / pageSize))
       : Math.max(1, hasMore ? page + 1 : page);
 
@@ -266,7 +233,7 @@ function UsuariosPageContent() {
             onView={handleView}
             title="Todos los usuarios"
             isLoading={isLoading}
-            pagination={isSearchMode ? undefined : paginationProps}
+            pagination={paginationProps}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onRefresh={refresh}
@@ -283,7 +250,7 @@ function UsuariosPageContent() {
             onView={handleView}
             title="Clientes"
             isLoading={isLoading}
-            pagination={isSearchMode ? undefined : paginationProps}
+            pagination={paginationProps}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onRefresh={refresh}
@@ -299,7 +266,7 @@ function UsuariosPageContent() {
             onEdit={handleEdit}
             onView={handleView}
             isLoading={isLoading}
-            pagination={isSearchMode ? undefined : paginationProps}
+            pagination={paginationProps}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onRefresh={refresh}

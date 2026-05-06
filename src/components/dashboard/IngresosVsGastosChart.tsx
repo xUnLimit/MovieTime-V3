@@ -45,7 +45,7 @@ export function IngresosVsGastosChart() {
     const ingresosPorDia: IngresosDia[] = stats?.ingresosPorDia ?? [];
     const currentDate = new Date();
     if (selectedMonth === 'actual') {
-      // Usar datos reales por día desde dashboard_stats (0 reads extra)
+      // Usar datos reales por día desde el read model SQL del dashboard.
       // Incluye días futuros del mes actual si tienen datos registrados
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);

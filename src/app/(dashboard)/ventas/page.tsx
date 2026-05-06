@@ -15,13 +15,11 @@ import { useServerPagination } from '@/hooks/useServerPagination';
 import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas-use-cases';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { useVentasStore } from '@/store/ventasStore';
-import { normalizeSearchText } from '@/lib/utils';
 import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
-import { getVentasConUltimoPago, VentaConUltimoPago } from '@/lib/services/ventaSyncService';
 
 function VentasPageContent() {
-  const { deleteVenta, fetchCounts, fetchVentas, ventas } = useVentasStore();
+  const { deleteVenta, fetchCounts } = useVentasStore();
   const { categorias, fetchCategorias } = useCategoriasStore();
 
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'inactivas'>('todas');
@@ -47,10 +45,20 @@ function VentasPageContent() {
     if (isCategoriaFiltered) {
       f.push({ field: 'categoriaId', operator: '==', value: selectedCategoriaId });
     }
+    if (isSearchMode) {
+      f.push({
+        field: '__search__',
+        operator: 'orIlike',
+        value: {
+          fields: ['clienteNombre', 'servicioNombre', 'servicioCorreo'],
+          value: searchQuery,
+        },
+      });
+    }
     return f;
-  }, [activeTab, isCategoriaFiltered, selectedCategoriaId]);
+  }, [activeTab, isCategoriaFiltered, isSearchMode, searchQuery, selectedCategoriaId]);
 
-  // Paginación server-side (solo cuando NO hay búsqueda activa)
+  // Paginación server-side con filtros y búsqueda en SQL.
   const { data: ventasPaginadas, isLoading: isLoadingPage, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<VentaDoc>({
     collectionName: VENTAS_COLLECTION,
     filters,
@@ -65,81 +73,11 @@ function VentasPageContent() {
   // Recargar ventas si se actualizó el nombre de un cliente desde el módulo de usuarios
   useEffect(() => {
     const handler = () => {
-      fetchVentas(true);
       refresh();
     };
     window.addEventListener('usuario-nombre-updated', handler);
     return () => window.removeEventListener('usuario-nombre-updated', handler);
-  }, [fetchVentas, refresh]);
-
-  // Modo búsqueda/filtro: fetchAll con cache y filtrar en memoria
-  const [isLoadingSearch, setIsLoadingSearch] = useState(false);
-  useEffect(() => {
-    if (!isSearchMode) return;
-    let cancelled = false;
-    const load = async () => {
-      setIsLoadingSearch(true);
-      await fetchVentas();
-      if (!cancelled) setIsLoadingSearch(false);
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [isSearchMode, fetchVentas]);
-
-  const searchResults = useMemo((): VentaDoc[] => {
-    if (!isSearchMode) return [];
-    const q = normalizeSearchText(searchQuery);
-    let base = activeTab === 'activas'
-      ? ventas.filter(v => v.estado === 'activo')
-      : activeTab === 'inactivas'
-        ? ventas.filter(v => v.estado === 'inactivo')
-        : ventas;
-    if (isCategoriaFiltered) {
-      base = base.filter(v => v.categoriaId === selectedCategoriaId);
-    }
-    if (q) {
-      base = base.filter(v =>
-        normalizeSearchText(v.clienteNombre).includes(q) ||
-        normalizeSearchText(v.servicioNombre).includes(q) ||
-        normalizeSearchText(v.servicioCorreo).includes(q)
-      );
-    }
-    return base.sort((a, b) => {
-      const field = orderBy === 'updatedAt' ? 'updatedAt' : 'createdAt';
-      const dateA = a[field] ? new Date(a[field] as Date).getTime() : 0;
-      const dateB = b[field] ? new Date(b[field] as Date).getTime() : 0;
-      return dateB - dateA;
-    });
-  }, [isSearchMode, searchQuery, ventas, activeTab, isCategoriaFiltered, selectedCategoriaId, orderBy]);
-
-  const ventasParaMostrar = isSearchMode ? searchResults : ventasPaginadas;
-  const isLoadingVentas = isSearchMode ? isLoadingSearch : isLoadingPage;
-
-  // Cargar datos del último pago desde PagoVenta
-  const [ventasConUltimoPago, setVentasConUltimoPago] = useState<VentaConUltimoPago[]>([]);
-  const [loadingDatos, setLoadingDatos] = useState(false);
-
-  useEffect(() => {
-    const cargarDatosUltimoPago = async () => {
-      if (ventasParaMostrar.length === 0) {
-        setVentasConUltimoPago([]);
-        return;
-      }
-
-      setLoadingDatos(true);
-      try {
-        const ventasConPagoActual = await getVentasConUltimoPago(ventasParaMostrar);
-        setVentasConUltimoPago(ventasConPagoActual);
-      } catch (error) {
-        console.error('Error cargando datos del último pago de ventas:', error);
-        setVentasConUltimoPago(ventasParaMostrar as VentaConUltimoPago[]);
-      } finally {
-        setLoadingDatos(false);
-      }
-    };
-
-    cargarDatosUltimoPago();
-  }, [ventasParaMostrar]);
+  }, [refresh]);
 
   const tituloTab = useMemo(() => {
     switch (activeTab) {
@@ -239,8 +177,8 @@ function VentasPageContent() {
 
         <TabsContent value={activeTab} className="space-y-4">
           <VentasTable
-            ventas={ventasConUltimoPago}
-            isLoading={isLoadingVentas || loadingDatos}
+            ventas={ventasPaginadas}
+            isLoading={isLoadingPage}
             title={tituloTab}
             onDelete={handleDeleteVenta}
             searchQuery={searchQuery}
@@ -250,13 +188,12 @@ function VentasPageContent() {
             onCategoriaChange={(id) => { setSelectedCategoriaId(id); }}
             orderBy={orderBy}
             onOrderByChange={setOrderBy}
-            // Paginación (oculta en modo búsqueda/filtro)
-            hasMore={isSearchMode ? false : hasMore}
-            hasPrevious={isSearchMode ? false : hasPrevious}
-            page={isSearchMode ? 1 : page}
+            hasMore={hasMore}
+            hasPrevious={hasPrevious}
+            page={page}
             onNext={next}
             onPrevious={previous}
-            showPagination={!isSearchMode}
+            showPagination
             pageSize={pageSize}
             onPageSizeChange={(size) => { setPageSize(size); refresh(); }}
           />

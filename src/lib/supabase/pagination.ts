@@ -1,11 +1,11 @@
 import { supabase } from './client';
-import { toSnakeCase } from './mappers';
-import { ENTITIES } from './entities';
+import { ENTITIES, type CollectionName } from './entities';
+import { readField, normalizeFilterValue } from './filters';
 import type { Database } from './database.types';
 
 export interface FilterOption {
   field: string;
-  operator: '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in';
+  operator: '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in' | 'is' | 'ilike' | 'orIlike';
   value: unknown;
 }
 
@@ -38,6 +38,9 @@ type QueryLike<T> = PromiseLike<{ data: T[] | null; count?: number | null; error
   gt: (field: string, value: unknown) => QueryLike<T>;
   gte: (field: string, value: unknown) => QueryLike<T>;
   in: (field: string, value: readonly unknown[]) => QueryLike<T>;
+  is: (field: string, value: null | boolean) => QueryLike<T>;
+  ilike: (field: string, value: string) => QueryLike<T>;
+  or: (filters: string) => QueryLike<T>;
 };
 
 const READ_ENTITY_BY_COLLECTION: Record<string, PublicEntity> = {
@@ -73,20 +76,10 @@ export async function getPaginated<T>(
   let query = supabase
     .from(entity as never)
     .select('*')
-    .order(snakeField(orderByField), { ascending: orderDirection === 'asc' })
+    .order(readField(collectionName as CollectionName, orderByField), { ascending: orderDirection === 'asc' })
     .range(start, end) as unknown as QueryLike<unknown>;
 
-  for (const filter of filters) {
-    const field = snakeField(filter.field);
-    const value = normalizeFilterValue(field, filter.value);
-    if (filter.operator === '==') query = query.eq(field, value);
-    if (filter.operator === '!=') query = query.neq(field, value);
-    if (filter.operator === '<') query = query.lt(field, value);
-    if (filter.operator === '<=') query = query.lte(field, value);
-    if (filter.operator === '>') query = query.gt(field, value);
-    if (filter.operator === '>=') query = query.gte(field, value);
-    if (filter.operator === 'in') query = query.in(field, value as readonly unknown[]);
-  }
+  query = applyFilters(collectionName, query, filters);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
@@ -118,48 +111,11 @@ export async function getCount(
     .from(entity as never)
     .select('*', { count: 'exact', head: true }) as unknown as QueryLike<unknown>;
 
-  for (const filter of filters) {
-    const field = snakeField(filter.field);
-    const value = normalizeFilterValue(field, filter.value);
-    if (filter.operator === '==') query = query.eq(field, value);
-    if (filter.operator === '!=') query = query.neq(field, value);
-    if (filter.operator === '<') query = query.lt(field, value);
-    if (filter.operator === '<=') query = query.lte(field, value);
-    if (filter.operator === '>') query = query.gt(field, value);
-    if (filter.operator === '>=') query = query.gte(field, value);
-    if (filter.operator === 'in') query = query.in(field, value as readonly unknown[]);
-  }
+  query = applyFilters(collectionName, query, filters);
 
   const { count, error } = await query;
   if (error) throw new Error(error.message);
   return count ?? 0;
-}
-
-function snakeField(field: string) {
-  if (field === '__name__') return 'id';
-  return Object.keys(toSnakeCase<Record<string, unknown>>({ [field]: true }))[0];
-}
-
-function normalizeFilterValue(field: string, value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((item) => normalizeFilterValue(field, item));
-  }
-
-  if (value instanceof Date) {
-    return isDateOnlyField(field) ? toDateOnly(value) : value.toISOString();
-  }
-
-  return value;
-}
-
-function isDateOnlyField(field: string) {
-  return (
-    field.includes('fecha_') ||
-    field.startsWith('ultima_fecha_') ||
-    field.startsWith('periodo_') ||
-    field.endsWith('_snapshot') ||
-    field === 'scheduled_for'
-  );
 }
 
 function mapPaginatedRow(collectionName: string, row: unknown): unknown {
@@ -176,6 +132,22 @@ function mapPaginatedRow(collectionName: string, row: unknown): unknown {
       fechaInicio: record.fechaInicio ?? record.ultimaFechaInicio,
       fechaVencimiento: record.fechaVencimiento ?? record.ultimaFechaVencimiento,
       renovacionAutomatica: Boolean(record.renovacionAutomatica ?? record.ultimaRenovacionAutomatica ?? false),
+    };
+  }
+
+  if (collectionName === ENTITIES.VENTAS) {
+    return {
+      ...record,
+      fechaInicio: record.fechaInicio ?? record.ultimaFechaInicio,
+      fechaFin: record.fechaFin ?? record.ultimaFechaFin,
+      cicloPago: record.cicloPago ?? record.ultimoCicloPago,
+      precio: Number(record.precio ?? record.ultimoPrecioOriginal ?? record.ultimoTotalOriginal ?? 0),
+      precioFinal: Number(record.precioFinal ?? record.ultimoTotalOriginal ?? 0),
+      descuento: Number(record.descuento ?? record.ultimoDescuento ?? 0),
+      metodoPagoId: record.metodoPagoId ?? record.ultimoMetodoPagoId,
+      metodoPagoNombre: record.metodoPagoNombre ?? record.ultimoMetodoPagoNombre,
+      moneda: record.moneda ?? record.ultimaMoneda ?? 'USD',
+      renovaciones: Number(record.renovaciones ?? Math.max(Number(record.ultimoNumeroPeriodo ?? 1) - 1, 0)),
     };
   }
 
@@ -296,9 +268,52 @@ function dateOnlyToLocalDate(value: string): Date {
   return new Date(year, month - 1, day);
 }
 
-function toDateOnly(value: Date) {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+function applyFilters<T>(
+  collectionName: string,
+  query: QueryLike<T>,
+  filters: FilterOption[]
+): QueryLike<T> {
+  const collection = collectionName as CollectionName;
+  let current = query;
+
+  for (const filter of filters) {
+    if (filter.operator === 'orIlike') {
+      current = current.or(buildOrIlikeFilter(collection, filter.value));
+      continue;
+    }
+
+    const field = readField(collection, filter.field);
+    const value = normalizeFilterValue(field, filter.value);
+    if (filter.operator === '==') current = current.eq(field, value);
+    if (filter.operator === '!=') current = current.neq(field, value);
+    if (filter.operator === '<') current = current.lt(field, value);
+    if (filter.operator === '<=') current = current.lte(field, value);
+    if (filter.operator === '>') current = current.gt(field, value);
+    if (filter.operator === '>=') current = current.gte(field, value);
+    if (filter.operator === 'in') current = current.in(field, value as readonly unknown[]);
+    if (filter.operator === 'is') current = current.is(field, value as null | boolean);
+    if (filter.operator === 'ilike') current = current.ilike(field, String(value));
+  }
+
+  return current;
+}
+
+function buildOrIlikeFilter(collectionName: CollectionName, value: unknown): string {
+  if (!value || typeof value !== 'object' || !Array.isArray((value as { fields?: unknown }).fields)) {
+    throw new Error('Filtro orIlike invalido');
+  }
+
+  const fields = (value as { fields: unknown[] }).fields.filter(
+    (field): field is string => typeof field === 'string' && field.length > 0
+  );
+  const term = String((value as { value?: unknown }).value ?? '');
+  const pattern = `%${escapeIlikeTerm(term)}%`;
+
+  return fields
+    .map((field) => `${readField(collectionName, field)}.ilike.${pattern}`)
+    .join(',');
+}
+
+function escapeIlikeTerm(value: string): string {
+  return value.trim().replace(/[,%()]/g, ' ').replace(/[%_\\]/g, '\\$&');
 }

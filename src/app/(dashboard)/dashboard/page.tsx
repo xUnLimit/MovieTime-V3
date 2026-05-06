@@ -212,7 +212,7 @@ export default function DashboardPage() {
       toast.success('Sistema sincronizado correctamente', {
         id: toastId,
         description:
-          'Notificaciones regeneradas y métricas del dashboard reconstruidas desde la base de datos.',
+          'Notificaciones regeneradas y dashboard actualizado desde consultas SQL vivas.',
       });
     } catch (error) {
       console.error('Error during global sync:', error);

@@ -11,6 +11,7 @@ import {
   queryServicios,
   removePagoServicio,
   removeServicio,
+  removeServicioWithPayments,
   updateLatestServicioPeriodo,
   updateServicio,
   updateServicioPaymentAndPeriod,
@@ -379,10 +380,10 @@ export async function deleteServicioUseCase(
   );
 
   if (options.deletePayments) {
-    await Promise.all(pagosActuales.map((pago) => removePagoServicio(pago.id)));
+    await removeServicioWithPayments(id, true);
+  } else {
+    await removeServicio(id);
   }
-
-  await removeServicio(id);
 
   if (gastosRealUSD > 0) {
     await adjustCategoriaGastos(servicio.categoriaId, -gastosRealUSD);

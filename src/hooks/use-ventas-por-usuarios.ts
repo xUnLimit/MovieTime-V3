@@ -5,7 +5,6 @@ import { differenceInCalendarDays } from 'date-fns';
 
 import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { logVentasCacheHit } from '@/lib/utils/devLogger';
-import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
@@ -91,13 +90,7 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
     const load = async () => {
       setIsLoading(true);
       try {
-        // Paso 1: Cargar ventas base (solo metadatos) — chunks de 30 para evitar límite 'in'
-        const ventasBase = await fetchVentasByClienteIdsUseCase<VentaDoc>(clienteIds);
-
-        if (cancelled) return;
-
-        // Paso 2: Cargar datos actuales desde PagoVenta (fuente de verdad)
-        const ventasConDatos = await getVentasConUltimoPago(ventasBase);
+        const ventasConDatos = await fetchVentasByClienteIdsUseCase<VentaDoc>(clienteIds);
 
         if (cancelled) return;
 
@@ -154,9 +147,7 @@ export function useVentasPorUsuarios(clienteIds: string[], { enabled = true } = 
 
       setIsLoading(true);
       try {
-        // chunks de 30 para evitar límite 'in'
-        const ventasBase = await fetchVentasByClienteIdsUseCase<VentaDoc>(clienteIds);
-        const ventasConDatos = await getVentasConUltimoPago(ventasBase);
+        const ventasConDatos = await fetchVentasByClienteIdsUseCase<VentaDoc>(clienteIds);
         const now = new Date();
         const result: Record<string, VentasUsuarioStats> = {};
 

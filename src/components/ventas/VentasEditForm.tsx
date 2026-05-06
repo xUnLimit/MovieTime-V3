@@ -650,8 +650,10 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         nextActivo &&
         prevServicioId !== nextServicioId
       ) {
-        await updatePerfilOcupado(prevServicioId, false);
-        await updatePerfilOcupado(nextServicioId, true);
+        await Promise.all([
+          updatePerfilOcupado(prevServicioId, false),
+          updatePerfilOcupado(nextServicioId, true),
+        ]);
       }
 
       invalidateDashboardCache({ entity: "venta", entityId: venta.id });

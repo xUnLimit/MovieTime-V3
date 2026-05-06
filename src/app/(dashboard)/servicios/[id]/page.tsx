@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
 import { useCategoriasStore } from '@/store/categoriasStore';
-import { useServiciosStore } from '@/store/serviciosStore';
 import { Servicio } from '@/types';
 import type { FilterOption } from '@/lib/supabase/pagination';
 
@@ -23,7 +22,6 @@ function ServiciosCategoriaPageContent() {
   const categoriaId = params.id as string;
 
   const { categorias, fetchCategorias } = useCategoriasStore();
-  const { fetchServicios, servicios: todosLosServicios } = useServiciosStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [cicloFilter, setCicloFilter] = useState('todos');
@@ -31,9 +29,6 @@ function ServiciosCategoriaPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('activo');
   const [pageSize, setPageSize] = useState(10);
   const isSearchMode = searchTerm.trim().length > 0;
-  // Si hay filtros client-side activos (ciclo o perfil), necesitamos fetchAll para no perder resultados de otras páginas
-  const needsFullFetch = cicloFilter !== 'todos' || perfilFilter !== 'todos';
-  const isFetchAllMode = isSearchMode || needsFullFetch;
 
   useEffect(() => {
     fetchCategorias();
@@ -42,7 +37,8 @@ function ServiciosCategoriaPageContent() {
   // Construir filtros dinámicos
   const filters = useMemo(() => {
     const baseFilters: FilterOption[] = [
-      { field: 'categoriaId', operator: '==', value: categoriaId }
+      { field: 'categoriaId', operator: '==', value: categoriaId },
+      { field: 'enReposo', operator: '==', value: false },
     ];
 
     if (estadoFilter === 'activo') {
@@ -51,10 +47,31 @@ function ServiciosCategoriaPageContent() {
       baseFilters.push({ field: 'activo', operator: '==', value: false });
     }
 
-    return baseFilters;
-  }, [categoriaId, estadoFilter]);
+    if (cicloFilter !== 'todos') {
+      baseFilters.push({ field: 'cicloPago', operator: '==', value: cicloFilter });
+    }
 
-  // Paginación con filtros (solo cuando NO hay búsqueda activa)
+    if (perfilFilter === 'con_disponibles') {
+      baseFilters.push({ field: 'perfilesLibres', operator: '>', value: 0 });
+    } else if (perfilFilter === 'sin_disponibles') {
+      baseFilters.push({ field: 'perfilesLibres', operator: '<=', value: 0 });
+    }
+
+    if (isSearchMode) {
+      baseFilters.push({
+        field: '__search__',
+        operator: 'orIlike',
+        value: {
+          fields: ['nombre', 'correo'],
+          value: searchTerm,
+        },
+      });
+    }
+
+    return baseFilters;
+  }, [categoriaId, cicloFilter, estadoFilter, isSearchMode, perfilFilter, searchTerm]);
+
+  // Paginación con filtros y búsqueda en SQL.
   const {
     data: serviciosPaginados,
     isLoading: isLoadingPage,
@@ -72,42 +89,8 @@ function ServiciosCategoriaPageContent() {
     orderDirection: 'asc',
   });
 
-  // Modo fetchAll: cuando hay búsqueda activa O filtros client-side (ciclo/perfil)
-  const [isLoadingFetchAll, setIsLoadingFetchAll] = useState(false);
-  useEffect(() => {
-    if (!isFetchAllMode) return;
-    let cancelled = false;
-    const load = async () => {
-      setIsLoadingFetchAll(true);
-      await fetchServicios();
-      if (!cancelled) setIsLoadingFetchAll(false);
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [isFetchAllMode, fetchServicios]);
-
-  const fetchAllResults = useMemo((): Servicio[] => {
-    if (!isFetchAllMode) return [];
-    const q = searchTerm.trim().toLowerCase();
-    return todosLosServicios.filter(s => {
-      if (s.categoriaId !== categoriaId) return false;
-      if (s.enReposo) return false; // Hide reposo services from Servicios module
-      if (estadoFilter === 'activo' && !s.activo) return false;
-      if (estadoFilter === 'inactivo' && s.activo) return false;
-      const matchSearch = !isSearchMode ||
-        (s.nombre ?? '').toLowerCase().includes(q) ||
-        (s.correo ?? '').toLowerCase().includes(q);
-      const matchCiclo = cicloFilter === 'todos' || s.cicloPago === cicloFilter;
-      const perfilesLibres = (s.perfilesDisponibles || 0) - (s.perfilesOcupados || 0);
-      const matchPerfil = perfilFilter === 'todos' ||
-        (perfilFilter === 'con_disponibles' && perfilesLibres > 0) ||
-        (perfilFilter === 'sin_disponibles' && perfilesLibres <= 0);
-      return matchSearch && matchCiclo && matchPerfil;
-    });
-  }, [isFetchAllMode, isSearchMode, searchTerm, todosLosServicios, categoriaId, estadoFilter, cicloFilter, perfilFilter]);
-
-  const isLoading = isFetchAllMode ? isLoadingFetchAll : isLoadingPage;
-  const servicios = isFetchAllMode ? fetchAllResults : serviciosPaginados;
+  const isLoading = isLoadingPage;
+  const servicios = serviciosPaginados;
 
   const categoria = categorias.find(c => c.id === categoriaId);
 
@@ -131,10 +114,6 @@ function ServiciosCategoriaPageContent() {
       window.removeEventListener('servicio-deleted', handleServicioDeleted);
     };
   }, [refresh]);
-
-  // En modo fetchAll, los filtros ya están aplicados en fetchAllResults.
-  // En modo paginación pura (sin filtros), no se necesita filtrado adicional.
-  const serviciosFiltrados = servicios.filter(s => !s.enReposo);
 
   const handleEdit = (id: string) => {
     router.push(`/servicios/${id}/editar?from=/servicios/${categoriaId}`);
@@ -187,7 +166,7 @@ function ServiciosCategoriaPageContent() {
       />
 
       <ServiciosCategoriaTableDetalle
-        servicios={serviciosFiltrados}
+        servicios={servicios}
         onEdit={handleEdit}
         onView={handleView}
         title="Todos los servicios"
@@ -198,10 +177,10 @@ function ServiciosCategoriaPageContent() {
         perfilFilter={perfilFilter}
         onPerfilChange={setPerfilFilter}
         isLoading={isLoading}
-        hasMore={isFetchAllMode ? false : hasMore}
-        hasPrevious={isFetchAllMode ? false : hasPrevious}
-        page={isFetchAllMode ? 1 : page}
-        showPagination={!isFetchAllMode}
+        hasMore={hasMore}
+        hasPrevious={hasPrevious}
+        page={page}
+        showPagination
         pageSize={pageSize}
         onPageSizeChange={setPageSize}
         onNext={next}

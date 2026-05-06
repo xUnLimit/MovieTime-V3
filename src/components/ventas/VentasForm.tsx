@@ -731,11 +731,18 @@ export function VentasForm() {
       }
 
       if (estadoVenta !== "inactivo") {
-        for (const item of items) {
-          if (item.perfilNumero) {
-            await updatePerfilOcupado(item.servicioId, true);
-          }
-        }
+        const servicioIdsConPerfil = Array.from(
+          new Set(
+            items
+              .filter((item) => item.perfilNumero)
+              .map((item) => item.servicioId),
+          ),
+        );
+        await Promise.all(
+          servicioIdsConPerfil.map((servicioId) =>
+            updatePerfilOcupado(servicioId, true),
+          ),
+        );
       }
       if (notifyCliente && estadoVenta !== "inactivo" && editedMessage) {
         const phoneRaw = clienteSeleccionado?.telefono || "";

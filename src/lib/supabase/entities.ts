@@ -23,7 +23,7 @@ export type PublicEntity = PublicTableName | PublicViewName;
 
 export type QueryFilter = {
   field: string;
-  operator: '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in';
+  operator: '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in' | 'is' | 'ilike' | 'orIlike';
   value: unknown;
 };
 
@@ -35,6 +35,9 @@ export type QueryBuilder = {
   gt: (field: string, value: unknown) => QueryBuilder;
   gte: (field: string, value: unknown) => QueryBuilder;
   in: (field: string, value: unknown) => QueryBuilder;
+  is: (field: string, value: null | boolean) => QueryBuilder;
+  ilike: (field: string, value: string) => QueryBuilder;
+  or: (filters: string) => QueryBuilder;
 };
 
 export const TABLE_BY_COLLECTION: Record<CollectionName, PublicTableName> = {

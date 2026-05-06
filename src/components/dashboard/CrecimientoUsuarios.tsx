@@ -40,7 +40,7 @@ export function CrecimientoUsuarios() {
     const currentDate = new Date();
 
     if (selectedPeriod === 'actual') {
-      // Usar datos reales por día desde dashboard_stats (0 reads extra)
+      // Usar datos reales por día desde el read model SQL del dashboard.
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
       const days = eachDayOfInterval({ start: monthStart, end: monthEnd });

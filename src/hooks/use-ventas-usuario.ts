@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { fetchPagosVentaByVentaIdsUseCase, fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
-import { getVentasConUltimoPago } from '@/lib/services/ventaSyncService';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
@@ -104,14 +103,7 @@ export function useVentasUsuario(usuarioId: string) {
     const load = async () => {
       setIsLoading(true);
       try {
-        // Paso 1: Cargar ventas base (solo metadatos)
-        const ventasBase = await fetchVentasByClienteUseCase<VentaDoc>(usuarioId);
-
-
-        if (cancelled) return;
-
-        // Paso 2: Cargar datos actuales desde PagoVenta (fuente de verdad)
-        const ventasConDatos = await getVentasConUltimoPago(ventasBase);
+        const ventasConDatos = await fetchVentasByClienteUseCase<VentaDoc & { renovaciones?: number }>(usuarioId);
 
         if (cancelled) return;
 
@@ -134,25 +126,9 @@ export function useVentasUsuario(usuarioId: string) {
           moneda:          venta.moneda,
         }));
 
-        // Query 2: Renovaciones por venta (desde pagosVenta)
-        const ventaIds = mapped.map((v) => v.id).filter(Boolean);
-
-        let renovaciones: Record<string, number> = {};
-        if (ventaIds.length > 0) {
-          const pagos = await fetchPagosVentaByVentaIdsUseCase<Record<string, unknown>>(ventaIds);
-
-          // Contar renovaciones por venta (excluir pago inicial)
-          const renovacionesMap: Record<string, number> = {};
-          pagos.forEach((pago) => {
-            const ventaId = pago.ventaId as string;
-            if (!ventaId) return;
-            const isPagoInicial = pago.isPagoInicial === true;
-            if (!isPagoInicial) {
-              renovacionesMap[ventaId] = (renovacionesMap[ventaId] || 0) + 1;
-            }
-          });
-          renovaciones = renovacionesMap;
-        }
+        const renovaciones = Object.fromEntries(
+          ventasConDatos.map((venta) => [venta.id, Number(venta.renovaciones ?? 0)])
+        );
 
         if (cancelled) return;
 
@@ -184,8 +160,7 @@ export function useVentasUsuario(usuarioId: string) {
       setIsLoading(true);
 
       try {
-        const ventasBase = await fetchVentasByClienteUseCase<VentaDoc>(usuarioId);
-        const ventasConDatos = await getVentasConUltimoPago(ventasBase);
+        const ventasConDatos = await fetchVentasByClienteUseCase<VentaDoc & { renovaciones?: number }>(usuarioId);
 
         const mapped: VentaUsuarioDoc[] = ventasConDatos.map((venta) => ({
           id:              venta.id,
@@ -206,20 +181,9 @@ export function useVentasUsuario(usuarioId: string) {
           moneda:          venta.moneda,
         }));
 
-        const ventaIds = mapped.map((v) => v.id).filter(Boolean);
-        let renovaciones: Record<string, number> = {};
-
-        if (ventaIds.length > 0) {
-          const pagos = await fetchPagosVentaByVentaIdsUseCase<Record<string, unknown>>(ventaIds);
-          const renovacionesMap: Record<string, number> = {};
-
-          pagos.forEach((pago) => {
-            const ventaId = pago.ventaId as string;
-            if (!ventaId || pago.isPagoInicial === true) return;
-            renovacionesMap[ventaId] = (renovacionesMap[ventaId] || 0) + 1;
-          });
-          renovaciones = renovacionesMap;
-        }
+        const renovaciones = Object.fromEntries(
+          ventasConDatos.map((venta) => [venta.id, Number(venta.renovaciones ?? 0)])
+        );
 
         ventasCache.set(usuarioId, { data: mapped, renovaciones, ts: Date.now() });
         setVentas(mapped);

@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase/client';
+import type { Json } from '@/lib/supabase/database.types';
 import type {
   DashboardStats,
   IngresoCategoria,
@@ -10,23 +11,29 @@ import type {
   UsuariosDia,
   UsuariosMes,
   VentaPronostico,
+  DashboardCounts,
 } from '@/types/dashboard';
-
-const STATS_ID = 'singleton';
+import type { ActivityLog } from '@/types';
 
 type DashboardStatsRow = {
   id: string;
   gastos_total: number | string | null;
   ingresos_total: number | string | null;
-  usuarios_por_mes: UsuariosMes[] | null;
-  usuarios_por_dia: UsuariosDia[] | null;
-  ingresos_por_mes: IngresosMes[] | null;
-  ingresos_por_dia: IngresosDia[] | null;
-  ingresos_por_categoria: IngresoCategoria[] | null;
-  ingresos_categorias_por_mes: IngresoCategoriaMes[] | null;
-  ventas_pronostico: VentaPronostico[] | null;
-  servicios_pronostico: ServicioPronostico[] | null;
+  usuarios_por_mes: Json | null;
+  usuarios_por_dia: Json | null;
+  ingresos_por_mes: Json | null;
+  ingresos_por_dia: Json | null;
+  ingresos_por_categoria: Json | null;
+  ingresos_categorias_por_mes: Json | null;
+  ventas_pronostico: Json | null;
+  servicios_pronostico: Json | null;
   updated_at: string | null;
+};
+
+type DashboardHome = {
+  stats: DashboardStats;
+  counts: DashboardCounts;
+  recentActivity: ActivityLog[];
 };
 
 function createEmptyStats(): DashboardStats {
@@ -45,11 +52,7 @@ function createEmptyStats(): DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const { data, error } = await supabase
-    .from('dashboard_stats')
-    .select('*')
-    .eq('id', STATS_ID)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('get_dashboard_stats_live').maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!data) return createEmptyStats();
@@ -66,7 +69,31 @@ export async function adjustIngresosStats(_params: {
   categoriaNombre: string;
 }): Promise<void> {
   void _params;
-  await rebuildDashboardStats();
+}
+
+export async function getDashboardHome(): Promise<DashboardHome> {
+  const { data, error } = await supabase.rpc('get_dashboard_home');
+  if (error) throw new Error(error.message);
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return {
+      stats: createEmptyStats(),
+      counts: { ventasActivas: 0, totalClientes: 0, totalRevendedores: 0 },
+      recentActivity: [],
+    };
+  }
+
+  const record = data as Record<string, Json>;
+  const counts = asRecord(record.counts);
+
+  return {
+    stats: rowToStats(asRecord(record.stats) as unknown as DashboardStatsRow),
+    counts: {
+      ventasActivas: Number(counts.ventasActivas ?? 0),
+      totalClientes: Number(counts.totalClientes ?? 0),
+      totalRevendedores: Number(counts.totalRevendedores ?? 0),
+    },
+    recentActivity: jsonArray<Record<string, unknown>>(record.recentActivity).map(activityLogFromJson),
+  };
 }
 
 export async function adjustGastosStats(_params: {
@@ -78,7 +105,6 @@ export async function adjustGastosStats(_params: {
   categoriaNombre?: string;
 }): Promise<void> {
   void _params;
-  await rebuildDashboardStats();
 }
 
 export async function adjustUsuariosPorMes(_params: {
@@ -88,7 +114,6 @@ export async function adjustUsuariosPorMes(_params: {
   delta: 1 | -1;
 }): Promise<void> {
   void _params;
-  await rebuildDashboardStats();
 }
 
 export async function upsertVentaPronostico(
@@ -97,7 +122,6 @@ export async function upsertVentaPronostico(
 ): Promise<void> {
   void _venta;
   void _ventaId;
-  await rebuildDashboardStats();
 }
 
 export async function upsertServicioPronostico(
@@ -106,7 +130,6 @@ export async function upsertServicioPronostico(
 ): Promise<void> {
   void _servicio;
   void _servicioId;
-  await rebuildDashboardStats();
 }
 
 export async function rebuildDashboardStats(_preFetchedData?: unknown): Promise<void> {
@@ -141,14 +164,42 @@ function rowToStats(row: DashboardStatsRow): DashboardStats {
   return {
     gastosTotal: Number(row.gastos_total ?? 0),
     ingresosTotal: Number(row.ingresos_total ?? 0),
-    usuariosPorMes: row.usuarios_por_mes ?? [],
-    usuariosPorDia: row.usuarios_por_dia ?? [],
-    ingresosPorMes: row.ingresos_por_mes ?? [],
-    ingresosPorDia: row.ingresos_por_dia ?? [],
-    ingresosPorCategoria: row.ingresos_por_categoria ?? [],
-    ingresosCategoriasPorMes: row.ingresos_categorias_por_mes ?? [],
-    ventasPronostico: row.ventas_pronostico ?? [],
-    serviciosPronostico: row.servicios_pronostico ?? [],
+    usuariosPorMes: jsonArray<UsuariosMes>(row.usuarios_por_mes),
+    usuariosPorDia: jsonArray<UsuariosDia>(row.usuarios_por_dia),
+    ingresosPorMes: jsonArray<IngresosMes>(row.ingresos_por_mes),
+    ingresosPorDia: jsonArray<IngresosDia>(row.ingresos_por_dia),
+    ingresosPorCategoria: jsonArray<IngresoCategoria>(row.ingresos_por_categoria),
+    ingresosCategoriasPorMes: jsonArray<IngresoCategoriaMes>(row.ingresos_categorias_por_mes),
+    ventasPronostico: jsonArray<VentaPronostico>(row.ventas_pronostico),
+    serviciosPronostico: jsonArray<ServicioPronostico>(row.servicios_pronostico),
     updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
+  };
+}
+
+function jsonArray<T>(value: Json | null): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function asRecord(value: Json | undefined): Record<string, Json> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, Json>
+    : {};
+}
+
+function activityLogFromJson(row: Record<string, unknown>): ActivityLog {
+  return {
+    id: String(row.id ?? ''),
+    usuarioId: String(row.usuarioId ?? ''),
+    usuarioEmail: String(row.usuarioEmail ?? ''),
+    accion: row.accion as ActivityLog['accion'],
+    entidad: row.entidad as ActivityLog['entidad'],
+    entidadId: String(row.entidadId ?? ''),
+    entidadNombre: String(row.entidadNombre ?? ''),
+    detalles: String(row.detalles ?? ''),
+    cambios: Array.isArray(row.cambios) ? row.cambios as ActivityLog['cambios'] : undefined,
+    metadata: row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
+      ? row.metadata as Record<string, unknown>
+      : undefined,
+    timestamp: row.timestamp ? new Date(String(row.timestamp)) : new Date(0),
   };
 }

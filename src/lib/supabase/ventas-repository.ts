@@ -36,6 +36,14 @@ export const updateVenta = <T extends Record<string, unknown>>(id: string, paylo
   update(ENTITIES.VENTAS, id, payload);
 export const removeVenta = (id: string) => remove(ENTITIES.VENTAS, id);
 
+export async function removeVentaWithPayments(id: string, deletePayments: boolean): Promise<void> {
+  const { error } = await rpcClient.rpc('delete_venta_with_payments', {
+    p_venta_id: id,
+    p_delete_payments: deletePayments,
+  });
+  if (error) throw new Error(error.message);
+}
+
 export async function createVentaWithInitialPayment(
   payload: Record<string, unknown>
 ): Promise<string> {

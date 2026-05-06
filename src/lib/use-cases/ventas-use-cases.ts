@@ -15,6 +15,7 @@ import {
   queryVentas,
   removePagoVenta,
   removeVenta,
+  removeVentaWithPayments,
   updateLatestVentaPeriodo,
   updateVenta,
   updateVentaPaymentAndPeriod,
@@ -689,11 +690,10 @@ export async function deleteVentaUseCase(
   const ventaEliminada = options.venta ?? await getVentaById<VentaDoc>(id);
 
   if (options.deletePagos) {
-    const pagos = await queryPagosVenta<PagoVenta>([{ field: 'ventaId', operator: '==', value: id }]);
-    await Promise.all(pagos.map((pago) => removePagoVenta(pago.id)));
+    await removeVentaWithPayments(id, true);
+  } else {
+    await removeVenta(id);
   }
-
-  await removeVenta(id);
 
   const serviceProfileDelta = options.servicioId && options.perfilNumero
     ? { servicioId: options.servicioId, shouldIncrement: false }
