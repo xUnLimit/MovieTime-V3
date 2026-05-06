@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 
-import { isUuid } from '@/lib/utils/safety';
 import ServicioDetalleClient from './ServicioDetalleClient';
 
 type PageProps = {
@@ -10,7 +9,9 @@ type PageProps = {
 
 export default async function ServicioDetallePage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  if (!isUuid(id)) {
+  const serviceId = id.trim();
+
+  if (!serviceId) {
     notFound();
   }
 
@@ -18,5 +19,5 @@ export default async function ServicioDetallePage({ params, searchParams }: Page
   const fromParam = resolvedSearchParams?.from;
   const from = Array.isArray(fromParam) ? fromParam[0] ?? null : fromParam ?? null;
 
-  return <ServicioDetalleClient id={id} from={from} />;
+  return <ServicioDetalleClient id={serviceId} from={from} />;
 }

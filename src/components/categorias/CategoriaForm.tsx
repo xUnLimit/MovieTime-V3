@@ -26,6 +26,18 @@ interface CategoriaFormProps {
   returnTo?: string;
 }
 
+function createUuid() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const value = Math.floor(Math.random() * 16);
+    const nibble = char === "x" ? value : (value & 0x3) | 0x8;
+    return nibble.toString(16);
+  });
+}
+
 export function CategoriaForm({
   mode,
   categoria,
@@ -153,7 +165,7 @@ export function CategoriaForm({
     }
 
     const nuevoTipo: TipoPlanConfig = {
-      id: `tipo-${Date.now()}`,
+      id: createUuid(),
       nombre: trimmed,
     };
     setTiposPlanes((prev) => [...prev, nuevoTipo]);
@@ -226,7 +238,7 @@ export function CategoriaForm({
 
   const agregarPlan = (tipoPlanId: string) => {
     const nuevoPlan: Plan = {
-      id: `plan-${Date.now()}`,
+      id: createUuid(),
       nombre: "",
       precio: 0,
       cicloPago: "mensual",
