@@ -1,4 +1,5 @@
-﻿import { getAll, queryDocuments, getCount, create, remove, logCacheHit } from './record-core';
+import { supabase } from './client';
+import { getAll, queryDocuments, getCount, create, remove, logCacheHit } from './record-core';
 import { ENTITIES, type QueryFilter } from './entities';
 
 export { logCacheHit };
@@ -10,5 +11,14 @@ export const countActivityLogs = (filters: QueryFilter[] = []) => getCount(ENTIT
 export const createActivityLog = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
   create(ENTITIES.ACTIVITY_LOG, payload);
 export const removeActivityLog = (id: string) => remove(ENTITIES.ACTIVITY_LOG, id);
+export async function removeAllActivityLogs() {
+  const { count, error } = await supabase
+    .from('activity_log')
+    .delete({ count: 'exact' })
+    .neq('id', '');
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
 
 export { ENTITIES } from './entities';

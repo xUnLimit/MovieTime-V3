@@ -4,7 +4,7 @@ import type { Categoria, Plan, TipoPlanConfig } from "@/types";
 
 export const categoriaSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  tipo: z.enum(["cliente", "revendedor", "ambos"], {
+  tipo: z.enum(["cliente", "revendedor"], {
     message: "Debe seleccionar asociado a",
   }),
   tipoCategoria: z.enum(["plataforma_streaming", "otros"], {
@@ -36,8 +36,6 @@ export function getAsociadoLabel(tipo: string) {
       return "Cliente";
     case "revendedor":
       return "Revendedor";
-    case "ambos":
-      return "Ambos";
     default:
       return "Seleccionar";
   }

@@ -50,6 +50,7 @@ interface LogTimelineProps {
   canDeleteLogs?: boolean;
   onDeleteSelected: (ids: string[]) => Promise<void>;
   onDeleteByDays: (days: number) => Promise<void>;
+  onDeleteAll: () => Promise<void>;
 }
 
 export function LogTimeline({
@@ -72,6 +73,7 @@ export function LogTimeline({
   canDeleteLogs = false,
   onDeleteSelected,
   onDeleteByDays,
+  onDeleteAll,
   pageSize,
   onPageSizeChange,
 }: LogTimelineProps) {
@@ -81,6 +83,7 @@ export function LogTimeline({
 
   // Modal de confirmación para limpiar por días
   const [confirmDays, setConfirmDays] = useState<number | null>(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [confirmCount, setConfirmCount] = useState<number | null>(null);
   const [isLoadingCount, setIsLoadingCount] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -147,6 +150,7 @@ export function LogTimeline({
 
   const handleRequestDeleteByDays = async (days: number) => {
     setConfirmDays(days);
+    setConfirmDeleteAll(false);
     setConfirmCount(null);
     setIsLoadingCount(true);
     const cutoff = new Date();
@@ -158,14 +162,33 @@ export function LogTimeline({
     setIsLoadingCount(false);
   };
 
-  const handleConfirmDeleteByDays = async () => {
-    if (confirmDays === null) return;
+  const handleRequestDeleteAll = async () => {
+    setConfirmDays(null);
+    setConfirmDeleteAll(true);
+    setConfirmCount(null);
+    setIsLoadingCount(true);
+    const count = await countActivityLogsUseCase();
+    setConfirmCount(count);
+    setIsLoadingCount(false);
+  };
+
+  const handleCloseDeleteConfirm = () => {
+    setConfirmDays(null);
+    setConfirmDeleteAll(false);
+    setConfirmCount(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (confirmDays === null && !confirmDeleteAll) return;
     setIsDeleting(true);
-    await onDeleteByDays(confirmDays);
+    if (confirmDeleteAll) {
+      await onDeleteAll();
+    } else if (confirmDays !== null) {
+      await onDeleteByDays(confirmDays);
+    }
     setSelectedLogs(new Set());
     setIsDeleting(false);
-    setConfirmDays(null);
-    setConfirmCount(null);
+    handleCloseDeleteConfirm();
   };
 
   const handleOpenCambios = (log: ActivityLog) => {
@@ -176,6 +199,7 @@ export function LogTimeline({
   const isAllSelected = logs.length > 0 && selectedLogs.size === logs.length;
   const hasSearchTerm = searchTerm.trim().length > 0;
   const searchFilteredCurrentPage = hasSearchTerm && unfilteredPageCount > 0 && logs.length === 0;
+  const isDeleteConfirmOpen = confirmDays !== null || confirmDeleteAll;
 
   const columns: Column<ActivityLog>[] = [
     {
@@ -202,11 +226,19 @@ export function LogTimeline({
       header: 'Fecha',
       sortable: true,
       width: '16%',
-      render: (item) => (
-        <div className="text-sm">
-          {format(new Date(item.timestamp), 'dd MMM yyyy, hh:mm:ss a', { locale: es })}
-        </div>
-      ),
+      render: (item) => {
+        const formattedTimestamp = format(
+          new Date(item.timestamp),
+          'dd MMM yyyy, hh:mm:ss a',
+          { locale: es }
+        );
+
+        return (
+          <div className="truncate text-sm" title={formattedTimestamp}>
+            {formattedTimestamp}
+          </div>
+        );
+      },
     },
     {
       key: 'usuarioEmail',
@@ -214,7 +246,11 @@ export function LogTimeline({
       sortable: true,
       align: 'center',
       width: '15%',
-      render: (item) => <div className="text-sm">{item.usuarioEmail}</div>,
+      render: (item) => (
+        <div className="truncate text-sm" title={item.usuarioEmail}>
+          {item.usuarioEmail}
+        </div>
+      ),
     },
     {
       key: 'accion',
@@ -245,11 +281,13 @@ export function LogTimeline({
         const { icon: Icon, color, message } = getActivityDisplayConfig(item);
         const [bgColor, textColor] = color.split(' ');
         return (
-          <div className="flex items-center gap-2 px-2">
+          <div className="flex w-full min-w-0 items-center gap-2 px-2">
             <div className={`flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-full ${bgColor}`}>
               <Icon className={`h-3 w-3 ${textColor}`} />
             </div>
-            <span className="text-sm">{message}</span>
+            <span className="min-w-0 flex-1 truncate text-sm" title={item.detalles}>
+              {message}
+            </span>
           </div>
         );
       },
@@ -265,18 +303,18 @@ export function LogTimeline({
         return (
           <div className="flex items-center justify-center">
             {cambiosCount > 0 || hasMetadata ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenCambios(item)}
-              className="h-8 px-3 text-xs font-medium text-purple-600 hover:bg-purple-500/10 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-colors"
-            >
-              <Eye className="h-4 w-4 mr-1.5" />
-              {cambiosCount > 0 ? `Ver (${cambiosCount})` : 'Metadata'}
-            </Button>
-          ) : (
-            <span className="text-xs text-muted-foreground/40">—</span>
-          )}
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => handleOpenCambios(item)}
+                className="text-xs font-medium text-purple-600 transition-colors hover:bg-purple-500/10 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+              >
+                <Eye className="h-3 w-3" />
+                {cambiosCount > 0 ? `Ver (${cambiosCount})` : 'Metadata'}
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground/40">—</span>
+            )}
           </div>
         );
       },
@@ -299,6 +337,7 @@ export function LogTimeline({
           canDeleteLogs={canDeleteLogs}
           onDeleteSelected={handleDeleteSelected}
           onRequestDeleteByDays={handleRequestDeleteByDays}
+          onRequestDeleteAll={handleRequestDeleteAll}
         />
       </div>
 
@@ -341,6 +380,7 @@ export function LogTimeline({
               data={logs as unknown as Record<string, unknown>[]}
               columns={columns as unknown as Column<Record<string, unknown>>[]}
               pagination={false}
+              fixedLayout
             />
 
             <PaginationFooter
@@ -368,17 +408,25 @@ export function LogTimeline({
         />
       )}
 
-      {/* Modal de confirmación para limpiar por días */}
-      <Dialog open={confirmDays !== null} onOpenChange={(open) => { if (!open && !isDeleting) { setConfirmDays(null); setConfirmCount(null); } }}>
+      {/* Modal de confirmación para limpiar logs */}
+      <Dialog open={isDeleteConfirmOpen} onOpenChange={(open) => { if (!open && !isDeleting) handleCloseDeleteConfirm(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              ¿Estás seguro de limpiar los logs?
+              {confirmDeleteAll ? '¿Estás seguro de eliminar todos los logs?' : '¿Estás seguro de limpiar los logs?'}
             </DialogTitle>
             <DialogDescription className="pt-1">
-              Esta acción eliminará permanentemente todos los registros con más de{' '}
-              <span className="font-semibold text-foreground">{confirmDays} días</span> de antigüedad.
+              {confirmDeleteAll ? (
+                <>
+                  Esta acción eliminará permanentemente todo el log de actividad.
+                </>
+              ) : (
+                <>
+                  Esta acción eliminará permanentemente todos los registros con más de{' '}
+                  <span className="font-semibold text-foreground">{confirmDays} días</span> de antigüedad.
+                </>
+              )}
               {isLoadingCount ? (
                 <span className="flex items-center gap-1.5 mt-2 text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -396,20 +444,20 @@ export function LogTimeline({
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
-              onClick={() => { setConfirmDays(null); setConfirmCount(null); }}
+              onClick={handleCloseDeleteConfirm}
               disabled={isDeleting}
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
-              onClick={handleConfirmDeleteByDays}
+              onClick={handleConfirmDelete}
               disabled={isLoadingCount || isDeleting || confirmCount === 0}
             >
               {isDeleting ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Eliminando...</>
               ) : (
-                'Sí, limpiar logs'
+                confirmDeleteAll ? 'Sí, eliminar todos' : 'Sí, limpiar logs'
               )}
             </Button>
           </DialogFooter>

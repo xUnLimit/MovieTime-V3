@@ -3263,6 +3263,18 @@ export type Database = {
           venta_id: string
         }[]
       }
+      delete_categoria: {
+        Args: { p_categoria_id: string }
+        Returns: undefined
+      }
+      delete_servicio_payment_and_empty_period: {
+        Args: { p_pago_id: string }
+        Returns: undefined
+      }
+      delete_venta_payment_and_empty_period: {
+        Args: { p_pago_id: string }
+        Returns: undefined
+      }
       is_authenticated: { Args: never; Returns: boolean }
       rebuild_dashboard_financial_stats: { Args: never; Returns: undefined }
       run_all_validations: { Args: never; Returns: Json }
@@ -3275,7 +3287,7 @@ export type Database = {
         | "renovacion"
       asociado_a_enum: "usuario" | "servicio"
       categoria_tipo_cat_enum: "plataforma_streaming" | "otros"
-      categoria_tipo_enum: "cliente" | "revendedor" | "ambos"
+      categoria_tipo_enum: "cliente" | "revendedor"
       ciclo_pago_enum: "mensual" | "trimestral" | "semestral" | "anual"
       entidad_log_enum:
         | "cliente"
@@ -3441,7 +3453,7 @@ export const Constants = {
       ],
       asociado_a_enum: ["usuario", "servicio"],
       categoria_tipo_cat_enum: ["plataforma_streaming", "otros"],
-      categoria_tipo_enum: ["cliente", "revendedor", "ambos"],
+      categoria_tipo_enum: ["cliente", "revendedor"],
       ciclo_pago_enum: ["mensual", "trimestral", "semestral", "anual"],
       entidad_log_enum: [
         "cliente",

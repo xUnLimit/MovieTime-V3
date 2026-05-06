@@ -1,25 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Calendar as CalendarIcon, ChevronDown, Search, Trash2 } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
+
 import { Button } from '@/components/ui/button';
-import { ChevronDown } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Calendar } from '@/components/ui/calendar';
-import { Search, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { DateRange } from 'react-day-picker';
 
 interface LogFiltersProps {
   searchTerm: string;
@@ -34,7 +35,27 @@ interface LogFiltersProps {
   canDeleteLogs?: boolean;
   onDeleteSelected: () => void;
   onRequestDeleteByDays: (days: number) => void;
+  onRequestDeleteAll: () => void;
 }
+
+const entityLabels: Record<string, string> = {
+  venta: 'Venta',
+  cliente: 'Cliente',
+  revendedor: 'Revendedor',
+  servicio: 'Servicio',
+  usuario: 'Usuario',
+  categoria: 'Categoría',
+  metodo_pago: 'Método de Pago',
+  gasto: 'Gasto',
+  template: 'Template',
+};
+
+const actionLabels: Record<string, string> = {
+  creacion: 'Creación',
+  actualizacion: 'Actualización',
+  eliminacion: 'Eliminación',
+  renovacion: 'Renovación',
+};
 
 export function LogFilters({
   searchTerm,
@@ -47,13 +68,14 @@ export function LogFilters({
   canDeleteLogs = false,
   onDeleteSelected,
   onRequestDeleteByDays,
+  onRequestDeleteAll,
 }: LogFiltersProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   return (
     <div className="flex items-center gap-3 w-full">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar por usuario, entidad, ID o detalle..."
           value={searchTerm}
@@ -95,17 +117,7 @@ export function LogFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="gap-2 justify-between w-[200px]">
-            {entidadFilter === 'all' ? 'Todas las entidades' : {
-              venta: 'Venta',
-              cliente: 'Cliente',
-              revendedor: 'Revendedor',
-              servicio: 'Servicio',
-              usuario: 'Usuario',
-              categoria: 'Categoría',
-              metodo_pago: 'Método de Pago',
-              gasto: 'Gasto',
-              template: 'Template',
-            }[entidadFilter] || 'Todas las entidades'}
+            {entidadFilter === 'all' ? 'Todas las entidades' : entityLabels[entidadFilter] || 'Todas las entidades'}
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
@@ -113,45 +125,18 @@ export function LogFilters({
           <DropdownMenuItem onClick={() => setEntidadFilter('all')}>
             Todas las entidades
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('venta')}>
-            Venta
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('cliente')}>
-            Cliente
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('revendedor')}>
-            Revendedor
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('servicio')}>
-            Servicio
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('usuario')}>
-            Usuario
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('categoria')}>
-            Categoría
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('metodo_pago')}>
-            Método de Pago
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('gasto')}>
-            Gasto
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEntidadFilter('template')}>
-            Template
-          </DropdownMenuItem>
+          {Object.entries(entityLabels).map(([value, label]) => (
+            <DropdownMenuItem key={value} onClick={() => setEntidadFilter(value)}>
+              {label}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="gap-2 justify-between w-[200px]">
-            {accionFilter === 'all' ? 'Todas las acciones' : {
-              creacion: 'Creación',
-              actualizacion: 'Actualización',
-              eliminacion: 'Eliminación',
-              renovacion: 'Renovación',
-            }[accionFilter] || 'Todas las acciones'}
+            {accionFilter === 'all' ? 'Todas las acciones' : actionLabels[accionFilter] || 'Todas las acciones'}
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
@@ -159,18 +144,11 @@ export function LogFilters({
           <DropdownMenuItem onClick={() => setAccionFilter('all')}>
             Todas las acciones
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setAccionFilter('creacion')}>
-            Creación
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setAccionFilter('actualizacion')}>
-            Actualización
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setAccionFilter('eliminacion')}>
-            Eliminación
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setAccionFilter('renovacion')}>
-            Renovación
-          </DropdownMenuItem>
+          {Object.entries(actionLabels).map(([value, label]) => (
+            <DropdownMenuItem key={value} onClick={() => setAccionFilter(value)}>
+              {label}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -193,13 +171,17 @@ export function LogFilters({
             Limpiar logs seleccionados ({selectedCount} en total)
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRequestDeleteByDays(7)}>
-            Eliminar Logs de +7 días
+            Eliminar logs de +7 días
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRequestDeleteByDays(14)}>
-            Eliminar Logs de +14 días
+            Eliminar logs de +14 días
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRequestDeleteByDays(30)}>
-            Eliminar Logs de +30 días
+            Eliminar logs de +30 días
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={onRequestDeleteAll}>
+            Eliminar todos los logs
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

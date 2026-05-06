@@ -40,7 +40,7 @@ interface CategoriasState {
   deleteCategoria: (id: string) => Promise<void>;
   setSelectedCategoria: (categoria: Categoria | null) => void;
   getCategoria: (id: string) => Categoria | undefined;
-  getCategoriasByTipo: (tipo: 'cliente' | 'revendedor' | 'ambos') => Categoria[];
+  getCategoriasByTipo: (tipo: 'cliente' | 'revendedor') => Categoria[];
   resyncContadoresCategorias: () => Promise<{ categoriasCorregidas: number }>;
 }
 
@@ -158,7 +158,7 @@ export const useCategoriasStore = create<CategoriasState>()(
       getCategoria: (id) => get().categorias.find((categoria) => categoria.id === id),
 
       getCategoriasByTipo: (tipo) =>
-        get().categorias.filter((categoria) => categoria.tipo === tipo || categoria.tipo === 'ambos'),
+        get().categorias.filter((categoria) => categoria.tipo === tipo),
 
       resyncContadoresCategorias: async () => {
         await get().fetchCategorias(true);

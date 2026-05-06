@@ -23,6 +23,29 @@ export function getUsuarioUseCase<T = Usuario>(id: string) {
   return getUsuarioById<T>(id);
 }
 
+function getUsuarioSqlPayload(usuario: Partial<Usuario>) {
+  const payload: Record<string, unknown> = {};
+  const allowedFields: Array<keyof Usuario> = [
+    'nombre',
+    'apellido',
+    'tipo',
+    'telefono',
+    'email',
+    'metodoPagoId',
+    'active',
+    'notas',
+    'createdBy',
+  ];
+
+  for (const field of allowedFields) {
+    if (usuario[field] !== undefined) {
+      payload[field] = usuario[field];
+    }
+  }
+
+  return payload;
+}
+
 export async function fetchUsuariosCountsUseCase() {
   const today = startOfDay(new Date());
   const [totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos] = await Promise.all([
@@ -39,11 +62,7 @@ export async function createUsuarioUseCase(
   usuarioData: Omit<Usuario, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos' | 'suscripcionesTotales'>,
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
-  const id = await createUsuario({
-    ...usuarioData,
-    serviciosActivos: 0,
-    active: true,
-  });
+  const id = await createUsuario(getUsuarioSqlPayload({ ...usuarioData, active: true }));
 
   const usuario: Usuario = {
     ...usuarioData,
@@ -84,7 +103,7 @@ export async function updateUsuarioUseCase(
   }
 ) {
   const oldUsuario = options.oldUsuario ?? await getUsuarioById<Usuario>(id);
-  await updateUsuario(id, updates);
+  await updateUsuario(id, getUsuarioSqlPayload(updates));
 
   const nombreChanged = oldUsuario
     ? updates.nombre !== undefined || updates.apellido !== undefined

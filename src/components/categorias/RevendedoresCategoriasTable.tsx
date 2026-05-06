@@ -42,9 +42,7 @@ export function RevendedoresCategoriasTable({
 
   // Filtrar solo categorías de revendedores
   const categoriasRevendedores = useMemo(() => {
-    return categorias.filter(
-      (c) => c.tipo === "revendedor" || c.tipo === "ambos",
-    );
+    return categorias.filter((c) => c.tipo === "revendedor");
   }, [categorias]);
 
   // Aplicar filtros y ordenar alfabéticamente

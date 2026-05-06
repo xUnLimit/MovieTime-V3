@@ -21,10 +21,12 @@ export const createTipoGasto = <T extends Record<string, unknown>>(payload: Omit
   create(ENTITIES.TIPOS_GASTO, payload);
 export const updateTipoGasto = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.TIPOS_GASTO, id, payload);
+export const removeTipoGasto = (id: string) => remove(ENTITIES.TIPOS_GASTO, id);
 
 export const getGastos = <T>() => getAll<T>(ENTITIES.GASTOS);
 export const getGastoById = <T>(id: string) => getById<T>(ENTITIES.GASTOS, id);
 export const queryGastos = <T>(filters: QueryFilter[] = []) => queryDocuments<T>(ENTITIES.GASTOS, filters);
+export const countGastos = (filters: QueryFilter[] = []) => getCount(ENTITIES.GASTOS, filters);
 export const createGasto = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
   create(ENTITIES.GASTOS, payload);
 export const updateGasto = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>

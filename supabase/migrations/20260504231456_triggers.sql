@@ -116,7 +116,7 @@ BEGIN
   ELSIF (TG_OP = 'DELETE') THEN
     v_servicio_ids := ARRAY[OLD.servicio_id];
   ELSE
-    -- UPDATE: incluir ambos por si cambio servicio_id (raro pero posible)
+    -- UPDATE: incluir servicio anterior y nuevo por si cambio servicio_id.
     IF NEW.servicio_id <> OLD.servicio_id THEN
       v_servicio_ids := ARRAY[NEW.servicio_id, OLD.servicio_id];
     ELSE

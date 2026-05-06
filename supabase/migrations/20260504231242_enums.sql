@@ -5,7 +5,7 @@
 
 CREATE TYPE ciclo_pago_enum AS ENUM ('mensual','trimestral','semestral','anual');
 CREATE TYPE usuario_tipo_enum AS ENUM ('cliente','revendedor');
-CREATE TYPE categoria_tipo_enum AS ENUM ('cliente','revendedor','ambos');
+CREATE TYPE categoria_tipo_enum AS ENUM ('cliente','revendedor');
 CREATE TYPE categoria_tipo_cat_enum AS ENUM ('plataforma_streaming','otros');
 CREATE TYPE metodo_pago_tipo_enum AS ENUM ('banco','yappy','paypal','binance','efectivo');
 CREATE TYPE tipo_cuenta_enum AS ENUM ('ahorro','corriente','wallet','telefono','email');

@@ -1,10 +1,10 @@
 import {
   buildCategorias,
   createCategoriaRecord,
+  deleteCategoriaRecord,
   getCategoriasCounts,
   getCategoriasFull,
   getCategoriaById,
-  removeCategoria,
   updateCategoriaRecord,
   upsertCategoriaPlanes,
 } from '@/lib/supabase/categorias-repository';
@@ -90,7 +90,7 @@ export async function deleteCategoriaUseCase(
     recordActivityLog?: RecordActivityLog;
   }
 ) {
-  await removeCategoria(id);
+  await deleteCategoriaRecord(id);
 
   await options.recordActivityLog?.({
     ...options.logContext,

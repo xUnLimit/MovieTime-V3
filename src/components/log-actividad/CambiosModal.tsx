@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CambioLog } from '@/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -24,6 +24,9 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios, metad
           <DialogTitle className="text-lg font-medium text-foreground">
             Cambios en <span className="text-purple-500 font-semibold">{entidadNombre}</span>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Detalle de los cambios registrados para esta actividad.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">

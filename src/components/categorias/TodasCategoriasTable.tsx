@@ -22,7 +22,6 @@ import Link from "next/link";
 const tipoLabels: Record<string, string> = {
   cliente: "Cliente",
   revendedor: "Revendedor",
-  ambos: "Cliente",
 };
 
 const tipoCategoriaLabels: Record<string, string> = {
@@ -55,8 +54,7 @@ export function TodasCategoriasTable({
         .includes(searchQuery.toLowerCase());
       const matchesTipo =
         tipoFilter === "todos" ||
-        categoria.tipo === tipoFilter ||
-        categoria.tipo === "ambos";
+        categoria.tipo === tipoFilter;
       return matchesSearch && matchesTipo;
     });
     // Ordenar alfabéticamente por nombre
@@ -98,13 +96,7 @@ export function TodasCategoriasTable({
         sortable: true,
         align: "center",
         width: "25%",
-        render: (item) => {
-          // Para "ambos", mostrar ambos tipos
-          if (item.tipo === "ambos") {
-            return <span>Cliente, Revendedor</span>;
-          }
-          return <span>{tipoLabels[item.tipo]}</span>;
-        },
+        render: (item) => <span>{tipoLabels[item.tipo]}</span>,
       },
       {
         key: "categoria",
@@ -160,7 +152,6 @@ export function TodasCategoriasTable({
               { value: "todos", label: "Todos los tipos" },
               { value: "cliente", label: "Cliente" },
               { value: "revendedor", label: "Revendedor" },
-              { value: "ambos", label: "Ambos" },
             ];
             const labelActual =
               opciones.find((o) => o.value === tipoFilter)?.label ??

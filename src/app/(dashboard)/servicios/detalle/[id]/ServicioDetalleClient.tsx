@@ -249,12 +249,22 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         isLatestPayment: eraUltimaRenovacion,
         fallbackMoneda: metodoPago?.moneda,
       });
-      refreshPagos();
+      invalidateDashboardCache({
+        entity: 'servicio',
+        entityId: id,
+      });
+      refreshCategoriasCache({
+        entity: 'servicio',
+        entityId: id,
+      });
+      await fetchCategorias(true);
+      await refreshPagos();
       if (eraUltimaRenovacion) {
         if (servicioActualizado) setServicio(servicioActualizado);
       }
       toast.success('Renovación eliminada', { description: 'El registro de pago ha sido eliminado del historial.' });
       setPagoToDelete(null);
+      setDeleteRenovacionDialogOpen(false);
     } catch (error) {
       console.error('Error al eliminar renovación:', error);
       toast.error('Error al eliminar renovación', { description: error instanceof Error ? error.message : undefined });

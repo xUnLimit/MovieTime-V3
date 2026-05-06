@@ -168,8 +168,7 @@ export const TIPOS_SERVICIO = [
 
 export const TIPOS_CATEGORIA = [
   { value: 'cliente', label: 'Solo Clientes' },
-  { value: 'revendedor', label: 'Solo Revendedores' },
-  { value: 'ambos', label: 'Ambos' }
+  { value: 'revendedor', label: 'Solo Revendedores' }
 ] as const;
 
 // ===========================

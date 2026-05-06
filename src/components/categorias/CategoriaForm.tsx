@@ -88,7 +88,7 @@ export function CategoriaForm({
           }
         : {
             nombre: "",
-            tipo: "" as "cliente" | "revendedor" | "ambos",
+            tipo: "" as "cliente" | "revendedor",
             tipoCategoria: "" as "plataforma_streaming" | "otros",
             notas: "",
           },
@@ -280,6 +280,7 @@ export function CategoriaForm({
           nombre: data.nombre,
           tipo: data.tipo,
           tipoCategoria: data.tipoCategoria,
+          notas: data.notas || "",
           tiposPlanes: tiposPlanes,
           planes: planes,
           activo: true,

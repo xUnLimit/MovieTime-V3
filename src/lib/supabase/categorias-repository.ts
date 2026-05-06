@@ -5,7 +5,6 @@
   getCount,
   create,
   update,
-  remove,
   logCacheHit,
   adjustCategoriaGastos,
   adjustCategoriaSuscripciones,
@@ -24,14 +23,13 @@ export const createCategoria = <T extends Record<string, unknown>>(payload: Omit
   create(ENTITIES.CATEGORIAS, payload);
 export const updateCategoria = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.CATEGORIAS, id, payload);
-export const removeCategoria = (id: string) => remove(ENTITIES.CATEGORIAS, id);
 
 export { ENTITIES } from './entities';
 
 type CategoriaRow = {
   id: string;
   nombre: string;
-  tipo: 'cliente' | 'revendedor' | 'ambos';
+  tipo: 'cliente' | 'revendedor';
   tipo_categoria: 'plataforma_streaming' | 'otros' | null;
   notas: string | null;
   activo: boolean;
@@ -50,8 +48,8 @@ export async function getCategoriasCounts() {
   const [{ count: totalCategorias }, { count: categoriasClientes }, { count: categoriasRevendedores }] =
     await Promise.all([
       supabase.from('categorias').select('*', { count: 'exact', head: true }),
-      supabase.from('categorias').select('*', { count: 'exact', head: true }).in('tipo', ['cliente', 'ambos']),
-      supabase.from('categorias').select('*', { count: 'exact', head: true }).in('tipo', ['revendedor', 'ambos']),
+      supabase.from('categorias').select('*', { count: 'exact', head: true }).eq('tipo', 'cliente'),
+      supabase.from('categorias').select('*', { count: 'exact', head: true }).eq('tipo', 'revendedor'),
     ]);
 
   return {
@@ -98,13 +96,18 @@ export async function updateCategoriaRecord(id: string, updates: Partial<Categor
   return data;
 }
 
+export async function deleteCategoriaRecord(id: string) {
+  const { error } = await supabase.rpc('delete_categoria', { p_categoria_id: id });
+  if (error) throw new Error(error.message);
+}
+
 export async function buildCategorias(categoriasRows: CategoriaRow[]): Promise<Categoria[]> {
   const ids = categoriasRows.map((categoria) => categoria.id);
   if (ids.length === 0) return [];
 
   const [tiposResult, planesResult, countersResult, ventasResult, financialResult] = await Promise.all([
-    supabase.from('planes_tipos').select('*').in('categoria_id', ids),
-    supabase.from('planes').select('*').in('categoria_id', ids),
+    supabase.from('planes_tipos').select('*').in('categoria_id', ids).eq('activo', true),
+    supabase.from('planes').select('*').in('categoria_id', ids).eq('activo', true),
     supabase.from('v_categoria_counters').select('*').in('categoria_id', ids),
     supabase.from('v_ventas_full').select('categoria_id,estado').in('categoria_id', ids),
     supabase.from('v_categoria_financial_metrics').select('*').in('categoria_id', ids),
@@ -176,6 +179,8 @@ export async function buildCategorias(categoriasRows: CategoriaRow[]): Promise<C
 }
 
 export async function upsertCategoriaPlanes(categoriaId: string, tiposPlanes: TipoPlanConfig[], planes: Plan[]) {
+  await deactivateMissingCategoriaPlanes(categoriaId, tiposPlanes, planes);
+
   if (tiposPlanes.length > 0) {
     const { error } = await supabase.from('planes_tipos').upsert(
       tiposPlanes.map((tipo, index) => ({
@@ -206,4 +211,39 @@ export async function upsertCategoriaPlanes(categoriaId: string, tiposPlanes: Ti
     );
     if (error) throw new Error(error.message);
   }
+}
+
+async function deactivateMissingCategoriaPlanes(
+  categoriaId: string,
+  tiposPlanes: TipoPlanConfig[],
+  planes: Plan[]
+) {
+  const [existingTiposResult, existingPlanesResult] = await Promise.all([
+    supabase.from('planes_tipos').select('id').eq('categoria_id', categoriaId).eq('activo', true),
+    supabase.from('planes').select('id').eq('categoria_id', categoriaId).eq('activo', true),
+  ]);
+
+  if (existingTiposResult.error) throw new Error(existingTiposResult.error.message);
+  if (existingPlanesResult.error) throw new Error(existingPlanesResult.error.message);
+
+  const nextTipoIds = new Set(tiposPlanes.map((tipo) => tipo.id));
+  const nextPlanIds = new Set(planes.map((plan) => plan.id));
+  const removedTipoIds = (existingTiposResult.data ?? [])
+    .map((tipo) => tipo.id)
+    .filter((id) => !nextTipoIds.has(id));
+  const removedPlanIds = (existingPlanesResult.data ?? [])
+    .map((plan) => plan.id)
+    .filter((id) => !nextPlanIds.has(id));
+
+  await Promise.all([
+    removedPlanIds.length > 0
+      ? supabase.from('planes').update({ activo: false }).in('id', removedPlanIds)
+      : Promise.resolve({ error: null }),
+    removedTipoIds.length > 0
+      ? supabase.from('planes_tipos').update({ activo: false }).in('id', removedTipoIds)
+      : Promise.resolve({ error: null }),
+  ]).then(([planesResult, tiposResult]) => {
+    if (planesResult.error) throw new Error(planesResult.error.message);
+    if (tiposResult.error) throw new Error(tiposResult.error.message);
+  });
 }

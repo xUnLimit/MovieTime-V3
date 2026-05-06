@@ -156,8 +156,8 @@ export async function enrichCategorias<T>(categorias: T[]): Promise<T[]> {
     ventasResult,
     financialResult,
   ] = await Promise.all([
-    supabase.from('planes_tipos').select('*').in('categoria_id', ids),
-    supabase.from('planes').select('*').in('categoria_id', ids),
+    supabase.from('planes_tipos').select('*').in('categoria_id', ids).eq('activo', true),
+    supabase.from('planes').select('*').in('categoria_id', ids).eq('activo', true),
     supabase.from('v_categoria_counters').select('*').in('categoria_id', ids),
     supabase.from('v_ventas_full').select('categoria_id,estado').in('categoria_id', ids),
     supabase.from('v_categoria_financial_metrics').select('*').in('categoria_id', ids),

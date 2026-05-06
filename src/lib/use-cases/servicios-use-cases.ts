@@ -592,12 +592,30 @@ export async function deleteServicioPagoUseCase(
     await adjustCategoriaGastos(servicio.categoriaId, -montoToRevertUSD);
   }
 
+  safeAsyncSideEffect(adjustGastosStats({
+    delta: -(pago.monto ?? 0),
+    moneda: pago.moneda || options.fallbackMoneda || 'USD',
+    mes: getMesKeyFromDate(pago.fecha ?? new Date()),
+    dia: getDiaKeyFromDate(pago.fecha ?? new Date()),
+    categoriaId: servicio.categoriaId,
+    categoriaNombre: servicio.categoriaNombre,
+  }), {
+    operation: 'adjustGastosStats',
+    entity: 'servicio',
+    entityId: servicio.id,
+  });
+
   let servicioActualizado: Servicio | null = null;
   if (options.isLatestPayment) {
     servicioActualizado = await getServicioById<Servicio>(servicio.id);
     const pronostico = servicioActualizado ? toServicioPronostico(servicioActualizado) : null;
     safeAsyncSideEffect(upsertServicioPronostico(pronostico, servicio.id), {
       operation: 'upsertServicioPronostico',
+      entity: 'servicio',
+      entityId: servicio.id,
+    });
+    safeAsyncSideEffect(sincronizarUnServicio(servicio.id), {
+      operation: 'sincronizarUnServicio',
       entity: 'servicio',
       entityId: servicio.id,
     });

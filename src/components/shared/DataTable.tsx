@@ -39,6 +39,7 @@ export interface DataTableProps<T> {
   actions?: (item: T) => React.ReactNode;
   pagination?: boolean;
   itemsPerPageOptions?: number[];
+  fixedLayout?: boolean;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -87,6 +88,7 @@ function DataTableComponent<T extends Record<string, unknown>>({
   actions,
   pagination = false,
   itemsPerPageOptions = [10, 25, 50, 100],
+  fixedLayout = false,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -174,7 +176,15 @@ function DataTableComponent<T extends Record<string, unknown>>({
   return (
     <div>
       <div className="rounded-md border bg-background overflow-x-auto">
-        <Table>
+        <Table className={fixedLayout ? 'table-fixed' : undefined}>
+          {fixedLayout ? (
+            <colgroup>
+              {columns.map((column) => (
+                <col key={column.key} style={{ width: column.width }} />
+              ))}
+              {actions ? <col /> : null}
+            </colgroup>
+          ) : null}
           <TableHeader>
             <TableRow>
               {columns.map((column, colIndex) => (

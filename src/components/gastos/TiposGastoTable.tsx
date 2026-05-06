@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Edit, MoreHorizontal, Power, Search } from 'lucide-react';
+import { Edit, MoreHorizontal, Power, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Column, DataTable } from '@/components/shared/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TipoGasto } from '@/types';
@@ -20,6 +22,7 @@ interface TiposGastoTableProps {
   tiposGasto: TipoGasto[];
   onEdit: (tipoGasto: TipoGasto) => void;
   onToggleActivo: (tipoGasto: TipoGasto) => Promise<void>;
+  onDelete: (tipoGasto: TipoGasto) => Promise<void>;
   title?: string;
 }
 
@@ -27,9 +30,12 @@ export function TiposGastoTable({
   tiposGasto,
   onEdit,
   onToggleActivo,
+  onDelete,
   title = 'Catálogo de tipos de gasto',
 }: TiposGastoTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [tipoToDelete, setTipoToDelete] = useState<TipoGasto | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredTipos = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -92,19 +98,38 @@ export function TiposGastoTable({
     }
   };
 
+  const handleDelete = async () => {
+    if (!tipoToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(tipoToDelete);
+      toast.success('Tipo de gasto eliminado', {
+        description: 'El catálogo fue actualizado correctamente.',
+      });
+      setTipoToDelete(null);
+    } catch (error) {
+      toast.error('Error al eliminar tipo de gasto', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Card className="p-4 pb-2">
       <h3 className="text-xl font-semibold">{title}</h3>
 
       <div className="flex flex-col gap-4 -mb-4 xl:flex-row xl:items-center">
         <div className="relative flex-1 min-w-0">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Buscar tipo de gasto..."
-          className="pl-9"
-        />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar tipo de gasto..."
+            className="pl-9"
+          />
         </div>
       </div>
 
@@ -135,10 +160,31 @@ export function TiposGastoTable({
                   <Power className="h-4 w-4 mr-2" />
                   {tipoGasto.activo ? 'Inactivar' : 'Activar'}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setTipoToDelete(tipoGasto)}
+                  variant="destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
         }}
+      />
+
+      <ConfirmDialog
+        open={tipoToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setTipoToDelete(null);
+        }}
+        onConfirm={handleDelete}
+        title="Eliminar tipo de gasto"
+        description={`¿Seguro que deseas eliminar "${tipoToDelete?.nombre ?? ''}"? Solo se puede eliminar si no tiene gastos asociados.`}
+        confirmText="Eliminar"
+        variant="danger"
+        loading={isDeleting}
       />
     </Card>
   );

@@ -26,7 +26,7 @@ export interface Plan {
 export interface Categoria {
   id: string;
   nombre: string;
-  tipo: 'cliente' | 'revendedor' | 'ambos';
+  tipo: 'cliente' | 'revendedor';
   tipoCategoria?: 'plataforma_streaming' | 'otros';
   /**
    * Tipos de plan personalizados de esta categoría.

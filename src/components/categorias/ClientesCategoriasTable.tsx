@@ -42,7 +42,7 @@ export function ClientesCategoriasTable({
 
   // Filtrar solo categorías de clientes
   const categoriasClientes = useMemo(() => {
-    return categorias.filter((c) => c.tipo === "cliente" || c.tipo === "ambos");
+    return categorias.filter((c) => c.tipo === "cliente");
   }, [categorias]);
 
   // Aplicar filtros y ordenar alfabéticamente

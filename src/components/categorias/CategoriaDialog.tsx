@@ -28,7 +28,7 @@ import { toast } from "sonner";
 
 const categoriaSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  tipo: z.enum(["cliente", "revendedor", "ambos"]),
+  tipo: z.enum(["cliente", "revendedor"]),
   activo: z.boolean(),
 });
 
@@ -137,7 +137,7 @@ export function CategoriaDialog({
             <Select
               value={tipoValue}
               onValueChange={(value) =>
-                setValue("tipo", value as "cliente" | "revendedor" | "ambos")
+                setValue("tipo", value as "cliente" | "revendedor")
               }
             >
               <SelectTrigger>
@@ -146,7 +146,6 @@ export function CategoriaDialog({
               <SelectContent>
                 <SelectItem value="cliente">Cliente</SelectItem>
                 <SelectItem value="revendedor">Revendedor</SelectItem>
-                <SelectItem value="ambos">Ambos</SelectItem>
               </SelectContent>
             </Select>
             {errors.tipo && (

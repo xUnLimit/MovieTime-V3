@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FieldErrors } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,6 +51,7 @@ export function MetodoPagoForm({
   const [isBasicaTabComplete, setIsBasicaTabComplete] = useState(
     mode === "edit",
   );
+  const didSkipInitialPaisSyncRef = useRef(false);
 
   const {
     register,
@@ -195,12 +196,21 @@ export function MetodoPagoForm({
 
   useEffect(() => {
     if (paisValue) {
+      if (
+        mode === "edit" &&
+        metodoPago &&
+        !didSkipInitialPaisSyncRef.current
+      ) {
+        didSkipInitialPaisSyncRef.current = true;
+        return;
+      }
+
       const paisMoneda = PAISES_MONEDAS.find((pm) => pm.pais === paisValue);
       if (paisMoneda) {
         setValue("moneda", paisMoneda.moneda);
       }
     }
-  }, [paisValue, setValue]);
+  }, [mode, metodoPago, paisValue, setValue]);
 
   const handleTabChange = async (value: string) => {
     if (value === "adicional" && !isBasicaTabComplete) {
@@ -262,25 +272,29 @@ export function MetodoPagoForm({
             "El nuevo método de pago ha sido registrado correctamente.",
         });
       } else if (metodoPago) {
+        if (!hasChanges) {
+          toast.info("No hay cambios para guardar");
+          return;
+        }
+
         const updates: Partial<MetodoPago> = {
           nombre: data.nombre,
           pais: data.pais,
           moneda: data.moneda,
           titular: data.titular,
           asociadoA: data.asociadoA,
+          alias: data.alias || "",
+          notas: data.notas || "",
         };
-        if (data.alias) updates.alias = data.alias;
-        if (data.notas) updates.notas = data.notas;
         if (data.asociadoA === "usuario") {
           updates.tipoCuenta = data.tipoCuenta;
-          updates.identificador = data.identificador;
+          updates.identificador = data.identificador || "";
         } else if (data.asociadoA === "servicio") {
           updates.identificador = data.email || "";
-          if (data.email) updates.email = data.email;
-          if (data.contrasena) updates.contrasena = data.contrasena;
-          if (data.numeroTarjeta) updates.numeroTarjeta = data.numeroTarjeta;
-          if (data.fechaExpiracion)
-            updates.fechaExpiracion = data.fechaExpiracion;
+          updates.email = data.email || "";
+          updates.contrasena = data.contrasena || "";
+          updates.numeroTarjeta = data.numeroTarjeta || "";
+          updates.fechaExpiracion = data.fechaExpiracion || "";
         }
         await updateMetodoPago(metodoPago.id, updates);
         await fetchCounts();

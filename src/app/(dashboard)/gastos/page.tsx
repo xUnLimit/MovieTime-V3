@@ -17,7 +17,7 @@ import { Gasto, TipoGasto } from '@/types';
 
 function GastosPageContent() {
   const { gastos, fetchGastos, deleteGasto } = useGastosStore();
-  const { tiposGasto, fetchTiposGasto, toggleActivo } = useTiposGastoStore();
+  const { tiposGasto, fetchTiposGasto, toggleActivo, deleteTipoGasto } = useTiposGastoStore();
   const [activeTab, setActiveTab] = useState('gastos');
   const [gastoDialogOpen, setGastoDialogOpen] = useState(false);
   const [tipoDialogOpen, setTipoDialogOpen] = useState(false);
@@ -53,6 +53,10 @@ function GastosPageContent() {
 
   const handleToggleTipoActivo = async (tipoGasto: TipoGasto) => {
     await toggleActivo(tipoGasto.id);
+  };
+
+  const handleDeleteTipo = async (tipoGasto: TipoGasto) => {
+    await deleteTipoGasto(tipoGasto.id);
   };
 
   return (
@@ -117,6 +121,7 @@ function GastosPageContent() {
             tiposGasto={tiposGasto}
             onEdit={handleEditTipo}
             onToggleActivo={handleToggleTipoActivo}
+            onDelete={handleDeleteTipo}
           />
         </TabsContent>
       </Tabs>

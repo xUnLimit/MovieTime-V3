@@ -17,8 +17,8 @@ export function getMetodoPagoDefaultValues(
           | "servicio"
           | "usuario"),
       pais: metodoPago.pais,
-      moneda: "USD",
-      alias: "",
+      moneda: metodoPago.moneda || "USD",
+      alias: metodoPago.alias || "",
       titular: metodoPago.titular,
       tipoCuenta:
         metodoPago.tipoCuenta &&
@@ -38,7 +38,7 @@ export function getMetodoPagoDefaultValues(
       contrasena: metodoPago.contrasena || "",
       numeroTarjeta: metodoPago.numeroTarjeta || "",
       fechaExpiracion: metodoPago.fechaExpiracion || "",
-      notas: "",
+      notas: metodoPago.notas || "",
     };
   }
 

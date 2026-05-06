@@ -103,7 +103,7 @@ export function detectarCambios<T extends Record<string, unknown>>(
  * Compara dos valores considerando null, undefined, Date, etc.
  */
 function sonValoresIguales(a: unknown, b: unknown): boolean {
-  // Ambos null o undefined
+  // Los dos null o undefined
   if (a == null && b == null) return true;
   // Solo uno es null/undefined
   if (a == null || b == null) return false;

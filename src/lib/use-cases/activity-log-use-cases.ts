@@ -1,4 +1,9 @@
-import { countActivityLogs, queryActivityLogs, removeActivityLog } from '@/lib/supabase/activity-log-repository';
+import {
+  countActivityLogs,
+  queryActivityLogs,
+  removeActivityLog,
+  removeAllActivityLogs,
+} from '@/lib/supabase/activity-log-repository';
 import { ENTITIES } from '@/lib/supabase/entities';
 import type { QueryFilter } from '@/lib/supabase/entities';
 import type { ActivityLog } from '@/types';
@@ -19,4 +24,8 @@ export async function deleteActivityLogsOlderThanUseCase(cutoff: Date) {
   ]);
   await deleteActivityLogsUseCase(oldLogs.map((log) => log.id));
   return oldLogs.length;
+}
+
+export async function deleteAllActivityLogsUseCase() {
+  return removeAllActivityLogs();
 }

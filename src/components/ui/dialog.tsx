@@ -31,6 +31,20 @@ function DialogClose({
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
+function hasDialogDescription(children: React.ReactNode): boolean {
+  return React.Children.toArray(children).some((child) => {
+    if (!React.isValidElement(child)) return false
+    if (child.type === DialogDescription) return true
+
+    const props = child.props as {
+      children?: React.ReactNode
+      "data-slot"?: string
+    }
+    if (props["data-slot"] === "dialog-description") return true
+    return hasDialogDescription(props.children)
+  })
+}
+
 function DialogOverlay({
   className,
   ...props
@@ -55,6 +69,8 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const hasDescription = hasDialogDescription(children)
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -66,6 +82,11 @@ function DialogContent({
           className
         )}
       >
+        {!hasDescription && (
+          <DialogDescription className="sr-only">
+            Contenido del dialogo.
+          </DialogDescription>
+        )}
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close

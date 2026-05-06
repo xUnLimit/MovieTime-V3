@@ -58,7 +58,6 @@ function VerCategoriaPageContent() {
     switch (tipo) {
       case 'cliente': return 'Cliente';
       case 'revendedor': return 'Revendedor';
-      case 'ambos': return 'Cliente y Revendedor';
       default: return tipo;
     }
   };

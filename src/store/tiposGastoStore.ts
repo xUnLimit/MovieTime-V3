@@ -1,4 +1,13 @@
-﻿import { countTiposGasto, createTipoGasto, ENTITIES, getTiposGasto, logCacheHit, updateTipoGasto } from '@/lib/supabase/catalogos-repository';
+import {
+  countGastos,
+  countTiposGasto,
+  createTipoGasto,
+  ENTITIES,
+  getTiposGasto,
+  logCacheHit,
+  removeTipoGasto,
+  updateTipoGasto,
+} from '@/lib/supabase/catalogos-repository';
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -23,6 +32,7 @@ interface TiposGastoState {
   fetchCounts: () => Promise<void>;
   createTipoGasto: (tipoGasto: Omit<TipoGasto, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTipoGasto: (id: string, updates: Partial<TipoGasto>) => Promise<void>;
+  deleteTipoGasto: (id: string) => Promise<void>;
   toggleActivo: (id: string) => Promise<void>;
   getTipoGasto: (id: string) => TipoGasto | undefined;
   getTiposActivos: () => TipoGasto[];
@@ -172,6 +182,26 @@ export const useTiposGastoStore = create<TiposGastoState>()(
         const tipo = get().tiposGasto.find((item) => item.id === id);
         if (!tipo) throw new Error('Tipo de gasto no encontrado');
         await get().updateTipoGasto(id, { activo: !tipo.activo });
+      },
+
+      deleteTipoGasto: async (id) => {
+        const tipo = get().tiposGasto.find((item) => item.id === id);
+        if (!tipo) throw new Error('Tipo de gasto no encontrado');
+
+        const gastosAsociados = await countGastos([
+          { field: 'tipoGastoId', operator: '==', value: id },
+        ]);
+        if (gastosAsociados > 0) {
+          throw new Error('Este tipo tiene gastos asociados. Inactívalo para conservar el historial.');
+        }
+
+        await removeTipoGasto(id);
+
+        set((state) => ({
+          tiposGasto: state.tiposGasto.filter((item) => item.id !== id),
+          totalTipos: Math.max(0, state.totalTipos - 1),
+          tiposActivos: Math.max(0, state.tiposActivos - (tipo.activo ? 1 : 0)),
+        }));
       },
 
       getTipoGasto: (id) => get().tiposGasto.find((tipo) => tipo.id === id),

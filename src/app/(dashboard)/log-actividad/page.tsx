@@ -8,6 +8,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { ACTIVITY_LOG_COLLECTION } from '@/lib/use-cases/activity-log-use-cases';
 import {
+  deleteAllActivityLogsUseCase,
   deleteActivityLogsOlderThanUseCase,
   deleteActivityLogsUseCase,
 } from '@/lib/use-cases/activity-log-use-cases';
@@ -88,6 +89,17 @@ function LogActividadPageContent() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    try {
+      const deletedCount = await deleteAllActivityLogsUseCase();
+      toast.success('Log de actividad eliminado', { description: `${deletedCount} registro(s) han sido eliminados.` });
+      refresh();
+    } catch (error) {
+      console.error('Error deleting all logs:', error);
+      toast.error('Error al eliminar registros', { description: 'No se pudieron eliminar todos los registros. Intenta nuevamente.' });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-1">
@@ -120,6 +132,7 @@ function LogActividadPageContent() {
         canDeleteLogs={canDeleteLogs}
         onDeleteSelected={handleDeleteSelected}
         onDeleteByDays={handleDeleteByDays}
+        onDeleteAll={handleDeleteAll}
         pageSize={pageSize}
         onPageSizeChange={(size) => { setPageSize(size); refresh(); }}
       />

@@ -121,13 +121,17 @@ export function normalizeWritePayload(
     ],
   };
 
-  if (collectionName === ENTITIES.SERVICIOS && snake.tipo && !snake.plan_tipo_id) {
-    snake.plan_tipo_id = snake.tipo;
+  if (collectionName === ENTITIES.SERVICIOS && snake.tipo !== undefined) {
+    if (snake.plan_tipo_id === undefined) {
+      snake.plan_tipo_id = snake.tipo;
+    }
+    delete snake.tipo;
   }
-  if (collectionName === ENTITIES.GASTOS && snake.monto && !snake.monto_original) {
-    snake.monto_original = snake.monto;
-    snake.monto_usd = snake.monto;
-    snake.moneda_original = 'USD';
+  if (collectionName === ENTITIES.GASTOS && snake.monto !== undefined) {
+    if (snake.monto_original === undefined) snake.monto_original = snake.monto;
+    if (snake.monto_usd === undefined) snake.monto_usd = snake.monto;
+    if (snake.moneda_original === undefined) snake.moneda_original = 'USD';
+    delete snake.monto;
   }
 
   const allowed = allowedByCollection[collectionName];
