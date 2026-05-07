@@ -124,8 +124,8 @@ function NotificacionesPageContent() {
   return (
     <div className="space-y-4">
       {/* Page Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Notificaciones</h1>
           <p className="text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground transition-colors">
@@ -134,7 +134,7 @@ function NotificacionesPageContent() {
             / <span className="text-foreground">Notificaciones</span>
           </p>
         </div>
-        <Button onClick={handleForzarSync} disabled={isSyncing} variant="outline" className="self-start sm:self-auto">
+        <Button onClick={handleForzarSync} disabled={isSyncing} variant="outline" className="shrink-0 whitespace-nowrap">
           <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
           {isSyncing ? 'Sincronizando...' : 'Actualizar'}
         </Button>

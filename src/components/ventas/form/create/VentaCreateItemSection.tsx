@@ -302,6 +302,7 @@ export function VentaCreateItemSection({
         <VentaServicioSelector
           categoriaId={categoriaId}
           planId={planId}
+          requirePlan
           servicioId={servicioId}
           servicioSeleccionado={servicioSeleccionado}
           servicios={serviciosVentana}

@@ -61,19 +61,19 @@ function GastosPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Gastos</h1>
           <p className="text-sm text-muted-foreground">
             <Link href="/" className="transition-colors hover:text-foreground">Dashboard</Link> / <span className="text-foreground">Gastos</span>
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex shrink-0 flex-row flex-wrap justify-end gap-2">
           <Button
             variant="outline"
             onClick={handleCreateTipo}
-            className="sm:self-auto"
+            className="whitespace-nowrap"
           >
             <Tags className="mr-2 h-4 w-4" />
             Nuevo tipo
@@ -81,7 +81,7 @@ function GastosPageContent() {
           <Button
             onClick={handleCreateGasto}
             disabled={tiposActivos.length === 0}
-            className="sm:self-auto"
+            className="whitespace-nowrap"
           >
             <Plus className="mr-2 h-4 w-4" />
             Nuevo gasto

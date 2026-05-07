@@ -133,8 +133,8 @@ function ServiciosCategoriaPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -144,14 +144,14 @@ function ServiciosCategoriaPageContent() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Servicios: {categoria.nombre}</h1>
+            <h1 className="min-w-0 text-xl sm:text-2xl font-bold tracking-tight">Servicios: {categoria.nombre}</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link href="/servicios" className="hover:text-foreground transition-colors">Servicios</Link> / <span className="text-foreground">{categoria.nombre}</span>
           </p>
         </div>
-        <Link href={`/servicios/crear?from=/servicios/${categoriaId}`} className="self-start sm:self-auto">
-          <Button>
+        <Link href={`/servicios/crear?from=/servicios/${categoriaId}`} className="shrink-0">
+          <Button className="whitespace-nowrap">
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Servicio
           </Button>

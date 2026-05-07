@@ -181,55 +181,6 @@ export function VentasForm() {
     loadServiciosCategoria();
   }, [categoriaId]);
 
-  useEffect(() => {
-    const tipoPlan = categorias
-      .flatMap((c) => c.planes ?? [])
-      .find((p) => p.id === planId)?.tipoPlan;
-
-    const candidateIds = serviciosCategoria
-      .filter((s) => tipoPlan && s.tipo === tipoPlan && s.activo && !s.enReposo)
-      .map((s) => s.id);
-
-    if (!planId || candidateIds.length === 0) {
-      setVentasActivasPorServicio({});
-      return;
-    }
-
-    let cancelled = false;
-    setLoadingVentasRanking(true);
-
-    fetchVentasByFiltersUseCase<VentaDoc>([
-      { field: "servicioId", operator: "in", value: candidateIds },
-      { field: "estado", operator: "!=", value: "inactivo" },
-    ])
-      .then((docs) => {
-        if (cancelled) return;
-        const grouped: Record<string, VentaDoc[]> = Object.fromEntries(
-          candidateIds.map((id) => [id, []])
-        );
-        docs.forEach((doc) => {
-          if (grouped[doc.servicioId]) grouped[doc.servicioId].push(doc);
-        });
-        setVentasActivasPorServicio(grouped);
-        const ocupados: Record<string, Set<number>> = {};
-        Object.entries(grouped).forEach(([sid, ventas]) => {
-          ocupados[sid] = new Set(
-            ventas.map((v) => v.perfilNumero).filter((n): n is number => n != null)
-          );
-        });
-        setPerfilesOcupadosVenta(ocupados);
-      })
-      .catch(() => {
-        if (!cancelled) setVentasActivasPorServicio({});
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingVentasRanking(false);
-      });
-
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planId]);
-
   const categoriaSeleccionada = useMemo(
     () => categorias.find((c) => c.id === categoriaId),
     [categorias, categoriaId],
@@ -317,29 +268,106 @@ export function VentasForm() {
     }, {});
   }, [items]);
 
+  const servicioRankingCandidateIds = useMemo(() => {
+    if (!planSeleccionado) return [];
+    return serviciosCategoria
+      .filter(
+        (servicio) =>
+          servicio.activo &&
+          !servicio.enReposo &&
+          servicio.tipo === planSeleccionado.tipoPlan,
+      )
+      .map((servicio) => servicio.id);
+  }, [planSeleccionado, serviciosCategoria]);
+
+  useEffect(() => {
+    if (servicioRankingCandidateIds.length === 0) {
+      setVentasActivasPorServicio({});
+      setPerfilesOcupadosVenta({});
+      setLoadingVentasRanking(false);
+      return;
+    }
+
+    let cancelled = false;
+    const candidateSet = new Set(servicioRankingCandidateIds);
+    setLoadingVentasRanking(true);
+
+    fetchVentasByFiltersUseCase<VentaDoc>([
+      { field: "servicioId", operator: "in", value: servicioRankingCandidateIds },
+      { field: "estado", operator: "!=", value: "inactivo" },
+    ])
+      .then((docs) => {
+        if (cancelled) return;
+        const grouped: Record<string, VentaDoc[]> = Object.fromEntries(
+          servicioRankingCandidateIds.map((id) => [id, []]),
+        );
+        docs.forEach((doc) => {
+          if (candidateSet.has(doc.servicioId)) {
+            grouped[doc.servicioId].push(doc);
+          }
+        });
+        setVentasActivasPorServicio(grouped);
+        setPerfilesOcupadosVenta(
+          Object.fromEntries(
+            Object.entries(grouped).map(([servicioId, ventas]) => [
+              servicioId,
+              new Set(
+                ventas
+                  .map((venta) => venta.perfilNumero)
+                  .filter((numero): numero is number => numero != null),
+              ),
+            ]),
+          ),
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Error cargando ventas activas para ranking:", error);
+        setVentasActivasPorServicio({});
+        setPerfilesOcupadosVenta({});
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingVentasRanking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [servicioRankingCandidateIds]);
+
   // Filtrar servicios: solo activos con perfiles disponibles y tipo compatible con el plan
   const serviciosFiltradosPorTipo = useMemo(() => {
     if (!planSeleccionado) return [];
     return serviciosOrdenados.filter((servicio) => {
       if (!servicio.activo || servicio.enReposo) return false;
       if (servicio.tipo !== planSeleccionado.tipoPlan) return false;
-      const ocupadosActual = servicio.perfilesOcupados || 0;
+      const ocupadosActual =
+        perfilesOcupadosVenta[servicio.id]?.size ?? servicio.perfilesOcupados ?? 0;
       const ocupadosEnVenta = perfilesUsados[servicio.id]?.size || 0;
       const disponibles =
         (servicio.perfilesDisponibles || 0) - ocupadosActual - ocupadosEnVenta;
       return disponibles > 0;
     });
-  }, [serviciosOrdenados, planSeleccionado, perfilesUsados]);
+  }, [perfilesOcupadosVenta, perfilesUsados, planSeleccionado, serviciosOrdenados]);
 
   const serviciosRankeados = useMemo(
     () =>
       rankServicios(
         serviciosFiltradosPorTipo,
         ventasActivasPorServicio,
-        planSeleccionado?.cicloPago ?? "mensual",
-        fechaInicioValue ?? new Date(),
+        {
+          planCicloPago: planSeleccionado?.cicloPago ?? "mensual",
+          fechaInicio: fechaInicioValue ?? new Date(),
+          fechaFin: fechaFinValue,
+        },
       ),
-    [serviciosFiltradosPorTipo, ventasActivasPorServicio, planSeleccionado, fechaInicioValue],
+    [
+      fechaFinValue,
+      fechaInicioValue,
+      planSeleccionado,
+      serviciosFiltradosPorTipo,
+      ventasActivasPorServicio,
+    ],
   );
 
   const maxServiciosWindowStart = useMemo(
@@ -363,7 +391,7 @@ export function VentasForm() {
 
   useEffect(() => {
     setServiciosWindowStart(0);
-  }, [categoriaId]);
+  }, [categoriaId, planId, tipoPlanId]);
 
   const getSlotsDisponibles = (servicioIdValue: string) => {
     const servicio = serviciosCategoria.find((s) => s.id === servicioIdValue);
@@ -582,6 +610,7 @@ export function VentasForm() {
 
     setItems((prev) => [...prev, newItem]);
     setCategoriaId("");
+    setTipoPlanId("");
     setServicioId("");
     setPlanId("");
     setPrecio("");
@@ -600,7 +629,15 @@ export function VentasForm() {
   const handleEditItem = (item: VentaItem) => {
     handleRemoveItem(item.id);
 
+    const itemCategoria = categorias.find(
+      (categoria) => categoria.id === item.categoriaId,
+    );
+    const itemPlan = itemCategoria?.planes?.find(
+      (plan) => plan.id === item.planId,
+    );
+
     setCategoriaId(item.categoriaId);
+    setTipoPlanId(itemPlan?.tipoPlan ?? "");
     setServicioId(item.servicioId);
     setPlanId(item.planId);
     setPrecio(item.precio.toString());

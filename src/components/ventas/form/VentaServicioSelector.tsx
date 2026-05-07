@@ -15,6 +15,7 @@ import type { Servicio } from "@/types";
 interface VentaServicioSelectorProps {
   categoriaId?: string;
   planId?: string;
+  requirePlan?: boolean;
   servicioId?: string;
   servicioSeleccionado?: Servicio;
   servicios: Servicio[];
@@ -33,6 +34,7 @@ interface VentaServicioSelectorProps {
 export function VentaServicioSelector({
   categoriaId,
   planId,
+  requirePlan = false,
   servicioId,
   servicioSeleccionado,
   servicios,
@@ -48,6 +50,7 @@ export function VentaServicioSelector({
   onWheel,
 }: VentaServicioSelectorProps) {
   const hasScrollControls = totalServicios > visibleRows;
+  const isDisabled = loading || !categoriaId || (requirePlan && !planId);
 
   return (
     <div className="space-y-2">
@@ -59,18 +62,18 @@ export function VentaServicioSelector({
               variant="outline"
               type="button"
               className="w-full justify-start pr-16 text-left"
-              disabled={!planId || loading}
+              disabled={isDisabled}
             >
               <span className="truncate">
                 {loading
                   ? "Cargando servicios..."
                   : servicioId
                     ? `${servicioSeleccionado?.nombre} - ${servicioSeleccionado?.correo}`
-                    : planId
-                      ? "Seleccionar servicio"
-                      : categoriaId
+                    : categoriaId
+                      ? requirePlan && !planId
                         ? "Primero selecciona plan"
-                        : "Primero selecciona categoria"}
+                        : "Seleccionar servicio"
+                      : "Primero selecciona categoria"}
               </span>
             </Button>
           </DropdownMenuTrigger>

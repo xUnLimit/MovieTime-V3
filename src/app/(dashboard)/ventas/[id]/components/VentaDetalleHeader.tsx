@@ -12,14 +12,14 @@ interface VentaDetalleHeaderProps {
 
 export function VentaDetalleHeader({ onDelete, onRenovar, venta }: VentaDetalleHeaderProps) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3">
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <Link href="/ventas">
           <Button variant="outline" size="icon" className="h-8 w-8 flex-shrink-0">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Detalles de Venta: {venta.clienteNombre}</h1>
           <p className="text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
@@ -30,7 +30,7 @@ export function VentaDetalleHeader({ onDelete, onRenovar, venta }: VentaDetalleH
           </p>
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex shrink-0 flex-wrap justify-end gap-2">
         <Button
           variant="default"
           size="sm"

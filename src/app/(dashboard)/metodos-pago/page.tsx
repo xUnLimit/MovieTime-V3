@@ -21,15 +21,15 @@ function MetodosPagoPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Métodos de Pago</h1>
           <p className="text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Métodos de Pago</span>
           </p>
         </div>
-        <Link href="/metodos-pago/crear" className="self-start sm:self-auto">
-          <Button>
+        <Link href="/metodos-pago/crear" className="shrink-0">
+          <Button className="whitespace-nowrap">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Método
           </Button>

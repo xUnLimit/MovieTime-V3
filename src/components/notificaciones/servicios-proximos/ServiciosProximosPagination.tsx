@@ -28,15 +28,15 @@ export function ServiciosProximosPagination({
   onNextPage,
 }: ServiciosProximosPaginationProps) {
   return (
-    <div className="flex items-center justify-between px-2 py-4">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Mostrar</span>
+    <div className="flex flex-wrap items-center gap-2 px-2 py-4">
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="h-8 w-[70px] px-2 justify-between"
+              className="h-8 w-[62px] justify-between px-2 sm:w-[70px]"
             >
               {itemsPerPage}
               <ChevronDown className="h-3.5 w-3.5 opacity-50" />
@@ -56,14 +56,15 @@ export function ServiciosProximosPagination({
         </DropdownMenu>
       </div>
 
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-muted-foreground">
+      <div className="ml-auto flex items-center gap-2 sm:gap-4">
+        <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
           Página {safeCurrentPage} de {totalPages}
         </span>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 gap-2">
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
             onClick={onPreviousPage}
             disabled={safeCurrentPage === 1}
           >
@@ -72,6 +73,7 @@ export function ServiciosProximosPagination({
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
             onClick={onNextPage}
             disabled={safeCurrentPage === totalPages}
           >

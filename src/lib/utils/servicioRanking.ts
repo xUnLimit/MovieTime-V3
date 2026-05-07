@@ -3,29 +3,53 @@ import { addMonths, differenceInCalendarDays } from 'date-fns';
 import { MESES_POR_CICLO } from '@/features/ventas/ventas-form-shared';
 import type { Servicio, VentaDoc } from '@/types';
 
+interface RankServiciosOptions {
+  planCicloPago: string;
+  fechaInicio?: Date;
+  fechaFin?: Date;
+}
+
 /**
  * Ordena servicios del mejor al peor para alojar un nuevo cliente.
  *
  * Prioridad:
  * 1. Servicio vacío (sin ventas activas) → score máximo; el más reciente va primero.
- * 2. Menor diferencia promedio de días restantes entre clientes existentes y el nuevo.
+ * 2. Menor diferencia promedio entre vencimientos existentes y el vencimiento nuevo.
  *    Bonus si todos los clientes existentes comparten el mismo cicloPago que el plan nuevo.
  * 3. Desempate: más slots disponibles.
  */
 export function rankServicios(
   servicios: Servicio[],
   ventasPorServicio: Record<string, VentaDoc[]>,
-  planCicloPago: string,
-  fechaInicio: Date = new Date(),
+  options: RankServiciosOptions,
 ): Servicio[] {
+  const {
+    planCicloPago,
+    fechaInicio = new Date(),
+    fechaFin,
+  } = options;
   const meses = MESES_POR_CICLO[planCicloPago as keyof typeof MESES_POR_CICLO] ?? 1;
-  const fechaFinNuevo = addMonths(fechaInicio, meses);
-  const diasRestantesNuevo = differenceInCalendarDays(fechaFinNuevo, fechaInicio);
+  const fechaFinNuevo = fechaFin ?? addMonths(fechaInicio, meses);
   const hoy = new Date();
+  const diasRestantesNuevo = Math.max(
+    differenceInCalendarDays(fechaFinNuevo, hoy),
+    0,
+  );
 
   const scored = servicios.map((servicio) => {
     const ventasActivas = ventasPorServicio[servicio.id] ?? [];
-    const slotsDisponibles = (servicio.perfilesDisponibles ?? 0) - (servicio.perfilesOcupados ?? 0);
+    const perfilesOcupados = new Set(
+      ventasActivas
+        .map((venta) => venta.perfilNumero)
+        .filter((numero): numero is number => numero != null),
+    ).size;
+    const ocupados = ventasActivas.length > 0
+      ? perfilesOcupados
+      : servicio.perfilesOcupados ?? 0;
+    const slotsDisponibles = Math.max(
+      (servicio.perfilesDisponibles ?? 0) - ocupados,
+      0,
+    );
 
     if (ventasActivas.length === 0) {
       const createdMs = servicio.createdAt ? new Date(servicio.createdAt as unknown as string).getTime() : 0;

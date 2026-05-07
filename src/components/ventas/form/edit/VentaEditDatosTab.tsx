@@ -67,6 +67,9 @@ interface VentaEditDatosTabProps {
   categoriaIdValue: string;
   categoriaSeleccionada?: Categoria;
   categoriasOrdenadas: Categoria[];
+  tipoPlanId: string;
+  tiposPlanes: { id: string; nombre: string }[];
+  onTipoPlanSelect: (tipoPlanId: string) => void;
   servicioIdValue: string;
   servicioSeleccionado?: Servicio;
   serviciosVentana: Servicio[];
@@ -104,6 +107,9 @@ export function VentaEditDatosTab({
   categoriaIdValue,
   categoriaSeleccionada,
   categoriasOrdenadas,
+  tipoPlanId,
+  tiposPlanes,
+  onTipoPlanSelect,
   servicioIdValue,
   servicioSeleccionado,
   serviciosVentana,
@@ -158,7 +164,7 @@ export function VentaEditDatosTab({
         }}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${tiposPlanes.length > 1 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
         <div className="space-y-2">
           <Label>Categoría</Label>
           <DropdownMenu>
@@ -183,6 +189,7 @@ export function VentaEditDatosTab({
                   key={categoria.id}
                   onClick={() => {
                     setValue("categoriaId", categoria.id);
+                    onTipoPlanSelect("");
                     setValue("servicioId", "");
                     setValue("planId", "");
                     setValue("perfilNumero", "");
@@ -201,6 +208,60 @@ export function VentaEditDatosTab({
           )}
         </div>
 
+        {tiposPlanes.length > 1 ? (
+          <div className="space-y-2">
+            <Label>Tipo de plan</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="w-full justify-between"
+                  disabled={!categoriaIdValue}
+                >
+                  {tipoPlanId
+                    ? tiposPlanes.find((tipo) => tipo.id === tipoPlanId)?.nombre
+                    : categoriaIdValue
+                      ? "Seleccionar tipo"
+                      : "Primero selecciona categorÃ­a"}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-[var(--radix-dropdown-menu-trigger-width)]"
+              >
+                {tiposPlanes.map((tipo) => (
+                  <DropdownMenuItem
+                    key={tipo.id}
+                    onClick={() => {
+                      const planesTipo =
+                        categoriaSeleccionada?.planes?.filter(
+                          (plan) => plan.tipoPlan === tipo.id,
+                        ) ?? [];
+                      const siguientePlan = planesTipo.length > 0
+                        ? planesTipo.find(
+                            (plan) =>
+                              plan.cicloPago === planSeleccionado?.cicloPago,
+                          ) ?? planesTipo[0]
+                        : undefined;
+                      onTipoPlanSelect(tipo.id);
+                      setValue("servicioId", "");
+                      setValue("planId", siguientePlan?.id ?? "");
+                      setValue("perfilNumero", "");
+                      clearErrors("servicioId");
+                      clearErrors("planId");
+                      clearErrors("perfilNumero");
+                    }}
+                  >
+                    {tipo.nombre}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : null}
+
         <VentaServicioSelector
           categoriaId={categoriaIdValue}
           servicioId={servicioIdValue}
@@ -218,9 +279,20 @@ export function VentaEditDatosTab({
           onScroll={onScrollServicios}
           onWheel={onWheelServicios}
           onSelectServicio={(servicio) => {
+            const planesServicio = categoriaSeleccionada?.planes?.filter(
+              (plan) => plan.tipoPlan === servicio.tipo,
+            ) ?? [];
+            const siguientePlan = planesServicio.length > 0
+              ? planesServicio.find(
+                  (plan) => plan.cicloPago === planSeleccionado?.cicloPago,
+                ) ?? planesServicio[0]
+              : undefined;
+            onTipoPlanSelect(servicio.tipo);
             setValue("servicioId", servicio.id);
+            setValue("planId", siguientePlan?.id ?? "");
             setValue("perfilNumero", "");
             clearErrors("servicioId");
+            clearErrors("planId");
           }}
         />
       </div>

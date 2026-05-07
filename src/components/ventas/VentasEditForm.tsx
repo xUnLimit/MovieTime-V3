@@ -36,6 +36,7 @@ import {
   roundToDecimals,
 } from "@/lib/utils/calculations";
 import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
+import { rankServicios } from "@/lib/utils/servicioRanking";
 import {
   getUsuarioMetodoPagoMoneda,
   getUsuarioMetodoPagoNombre,
@@ -91,8 +92,13 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   const [perfilesOcupadosVenta, setPerfilesOcupadosVenta] = useState<
     Record<string, Set<number>>
   >({});
+  const [ventasActivasPorServicio, setVentasActivasPorServicio] = useState<
+    Record<string, VentaDoc[]>
+  >({});
+  const [loadingVentasRanking, setLoadingVentasRanking] = useState(false);
   const [serviciosWindowStart, setServiciosWindowStart] = useState(0);
   const [searchCliente, setSearchCliente] = useState("");
+  const [tipoPlanId, setTipoPlanId] = useState("");
 
   // Efecto inicial: solo cargar datos que no dependen de selección
   useEffect(() => {
@@ -223,16 +229,135 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     [categorias, categoriaIdValue],
   );
 
+  const servicioSeleccionado = useMemo(
+    () => serviciosCategoria.find((s) => s.id === servicioIdValue),
+    [servicioIdValue, serviciosCategoria],
+  );
+
+  const tipoPlanSeleccionadoId = useMemo(() => {
+    if (tipoPlanId) return tipoPlanId;
+    if (servicioSeleccionado?.tipo) return servicioSeleccionado.tipo;
+    const tiposPlanes = categoriaSeleccionada?.tiposPlanes ?? [];
+    return tiposPlanes.length === 1 ? tiposPlanes[0].id : "";
+  }, [categoriaSeleccionada, servicioSeleccionado?.tipo, tipoPlanId]);
+
+  const planesDisponibles = useMemo(() => {
+    const planes = categoriaSeleccionada?.planes ?? [];
+    if (!tipoPlanSeleccionadoId) return planes;
+    return planes.filter(
+      (plan) => plan.tipoPlan === tipoPlanSeleccionadoId
+    );
+  }, [categoriaSeleccionada, tipoPlanSeleccionadoId]);
+
+  const planActualCategoria = useMemo(
+    () => categoriaSeleccionada?.planes?.find((plan) => plan.id === planIdValue),
+    [categoriaSeleccionada, planIdValue],
+  );
+
+  const planSeleccionado = useMemo(
+    () => planesDisponibles.find((plan) => plan.id === planIdValue),
+    [planesDisponibles, planIdValue],
+  );
+
+  useEffect(() => {
+    if (!categoriaIdValue) {
+      setTipoPlanId("");
+      return;
+    }
+    if (tipoPlanId || !tipoPlanSeleccionadoId) return;
+    setTipoPlanId(tipoPlanSeleccionadoId);
+  }, [categoriaIdValue, tipoPlanId, tipoPlanSeleccionadoId]);
+
+  const planParaRanking = planSeleccionado ?? planActualCategoria;
+  const tipoPlanRanking =
+    tipoPlanSeleccionadoId ||
+    planParaRanking?.tipoPlan ||
+    servicioSeleccionado?.tipo ||
+    null;
+
+  const servicioRankingCandidateIds = useMemo(() => {
+    const ids = new Set<string>();
+    serviciosCategoria.forEach((servicio) => {
+      if (servicio.id === venta.servicioId) {
+        ids.add(servicio.id);
+        return;
+      }
+      if (!servicio.activo || servicio.enReposo) return;
+      if (tipoPlanRanking && servicio.tipo !== tipoPlanRanking) return;
+      ids.add(servicio.id);
+    });
+    return Array.from(ids);
+  }, [serviciosCategoria, tipoPlanRanking, venta.servicioId]);
+
+  useEffect(() => {
+    if (servicioRankingCandidateIds.length === 0) {
+      setVentasActivasPorServicio({});
+      setPerfilesOcupadosVenta({});
+      setLoadingVentasRanking(false);
+      return;
+    }
+
+    let cancelled = false;
+    const candidateSet = new Set(servicioRankingCandidateIds);
+    setLoadingVentasRanking(true);
+
+    fetchVentasByFiltersUseCase<VentaDoc>([
+      { field: "servicioId", operator: "in", value: servicioRankingCandidateIds },
+      { field: "estado", operator: "!=", value: "inactivo" },
+    ])
+      .then((docs) => {
+        if (cancelled) return;
+        const grouped: Record<string, VentaDoc[]> = Object.fromEntries(
+          servicioRankingCandidateIds.map((id) => [id, []]),
+        );
+        docs.forEach((doc) => {
+          if (doc.id === venta.id || !candidateSet.has(doc.servicioId)) return;
+          grouped[doc.servicioId].push(doc);
+        });
+        setVentasActivasPorServicio(grouped);
+        setPerfilesOcupadosVenta(
+          Object.fromEntries(
+            Object.entries(grouped).map(([servicioId, ventas]) => [
+              servicioId,
+              new Set(
+                ventas
+                  .map((doc) => doc.perfilNumero)
+                  .filter((numero): numero is number => numero != null),
+              ),
+            ]),
+          ),
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Error cargando ventas activas para ranking:", error);
+        setVentasActivasPorServicio({});
+        setPerfilesOcupadosVenta({});
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingVentasRanking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [servicioRankingCandidateIds, venta.id]);
+
   const serviciosOrdenados = useMemo(() => {
-    return [...serviciosCategoria]
+    const servicioOriginal = serviciosCategoria.find(
+      (servicio) => servicio.id === venta.servicioId,
+    );
+    const serviciosParaCambio = serviciosCategoria
       .filter((servicio) => {
-        // Siempre mostrar el servicio actual de la venta (aunque esté lleno o inactivo)
-        if (servicio.id === venta.servicioId) return true;
-        // Solo mostrar servicios activos con perfiles disponibles (excluir en reposo)
+        if (servicio.id === venta.servicioId) return false;
         if (!servicio.activo || servicio.enReposo) return false;
+        if (tipoPlanRanking && servicio.tipo !== tipoPlanRanking) return false;
+        const ocupados =
+          perfilesOcupadosVenta[servicio.id]?.size ??
+          servicio.perfilesOcupados ??
+          0;
         const disponibles =
-          (servicio.perfilesDisponibles || 0) -
-          (servicio.perfilesOcupados || 0);
+          (servicio.perfilesDisponibles || 0) - ocupados;
         return disponibles > 0;
       })
       .sort((a, b) => {
@@ -240,7 +365,32 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return bDate - aDate;
       });
-  }, [serviciosCategoria, venta.servicioId]);
+
+    const rankeados = rankServicios(
+      serviciosParaCambio,
+      ventasActivasPorServicio,
+      {
+        planCicloPago:
+          planParaRanking?.cicloPago ?? venta.cicloPago ?? "mensual",
+        fechaInicio: fechaInicioValue ?? venta.fechaInicio,
+        fechaFin: fechaFinValue ?? venta.fechaFin,
+      },
+    );
+
+    return servicioOriginal ? [...rankeados, servicioOriginal] : rankeados;
+  }, [
+    fechaFinValue,
+    fechaInicioValue,
+    perfilesOcupadosVenta,
+    planParaRanking,
+    serviciosCategoria,
+    tipoPlanRanking,
+    venta.cicloPago,
+    venta.fechaFin,
+    venta.fechaInicio,
+    venta.servicioId,
+    ventasActivasPorServicio,
+  ]);
 
   const maxServiciosWindowStart = useMemo(
     () =>
@@ -257,23 +407,6 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     [serviciosOrdenados, serviciosWindowStart],
   );
 
-  const servicioSeleccionado = serviciosCategoria.find(
-    (s) => s.id === servicioIdValue,
-  );
-
-  const planesDisponibles = useMemo(() => {
-    if (!categoriaSeleccionada?.planes || !servicioSeleccionado?.tipo)
-      return [];
-    return categoriaSeleccionada.planes.filter(
-      (plan) => plan.tipoPlan === servicioSeleccionado.tipo
-    );
-  }, [categoriaSeleccionada, servicioSeleccionado?.tipo]);
-
-  const planSeleccionado = useMemo(
-    () => planesDisponibles.find((plan) => plan.id === planIdValue),
-    [planesDisponibles, planIdValue],
-  );
-
   useVentaEditPlanPricing({
     setValue,
     planSeleccionado,
@@ -286,37 +419,30 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   });
 
   useEffect(() => {
-    const loadPerfilesOcupados = async () => {
-      if (!servicioIdValue) return;
-      try {
-        const docs = await fetchVentasByFiltersUseCase<Record<string, unknown>>([
-          { field: "servicioId", operator: "==", value: servicioIdValue },
-        ]);
-        const ocupados = new Set<number>();
-        docs.forEach((doc) => {
-          const estado = (doc.estado as string | undefined) ?? "activo";
-          if (estado === "inactivo") return;
-          if (doc.id === venta.id) return; // excluir la venta actual para que su perfil aparezca disponible
-          const perfil =
-            (doc.perfilNumero as number | null | undefined) ?? null;
-          if (!perfil) return;
-          ocupados.add(perfil);
-        });
-        setPerfilesOcupadosVenta((prev) => ({
-          ...prev,
-          [servicioIdValue]: ocupados,
-        }));
-      } catch (error) {
-        console.error("Error cargando perfiles ocupados por ventas:", error);
-        setPerfilesOcupadosVenta((prev) => ({
-          ...prev,
-          [servicioIdValue]: new Set(),
-        }));
-      }
-    };
+    if (planesDisponibles.length === 0) return;
+    const planEsCompatible = planesDisponibles.some(
+      (plan) => plan.id === planIdValue,
+    );
+    if (planEsCompatible) return;
 
-    loadPerfilesOcupados();
-  }, [servicioIdValue, venta.id]);
+    const cicloPreferido =
+      planActualCategoria?.cicloPago ?? venta.cicloPago ?? "mensual";
+    const siguientePlan =
+      planesDisponibles.find((plan) => plan.cicloPago === cicloPreferido) ??
+      planesDisponibles[0];
+
+    if (siguientePlan) {
+      setValue("planId", siguientePlan.id);
+      clearErrors("planId");
+    }
+  }, [
+    clearErrors,
+    planActualCategoria?.cicloPago,
+    planIdValue,
+    planesDisponibles,
+    setValue,
+    venta.cicloPago,
+  ]);
 
   useEffect(() => {
     setServiciosWindowStart((prev) => Math.min(prev, maxServiciosWindowStart));
@@ -324,7 +450,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
 
   useEffect(() => {
     setServiciosWindowStart(0);
-  }, [categoriaIdValue]);
+  }, [categoriaIdValue, planIdValue, tipoPlanRanking]);
 
   const getSlotsDisponibles = useCallback(
     (servicioId: string) => {
@@ -710,12 +836,15 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
             categoriaIdValue={categoriaIdValue}
             categoriaSeleccionada={categoriaSeleccionada}
             categoriasOrdenadas={categoriasOrdenadas}
+            tipoPlanId={tipoPlanId}
+            tiposPlanes={categoriaSeleccionada?.tiposPlanes ?? []}
+            onTipoPlanSelect={setTipoPlanId}
             servicioIdValue={servicioIdValue}
             servicioSeleccionado={servicioSeleccionado}
             serviciosVentana={serviciosVentana}
             totalServicios={serviciosOrdenados.length}
             visibleServiciosRows={SERVICIOS_DROPDOWN_VISIBLE_ROWS}
-            loadingServicios={loadingServicios}
+            loadingServicios={loadingServicios || loadingVentasRanking}
             getSlotsDisponibles={getSlotsDisponibles}
             getDisponiblesColorClass={getDisponiblesColorClass}
             onOpenPerfilDetalle={handleOpenPerfilDetalle}
