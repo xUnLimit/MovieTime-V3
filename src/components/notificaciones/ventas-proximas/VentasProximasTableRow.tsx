@@ -72,7 +72,7 @@ export function VentasProximasTableRow({
         notif.resaltada ? 'bg-orange-50/50 dark:bg-orange-500/5' : ''
       }`}
     >
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         <Button
           variant="ghost"
           size="icon"
@@ -104,22 +104,22 @@ export function VentasProximasTableRow({
         </Button>
       </TableCell>
 
-      <TableCell className="p-4 text-center font-medium">
-        <span className="inline-block max-w-[170px] truncate align-middle">
+      <TableCell className="px-2 py-2 text-center font-medium">
+        <span className="inline-block max-w-[130px] truncate align-middle">
           {notif.clienteNombre}
         </span>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
-        <span className="inline-block max-w-[170px] truncate align-middle">
+      <TableCell className="px-2 py-2 text-center">
+        <span className="inline-block max-w-[130px] truncate align-middle">
           {notif.categoriaNombre}
         </span>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {notif.servicioCorreo ? (
           <div className="flex items-center justify-center gap-2">
-            <span className="font-medium truncate max-w-[220px]">
+            <span className="max-w-[180px] truncate font-medium">
               {notif.servicioCorreo}
             </span>
             <Button
@@ -137,7 +137,7 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className="w-[190px] p-4 text-center">
+      <TableCell className="w-[160px] px-2 py-2 text-center">
         {notif.servicioContrasena ? (
           <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
             <span className="min-w-0 break-all text-center font-medium leading-tight">
@@ -175,13 +175,13 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
-            <span className="inline-block max-w-[120px] truncate font-medium align-middle">
+      <TableCell className="px-2 py-2 text-center">
+            <span className="inline-block max-w-[100px] truncate font-medium align-middle">
               {notif.perfilNombre || '-'}
             </span>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {notif.codigo ? (
           <div className="flex items-center justify-center gap-2">
             <span className="inline-block max-w-[72px] truncate font-medium align-middle">
@@ -202,20 +202,20 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {notif.fechaInicio ? formatearFecha(new Date(notif.fechaInicio)) : '—'}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {formatearFecha(new Date(notif.fechaFin))}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {getCurrencySymbol(notif.moneda)}
         {notif.precioFinal?.toFixed(2) || '0.00'}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         <Badge
           variant="outline"
           className={`font-normal gap-1 ${estadoBadge.variant}`}
@@ -227,7 +227,7 @@ export function VentasProximasTableRow({
         </Badge>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">

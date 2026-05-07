@@ -164,33 +164,32 @@ export function ReposoNotificacionesTable() {
       </div>
 
       <div>
-        <div className="rounded-md border">
-          <div className="table-scroll-shell">
-          <Table className="table-scroll-content min-w-[1060px]">
+        <div className="notification-table-scroll-shell rounded-md border">
+          <Table className="table-scroll-content min-w-[980px] lg:min-w-full">
             <TableHeader>
               <TableRow className="border-b hover:bg-muted/50">
-                <TableHead className="h-12 px-4 text-center text-muted-foreground w-[80px]">
+                <TableHead className="h-10 w-[56px] px-2 text-center text-muted-foreground">
                   Tipo
                 </TableHead>
-                <TableHead className="h-12 min-w-[170px] px-4 text-center text-muted-foreground">
+                <TableHead className="h-10 min-w-[130px] px-2 text-center text-muted-foreground">
                   Categoría
                 </TableHead>
-                <TableHead className="h-12 min-w-[220px] px-4 text-center text-muted-foreground">
+                <TableHead className="h-10 min-w-[200px] px-2 text-center text-muted-foreground">
                   Correo
                 </TableHead>
-                <TableHead className="h-12 min-w-[150px] px-4 text-center text-muted-foreground">
+                <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
                   Fecha Inicio
                 </TableHead>
-                <TableHead className="h-12 min-w-[150px] px-4 text-center text-muted-foreground">
+                <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
                   Fecha Fin
                 </TableHead>
-                <TableHead className="h-12 min-w-[170px] px-4 text-center text-muted-foreground">
+                <TableHead className="h-10 min-w-[150px] px-2 text-center text-muted-foreground">
                   Fecha Fin Reposo
                 </TableHead>
-                <TableHead className="h-12 min-w-[150px] px-4 text-center text-muted-foreground">
+                <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
                   Estado
                 </TableHead>
-                <TableHead className="h-12 px-4 text-center text-muted-foreground">
+                <TableHead className="h-10 min-w-[74px] px-2 text-center text-muted-foreground">
                   Acciones
                 </TableHead>
               </TableRow>
@@ -208,7 +207,7 @@ export function ReposoNotificacionesTable() {
                   return (
                     <TableRow key={notif.id} className="border-b transition-colors hover:bg-muted/50">
                       {/* Tipo - Bell icon */}
-                      <TableCell className="p-4 text-center">
+                      <TableCell className="px-2 py-2 text-center">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -229,41 +228,41 @@ export function ReposoNotificacionesTable() {
                       </TableCell>
 
                       {/* Categoría */}
-                      <TableCell className="p-4 text-center">
+                      <TableCell className="px-2 py-2 text-center">
                         {notif.categoriaNombre}
                       </TableCell>
 
                       {/* Correo */}
-                      <TableCell className="p-4 text-center text-sm">
+                      <TableCell className="px-2 py-2 text-center text-sm">
                         {notif.correo ?? '—'}
                       </TableCell>
 
                       {/* Fecha Inicio */}
-                      <TableCell className="p-4 text-center text-sm">
+                      <TableCell className="px-2 py-2 text-center text-sm">
                         {notif.fechaInicio
                           ? formatearFecha(notif.fechaInicio instanceof Date ? notif.fechaInicio.toISOString() : String(notif.fechaInicio))
                           : '-'}
                       </TableCell>
 
                       {/* Fecha Fin */}
-                      <TableCell className="p-4 text-center text-sm">
+                      <TableCell className="px-2 py-2 text-center text-sm">
                         {notif.fechaFin
                           ? formatearFecha(notif.fechaFin instanceof Date ? notif.fechaFin.toISOString() : String(notif.fechaFin))
                           : '-'}
                       </TableCell>
 
                       {/* Fecha Fin Reposo */}
-                      <TableCell className="p-4 text-center text-sm">
+                      <TableCell className="px-2 py-2 text-center text-sm">
                         {notif.fechaFinReposo ? formatearFecha(notif.fechaFinReposo instanceof Date ? notif.fechaFinReposo.toISOString() : String(notif.fechaFinReposo)) : '—'}
                       </TableCell>
 
                       {/* Estado */}
-                      <TableCell className="p-4 text-center">
+                      <TableCell className="px-2 py-2 text-center">
                         {getEstadoBadge(notif.diasRestantes)}
                       </TableCell>
 
                       {/* Acciones */}
-                      <TableCell className="p-4 text-center">
+                      <TableCell className="px-2 py-2 text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -279,11 +278,10 @@ export function ReposoNotificacionesTable() {
               )}
             </TableBody>
           </Table>
-          </div>
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+        <div className="flex flex-col gap-2 px-2 py-2 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
             <DropdownMenu>

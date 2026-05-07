@@ -28,7 +28,7 @@ export function ServiciosProximosPagination({
   onNextPage,
 }: ServiciosProximosPaginationProps) {
   return (
-    <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+    <div className="flex flex-col gap-2 px-2 py-2 sm:flex-row sm:flex-wrap sm:items-center">
       <div className="flex shrink-0 items-center gap-2">
         <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
         <DropdownMenu>

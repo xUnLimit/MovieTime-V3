@@ -64,7 +64,7 @@ export function ServiciosProximosTableRow({
         notif.resaltada ? 'bg-orange-50/50 dark:bg-orange-500/5' : ''
       }`}
     >
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         <Button
           variant="ghost"
           size="icon"
@@ -96,15 +96,15 @@ export function ServiciosProximosTableRow({
         </Button>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
-        <span className="inline-block max-w-[170px] truncate align-middle">
+      <TableCell className="px-2 py-2 text-center">
+        <span className="inline-block max-w-[130px] truncate align-middle">
           {notif.categoriaNombre}
         </span>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         <div className="flex items-center justify-center gap-2">
-            <span className="font-medium truncate max-w-[220px]">
+            <span className="max-w-[180px] truncate font-medium">
               {notif.correo}
             </span>
           <Button
@@ -119,7 +119,7 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className="w-[190px] p-4 text-center">
+      <TableCell className="w-[160px] px-2 py-2 text-center">
         <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
           <span className="min-w-0 break-all text-center font-medium leading-tight">
             {isPasswordVisible ? notif.contrasena : '••••••••'}
@@ -151,10 +151,10 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {notif.metodoPagoNombre ? (
           <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-            <span className="font-medium truncate max-w-[130px]">
+            <span className="max-w-[110px] truncate font-medium">
               {notif.metodoPagoNombre}
             </span>
             {notif.metodoPagoTarjetaTerminacion && (
@@ -168,16 +168,16 @@ export function ServiciosProximosTableRow({
         )}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {formatearFecha(new Date(notif.fechaVencimiento))}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         {getCurrencySymbol(notif.moneda)}
         {notif.costoServicio.toFixed(2)}
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         <Badge
           variant="outline"
           className={`font-normal ${estadoBadge.variant}`}
@@ -186,7 +186,7 @@ export function ServiciosProximosTableRow({
         </Badge>
       </TableCell>
 
-      <TableCell className="p-4 text-center">
+      <TableCell className="px-2 py-2 text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">

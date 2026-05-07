@@ -34,36 +34,35 @@ export function ServiciosProximosTableContent({
   onAcciones,
 }: ServiciosProximosTableContentProps) {
   return (
-    <div className="rounded-md border">
-      <div className="table-scroll-shell">
-        <Table className="table-scroll-content min-w-[980px]">
+    <div className="notification-table-scroll-shell rounded-md border">
+      <Table className="table-scroll-content min-w-[1120px] lg:min-w-full">
           <TableHeader>
             <TableRow className="border-b hover:bg-muted/50">
-              <TableHead className="h-12 px-4 text-center text-muted-foreground w-[80px]">
+              <TableHead className="h-10 w-[56px] px-2 text-center text-muted-foreground">
                 Tipo
               </TableHead>
-              <TableHead className="h-12 min-w-[170px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[130px] px-2 text-center text-muted-foreground">
                 Categoría
               </TableHead>
-              <TableHead className="h-12 min-w-[220px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[200px] px-2 text-center text-muted-foreground">
                 Email
               </TableHead>
-              <TableHead className="h-12 min-w-[190px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[160px] px-2 text-center text-muted-foreground">
                 Contraseña
               </TableHead>
-              <TableHead className="h-12 min-w-[180px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[150px] px-2 text-center text-muted-foreground">
                 Método de Pago
               </TableHead>
-              <TableHead className="h-12 min-w-[170px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[145px] px-2 text-center text-muted-foreground">
                 Fecha de Vencimiento
               </TableHead>
-              <TableHead className="h-12 min-w-[100px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[80px] px-2 text-center text-muted-foreground">
                 Monto
               </TableHead>
-              <TableHead className="h-12 min-w-[150px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
                 Estado
               </TableHead>
-              <TableHead className="h-12 min-w-[96px] px-4 text-center text-muted-foreground">
+              <TableHead className="h-10 min-w-[74px] px-2 text-center text-muted-foreground">
                 Acciones
               </TableHead>
             </TableRow>
@@ -84,7 +83,6 @@ export function ServiciosProximosTableContent({
             ))}
           </TableBody>
         </Table>
-      </div>
     </div>
   );
 }

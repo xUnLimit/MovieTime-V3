@@ -203,6 +203,25 @@
     display: none;
   }
 
+  .notification-table-scroll-shell [data-slot="table-container"] {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .notification-table-scroll-shell [data-slot="table-container"]::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+  }
+
+  .notification-table-scroll-shell [data-slot="table-container"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .notification-table-scroll-shell [data-slot="table-container"]::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--border);
+  }
+
   .table-scroll-content {
     @apply min-w-max;
   }
