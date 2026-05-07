@@ -9,6 +9,7 @@ import { ClientesTable } from '@/components/usuarios/ClientesTable';
 import { RevendedoresTable } from '@/components/usuarios/RevendedoresTable';
 import { TodosUsuariosTable } from '@/components/usuarios/TodosUsuariosTable';
 import { UsuariosMetrics } from '@/components/usuarios/UsuariosMetrics';
+import { filterUsuariosForUsuariosPage, type UsuariosTab } from '@/components/usuarios/usuarios-search';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,11 +37,21 @@ const ALL_PAYMENT_METHODS_LABEL = 'Todos los métodos';
 
 function UsuariosPageContent() {
   const router = useRouter();
-  const { totalClientes, totalRevendedores, totalNuevosHoy, totalUsuariosActivos, fetchCounts } = useUsuariosStore();
+  const {
+    totalClientes,
+    totalRevendedores,
+    totalNuevosHoy,
+    totalUsuariosActivos,
+    usuarios,
+    fetchUsuarios,
+    fetchCounts,
+    isLoading: isLoadingUsuarios,
+  } = useUsuariosStore();
   const { fetchMetodosPagoUsuarios } = useMetodosPagoStore();
 
-  const [activeTab, setActiveTab] = useState('todos');
+  const [activeTab, setActiveTab] = useState<UsuariosTab>('todos');
   const [pageSize, setPageSize] = useState(10);
+  const [searchPageIndex, setSearchPageIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [metodoPagoFilter, setMetodoPagoFilter] = useState(ALL_PAYMENT_METHODS_VALUE);
   const [metodoPagoOptions, setMetodoPagoOptions] = useState<MetodoPagoFilterOption[]>([
@@ -114,19 +125,8 @@ function UsuariosPageContent() {
       );
     }
 
-    if (isSearchMode) {
-      nextFilters.push({
-        field: '__search__',
-        operator: 'orIlike',
-        value: {
-          fields: ['nombre', 'apellido', 'telefono'],
-          value: searchQuery,
-        },
-      });
-    }
-
     return nextFilters;
-  }, [activeTab, isSearchMode, searchQuery, selectedMetodoPagoFilter]);
+  }, [activeTab, selectedMetodoPagoFilter]);
 
   // Paginación server-side con filtros y búsqueda en SQL.
   const { data: pageData, isLoading: isLoadingPage, hasMore, hasPrevious, page, next, previous, refresh } = useServerPagination<Usuario>({
@@ -135,16 +135,78 @@ function UsuariosPageContent() {
     pageSize,
   });
 
-  const isLoading = isLoadingPage;
-  const displayData = pageData;
+  useEffect(() => {
+    if (isSearchMode) {
+      void fetchUsuarios();
+    }
+  }, [fetchUsuarios, isSearchMode]);
+
+  const searchResults = useMemo(
+    () =>
+      filterUsuariosForUsuariosPage({
+        usuarios,
+        searchQuery,
+        activeTab,
+        selectedMetodoPagoFilter,
+        allPaymentMethodsValue: ALL_PAYMENT_METHODS_VALUE,
+      }),
+    [activeTab, searchQuery, selectedMetodoPagoFilter, usuarios],
+  );
+
+  const searchStart = searchPageIndex * pageSize;
+  const searchDisplayData = searchResults.slice(searchStart, searchStart + pageSize);
+
+  const isLoading = isSearchMode ? isLoadingUsuarios && usuarios.length === 0 : isLoadingPage;
+  const displayData = isSearchMode ? searchDisplayData : pageData;
 
   // Total según tab (para calcular páginas)
   const totalCurrentTab = activeTab === 'clientes' ? totalClientes : activeTab === 'revendedores' ? totalRevendedores : totalClientes + totalRevendedores;
-  const totalPages = selectedMetodoPagoFilter === ALL_PAYMENT_METHODS_VALUE && !isSearchMode
+  const totalPages = isSearchMode
+      ? Math.max(1, Math.ceil(searchResults.length / pageSize))
+      : selectedMetodoPagoFilter === ALL_PAYMENT_METHODS_VALUE
       ? Math.max(1, Math.ceil(totalCurrentTab / pageSize))
       : Math.max(1, hasMore ? page + 1 : page);
 
-  const paginationProps = { page, totalPages, hasPrevious, hasMore, onPrevious: previous, onNext: next, pageSize, onPageSizeChange: (size: number) => { setPageSize(size); refresh(); } };
+  const paginationProps = {
+    page: isSearchMode ? searchPageIndex + 1 : page,
+    totalPages,
+    hasPrevious: isSearchMode ? searchPageIndex > 0 : hasPrevious,
+    hasMore: isSearchMode ? searchStart + pageSize < searchResults.length : hasMore,
+    onPrevious: isSearchMode ? () => setSearchPageIndex((current) => Math.max(0, current - 1)) : previous,
+    onNext: isSearchMode ? () => setSearchPageIndex((current) => current + 1) : next,
+    pageSize,
+    onPageSizeChange: (size: number) => {
+      setPageSize(size);
+      setSearchPageIndex(0);
+      if (!isSearchMode) refresh();
+    },
+  };
+
+  const handleRefresh = useCallback(() => {
+    if (isSearchMode) {
+      setSearchPageIndex(0);
+      void fetchUsuarios(true);
+      return;
+    }
+
+    refresh();
+  }, [fetchUsuarios, isSearchMode, refresh]);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab as UsuariosTab);
+    setSearchQuery('');
+    setSearchPageIndex(0);
+  }, []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setSearchPageIndex(0);
+  }, []);
+
+  const handleMetodoPagoFilterChange = useCallback((value: string) => {
+    setMetodoPagoFilter(value);
+    setSearchPageIndex(0);
+  }, []);
 
   useEffect(() => {
     fetchCounts();
@@ -182,19 +244,21 @@ function UsuariosPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuarios</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Usuarios</span>
-          </p>
+      <div className="dashboard-page-heading">
+        <div className="dashboard-page-heading-row">
+          <div className="dashboard-page-heading-copy">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuarios</h1>
+          </div>
+          <Link href="/usuarios/crear" className="shrink-0">
+            <Button className="whitespace-nowrap">
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Usuario
+            </Button>
+          </Link>
         </div>
-        <Link href="/usuarios/crear" className="shrink-0">
-          <Button className="whitespace-nowrap">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Usuario
-          </Button>
-        </Link>
+        <p className="text-sm text-muted-foreground">
+          <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Usuarios</span>
+        </p>
       </div>
 
       <UsuariosMetrics
@@ -204,7 +268,7 @@ function UsuariosPageContent() {
         totalNuevosHoy={totalNuevosHoy}
       />
 
-      <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); setSearchQuery(''); }}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex border-b border-border">
           <TabsTrigger
             value="todos"
@@ -235,10 +299,10 @@ function UsuariosPageContent() {
             isLoading={isLoading}
             pagination={paginationProps}
             searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onRefresh={refresh}
+            onSearchChange={handleSearchChange}
+            onRefresh={handleRefresh}
             metodoPagoFilter={selectedMetodoPagoFilter}
-            onMetodoPagoFilterChange={setMetodoPagoFilter}
+            onMetodoPagoFilterChange={handleMetodoPagoFilterChange}
             metodoPagoOptions={metodoPagoOptions}
           />
         </TabsContent>
@@ -252,10 +316,10 @@ function UsuariosPageContent() {
             isLoading={isLoading}
             pagination={paginationProps}
             searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onRefresh={refresh}
+            onSearchChange={handleSearchChange}
+            onRefresh={handleRefresh}
             metodoPagoFilter={selectedMetodoPagoFilter}
-            onMetodoPagoFilterChange={setMetodoPagoFilter}
+            onMetodoPagoFilterChange={handleMetodoPagoFilterChange}
             metodoPagoOptions={metodoPagoOptions}
           />
         </TabsContent>
@@ -268,10 +332,10 @@ function UsuariosPageContent() {
             isLoading={isLoading}
             pagination={paginationProps}
             searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onRefresh={refresh}
+            onSearchChange={handleSearchChange}
+            onRefresh={handleRefresh}
             metodoPagoFilter={selectedMetodoPagoFilter}
-            onMetodoPagoFilterChange={setMetodoPagoFilter}
+            onMetodoPagoFilterChange={handleMetodoPagoFilterChange}
             metodoPagoOptions={metodoPagoOptions}
           />
         </TabsContent>

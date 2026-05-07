@@ -25,8 +25,8 @@ export function ServiciosProximosToolbar({
   onEstadoFilterChange,
 }: ServiciosProximosToolbarProps) {
   return (
-    <div className="flex items-center gap-4 -mb-4">
-      <div className="relative flex-1">
+    <div className="dashboard-toolbar">
+      <div className="dashboard-toolbar-search">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por categoría o email..."
@@ -37,7 +37,7 @@ export function ServiciosProximosToolbar({
       </div>
 
       <Select value={estadoFilter} onValueChange={onEstadoFilterChange}>
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="dashboard-toolbar-control-wide">
           <SelectValue placeholder="Todos los estados" />
         </SelectTrigger>
         <SelectContent>

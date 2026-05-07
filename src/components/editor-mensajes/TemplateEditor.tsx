@@ -97,25 +97,27 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       <Tabs value={selectedTipo} onValueChange={(value) => setSelectedTipo(value as TipoTemplate)}>
-        <TabsList className="justify-start rounded-none h-auto p-0 bg-transparent w-fit border-b">
-          {TIPO_TEMPLATES.map((tipo) => (
-            <TabsTrigger
-              key={tipo.value}
-              value={tipo.value}
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              {tipo.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="tabs-scroll-shell">
+          <TabsList className="tabs-scroll-list h-auto justify-start rounded-none border-b bg-transparent p-0">
+            {TIPO_TEMPLATES.map((tipo) => (
+              <TabsTrigger
+                key={tipo.value}
+                value={tipo.value}
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                {tipo.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {TIPO_TEMPLATES.map((tipo) => (
           <TabsContent key={tipo.value} value={tipo.value} className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Editor Section */}
-              <Card className="lg:col-span-2 p-5 space-y-3">
+              <Card className="min-w-0 space-y-3 p-5 lg:col-span-2">
                 <div>
                   <h2 className="text-lg font-semibold">Plantilla de {tipo.label}</h2>
                   <p className="text-sm text-muted-foreground">
@@ -165,7 +167,7 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
                               <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <code className="text-xs font-semibold block text-foreground">
-                                  {placeholder.key}
+                                  <span className="break-all">{placeholder.key}</span>
                                 </code>
                                 <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
                                   {placeholder.description}

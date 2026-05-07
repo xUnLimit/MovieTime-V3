@@ -139,8 +139,8 @@ export function ReposoNotificacionesTable() {
   return (
     <Card className="p-4 pb-2">
       <h3 className="text-xl font-semibold">Servicios en Reposo</h3>
-      <div className="flex items-center gap-4 -mb-4">
-        <div className="relative flex-1">
+      <div className="dashboard-toolbar">
+        <div className="dashboard-toolbar-search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por categoría o correo..."
@@ -151,7 +151,7 @@ export function ReposoNotificacionesTable() {
         </div>
 
         <Select value={estadoFilter} onValueChange={(v) => { setEstadoFilter(v); setCurrentPage(1); }}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="dashboard-toolbar-control-wide">
             <SelectValue placeholder="Todos los estados" />
           </SelectTrigger>
           <SelectContent>

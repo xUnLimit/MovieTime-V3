@@ -154,8 +154,8 @@ export function UsuariosMetodosPagoTable({
     <>
       <Card className="p-4 pb-2">
         <h3 className="text-xl font-semibold">{title}</h3>
-        <div className="flex items-center gap-4 -mb-4">
-          <div className="relative flex-1">
+        <div className="dashboard-toolbar">
+          <div className="dashboard-toolbar-search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por método, titular, alias..."
@@ -168,7 +168,7 @@ export function UsuariosMetodosPagoTable({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-[200px] justify-between font-normal"
+                className="dashboard-toolbar-control-wide justify-between font-normal"
               >
                 {paisFilter === "todos" ? "Todos los países" : paisFilter}
                 <svg
@@ -186,7 +186,7 @@ export function UsuariosMetodosPagoTable({
                 </svg>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
+            <DropdownMenuContent align="end" className="dashboard-toolbar-control-wide">
               {[
                 { value: "todos", label: "Todos los países" },
                 ...paisesUnicos.map((p) => ({ value: p, label: p })),

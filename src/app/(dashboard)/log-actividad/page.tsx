@@ -101,7 +101,7 @@ function LogActividadPageContent() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4 overflow-x-hidden">
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Log de Actividad</h1>
         <p className="text-sm text-muted-foreground">

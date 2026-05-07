@@ -65,7 +65,7 @@ export default function DashboardLayout({
         />
 
         {/* Main Content */}
-        <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Mobile top bar */}
           <div className="flex items-center h-14 px-4 border-b border-border bg-background md:hidden flex-shrink-0">
             <button
@@ -79,8 +79,8 @@ export default function DashboardLayout({
           </div>
 
           {/* Main */}
-          <main className="flex-1 overflow-y-auto bg-background">
-            <div className="h-full p-3 sm:p-4 md:p-6">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background">
+            <div className="h-full min-w-0 overflow-x-hidden p-3 sm:p-4 md:p-6">
               {children}
             </div>
           </main>

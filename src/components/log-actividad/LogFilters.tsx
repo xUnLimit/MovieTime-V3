@@ -74,8 +74,8 @@ export function LogFilters({
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   return (
-    <div className="flex items-center gap-3 w-full">
-      <div className="relative flex-1">
+    <div className="dashboard-toolbar">
+      <div className="dashboard-toolbar-search">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar por usuario, entidad, ID o detalle..."
@@ -87,7 +87,7 @@ export function LogFilters({
 
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="gap-2 justify-start text-left font-normal whitespace-nowrap">
+          <Button variant="outline" className="dashboard-toolbar-control-xl justify-start gap-2 text-left font-normal whitespace-nowrap">
             <CalendarIcon className="h-4 w-4" />
             {dateRange?.from ? (
               dateRange.to ? (
@@ -117,12 +117,12 @@ export function LogFilters({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="gap-2 justify-between w-[200px]">
+          <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
             {entidadFilter === 'all' ? 'Todas las entidades' : entityLabels[entidadFilter] || 'Todas las entidades'}
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[200px]">
+        <DropdownMenuContent align="start" className="dashboard-toolbar-control-wide">
           <DropdownMenuItem onClick={() => setEntidadFilter('all')}>
             Todas las entidades
           </DropdownMenuItem>
@@ -136,12 +136,12 @@ export function LogFilters({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="gap-2 justify-between w-[200px]">
+          <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
             {accionFilter === 'all' ? 'Todas las acciones' : actionLabels[accionFilter] || 'Todas las acciones'}
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[200px]">
+        <DropdownMenuContent align="start" className="dashboard-toolbar-control-wide">
           <DropdownMenuItem onClick={() => setAccionFilter('all')}>
             Todas las acciones
           </DropdownMenuItem>

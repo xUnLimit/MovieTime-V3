@@ -78,19 +78,21 @@ function ServiciosPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Servicios</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Servicios</span>
-          </p>
+      <div className="dashboard-page-heading">
+        <div className="dashboard-page-heading-row">
+          <div className="dashboard-page-heading-copy">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Servicios</h1>
+          </div>
+          <Link href="/servicios/crear" className="shrink-0">
+            <Button className="whitespace-nowrap">
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Servicio
+            </Button>
+          </Link>
         </div>
-        <Link href="/servicios/crear" className="shrink-0">
-          <Button className="whitespace-nowrap">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Servicio
-          </Button>
-        </Link>
+        <p className="text-sm text-muted-foreground">
+          <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Servicios</span>
+        </p>
       </div>
 
       <ServiciosMetrics />

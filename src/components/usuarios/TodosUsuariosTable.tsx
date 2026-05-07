@@ -246,8 +246,8 @@ export function TodosUsuariosTable({
     <>
       <Card className="p-4 pb-2">
         <h3 className="text-xl font-semibold">{title}</h3>
-        <div className="flex items-center gap-4 -mb-4">
-          <div className="relative flex-1">
+        <div className="dashboard-toolbar">
+          <div className="dashboard-toolbar-search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre o teléfono..."
@@ -260,7 +260,7 @@ export function TodosUsuariosTable({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-[180px] justify-between font-normal"
+                className="dashboard-toolbar-control justify-between font-normal"
               >
                 {selectedMetodoPagoLabel}
                 <svg
@@ -278,7 +278,7 @@ export function TodosUsuariosTable({
                 </svg>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px]">
+            <DropdownMenuContent align="end" className="dashboard-toolbar-control">
               {metodoPagoOptions.map((option) => (
                 <DropdownMenuItem
                   key={option.value}

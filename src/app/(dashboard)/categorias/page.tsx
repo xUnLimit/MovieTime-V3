@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { TodasCategoriasTable } from '@/components/categorias/TodasCategoriasTable';
+
+import { CategoriasMetrics } from '@/components/categorias/CategoriasMetrics';
 import { ClientesCategoriasTable } from '@/components/categorias/ClientesCategoriasTable';
 import { RevendedoresCategoriasTable } from '@/components/categorias/RevendedoresCategoriasTable';
-import { CategoriasMetrics } from '@/components/categorias/CategoriasMetrics';
-import { useCategoriasStore } from '@/store/categoriasStore';
+import { TodasCategoriasTable } from '@/components/categorias/TodasCategoriasTable';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useCategoriasStore } from '@/store/categoriasStore';
 
 function CategoriasPageContent() {
   const { categorias, fetchCategorias, fetchCounts } = useCategoriasStore();
@@ -21,10 +22,9 @@ function CategoriasPageContent() {
     fetchCounts();
   }, [fetchCategorias, fetchCounts]);
 
-  // Escuchar cuando se elimina una categoría desde otra página
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'categoria-deleted') {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'categoria-deleted') {
         fetchCategorias(true);
         fetchCounts();
       }
@@ -46,64 +46,58 @@ function CategoriasPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categorías</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Categorías</span>
-          </p>
+      <div className="dashboard-page-heading">
+        <div className="dashboard-page-heading-row">
+          <div className="dashboard-page-heading-copy">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Categorias</h1>
+          </div>
+          <Link href="/categorias/crear" className="shrink-0">
+            <Button className="whitespace-nowrap">
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Categoria
+            </Button>
+          </Link>
         </div>
-        <Link href="/categorias/crear" className="shrink-0">
-          <Button className="whitespace-nowrap">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Categoría
-          </Button>
-        </Link>
+        <p className="text-sm text-muted-foreground">
+          <Link href="/" className="transition-colors hover:text-foreground">Dashboard</Link> /{' '}
+          <span className="text-foreground">Categorias</span>
+        </p>
       </div>
 
       <CategoriasMetrics />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex border-b border-border">
+        <TabsList className="inline-flex h-auto rounded-none border-b border-border bg-transparent p-0">
           <TabsTrigger
             value="todos"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+            className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
           >
             Todos
           </TabsTrigger>
           <TabsTrigger
             value="clientes"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+            className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
           >
             Clientes
           </TabsTrigger>
           <TabsTrigger
             value="revendedores"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+            className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
           >
             Revendedores
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="todos" className="space-y-4">
-          <TodasCategoriasTable
-            categorias={categorias}
-            title="Todas las categorías"
-          />
+          <TodasCategoriasTable categorias={categorias} title="Todas las categorias" />
         </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">
-          <ClientesCategoriasTable
-            categorias={categorias}
-            title="Categorías de Clientes"
-          />
+          <ClientesCategoriasTable categorias={categorias} title="Categorias de Clientes" />
         </TabsContent>
 
         <TabsContent value="revendedores" className="space-y-4">
-          <RevendedoresCategoriasTable
-            categorias={categorias}
-            title="Categorías de Revendedores"
-          />
+          <RevendedoresCategoriasTable categorias={categorias} title="Categorias de Revendedores" />
         </TabsContent>
       </Tabs>
     </div>
@@ -112,7 +106,7 @@ function CategoriasPageContent() {
 
 export default function CategoriasPage() {
   return (
-    <ModuleErrorBoundary moduleName="Categorías">
+    <ModuleErrorBoundary moduleName="Categorias">
       <CategoriasPageContent />
     </ModuleErrorBoundary>
   );

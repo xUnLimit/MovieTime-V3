@@ -122,7 +122,7 @@ function NotificacionesPageContent() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4 overflow-x-hidden">
       {/* Page Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
@@ -145,7 +145,8 @@ function NotificacionesPageContent() {
 
       {/* Tabs - matching Categorías tabs style */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex w-fit max-w-full flex-wrap items-end justify-start gap-x-0 gap-y-1 overflow-visible border-b border-border">
+        <div className="tabs-scroll-shell">
+          <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
           <TabsTrigger
             value="ventas"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm whitespace-nowrap"
@@ -190,7 +191,8 @@ function NotificacionesPageContent() {
               </span>
             )}
           </TabsTrigger>
-        </TabsList>
+          </TabsList>
+        </div>
 
         {/* Ventas Tab */}
         <TabsContent value="ventas" className="space-y-4">
