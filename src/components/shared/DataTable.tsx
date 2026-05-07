@@ -40,6 +40,8 @@ export interface DataTableProps<T> {
   pagination?: boolean;
   itemsPerPageOptions?: number[];
   fixedLayout?: boolean;
+  containerClassName?: string;
+  tableClassName?: string;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -89,6 +91,8 @@ function DataTableComponent<T extends Record<string, unknown>>({
   pagination = false,
   itemsPerPageOptions = [10, 25, 50, 100],
   fixedLayout = false,
+  containerClassName,
+  tableClassName,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -175,8 +179,8 @@ function DataTableComponent<T extends Record<string, unknown>>({
 
   return (
     <div>
-      <div className="rounded-md border bg-background overflow-x-auto">
-        <Table className={fixedLayout ? 'table-fixed' : undefined}>
+      <div className={`rounded-md border bg-background ${containerClassName ?? 'overflow-x-auto'}`}>
+        <Table className={[fixedLayout ? 'table-fixed' : '', tableClassName].filter(Boolean).join(' ') || undefined}>
           {fixedLayout ? (
             <colgroup>
               {columns.map((column) => (

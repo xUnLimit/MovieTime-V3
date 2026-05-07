@@ -46,16 +46,16 @@ export function ServicioPaymentsHistory({
         <h2 className="text-lg font-semibold">Historial de pagos del servicio</h2>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full table-fixed">
+      <div className="table-scroll-shell">
+        <table className="table-scroll-content min-w-[980px]">
           <colgroup>
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '24%' }} />
-            <col style={{ width: '26%' }} />
-            <col style={{ width: '24%' }} />
-            <col style={{ width: '26%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '10%' }} />
+            <col style={{ width: '140px' }} />
+            <col style={{ width: '200px' }} />
+            <col style={{ width: '170px' }} />
+            <col style={{ width: '150px' }} />
+            <col style={{ width: '170px' }} />
+            <col style={{ width: '110px' }} />
+            <col style={{ width: '90px' }} />
           </colgroup>
           <thead>
             <tr className="border-b text-sm text-muted-foreground">

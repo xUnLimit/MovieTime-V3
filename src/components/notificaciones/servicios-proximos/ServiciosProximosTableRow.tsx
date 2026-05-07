@@ -97,14 +97,16 @@ export function ServiciosProximosTableRow({
       </TableCell>
 
       <TableCell className="p-4 text-center">
-        {notif.categoriaNombre}
+        <span className="inline-block max-w-[170px] truncate align-middle">
+          {notif.categoriaNombre}
+        </span>
       </TableCell>
 
       <TableCell className="p-4 text-center">
         <div className="flex items-center justify-center gap-2">
-          <span className="font-medium truncate max-w-[200px]">
-            {notif.correo}
-          </span>
+            <span className="font-medium truncate max-w-[220px]">
+              {notif.correo}
+            </span>
           <Button
             variant="ghost"
             size="icon"
@@ -117,7 +119,7 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className="w-[160px] p-4 text-center">
+      <TableCell className="w-[190px] p-4 text-center">
         <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
           <span className="min-w-0 break-all text-center font-medium leading-tight">
             {isPasswordVisible ? notif.contrasena : '••••••••'}
@@ -152,7 +154,7 @@ export function ServiciosProximosTableRow({
       <TableCell className="p-4 text-center">
         {notif.metodoPagoNombre ? (
           <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-            <span className="font-medium truncate max-w-[140px]">
+            <span className="font-medium truncate max-w-[130px]">
               {notif.metodoPagoNombre}
             </span>
             {notif.metodoPagoTarjetaTerminacion && (

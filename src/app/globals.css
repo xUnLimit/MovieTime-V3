@@ -159,6 +159,10 @@
     @apply w-full sm:w-[220px];
   }
 
+  .dashboard-toolbar-control-2xl {
+    @apply w-full sm:w-[240px];
+  }
+
   .dashboard-page-heading {
     @apply space-y-2;
   }
@@ -187,6 +191,20 @@
 
   .tabs-scroll-list {
     @apply inline-flex min-w-max flex-nowrap;
+  }
+
+  .table-scroll-shell {
+    @apply min-w-0 overflow-x-auto overflow-y-hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .table-scroll-shell::-webkit-scrollbar {
+    display: none;
+  }
+
+  .table-scroll-content {
+    @apply min-w-max;
   }
 }
 

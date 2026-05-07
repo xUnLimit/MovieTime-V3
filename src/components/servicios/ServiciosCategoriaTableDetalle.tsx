@@ -367,7 +367,7 @@ export const ServiciosCategoriaTableDetalle = memo(
               />
             </div>
             <Select value={cicloFilter} onValueChange={onCicloChange}>
-              <SelectTrigger className="dashboard-toolbar-control">
+              <SelectTrigger className="dashboard-toolbar-control-wide">
                 <SelectValue placeholder="Todos los ciclos" />
               </SelectTrigger>
               <SelectContent>
@@ -379,7 +379,7 @@ export const ServiciosCategoriaTableDetalle = memo(
               </SelectContent>
             </Select>
             <Select value={perfilFilter} onValueChange={onPerfilChange}>
-              <SelectTrigger className="dashboard-toolbar-control">
+              <SelectTrigger className="dashboard-toolbar-control-wide">
                 <SelectValue placeholder="Todos los perfiles" />
               </SelectTrigger>
               <SelectContent>
@@ -401,6 +401,8 @@ export const ServiciosCategoriaTableDetalle = memo(
               emptyMessage="No hay servicios para mostrar"
               loading={isLoading}
               pagination={false}
+              containerClassName="table-scroll-shell"
+              tableClassName="table-scroll-content min-w-[1180px]"
               actions={(item) => {
                 const servicio = item as unknown as Servicio;
                 return (

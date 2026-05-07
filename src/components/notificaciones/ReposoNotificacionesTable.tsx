@@ -165,29 +165,29 @@ export function ReposoNotificacionesTable() {
 
       <div>
         <div className="rounded-md border">
-          <div className="relative w-full overflow-auto">
-          <Table>
+          <div className="table-scroll-shell">
+          <Table className="table-scroll-content min-w-[1060px]">
             <TableHeader>
               <TableRow className="border-b hover:bg-muted/50">
                 <TableHead className="h-12 px-4 text-center text-muted-foreground w-[80px]">
                   Tipo
                 </TableHead>
-                <TableHead className="h-12 px-4 text-center text-muted-foreground">
+                <TableHead className="h-12 min-w-[170px] px-4 text-center text-muted-foreground">
                   Categoría
                 </TableHead>
-                <TableHead className="h-12 px-4 text-center text-muted-foreground">
+                <TableHead className="h-12 min-w-[220px] px-4 text-center text-muted-foreground">
                   Correo
                 </TableHead>
-                <TableHead className="h-12 px-4 text-center text-muted-foreground">
+                <TableHead className="h-12 min-w-[150px] px-4 text-center text-muted-foreground">
                   Fecha Inicio
                 </TableHead>
-                <TableHead className="h-12 px-4 text-center text-muted-foreground">
+                <TableHead className="h-12 min-w-[150px] px-4 text-center text-muted-foreground">
                   Fecha Fin
                 </TableHead>
-                <TableHead className="h-12 px-4 text-center text-muted-foreground">
+                <TableHead className="h-12 min-w-[170px] px-4 text-center text-muted-foreground">
                   Fecha Fin Reposo
                 </TableHead>
-                <TableHead className="h-12 px-4 text-center text-muted-foreground">
+                <TableHead className="h-12 min-w-[150px] px-4 text-center text-muted-foreground">
                   Estado
                 </TableHead>
                 <TableHead className="h-12 px-4 text-center text-muted-foreground">
@@ -283,7 +283,7 @@ export function ReposoNotificacionesTable() {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-wrap items-center gap-2 px-2 py-4">
+        <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
             <DropdownMenu>
@@ -307,7 +307,7 @@ export function ReposoNotificacionesTable() {
             </DropdownMenu>
           </div>
 
-          <div className="ml-auto flex items-center gap-2 sm:gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:gap-4">
             <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
               Página {currentPage} de {Math.max(1, totalPages)}
             </span>

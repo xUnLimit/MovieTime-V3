@@ -104,18 +104,22 @@ export function VentasProximasTableRow({
         </Button>
       </TableCell>
 
-      <TableCell className="p-4 text-center font-medium truncate">
-        {notif.clienteNombre}
+      <TableCell className="p-4 text-center font-medium">
+        <span className="inline-block max-w-[170px] truncate align-middle">
+          {notif.clienteNombre}
+        </span>
       </TableCell>
 
       <TableCell className="p-4 text-center">
-        {notif.categoriaNombre}
+        <span className="inline-block max-w-[170px] truncate align-middle">
+          {notif.categoriaNombre}
+        </span>
       </TableCell>
 
       <TableCell className="p-4 text-center">
         {notif.servicioCorreo ? (
           <div className="flex items-center justify-center gap-2">
-            <span className="font-medium truncate max-w-[200px]">
+            <span className="font-medium truncate max-w-[220px]">
               {notif.servicioCorreo}
             </span>
             <Button
@@ -133,7 +137,7 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className="w-[160px] p-4 text-center">
+      <TableCell className="w-[190px] p-4 text-center">
         {notif.servicioContrasena ? (
           <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
             <span className="min-w-0 break-all text-center font-medium leading-tight">
@@ -172,13 +176,17 @@ export function VentasProximasTableRow({
       </TableCell>
 
       <TableCell className="p-4 text-center">
-        <span className="font-medium">{notif.perfilNombre || '-'}</span>
+            <span className="inline-block max-w-[120px] truncate font-medium align-middle">
+              {notif.perfilNombre || '-'}
+            </span>
       </TableCell>
 
       <TableCell className="p-4 text-center">
         {notif.codigo ? (
           <div className="flex items-center justify-center gap-2">
-            <span className="font-medium">{notif.codigo}</span>
+            <span className="inline-block max-w-[72px] truncate font-medium align-middle">
+              {notif.codigo}
+            </span>
             <Button
               variant="ghost"
               size="icon"

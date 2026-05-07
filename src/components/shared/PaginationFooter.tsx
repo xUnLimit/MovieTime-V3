@@ -31,7 +31,7 @@ export function PaginationFooter({
   onPageSizeChange,
 }: PaginationFooterProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 px-2 py-4">
+    <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
       <div className="flex shrink-0 items-center gap-2">
         <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
         <DropdownMenu>
@@ -55,7 +55,7 @@ export function PaginationFooter({
         </DropdownMenu>
       </div>
 
-      <div className="ml-auto flex items-center gap-2 sm:gap-4">
+      <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:gap-4">
         <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
           Página {page} de {totalPages}
         </span>

@@ -237,7 +237,7 @@ export function LogTimeline({
       key: 'timestamp',
       header: 'Fecha',
       sortable: true,
-      width: '16%',
+      width: '170px',
       render: (item) => {
         const formattedTimestamp = format(
           new Date(item.timestamp),
@@ -257,7 +257,7 @@ export function LogTimeline({
       header: 'Usuario',
       sortable: true,
       align: 'center',
-      width: '15%',
+      width: '180px',
       render: (item) => (
         <div className="truncate text-sm" title={item.usuarioEmail}>
           {item.usuarioEmail}
@@ -269,7 +269,7 @@ export function LogTimeline({
       header: 'Acción',
       sortable: true,
       align: 'center',
-      width: '12%',
+      width: '130px',
       render: (item) => (
         <Badge variant="outline" className={getActionBadgeStyle(item)}>
           {getActionLabel(item)}
@@ -281,14 +281,14 @@ export function LogTimeline({
       header: 'Entidad',
       sortable: true,
       align: 'center',
-      width: '12%',
+      width: '120px',
       render: (item) => <div className="text-sm">{getEntityLabel(item.entidad)}</div>,
     },
     {
       key: 'detalles',
       header: 'Detalles',
       align: 'left',
-      width: '28%',
+      width: '340px',
       render: (item) => {
         const { icon: Icon, color, message } = getActivityDisplayConfig(item);
         const [bgColor, textColor] = color.split(' ');
@@ -308,7 +308,7 @@ export function LogTimeline({
       key: 'cambios',
       header: 'Cambios',
       align: 'center',
-      width: '12%',
+      width: '110px',
       render: (item) => {
         const cambiosCount = item.cambios?.length ?? 0;
         const hasMetadata = item.metadata && Object.keys(item.metadata).length > 0;
@@ -393,6 +393,8 @@ export function LogTimeline({
               columns={columns as unknown as Column<Record<string, unknown>>[]}
               pagination={false}
               fixedLayout
+              containerClassName="table-scroll-shell"
+              tableClassName="table-scroll-content min-w-[1100px]"
             />
 
             <PaginationFooter
