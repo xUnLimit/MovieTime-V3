@@ -55,7 +55,7 @@ export default function DashboardLayout({
 
   return (
     <ErrorBoundary fallback={<DashboardErrorFallback />}>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-[100dvh] overflow-hidden">
         {/* Sidebar */}
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -67,7 +67,7 @@ export default function DashboardLayout({
         {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Mobile top bar */}
-          <div className="flex items-center h-14 px-4 border-b border-border bg-background md:hidden flex-shrink-0">
+          <div className="flex items-center h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-border bg-background md:hidden flex-shrink-0 z-50">
             <button
               onClick={() => setMobileSidebarOpen(true)}
               className="flex items-center justify-center h-9 w-9 rounded-lg text-foreground hover:bg-muted transition-colors"
