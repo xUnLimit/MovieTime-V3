@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallback';
 import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
-import { Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export default function DashboardLayout({
   children
@@ -66,17 +66,30 @@ export default function DashboardLayout({
 
         {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Mobile top bar */}
-          <div className="flex items-center h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-border bg-background md:hidden flex-shrink-0 z-50">
+          {/* Mobile top bar — fixed para cubrir el border-r del sidebar en la safe area */}
+          <div
+            className="fixed top-0 left-0 right-0 flex items-center px-4 bg-background md:hidden z-[60]"
+            style={{
+              height: 'calc(3.5rem + env(safe-area-inset-top))',
+              paddingTop: 'env(safe-area-inset-top)',
+            }}
+          >
             <button
-              onClick={() => setMobileSidebarOpen(true)}
+              onClick={() => setMobileSidebarOpen(prev => !prev)}
               className="flex items-center justify-center h-9 w-9 rounded-lg text-foreground hover:bg-muted transition-colors"
-              aria-label="Abrir menú"
+              aria-label={mobileSidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
             >
-              <Menu className="h-5 w-5" />
+              {mobileSidebarOpen
+                ? <X className="h-5 w-5" />
+                : <Menu className="h-5 w-5" />}
             </button>
             <span className="ml-3 text-base font-semibold">MovieTime PTY</span>
           </div>
+          {/* Espaciador para compensar el top bar fixed */}
+          <div
+            className="md:hidden flex-shrink-0"
+            style={{ height: 'calc(3.5rem + env(safe-area-inset-top))' }}
+          />
 
           {/* Main */}
           <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background">
