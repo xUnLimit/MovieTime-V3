@@ -209,7 +209,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
     });
   };
 
-  const sidebarContent = (isMobile: boolean) => (
+  const sidebarContent = (isMobile: boolean, withRef = false) => (
     <aside
       data-collapsed={isMobile ? false : collapsed}
       className={cn(
@@ -343,7 +343,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
         <div className="p-2 space-y-1">
           {/* Botón Tema */}
           <button
-            ref={themeButtonRef}
+            ref={withRef ? themeButtonRef : undefined}
             onClick={toggleTheme}
             aria-label="Cambiar tema"
             className={cn(
@@ -409,7 +409,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
     <>
       {/* Desktop sidebar */}
       <div className="hidden md:flex h-[100dvh]">
-        {sidebarContent(false)}
+        {sidebarContent(false, true)}
       </div>
 
       {/* Mobile overlay — siempre en el DOM para que la transición CSS funcione */}
