@@ -56,7 +56,8 @@ export function IngresosVsGastosChart() {
         const diaKey = format(day, 'yyyy-MM-dd');
         const entry = diaMap.get(diaKey);
         return {
-          dia: format(day, 'd MMM', { locale: es }),
+          dia: format(day, 'd', { locale: es }),
+          fullDate: format(day, 'd MMM yyyy', { locale: es }),
           ingresos: entry?.ingresos ?? 0,
           gastos: entry?.gastos ?? 0,
         };
@@ -74,7 +75,8 @@ export function IngresosVsGastosChart() {
       const mesKey = format(month, 'yyyy-MM');
       const entry = mesMap.get(mesKey);
       return {
-        dia: format(month, 'MMM yyyy', { locale: es }),
+        dia: format(month, 'MMM', { locale: es }),
+        fullDate: format(month, 'MMMM yyyy', { locale: es }),
         ingresos: entry?.ingresos ?? 0,
         gastos: entry?.gastos ?? 0,
       };
@@ -146,6 +148,13 @@ export function IngresosVsGastosChart() {
               formatter={(value: number | undefined) => {
                 if (value === undefined) return '';
                 return `$${value.toFixed(2)}`;
+              }}
+              labelFormatter={(label, payload) => {
+                if (payload && payload.length > 0) {
+                  const dateStr = payload[0].payload.fullDate;
+                  return dateStr ? dateStr.charAt(0).toUpperCase() + dateStr.slice(1) : label;
+                }
+                return label;
               }}
               labelStyle={{ color: tooltipText }}
               animationDuration={0}

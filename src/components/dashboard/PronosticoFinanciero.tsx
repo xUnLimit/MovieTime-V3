@@ -192,7 +192,7 @@ export function PronosticoFinanciero() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {'Basado en renovaciones y pagos recurrentes, se muestra la proyecci\u00f3n esparada de ingresos, gastos y ganancias.'}
+              {'Basado en renovaciones y gastos recurrentes, se muestra el pron\u00f3stico esperado de ingresos, gastos y ganancias.'}
             </p>
           )}
         </div>

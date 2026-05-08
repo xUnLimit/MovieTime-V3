@@ -49,12 +49,13 @@ export function CrecimientoUsuarios() {
 
       return days.map((day) => {
         if (day > today) {
-          return { dia: day.getDate().toString(), clientes: 0, revendedores: 0 };
+          return { dia: day.getDate().toString(), fullDate: format(day, 'd MMM yyyy', { locale: es }), clientes: 0, revendedores: 0 };
         }
         const diaKey = format(day, 'yyyy-MM-dd');
         const entry = diaMap.get(diaKey);
         return {
           dia: day.getDate().toString(),
+          fullDate: format(day, 'd MMM yyyy', { locale: es }),
           clientes: entry?.clientes ?? 0,
           revendedores: entry?.revendedores ?? 0,
         };
@@ -72,6 +73,7 @@ export function CrecimientoUsuarios() {
 
       return {
         dia: format(month, 'MMM', { locale: es }),
+        fullDate: format(month, 'MMMM yyyy', { locale: es }),
         clientes: entry?.clientes ?? 0,
         revendedores: entry?.revendedores ?? 0,
       };
@@ -164,6 +166,13 @@ export function CrecimientoUsuarios() {
                 if (name === 'clientes') return [displayValue, 'Clientes'];
                 if (name === 'revendedores') return [displayValue, 'Revendedores'];
                 return [displayValue, name ?? ''];
+              }}
+              labelFormatter={(label, payload) => {
+                if (payload && payload.length > 0) {
+                  const dateStr = payload[0].payload.fullDate;
+                  return dateStr ? dateStr.charAt(0).toUpperCase() + dateStr.slice(1) : label;
+                }
+                return label;
               }}
               labelStyle={{ color: tooltipText }}
               animationDuration={0}
