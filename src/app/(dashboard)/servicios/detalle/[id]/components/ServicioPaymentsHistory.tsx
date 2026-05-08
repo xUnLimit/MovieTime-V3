@@ -47,25 +47,16 @@ export function ServicioPaymentsHistory({
       </div>
 
       <div className="table-scroll-shell">
-        <table className="table-scroll-content min-w-[980px]">
-          <colgroup>
-            <col style={{ width: '140px' }} />
-            <col style={{ width: '200px' }} />
-            <col style={{ width: '170px' }} />
-            <col style={{ width: '150px' }} />
-            <col style={{ width: '170px' }} />
-            <col style={{ width: '110px' }} />
-            <col style={{ width: '90px' }} />
-          </colgroup>
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="border-b text-sm text-muted-foreground">
-              <th className="text-left py-3 font-medium">Fecha</th>
-              <th className="text-left py-3 font-medium">Descripción</th>
-              <th className="text-left py-3 font-medium">Ciclo de facturación</th>
-              <th className="text-left py-3 font-medium">Fecha de Inicio</th>
-              <th className="text-left py-3 font-medium">Fecha de Vencimiento</th>
-              <th className="text-left py-3 font-medium">Monto</th>
-              <th className="text-center py-3 font-medium w-[10%]">Acciones</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">Fecha</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">Descripción</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">Ciclo de facturación</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Inicio</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Vencimiento</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">Monto</th>
+              <th className="text-center py-3 font-medium whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody>
