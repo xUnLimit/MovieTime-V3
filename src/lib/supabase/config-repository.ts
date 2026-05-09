@@ -53,6 +53,8 @@ export async function getConfig(): Promise<Configuracion> {
         : [],
       updatedBy: typeof config.executive_push_updated_by === 'string' ? config.executive_push_updated_by : undefined,
       updatedAt: new Date(config.updated_at),
+      lastSentAt: typeof config.executive_push_last_sent_at === 'string' ? new Date(config.executive_push_last_sent_at) : null,
+      lastSentDate: typeof config.executive_push_last_sent_date === 'string' ? config.executive_push_last_sent_date : null,
     },
     whatsapp: {
       prefijoTelefono: config.whatsapp_prefijo,

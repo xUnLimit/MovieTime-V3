@@ -31,6 +31,7 @@ import {
   registerPushSubscription,
   unregisterPushSubscription,
 } from '@/lib/pwa/push-client';
+import { getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 import { useAuthStore } from '@/store/authStore';
 import { useConfigStore } from '@/store/configStore';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
@@ -97,6 +98,46 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
 
   const executivePush = config?.executivePush;
   const executivePushConfigReady = Boolean(executivePush);
+
+  const executivePushStatus = useMemo(() => {
+    if (!executivePush) return null;
+    const due = getExecutivePushDueStatus({
+      enabled: executivePush.enabled,
+      sendTime: executivePush.sendTime,
+      timezone: executivePush.timezone,
+      lastSentDate: executivePush.lastSentDate,
+    });
+
+    if (!executivePush.enabled) {
+      return { tone: 'muted' as const, label: 'Desactivada' };
+    }
+
+    if (due.due === false && due.reason === 'invalid_time') {
+      return { tone: 'warning' as const, label: 'Hora inválida' };
+    }
+
+    const sentToday = executivePush.lastSentDate === due.today;
+    if (sentToday && executivePush.lastSentAt) {
+      const sentAt = executivePush.lastSentAt;
+      const timeStr = sentAt.toLocaleTimeString('es-PA', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: executivePush.timezone,
+      });
+      const diffMs = Date.now() - sentAt.getTime();
+      const diffMin = Math.max(0, Math.round(diffMs / 60000));
+      const ago =
+        diffMin < 60 ? `hace ${diffMin} min` : `hace ${Math.round(diffMin / 60)} h`;
+      return { tone: 'success' as const, label: `Enviada hoy ${timeStr} (${ago})` };
+    }
+
+    if (due.due === false && due.reason === 'before_send_time') {
+      return { tone: 'muted' as const, label: `Pendiente para ${executivePush.sendTime}` };
+    }
+
+    return { tone: 'pending' as const, label: 'Esperando próximo ciclo del scheduler' };
+  }, [executivePush]);
 
   useEffect(() => {
     if (executivePush?.sendTime) {
@@ -352,6 +393,25 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                 onCheckedChange={handleExecutivePushToggle}
               />
             </div>
+
+            {executivePushStatus ? (
+              <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                <span className="text-muted-foreground">Estado de hoy</span>
+                <span
+                  className={
+                    executivePushStatus.tone === 'success'
+                      ? 'font-medium text-emerald-600'
+                      : executivePushStatus.tone === 'warning'
+                      ? 'font-medium text-amber-600'
+                      : executivePushStatus.tone === 'pending'
+                      ? 'font-medium text-amber-600'
+                      : 'font-medium text-muted-foreground'
+                  }
+                >
+                  {executivePushStatus.label}
+                </span>
+              </div>
+            ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">

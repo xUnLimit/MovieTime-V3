@@ -56,6 +56,8 @@ export interface ExecutivePushSettings {
   blockOrder: ExecutivePushBlock[];
   updatedBy?: string;
   updatedAt: Date;
+  lastSentAt?: Date | null;
+  lastSentDate?: string | null;
 }
 
 export interface ConfiguracionWhatsApp {
