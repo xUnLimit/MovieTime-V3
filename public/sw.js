@@ -1,5 +1,18 @@
-const CACHE_NAME = 'movietime-pwa-v4';
+const CACHE_NAME = 'movietime-pwa-v5';
 const APP_SHELL = [
+  '/',
+  '/login',
+  '/dashboard',
+  '/usuarios',
+  '/servicios',
+  '/ventas',
+  '/notificaciones',
+  '/categorias',
+  '/metodos-pago',
+  '/gastos',
+  '/reposo',
+  '/editor-mensajes',
+  '/log-actividad',
   '/offline',
   '/manifest.webmanifest',
   '/favicon.ico',
@@ -57,10 +70,9 @@ self.addEventListener('fetch', (event) => {
         .catch(async () => {
           const cached = await caches.match(request);
           const cachedPath = await caches.match(url.pathname);
-          const appShell = await caches.match('/dashboard');
-          const rootShell = await caches.match('/');
           const offlineFallback = await caches.match('/offline');
-          return cached || cachedPath || appShell || rootShell || offlineFallback;
+          const rootShell = await caches.match('/');
+          return cached || cachedPath || offlineFallback || rootShell;
         })
     );
     return;

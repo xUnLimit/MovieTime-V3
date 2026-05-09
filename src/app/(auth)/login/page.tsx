@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ export default function LoginPage() {
     return localStorage.getItem('auth-remember') === 'true';
   });
   const [showPassword, setShowPassword] = useState(false);
+  const offlineRestoreAttemptedRef = useRef(false);
   const [isOnline, setIsOnline] = useState(() => {
     if (typeof navigator === 'undefined') return true;
     return navigator.onLine;
@@ -51,6 +52,27 @@ export default function LoginPage() {
       window.removeEventListener('offline', updateOfflineState);
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      !isHydrated ||
+      isAuthenticated ||
+      isOnline ||
+      !canUseOfflineAccess ||
+      offlineRestoreAttemptedRef.current
+    ) {
+      return;
+    }
+
+    offlineRestoreAttemptedRef.current = true;
+    try {
+      restoreOfflineSession();
+      toast.success('Modo lectura offline activo');
+      router.replace('/dashboard');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo entrar en modo offline.');
+    }
+  }, [canUseOfflineAccess, isAuthenticated, isHydrated, isOnline, restoreOfflineSession, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
