@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, WifiOff } from 'lucide-react';
+import { hasOfflineAuthUser } from '@/lib/pwa/offline-auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading, isHydrated } = useAuthStore();
+  const { login, restoreOfflineSession, isAuthenticated, isLoading, isHydrated } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,6 +23,11 @@ export default function LoginPage() {
     return localStorage.getItem('auth-remember') === 'true';
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof navigator === 'undefined') return true;
+    return navigator.onLine;
+  });
+  const [canUseOfflineAccess, setCanUseOfflineAccess] = useState(false);
 
   useEffect(() => {
     // Si ya está autenticado, redirigir al dashboard
@@ -29,6 +35,22 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   }, [isAuthenticated, isHydrated, router]);
+
+  useEffect(() => {
+    const updateOfflineState = () => {
+      setIsOnline(navigator.onLine);
+      setCanUseOfflineAccess(hasOfflineAuthUser());
+    };
+
+    updateOfflineState();
+    window.addEventListener('online', updateOfflineState);
+    window.addEventListener('offline', updateOfflineState);
+
+    return () => {
+      window.removeEventListener('online', updateOfflineState);
+      window.removeEventListener('offline', updateOfflineState);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +69,16 @@ export default function LoginPage() {
     }
   };
 
+  const handleOfflineAccess = () => {
+    try {
+      restoreOfflineSession();
+      toast.success('Modo lectura offline activo');
+      router.push('/dashboard');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo entrar en modo offline.');
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-sm shadow-sm">
@@ -57,6 +89,14 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
+          {!isOnline ? (
+            <div className="mb-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+              <div className="flex items-start gap-2">
+                <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>Sin conexion. El inicio con contrasena necesita internet.</span>
+              </div>
+            </div>
+          ) : null}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-normal">
@@ -119,10 +159,20 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || !isOnline}
             >
               {isLoading ? 'Iniciando Sesión...' : 'Iniciar Sesión'}
             </Button>
+            {!isOnline && canUseOfflineAccess ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleOfflineAccess}
+              >
+                Entrar en modo lectura offline
+              </Button>
+            ) : null}
           </form>
         </CardContent>
       </Card>
