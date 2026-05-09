@@ -1,3 +1,5 @@
+import { createECDH } from 'node:crypto';
+
 import webPush from 'web-push';
 
 import { env } from '@/config';
@@ -18,6 +20,30 @@ const PUSH_PAYLOAD = JSON.stringify({ kind: 'executive_daily_summary' });
 const PUSH_REQUEST_TIMEOUT_MS = 15_000;
 const PUSH_DELIVERY_CONCURRENCY = 5;
 
+function base64UrlEncode(value: Buffer) {
+  return value.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlDecode(value: string) {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  return Buffer.from(`${normalized}${padding}`, 'base64');
+}
+
+function assertValidVapidConfig(publicKey: string, privateKey: string) {
+  const ecdh = createECDH('prime256v1');
+  ecdh.setPrivateKey(base64UrlDecode(privateKey));
+  const derivedPublicKey = base64UrlEncode(ecdh.getPublicKey(undefined, 'uncompressed'));
+  if (derivedPublicKey !== publicKey) {
+    throw new Error('Invalid VAPID configuration: NEXT_PUBLIC_VAPID_PUBLIC_KEY does not match VAPID_PRIVATE_KEY.');
+  }
+
+  const validSubject = env.vapidSubject.startsWith('mailto:') || env.vapidSubject.startsWith('https://');
+  if (!validSubject) {
+    throw new Error('Invalid VAPID configuration: VAPID_SUBJECT must start with mailto: or https://.');
+  }
+}
+
 function configureVapid() {
   const publicKey = env.vapidPublicKey;
   const privateKey = process.env.VAPID_PRIVATE_KEY || '';
@@ -26,6 +52,7 @@ function configureVapid() {
     throw new Error('Missing VAPID keys. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.');
   }
 
+  assertValidVapidConfig(publicKey, privateKey);
   webPush.setVapidDetails(env.vapidSubject, publicKey, privateKey);
 }
 

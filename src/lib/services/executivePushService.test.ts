@@ -17,7 +17,7 @@ vi.mock('web-push', () => ({
 
 vi.mock('@/config', () => ({
   env: {
-    vapidPublicKey: 'public-vapid-key',
+    vapidPublicKey: 'REDACTED_VAPID_PUBLIC_KEY',
     vapidSubject: 'mailto:admin@example.com',
     appUrl: 'https://system.movietimepty.top',
   },
@@ -83,7 +83,7 @@ function setupSupabaseMock() {
 
 describe('sendExecutivePushDailySummary', () => {
   beforeEach(() => {
-    process.env.VAPID_PRIVATE_KEY = 'private-vapid-key';
+    process.env.VAPID_PRIVATE_KEY = 'REDACTED_VAPID_PRIVATE_KEY';
     webPushMocks.setVapidDetails.mockReset();
     webPushMocks.sendNotification.mockReset().mockResolvedValue({ statusCode: 201, body: '', headers: {} });
     supabaseMocks.from.mockReset();
@@ -97,8 +97,8 @@ describe('sendExecutivePushDailySummary', () => {
 
     expect(webPushMocks.setVapidDetails).toHaveBeenCalledWith(
       'mailto:admin@example.com',
-      'public-vapid-key',
-      'private-vapid-key'
+      'REDACTED_VAPID_PUBLIC_KEY',
+      'REDACTED_VAPID_PRIVATE_KEY'
     );
     expect(webPushMocks.sendNotification).toHaveBeenCalledWith(
       {

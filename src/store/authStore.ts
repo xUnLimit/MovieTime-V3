@@ -31,12 +31,12 @@ function getActiveStorage(): Storage {
     : sessionStorage;
 }
 
-/** Clear auth data from both storages */
+/** Clear auth data from both storages. Preserves the rememberMe preference
+ * so the next login defaults to the user's last choice. */
 function clearAllAuthStorage() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(REMEMBER_KEY);
   clearOfflineAuthUser();
 }
 
@@ -85,16 +85,19 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
 
           try {
+            // Clear old auth data and set the remember flag BEFORE signIn so
+            // both Supabase's storage adapter and Zustand's persist middleware
+            // pick the right storage (localStorage vs sessionStorage).
+            clearAllAuthStorage();
+            if (rememberMe) {
+              localStorage.setItem(REMEMBER_KEY, 'true');
+            } else {
+              localStorage.removeItem(REMEMBER_KEY);
+            }
+
             await signIn(email, password);
             const user = await loadActiveProfile();
 
-            // Clear old data from both storages first
-            clearAllAuthStorage();
-
-            // Set the remember flag BEFORE Zustand persists (so getActiveStorage picks it up)
-            if (rememberMe) {
-              localStorage.setItem(REMEMBER_KEY, 'true');
-            }
             saveOfflineAuthUser(user);
             setOfflineAuthSessionActive(false);
 
