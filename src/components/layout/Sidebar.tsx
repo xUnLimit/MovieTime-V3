@@ -217,7 +217,15 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
         !isMobile && "transition-[width] duration-300 ease-in-out"
       )}
       style={{
-        width: isMobile ? '200px' : (collapsed ? '48px' : '200px')
+        width: isMobile ? '200px' : (collapsed ? '48px' : '200px'),
+        ...(isMobile
+          ? {
+              boxSizing: 'border-box',
+              height: '100dvh',
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }
+          : {}),
       }}
     >
       {/* Header - Logo y Título */}
@@ -414,7 +422,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
 
       {/* Mobile overlay — siempre en el DOM para que la transición CSS funcione */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 md:hidden"
+        className="fixed inset-0 z-[65] bg-black/50 md:hidden"
         style={{
           opacity: mobileOpen ? 1 : 0,
           pointerEvents: mobileOpen ? 'auto' : 'none',
@@ -425,7 +433,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       />
       {/* Mobile drawer — siempre en el DOM para que el slide funcione al cerrar */}
       <div
-        className="fixed inset-y-0 left-0 z-50 md:hidden flex h-full"
+        className="fixed inset-y-0 left-0 z-[70] md:hidden flex h-full"
         style={{
           transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)',
