@@ -42,7 +42,7 @@ export function buildExecutivePushBody(blocks: ExecutivePushSummaryBlock[]): str
       }
       return `${block.label}: ${block.count ?? 0}`;
     })
-    .join(' | ');
+    .join('\n');
 }
 
 export function buildExecutivePushSummaryPayload(
