@@ -181,7 +181,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-0 translate-y-0 sm:top-[50%] sm:translate-y-[-50%] grid max-h-[100dvh] overflow-hidden p-0 sm:max-h-[85vh] sm:max-w-2xl">
+      <DialogContent className="top-0 flex h-[100dvh] max-h-[100dvh] translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-x-0 p-0 sm:top-[50%] sm:h-auto sm:max-h-[85vh] sm:max-w-2xl sm:translate-y-[-50%] sm:rounded-lg sm:border">
         <DialogHeader className="shrink-0 border-b bg-background px-6 pb-4 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:pt-6">
           <DialogTitle>Configuracion</DialogTitle>
           <DialogDescription>
@@ -189,7 +189,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 space-y-6 overflow-y-auto px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-4 sm:pb-6">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-4 sm:pb-6">
           <section className="space-y-3">
             <div>
               <h3 className="text-sm font-semibold">Vista del dashboard</h3>
