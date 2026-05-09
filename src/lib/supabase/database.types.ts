@@ -122,6 +122,8 @@ export type Database = {
         Row: {
           executive_push_block_order: Json | null
           executive_push_enabled: boolean
+          executive_push_last_sent_at: string | null
+          executive_push_last_sent_date: string | null
           executive_push_selected_blocks: Json | null
           executive_push_send_time: string
           executive_push_timezone: string
@@ -135,6 +137,8 @@ export type Database = {
         Insert: {
           executive_push_block_order?: Json | null
           executive_push_enabled?: boolean
+          executive_push_last_sent_at?: string | null
+          executive_push_last_sent_date?: string | null
           executive_push_selected_blocks?: Json | null
           executive_push_send_time?: string
           executive_push_timezone?: string
@@ -148,6 +152,8 @@ export type Database = {
         Update: {
           executive_push_block_order?: Json | null
           executive_push_enabled?: boolean
+          executive_push_last_sent_at?: string | null
+          executive_push_last_sent_date?: string | null
           executive_push_selected_blocks?: Json | null
           executive_push_send_time?: string
           executive_push_timezone?: string

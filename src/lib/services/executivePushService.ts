@@ -4,6 +4,7 @@ import { env } from '@/config';
 import { createServiceRoleClient } from '@/lib/server/supabase-server';
 import type { ExecutivePushBlock, ExecutivePushSummaryBlock, ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
 import { buildExecutivePushSummaryPayload, getExecutivePushBlockMeta } from '@/lib/pwa/push-helpers';
+import { getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
@@ -107,6 +108,7 @@ async function getExecutivePushSettings(client: ServiceClient) {
     enabled: Boolean(data.executive_push_enabled),
     sendTime: data.executive_push_send_time ?? '08:00',
     timezone: data.executive_push_timezone ?? 'America/Bogota',
+    lastSentDate: data.executive_push_last_sent_date ?? null,
     selectedBlocks: Array.isArray(data.executive_push_selected_blocks)
       ? data.executive_push_selected_blocks as ExecutivePushBlock[]
       : [],
@@ -241,11 +243,18 @@ async function sendSubscriptionPing(subscription: Pick<PushSubscriptionRecord, '
   return response.status;
 }
 
-export async function sendExecutivePushDailySummary(): Promise<{ sent: number; disabled: number }> {
+export async function sendExecutivePushDailySummary(): Promise<{
+  sent: number;
+  disabled: number;
+  skipped?: string;
+  pushDate?: string;
+}> {
   const client = createServiceRoleClient();
   const settings = await getExecutivePushSettings(client);
-  if (!settings.enabled) {
-    return { sent: 0, disabled: 0 };
+
+  const dueStatus = getExecutivePushDueStatus(settings);
+  if (!dueStatus.due) {
+    return { sent: 0, disabled: 0, skipped: dueStatus.reason, pushDate: dueStatus.today };
   }
 
   const { data, error } = await client
@@ -273,5 +282,14 @@ export async function sendExecutivePushDailySummary(): Promise<{ sent: number; d
     }
   }
 
-  return { sent, disabled };
+  const { error: markSentError } = await client
+    .from('config')
+    .update({
+      executive_push_last_sent_at: new Date().toISOString(),
+      executive_push_last_sent_date: dueStatus.today,
+    })
+    .eq('id', 'global');
+  if (markSentError) throw new Error(markSentError.message);
+
+  return { sent, disabled, pushDate: dueStatus.today };
 }

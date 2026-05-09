@@ -1,0 +1,20 @@
+name: Executive Push Scheduler
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-executive-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Trigger scheduled executive push
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PUSH_DAILY_URL: ${{ vars.PUSH_DAILY_URL || 'https://system.movietimepty.top/api/push/daily' }}
+        run: |
+          test -n "$CRON_SECRET"
+          curl --fail-with-body --request POST "$PUSH_DAILY_URL" \
+            --header "Authorization: Bearer $CRON_SECRET"
