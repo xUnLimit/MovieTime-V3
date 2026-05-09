@@ -15,6 +15,8 @@ type PushFailure = {
 };
 
 const PUSH_PAYLOAD = JSON.stringify({ kind: 'executive_daily_summary' });
+const PUSH_REQUEST_TIMEOUT_MS = 15_000;
+const PUSH_DELIVERY_CONCURRENCY = 5;
 
 function configureVapid() {
   const publicKey = env.vapidPublicKey;
@@ -206,6 +208,7 @@ async function sendSubscriptionPing(subscription: Pick<PushSubscriptionRecord, '
     {
       TTL: 60,
       urgency: 'normal',
+      timeout: PUSH_REQUEST_TIMEOUT_MS,
     }
   );
 }
@@ -238,34 +241,39 @@ export async function sendExecutivePushDailySummary(): Promise<{
   let disabled = 0;
   const failures: PushFailure[] = [];
 
-  for (const subscription of subscriptions) {
-    try {
-      await sendSubscriptionPing(subscription);
-      sent += 1;
-    } catch (error) {
-      const statusCode = isWebPushError(error) ? error.statusCode : undefined;
-      const body = isWebPushError(error) ? error.body : undefined;
-      const message = error instanceof Error ? error.message : 'Unknown push delivery error.';
-      const endpointOrigin = getEndpointOrigin(subscription.endpoint);
-      failures.push({
-        endpointOrigin,
-        statusCode,
-        body,
-        message,
-      });
+  for (let index = 0; index < subscriptions.length; index += PUSH_DELIVERY_CONCURRENCY) {
+    const batch = subscriptions.slice(index, index + PUSH_DELIVERY_CONCURRENCY);
+    await Promise.all(
+      batch.map(async (subscription) => {
+        try {
+          await sendSubscriptionPing(subscription);
+          sent += 1;
+        } catch (error) {
+          const statusCode = isWebPushError(error) ? error.statusCode : undefined;
+          const body = isWebPushError(error) ? error.body : undefined;
+          const message = error instanceof Error ? error.message : 'Unknown push delivery error.';
+          const endpointOrigin = getEndpointOrigin(subscription.endpoint);
+          failures.push({
+            endpointOrigin,
+            statusCode,
+            body,
+            message,
+          });
 
-      console.error('Error sending executive push ping:', {
-        endpointOrigin,
-        statusCode,
-        body,
-        message,
-      });
+          console.error('Error sending executive push ping:', {
+            endpointOrigin,
+            statusCode,
+            body,
+            message,
+          });
 
-      if (shouldDisableSubscription(statusCode)) {
-        disabled += 1;
-        await client.from('push_subscriptions').update({ enabled: false }).eq('id', subscription.id);
+          if (shouldDisableSubscription(statusCode)) {
+            disabled += 1;
+            await client.from('push_subscriptions').update({ enabled: false }).eq('id', subscription.id);
+          }
+        }
       }
-    }
+    ));
   }
 
   const deliverySkipReason = getExecutivePushDeliverySkipReason(subscriptions.length, sent);

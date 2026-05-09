@@ -112,6 +112,7 @@ describe('sendExecutivePushDailySummary', () => {
       {
         TTL: 60,
         urgency: 'normal',
+        timeout: 15000,
       }
     );
     expect(result).toMatchObject({ sent: 1, disabled: 0, failed: 0 });
