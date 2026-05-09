@@ -524,7 +524,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                   <SelectTrigger id="executive-interval" className="w-full">
                     <SelectValue placeholder="Seleccionar intervalo" />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[100]">
+                  <SelectContent position="popper">
                     {[1, 2, 4, 6, 8, 12, 24].map((hours) => (
                       <SelectItem key={hours} value={String(hours)}>
                         Cada {hours} h
