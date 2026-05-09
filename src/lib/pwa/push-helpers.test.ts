@@ -22,7 +22,7 @@ describe('buildExecutivePushSummaryPayload', () => {
 
     expect(payload.destination).toBe('/notificaciones');
     expect(payload.tab).toBe('servicios');
-    expect(payload.title).toBe('MovieTime PTY');
+    expect(payload.title).toBe('Recordatorio');
     expect(payload.body).toContain('Servicios por pagar: 3');
     expect(payload.body).toContain('Monto a fondear: 120.00 USD');
   });

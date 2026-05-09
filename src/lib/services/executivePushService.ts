@@ -102,18 +102,20 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
   const orderedBlocks = settings.blockOrder.length > 0 ? settings.blockOrder : settings.selectedBlocks;
   const selectedSet = new Set(settings.selectedBlocks);
 
-  // Only count notifications where the user has the "campanita" flag (resaltada)
-  // turned on AND that are due today or already overdue (dias_restantes <= 0).
+  // Count notifications the user hasn't dismissed (leida=false — the "active
+  // bell" icon in the table) AND that are due today or already overdue
+  // (dias_restantes <= 0). Marking a row as read in the table removes it from
+  // the push count.
   const [ventaNotificationsResult, servicioNotificationsResult] = await Promise.all([
     client
       .from('v_notificaciones_venta')
-      .select('cliente_id,dias_restantes,resaltada')
-      .eq('resaltada', true)
+      .select('cliente_id,dias_restantes,leida')
+      .eq('leida', false)
       .lte('dias_restantes', 0),
     client
       .from('v_notificaciones_servicio')
-      .select('servicio_id,costo_servicio_snapshot,moneda_snapshot,dias_restantes,resaltada')
-      .eq('resaltada', true)
+      .select('servicio_id,costo_servicio_snapshot,moneda_snapshot,dias_restantes,leida')
+      .eq('leida', false)
       .lte('dias_restantes', 0),
   ]);
 

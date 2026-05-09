@@ -39,7 +39,7 @@ export function buildExecutivePushSummaryPayload(
   const { destination, tab } = buildExecutivePushDestination(blocks);
   return {
     kind: 'executive_daily_summary',
-    title: 'MovieTime PTY',
+    title: 'Recordatorio',
     body: buildExecutivePushBody(blocks),
     destination,
     tab,
