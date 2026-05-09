@@ -64,6 +64,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
   } = usePwaStore();
 
   const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [isSavingExecutiveTime, setIsSavingExecutiveTime] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -138,14 +139,23 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
 
   const handleTimeChange = async (sendTime: string) => {
     if (!executivePush) return;
+    if (!sendTime) {
+      toast.error('Selecciona una hora de envio valida.');
+      return;
+    }
+
+    setIsSavingExecutiveTime(true);
     try {
       await updateExecutivePush({
         ...executivePush,
         sendTime,
         updatedBy: user?.id,
       });
+      toast.success(`Hora de push aplicada: ${sendTime}.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo guardar la hora de envio.');
+    } finally {
+      setIsSavingExecutiveTime(false);
     }
   };
 
@@ -331,8 +341,12 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                   id="executive-send-time"
                   type="time"
                   value={executivePush?.sendTime ?? '08:00'}
+                  disabled={isSavingExecutiveTime}
                   onChange={(event) => void handleTimeChange(event.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  {isSavingExecutiveTime ? 'Guardando hora...' : 'Se aplica al siguiente ciclo del scheduler.'}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="executive-timezone">Timezone</Label>
