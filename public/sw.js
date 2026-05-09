@@ -1,11 +1,22 @@
-const CACHE_NAME = 'movietime-pwa-v1';
+const CACHE_NAME = 'movietime-pwa-v2';
 const APP_SHELL = [
   '/',
   '/login',
   '/dashboard',
+  '/usuarios',
+  '/servicios',
+  '/ventas',
+  '/notificaciones',
+  '/categorias',
+  '/metodos-pago',
+  '/gastos',
+  '/reposo',
+  '/editor-mensajes',
+  '/log-actividad',
   '/offline',
   '/manifest.webmanifest',
   '/favicon.ico',
+  '/favicon.svg',
   '/icon-192.png',
   '/icon-512.png',
   '/apple-icon',
@@ -13,7 +24,21 @@ const APP_SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) =>
+        Promise.allSettled(
+          APP_SHELL.map((url) =>
+            fetch(url, { cache: 'reload' }).then((response) => {
+              if (response.ok) {
+                return cache.put(url, response);
+              }
+              return undefined;
+            })
+          )
+        )
+      )
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -42,7 +67,11 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(async () => {
           const cached = await caches.match(request);
-          return cached || caches.match('/offline');
+          const cachedPath = await caches.match(url.pathname);
+          const appShell = await caches.match('/dashboard');
+          const rootShell = await caches.match('/');
+          const offlineFallback = await caches.match('/offline');
+          return cached || cachedPath || appShell || rootShell || offlineFallback;
         })
     );
     return;

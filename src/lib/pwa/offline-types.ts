@@ -14,6 +14,7 @@ export interface OfflineAppSnapshot {
   version: number;
   syncedAt: string;
   collections: Partial<Record<CollectionName, unknown[]>>;
+  detailRoutes: string[];
   dashboardHome: OfflineDashboardHomeSnapshot | null;
   config: Configuracion | null;
 }
