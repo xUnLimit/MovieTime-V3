@@ -4,6 +4,7 @@ import { env } from '@/config';
 import { sendExecutivePushDailySummary } from '@/lib/services/executivePushService';
 
 function isAuthorizedCronRequest(request: Request) {
+  // GitHub Actions / manual calls use a shared secret in Authorization or a custom header.
   const cronSecret = request.headers.get('x-push-cron-secret');
   const authorization = request.headers.get('authorization');
   return Boolean(
@@ -19,6 +20,9 @@ async function handleDailyPush(request: Request) {
 
   try {
     const result = await sendExecutivePushDailySummary();
+    if (result.skipped === 'no_successful_deliveries') {
+      return NextResponse.json({ ok: false, ...result }, { status: 502 });
+    }
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return NextResponse.json(

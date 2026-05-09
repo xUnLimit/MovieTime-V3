@@ -7,6 +7,7 @@ import {
   getCurrentProfile,
   onAuthStateChange,
 } from '@/lib/supabase/auth';
+import { getOfflineAuthDecision } from '@/lib/pwa/offline-auth';
 
 const STORAGE_KEY = 'auth-storage';
 const REMEMBER_KEY = 'auth-remember';
@@ -30,6 +31,11 @@ function clearAllAuthStorage() {
   localStorage.removeItem(STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(REMEMBER_KEY);
+}
+
+function isBrowserOnline() {
+  if (typeof navigator === 'undefined') return true;
+  return navigator.onLine;
 }
 
 interface AuthState {
@@ -136,12 +142,37 @@ export const useAuthStore = create<AuthState>()(
                 set({ user, isAuthenticated: true, isLoading: false });
               } catch (error) {
                 void error;
+                // Offline profile checks can fail even when the persisted session is valid.
+                const current = useAuthStore.getState();
+                const decision = getOfflineAuthDecision({
+                  isOnline: isBrowserOnline(),
+                  hasPersistedUser: Boolean(current.user),
+                });
+                if (decision !== 'clear') {
+                  set({
+                    isAuthenticated: decision === 'preserve',
+                    isLoading: false,
+                  });
+                  return;
+                }
                 await supabaseSignOut().catch(() => undefined);
                 clearAllAuthStorage();
                 set({ user: null, isAuthenticated: false, isLoading: false });
               }
             } else {
-              // Supabase has no session: clear everything
+              // Keep persisted auth while offline so read-only navigation keeps working.
+              const current = useAuthStore.getState();
+              const decision = getOfflineAuthDecision({
+                isOnline: isBrowserOnline(),
+                hasPersistedUser: Boolean(current.user),
+              });
+              if (decision !== 'clear') {
+                set({
+                  isAuthenticated: decision === 'preserve',
+                  isLoading: false,
+                });
+                return;
+              }
               clearAllAuthStorage();
               set({ user: null, isAuthenticated: false, isLoading: false });
             }

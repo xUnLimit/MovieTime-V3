@@ -4,7 +4,7 @@ import { env } from '@/config';
 import { createServiceRoleClient } from '@/lib/server/supabase-server';
 import type { ExecutivePushBlock, ExecutivePushSummaryBlock, ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
 import { buildExecutivePushSummaryPayload, getExecutivePushBlockMeta } from '@/lib/pwa/push-helpers';
-import { getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
+import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
@@ -280,6 +280,11 @@ export async function sendExecutivePushDailySummary(): Promise<{
     } catch (error) {
       console.error('Error sending executive push ping:', error);
     }
+  }
+
+  const deliverySkipReason = getExecutivePushDeliverySkipReason(subscriptions.length, sent);
+  if (deliverySkipReason) {
+    return { sent, disabled, skipped: deliverySkipReason, pushDate: dueStatus.today };
   }
 
   const { error: markSentError } = await client

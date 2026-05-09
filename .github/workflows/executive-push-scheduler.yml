@@ -2,6 +2,8 @@ name: Executive Push Scheduler
 
 on:
   schedule:
+    # Runs every 5 minutes. The endpoint itself guards against duplicate sends
+    # using executive_push_last_sent_date; only fires once per day at the configured time.
     - cron: '*/5 * * * *'
   workflow_dispatch:
 
@@ -15,6 +17,11 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           PUSH_DAILY_URL: ${{ vars.PUSH_DAILY_URL || 'https://system.movietimepty.top/api/push/daily' }}
         run: |
-          test -n "$CRON_SECRET"
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET is not set; push trigger cannot run."
+            exit 1
+          fi
+          echo "Triggering push at $PUSH_DAILY_URL"
           curl --fail-with-body --request POST "$PUSH_DAILY_URL" \
-            --header "Authorization: Bearer $CRON_SECRET"
+            --header "Authorization: Bearer $CRON_SECRET" \
+            --header "Content-Type: application/json"

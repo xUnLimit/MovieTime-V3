@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { formatSyncDate } from '@/lib/pwa/format-sync-date';
 import { EXECUTIVE_PUSH_BLOCKS } from '@/lib/pwa/push-constants';
 import {
   getPushSubscriptionStatus,
@@ -40,10 +41,6 @@ interface ConfiguracionDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function formatSyncDate(date: Date | null) {
-  if (!date) return 'Sin copia offline';
-  return date.toLocaleString('es-CO');
-}
 
 export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogProps) {
   const user = useAuthStore((state) => state.user);

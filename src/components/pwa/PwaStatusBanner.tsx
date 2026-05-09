@@ -4,17 +4,8 @@ import { RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { formatSyncDate } from '@/lib/pwa/format-sync-date';
 import { usePwaStore } from '@/store/pwaStore';
-
-function formatSyncDate(date: Date | null) {
-  if (!date) return 'Sin copia offline';
-  return date.toLocaleString('es-CO', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-  });
-}
 
 export function PwaStatusBanner() {
   const { isOnline, lastSyncAt, syncStatus, isOfflineReady, syncOfflineData } = usePwaStore();

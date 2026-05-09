@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getExecutivePushDueStatus } from './push-schedule';
+import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from './push-schedule';
 
 describe('getExecutivePushDueStatus', () => {
   it('marks the summary due after the configured local send time', () => {
@@ -43,5 +43,11 @@ describe('getExecutivePushDueStatus', () => {
     );
 
     expect(result).toEqual({ due: false, reason: 'already_sent_today', today: '2026-05-09' });
+  });
+
+  it('keeps the daily push retryable when no delivery succeeded', () => {
+    expect(getExecutivePushDeliverySkipReason(0, 0)).toBe('no_active_subscriptions');
+    expect(getExecutivePushDeliverySkipReason(2, 0)).toBe('no_successful_deliveries');
+    expect(getExecutivePushDeliverySkipReason(2, 1)).toBeNull();
   });
 });

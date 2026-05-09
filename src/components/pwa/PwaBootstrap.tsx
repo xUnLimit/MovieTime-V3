@@ -5,11 +5,16 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { usePwaStore } from '@/store/pwaStore';
 
+const OFFLINE_SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 min
+
 export function PwaBootstrap() {
   const { isAuthenticated, isHydrated } = useAuthStore();
   const {
     hydrateOfflineState,
+    isOnline,
     isSupported,
+    lastSyncAt,
+    syncStatus,
     setInstalled,
     setNetworkStatus,
     setNotificationPermission,
@@ -55,14 +60,18 @@ export function PwaBootstrap() {
   }, [setInstalled, setNetworkStatus, setNotificationPermission]);
 
   useEffect(() => {
-    if (!isHydrated || !isAuthenticated || typeof navigator === 'undefined' || !navigator.onLine) {
+    if (!isHydrated || !isAuthenticated || !isOnline) {
       return;
     }
+    if (syncStatus === 'syncing') return;
+
+    const stale = !lastSyncAt || Date.now() - lastSyncAt.getTime() > OFFLINE_SYNC_INTERVAL_MS;
+    if (!stale) return;
 
     syncOfflineData().catch((error) => {
       console.error('Error syncing offline data:', error);
     });
-  }, [isAuthenticated, isHydrated, syncOfflineData]);
+  }, [isAuthenticated, isHydrated, isOnline, lastSyncAt, syncOfflineData, syncStatus]);
 
   return null;
 }

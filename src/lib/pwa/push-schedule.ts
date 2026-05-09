@@ -68,3 +68,9 @@ export function getExecutivePushDueStatus(
 
   return { due: true, today, currentMinutes, scheduledMinutes };
 }
+
+export function getExecutivePushDeliverySkipReason(subscriptionCount: number, sent: number) {
+  if (subscriptionCount === 0) return 'no_active_subscriptions';
+  if (sent === 0) return 'no_successful_deliveries';
+  return null;
+}
