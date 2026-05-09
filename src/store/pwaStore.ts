@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware';
 
 import { getOfflineSnapshotMeta } from '@/lib/pwa/offline-read';
 import { syncOfflineSnapshot } from '@/lib/pwa/offline-sync';
-import type { OfflineSyncStatus } from '@/lib/pwa/offline-types';
+import type { OfflineSyncProgress, OfflineSyncStatus } from '@/lib/pwa/offline-types';
 
 interface PwaState {
   isOnline: boolean;
@@ -13,6 +13,7 @@ interface PwaState {
   notificationPermission: NotificationPermission | 'unsupported';
   lastSyncAt: Date | null;
   syncStatus: OfflineSyncStatus;
+  syncProgress: OfflineSyncProgress | null;
   isOfflineReady: boolean;
   error: string | null;
   setNetworkStatus: (isOnline: boolean) => void;
@@ -42,6 +43,7 @@ export const usePwaStore = create<PwaState>()(
         typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
       lastSyncAt: null,
       syncStatus: 'idle',
+      syncProgress: null,
       isOfflineReady: false,
       error: null,
       setNetworkStatus: (isOnline) => set({ isOnline }),
@@ -55,11 +57,24 @@ export const usePwaStore = create<PwaState>()(
         });
       },
       syncOfflineData: async () => {
-        set({ syncStatus: 'syncing', error: null });
+        set({
+          syncStatus: 'syncing',
+          syncProgress: {
+            phase: 'preparing',
+            percentage: 0,
+            completed: 0,
+            total: 1,
+            label: 'Preparando sincronizacion offline',
+          },
+          error: null,
+        });
         try {
-          const snapshot = await syncOfflineSnapshot();
+          const snapshot = await syncOfflineSnapshot((syncProgress) => {
+            set({ syncProgress });
+          });
           set({
             syncStatus: 'ready',
+            syncProgress: null,
             lastSyncAt: new Date(snapshot.syncedAt),
             isOfflineReady: true,
             error: null,
@@ -67,6 +82,7 @@ export const usePwaStore = create<PwaState>()(
         } catch (error) {
           set({
             syncStatus: 'error',
+            syncProgress: null,
             error: error instanceof Error ? error.message : 'No se pudo sincronizar el modo offline.',
           });
           throw error;

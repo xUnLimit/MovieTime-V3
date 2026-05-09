@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -54,6 +55,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
     isOfflineReady,
     lastSyncAt,
     syncStatus,
+    syncProgress,
     notificationPermission,
     hydrateOfflineState,
     setNotificationPermission,
@@ -255,6 +257,16 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                 <span className="text-muted-foreground">{isInstalled ? 'Si' : 'No'}</span>
               </div>
             </div>
+
+            {syncStatus === 'syncing' && syncProgress ? (
+              <div className="space-y-2 rounded-md bg-muted/40 px-3 py-2">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="min-w-0 truncate text-muted-foreground">{syncProgress.label}</span>
+                  <span className="shrink-0 font-medium">{syncProgress.percentage}%</span>
+                </div>
+                <Progress value={syncProgress.percentage} aria-label="Progreso de sincronizacion offline" />
+              </div>
+            ) : null}
 
             <Button
               type="button"
