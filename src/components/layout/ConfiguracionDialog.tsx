@@ -62,6 +62,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
 
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [isSavingExecutiveTime, setIsSavingExecutiveTime] = useState(false);
+  const [draftSendTime, setDraftSendTime] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -93,6 +94,12 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
   }, [stats?.ingresosPorMes]);
 
   const executivePush = config?.executivePush;
+
+  useEffect(() => {
+    if (executivePush?.sendTime) {
+      setDraftSendTime(executivePush.sendTime);
+    }
+  }, [executivePush?.sendTime]);
 
   const handleOfflineRefresh = async () => {
     try {
@@ -134,21 +141,22 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
     }
   };
 
-  const handleTimeChange = async (sendTime: string) => {
+  const handleTimeCommit = async () => {
     if (!executivePush) return;
-    if (!sendTime) {
+    if (!draftSendTime) {
       toast.error('Selecciona una hora de envio valida.');
       return;
     }
+    if (draftSendTime === executivePush.sendTime) return;
 
     setIsSavingExecutiveTime(true);
     try {
       await updateExecutivePush({
         ...executivePush,
-        sendTime,
+        sendTime: draftSendTime,
         updatedBy: user?.id,
       });
-      toast.success(`Hora de push aplicada: ${sendTime}.`);
+      toast.success(`Hora de push aplicada: ${draftSendTime}.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo guardar la hora de envio.');
     } finally {
@@ -337,9 +345,15 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                 <Input
                   id="executive-send-time"
                   type="time"
-                  value={executivePush?.sendTime ?? '08:00'}
+                  value={draftSendTime || executivePush?.sendTime || '08:00'}
                   disabled={isSavingExecutiveTime}
-                  onChange={(event) => void handleTimeChange(event.target.value)}
+                  onChange={(event) => setDraftSendTime(event.target.value)}
+                  onBlur={() => void handleTimeCommit()}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.currentTarget.blur();
+                    }
+                  }}
                 />
                 <p className="text-xs text-muted-foreground">
                   {isSavingExecutiveTime ? 'Guardando hora...' : 'Se aplica al siguiente ciclo del scheduler.'}
