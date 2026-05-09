@@ -10,6 +10,18 @@ function base64UrlToUint8Array(value: string) {
   return Uint8Array.from(raw, (char) => char.charCodeAt(0));
 }
 
+function arrayBufferToBase64Url(value: ArrayBuffer) {
+  const bytes = new Uint8Array(value);
+  const binary = String.fromCharCode(...bytes);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function subscriptionUsesCurrentVapidKey(subscription: PushSubscription) {
+  const key = subscription.options.applicationServerKey;
+  if (!key) return false;
+  return arrayBufferToBase64Url(key) === env.vapidPublicKey;
+}
+
 async function getAuthToken() {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
@@ -33,10 +45,18 @@ export async function registerPushSubscription() {
   }
 
   const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: base64UrlToUint8Array(env.vapidPublicKey),
-  });
+  let subscription = await registration.pushManager.getSubscription();
+  if (subscription && !subscriptionUsesCurrentVapidKey(subscription)) {
+    await subscription.unsubscribe();
+    subscription = null;
+  }
+
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(env.vapidPublicKey),
+    });
+  }
 
   const token = await getAuthToken();
   const json = subscription.toJSON();

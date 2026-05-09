@@ -1,18 +1,5 @@
-const CACHE_NAME = 'movietime-pwa-v3';
+const CACHE_NAME = 'movietime-pwa-v4';
 const APP_SHELL = [
-  '/',
-  '/login',
-  '/dashboard',
-  '/usuarios',
-  '/servicios',
-  '/ventas',
-  '/notificaciones',
-  '/categorias',
-  '/metodos-pago',
-  '/gastos',
-  '/reposo',
-  '/editor-mensajes',
-  '/log-actividad',
   '/offline',
   '/manifest.webmanifest',
   '/favicon.ico',

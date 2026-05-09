@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { env } from '@/config';
 import { sendExecutivePushDailySummary } from '@/lib/services/executivePushService';
 
+export const runtime = 'nodejs';
+
 function isAuthorizedCronRequest(request: Request) {
   // GitHub Actions / manual calls use a shared secret in Authorization or a custom header.
   const cronSecret = request.headers.get('x-push-cron-secret');

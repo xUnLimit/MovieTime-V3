@@ -2,23 +2,34 @@
 
 import { useEffect } from 'react';
 
-import { useAuthStore } from '@/store/authStore';
+import { env } from '@/config';
 import { usePwaStore } from '@/store/pwaStore';
 
-const OFFLINE_SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 min
+const MOVIETIME_CACHE_PREFIX = 'movietime-';
+
+async function unregisterDevelopmentServiceWorkers() {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  if (typeof window !== 'undefined' && 'caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter((key) => key.startsWith(MOVIETIME_CACHE_PREFIX))
+        .map((key) => caches.delete(key))
+    );
+  }
+}
 
 export function PwaBootstrap() {
-  const { isAuthenticated, isHydrated } = useAuthStore();
   const {
     hydrateOfflineState,
-    isOnline,
     isSupported,
-    lastSyncAt,
-    syncStatus,
     setInstalled,
     setNetworkStatus,
     setNotificationPermission,
-    syncOfflineData,
   } = usePwaStore();
 
   useEffect(() => {
@@ -27,6 +38,13 @@ export function PwaBootstrap() {
 
   useEffect(() => {
     if (!isSupported || typeof navigator === 'undefined') return;
+
+    if (env.isDevelopment && !env.enableDevServiceWorker) {
+      unregisterDevelopmentServiceWorkers().catch((error) => {
+        console.error('Error unregistering development service worker:', error);
+      });
+      return;
+    }
 
     navigator.serviceWorker.register('/sw.js').catch((error) => {
       console.error('Error registering service worker:', error);
@@ -58,20 +76,6 @@ export function PwaBootstrap() {
       window.removeEventListener('appinstalled', updateInstalledState);
     };
   }, [setInstalled, setNetworkStatus, setNotificationPermission]);
-
-  useEffect(() => {
-    if (!isHydrated || !isAuthenticated || !isOnline) {
-      return;
-    }
-    if (syncStatus === 'syncing') return;
-
-    const stale = !lastSyncAt || Date.now() - lastSyncAt.getTime() > OFFLINE_SYNC_INTERVAL_MS;
-    if (!stale) return;
-
-    syncOfflineData().catch((error) => {
-      console.error('Error syncing offline data:', error);
-    });
-  }, [isAuthenticated, isHydrated, isOnline, lastSyncAt, syncOfflineData, syncStatus]);
 
   return null;
 }

@@ -1,4 +1,4 @@
-import { createPrivateKey, createECDH, sign as cryptoSign } from 'node:crypto';
+import webPush from 'web-push';
 
 import { env } from '@/config';
 import { createServiceRoleClient } from '@/lib/server/supabase-server';
@@ -7,19 +7,16 @@ import { buildExecutivePushSummaryPayload, getExecutivePushBlockMeta } from '@/l
 import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
+type PushFailure = {
+  endpointOrigin: string;
+  statusCode?: number;
+  body?: string;
+  message: string;
+};
 
-function base64UrlEncode(value: Buffer | string) {
-  const buffer = Buffer.isBuffer(value) ? value : Buffer.from(value);
-  return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
+const PUSH_PAYLOAD = JSON.stringify({ kind: 'executive_daily_summary' });
 
-function base64UrlDecode(value: string) {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
-  return Buffer.from(`${normalized}${padding}`, 'base64');
-}
-
-function getVapidKeyPair() {
+function configureVapid() {
   const publicKey = env.vapidPublicKey;
   const privateKey = process.env.VAPID_PRIVATE_KEY || '';
 
@@ -27,52 +24,23 @@ function getVapidKeyPair() {
     throw new Error('Missing VAPID keys. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.');
   }
 
-  const privateBytes = base64UrlDecode(privateKey);
-  const ecdh = createECDH('prime256v1');
-  ecdh.setPrivateKey(privateBytes);
-  const publicBytes = ecdh.getPublicKey(undefined, 'uncompressed');
-  const x = base64UrlEncode(publicBytes.subarray(1, 33));
-  const y = base64UrlEncode(publicBytes.subarray(33));
-  const d = base64UrlEncode(privateBytes);
-
-  const key = createPrivateKey({
-    key: {
-      kty: 'EC',
-      crv: 'P-256',
-      x,
-      y,
-      d,
-    },
-    format: 'jwk',
-  });
-
-  return {
-    publicKey,
-    privateKey: key,
-  };
+  webPush.setVapidDetails(env.vapidSubject, publicKey, privateKey);
 }
 
-function createVapidJwt(endpoint: string) {
-  const { publicKey, privateKey } = getVapidKeyPair();
-  const audience = new URL(endpoint).origin;
-  const header = base64UrlEncode(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
-  const payload = base64UrlEncode(
-    JSON.stringify({
-      aud: audience,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 12,
-      sub: env.vapidSubject,
-    })
-  );
-  const data = `${header}.${payload}`;
-  const signature = cryptoSign('SHA256', Buffer.from(data), {
-    key: privateKey,
-    dsaEncoding: 'ieee-p1363',
-  });
+function isWebPushError(error: unknown): error is Error & { statusCode?: number; body?: string } {
+  return error instanceof Error;
+}
 
-  return {
-    token: `${data}.${base64UrlEncode(signature)}`,
-    publicKey,
-  };
+function shouldDisableSubscription(statusCode: number | undefined) {
+  return statusCode === 403 || statusCode === 404 || statusCode === 410;
+}
+
+function getEndpointOrigin(endpoint: string) {
+  try {
+    return new URL(endpoint).origin;
+  } catch {
+    return 'unknown';
+  }
 }
 
 function buildDestinationWithQuery(payload: ExecutivePushSummaryPayload) {
@@ -224,28 +192,29 @@ export async function getExecutivePushSummaryForEndpoint(endpoint: string): Prom
   };
 }
 
-async function sendSubscriptionPing(subscription: Pick<PushSubscriptionRecord, 'endpoint'>) {
-  const { token, publicKey } = createVapidJwt(subscription.endpoint);
-  const response = await fetch(subscription.endpoint, {
-    method: 'POST',
-    headers: {
-      TTL: '60',
-      Urgency: 'normal',
-      Authorization: `vapid t=${token}, k=${publicKey}`,
-      'Content-Length': '0',
+async function sendSubscriptionPing(subscription: Pick<PushSubscriptionRecord, 'endpoint' | 'p256dh' | 'auth'>) {
+  configureVapid();
+  await webPush.sendNotification(
+    {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: subscription.p256dh,
+        auth: subscription.auth,
+      },
     },
-  });
-
-  if (!response.ok && response.status !== 404 && response.status !== 410) {
-    throw new Error(`Push endpoint rejected request with status ${response.status}.`);
-  }
-
-  return response.status;
+    PUSH_PAYLOAD,
+    {
+      TTL: 60,
+      urgency: 'normal',
+    }
+  );
 }
 
 export async function sendExecutivePushDailySummary(): Promise<{
   sent: number;
   disabled: number;
+  failed: number;
+  failures?: PushFailure[];
   skipped?: string;
   pushDate?: string;
 }> {
@@ -254,7 +223,7 @@ export async function sendExecutivePushDailySummary(): Promise<{
 
   const dueStatus = getExecutivePushDueStatus(settings);
   if (!dueStatus.due) {
-    return { sent: 0, disabled: 0, skipped: dueStatus.reason, pushDate: dueStatus.today };
+    return { sent: 0, disabled: 0, failed: 0, skipped: dueStatus.reason, pushDate: dueStatus.today };
   }
 
   const { data, error } = await client
@@ -267,24 +236,48 @@ export async function sendExecutivePushDailySummary(): Promise<{
 
   let sent = 0;
   let disabled = 0;
+  const failures: PushFailure[] = [];
 
   for (const subscription of subscriptions) {
     try {
-      const status = await sendSubscriptionPing(subscription);
-      if (status === 404 || status === 410) {
+      await sendSubscriptionPing(subscription);
+      sent += 1;
+    } catch (error) {
+      const statusCode = isWebPushError(error) ? error.statusCode : undefined;
+      const body = isWebPushError(error) ? error.body : undefined;
+      const message = error instanceof Error ? error.message : 'Unknown push delivery error.';
+      const endpointOrigin = getEndpointOrigin(subscription.endpoint);
+      failures.push({
+        endpointOrigin,
+        statusCode,
+        body,
+        message,
+      });
+
+      console.error('Error sending executive push ping:', {
+        endpointOrigin,
+        statusCode,
+        body,
+        message,
+      });
+
+      if (shouldDisableSubscription(statusCode)) {
         disabled += 1;
         await client.from('push_subscriptions').update({ enabled: false }).eq('id', subscription.id);
-      } else {
-        sent += 1;
       }
-    } catch (error) {
-      console.error('Error sending executive push ping:', error);
     }
   }
 
   const deliverySkipReason = getExecutivePushDeliverySkipReason(subscriptions.length, sent);
   if (deliverySkipReason) {
-    return { sent, disabled, skipped: deliverySkipReason, pushDate: dueStatus.today };
+    return {
+      sent,
+      disabled,
+      failed: failures.length,
+      failures,
+      skipped: deliverySkipReason,
+      pushDate: dueStatus.today,
+    };
   }
 
   const { error: markSentError } = await client
@@ -296,5 +289,11 @@ export async function sendExecutivePushDailySummary(): Promise<{
     .eq('id', 'global');
   if (markSentError) throw new Error(markSentError.message);
 
-  return { sent, disabled, pushDate: dueStatus.today };
+  return {
+    sent,
+    disabled,
+    failed: failures.length,
+    failures: failures.length > 0 ? failures : undefined,
+    pushDate: dueStatus.today,
+  };
 }

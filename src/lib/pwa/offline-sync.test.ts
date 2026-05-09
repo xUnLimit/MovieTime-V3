@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildOfflineDetailRoutes, extractNextStaticAssetUrls } from './offline-sync';
 
 describe('buildOfflineDetailRoutes', () => {
-  it('includes static module routes and dynamic detail routes from synced records', () => {
+  it('does not generate route cache entries from synced record ids', () => {
     const routes = buildOfflineDetailRoutes({
       ventas: [{ id: 'venta-1' }],
       servicios: [{ id: 'servicio-1', categoriaId: 'categoria-1' }],
@@ -12,16 +12,7 @@ describe('buildOfflineDetailRoutes', () => {
       metodosPago: [{ id: 'metodo-1' }],
     });
 
-    expect(routes).toEqual(expect.arrayContaining([
-      '/dashboard',
-      '/ventas',
-      '/ventas/venta-1',
-      '/servicios/detalle/servicio-1',
-      '/servicios/categoria-1',
-      '/usuarios/usuario-1',
-      '/categorias/categoria-1',
-      '/metodos-pago/metodo-1',
-    ]));
+    expect(routes).toEqual([]);
   });
 
   it('extracts Next static assets from cached route HTML', () => {

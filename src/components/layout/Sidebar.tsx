@@ -302,6 +302,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
                   <Link
                     key={item.name}
                     href={item.href}
+                    prefetch={false}
                     className={cn(
                       "relative flex items-center h-9 rounded-lg overflow-hidden",
                       "transition-colors duration-200",

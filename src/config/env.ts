@@ -15,6 +15,7 @@ export const env = {
 
   // Features
   enableMockAuth: process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true', // Default false
+  enableDevServiceWorker: process.env.NEXT_PUBLIC_ENABLE_SW_DEV === 'true',
   vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
   pushCronSecret: process.env.PUSH_CRON_SECRET || process.env.CRON_SECRET || '',
