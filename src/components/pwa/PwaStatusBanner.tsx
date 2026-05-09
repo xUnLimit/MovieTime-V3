@@ -22,7 +22,7 @@ export function PwaStatusBanner() {
 
   if (isOnline && !isOfflineReady) {
     return (
-      <div className="mb-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+      <div className="mb-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 sm:hidden">
         <div className="flex flex-wrap items-center gap-2">
           <span>La app todavia no tiene una copia offline lista.</span>
           <Button variant="ghost" size="sm" className="h-7 px-2" onClick={handleRefresh} disabled={syncStatus === 'syncing'}>
