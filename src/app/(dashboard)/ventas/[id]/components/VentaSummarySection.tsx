@@ -77,7 +77,7 @@ export function VentaSummarySection({
           <div>
             <p className="text-xs text-muted-foreground">Cliente</p>
             {venta.clienteId ? (
-              <Link href={`/usuarios/${venta.clienteId}`} className="text-sm font-medium text-purple-500 hover:underline">
+              <Link prefetch={false} href={`/usuarios/${venta.clienteId}`} className="text-sm font-medium text-purple-500 hover:underline">
                 {venta.clienteNombre}
               </Link>
             ) : (

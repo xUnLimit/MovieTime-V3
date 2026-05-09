@@ -6,9 +6,9 @@ export function ServicioLoadingState() {
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando servicio...</h1>
         <p className="text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
+          <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
           {' / '}
-          <Link href="/servicios" className="hover:text-foreground transition-colors">Servicios</Link>
+          <Link prefetch={false} href="/servicios" className="hover:text-foreground transition-colors">Servicios</Link>
           {' / '}
           <span className="text-foreground">Detalles</span>
         </p>
@@ -26,11 +26,11 @@ export function ServicioNotFoundState() {
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Servicio no encontrado</h1>
         <p className="text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">
+          <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
             Dashboard
           </Link>{' '}
           /{' '}
-          <Link href="/servicios" className="hover:text-foreground transition-colors">
+          <Link prefetch={false} href="/servicios" className="hover:text-foreground transition-colors">
             Servicios
           </Link>{' '}
           / <span className="text-foreground">Detalles</span>
@@ -38,7 +38,7 @@ export function ServicioNotFoundState() {
       </div>
       <div className="bg-card border border-border rounded-lg p-6">
         <p className="text-muted-foreground">No se encontró el servicio con el ID proporcionado.</p>
-        <Link href="/servicios" className="inline-block mt-4 text-primary hover:underline">
+        <Link prefetch={false} href="/servicios" className="inline-block mt-4 text-primary hover:underline">
           Volver a Servicios
         </Link>
       </div>

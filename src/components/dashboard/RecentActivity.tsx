@@ -85,7 +85,7 @@ export function RecentActivity() {
         </div>
         <div className="pt-6">
           <Button className="w-full bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700" asChild>
-            <Link href="/log-actividad">
+            <Link prefetch={false} href="/log-actividad">
               Ver todo el historial
             </Link>
           </Button>

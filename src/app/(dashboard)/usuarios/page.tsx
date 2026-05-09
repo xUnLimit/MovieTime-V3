@@ -249,7 +249,7 @@ function UsuariosPageContent() {
           <div className="dashboard-page-heading-copy">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuarios</h1>
           </div>
-          <Link href="/usuarios/crear" className="shrink-0">
+          <Link prefetch={false} href="/usuarios/crear" className="shrink-0">
             <Button className="whitespace-nowrap">
               <Plus className="mr-2 h-4 w-4" />
               Nuevo Usuario
@@ -257,7 +257,7 @@ function UsuariosPageContent() {
           </Link>
         </div>
         <p className="text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Usuarios</span>
+          <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Usuarios</span>
         </p>
       </div>
 

@@ -438,13 +438,13 @@ export function VentasTable({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link href={`/ventas/${item.original.id}`}>
+                    <Link prefetch={false} href={`/ventas/${item.original.id}`}>
                       <Eye className="h-4 w-4 mr-2" />
                       Ver detalles
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={`/ventas/${item.original.id}/editar`}>
+                    <Link prefetch={false} href={`/ventas/${item.original.id}/editar`}>
                       <Edit className="h-4 w-4 mr-2" />
                       Editar
                     </Link>

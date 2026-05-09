@@ -51,7 +51,7 @@ function CategoriasPageContent() {
           <div className="dashboard-page-heading-copy">
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Categorias</h1>
           </div>
-          <Link href="/categorias/crear" className="shrink-0">
+          <Link prefetch={false} href="/categorias/crear" className="shrink-0">
             <Button className="whitespace-nowrap">
               <Plus className="mr-2 h-4 w-4" />
               Nueva Categoria
@@ -59,7 +59,7 @@ function CategoriasPageContent() {
           </Link>
         </div>
         <p className="text-sm text-muted-foreground">
-          <Link href="/" className="transition-colors hover:text-foreground">Dashboard</Link> /{' '}
+          <Link prefetch={false} href="/" className="transition-colors hover:text-foreground">Dashboard</Link> /{' '}
           <span className="text-foreground">Categorias</span>
         </p>
       </div>

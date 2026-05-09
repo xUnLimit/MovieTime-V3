@@ -221,13 +221,13 @@ export function ServiciosCategoriaTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/servicios/detalle/${servicio.id}`}>
+                            <Link prefetch={false} href={`/servicios/detalle/${servicio.id}`}>
                               <Eye className="h-4 w-4 mr-2" />
                               Ver detalles
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/servicios/${servicio.id}/editar?from=/servicios/${servicio.categoriaId}`}>
+                            <Link prefetch={false} href={`/servicios/${servicio.id}/editar?from=/servicios/${servicio.categoriaId}`}>
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </Link>

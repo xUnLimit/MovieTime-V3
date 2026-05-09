@@ -77,7 +77,7 @@ function EditarVentaPageContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href={`/ventas/${id}`}>
+            <Link prefetch={false} href={`/ventas/${id}`}>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -85,15 +85,15 @@ function EditarVentaPageContent() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Venta</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/ventas" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/ventas" className="hover:text-foreground transition-colors">
               Ventas
             </Link>{' '}
             /{' '}
-            <Link href={`/ventas/${id}`} className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href={`/ventas/${id}`} className="hover:text-foreground transition-colors">
               Detalle
             </Link>{' '}
             / <span className="text-foreground">Editar</span>

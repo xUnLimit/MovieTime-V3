@@ -129,7 +129,7 @@ export function ServicioProfilesSection({
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm text-muted-foreground">Detalles de la venta:</p>
                       {venta.ventaId && (
-                        <Link href={`/ventas/${venta.ventaId}`}>
+                        <Link prefetch={false} href={`/ventas/${venta.ventaId}`}>
                           <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
                             <ExternalLink className="h-3.5 w-3.5" />
                             Ver venta

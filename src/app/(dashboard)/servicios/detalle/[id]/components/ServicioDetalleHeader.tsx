@@ -25,7 +25,7 @@ export function ServicioDetalleHeader({
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex min-w-0 items-center gap-3">
-        <Link href={returnToServicios}>
+        <Link prefetch={false} href={returnToServicios}>
           <Button variant="outline" size="icon" className="h-8 w-8 flex-shrink-0">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -33,15 +33,15 @@ export function ServicioDetalleHeader({
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Servicio: {servicio.nombre}</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>
             {' / '}
-            <Link href="/servicios" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/servicios" className="hover:text-foreground transition-colors">
               Servicios
             </Link>
             {' / '}
-            <Link href={`/servicios/${servicio.categoriaId}`} className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href={`/servicios/${servicio.categoriaId}`} className="hover:text-foreground transition-colors">
               {categoria?.nombre || 'Categoría'}
             </Link>
             {' / '}
@@ -55,7 +55,7 @@ export function ServicioDetalleHeader({
           Renovar
         </Button>
         <Button asChild variant="outline" size="sm">
-          <Link href={`/servicios/${id}/editar?from=${encodeURIComponent(`/servicios/detalle/${id}`)}`}>
+          <Link prefetch={false} href={`/servicios/${id}/editar?from=${encodeURIComponent(`/servicios/detalle/${id}`)}`}>
             <Pencil className="h-3.5 w-3.5 mr-1.5" />
             Editar
           </Link>

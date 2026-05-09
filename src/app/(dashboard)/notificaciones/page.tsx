@@ -137,7 +137,7 @@ function NotificacionesPageContent() {
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Notificaciones</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             / <span className="text-foreground">Notificaciones</span>

@@ -47,7 +47,7 @@ export function UrgentNotifications({ notificaciones }: UrgentNotificationsProps
           Notificaciones Urgentes
         </CardTitle>
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/notificaciones">
+          <Link prefetch={false} href="/notificaciones">
             Ver todas
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

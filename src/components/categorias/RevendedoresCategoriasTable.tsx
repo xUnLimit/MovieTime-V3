@@ -147,13 +147,13 @@ export function RevendedoresCategoriasTable({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link href={`/categorias/${categoria.id}`}>
+                    <Link prefetch={false} href={`/categorias/${categoria.id}`}>
                       <Eye className="h-4 w-4 mr-2" />
                       Ver detalles
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={`/categorias/${categoria.id}/editar`}>
+                    <Link prefetch={false} href={`/categorias/${categoria.id}/editar`}>
                       <Edit className="h-4 w-4 mr-2" />
                       Editar
                     </Link>

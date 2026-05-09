@@ -65,11 +65,11 @@ function UsuarioDetallesPageContent() {
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuario no encontrado</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/usuarios" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/usuarios" className="hover:text-foreground transition-colors">
               Usuarios
             </Link>{' '}
             / <span className="text-foreground">Detalles</span>
@@ -79,7 +79,7 @@ function UsuarioDetallesPageContent() {
           <p className="text-muted-foreground">
             No se encontró el usuario con el ID proporcionado.
           </p>
-          <Link
+          <Link prefetch={false}
             href="/usuarios"
             className="inline-block mt-4 text-primary hover:underline"
           >
@@ -110,7 +110,7 @@ function UsuarioDetallesPageContent() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/usuarios">
+            <Link prefetch={false} href="/usuarios">
               <Button variant="outline" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -118,9 +118,9 @@ function UsuarioDetallesPageContent() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{usuario.nombre} {usuario.apellido}</h1>
               <p className="text-sm text-muted-foreground">
-                <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
+                <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
                 {' / '}
-                <Link href="/usuarios" className="hover:text-foreground transition-colors">Usuarios</Link>
+                <Link prefetch={false} href="/usuarios" className="hover:text-foreground transition-colors">Usuarios</Link>
                 {' / '}
                 <span className="text-foreground">{usuario.nombre} {usuario.apellido}</span>
               </p>
@@ -128,7 +128,7 @@ function UsuarioDetallesPageContent() {
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href={`/usuarios/editar/${usuario.id}`}>
+              <Link prefetch={false} href={`/usuarios/editar/${usuario.id}`}>
                 <Pencil className="h-3.5 w-3.5 mr-1.5" />
                 Editar
               </Link>

@@ -96,6 +96,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
   }, [stats?.ingresosPorMes]);
 
   const executivePush = config?.executivePush;
+  const executivePushConfigReady = Boolean(executivePush);
 
   useEffect(() => {
     if (executivePush?.sendTime) {
@@ -346,7 +347,8 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
               </div>
               <Switch
                 id="executive-push-enabled"
-                checked={executivePush?.enabled ?? false}
+                checked={executivePushConfigReady ? executivePush?.enabled === true : false}
+                disabled={!executivePushConfigReady}
                 onCheckedChange={handleExecutivePushToggle}
               />
             </div>

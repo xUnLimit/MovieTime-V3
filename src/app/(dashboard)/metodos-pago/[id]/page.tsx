@@ -82,7 +82,7 @@ function VerMetodoPagoPageContent() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Link href="/metodos-pago">
+          <Link prefetch={false} href="/metodos-pago">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -100,7 +100,7 @@ function VerMetodoPagoPageContent() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Link href="/metodos-pago">
+          <Link prefetch={false} href="/metodos-pago">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -121,7 +121,7 @@ function VerMetodoPagoPageContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/metodos-pago">
+          <Link prefetch={false} href="/metodos-pago">
             <Button variant="outline" size="icon" className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -134,9 +134,9 @@ function VerMetodoPagoPageContent() {
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
+              <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
               {' / '}
-              <Link href="/metodos-pago" className="hover:text-foreground transition-colors">Métodos de Pago</Link>
+              <Link prefetch={false} href="/metodos-pago" className="hover:text-foreground transition-colors">Métodos de Pago</Link>
               {' / '}
               <span className="text-foreground">{metodo.nombre}</span>
             </p>
@@ -144,7 +144,7 @@ function VerMetodoPagoPageContent() {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href={`/metodos-pago/${metodo.id}/editar?from=/metodos-pago/${metodo.id}`}>
+            <Link prefetch={false} href={`/metodos-pago/${metodo.id}/editar?from=/metodos-pago/${metodo.id}`}>
               <Edit className="h-3.5 w-3.5 mr-1.5" />
               Editar
             </Link>

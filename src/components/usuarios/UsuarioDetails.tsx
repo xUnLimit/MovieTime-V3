@@ -481,13 +481,13 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/ventas/${row.id}`}>
+                                <Link prefetch={false} href={`/ventas/${row.id}`}>
                                   <ShoppingCart className="h-4 w-4 mr-2" />
                                   Ver Venta
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/servicios/detalle/${row.servicioId}`}>
+                                <Link prefetch={false} href={`/servicios/detalle/${row.servicioId}`}>
                                   <Monitor className="h-4 w-4 mr-2" />
                                   Ver Servicio
                                 </Link>
@@ -587,13 +587,13 @@ export function UsuarioDetails({ usuario }: UsuarioDetailsProps) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/ventas/${row.id}`}>
+                                <Link prefetch={false} href={`/ventas/${row.id}`}>
                                   <ShoppingCart className="h-4 w-4 mr-2" />
                                   Ver Venta
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/servicios/detalle/${row.servicioId}`}>
+                                <Link prefetch={false} href={`/servicios/detalle/${row.servicioId}`}>
                                   <Monitor className="h-4 w-4 mr-2" />
                                   Ver Servicio
                                 </Link>

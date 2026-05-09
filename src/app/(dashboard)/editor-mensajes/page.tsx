@@ -18,7 +18,7 @@ function EditorMensajesPageContent() {
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editor de Mensajes de WhatsApp</h1>
         <p className="text-sm text-muted-foreground">
-          <Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Editor de Mensajes</span>
+          <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Editor de Mensajes</span>
         </p>
       </div>
 

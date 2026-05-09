@@ -25,10 +25,10 @@ function MetodosPagoPageContent() {
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Métodos de Pago</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Métodos de Pago</span>
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Métodos de Pago</span>
           </p>
         </div>
-        <Link href="/metodos-pago/crear" className="shrink-0">
+        <Link prefetch={false} href="/metodos-pago/crear" className="shrink-0">
           <Button className="whitespace-nowrap">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Método

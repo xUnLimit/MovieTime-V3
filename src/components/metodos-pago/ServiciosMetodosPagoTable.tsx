@@ -243,13 +243,13 @@ export function ServiciosMetodosPagoTable({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link href={`/metodos-pago/${metodo.id}`}>
+                      <Link prefetch={false} href={`/metodos-pago/${metodo.id}`}>
                         <Eye className="h-4 w-4 mr-2" />
                         Ver detalles
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`/metodos-pago/${metodo.id}/editar`}>
+                      <Link prefetch={false} href={`/metodos-pago/${metodo.id}/editar`}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </Link>

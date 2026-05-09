@@ -472,7 +472,7 @@ export const CategoriasTable = memo(function CategoriasTable({
                     </TableCell>
                     <TableCell className="text-center pr-6">
                       <Button asChild variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Link href={`/servicios/${row.categoria.id}`}>
+                        <Link prefetch={false} href={`/servicios/${row.categoria.id}`}>
                           <Eye className="h-4 w-4" />
                         </Link>
                       </Button>

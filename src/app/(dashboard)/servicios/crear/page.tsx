@@ -16,7 +16,7 @@ function CrearServicioPageContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href={from}>
+            <Link prefetch={false} href={from}>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -24,7 +24,7 @@ function CrearServicioPageContent() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nuevo Servicio</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link href="/servicios" className="hover:text-foreground transition-colors">Servicios</Link> / <span className="text-foreground">Crear</span>
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link prefetch={false} href="/servicios" className="hover:text-foreground transition-colors">Servicios</Link> / <span className="text-foreground">Crear</span>
           </p>
         </div>
       </div>

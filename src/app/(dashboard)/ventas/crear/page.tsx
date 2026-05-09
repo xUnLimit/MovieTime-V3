@@ -11,7 +11,7 @@ export default function CrearVentaPage() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href="/ventas">
+            <Link prefetch={false} href="/ventas">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -19,11 +19,11 @@ export default function CrearVentaPage() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nueva Venta</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/ventas" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/ventas" className="hover:text-foreground transition-colors">
               Ventas
             </Link>{' '}
             / <span className="text-foreground">Crear</span>

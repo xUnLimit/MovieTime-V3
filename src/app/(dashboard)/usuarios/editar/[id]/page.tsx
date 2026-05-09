@@ -70,11 +70,11 @@ function EditarUsuarioPageContent() {
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuario no encontrado</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/usuarios" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/usuarios" className="hover:text-foreground transition-colors">
               Usuarios
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
@@ -84,7 +84,7 @@ function EditarUsuarioPageContent() {
           <p className="text-muted-foreground">
             No se encontró el usuario con el ID proporcionado.
           </p>
-          <Link
+          <Link prefetch={false}
             href="/usuarios"
             className="inline-block mt-4 text-primary hover:underline"
           >
@@ -100,7 +100,7 @@ function EditarUsuarioPageContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href={`/usuarios/${id}`}>
+            <Link prefetch={false} href={`/usuarios/${id}`}>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -110,15 +110,15 @@ function EditarUsuarioPageContent() {
             </h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/usuarios" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/usuarios" className="hover:text-foreground transition-colors">
               Usuarios
             </Link>{' '}
             /{' '}
-            <Link href={`/usuarios/${id}`} className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href={`/usuarios/${id}`} className="hover:text-foreground transition-colors">
               {usuario?.nombre || 'Detalle'}
             </Link>{' '}
             / <span className="text-foreground">Editar</span>

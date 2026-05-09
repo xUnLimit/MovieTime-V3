@@ -252,19 +252,19 @@ export function VentasProximasTableRow({
               <span className="text-purple-600">Renovar</span>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/usuarios/${notif.clienteId}`}>
+              <Link prefetch={false} href={`/usuarios/${notif.clienteId}`}>
                 <User className="h-4 w-4 mr-2" />
                 Ver Cliente
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/ventas/${notif.ventaId}`}>
+              <Link prefetch={false} href={`/ventas/${notif.ventaId}`}>
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 Ver Venta
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/servicios/detalle/${notif.servicioId}`}>
+              <Link prefetch={false} href={`/servicios/detalle/${notif.servicioId}`}>
                 <Tv2 className="h-4 w-4 mr-2" />
                 Ver Servicio
               </Link>

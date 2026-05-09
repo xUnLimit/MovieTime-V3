@@ -323,14 +323,14 @@ export function TodosUsuariosTable({
                 <DropdownMenuContent align="end">
                   {onView && (
                     <DropdownMenuItem asChild>
-                      <Link href={`/usuarios/${item.id}`}>
+                      <Link prefetch={false} href={`/usuarios/${item.id}`}>
                         <Eye className="h-4 w-4 mr-2" />
                         Ver detalles
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link href={`/usuarios/editar/${item.id}`}>
+                    <Link prefetch={false} href={`/usuarios/editar/${item.id}`}>
                       <Edit className="h-4 w-4 mr-2" />
                       Editar
                     </Link>

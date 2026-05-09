@@ -13,7 +13,7 @@ function CrearCategoriaPageContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href="/categorias">
+            <Link prefetch={false} href="/categorias">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -21,11 +21,11 @@ function CrearCategoriaPageContent() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nueva Categoría</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/categorias" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/categorias" className="hover:text-foreground transition-colors">
               Categorías
             </Link>{' '}
             / <span className="text-foreground">Crear</span>

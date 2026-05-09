@@ -140,10 +140,10 @@ function VentasPageContent() {
           <div className="min-w-0 space-y-1">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Ventas</h1>
             <p className="text-sm text-muted-foreground">
-              <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Ventas</span>
+              <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Ventas</span>
             </p>
           </div>
-          <Link href="/ventas/crear" className="shrink-0">
+          <Link prefetch={false} href="/ventas/crear" className="shrink-0">
             <Button className="whitespace-nowrap">
               <Plus className="mr-2 h-4 w-4" />
               Nueva Venta

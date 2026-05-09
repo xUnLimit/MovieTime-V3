@@ -206,7 +206,7 @@ export function ServiciosProximosTableRow({
               <span className="text-red-600">Inactivar</span>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/servicios/detalle/${notif.servicioId}`}>
+              <Link prefetch={false} href={`/servicios/detalle/${notif.servicioId}`}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Ver Servicio
               </Link>

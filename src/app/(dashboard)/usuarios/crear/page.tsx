@@ -39,7 +39,7 @@ function CrearUsuarioPageContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href="/usuarios">
+            <Link prefetch={false} href="/usuarios">
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -47,7 +47,7 @@ function CrearUsuarioPageContent() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nuevo Usuario</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10 sm:ml-10">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link href="/usuarios" className="hover:text-foreground transition-colors">Clientes</Link> / <span className="text-foreground">Crear</span>
+            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link prefetch={false} href="/usuarios" className="hover:text-foreground transition-colors">Clientes</Link> / <span className="text-foreground">Crear</span>
           </p>
         </div>
       </div>

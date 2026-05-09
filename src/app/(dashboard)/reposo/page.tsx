@@ -490,7 +490,7 @@ function ReposoPageContent() {
             Servicios en Reposo
           </h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{" "}
             / <span className="text-foreground">Servicios en Reposo</span>
@@ -557,7 +557,7 @@ function ReposoPageContent() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link href={`/servicios/detalle/${servicio.id}`}>
+                      <Link prefetch={false} href={`/servicios/detalle/${servicio.id}`}>
                         <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
                         Ver detalles
                       </Link>

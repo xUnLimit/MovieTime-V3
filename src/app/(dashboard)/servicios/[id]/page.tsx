@@ -147,10 +147,10 @@ function ServiciosCategoriaPageContent() {
             <h1 className="min-w-0 text-xl sm:text-2xl font-bold tracking-tight">Servicios: {categoria.nombre}</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link href="/servicios" className="hover:text-foreground transition-colors">Servicios</Link> / <span className="text-foreground">{categoria.nombre}</span>
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link prefetch={false} href="/servicios" className="hover:text-foreground transition-colors">Servicios</Link> / <span className="text-foreground">{categoria.nombre}</span>
           </p>
         </div>
-        <Link href={`/servicios/crear?from=/servicios/${categoriaId}`} className="shrink-0">
+        <Link prefetch={false} href={`/servicios/crear?from=/servicios/${categoriaId}`} className="shrink-0">
           <Button className="whitespace-nowrap">
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Servicio

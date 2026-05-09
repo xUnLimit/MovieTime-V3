@@ -152,7 +152,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Action button */}
-          <Link
+          <Link prefetch={false}
             href="/notificaciones"
             onClick={() => toast.dismiss(t)}
             className={[

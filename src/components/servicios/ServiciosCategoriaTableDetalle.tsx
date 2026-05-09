@@ -415,14 +415,14 @@ export const ServiciosCategoriaTableDetalle = memo(
                     <DropdownMenuContent align="end">
                       {onView && (
                         <DropdownMenuItem asChild>
-                          <Link href={`/servicios/detalle/${servicio.id}?from=${encodeURIComponent(pathname)}`}>
+                          <Link prefetch={false} href={`/servicios/detalle/${servicio.id}?from=${encodeURIComponent(pathname)}`}>
                             <Eye className="h-4 w-4 mr-2" />
                             Ver detalles
                           </Link>
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem asChild>
-                        <Link href={`/servicios/${servicio.id}/editar?from=${encodeURIComponent(pathname)}`}>
+                        <Link prefetch={false} href={`/servicios/${servicio.id}/editar?from=${encodeURIComponent(pathname)}`}>
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </Link>

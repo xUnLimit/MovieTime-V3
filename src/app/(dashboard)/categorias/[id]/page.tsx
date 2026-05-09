@@ -86,7 +86,7 @@ function VerCategoriaPageContent() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Link href="/categorias">
+          <Link prefetch={false} href="/categorias">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -104,7 +104,7 @@ function VerCategoriaPageContent() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Link href="/categorias">
+          <Link prefetch={false} href="/categorias">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -173,7 +173,7 @@ function VerCategoriaPageContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/categorias">
+          <Link prefetch={false} href="/categorias">
             <Button variant="outline" size="icon" className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -181,9 +181,9 @@ function VerCategoriaPageContent() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{categoria.nombre}</h1>
             <p className="text-sm text-muted-foreground">
-              <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
+              <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
               {' / '}
-              <Link href="/categorias" className="hover:text-foreground transition-colors">Categorías</Link>
+              <Link prefetch={false} href="/categorias" className="hover:text-foreground transition-colors">Categorías</Link>
               {' / '}
               <span className="text-foreground">{categoria.nombre}</span>
             </p>
@@ -191,7 +191,7 @@ function VerCategoriaPageContent() {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href={`/categorias/${categoria.id}/editar?from=/categorias/${categoria.id}`}>
+            <Link prefetch={false} href={`/categorias/${categoria.id}/editar?from=/categorias/${categoria.id}`}>
               <Edit className="h-3.5 w-3.5 mr-1.5" />
               Editar
             </Link>

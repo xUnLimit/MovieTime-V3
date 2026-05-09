@@ -14,7 +14,7 @@ export function VentaDetalleHeader({ onDelete, onRenovar, venta }: VentaDetalleH
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex min-w-0 items-center gap-3">
-        <Link href="/ventas">
+        <Link prefetch={false} href="/ventas">
           <Button variant="outline" size="icon" className="h-8 w-8 flex-shrink-0">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -22,9 +22,9 @@ export function VentaDetalleHeader({ onDelete, onRenovar, venta }: VentaDetalleH
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Detalles de Venta: {venta.clienteNombre}</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
             {' / '}
-            <Link href="/ventas" className="hover:text-foreground transition-colors">Ventas</Link>
+            <Link prefetch={false} href="/ventas" className="hover:text-foreground transition-colors">Ventas</Link>
             {' / '}
             <span className="text-foreground">{venta.clienteNombre}</span>
           </p>
@@ -41,7 +41,7 @@ export function VentaDetalleHeader({ onDelete, onRenovar, venta }: VentaDetalleH
           Renovar
         </Button>
         <Button asChild variant="outline" size="sm">
-          <Link href={`/ventas/${venta.id}/editar`}>
+          <Link prefetch={false} href={`/ventas/${venta.id}/editar`}>
             <Edit className="h-3.5 w-3.5 mr-1.5" />
             Editar
           </Link>

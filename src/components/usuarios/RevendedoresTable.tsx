@@ -301,14 +301,14 @@ export function RevendedoresTable({
                   <DropdownMenuContent align="end">
                     {onView && (
                       <DropdownMenuItem asChild>
-                        <Link href={`/usuarios/${usuario.id}`}>
+                        <Link prefetch={false} href={`/usuarios/${usuario.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
                           Ver detalles
                         </Link>
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem asChild>
-                      <Link href={`/usuarios/editar/${usuario.id}`}>
+                      <Link prefetch={false} href={`/usuarios/editar/${usuario.id}`}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </Link>

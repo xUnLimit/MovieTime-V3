@@ -52,11 +52,11 @@ function EditarCategoriaPageContent() {
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categoría no encontrada</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/categorias" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/categorias" className="hover:text-foreground transition-colors">
               Categorías
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
@@ -66,7 +66,7 @@ function EditarCategoriaPageContent() {
           <p className="text-muted-foreground">
             No se encontró la categoría con el ID proporcionado.
           </p>
-          <Link
+          <Link prefetch={false}
             href="/categorias"
             className="inline-block mt-4 text-primary hover:underline"
           >
@@ -83,7 +83,7 @@ function EditarCategoriaPageContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href={from}>
+            <Link prefetch={false} href={from}>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -91,11 +91,11 @@ function EditarCategoriaPageContent() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Categoría</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/categorias" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/categorias" className="hover:text-foreground transition-colors">
               Categorías
             </Link>{' '}
             / <span className="text-foreground">Editar</span>

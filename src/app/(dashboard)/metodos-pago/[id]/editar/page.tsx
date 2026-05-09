@@ -52,11 +52,11 @@ function EditarMetodoPagoPageContent() {
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Método de pago no encontrado</h1>
           <p className="text-sm text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/metodos-pago" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/metodos-pago" className="hover:text-foreground transition-colors">
               Métodos de Pago
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
@@ -66,7 +66,7 @@ function EditarMetodoPagoPageContent() {
           <p className="text-muted-foreground">
             No se encontró el método de pago con el ID proporcionado.
           </p>
-          <Link
+          <Link prefetch={false}
             href="/metodos-pago"
             className="inline-block mt-4 text-primary hover:underline"
           >
@@ -83,7 +83,7 @@ function EditarMetodoPagoPageContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href={from}>
+            <Link prefetch={false} href={from}>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -91,11 +91,11 @@ function EditarMetodoPagoPageContent() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Método de Pago</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
               Dashboard
             </Link>{' '}
             /{' '}
-            <Link href="/metodos-pago" className="hover:text-foreground transition-colors">
+            <Link prefetch={false} href="/metodos-pago" className="hover:text-foreground transition-colors">
               Métodos de Pago
             </Link>{' '}
             / <span className="text-foreground">Editar</span>
