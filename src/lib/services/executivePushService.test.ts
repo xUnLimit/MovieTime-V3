@@ -15,11 +15,18 @@ vi.mock('web-push', () => ({
   default: webPushMocks,
 }));
 
+// Test-only VAPID keys — NOT real credentials.
+// web-push is fully mocked so these values are never used for real encryption.
+const TEST_VAPID_PUBLIC_KEY =
+  'BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFakeVapidPublicKeyForTestsOnly00';
+const TEST_VAPID_PRIVATE_KEY = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const TEST_VAPID_SUBJECT = 'mailto:test@example.com';
+
 vi.mock('@/config', () => ({
   env: {
-    vapidPublicKey: 'REDACTED_VAPID_PUBLIC_KEY',
-    vapidSubject: 'mailto:admin@example.com',
-    appUrl: 'https://system.movietimepty.top',
+    vapidPublicKey: TEST_VAPID_PUBLIC_KEY,
+    vapidSubject: TEST_VAPID_SUBJECT,
+    appUrl: 'https://example.com',
   },
 }));
 
@@ -114,7 +121,7 @@ function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: s
 
 describe('sendExecutivePushDailySummary', () => {
   beforeEach(() => {
-    process.env.VAPID_PRIVATE_KEY = 'REDACTED_VAPID_PRIVATE_KEY';
+    process.env.VAPID_PRIVATE_KEY = TEST_VAPID_PRIVATE_KEY;
     webPushMocks.setVapidDetails.mockReset();
     webPushMocks.sendNotification.mockReset().mockResolvedValue({ statusCode: 201, body: '', headers: {} });
     supabaseMocks.from.mockReset();
@@ -127,9 +134,9 @@ describe('sendExecutivePushDailySummary', () => {
     const result = await sendExecutivePushDailySummary();
 
     expect(webPushMocks.setVapidDetails).toHaveBeenCalledWith(
-      'mailto:admin@example.com',
-      'REDACTED_VAPID_PUBLIC_KEY',
-      'REDACTED_VAPID_PRIVATE_KEY'
+      TEST_VAPID_SUBJECT,
+      TEST_VAPID_PUBLIC_KEY,
+      TEST_VAPID_PRIVATE_KEY
     );
     expect(webPushMocks.sendNotification).toHaveBeenCalledWith(
       {
