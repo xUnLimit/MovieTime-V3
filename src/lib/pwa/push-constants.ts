@@ -8,20 +8,8 @@ export const EXECUTIVE_PUSH_BLOCKS: { key: ExecutivePushBlock; label: string; de
     tab: 'ventas',
   },
   {
-    key: 'ventas_por_vencer',
-    label: 'Ventas por vencer',
-    destination: '/notificaciones',
-    tab: 'ventas',
-  },
-  {
-    key: 'servicios_por_pagar_hoy',
-    label: 'Servicios por pagar hoy',
-    destination: '/notificaciones',
-    tab: 'servicios',
-  },
-  {
-    key: 'monto_a_pagar_hoy',
-    label: 'Monto a pagar hoy',
+    key: 'servicios_por_pagar',
+    label: 'Servicios por pagar',
     destination: '/notificaciones',
     tab: 'servicios',
   },

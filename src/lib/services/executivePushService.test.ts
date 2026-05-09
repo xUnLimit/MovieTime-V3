@@ -37,8 +37,8 @@ function setupSupabaseMock() {
     executive_push_send_time: '00:00',
     executive_push_timezone: 'UTC',
     executive_push_last_sent_date: null,
-    executive_push_selected_blocks: ['ventas_por_vencer'],
-    executive_push_block_order: ['ventas_por_vencer'],
+    executive_push_selected_blocks: ['clientes_por_notificar'],
+    executive_push_block_order: ['clientes_por_notificar'],
   };
   const subscriptions = [
     {
@@ -73,6 +73,20 @@ function setupSupabaseMock() {
         }),
         update: () => ({
           eq: supabaseMocks.subscriptionUpdateEq,
+        }),
+      };
+    }
+
+    // The summary builder queries the notification views; the production push
+    // path currently doesn't reach buildSummaryBlocks (sendSubscriptionPing
+    // sends a constant payload), but keep these stubs to be safe if the call
+    // chain changes.
+    if (table === 'v_notificaciones_venta' || table === 'v_notificaciones_servicio') {
+      return {
+        select: () => ({
+          eq: () => ({
+            lte: async () => ({ data: [], error: null }),
+          }),
         }),
       };
     }

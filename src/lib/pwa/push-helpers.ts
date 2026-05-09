@@ -13,11 +13,20 @@ export function buildExecutivePushDestination(blocks: ExecutivePushSummaryBlock[
   };
 }
 
+function formatAmounts(amounts: Record<string, number>): string {
+  const entries = Object.entries(amounts).filter(([, value]) => value > 0);
+  if (entries.length === 0) return '0';
+  return entries
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([currency, value]) => `${value.toFixed(2)} ${currency}`)
+    .join(', ');
+}
+
 export function buildExecutivePushBody(blocks: ExecutivePushSummaryBlock[]): string {
   return blocks
     .map((block) => {
-      if (block.amount !== undefined) {
-        return `${block.label}: ${block.amount.toFixed(2)} ${block.currency ?? 'USD'}`;
+      if (block.amounts !== undefined) {
+        return `${block.label}: ${formatAmounts(block.amounts)}`;
       }
       return `${block.label}: ${block.count ?? 0}`;
     })
@@ -30,7 +39,7 @@ export function buildExecutivePushSummaryPayload(
   const { destination, tab } = buildExecutivePushDestination(blocks);
   return {
     kind: 'executive_daily_summary',
-    title: 'Resumen operativo del dia',
+    title: 'MovieTime PTY',
     body: buildExecutivePushBody(blocks),
     destination,
     tab,

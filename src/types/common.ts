@@ -43,9 +43,7 @@ export interface ConfiguracionNotificaciones {
 
 export type ExecutivePushBlock =
   | 'clientes_por_notificar'
-  | 'ventas_por_vencer'
-  | 'servicios_por_pagar_hoy'
-  | 'monto_a_pagar_hoy'
+  | 'servicios_por_pagar'
   | 'monto_a_fondear';
 
 export interface ExecutivePushSettings {
@@ -91,8 +89,9 @@ export interface ExecutivePushSummaryBlock {
   key: ExecutivePushBlock;
   label: string;
   count?: number;
-  amount?: number;
-  currency?: string;
+  // Multi-currency totals: { USD: 50, NGN: 1500, EGP: 200 }. Empty object means
+  // no services match the criteria — the body will still render "0".
+  amounts?: Record<string, number>;
   destination: string;
   tab?: string;
 }

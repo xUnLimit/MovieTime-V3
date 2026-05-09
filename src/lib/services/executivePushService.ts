@@ -80,24 +80,6 @@ function buildDestinationWithQuery(payload: ExecutivePushSummaryPayload) {
   return `${url.pathname}${url.search}`;
 }
 
-function getDatePartsInTimezone(timezone: string) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-
-  const parts = formatter.formatToParts(new Date());
-  const year = parts.find((part) => part.type === 'year')?.value ?? '1970';
-  const month = parts.find((part) => part.type === 'month')?.value ?? '01';
-  const day = parts.find((part) => part.type === 'day')?.value ?? '01';
-
-  return {
-    today: `${year}-${month}-${day}`,
-  };
-}
-
 async function getExecutivePushSettings(client: ServiceClient) {
   const { data, error } = await client.from('config').select('*').eq('id', 'global').single();
   if (error) throw new Error(error.message);
@@ -117,28 +99,29 @@ async function getExecutivePushSettings(client: ServiceClient) {
 
 async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushSummaryBlock[]> {
   const settings = await getExecutivePushSettings(client);
-  const { today } = getDatePartsInTimezone(settings.timezone);
   const orderedBlocks = settings.blockOrder.length > 0 ? settings.blockOrder : settings.selectedBlocks;
   const selectedSet = new Set(settings.selectedBlocks);
 
+  // Only count notifications where the user has the "campanita" flag (resaltada)
+  // turned on AND that are due today or already overdue (dias_restantes <= 0).
   const [ventaNotificationsResult, servicioNotificationsResult] = await Promise.all([
     client
       .from('v_notificaciones_venta')
-      .select('cliente_id,venta_id,dias_restantes')
-      .lte('dias_restantes', 7),
+      .select('cliente_id,dias_restantes,resaltada')
+      .eq('resaltada', true)
+      .lte('dias_restantes', 0),
     client
       .from('v_notificaciones_servicio')
-      .select('servicio_id,costo_servicio_snapshot,moneda_snapshot,fecha_vencimiento_snapshot,renovacion_automatica_snapshot')
-      .eq('fecha_vencimiento_snapshot', today),
+      .select('servicio_id,costo_servicio_snapshot,moneda_snapshot,dias_restantes,resaltada')
+      .eq('resaltada', true)
+      .lte('dias_restantes', 0),
   ]);
 
   if (ventaNotificationsResult.error) throw new Error(ventaNotificationsResult.error.message);
   if (servicioNotificationsResult.error) throw new Error(servicioNotificationsResult.error.message);
 
   const ventaNotifications = ventaNotificationsResult.data ?? [];
-  const servicioNotifications = (servicioNotificationsResult.data ?? []).filter(
-    (item) => item.renovacion_automatica_snapshot === true
-  );
+  const servicioNotifications = servicioNotificationsResult.data ?? [];
 
   const distinctClientes = new Set(
     ventaNotifications
@@ -146,10 +129,17 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
       .filter((value): value is string => typeof value === 'string' && value.length > 0)
   );
 
-  const montoPagarHoy = servicioNotifications.reduce((total, item) => {
+  // Sum service costs grouped by currency. NGN/EGP/etc. stay in their own bucket;
+  // we don't FX-convert because the executive needs to know each fund's exposure.
+  const montoPorMoneda = servicioNotifications.reduce<Record<string, number>>((acc, item) => {
     const costo = Number(item.costo_servicio_snapshot ?? 0);
-    return total + costo;
-  }, 0);
+    if (!Number.isFinite(costo) || costo === 0) return acc;
+    const moneda = (typeof item.moneda_snapshot === 'string' && item.moneda_snapshot.length > 0)
+      ? item.moneda_snapshot.toUpperCase()
+      : 'USD';
+    acc[moneda] = (acc[moneda] ?? 0) + costo;
+    return acc;
+  }, {});
 
   const builders: Record<ExecutivePushBlock, () => ExecutivePushSummaryBlock> = {
     clientes_por_notificar: () => ({
@@ -159,39 +149,23 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
       destination: '/notificaciones',
       tab: 'ventas',
     }),
-    ventas_por_vencer: () => ({
-      key: 'ventas_por_vencer',
-      label: getExecutivePushBlockMeta('ventas_por_vencer')?.label ?? 'Ventas por vencer',
-      count: ventaNotifications.length,
-      destination: '/notificaciones',
-      tab: 'ventas',
-    }),
-    servicios_por_pagar_hoy: () => ({
-      key: 'servicios_por_pagar_hoy',
-      label: getExecutivePushBlockMeta('servicios_por_pagar_hoy')?.label ?? 'Servicios por pagar hoy',
+    servicios_por_pagar: () => ({
+      key: 'servicios_por_pagar',
+      label: getExecutivePushBlockMeta('servicios_por_pagar')?.label ?? 'Servicios por pagar',
       count: servicioNotifications.length,
-      destination: '/notificaciones',
-      tab: 'servicios',
-    }),
-    monto_a_pagar_hoy: () => ({
-      key: 'monto_a_pagar_hoy',
-      label: getExecutivePushBlockMeta('monto_a_pagar_hoy')?.label ?? 'Monto a pagar hoy',
-      amount: montoPagarHoy,
-      currency: 'USD',
       destination: '/notificaciones',
       tab: 'servicios',
     }),
     monto_a_fondear: () => ({
       key: 'monto_a_fondear',
       label: getExecutivePushBlockMeta('monto_a_fondear')?.label ?? 'Monto a fondear',
-      amount: montoPagarHoy,
-      currency: 'USD',
+      amounts: montoPorMoneda,
       destination: '/dashboard',
     }),
   };
 
   return orderedBlocks
-    .filter((block) => selectedSet.has(block))
+    .filter((block): block is ExecutivePushBlock => selectedSet.has(block) && block in builders)
     .map((block) => builders[block]());
 }
 
