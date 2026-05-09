@@ -7,6 +7,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { RefreshCw, Bell, ShoppingCart, Server, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -65,11 +66,12 @@ function NotificacionesMetrics() {
 }
 
 function NotificacionesPageContent() {
+  const searchParams = useSearchParams();
   const { notificaciones, fetchNotificaciones, fetchCounts, ventasProximas, serviciosProximos, reposoCompletados } =
     useNotificacionesStore();
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
 
-  const [activeTab, setActiveTab] = useState('ventas');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'ventas');
   const [isSyncing, setIsSyncing] = useState(false);
   const serviciosAutorrenovables = useMemo(
     () =>
@@ -80,6 +82,13 @@ function NotificacionesPageContent() {
       ).length,
     [notificaciones]
   );
+
+  useEffect(() => {
+    const requestedTab = searchParams.get('tab');
+    if (requestedTab) {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams]);
 
   // Initialize on mount
   useEffect(() => {

@@ -1,0 +1,21 @@
+import { ENTITIES, type CollectionName } from '@/lib/supabase/entities';
+
+export const OFFLINE_DB_NAME = 'movietime-offline';
+export const OFFLINE_DB_VERSION = 1;
+export const OFFLINE_STORE_NAME = 'snapshots';
+export const OFFLINE_SNAPSHOT_KEY = 'app-snapshot';
+
+export const OFFLINE_COLLECTIONS: CollectionName[] = [
+  ENTITIES.USUARIOS,
+  ENTITIES.SERVICIOS,
+  ENTITIES.CATEGORIAS,
+  ENTITIES.METODOS_PAGO,
+  ENTITIES.TIPOS_GASTO,
+  ENTITIES.ACTIVITY_LOG,
+  ENTITIES.GASTOS,
+  ENTITIES.TEMPLATES,
+  ENTITIES.NOTIFICACIONES,
+  ENTITIES.PAGOS_SERVICIO,
+  ENTITIES.VENTAS,
+  ENTITIES.PAGOS_VENTA,
+];

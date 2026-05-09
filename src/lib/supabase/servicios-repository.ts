@@ -13,6 +13,7 @@ import { supabase } from './client';
 import { toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
 import { assertRecordId, assertRpcStringId } from '@/lib/utils/safety';
+import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
 export { logCacheHit, adjustCategoriaGastos };
 
@@ -36,6 +37,7 @@ export const updateServicio = <T extends Record<string, unknown>>(id: string, pa
 export const removeServicio = (id: string) => remove(ENTITIES.SERVICIOS, id);
 
 export async function removeServicioWithPayments(id: string, deletePayments: boolean): Promise<void> {
+  assertOnlineMutation();
   const { error } = await rpcClient.rpc('delete_servicio_with_payments', {
     p_servicio_id: id,
     p_delete_payments: deletePayments,
@@ -46,6 +48,7 @@ export async function removeServicioWithPayments(id: string, deletePayments: boo
 export async function createServicioWithInitialPayment(
   payload: Record<string, unknown>
 ): Promise<string> {
+  assertOnlineMutation();
   const { data, error } = await rpcClient.rpc('create_servicio_with_initial_payment', payload);
   if (error) throw new Error(error.message);
   return assertRpcStringId(data, 'create_servicio_with_initial_payment');
@@ -58,6 +61,7 @@ export const updatePagoServicio = <T extends Record<string, unknown>>(id: string
   update(ENTITIES.PAGOS_SERVICIO, id, payload);
 
 export async function removePagoServicio(id: string): Promise<void> {
+  assertOnlineMutation();
   const { error } = await rpcClient.rpc('delete_servicio_payment_and_empty_period', {
     p_pago_id: id,
   });
@@ -79,6 +83,7 @@ export async function updateLatestServicioPeriodo(
   servicioId: string,
   payload: ServicioPeriodoUpdate
 ): Promise<void> {
+  assertOnlineMutation();
   const { data: latestPeriod, error: selectError } = await supabase
     .from('servicio_periodos')
     .select('id')
@@ -97,6 +102,7 @@ export async function updateServicioPeriodoById(
   periodoId: string,
   payload: ServicioPeriodoUpdate
 ): Promise<void> {
+  assertOnlineMutation();
   const periodUpdate: Record<string, unknown> = {
     fecha_inicio: toDateOnly(payload.fechaInicio),
     fecha_vencimiento: toDateOnly(payload.fechaVencimiento),
@@ -127,6 +133,7 @@ export async function updateServicioPaymentAndPeriod(
     notas?: string | null;
   }
 ): Promise<void> {
+  assertOnlineMutation();
   const { error } = await rpcClient.rpc('update_servicio_payment_and_period', {
     p_pago_id: pagoId,
     p_fecha_inicio: toDateOnly(payload.fechaInicio),

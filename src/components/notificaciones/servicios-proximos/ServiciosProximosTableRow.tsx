@@ -180,8 +180,11 @@ export function ServiciosProximosTableRow({
       <TableCell className="px-2 py-2 text-center">
         <Badge
           variant="outline"
-          className={`font-normal ${estadoBadge.variant}`}
+          className={`font-normal gap-1 ${estadoBadge.variant}`}
         >
+          {notif.resaltada && (
+            <AlertTriangle className="h-3 w-3 shrink-0" />
+          )}
           {estadoBadge.text}
         </Badge>
       </TableCell>

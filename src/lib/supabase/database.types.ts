@@ -120,6 +120,12 @@ export type Database = {
       }
       config: {
         Row: {
+          executive_push_block_order: Json | null
+          executive_push_enabled: boolean
+          executive_push_selected_blocks: Json | null
+          executive_push_send_time: string
+          executive_push_timezone: string
+          executive_push_updated_by: string | null
           hora_envio: number
           id: string
           notificaciones_dias_anticipacion: number
@@ -127,6 +133,12 @@ export type Database = {
           whatsapp_prefijo: string
         }
         Insert: {
+          executive_push_block_order?: Json | null
+          executive_push_enabled?: boolean
+          executive_push_selected_blocks?: Json | null
+          executive_push_send_time?: string
+          executive_push_timezone?: string
+          executive_push_updated_by?: string | null
           hora_envio?: number
           id?: string
           notificaciones_dias_anticipacion?: number
@@ -134,6 +146,12 @@ export type Database = {
           whatsapp_prefijo?: string
         }
         Update: {
+          executive_push_block_order?: Json | null
+          executive_push_enabled?: boolean
+          executive_push_selected_blocks?: Json | null
+          executive_push_send_time?: string
+          executive_push_timezone?: string
+          executive_push_updated_by?: string | null
           hora_envio?: number
           id?: string
           notificaciones_dias_anticipacion?: number
@@ -141,6 +159,56 @@ export type Database = {
           whatsapp_prefijo?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          platform: string
+          updated_at: string
+          user_agent: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          platform?: string
+          updated_at?: string
+          user_agent?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          platform?: string
+          updated_at?: string
+          user_agent?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       currencies: {
         Row: {

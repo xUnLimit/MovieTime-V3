@@ -6,11 +6,12 @@ import {
   getConfig,
   updateNotificationLeadDays,
   updateNotificationSendHour,
+  updateExecutivePushSettings,
   updateWhatsappPrefix,
   upsertExchangeRates,
 } from '@/lib/supabase/config-repository';
 import { CACHE_TTL_MS } from '@/lib/constants';
-import type { Configuracion, TasasCambio } from '@/types';
+import type { Configuracion, ExecutivePushSettings, TasasCambio } from '@/types';
 
 interface ConfigState {
   config: Configuracion | null;
@@ -24,6 +25,7 @@ interface ConfigState {
   updateDiasNotificacion: (dias: number[]) => Promise<void>;
   updateHoraEnvio: (hora: number) => Promise<void>;
   updatePrefijoWhatsApp: (prefijo: string) => Promise<void>;
+  updateExecutivePush: (updates: Partial<ExecutivePushSettings>) => Promise<void>;
 }
 
 const CACHE_TIMEOUT = CACHE_TTL_MS;
@@ -117,6 +119,31 @@ export const useConfigStore = create<ConfigState>()(
                 ...state.config,
                 whatsapp: {
                   prefijoTelefono: prefijo,
+                },
+                updatedAt: new Date(),
+              }
+            : null,
+        }));
+      },
+
+      updateExecutivePush: async (updates) => {
+        await updateExecutivePushSettings({
+          executive_push_enabled: updates.enabled,
+          executive_push_send_time: updates.sendTime,
+          executive_push_timezone: updates.timezone,
+          executive_push_selected_blocks: updates.selectedBlocks,
+          executive_push_block_order: updates.blockOrder,
+          executive_push_updated_by: updates.updatedBy ?? null,
+        });
+
+        set((state) => ({
+          config: state.config
+            ? {
+                ...state.config,
+                executivePush: {
+                  ...state.config.executivePush,
+                  ...updates,
+                  updatedAt: new Date(),
                 },
                 updatedAt: new Date(),
               }

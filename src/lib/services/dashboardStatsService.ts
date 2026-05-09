@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase/client';
 import type { Json } from '@/lib/supabase/database.types';
+import { getOfflineDashboardHome, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
 import type {
   DashboardStats,
   IngresoCategoria,
@@ -52,6 +53,10 @@ function createEmptyStats(): DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+  if (await shouldUseOfflineRead()) {
+    return (await getOfflineDashboardHome())?.stats ?? createEmptyStats();
+  }
+
   const { data, error } = await supabase.rpc('get_dashboard_stats_live').maybeSingle();
 
   if (error) throw new Error(error.message);
@@ -72,6 +77,11 @@ export async function adjustIngresosStats(_params: {
 }
 
 export async function getDashboardHome(): Promise<DashboardHome> {
+  if (await shouldUseOfflineRead()) {
+    const offline = await getOfflineDashboardHome();
+    if (offline) return offline;
+  }
+
   const { data, error } = await supabase.rpc('get_dashboard_home');
   if (error) throw new Error(error.message);
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -134,6 +144,9 @@ export async function upsertServicioPronostico(
 
 export async function rebuildDashboardStats(_preFetchedData?: unknown): Promise<void> {
   void _preFetchedData;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error('Esta accion requiere conexion a internet.');
+  }
   const { data, error } = await supabase.auth.getSession();
   if (error) throw new Error(error.message);
   const token = data.session?.access_token;

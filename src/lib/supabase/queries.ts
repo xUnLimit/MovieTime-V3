@@ -1,6 +1,7 @@
 import { supabase } from './client';
 import { toCamelCase, toSnakeCase } from './mappers';
 import type { Database } from './database.types';
+import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
 type PublicTableName = keyof Database['public']['Tables'];
 type PublicViewName = keyof Database['public']['Views'];
@@ -49,6 +50,7 @@ export async function insert<TIn extends Record<string, unknown>, TOut = TIn>(
   payload: TIn,
   select = '*'
 ): Promise<TOut> {
+  assertOnlineMutation();
   const snake = toSnakeCase<Record<string, unknown>>(payload);
   const { data, error } = await supabase
     .from(table as never)
@@ -65,6 +67,7 @@ export async function update<TIn extends Record<string, unknown>, TOut = TIn>(
   payload: Partial<TIn>,
   select = '*'
 ): Promise<TOut> {
+  assertOnlineMutation();
   const snake = toSnakeCase<Record<string, unknown>>(payload);
   const { data, error } = await supabase
     .from(table as never)
@@ -80,6 +83,7 @@ export async function remove(
   table: PublicTableName,
   id: string
 ): Promise<void> {
+  assertOnlineMutation();
   const { error } = await supabase
     .from(table as never)
     .delete()
@@ -94,6 +98,7 @@ export async function rpc<TArgs extends Record<string, unknown> | undefined, TRe
   fn: keyof Database['public']['Functions'],
   args?: TArgs
 ): Promise<TResult> {
+  assertOnlineMutation();
   const snake = args ? toSnakeCase<Record<string, unknown>>(args) : undefined;
   const { data, error } = await supabase.rpc(fn as never, snake as never);
   if (error) throw new Error(error.message);

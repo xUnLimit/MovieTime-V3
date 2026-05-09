@@ -1,6 +1,7 @@
 import { supabase } from './client';
 import { toDateOnly, toIso } from './dates';
 import { assertRpcStringId } from '@/lib/utils/safety';
+import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
 type RpcResult = {
   data: unknown;
@@ -12,6 +13,7 @@ const rpcClient = supabase as unknown as {
 };
 
 export async function createPagoServicio(payload: Record<string, unknown>): Promise<string> {
+  assertOnlineMutation();
   const servicioId = String(payload.servicioId ?? '');
   if (!servicioId) throw new Error('servicioId es requerido para pagos_servicio');
 
@@ -41,6 +43,7 @@ export async function createPagoServicio(payload: Record<string, unknown>): Prom
 }
 
 export async function createPagoVenta(payload: Record<string, unknown>): Promise<string> {
+  assertOnlineMutation();
   const ventaId = String(payload.ventaId ?? '');
   if (!ventaId) throw new Error('ventaId es requerido para pagos_venta');
 

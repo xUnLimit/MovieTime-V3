@@ -31,15 +31,13 @@ export function getEstadoBadge(
   diasRestantes: number,
   resaltada: boolean
 ): { variant: string; text: string } {
-  const prefix = resaltada ? '?? ' : '';
-
   if (diasRestantes < 0) {
     const dias = Math.abs(diasRestantes);
     return {
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
-      text: `${prefix}${dias} día${dias > 1 ? 's' : ''} de retraso`,
+      text: `${dias} día${dias > 1 ? 's' : ''} de retraso`,
     };
   }
 
@@ -48,7 +46,7 @@ export function getEstadoBadge(
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
-      text: `${prefix}Vence hoy`,
+      text: 'Vence hoy',
     };
   }
 
@@ -57,7 +55,7 @@ export function getEstadoBadge(
       variant: resaltada
         ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
         : 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300',
-      text: `${prefix}${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
+      text: `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
     };
   }
 
@@ -65,7 +63,7 @@ export function getEstadoBadge(
     variant: resaltada
       ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
       : 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',
-    text: `${prefix}${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
+    text: `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
   };
 }
 

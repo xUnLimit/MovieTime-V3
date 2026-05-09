@@ -13,6 +13,8 @@ import { supabase } from './client';
 import { ENTITIES, type QueryFilter } from './entities';
 import type { Json } from './database.types';
 import type { Categoria, Plan, TipoPlanConfig } from '@/types';
+import { readOfflineCollection, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
+import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
 export { logCacheHit, adjustCategoriaGastos, adjustCategoriaSuscripciones };
 
@@ -40,12 +42,25 @@ type CategoriaRow = {
 };
 
 export async function getCategoriasFull(): Promise<Categoria[]> {
+  if (await shouldUseOfflineRead()) {
+    return readOfflineCollection<Categoria>(ENTITIES.CATEGORIAS);
+  }
+
   const { data, error } = await supabase.rpc('get_categorias_full');
   if (error) throw new Error(error.message);
   return jsonCategorias(data);
 }
 
 export async function getCategoriasCounts() {
+  if (await shouldUseOfflineRead()) {
+    const categorias = await readOfflineCollection<Categoria>(ENTITIES.CATEGORIAS);
+    return {
+      totalCategorias: categorias.length,
+      categoriasClientes: categorias.filter((categoria) => categoria.tipo === 'cliente').length,
+      categoriasRevendedores: categorias.filter((categoria) => categoria.tipo === 'revendedor').length,
+    };
+  }
+
   const { data, error } = await supabase.rpc('get_categorias_counts');
   if (error) throw new Error(error.message);
   const counts = data && typeof data === 'object' && !Array.isArray(data)
@@ -62,6 +77,7 @@ export async function getCategoriasCounts() {
 export async function createCategoriaRecord(
   categoria: Pick<Categoria, 'nombre' | 'tipo' | 'tipoCategoria' | 'notas' | 'activo'>
 ) {
+  assertOnlineMutation();
   const { data, error } = await supabase
     .from('categorias')
     .insert({
@@ -79,6 +95,7 @@ export async function createCategoriaRecord(
 }
 
 export async function updateCategoriaRecord(id: string, updates: Partial<Categoria>) {
+  assertOnlineMutation();
   const { data, error } = await supabase
     .from('categorias')
     .update({
@@ -97,6 +114,7 @@ export async function updateCategoriaRecord(id: string, updates: Partial<Categor
 }
 
 export async function deleteCategoriaRecord(id: string) {
+  assertOnlineMutation();
   const { error } = await supabase.rpc('delete_categoria', { p_categoria_id: id });
   if (error) throw new Error(error.message);
 }
@@ -179,6 +197,7 @@ export async function buildCategorias(categoriasRows: CategoriaRow[]): Promise<C
 }
 
 export async function upsertCategoriaPlanes(categoriaId: string, tiposPlanes: TipoPlanConfig[], planes: Plan[]) {
+  assertOnlineMutation();
   await deactivateMissingCategoriaPlanes(categoriaId, tiposPlanes, planes);
 
   if (tiposPlanes.length > 0) {

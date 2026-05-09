@@ -15,6 +15,9 @@ export const env = {
 
   // Features
   enableMockAuth: process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true', // Default false
+  vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
+  vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
+  pushCronSecret: process.env.PUSH_CRON_SECRET || process.env.CRON_SECRET || '',
 
   // Environment
   isDevelopment: process.env.NODE_ENV === 'development',

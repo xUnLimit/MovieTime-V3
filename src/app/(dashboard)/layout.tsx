@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { PwaStatusBanner } from '@/components/pwa/PwaStatusBanner';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallback';
 import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
@@ -94,6 +95,7 @@ export default function DashboardLayout({
           {/* Main */}
           <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background">
             <div className="h-full min-w-0 overflow-x-hidden p-3 sm:p-4 md:p-6">
+              <PwaStatusBanner />
               {children}
             </div>
           </main>

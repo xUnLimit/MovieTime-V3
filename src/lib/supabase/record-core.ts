@@ -12,6 +12,8 @@ import { mapReadRow, enrichCategorias, enrichUsuarios } from './read-models';
 import { createNotification, queryNotifications, updateNotification } from './notifications-repository';
 import { createPagoServicio, createPagoVenta } from './payments-repository';
 import { insertRawRow, normalizeWritePayload } from './write-utils';
+import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
+import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
 export { ENTITIES };
 export type { CollectionName, QueryFilter };
@@ -26,6 +28,10 @@ export function logCacheHit(collectionName: string) {
 }
 
 export async function getAll<T>(collectionName: CollectionName): Promise<T[]> {
+  if (await shouldUseOfflineRead()) {
+    return readOfflineCollection<T>(collectionName);
+  }
+
   const entity = readEntity(collectionName);
   const { data, error } = await supabase.from(entity as never).select('*');
   if (error) throw new Error(error.message);
@@ -34,6 +40,10 @@ export async function getAll<T>(collectionName: CollectionName): Promise<T[]> {
 }
 
 export async function getById<T>(collectionName: CollectionName, id: string): Promise<T | null> {
+  if (await shouldUseOfflineRead()) {
+    return readOfflineCollectionById<T>(collectionName, id);
+  }
+
   const entity = readEntity(collectionName);
   const { data, error } = await supabase
     .from(entity as never)
@@ -52,6 +62,10 @@ export async function queryDocuments<T>(
   collectionName: CollectionName,
   filters: QueryFilter[] = []
 ): Promise<T[]> {
+  if (await shouldUseOfflineRead()) {
+    return readOfflineCollection<T>(collectionName, filters);
+  }
+
   if (collectionName === ENTITIES.NOTIFICACIONES) {
     return queryNotifications<T>(filters);
   }
@@ -74,6 +88,11 @@ export async function getCount(
   collectionName: CollectionName,
   filters: QueryFilter[] = []
 ): Promise<number> {
+  if (await shouldUseOfflineRead()) {
+    const rows = await readOfflineCollection(collectionName, filters);
+    return rows.length;
+  }
+
   if (collectionName === ENTITIES.USUARIOS && filters.some((filter) => filter.field === 'serviciosActivos')) {
     return getUsuariosDerivedCount(filters);
   }
@@ -97,6 +116,8 @@ export async function create<T extends Record<string, unknown>>(
   collectionName: CollectionName,
   payload: Omit<T, 'id'>
 ): Promise<string> {
+  assertOnlineMutation();
+
   if (collectionName === ENTITIES.NOTIFICACIONES) {
     return createNotification(payload as Record<string, unknown>);
   }
@@ -114,6 +135,7 @@ export async function createRaw(
   collectionName: CollectionName,
   payload: Record<string, unknown>
 ): Promise<string> {
+  assertOnlineMutation();
   return insertRawRow(writeTable(collectionName), payload);
 }
 
@@ -122,6 +144,8 @@ export async function update<T extends Record<string, unknown>>(
   id: string,
   payload: Partial<T>
 ): Promise<void> {
+  assertOnlineMutation();
+
   if (collectionName === ENTITIES.NOTIFICACIONES) {
     await updateNotification(id, payload as Record<string, unknown>);
     return;
@@ -138,6 +162,7 @@ export async function update<T extends Record<string, unknown>>(
 }
 
 export async function remove(collectionName: CollectionName, id: string): Promise<void> {
+  assertOnlineMutation();
   const table = writeTable(collectionName);
 
   if (collectionName === ENTITIES.SERVICIOS || collectionName === ENTITIES.VENTAS) {
