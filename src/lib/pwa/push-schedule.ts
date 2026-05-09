@@ -1,16 +1,36 @@
 type ExecutivePushSchedule = {
   enabled: boolean;
-  sendTime: string;
+  sendTime?: string;
+  windowStart?: string;
+  windowEnd?: string;
+  intervalHours?: number;
   timezone: string;
+  lastSentAt?: string | Date | null;
   lastSentDate?: string | null;
 };
 
 export type ExecutivePushDueResult =
-  | { due: true; today: string; currentMinutes: number; scheduledMinutes: number }
-  | { due: false; reason: 'disabled' | 'invalid_time' | 'already_sent_today' | 'before_send_time'; today: string };
+  | {
+      due: true;
+      today: string;
+      currentMinutes: number;
+      windowStartMinutes: number;
+      windowEndMinutes: number;
+      intervalHours: number;
+    }
+  | {
+      due: false;
+      reason:
+        | 'disabled'
+        | 'invalid_time'
+        | 'invalid_interval'
+        | 'outside_window'
+        | 'interval_not_elapsed';
+      today: string;
+    };
 
-function parseSendTime(sendTime: string) {
-  const match = /^(\d{2}):(\d{2})$/.exec(sendTime);
+function parseTime(value: string | undefined) {
+  const match = /^(\d{2}):(\d{2})$/.exec(value ?? '');
   if (!match) return null;
 
   const hours = Number(match[1]);
@@ -30,6 +50,7 @@ function getLocalParts(date: Date, timezone: string) {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
+    hourCycle: 'h23',
   });
 
   const parts = formatter.formatToParts(date);
@@ -43,6 +64,27 @@ function getLocalParts(date: Date, timezone: string) {
   };
 }
 
+function isInsideWindow(currentMinutes: number, windowStartMinutes: number, windowEndMinutes: number) {
+  if (windowStartMinutes === windowEndMinutes) return false;
+  if (windowStartMinutes < windowEndMinutes) {
+    return currentMinutes >= windowStartMinutes && currentMinutes < windowEndMinutes;
+  }
+  return currentMinutes >= windowStartMinutes || currentMinutes < windowEndMinutes;
+}
+
+function normalizeIntervalHours(value: number | undefined) {
+  if (value === undefined || !Number.isFinite(value)) return null;
+  const hours = Number(value);
+  if (!Number.isInteger(hours) || hours < 1 || hours > 24) return null;
+  return hours;
+}
+
+function parseLastSentAt(value: string | Date | null | undefined) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export function getExecutivePushDueStatus(
   schedule: ExecutivePushSchedule,
   now: Date = new Date()
@@ -53,20 +95,30 @@ export function getExecutivePushDueStatus(
     return { due: false, reason: 'disabled', today };
   }
 
-  const scheduledMinutes = parseSendTime(schedule.sendTime);
-  if (scheduledMinutes === null) {
+  const windowStartMinutes = parseTime(schedule.windowStart ?? schedule.sendTime ?? '08:00');
+  const windowEndMinutes = parseTime(schedule.windowEnd ?? '22:00');
+  if (windowStartMinutes === null || windowEndMinutes === null || windowStartMinutes === windowEndMinutes) {
     return { due: false, reason: 'invalid_time', today };
   }
 
-  if (schedule.lastSentDate === today) {
-    return { due: false, reason: 'already_sent_today', today };
+  const intervalHours = normalizeIntervalHours(schedule.intervalHours ?? 24);
+  if (intervalHours === null) {
+    return { due: false, reason: 'invalid_interval', today };
   }
 
-  if (currentMinutes < scheduledMinutes) {
-    return { due: false, reason: 'before_send_time', today };
+  if (!isInsideWindow(currentMinutes, windowStartMinutes, windowEndMinutes)) {
+    return { due: false, reason: 'outside_window', today };
   }
 
-  return { due: true, today, currentMinutes, scheduledMinutes };
+  const lastSentAt = parseLastSentAt(schedule.lastSentAt);
+  if (lastSentAt) {
+    const elapsedMs = now.getTime() - lastSentAt.getTime();
+    if (elapsedMs < intervalHours * 60 * 60 * 1000) {
+      return { due: false, reason: 'interval_not_elapsed', today };
+    }
+  }
+
+  return { due: true, today, currentMinutes, windowStartMinutes, windowEndMinutes, intervalHours };
 }
 
 export function getExecutivePushDeliverySkipReason(subscriptionCount: number, sent: number) {

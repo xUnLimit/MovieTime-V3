@@ -15,11 +15,23 @@ export function buildExecutivePushDestination(blocks: ExecutivePushSummaryBlock[
 
 function formatAmounts(amounts: Record<string, number>): string {
   const entries = Object.entries(amounts).filter(([, value]) => value > 0);
-  if (entries.length === 0) return '0';
   return entries
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([currency, value]) => `${value.toFixed(2)} ${currency}`)
     .join(', ');
+}
+
+export function isExecutivePushBlockActive(block: ExecutivePushSummaryBlock): boolean {
+  if (block.amounts !== undefined) {
+    return Object.values(block.amounts).some((value) => value > 0);
+  }
+  return (block.count ?? 0) > 0;
+}
+
+export function filterExecutivePushActiveBlocks(
+  blocks: ExecutivePushSummaryBlock[]
+): ExecutivePushSummaryBlock[] {
+  return blocks.filter(isExecutivePushBlockActive);
 }
 
 export function buildExecutivePushBody(blocks: ExecutivePushSummaryBlock[]): string {
@@ -36,14 +48,15 @@ export function buildExecutivePushBody(blocks: ExecutivePushSummaryBlock[]): str
 export function buildExecutivePushSummaryPayload(
   blocks: ExecutivePushSummaryBlock[]
 ): ExecutivePushSummaryPayload {
-  const { destination, tab } = buildExecutivePushDestination(blocks);
+  const activeBlocks = filterExecutivePushActiveBlocks(blocks);
+  const { destination, tab } = buildExecutivePushDestination(activeBlocks);
   return {
     kind: 'executive_daily_summary',
     title: 'Recordatorio',
-    body: buildExecutivePushBody(blocks),
+    body: buildExecutivePushBody(activeBlocks),
     destination,
     tab,
-    blocks,
+    blocks: activeBlocks,
     generatedAt: new Date().toISOString(),
   };
 }

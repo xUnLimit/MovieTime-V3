@@ -11,7 +11,6 @@ import {
   upsertExchangeRates,
 } from '@/lib/supabase/config-repository';
 import { CACHE_TTL_MS } from '@/lib/constants';
-import { getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 import type { Configuracion, ExecutivePushSettings, TasasCambio } from '@/types';
 
 interface ConfigState {
@@ -30,6 +29,12 @@ interface ConfigState {
 }
 
 const CACHE_TIMEOUT = CACHE_TTL_MS;
+
+function sameArray(left: readonly string[] | undefined, right: readonly string[] | undefined) {
+  if (left === undefined && right === undefined) return true;
+  if (!left || !right || left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
 
 export const useConfigStore = create<ConfigState>()(
   devtools(
@@ -129,31 +134,25 @@ export const useConfigStore = create<ConfigState>()(
 
       updateExecutivePush: async (updates) => {
         const currentExecutivePush = get().config?.executivePush;
-
-        // If the user changes sendTime to a moment that has NOT yet passed today
-        // (in the configured timezone), clear the daily-sent marker so the cron
-        // re-fires at the new time. Multiple time changes the same day before the
-        // configured hour are safe — each one re-arms a single send.
         let shouldResetLastSent = false;
-        if (
-          currentExecutivePush &&
-          updates.sendTime !== undefined &&
-          updates.sendTime !== currentExecutivePush.sendTime
-        ) {
-          const probe = getExecutivePushDueStatus({
-            enabled: true,
-            sendTime: updates.sendTime,
-            timezone: updates.timezone ?? currentExecutivePush.timezone,
-            lastSentDate: null,
-          });
-          // probe.due===true means "the new time is at-or-past now and there is
-          // no last-sent record". We only reset when it's still in the future.
-          shouldResetLastSent = probe.due === false && probe.reason === 'before_send_time';
+        if (currentExecutivePush) {
+          shouldResetLastSent =
+            (updates.enabled === true && currentExecutivePush.enabled === false) ||
+            (updates.sendTime !== undefined && updates.sendTime !== currentExecutivePush.sendTime) ||
+            (updates.windowStart !== undefined && updates.windowStart !== currentExecutivePush.windowStart) ||
+            (updates.windowEnd !== undefined && updates.windowEnd !== currentExecutivePush.windowEnd) ||
+            (updates.intervalHours !== undefined && updates.intervalHours !== currentExecutivePush.intervalHours) ||
+            (updates.timezone !== undefined && updates.timezone !== currentExecutivePush.timezone) ||
+            (updates.selectedBlocks !== undefined && !sameArray(updates.selectedBlocks, currentExecutivePush.selectedBlocks)) ||
+            (updates.blockOrder !== undefined && !sameArray(updates.blockOrder, currentExecutivePush.blockOrder));
         }
 
         await updateExecutivePushSettings({
           executive_push_enabled: updates.enabled,
           executive_push_send_time: updates.sendTime,
+          executive_push_window_start: updates.windowStart,
+          executive_push_window_end: updates.windowEnd,
+          executive_push_interval_hours: updates.intervalHours,
           executive_push_timezone: updates.timezone,
           executive_push_selected_blocks: updates.selectedBlocks,
           executive_push_block_order: updates.blockOrder,

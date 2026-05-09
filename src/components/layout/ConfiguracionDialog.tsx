@@ -65,8 +65,9 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
   } = usePwaStore();
 
   const [pushSubscribed, setPushSubscribed] = useState(false);
-  const [isSavingExecutiveTime, setIsSavingExecutiveTime] = useState(false);
-  const [draftSendTime, setDraftSendTime] = useState('');
+  const [isSavingExecutiveSchedule, setIsSavingExecutiveSchedule] = useState(false);
+  const [draftWindowStart, setDraftWindowStart] = useState('');
+  const [draftWindowEnd, setDraftWindowEnd] = useState('');
   const [isSendingTestPush, setIsSendingTestPush] = useState(false);
 
   useEffect(() => {
@@ -105,9 +106,11 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
     if (!executivePush) return null;
     const due = getExecutivePushDueStatus({
       enabled: executivePush.enabled,
-      sendTime: executivePush.sendTime,
+      windowStart: executivePush.windowStart,
+      windowEnd: executivePush.windowEnd,
+      intervalHours: executivePush.intervalHours,
       timezone: executivePush.timezone,
-      lastSentDate: executivePush.lastSentDate,
+      lastSentAt: executivePush.lastSentAt,
     });
 
     if (!executivePush.enabled) {
@@ -115,11 +118,14 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
     }
 
     if (due.due === false && due.reason === 'invalid_time') {
-      return { tone: 'warning' as const, label: 'Hora inválida' };
+      return { tone: 'warning' as const, label: 'Ventana invalida' };
     }
 
-    const sentToday = executivePush.lastSentDate === due.today;
-    if (sentToday && executivePush.lastSentAt) {
+    if (due.due === false && due.reason === 'invalid_interval') {
+      return { tone: 'warning' as const, label: 'Intervalo invalido' };
+    }
+
+    if (executivePush.lastSentAt) {
       const sentAt = executivePush.lastSentAt;
       const timeStr = sentAt.toLocaleTimeString('es-PA', {
         hour: '2-digit',
@@ -131,21 +137,29 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
       const diffMin = Math.max(0, Math.round(diffMs / 60000));
       const ago =
         diffMin < 60 ? `hace ${diffMin} min` : `hace ${Math.round(diffMin / 60)} h`;
-      return { tone: 'success' as const, label: `Enviada hoy ${timeStr} (${ago})` };
+      if (due.due === false && due.reason === 'interval_not_elapsed') {
+        return { tone: 'muted' as const, label: `Ultimo envio ${timeStr} (${ago})` };
+      }
     }
 
-    if (due.due === false && due.reason === 'before_send_time') {
-      return { tone: 'muted' as const, label: `Pendiente para ${executivePush.sendTime}` };
+    if (due.due === false && due.reason === 'outside_window') {
+      return {
+        tone: 'muted' as const,
+        label: `Fuera de ventana ${executivePush.windowStart}-${executivePush.windowEnd}`,
+      };
     }
 
-    return { tone: 'pending' as const, label: 'Esperando próximo ciclo del scheduler' };
+    return { tone: 'pending' as const, label: 'Listo para el proximo ciclo del scheduler' };
   }, [executivePush]);
 
   useEffect(() => {
-    if (executivePush?.sendTime) {
-      setDraftSendTime(executivePush.sendTime);
+    if (executivePush?.windowStart) {
+      setDraftWindowStart(executivePush.windowStart);
     }
-  }, [executivePush?.sendTime]);
+    if (executivePush?.windowEnd) {
+      setDraftWindowEnd(executivePush.windowEnd);
+    }
+  }, [executivePush?.windowStart, executivePush?.windowEnd]);
 
   const handleOfflineRefresh = async () => {
     try {
@@ -187,32 +201,49 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
     }
   };
 
-  const handleTimeCommit = async () => {
+  const handleScheduleCommit = async (intervalHours?: number) => {
     if (!executivePush) return;
-    if (!draftSendTime) {
-      toast.error('Selecciona una hora de envio valida.');
+    const windowStart = draftWindowStart || executivePush.windowStart || '08:00';
+    const windowEnd = draftWindowEnd || executivePush.windowEnd || '22:00';
+    const nextIntervalHours = intervalHours ?? executivePush.intervalHours;
+
+    if (!windowStart || !windowEnd) {
+      toast.error('Selecciona una ventana horaria valida.');
       return;
     }
-    if (draftSendTime === executivePush.sendTime) return;
+    if (!Number.isInteger(nextIntervalHours) || nextIntervalHours < 1 || nextIntervalHours > 24) {
+      toast.error('Selecciona un intervalo valido.');
+      return;
+    }
+    if (
+      windowStart === executivePush.windowStart &&
+      windowEnd === executivePush.windowEnd &&
+      nextIntervalHours === executivePush.intervalHours
+    ) {
+      return;
+    }
 
-    setIsSavingExecutiveTime(true);
+    setIsSavingExecutiveSchedule(true);
     try {
       await updateExecutivePush({
         ...executivePush,
-        sendTime: draftSendTime,
+        sendTime: windowStart,
+        windowStart,
+        windowEnd,
+        intervalHours: nextIntervalHours,
         updatedBy: user?.id,
       });
-      toast.success(`Hora de push aplicada: ${draftSendTime}.`);
+      toast.success('Programacion de recordatorios actualizada.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo guardar la hora de envio.');
+      toast.error(error instanceof Error ? error.message : 'No se pudo guardar la programacion.');
     } finally {
-      setIsSavingExecutiveTime(false);
+      setIsSavingExecutiveSchedule(false);
     }
   };
 
   const handleTestPush = async () => {
     if (!executivePush?.enabled) {
-      toast.error('Activa primero la push ejecutiva diaria.');
+      toast.error('Activa primero los recordatorios ejecutivos.');
       return;
     }
     setIsSendingTestPush(true);
@@ -395,7 +426,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
           <section className="space-y-3 rounded-md border p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold">Push ejecutiva diaria</h3>
+                <h3 className="text-sm font-semibold">Recordatorios ejecutivos</h3>
                 <p className="text-xs text-muted-foreground">
                   Resumen operativo para admins con deep link al modulo relacionado.
                 </p>
@@ -406,10 +437,10 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
             <div className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2">
               <div>
                 <Label htmlFor="executive-push-enabled" className="text-sm font-medium">
-                  Activar push ejecutiva diaria
+                  Activar recordatorios ejecutivos
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Usa una plantilla configurable y se envia segun la hora definida.
+                  Solo se envia dentro de la ventana definida y cuando hay pendientes activos.
                 </p>
               </div>
               <Switch
@@ -422,12 +453,10 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
 
             {executivePushStatus ? (
               <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
-                <span className="text-muted-foreground">Estado de hoy</span>
+                <span className="text-muted-foreground">Estado</span>
                 <span
                   className={
-                    executivePushStatus.tone === 'success'
-                      ? 'font-medium text-emerald-600'
-                      : executivePushStatus.tone === 'warning'
+                    executivePushStatus.tone === 'warning'
                       ? 'font-medium text-amber-600'
                       : executivePushStatus.tone === 'pending'
                       ? 'font-medium text-amber-600'
@@ -441,14 +470,14 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="executive-send-time">Hora de envio</Label>
+                <Label htmlFor="executive-window-start">Inicio de ventana</Label>
                 <Input
-                  id="executive-send-time"
+                  id="executive-window-start"
                   type="time"
-                  value={draftSendTime || executivePush?.sendTime || '08:00'}
-                  disabled={isSavingExecutiveTime}
-                  onChange={(event) => setDraftSendTime(event.target.value)}
-                  onBlur={() => void handleTimeCommit()}
+                  value={draftWindowStart || executivePush?.windowStart || '08:00'}
+                  disabled={isSavingExecutiveSchedule}
+                  onChange={(event) => setDraftWindowStart(event.target.value)}
+                  onBlur={() => void handleScheduleCommit()}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                       event.currentTarget.blur();
@@ -456,8 +485,45 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  {isSavingExecutiveTime ? 'Guardando hora...' : 'Se aplica al siguiente ciclo del scheduler.'}
+                  {isSavingExecutiveSchedule ? 'Guardando...' : 'Primer intento del ciclo.'}
                 </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="executive-window-end">Fin de ventana</Label>
+                <Input
+                  id="executive-window-end"
+                  type="time"
+                  value={draftWindowEnd || executivePush?.windowEnd || '22:00'}
+                  disabled={isSavingExecutiveSchedule}
+                  onChange={(event) => setDraftWindowEnd(event.target.value)}
+                  onBlur={() => void handleScheduleCommit()}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.currentTarget.blur();
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">No se envia fuera de esta ventana.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="executive-interval">Intervalo</Label>
+                <Select
+                  value={String(executivePush?.intervalHours ?? 24)}
+                  disabled={isSavingExecutiveSchedule || !executivePush}
+                  onValueChange={(value) => void handleScheduleCommit(Number(value))}
+                >
+                  <SelectTrigger id="executive-interval" className="w-full">
+                    <SelectValue placeholder="Seleccionar intervalo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 4, 6, 8, 12, 24].map((hours) => (
+                      <SelectItem key={hours} value={String(hours)}>
+                        Cada {hours} h
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Se cuenta desde el ultimo envio exitoso.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="executive-timezone">Timezone</Label>
@@ -501,7 +567,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
             </Button>
 
             <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              La push diaria usa un ping web push y el service worker resuelve el resumen vigente antes de mostrarlo.
+              El cron revisa cada minuto, pero solo envia si hay bloques activos y ya paso el intervalo configurado.
             </div>
           </section>
         </div>

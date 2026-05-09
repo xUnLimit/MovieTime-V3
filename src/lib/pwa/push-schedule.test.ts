@@ -3,13 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from './push-schedule';
 
 describe('getExecutivePushDueStatus', () => {
-  it('marks the summary due after the configured local send time', () => {
+  it('marks the summary due inside the configured local window', () => {
     const result = getExecutivePushDueStatus(
       {
         enabled: true,
-        sendTime: '08:00',
+        windowStart: '08:00',
+        windowEnd: '22:00',
+        intervalHours: 4,
         timezone: 'America/Bogota',
-        lastSentDate: null,
+        lastSentAt: null,
       },
       new Date('2026-05-09T13:03:00.000Z')
     );
@@ -17,32 +19,52 @@ describe('getExecutivePushDueStatus', () => {
     expect(result).toMatchObject({ due: true, today: '2026-05-09' });
   });
 
-  it('skips before the configured local send time', () => {
+  it('skips outside the configured local window', () => {
     const result = getExecutivePushDueStatus(
       {
         enabled: true,
-        sendTime: '08:00',
+        windowStart: '08:00',
+        windowEnd: '22:00',
+        intervalHours: 4,
         timezone: 'America/Bogota',
-        lastSentDate: null,
+        lastSentAt: null,
       },
       new Date('2026-05-09T12:59:00.000Z')
     );
 
-    expect(result).toEqual({ due: false, reason: 'before_send_time', today: '2026-05-09' });
+    expect(result).toEqual({ due: false, reason: 'outside_window', today: '2026-05-09' });
   });
 
-  it('skips when it already sent for the local day', () => {
+  it('skips until the configured interval has elapsed after the last successful send', () => {
     const result = getExecutivePushDueStatus(
       {
         enabled: true,
-        sendTime: '08:00',
+        windowStart: '08:00',
+        windowEnd: '22:00',
+        intervalHours: 4,
         timezone: 'America/Bogota',
-        lastSentDate: '2026-05-09',
+        lastSentAt: '2026-05-09T13:00:00.000Z',
       },
-      new Date('2026-05-09T18:00:00.000Z')
+      new Date('2026-05-09T16:59:00.000Z')
     );
 
-    expect(result).toEqual({ due: false, reason: 'already_sent_today', today: '2026-05-09' });
+    expect(result).toEqual({ due: false, reason: 'interval_not_elapsed', today: '2026-05-09' });
+  });
+
+  it('supports windows that cross midnight', () => {
+    const result = getExecutivePushDueStatus(
+      {
+        enabled: true,
+        windowStart: '22:00',
+        windowEnd: '06:00',
+        intervalHours: 4,
+        timezone: 'UTC',
+        lastSentAt: null,
+      },
+      new Date('2026-05-09T23:00:00.000Z')
+    );
+
+    expect(result).toMatchObject({ due: true, today: '2026-05-09' });
   });
 
   it('keeps the daily push retryable when no delivery succeeded', () => {

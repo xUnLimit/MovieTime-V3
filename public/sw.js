@@ -127,6 +127,10 @@ async function handlePushEvent() {
     }
 
     const payload = await response.json();
+    if (!Array.isArray(payload.blocks) || payload.blocks.length === 0) {
+      return;
+    }
+
     await self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: '/icon-192.png',

@@ -44,6 +44,15 @@ export async function getConfig(): Promise<Configuracion> {
     executivePush: {
       enabled: Boolean(config.executive_push_enabled ?? false),
       sendTime: typeof config.executive_push_send_time === 'string' ? config.executive_push_send_time : '08:00',
+      windowStart: typeof config.executive_push_window_start === 'string'
+        ? config.executive_push_window_start
+        : typeof config.executive_push_send_time === 'string'
+          ? config.executive_push_send_time
+          : '08:00',
+      windowEnd: typeof config.executive_push_window_end === 'string' ? config.executive_push_window_end : '22:00',
+      intervalHours: typeof config.executive_push_interval_hours === 'number'
+        ? config.executive_push_interval_hours
+        : 24,
       timezone: typeof config.executive_push_timezone === 'string' ? config.executive_push_timezone : 'America/Bogota',
       selectedBlocks: Array.isArray(config.executive_push_selected_blocks)
         ? config.executive_push_selected_blocks as Configuracion['executivePush']['selectedBlocks']
@@ -98,6 +107,9 @@ export async function updateWhatsappPrefix(prefijo: string) {
 export async function updateExecutivePushSettings(payload: {
   executive_push_enabled?: boolean;
   executive_push_send_time?: string;
+  executive_push_window_start?: string;
+  executive_push_window_end?: string;
+  executive_push_interval_hours?: number;
   executive_push_timezone?: string;
   executive_push_selected_blocks?: string[];
   executive_push_block_order?: string[];
@@ -115,6 +127,9 @@ async function updateConfig(payload: {
   whatsapp_prefijo?: string;
   executive_push_enabled?: boolean;
   executive_push_send_time?: string;
+  executive_push_window_start?: string;
+  executive_push_window_end?: string;
+  executive_push_interval_hours?: number;
   executive_push_timezone?: string;
   executive_push_selected_blocks?: string[];
   executive_push_block_order?: string[];

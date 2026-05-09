@@ -44,11 +44,15 @@ export interface ConfiguracionNotificaciones {
 export type ExecutivePushBlock =
   | 'clientes_por_notificar'
   | 'servicios_por_pagar'
+  | 'reposo_terminado'
   | 'monto_a_fondear';
 
 export interface ExecutivePushSettings {
   enabled: boolean;
   sendTime: string;
+  windowStart: string;
+  windowEnd: string;
+  intervalHours: number;
   timezone: string;
   selectedBlocks: ExecutivePushBlock[];
   blockOrder: ExecutivePushBlock[];

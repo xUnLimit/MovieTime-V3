@@ -5,7 +5,11 @@ import webPush from 'web-push';
 import { env } from '@/config';
 import { createServiceRoleClient } from '@/lib/server/supabase-server';
 import type { ExecutivePushBlock, ExecutivePushSummaryBlock, ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
-import { buildExecutivePushSummaryPayload, getExecutivePushBlockMeta } from '@/lib/pwa/push-helpers';
+import {
+  buildExecutivePushSummaryPayload,
+  filterExecutivePushActiveBlocks,
+  getExecutivePushBlockMeta,
+} from '@/lib/pwa/push-helpers';
 import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
@@ -86,7 +90,11 @@ async function getExecutivePushSettings(client: ServiceClient) {
   return {
     enabled: Boolean(data.executive_push_enabled),
     sendTime: data.executive_push_send_time ?? '08:00',
+    windowStart: data.executive_push_window_start ?? data.executive_push_send_time ?? '08:00',
+    windowEnd: data.executive_push_window_end ?? '22:00',
+    intervalHours: Number(data.executive_push_interval_hours ?? 24),
     timezone: data.executive_push_timezone ?? 'America/Bogota',
+    lastSentAt: data.executive_push_last_sent_at ?? null,
     lastSentDate: data.executive_push_last_sent_date ?? null,
     selectedBlocks: Array.isArray(data.executive_push_selected_blocks)
       ? data.executive_push_selected_blocks as ExecutivePushBlock[]
@@ -106,7 +114,7 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
   // bell" icon in the table) AND that are due today or already overdue
   // (dias_restantes <= 0). Marking a row as read in the table removes it from
   // the push count.
-  const [ventaNotificationsResult, servicioNotificationsResult] = await Promise.all([
+  const [ventaNotificationsResult, servicioNotificationsResult, reposoNotificationsResult] = await Promise.all([
     client
       .from('v_notificaciones_venta')
       .select('cliente_id,dias_restantes,leida')
@@ -117,13 +125,20 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
       .select('servicio_id,costo_servicio_snapshot,moneda_snapshot,dias_restantes,leida')
       .eq('leida', false)
       .lte('dias_restantes', 0),
+    client
+      .from('v_notificaciones_reposo')
+      .select('servicio_id,dias_restantes,leida')
+      .eq('leida', false)
+      .lte('dias_restantes', 0),
   ]);
 
   if (ventaNotificationsResult.error) throw new Error(ventaNotificationsResult.error.message);
   if (servicioNotificationsResult.error) throw new Error(servicioNotificationsResult.error.message);
+  if (reposoNotificationsResult.error) throw new Error(reposoNotificationsResult.error.message);
 
   const ventaNotifications = ventaNotificationsResult.data ?? [];
   const servicioNotifications = servicioNotificationsResult.data ?? [];
+  const reposoNotifications = reposoNotificationsResult.data ?? [];
 
   const distinctClientes = new Set(
     ventaNotifications
@@ -157,6 +172,13 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
       count: servicioNotifications.length,
       destination: '/notificaciones',
       tab: 'servicios',
+    }),
+    reposo_terminado: () => ({
+      key: 'reposo_terminado',
+      label: getExecutivePushBlockMeta('reposo_terminado')?.label ?? 'Reposo terminado',
+      count: reposoNotifications.length,
+      destination: '/notificaciones',
+      tab: 'reposo',
     }),
     monto_a_fondear: () => ({
       key: 'monto_a_fondear',
@@ -229,10 +251,15 @@ export async function sendExecutivePushDailySummary(options?: { force?: boolean 
   const settings = await getExecutivePushSettings(client);
 
   const dueStatus = getExecutivePushDueStatus(settings);
-  // Forced sends bypass the daily/time guards but still require enabled=true
+  // Forced sends bypass the window/interval guards but still require enabled=true
   // to avoid "test" buttons firing notifications when the feature is off.
   if (!dueStatus.due && !(force && settings.enabled)) {
     return { sent: 0, disabled: 0, failed: 0, skipped: dueStatus.reason, pushDate: dueStatus.today };
+  }
+
+  const blocks = filterExecutivePushActiveBlocks(await buildSummaryBlocks(client));
+  if (blocks.length === 0) {
+    return { sent: 0, disabled: 0, failed: 0, skipped: 'no_active_items', pushDate: dueStatus.today };
   }
 
   const { data, error } = await client

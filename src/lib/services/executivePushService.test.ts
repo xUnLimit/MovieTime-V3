@@ -31,11 +31,18 @@ vi.mock('@/lib/server/supabase-server', () => ({
 
 import { sendExecutivePushDailySummary } from './executivePushService';
 
-function setupSupabaseMock() {
+function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: string; dias_restantes: number; leida: boolean }> } = {}) {
+  const ventaNotifications = options.ventaNotifications ?? [
+    { cliente_id: 'cliente-1', dias_restantes: 0, leida: false },
+  ];
   const configRow = {
     executive_push_enabled: true,
     executive_push_send_time: '00:00',
+    executive_push_window_start: '00:00',
+    executive_push_window_end: '23:59',
+    executive_push_interval_hours: 4,
     executive_push_timezone: 'UTC',
+    executive_push_last_sent_at: null,
     executive_push_last_sent_date: null,
     executive_push_selected_blocks: ['clientes_por_notificar'],
     executive_push_block_order: ['clientes_por_notificar'],
@@ -81,7 +88,17 @@ function setupSupabaseMock() {
     // path currently doesn't reach buildSummaryBlocks (sendSubscriptionPing
     // sends a constant payload), but keep these stubs to be safe if the call
     // chain changes.
-    if (table === 'v_notificaciones_venta' || table === 'v_notificaciones_servicio') {
+    if (table === 'v_notificaciones_venta') {
+      return {
+        select: () => ({
+          eq: () => ({
+            lte: async () => ({ data: ventaNotifications, error: null }),
+          }),
+        }),
+      };
+    }
+
+    if (table === 'v_notificaciones_servicio' || table === 'v_notificaciones_reposo') {
       return {
         select: () => ({
           eq: () => ({
@@ -150,6 +167,21 @@ describe('sendExecutivePushDailySummary', () => {
       skipped: 'no_successful_deliveries',
     });
     expect(supabaseMocks.subscriptionUpdateEq).toHaveBeenCalledWith('id', 'sub-1');
+    expect(supabaseMocks.configUpdateEq).not.toHaveBeenCalled();
+  });
+
+  it('skips delivery and keeps the reminder retryable when no selected block has active items', async () => {
+    setupSupabaseMock({ ventaNotifications: [] });
+
+    const result = await sendExecutivePushDailySummary();
+
+    expect(result).toMatchObject({
+      sent: 0,
+      disabled: 0,
+      failed: 0,
+      skipped: 'no_active_items',
+    });
+    expect(webPushMocks.sendNotification).not.toHaveBeenCalled();
     expect(supabaseMocks.configUpdateEq).not.toHaveBeenCalled();
   });
 });

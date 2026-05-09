@@ -124,10 +124,13 @@ export type Database = {
           executive_push_enabled: boolean
           executive_push_last_sent_at: string | null
           executive_push_last_sent_date: string | null
+          executive_push_interval_hours: number
           executive_push_selected_blocks: Json | null
           executive_push_send_time: string
           executive_push_timezone: string
           executive_push_updated_by: string | null
+          executive_push_window_end: string
+          executive_push_window_start: string
           hora_envio: number
           id: string
           notificaciones_dias_anticipacion: number
@@ -139,10 +142,13 @@ export type Database = {
           executive_push_enabled?: boolean
           executive_push_last_sent_at?: string | null
           executive_push_last_sent_date?: string | null
+          executive_push_interval_hours?: number
           executive_push_selected_blocks?: Json | null
           executive_push_send_time?: string
           executive_push_timezone?: string
           executive_push_updated_by?: string | null
+          executive_push_window_end?: string
+          executive_push_window_start?: string
           hora_envio?: number
           id?: string
           notificaciones_dias_anticipacion?: number
@@ -154,10 +160,13 @@ export type Database = {
           executive_push_enabled?: boolean
           executive_push_last_sent_at?: string | null
           executive_push_last_sent_date?: string | null
+          executive_push_interval_hours?: number
           executive_push_selected_blocks?: Json | null
           executive_push_send_time?: string
           executive_push_timezone?: string
           executive_push_updated_by?: string | null
+          executive_push_window_end?: string
+          executive_push_window_start?: string
           hora_envio?: number
           id?: string
           notificaciones_dias_anticipacion?: number

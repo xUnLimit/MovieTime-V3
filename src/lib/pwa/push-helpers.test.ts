@@ -40,8 +40,15 @@ describe('buildExecutivePushSummaryPayload', () => {
     expect(payload.body).toBe('Monto a fondear: 200.00 EGP, 1500.00 NGN, 50.00 USD');
   });
 
-  it('renders 0 when no currencies have amounts', () => {
+  it('omits blocks without active counts or amounts', () => {
     const payload = buildExecutivePushSummaryPayload([
+      {
+        key: 'servicios_por_pagar',
+        label: 'Servicios por pagar',
+        count: 0,
+        destination: '/notificaciones',
+        tab: 'servicios',
+      },
       {
         key: 'monto_a_fondear',
         label: 'Monto a fondear',
@@ -50,6 +57,7 @@ describe('buildExecutivePushSummaryPayload', () => {
       },
     ]);
 
-    expect(payload.body).toBe('Monto a fondear: 0');
+    expect(payload.body).toBe('');
+    expect(payload.blocks).toEqual([]);
   });
 });
