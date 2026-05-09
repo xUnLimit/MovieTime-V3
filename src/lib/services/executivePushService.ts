@@ -240,7 +240,7 @@ async function sendSubscriptionPing(subscription: Pick<PushSubscriptionRecord, '
   );
 }
 
-export async function sendExecutivePushDailySummary(): Promise<{
+export async function sendExecutivePushDailySummary(options?: { force?: boolean }): Promise<{
   sent: number;
   disabled: number;
   failed: number;
@@ -248,11 +248,14 @@ export async function sendExecutivePushDailySummary(): Promise<{
   skipped?: string;
   pushDate?: string;
 }> {
+  const force = options?.force === true;
   const client = createServiceRoleClient();
   const settings = await getExecutivePushSettings(client);
 
   const dueStatus = getExecutivePushDueStatus(settings);
-  if (!dueStatus.due) {
+  // Forced sends bypass the daily/time guards but still require enabled=true
+  // to avoid "test" buttons firing notifications when the feature is off.
+  if (!dueStatus.due && !(force && settings.enabled)) {
     return { sent: 0, disabled: 0, failed: 0, skipped: dueStatus.reason, pushDate: dueStatus.today };
   }
 

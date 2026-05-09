@@ -31,6 +31,31 @@ async function getAuthToken() {
   return data.session.access_token;
 }
 
+export type ExecutivePushTestResult = {
+  ok: boolean;
+  sent: number;
+  disabled: number;
+  failed: number;
+  skipped?: string;
+  pushDate?: string;
+};
+
+export async function triggerExecutivePushTest(): Promise<ExecutivePushTestResult> {
+  const token = await getAuthToken();
+  const response = await fetch('/api/push/test', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof body.error === 'string' ? body.error : 'No se pudo enviar la push de prueba.');
+  }
+  return body as ExecutivePushTestResult;
+}
+
 export async function registerPushSubscription() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
     throw new Error('Este navegador no soporta push web.');

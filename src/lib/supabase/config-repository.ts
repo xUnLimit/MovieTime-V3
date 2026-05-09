@@ -102,6 +102,8 @@ export async function updateExecutivePushSettings(payload: {
   executive_push_selected_blocks?: string[];
   executive_push_block_order?: string[];
   executive_push_updated_by?: string | null;
+  executive_push_last_sent_at?: string | null;
+  executive_push_last_sent_date?: string | null;
 }) {
   assertOnlineMutation();
   await updateConfig(payload);
@@ -117,6 +119,8 @@ async function updateConfig(payload: {
   executive_push_selected_blocks?: string[];
   executive_push_block_order?: string[];
   executive_push_updated_by?: string | null;
+  executive_push_last_sent_at?: string | null;
+  executive_push_last_sent_date?: string | null;
 }) {
   const { error } = await supabase.from('config').update(payload).eq('id', CONFIG_DOC_ID);
   if (error) throw new Error(error.message);

@@ -29,6 +29,7 @@ import { EXECUTIVE_PUSH_BLOCKS } from '@/lib/pwa/push-constants';
 import {
   getPushSubscriptionStatus,
   registerPushSubscription,
+  triggerExecutivePushTest,
   unregisterPushSubscription,
 } from '@/lib/pwa/push-client';
 import { getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
@@ -66,6 +67,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [isSavingExecutiveTime, setIsSavingExecutiveTime] = useState(false);
   const [draftSendTime, setDraftSendTime] = useState('');
+  const [isSendingTestPush, setIsSendingTestPush] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -205,6 +207,30 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
       toast.error(error instanceof Error ? error.message : 'No se pudo guardar la hora de envio.');
     } finally {
       setIsSavingExecutiveTime(false);
+    }
+  };
+
+  const handleTestPush = async () => {
+    if (!executivePush?.enabled) {
+      toast.error('Activa primero la push ejecutiva diaria.');
+      return;
+    }
+    setIsSendingTestPush(true);
+    try {
+      const result = await triggerExecutivePushTest();
+      if (result.skipped) {
+        toast.info(`Push omitida: ${result.skipped}.`);
+      } else if (result.sent > 0) {
+        toast.success(`Push de prueba enviada a ${result.sent} dispositivo${result.sent === 1 ? '' : 's'}.`);
+      } else {
+        toast.warning('Push procesada sin entregas. Verifica las suscripciones activas.');
+      }
+      // Refresh config so the "last sent" indicator reflects the test send.
+      fetchConfig(true).catch(() => undefined);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo enviar la push de prueba.');
+    } finally {
+      setIsSendingTestPush(false);
     }
   };
 
@@ -462,6 +488,17 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                 ))}
               </div>
             </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleTestPush}
+              disabled={!executivePush?.enabled || isSendingTestPush}
+              className="w-full sm:w-auto"
+            >
+              <BellRing className={`mr-2 h-4 w-4 ${isSendingTestPush ? 'animate-pulse' : ''}`} />
+              {isSendingTestPush ? 'Enviando...' : 'Enviar prueba ahora'}
+            </Button>
 
             <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               La push diaria usa un ping web push y el service worker resuelve el resumen vigente antes de mostrarlo.
