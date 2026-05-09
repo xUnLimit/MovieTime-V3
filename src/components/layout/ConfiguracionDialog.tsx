@@ -68,6 +68,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
   const [isSavingExecutiveSchedule, setIsSavingExecutiveSchedule] = useState(false);
   const [draftWindowStart, setDraftWindowStart] = useState('');
   const [draftWindowEnd, setDraftWindowEnd] = useState('');
+  const [draftIntervalHours, setDraftIntervalHours] = useState<number | null>(null);
   const [isSendingTestPush, setIsSendingTestPush] = useState(false);
 
   useEffect(() => {
@@ -159,7 +160,10 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
     if (executivePush?.windowEnd) {
       setDraftWindowEnd(executivePush.windowEnd);
     }
-  }, [executivePush?.windowStart, executivePush?.windowEnd]);
+    if (executivePush?.intervalHours) {
+      setDraftIntervalHours(executivePush.intervalHours);
+    }
+  }, [executivePush?.windowStart, executivePush?.windowEnd, executivePush?.intervalHours]);
 
   const handleOfflineRefresh = async () => {
     try {
@@ -235,6 +239,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
       });
       toast.success('Programacion de recordatorios actualizada.');
     } catch (error) {
+      setDraftIntervalHours(executivePush.intervalHours);
       toast.error(error instanceof Error ? error.message : 'No se pudo guardar la programacion.');
     } finally {
       setIsSavingExecutiveSchedule(false);
@@ -508,9 +513,13 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
               <div className="space-y-2">
                 <Label htmlFor="executive-interval">Intervalo</Label>
                 <Select
-                  value={String(executivePush?.intervalHours ?? 24)}
+                  value={String(draftIntervalHours ?? executivePush?.intervalHours ?? 24)}
                   disabled={isSavingExecutiveSchedule || !executivePush}
-                  onValueChange={(value) => void handleScheduleCommit(Number(value))}
+                  onValueChange={(value) => {
+                    const nextInterval = Number(value);
+                    setDraftIntervalHours(nextInterval);
+                    void handleScheduleCommit(nextInterval);
+                  }}
                 >
                   <SelectTrigger id="executive-interval" className="w-full">
                     <SelectValue placeholder="Seleccionar intervalo" />
@@ -526,12 +535,10 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
                 <p className="text-xs text-muted-foreground">Se cuenta desde el ultimo envio exitoso.</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="executive-timezone">Timezone</Label>
-                <Input
-                  id="executive-timezone"
-                  value={executivePush?.timezone ?? 'America/Bogota'}
-                  readOnly
-                />
+                <Label>Timezone</Label>
+                <div className="flex h-10 w-full select-none items-center rounded-md border bg-muted/40 px-3 text-sm text-muted-foreground">
+                  {executivePush?.timezone ?? 'America/Bogota'}
+                </div>
               </div>
             </div>
 
