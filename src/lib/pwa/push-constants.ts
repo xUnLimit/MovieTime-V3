@@ -15,13 +15,13 @@ export const EXECUTIVE_PUSH_BLOCKS: { key: ExecutivePushBlock; label: string; de
   },
   {
     key: 'reposo_terminado',
-    label: 'Reposo terminado',
+    label: 'Servicios en reposo finalizados',
     destination: '/notificaciones',
     tab: 'reposo',
   },
   {
     key: 'monto_a_fondear',
-    label: 'Monto a fondear',
+    label: 'Monto a pagar',
     destination: '/dashboard',
   },
 ];

@@ -175,14 +175,14 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
     }),
     reposo_terminado: () => ({
       key: 'reposo_terminado',
-      label: getExecutivePushBlockMeta('reposo_terminado')?.label ?? 'Reposo terminado',
+      label: getExecutivePushBlockMeta('reposo_terminado')?.label ?? 'Servicios en reposo finalizados',
       count: reposoNotifications.length,
       destination: '/notificaciones',
       tab: 'reposo',
     }),
     monto_a_fondear: () => ({
       key: 'monto_a_fondear',
-      label: getExecutivePushBlockMeta('monto_a_fondear')?.label ?? 'Monto a fondear',
+      label: getExecutivePushBlockMeta('monto_a_fondear')?.label ?? 'Monto a pagar',
       amounts: montoPorMoneda,
       destination: '/dashboard',
     }),

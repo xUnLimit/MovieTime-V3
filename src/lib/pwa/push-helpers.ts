@@ -34,15 +34,41 @@ export function filterExecutivePushActiveBlocks(
   return blocks.filter(isExecutivePushBlockActive);
 }
 
+function formatBlock(block: ExecutivePushSummaryBlock): string {
+  if (block.amounts !== undefined) {
+    return `${block.label}: ${formatAmounts(block.amounts)}`;
+  }
+  return `${block.label}: ${block.count ?? 0}`;
+}
+
 export function buildExecutivePushBody(blocks: ExecutivePushSummaryBlock[]): string {
-  return blocks
-    .map((block) => {
-      if (block.amounts !== undefined) {
-        return `${block.label}: ${formatAmounts(block.amounts)}`;
-      }
-      return `${block.label}: ${block.count ?? 0}`;
-    })
-    .join('\n');
+  const clientesBlock = blocks.find((b) => b.key === 'clientes_por_notificar');
+  const serviciosBlock = blocks.find((b) => b.key === 'servicios_por_pagar');
+  const montoBlock = blocks.find((b) => b.key === 'monto_a_fondear');
+  const reposoBlock = blocks.find((b) => b.key === 'reposo_terminado');
+
+  const lines: string[] = [];
+
+  const clientesServiciosParts = [clientesBlock, serviciosBlock]
+    .filter(Boolean)
+    .map((b) => formatBlock(b!));
+  if (clientesServiciosParts.length > 0) {
+    lines.push(clientesServiciosParts.join(' | '));
+  }
+
+  const montoReposoParts = [montoBlock, reposoBlock]
+    .filter(Boolean)
+    .map((b) => formatBlock(b!));
+  if (montoReposoParts.length > 0) {
+    lines.push(montoReposoParts.join(' | '));
+  }
+
+  // Fallback for any blocks not covered by the two groups above
+  const handledKeys = new Set(['clientes_por_notificar', 'servicios_por_pagar', 'monto_a_fondear', 'reposo_terminado']);
+  const extra = blocks.filter((b) => !handledKeys.has(b.key)).map(formatBlock);
+  lines.push(...extra);
+
+  return lines.join('\n');
 }
 
 export function buildExecutivePushSummaryPayload(
