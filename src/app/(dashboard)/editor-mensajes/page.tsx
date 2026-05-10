@@ -14,7 +14,7 @@ function EditorMensajesPageContent() {
   }, [fetchTemplates]);
 
   return (
-    <div className="min-w-0 space-y-6 overflow-x-hidden">
+    <div className="min-w-0 space-y-4 overflow-x-hidden">
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editor de Mensajes de WhatsApp</h1>
         <p className="text-sm text-muted-foreground">

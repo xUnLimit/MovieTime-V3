@@ -48,8 +48,12 @@ function CategoriasPageContent() {
     <div className="space-y-4">
       <div className="dashboard-page-heading">
         <div className="dashboard-page-heading-row">
-          <div className="dashboard-page-heading-copy">
+          <div className="dashboard-page-heading-copy space-y-1">
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Categorias</h1>
+            <p className="text-sm text-muted-foreground">
+              <Link prefetch={false} href="/" className="transition-colors hover:text-foreground">Dashboard</Link> /{' '}
+              <span className="text-foreground">Categorias</span>
+            </p>
           </div>
           <Link prefetch={false} href="/categorias/crear" className="shrink-0">
             <Button className="whitespace-nowrap">
@@ -58,10 +62,6 @@ function CategoriasPageContent() {
             </Button>
           </Link>
         </div>
-        <p className="text-sm text-muted-foreground">
-          <Link prefetch={false} href="/" className="transition-colors hover:text-foreground">Dashboard</Link> /{' '}
-          <span className="text-foreground">Categorias</span>
-        </p>
       </div>
 
       <CategoriasMetrics />

@@ -97,15 +97,15 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
   };
 
   return (
-    <div className="min-w-0 space-y-6 overflow-x-hidden">
+    <div className="min-w-0 overflow-x-hidden">
       <Tabs value={selectedTipo} onValueChange={(value) => setSelectedTipo(value as TipoTemplate)}>
-        <div className="tabs-scroll-shell">
-          <TabsList className="tabs-scroll-list h-auto justify-start rounded-none border-b bg-transparent p-0">
+        <div className="tabs-scroll-shell -mx-1 px-1">
+          <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
             {TIPO_TEMPLATES.map((tipo) => (
               <TabsTrigger
                 key={tipo.value}
                 value={tipo.value}
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
                 {tipo.label}
               </TabsTrigger>
@@ -114,7 +114,7 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
         </div>
 
         {TIPO_TEMPLATES.map((tipo) => (
-          <TabsContent key={tipo.value} value={tipo.value} className="mt-6">
+          <TabsContent key={tipo.value} value={tipo.value} className="min-w-0 space-y-4">
             <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
               {/* Editor Section */}
               <Card className="min-w-0 space-y-3 p-5 lg:col-span-2">

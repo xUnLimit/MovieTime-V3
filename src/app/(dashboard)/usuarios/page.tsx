@@ -247,8 +247,11 @@ function UsuariosPageContent() {
     <div className="space-y-4">
       <div className="dashboard-page-heading">
         <div className="dashboard-page-heading-row">
-          <div className="dashboard-page-heading-copy">
+          <div className="dashboard-page-heading-copy space-y-1">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuarios</h1>
+            <p className="text-sm text-muted-foreground">
+              <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Usuarios</span>
+            </p>
           </div>
           <Link prefetch={false} href="/usuarios/crear" className="shrink-0">
             <Button className="whitespace-nowrap">
@@ -257,9 +260,6 @@ function UsuariosPageContent() {
             </Button>
           </Link>
         </div>
-        <p className="text-sm text-muted-foreground">
-          <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Usuarios</span>
-        </p>
       </div>
 
       <UsuariosMetrics
