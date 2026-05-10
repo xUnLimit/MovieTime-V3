@@ -41,12 +41,13 @@ function LogActividadPageContent() {
     return f;
   }, [accionFilter, entidadFilter, usuarioFilter]);
 
-  const { data: logs, isLoading, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<ActivityLog>({
+  const { data: logs, isLoading, hasMore, page, totalPages, hasPrevious, next, previous, refresh } = useServerPagination<ActivityLog>({
     collectionName: ACTIVITY_LOG_COLLECTION,
     filters,
     pageSize,
     orderByField: 'timestamp',
     orderDirection: 'desc',
+    includeTotalCount: true,
   });
 
   // Filtrado client-side solo para búsqueda de texto (no se puede hacer server-side)
@@ -125,6 +126,7 @@ function LogActividadPageContent() {
         hasMore={hasMore}
         hasPrevious={hasPrevious}
         page={page}
+        totalPages={totalPages}
         onNext={next}
         onPrevious={previous}
         onRefresh={refresh}

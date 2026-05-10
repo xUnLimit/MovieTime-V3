@@ -3,6 +3,7 @@
 import { memo, useMemo, useState } from "react";
 import Link from "next/link";
 import { useVentasPorCategorias } from "@/hooks/use-ventas-por-categorias";
+import { useClientPagination } from "@/hooks/useClientPagination";
 import {
   Table,
   TableBody,
@@ -14,12 +15,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { PaginationFooter } from "@/components/shared/PaginationFooter";
 import {
   Monitor,
   Users,
@@ -30,7 +26,6 @@ import {
   ArrowUp,
   ArrowDown,
   TrendingUp,
-  ChevronDown,
 } from "lucide-react";
 import { Categoria } from "@/types";
 import { useServiciosStore } from "@/store/serviciosStore";
@@ -57,8 +52,6 @@ export const CategoriasTable = memo(function CategoriasTable({
   title = "Todas las categorías",
 }: CategoriasTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortKey, setSortKey] = useState<keyof CategoriaRow | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(
     null,
@@ -175,6 +168,22 @@ export const CategoriasTable = memo(function CategoriasTable({
     });
   }, [filteredRows, sortKey, sortDirection]);
 
+  const {
+    data: paginatedRows,
+    page,
+    totalPages,
+    hasPrevious,
+    hasMore,
+    pageSize,
+    setPageSize,
+    next,
+    previous,
+    reset: resetPagination,
+  } = useClientPagination({
+    data: sortedRows,
+    initialPageSize: 10,
+  });
+
   const handleSort = (key: keyof CategoriaRow) => {
     if (sortKey === key) {
       if (sortDirection === "asc") {
@@ -189,7 +198,7 @@ export const CategoriasTable = memo(function CategoriasTable({
       setSortKey(key);
       setSortDirection("asc");
     }
-    setCurrentPage(1);
+    resetPagination();
   };
 
   const getSortIcon = (columnKey: keyof CategoriaRow) => {
@@ -203,12 +212,6 @@ export const CategoriasTable = memo(function CategoriasTable({
   };
 
   // Paginación
-  const totalPages = Math.ceil(sortedRows.length / itemsPerPage);
-  const paginatedRows = sortedRows.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
-
   const getProgressPercentage = (activos: number, total: number) => {
     if (total === 0) return 0;
     return Math.round((activos / total) * 100);
@@ -223,7 +226,10 @@ export const CategoriasTable = memo(function CategoriasTable({
           <Input
             placeholder="Buscar categorías..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              resetPagination();
+            }}
             className="pl-9"
           />
         </div>
@@ -485,63 +491,17 @@ export const CategoriasTable = memo(function CategoriasTable({
         </Table>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 px-2 py-4">
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-[62px] justify-between px-2 sm:w-[70px]"
-              >
-                {itemsPerPage}
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {[10, 25, 50].map((size) => (
-                <DropdownMenuItem
-                  key={size}
-                  onClick={() => {
-                    setItemsPerPage(size);
-                    setCurrentPage(1);
-                  }}
-                  className={itemsPerPage === size ? "bg-accent" : ""}
-                >
-                  {size}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <PaginationFooter
+        page={page}
+        totalPages={totalPages}
+        hasPrevious={hasPrevious}
+        hasMore={hasMore}
+        onPrevious={previous}
+        onNext={next}
+        pageSize={pageSize}
+        onPageSizeChange={setPageSize}
+      />
 
-        <div className="ml-auto flex items-center gap-2 sm:gap-4">
-          <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
-            Página {currentPage} de {totalPages || 1}
-          </span>
-          <div className="flex shrink-0 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-            >
-              Siguiente
-            </Button>
-          </div>
-        </div>
-      </div>
     </Card>
   );
 });

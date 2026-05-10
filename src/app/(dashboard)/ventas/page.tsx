@@ -61,12 +61,13 @@ function VentasPageContent() {
   }, [activeTab, isCategoriaFiltered, isSearchMode, searchQuery, selectedCategoriaId]);
 
   // Paginación server-side con filtros y búsqueda en SQL.
-  const { data: ventasPaginadas, isLoading: isLoadingPage, hasMore, page, hasPrevious, next, previous, refresh } = useServerPagination<VentaDoc>({
+  const { data: ventasPaginadas, isLoading: isLoadingPage, hasMore, page, totalPages, hasPrevious, next, previous, refresh } = useServerPagination<VentaDoc>({
     collectionName: VENTAS_COLLECTION,
     filters,
     pageSize,
     orderByField: orderBy,
     orderDirection: 'desc',
+    includeTotalCount: true,
   });
 
   // Cargar categorías al montar
@@ -193,6 +194,7 @@ function VentasPageContent() {
             hasMore={hasMore}
             hasPrevious={hasPrevious}
             page={page}
+            totalPages={totalPages}
             onNext={next}
             onPrevious={previous}
             showPagination

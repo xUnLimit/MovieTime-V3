@@ -62,6 +62,7 @@ interface ServiciosCategoriaTableDetalleProps {
   hasMore?: boolean;
   hasPrevious?: boolean;
   page?: number;
+  totalPages?: number;
   showPagination?: boolean;
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
@@ -84,6 +85,7 @@ export const ServiciosCategoriaTableDetalle = memo(
     hasMore = false,
     hasPrevious = false,
     page = 1,
+    totalPages = hasMore ? page + 1 : page,
     showPagination = true,
     pageSize = 10,
     onPageSizeChange,
@@ -354,20 +356,20 @@ export const ServiciosCategoriaTableDetalle = memo(
 
     return (
       <>
-        <Card className="p-4 pb-2">
-          <h3 className="text-xl font-semibold">{title}</h3>
-          <div className="dashboard-toolbar">
-            <div className="dashboard-toolbar-search">
+        <Card className="min-w-0 p-3 pb-2 sm:p-4 sm:pb-2">
+          <h3 className="text-lg font-semibold sm:text-xl">{title}</h3>
+          <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px_200px] sm:items-center sm:gap-4">
+            <div className="relative min-w-0">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nombre o email..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-9"
+                className="w-full pl-9"
               />
             </div>
             <Select value={cicloFilter} onValueChange={onCicloChange}>
-              <SelectTrigger className="dashboard-toolbar-control-wide">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Todos los ciclos" />
               </SelectTrigger>
               <SelectContent>
@@ -379,7 +381,7 @@ export const ServiciosCategoriaTableDetalle = memo(
               </SelectContent>
             </Select>
             <Select value={perfilFilter} onValueChange={onPerfilChange}>
-              <SelectTrigger className="dashboard-toolbar-control-wide">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Todos los perfiles" />
               </SelectTrigger>
               <SelectContent>
@@ -443,7 +445,7 @@ export const ServiciosCategoriaTableDetalle = memo(
             {showPagination && (
               <PaginationFooter
                 page={page}
-                totalPages={hasMore ? page + 1 : page}
+                totalPages={totalPages}
                 hasPrevious={hasPrevious}
                 hasMore={hasMore}
                 onPrevious={onPrevious}

@@ -61,8 +61,8 @@ export function VentaSummarySection({
   venta,
 }: VentaSummarySectionProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[2fr_0.8fr] gap-4">
-      <Card className="p-6 space-y-6">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(320px,1fr)]">
+      <Card className="min-w-0 p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-semibold">Información General</h2>
@@ -150,7 +150,7 @@ export function VentaSummarySection({
         </div>
       </Card>
 
-      <Card className="p-6 space-y-5">
+      <Card className="min-w-0 p-6 space-y-5">
         <div className="flex flex-col items-center text-center gap-3">
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center ${

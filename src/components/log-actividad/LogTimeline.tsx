@@ -45,6 +45,7 @@ interface LogTimelineProps {
   hasMore: boolean;
   hasPrevious: boolean;
   page: number;
+  totalPages: number;
   onNext: () => void;
   onPrevious: () => void;
   onRefresh: () => void;
@@ -72,6 +73,7 @@ export function LogTimeline({
   hasMore,
   hasPrevious,
   page,
+  totalPages,
   onNext,
   onPrevious,
   canDeleteLogs = false,
@@ -376,7 +378,7 @@ export function LogTimeline({
             {searchFilteredCurrentPage ? (
               <PaginationFooter
                 page={page}
-                totalPages={hasMore ? page + 1 : page}
+                totalPages={totalPages}
                 hasPrevious={hasPrevious}
                 hasMore={hasMore}
                 onPrevious={onPrevious}
@@ -399,7 +401,7 @@ export function LogTimeline({
 
             <PaginationFooter
               page={page}
-              totalPages={hasMore ? page + 1 : page}
+              totalPages={totalPages}
               hasPrevious={hasPrevious}
               hasMore={hasMore}
               onPrevious={onPrevious}

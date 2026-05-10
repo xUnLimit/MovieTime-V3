@@ -41,13 +41,15 @@ function VentaDetallePageBody({ id }: { id: string }) {
         venta={venta}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_0.8fr] gap-4">
-        <VentaPaymentsSection
-          paymentRows={detalle.paymentRows}
-          venta={venta}
-          onDeletePago={detalle.handleDeletePago}
-          onEditarPago={detalle.handleEditarPago}
-        />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(280px,1fr)]">
+        <div className="min-w-0">
+          <VentaPaymentsSection
+            paymentRows={detalle.paymentRows}
+            venta={venta}
+            onDeletePago={detalle.handleDeletePago}
+            onEditarPago={detalle.handleEditarPago}
+          />
+        </div>
         <VentaNotesCard notas={venta.notas} />
       </div>
 

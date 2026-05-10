@@ -10,15 +10,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ArrowUpDown, ArrowUp, ArrowDown, ChevronDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 import { LoadingSpinner } from './LoadingSpinner';
 import { EmptyState } from './EmptyState';
+import { PaginationFooter } from './PaginationFooter';
 
 export interface Column<T> {
   key: string;
@@ -96,8 +92,36 @@ function DataTableComponent<T extends Record<string, unknown>>({
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+
+  const sortedData = useMemo(() => {
+    if (!sortKey || !sortDirection) return data;
+
+    return [...data].sort((a, b) => {
+      const aValue = a[sortKey] as string | number | boolean;
+      const bValue = b[sortKey] as string | number | boolean;
+
+      if (aValue === bValue) return 0;
+
+      const comparison = aValue < bValue ? -1 : 1;
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [data, sortKey, sortDirection]);
+
+  const {
+    data: paginatedData,
+    page,
+    totalPages,
+    hasPrevious,
+    hasMore,
+    pageSize,
+    setPageSize,
+    next,
+    previous,
+    reset,
+  } = useClientPagination({
+    data: sortedData,
+    initialPageSize: itemsPerPageOptions[0],
+  });
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -115,47 +139,12 @@ function DataTableComponent<T extends Record<string, unknown>>({
       setSortKey(key);
       setSortDirection('asc');
     }
+    reset();
   };
 
-  const sortedData = useMemo(() => {
-    if (!sortKey || !sortDirection) return data;
-
-    return [...data].sort((a, b) => {
-      const aValue = a[sortKey] as string | number | boolean;
-      const bValue = b[sortKey] as string | number | boolean;
-
-      if (aValue === bValue) return 0;
-
-      const comparison = aValue < bValue ? -1 : 1;
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  }, [data, sortKey, sortDirection]);
-
-  // Pagination logic
-  const totalPages = useMemo(() => {
-    if (!pagination) return 1;
-    return Math.ceil(sortedData.length / itemsPerPage);
-  }, [pagination, sortedData.length, itemsPerPage]);
-
-  const paginatedData = useMemo(() => {
-    if (!pagination) return sortedData;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return sortedData.slice(startIndex, endIndex);
-  }, [pagination, sortedData, currentPage, itemsPerPage]);
-
-  const handlePreviousPage = useCallback(() => {
-    setCurrentPage((prev) => Math.max(1, prev - 1));
-  }, []);
-
-  const handleNextPage = useCallback(() => {
-    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-  }, [totalPages]);
-
-  const handleItemsPerPageChange = useCallback((value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1);
-  }, []);
+  const handleItemsPerPageChange = useCallback((size: number) => {
+    setPageSize(size);
+  }, [setPageSize]);
 
   const getSortIcon = (columnKey: string) => {
     if (sortKey !== columnKey) {
@@ -175,7 +164,7 @@ function DataTableComponent<T extends Record<string, unknown>>({
     );
   }
 
-  const displayData = paginatedData;
+  const displayData = pagination ? paginatedData : sortedData;
 
   return (
     <div>
@@ -243,56 +232,17 @@ function DataTableComponent<T extends Record<string, unknown>>({
       </div>
 
       {pagination && (
-        <div className="flex flex-row flex-wrap items-center justify-between gap-3 px-2 py-4 sm:gap-2">
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 w-[62px] justify-between px-2 sm:w-[70px]">
-                  {itemsPerPage}
-                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {itemsPerPageOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option}
-                    onClick={() => handleItemsPerPageChange(option.toString())}
-                    className={itemsPerPage === option ? 'bg-accent' : ''}
-                  >
-                    {option}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
-              Página {currentPage} de {totalPages}
-            </span>
-            <div className="flex shrink-0 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente
-              </Button>
-            </div>
-          </div>
-        </div>
+        <PaginationFooter
+          page={page}
+          totalPages={totalPages}
+          hasPrevious={hasPrevious}
+          hasMore={hasMore}
+          onPrevious={previous}
+          onNext={next}
+          pageSize={pageSize}
+          onPageSizeChange={handleItemsPerPageChange}
+          pageSizeOptions={itemsPerPageOptions}
+        />
       )}
     </div>
   );

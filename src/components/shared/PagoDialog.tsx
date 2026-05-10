@@ -54,7 +54,7 @@ export function PagoDialog(props: PagoDialogProps) {
 
   const defaultMetodoPagoId = isVenta
     ? (venta?.metodoPagoId || PENDING_USER_PAYMENT_ID)
-    : (servicio?.metodoPagoId || '');
+    : (isEdit && pago ? pago.metodoPagoId || '' : servicio?.metodoPagoId || '');
   const defaultCosto = venta
     ? (props.mode === 'renew' ? roundToDecimals(venta.precioFinal || 0) : 0)
     : (props.mode === 'renew' ? roundToDecimals(servicio?.costoServicio || 0) : 0);
@@ -176,8 +176,8 @@ export function PagoDialog(props: PagoDialogProps) {
     if (isEdit) {
       if (!props.pago || !servicio) return;
       reset({
-        periodoRenovacion: servicio.cicloPago || '',
-        metodoPagoId: servicio.metodoPagoId || '',
+        periodoRenovacion: props.pago.cicloPago || servicio.cicloPago || '',
+        metodoPagoId: props.pago.metodoPagoId || '',
         costo: roundToDecimals(props.pago.monto),
         fechaInicio: new Date(props.pago.fechaInicio),
         fechaVencimiento: new Date(props.pago.fechaVencimiento),
@@ -268,8 +268,8 @@ export function PagoDialog(props: PagoDialogProps) {
     const inicioPago = new Date(props.pago.fechaInicio).getTime();
     const vencimientoPago = new Date(props.pago.fechaVencimiento).getTime();
     return (
-      periodoValue !== (servicio.cicloPago || '') ||
-      metodoPagoIdValue !== (servicio.metodoPagoId || '') ||
+      periodoValue !== (props.pago.cicloPago || '') ||
+      metodoPagoIdValue !== (props.pago.metodoPagoId || '') ||
       costoValue !== roundToDecimals(props.pago.monto) ||
       fechaInicioValue?.getTime() !== inicioPago ||
       fechaVencimientoValue?.getTime() !== vencimientoPago ||

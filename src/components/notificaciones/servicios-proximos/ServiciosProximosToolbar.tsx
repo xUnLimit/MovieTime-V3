@@ -25,19 +25,19 @@ export function ServiciosProximosToolbar({
   onEstadoFilterChange,
 }: ServiciosProximosToolbarProps) {
   return (
-    <div className="dashboard-toolbar">
-      <div className="dashboard-toolbar-search">
+    <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center sm:gap-4">
+      <div className="relative min-w-0">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por categoría o email..."
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="pl-9"
+          className="w-full pl-9"
         />
       </div>
 
       <Select value={estadoFilter} onValueChange={onEstadoFilterChange}>
-        <SelectTrigger className="dashboard-toolbar-control-wide">
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Todos los estados" />
         </SelectTrigger>
         <SelectContent>

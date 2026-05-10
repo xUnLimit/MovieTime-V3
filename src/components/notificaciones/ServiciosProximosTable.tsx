@@ -307,8 +307,8 @@ export function ServiciosProximosTable({
   };
 
   return (
-    <Card className="p-4 pb-2">
-      <h3 className="text-xl font-semibold">{title}</h3>
+    <Card className="min-w-0 p-3 pb-2 sm:p-4 sm:pb-2">
+      <h3 className="text-lg font-semibold sm:text-xl">{title}</h3>
       <ServiciosProximosToolbar
         searchQuery={searchQuery}
         estadoFilter={estadoFilter}

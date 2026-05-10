@@ -69,10 +69,11 @@ export const VentaPagosTable = memo(function VentaPagosTable({
   return (
     <>
       <div className="table-scroll-shell">
-        <table className="table-scroll-content min-w-[1080px]">
+        <table className="table-scroll-content min-w-[1240px]">
           <colgroup>
             <col style={{ width: "140px" }} />
             <col style={{ width: "180px" }} />
+            <col style={{ width: "160px" }} />
             <col style={{ width: "150px" }} />
             <col style={{ width: "150px" }} />
             <col style={{ width: "150px" }} />
@@ -87,6 +88,9 @@ export const VentaPagosTable = memo(function VentaPagosTable({
                 Fecha de Pago
               </th>
               <th className="text-left py-3 font-medium">Descripción</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">
+                Método de pago
+              </th>
               <th className="text-left py-3 font-medium">
                 Ciclo de facturación
               </th>
@@ -110,6 +114,8 @@ export const VentaPagosTable = memo(function VentaPagosTable({
                 pago.descripcion.toLowerCase() === "pago inicial";
               const esUltimo = index === 0;
               const puedeGestionar = canManagePagos && esUltimo && !esInicial;
+              const metodoPagoNombre =
+                pago.metodoPagoNombre?.trim() || "Sin método";
 
               return (
                 <tr
@@ -120,6 +126,9 @@ export const VentaPagosTable = memo(function VentaPagosTable({
                     {pago.fecha ? formatearFecha(new Date(pago.fecha)) : "—"}
                   </td>
                   <td className="py-3 font-medium">{pago.descripcion}</td>
+                  <td className="py-3 whitespace-nowrap">
+                    {metodoPagoNombre}
+                  </td>
                   <td className="py-3">{getCicloPagoLabel(pago.cicloPago)}</td>
                   <td className="py-3 whitespace-nowrap">
                     {pago.fechaInicio

@@ -428,8 +428,8 @@ export function VentasProximasTable() {
   };
 
   return (
-    <Card className="p-4 pb-2">
-      <h3 className="text-xl font-semibold">Ventas próximas a vencer</h3>
+    <Card className="min-w-0 p-3 pb-2 sm:p-4 sm:pb-2">
+      <h3 className="text-lg font-semibold sm:text-xl">Ventas próximas a vencer</h3>
       <VentasProximasToolbar
         searchQuery={searchQuery}
         estadoFilter={estadoFilter}

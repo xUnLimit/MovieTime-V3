@@ -18,6 +18,8 @@ export interface PaginationFooterProps {
   onNext: () => void;
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
+  pageSizeOptions?: readonly number[];
+  className?: string;
 }
 
 export function PaginationFooter({
@@ -29,9 +31,14 @@ export function PaginationFooter({
   onNext,
   pageSize = 10,
   onPageSizeChange,
+  pageSizeOptions = [10, 25, 50],
+  className = 'px-2 py-4',
 }: PaginationFooterProps) {
+  const safeTotalPages = Math.max(1, totalPages);
+  const safePage = Math.min(Math.max(1, page), safeTotalPages);
+
   return (
-    <div className="flex flex-row flex-wrap items-center justify-between gap-3 px-2 py-4 sm:gap-2">
+    <div className={`flex flex-row flex-wrap items-center justify-between gap-3 sm:gap-2 ${className}`}>
       <div className="flex shrink-0 items-center gap-2">
         <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
         <DropdownMenu>
@@ -42,7 +49,7 @@ export function PaginationFooter({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {[10, 25, 50].map((size) => (
+            {pageSizeOptions.map((size) => (
               <DropdownMenuItem
                 key={size}
                 onClick={() => onPageSizeChange?.(size)}
@@ -57,7 +64,7 @@ export function PaginationFooter({
 
       <div className="flex flex-wrap items-center gap-2 sm:gap-4">
         <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
-          Página {page} de {totalPages}
+          Página {safePage} de {safeTotalPages}
         </span>
         <div className="flex shrink-0 gap-2">
           <Button
@@ -65,7 +72,7 @@ export function PaginationFooter({
             size="sm"
             className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
             onClick={onPrevious}
-            disabled={!hasPrevious}
+            disabled={!hasPrevious || safePage === 1}
           >
             Anterior
           </Button>
@@ -74,7 +81,7 @@ export function PaginationFooter({
             size="sm"
             className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
             onClick={onNext}
-            disabled={!hasMore}
+            disabled={!hasMore || safePage === safeTotalPages}
           >
             Siguiente
           </Button>

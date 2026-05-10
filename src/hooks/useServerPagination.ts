@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getPaginated, FilterOption } from '@/lib/supabase/pagination';
+import { getPaginated, getCount, FilterOption } from '@/lib/supabase/pagination';
 
 interface UseServerPaginationOptions {
   collectionName: string;
@@ -11,6 +11,7 @@ interface UseServerPaginationOptions {
   orderDirection?: 'asc' | 'desc';
   enabled?: boolean;
   realtime?: boolean; // Nuevo parámetro para activar listeners en tiempo real
+  includeTotalCount?: boolean;
 }
 
 /**
@@ -25,10 +26,12 @@ export function useServerPagination<T>({
   orderByField,
   orderDirection,
   enabled = true,
+  includeTotalCount = false,
 }: UseServerPaginationOptions) {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const cursorsRef = useRef<(number | undefined)[]>([undefined]);
@@ -44,6 +47,7 @@ export function useServerPagination<T>({
     if (!enabled) {
       setData([]);
       setHasMore(false);
+      setTotalCount(null);
       setIsLoading(false);
       return;
     }
@@ -71,16 +75,29 @@ export function useServerPagination<T>({
     const fetchPage = async () => {
       setIsLoading(true);
       try {
-        const result = await getPaginated<T>(collectionName, {
-          pageSize,
-          startAfterDoc: cursorsRef.current[currentPageIndex],
-          filters,
-          orderByField,
-          orderDirection,
-        });
+        const [result, count] = await Promise.all([
+          getPaginated<T>(collectionName, {
+            pageSize,
+            startAfterDoc: cursorsRef.current[currentPageIndex],
+            filters,
+            orderByField,
+            orderDirection,
+          }),
+          includeTotalCount
+            ? getCount(collectionName, filters)
+            : Promise.resolve<number | null>(null),
+        ]);
         if (!cancelled) {
+          const totalPagesFromCount =
+            count === null ? null : Math.max(1, Math.ceil(count / pageSize));
+
           setData(result.docs);
-          setHasMore(result.hasMore);
+          setTotalCount(count);
+          setHasMore(
+            totalPagesFromCount === null
+              ? result.hasMore
+              : currentPageIndex + 1 < totalPagesFromCount
+          );
           if (result.lastDoc) {
             cursorsRef.current[currentPageIndex + 1] = result.lastDoc;
           }
@@ -89,6 +106,7 @@ export function useServerPagination<T>({
         if (!cancelled) {
           console.error('Error fetching page:', error);
           setData([]);
+          setTotalCount(null);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -98,7 +116,12 @@ export function useServerPagination<T>({
     fetchPage();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageIndex, filtersKey, pageSize, refreshKey, orderKey, enabled]);
+  }, [pageIndex, filtersKey, pageSize, refreshKey, orderKey, enabled, includeTotalCount]);
+
+  const totalPages =
+    totalCount === null
+      ? Math.max(1, hasMore ? pageIndex + 2 : pageIndex + 1)
+      : Math.max(1, Math.ceil(totalCount / pageSize));
 
   const next = useCallback(() => setPageIndex(p => p + 1), []);
   const previous = useCallback(() => setPageIndex(p => Math.max(0, p - 1)), []);
@@ -114,6 +137,8 @@ export function useServerPagination<T>({
     isLoading,
     hasMore,
     page: pageIndex + 1,
+    totalCount,
+    totalPages,
     hasPrevious: pageIndex > 0,
     next,
     previous,

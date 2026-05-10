@@ -1,11 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search, MoreHorizontal, BellRing, BellOff, ChevronDown } from 'lucide-react';
+import { Search, MoreHorizontal, BellRing, BellOff } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +27,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { useClientPagination } from '@/hooks/useClientPagination';
+import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import type { NotificacionReposo } from '@/types/notificaciones';
 
 type ReposoRow = NotificacionReposo & { id: string };
@@ -93,8 +94,6 @@ export function ReposoNotificacionesTable() {
   const { notificaciones, toggleLeida } = useNotificacionesStore();
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('todos');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const reposoNotificaciones = useMemo(() => {
     return notificaciones
@@ -127,31 +126,47 @@ export function ReposoNotificacionesTable() {
     return result;
   }, [reposoNotificaciones, search, estadoFilter]);
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1);
-  };
+  const {
+    data: paginated,
+    page,
+    totalPages,
+    hasPrevious,
+    hasMore,
+    pageSize,
+    setPageSize,
+    next,
+    previous,
+    reset: resetPagination,
+  } = useClientPagination({
+    data: filtered,
+    initialPageSize: 10,
+  });
 
   return (
-    <Card className="p-4 pb-2">
-      <h3 className="text-xl font-semibold">Servicios en Reposo</h3>
-      <div className="dashboard-toolbar">
-        <div className="dashboard-toolbar-search">
+    <Card className="min-w-0 p-3 pb-2 sm:p-4 sm:pb-2">
+      <h3 className="text-lg font-semibold sm:text-xl">Servicios en Reposo</h3>
+      <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center sm:gap-4">
+        <div className="relative min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por categoría o correo..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="pl-9"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              resetPagination();
+            }}
+            className="w-full pl-9"
           />
         </div>
 
-        <Select value={estadoFilter} onValueChange={(v) => { setEstadoFilter(v); setCurrentPage(1); }}>
-          <SelectTrigger className="dashboard-toolbar-control-wide">
+        <Select
+          value={estadoFilter}
+          onValueChange={(v) => {
+            setEstadoFilter(v);
+            resetPagination();
+          }}
+        >
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Todos los estados" />
           </SelectTrigger>
           <SelectContent>
@@ -280,57 +295,19 @@ export function ReposoNotificacionesTable() {
           </Table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex flex-row flex-wrap items-center justify-between gap-3 px-2 py-2 sm:gap-2">
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="text-xs text-muted-foreground sm:text-sm">Mostrar</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 w-[62px] justify-between px-2 sm:w-[70px]">
-                  {itemsPerPage}
-                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {[10, 25, 50, 100].map((size) => (
-                  <DropdownMenuItem
-                    key={size}
-                    onClick={() => handleItemsPerPageChange(size.toString())}
-                    className={itemsPerPage === size ? 'bg-accent' : ''}
-                  >
-                    {size}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+        <PaginationFooter
+          page={page}
+          totalPages={totalPages}
+          hasPrevious={hasPrevious}
+          hasMore={hasMore}
+          onPrevious={previous}
+          onNext={next}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
+          className="px-2 py-2"
+        />
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
-              Página {currentPage} de {Math.max(1, totalPages)}
-            </span>
-            <div className="flex shrink-0 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs sm:px-3 sm:text-sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage >= totalPages}
-              >
-                Siguiente
-              </Button>
-            </div>
-          </div>
-        </div>
       </div>
     </Card>
   );

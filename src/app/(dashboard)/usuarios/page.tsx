@@ -129,10 +129,11 @@ function UsuariosPageContent() {
   }, [activeTab, selectedMetodoPagoFilter]);
 
   // Paginación server-side con filtros y búsqueda en SQL.
-  const { data: pageData, isLoading: isLoadingPage, hasMore, hasPrevious, page, next, previous, refresh } = useServerPagination<Usuario>({
+  const { data: pageData, isLoading: isLoadingPage, hasMore, hasPrevious, page, totalPages: serverTotalPages, next, previous, refresh } = useServerPagination<Usuario>({
     collectionName: USUARIOS_COLLECTION,
     filters,
     pageSize,
+    includeTotalCount: selectedMetodoPagoFilter !== ALL_PAYMENT_METHODS_VALUE,
   });
 
   useEffect(() => {
@@ -165,7 +166,7 @@ function UsuariosPageContent() {
       ? Math.max(1, Math.ceil(searchResults.length / pageSize))
       : selectedMetodoPagoFilter === ALL_PAYMENT_METHODS_VALUE
       ? Math.max(1, Math.ceil(totalCurrentTab / pageSize))
-      : Math.max(1, hasMore ? page + 1 : page);
+      : serverTotalPages;
 
   const paginationProps = {
     page: isSearchMode ? searchPageIndex + 1 : page,

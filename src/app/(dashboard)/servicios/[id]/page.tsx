@@ -83,6 +83,7 @@ function ServiciosCategoriaPageContent() {
     hasMore,
     hasPrevious,
     page,
+    totalPages,
     next,
     previous,
     refresh
@@ -93,6 +94,7 @@ function ServiciosCategoriaPageContent() {
     orderByField: 'correo',
     orderDirection: 'asc',
     enabled: Boolean(categoriaId),
+    includeTotalCount: true,
   });
 
   const isLoading = isLoadingPage;
@@ -196,6 +198,7 @@ function ServiciosCategoriaPageContent() {
         hasMore={hasMore}
         hasPrevious={hasPrevious}
         page={page}
+        totalPages={totalPages}
         showPagination
         pageSize={pageSize}
         onPageSizeChange={setPageSize}

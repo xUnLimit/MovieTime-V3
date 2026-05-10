@@ -153,49 +153,49 @@ function NotificacionesPageContent() {
       <NotificacionesMetrics />
 
       {/* Tabs - matching Categorías tabs style */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="tabs-scroll-shell">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
+        <div className="tabs-scroll-shell -mx-1 px-1">
           <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
           <TabsTrigger
             value="ventas"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm whitespace-nowrap"
+            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
             Ventas Próximas
             {ventasProximas > 0 && (
-              <span className="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
+              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {ventasProximas}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger
             value="servicios"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm whitespace-nowrap"
+            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
             Servicios Próximos
             {serviciosProximos > 0 && (
-              <span className="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
+              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {serviciosProximos}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger
             value="autorrenovables"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm whitespace-nowrap"
+            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
             Servicios autorrenovables
             {serviciosAutorrenovables > 0 && (
-              <span className="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
+              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {serviciosAutorrenovables}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger
             value="reposo"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm whitespace-nowrap"
+            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
             Servicios en Reposo
             {reposoCompletados > 0 && (
-              <span className="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-0.5">
+              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {reposoCompletados}
               </span>
             )}
@@ -204,17 +204,17 @@ function NotificacionesPageContent() {
         </div>
 
         {/* Ventas Tab */}
-        <TabsContent value="ventas" className="space-y-4">
+        <TabsContent value="ventas" className="min-w-0 space-y-4">
           <VentasProximasTable />
         </TabsContent>
 
         {/* Servicios Tab */}
-        <TabsContent value="servicios" className="space-y-4">
+        <TabsContent value="servicios" className="min-w-0 space-y-4">
           <ServiciosProximosTable />
         </TabsContent>
 
         {/* Servicios Autorrenovables Tab */}
-        <TabsContent value="autorrenovables" className="space-y-4">
+        <TabsContent value="autorrenovables" className="min-w-0 space-y-4">
           <ServiciosProximosTable
             soloAutorrenovables
             title="Servicios autorrenovables"
@@ -223,7 +223,7 @@ function NotificacionesPageContent() {
         </TabsContent>
 
         {/* Servicios Reposo Tab */}
-        <TabsContent value="reposo" className="space-y-4">
+        <TabsContent value="reposo" className="min-w-0 space-y-4">
           <ReposoNotificacionesTable />
         </TabsContent>
       </Tabs>

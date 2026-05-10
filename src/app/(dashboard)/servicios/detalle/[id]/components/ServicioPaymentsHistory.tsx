@@ -47,11 +47,12 @@ export function ServicioPaymentsHistory({
       </div>
 
       <div className="table-scroll-shell">
-        <table className="w-full min-w-[800px]">
+        <table className="w-full min-w-[960px]">
           <thead>
             <tr className="border-b text-sm text-muted-foreground">
               <th className="text-left py-3 font-medium whitespace-nowrap">Fecha</th>
               <th className="text-left py-3 font-medium whitespace-nowrap">Descripción</th>
+              <th className="text-left py-3 font-medium whitespace-nowrap">Método de pago</th>
               <th className="text-left py-3 font-medium whitespace-nowrap">Ciclo de facturación</th>
               <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Inicio</th>
               <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Vencimiento</th>
@@ -62,7 +63,7 @@ export function ServicioPaymentsHistory({
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                   Cargando historial de pagos...
                 </td>
               </tr>
@@ -73,6 +74,8 @@ export function ServicioPaymentsHistory({
                   const pagoMetodo = pago.metodoPagoId
                     ? metodosPago.find((m) => m.id === pago.metodoPagoId)
                     : undefined;
+                  const metodoPagoNombre =
+                    pago.metodoPagoNombre?.trim() || pagoMetodo?.nombre || 'Sin método';
                   const pagoCurrency = getCurrencySymbol(pago.moneda || pagoMetodo?.moneda || metodoPago?.moneda);
                   return (
                     <tr key={pago.id} className="border-b text-sm">
@@ -80,6 +83,7 @@ export function ServicioPaymentsHistory({
                         {format(new Date(pago.fecha), 'd MMM yyyy', { locale: es })}
                       </td>
                       <td className="py-3">{pago.descripcion}</td>
+                      <td className="py-3 whitespace-nowrap">{metodoPagoNombre}</td>
                       <td className="py-3">
                         {getCicloPagoLabel(pago.cicloPago ?? '') || '-'}
                       </td>

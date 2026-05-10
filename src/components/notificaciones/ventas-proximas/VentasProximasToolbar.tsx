@@ -29,14 +29,14 @@ export function VentasProximasToolbar({
       ?.label ?? 'Todos los estados';
 
   return (
-    <div className="dashboard-toolbar">
-      <div className="dashboard-toolbar-search">
+    <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center sm:gap-4">
+      <div className="relative min-w-0">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por cliente o categoría..."
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="pl-9"
+          className="w-full pl-9"
         />
       </div>
 
@@ -44,7 +44,7 @@ export function VentasProximasToolbar({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="dashboard-toolbar-control-wide justify-between font-normal"
+            className="w-full justify-between font-normal"
           >
             {labelActual}
             <svg
@@ -62,7 +62,7 @@ export function VentasProximasToolbar({
             </svg>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="dashboard-toolbar-control-wide">
+        <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[12rem]">
           {ESTADO_FILTER_OPTIONS.map((option) => (
             <DropdownMenuItem
               key={option.value}

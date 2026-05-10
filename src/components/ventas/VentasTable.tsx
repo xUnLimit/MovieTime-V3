@@ -56,6 +56,7 @@ interface VentasTableProps {
   hasMore: boolean;
   hasPrevious: boolean;
   page: number;
+  totalPages: number;
   onNext: () => void;
   onPrevious: () => void;
   showPagination?: boolean;
@@ -107,6 +108,7 @@ export function VentasTable({
   hasMore,
   hasPrevious,
   page,
+  totalPages,
   onNext,
   onPrevious,
   showPagination = true,
@@ -472,7 +474,7 @@ export function VentasTable({
           {showPagination && (
             <PaginationFooter
               page={page}
-              totalPages={hasMore ? page + 1 : page}
+              totalPages={totalPages}
               hasPrevious={hasPrevious}
               hasMore={hasMore}
               onPrevious={onPrevious}
