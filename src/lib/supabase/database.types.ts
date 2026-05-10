@@ -3279,7 +3279,6 @@ export type Database = {
       }
     }
     Functions: {
-      auth_role: { Args: never; Returns: string }
       check_doble_venta_perfil: {
         Args: never
         Returns: {

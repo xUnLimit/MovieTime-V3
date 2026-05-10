@@ -12,13 +12,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { formatearFechaHora } from '@/lib/utils/calculations';
+import { isUuid } from '@/lib/utils/safety';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { Categoria, Plan } from '@/types';
 
 function VerCategoriaPageContent() {
   const params = useParams();
   const router = useRouter();
-  const { deleteCategoria } = useCategoriasStore();
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = isUuid(rawId) ? rawId : null;
+  const deleteCategoria = useCategoriasStore((state) => state.deleteCategoria);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -26,8 +29,11 @@ function VerCategoriaPageContent() {
 
   useEffect(() => {
     const loadCategoria = async () => {
-      const id = Array.isArray(params.id) ? params.id[0] : params.id;
-      if (!id) return;
+      if (!id) {
+        setCategoria(null);
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const data = await getCategoriaUseCase<Categoria>(id);
@@ -40,7 +46,7 @@ function VerCategoriaPageContent() {
       }
     };
     loadCategoria();
-  }, [params.id]);
+  }, [id]);
 
   const handleDelete = async () => {
     if (categoria) {

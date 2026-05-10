@@ -15,6 +15,7 @@
  */
 
 import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
 
 import { countNotificaciones, queryNotificaciones, removeNotificacion, updateNotificacion } from '@/lib/supabase/notifications-repository';
 import { CACHE_TTL_MS } from '@/lib/constants';
@@ -54,7 +55,7 @@ interface NotificacionesState {
 
 const CACHE_TTL = CACHE_TTL_MS;
 
-export const useNotificacionesStore = create<NotificacionesState>((set, get) => ({
+export const useNotificacionesStore = create<NotificacionesState>()(subscribeWithSelector((set, get) => ({
   // Initial state
   notificaciones: [],
   isLoading: false,
@@ -376,4 +377,4 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
   getNotificacionesResaltadas: () => {
     return get().notificaciones.filter((n) => n.resaltada);
   },
-}));
+})));

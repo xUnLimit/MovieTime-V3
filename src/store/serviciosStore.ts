@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 import { ENTITIES, getServicioById, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
 import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas-use-cases';
@@ -59,7 +59,7 @@ interface ServiciosState {
 const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useServiciosStore = create<ServiciosState>()(
-  devtools(
+  subscribeWithSelector(devtools(
     (set, get) => ({
       servicios: [],
       isLoading: false,
@@ -272,5 +272,5 @@ export const useServiciosStore = create<ServiciosState>()(
       },
     }),
     { name: 'servicios-store' }
-  )
+  ))
 );

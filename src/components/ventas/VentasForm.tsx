@@ -61,10 +61,12 @@ const PENDING_METODO_PAGO_OPTION: MetodoPagoUsuarioOption = {
 
 export function VentasForm() {
   const router = useRouter();
-  const { categorias, fetchCategorias } = useCategoriasStore();
-  const { updatePerfilOcupado } = useServiciosStore();
-  const { usuarios, fetchUsuarios } = useUsuariosStore();
-  const { createVenta } = useVentasStore();
+  const categorias = useCategoriasStore((state) => state.categorias);
+  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
+  const usuarios = useUsuariosStore((state) => state.usuarios);
+  const fetchUsuarios = useUsuariosStore((state) => state.fetchUsuarios);
+  const createVenta = useVentasStore((state) => state.createVenta);
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
   const templateNotificacion = useTemplatesStore((state) =>
     state.getTemplateByTipo("suscripcion"),

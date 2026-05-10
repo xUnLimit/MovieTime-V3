@@ -7,13 +7,12 @@ import { useServiciosStore } from "@/store/serviciosStore";
 import { useVentasStore } from "@/store/ventasStore";
 
 export const ServiciosMetrics = memo(function ServiciosMetrics() {
-  const {
-    totalServicios,
-    serviciosActivos,
-    totalCategoriasActivas,
-    fetchCounts,
-  } = useServiciosStore();
-  const { ventasActivas, fetchCounts: fetchVentasCounts } = useVentasStore();
+  const totalServicios = useServiciosStore((state) => state.totalServicios);
+  const serviciosActivos = useServiciosStore((state) => state.serviciosActivos);
+  const totalCategoriasActivas = useServiciosStore((state) => state.totalCategoriasActivas);
+  const fetchCounts = useServiciosStore((state) => state.fetchCounts);
+  const ventasActivas = useVentasStore((state) => state.ventasActivas);
+  const fetchVentasCounts = useVentasStore((state) => state.fetchCounts);
 
   useEffect(() => {
     fetchCounts();

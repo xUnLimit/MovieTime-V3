@@ -12,6 +12,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
+import { isUuid } from '@/lib/utils/safety';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { Servicio } from '@/types';
 import type { FilterOption } from '@/lib/supabase/pagination';
@@ -19,9 +20,11 @@ import type { FilterOption } from '@/lib/supabase/pagination';
 function ServiciosCategoriaPageContent() {
   const params = useParams();
   const router = useRouter();
-  const categoriaId = params.id as string;
+  const rawCategoriaId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const categoriaId = isUuid(rawCategoriaId) ? rawCategoriaId : null;
 
-  const { categorias, fetchCategorias } = useCategoriasStore();
+  const categorias = useCategoriasStore((state) => state.categorias);
+  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [cicloFilter, setCicloFilter] = useState('todos');
@@ -36,6 +39,8 @@ function ServiciosCategoriaPageContent() {
 
   // Construir filtros dinámicos
   const filters = useMemo(() => {
+    if (!categoriaId) return [];
+
     const baseFilters: FilterOption[] = [
       { field: 'categoriaId', operator: '==', value: categoriaId },
       { field: 'enReposo', operator: '==', value: false },
@@ -87,12 +92,13 @@ function ServiciosCategoriaPageContent() {
     pageSize,
     orderByField: 'correo',
     orderDirection: 'asc',
+    enabled: Boolean(categoriaId),
   });
 
   const isLoading = isLoadingPage;
   const servicios = serviciosPaginados;
 
-  const categoria = categorias.find(c => c.id === categoriaId);
+  const categoria = categoriaId ? categorias.find(c => c.id === categoriaId) : undefined;
 
   // Escuchar cuando se elimina un servicio desde otra página
   useEffect(() => {
@@ -116,12 +122,22 @@ function ServiciosCategoriaPageContent() {
   }, [refresh]);
 
   const handleEdit = (id: string) => {
+    if (!categoriaId) return;
     router.push(`/servicios/${id}/editar?from=/servicios/${categoriaId}`);
   };
 
   const handleView = (id: string) => {
+    if (!categoriaId) return;
     router.push(`/servicios/detalle/${id}?from=${encodeURIComponent(`/servicios/${categoriaId}`)}`);
   };
+
+  if (!categoriaId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Categoria no encontrada</p>
+      </div>
+    );
+  }
 
   if (!categoria) {
     return (

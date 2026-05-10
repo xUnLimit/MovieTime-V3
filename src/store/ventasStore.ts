@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 import { countVentas, ENTITIES, getVentas, logCacheHit } from '@/lib/supabase/ventas-repository';
 import {
@@ -51,7 +51,7 @@ interface VentasState {
 const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useVentasStore = create<VentasState>()(
-  devtools(
+  subscribeWithSelector(devtools(
     (set, get) => ({
       ventas: [],
       isLoading: false,
@@ -209,5 +209,5 @@ export const useVentasStore = create<VentasState>()(
       },
     }),
     { name: 'ventas-store' }
-  )
+  ))
 );

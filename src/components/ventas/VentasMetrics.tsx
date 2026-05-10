@@ -16,9 +16,12 @@ import { useIngresoMensualEsperado } from "@/hooks/use-ingreso-mensual-esperado"
 import { useMontoSinConsumirTotal } from "@/hooks/use-monto-sin-consumir-total";
 
 export const VentasMetrics = memo(function VentasMetrics() {
-  const { fetchCounts, totalVentas, ventasActivas, ventasInactivas } =
-    useVentasStore();
-  const { stats: dashboardStats, fetchDashboardStats } = useDashboardStore();
+  const fetchCounts = useVentasStore((state) => state.fetchCounts);
+  const totalVentas = useVentasStore((state) => state.totalVentas);
+  const ventasActivas = useVentasStore((state) => state.ventasActivas);
+  const ventasInactivas = useVentasStore((state) => state.ventasInactivas);
+  const dashboardStats = useDashboardStore((state) => state.stats);
+  const fetchDashboardStats = useDashboardStore((state) => state.fetchDashboardStats);
   const { value: ingresoMensual, isLoading: isLoadingMensual } =
     useIngresoMensualEsperado();
   const { value: montoSinConsumir, isLoading: isLoadingMonto } =

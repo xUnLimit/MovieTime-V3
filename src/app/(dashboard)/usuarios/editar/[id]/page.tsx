@@ -9,6 +9,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { UsuarioForm } from '@/components/usuarios/UsuarioForm';
 import { getUsuarioUseCase } from '@/lib/use-cases/usuarios-use-cases';
+import { isUuid } from '@/lib/utils/safety';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import type { Usuario, MetodoPago } from '@/types';
 import { toast } from 'sonner';
@@ -16,7 +17,8 @@ import { toast } from 'sonner';
 function EditarUsuarioPageContent() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = isUuid(rawId) ? rawId : null;
   const { fetchMetodosPagoUsuarios } = useMetodosPagoStore();
 
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -25,7 +27,11 @@ function EditarUsuarioPageContent() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        setUsuario(null);
+        return;
+      }
       setLoading(true);
       try {
         const [usuarioData, metodosData] = await Promise.all([
@@ -49,10 +55,12 @@ function EditarUsuarioPageContent() {
   const tipoUsuario = usuario?.tipo ?? 'cliente';
 
   const handleSuccess = () => {
+    if (!id) return;
     router.push(`/usuarios/${id}`);
   };
 
   const handleCancel = () => {
+    if (!id) return;
     router.push(`/usuarios/${id}`);
   };
 

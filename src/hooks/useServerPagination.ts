@@ -9,6 +9,7 @@ interface UseServerPaginationOptions {
   pageSize?: number;
   orderByField?: string;
   orderDirection?: 'asc' | 'desc';
+  enabled?: boolean;
   realtime?: boolean; // Nuevo parámetro para activar listeners en tiempo real
 }
 
@@ -23,6 +24,7 @@ export function useServerPagination<T>({
   pageSize = 10,
   orderByField,
   orderDirection,
+  enabled = true,
 }: UseServerPaginationOptions) {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +41,13 @@ export function useServerPagination<T>({
   const orderKey = `${orderByField}:${orderDirection}`;
 
   useEffect(() => {
+    if (!enabled) {
+      setData([]);
+      setHasMore(false);
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     let currentPageIndex = pageIndex;
 
@@ -89,7 +98,7 @@ export function useServerPagination<T>({
     fetchPage();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageIndex, filtersKey, pageSize, refreshKey, orderKey]);
+  }, [pageIndex, filtersKey, pageSize, refreshKey, orderKey, enabled]);
 
   const next = useCallback(() => setPageIndex(p => p + 1), []);
   const previous = useCallback(() => setPageIndex(p => Math.max(0, p - 1)), []);

@@ -38,9 +38,12 @@ export function ServicioForm({
   returnTo = "/servicios",
 }: ServicioFormProps) {
   const router = useRouter();
-  const { createServicio, updateServicio, fetchCounts } = useServiciosStore();
-  const { categorias, fetchCategorias } = useCategoriasStore();
-  const { fetchMetodosPagoServicios } = useMetodosPagoStore();
+  const createServicio = useServiciosStore((state) => state.createServicio);
+  const updateServicio = useServiciosStore((state) => state.updateServicio);
+  const fetchCounts = useServiciosStore((state) => state.fetchCounts);
+  const categorias = useCategoriasStore((state) => state.categorias);
+  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const fetchMetodosPagoServicios = useMetodosPagoStore((state) => state.fetchMetodosPagoServicios);
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [activeTab, setActiveTab] = useState("datos");
   const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
@@ -95,11 +98,11 @@ export function ServicioForm({
     setValue,
     watch,
     getValues,
-    clearErrors,
     trigger,
     setError,
   } = useForm<ServicioFormData>({
     resolver: zodResolver(servicioSchema),
+    mode: "onChange",
     defaultValues: {
       nombre: servicio?.nombre || "",
       categoriaId: servicio?.categoriaId || "",
@@ -218,70 +221,6 @@ export function ServicioForm({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id, setValue]);
-
-  useEffect(() => {
-    if (nombreValue && nombreValue.length >= 2 && errors.nombre) {
-      clearErrors("nombre");
-    }
-  }, [nombreValue, errors.nombre, clearErrors]);
-
-  useEffect(() => {
-    if (
-      correoValue &&
-      correoValue.includes("@") &&
-      correoValue.includes(".") &&
-      errors.correo
-    ) {
-      clearErrors("correo");
-    }
-  }, [correoValue, errors.correo, clearErrors]);
-
-  useEffect(() => {
-    if (contrasenaValue && contrasenaValue.length >= 6 && errors.contrasena) {
-      clearErrors("contrasena");
-    }
-  }, [contrasenaValue, errors.contrasena, clearErrors]);
-
-  useEffect(() => {
-    if (categoriaIdValue && errors.categoriaId) {
-      clearErrors("categoriaId");
-    }
-  }, [categoriaIdValue, errors.categoriaId, clearErrors]);
-
-  useEffect(() => {
-    if (tipoPlanValue && errors.tipoPlan) {
-      clearErrors("tipoPlan");
-    }
-  }, [tipoPlanValue, errors.tipoPlan, clearErrors]);
-
-  useEffect(() => {
-    if (metodoPagoIdValue && errors.metodoPagoId) {
-      clearErrors("metodoPagoId");
-    }
-  }, [metodoPagoIdValue, errors.metodoPagoId, clearErrors]);
-
-  useEffect(() => {
-    if (
-      costoServicioValue &&
-      !isNaN(Number(costoServicioValue)) &&
-      Number(costoServicioValue) > 0 &&
-      errors.costoServicio
-    ) {
-      clearErrors("costoServicio");
-    }
-  }, [costoServicioValue, errors.costoServicio, clearErrors]);
-
-  useEffect(() => {
-    if (
-      perfilesDisponiblesValue &&
-      !isNaN(Number(perfilesDisponiblesValue)) &&
-      Number(perfilesDisponiblesValue) >= 1 &&
-      Number.isInteger(Number(perfilesDisponiblesValue)) &&
-      errors.perfilesDisponibles
-    ) {
-      clearErrors("perfilesDisponibles");
-    }
-  }, [perfilesDisponiblesValue, errors.perfilesDisponibles, clearErrors]);
 
   useEffect(() => {
     if (!fechaInicioValue) return;

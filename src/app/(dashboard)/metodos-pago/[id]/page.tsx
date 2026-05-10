@@ -12,13 +12,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { formatearFechaHora } from '@/lib/utils/calculations';
+import { isUuid } from '@/lib/utils/safety';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { MetodoPago } from '@/types';
 
 function VerMetodoPagoPageContent() {
   const params = useParams();
   const router = useRouter();
-  const { deleteMetodoPago } = useMetodosPagoStore();
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = isUuid(rawId) ? rawId : null;
+  const deleteMetodoPago = useMetodosPagoStore((state) => state.deleteMetodoPago);
   const [metodo, setMetodo] = useState<MetodoPago | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -27,8 +30,11 @@ function VerMetodoPagoPageContent() {
 
   useEffect(() => {
     const loadMetodoPago = async () => {
-      const id = Array.isArray(params.id) ? params.id[0] : params.id;
-      if (!id) return;
+      if (!id) {
+        setIsLoading(false);
+        setMetodo(null);
+        return;
+      }
 
       setIsLoading(true);
       try {
@@ -43,7 +49,7 @@ function VerMetodoPagoPageContent() {
     };
 
     loadMetodoPago();
-  }, [params.id]);
+  }, [id]);
 
   const handleDelete = async () => {
     if (metodo) {

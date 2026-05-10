@@ -9,6 +9,7 @@ import { CategoriaForm } from '@/components/categorias/CategoriaForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
+import { isUuid } from '@/lib/utils/safety';
 import type { Categoria } from '@/types';
 import { toast } from 'sonner';
 
@@ -16,13 +17,18 @@ function EditarCategoriaPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/categorias';
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = isUuid(rawId) ? rawId : null;
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadCategoria = async () => {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        setCategoria(null);
+        return;
+      }
       setLoading(true);
       try {
         const data = await getCategoriaUseCase<Categoria>(id);

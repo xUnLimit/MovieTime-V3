@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { getUsuarioUseCase } from '@/lib/use-cases/usuarios-use-cases';
+import { isUuid } from '@/lib/utils/safety';
 import { useUsuariosStore } from '@/store/usuariosStore';
 import { Usuario } from '@/types';
 import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago';
@@ -18,15 +19,22 @@ import { USUARIO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/usuarioMetodoPago
 function UsuarioDetallesPageContent() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = isUuid(rawId) ? rawId : null;
 
-  const { deleteUsuario } = useUsuariosStore();
+  const deleteUsuario = useUsuariosStore((state) => state.deleteUsuario);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Fetch solo este usuario por ID (1 lectura en lugar de N)
   useEffect(() => {
     const load = async () => {
+      if (!id) {
+        setUsuario(null);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const user = await getUsuarioUseCase<Usuario>(id);
@@ -55,6 +63,18 @@ function UsuarioDetallesPageContent() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-muted-foreground">Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!id) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Usuario no encontrado</h1>
+        <p className="text-sm text-muted-foreground">El ID del usuario no es valido.</p>
+        <Link prefetch={false} href="/usuarios" className="text-primary hover:underline">
+          Volver a Usuarios
+        </Link>
       </div>
     );
   }

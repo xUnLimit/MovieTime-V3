@@ -19,8 +19,10 @@ import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
 
 function VentasPageContent() {
-  const { deleteVenta, fetchCounts } = useVentasStore();
-  const { categorias, fetchCategorias } = useCategoriasStore();
+  const deleteVenta = useVentasStore((state) => state.deleteVenta);
+  const fetchCounts = useVentasStore((state) => state.fetchCounts);
+  const categorias = useCategoriasStore((state) => state.categorias);
+  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
 
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'inactivas'>('todas');
   const [pageSize, setPageSize] = useState(10);

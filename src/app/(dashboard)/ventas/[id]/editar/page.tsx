@@ -10,16 +10,23 @@ import { Button } from '@/components/ui/button';
 import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
 import { getVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
+import { isUuid } from '@/lib/utils/safety';
 import { VentaDoc } from '@/types';
 import { toast } from 'sonner';
 
 function EditarVentaPageContent() {
   const params = useParams();
-  const id = params.id as string;
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = isUuid(rawId) ? rawId : null;
   const [venta, setVenta] = useState<VentaEditData | null>(null);
 
   useEffect(() => {
     const loadVenta = async () => {
+      if (!id) {
+        setVenta(null);
+        return;
+      }
+
       try {
         const doc = await getVentaUseCase<Record<string, unknown>>(id);
         if (!doc) {
@@ -67,10 +74,20 @@ function EditarVentaPageContent() {
       }
     };
 
-    if (id) {
-      loadVenta();
-    }
+    loadVenta();
   }, [id]);
+
+  if (!id) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Venta no encontrada</h1>
+        <p className="text-sm text-muted-foreground">El ID de la venta no es valido.</p>
+        <Link prefetch={false} href="/ventas" className="text-primary hover:underline">
+          Volver a Ventas
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

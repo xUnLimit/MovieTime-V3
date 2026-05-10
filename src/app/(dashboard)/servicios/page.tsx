@@ -12,9 +12,10 @@ import { useDashboardStore } from '@/store/dashboardStore';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
 function ServiciosPageContent() {
-  const { categorias, fetchCategorias } = useCategoriasStore();
-  const { fetchServicios } = useServiciosStore();
-  const { fetchDashboardStats } = useDashboardStore();
+  const categorias = useCategoriasStore((state) => state.categorias);
+  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const fetchServicios = useServiciosStore((state) => state.fetchServicios);
+  const fetchDashboardStats = useDashboardStore((state) => state.fetchDashboardStats);
 
   // Cargar datos iniciales (siempre refresca para mostrar datos actualizados)
   useEffect(() => {

@@ -9,6 +9,7 @@ import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { isUuid } from '@/lib/utils/safety';
 import type { MetodoPago } from '@/types';
 import { toast } from 'sonner';
 
@@ -16,13 +17,18 @@ function EditarMetodoPagoPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/metodos-pago';
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = isUuid(rawId) ? rawId : null;
   const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadMetodoPago = async () => {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        setMetodoPago(null);
+        return;
+      }
       setLoading(true);
       try {
         const data = await getMetodoPagoUseCase<MetodoPago>(id);

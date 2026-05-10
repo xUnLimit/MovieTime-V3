@@ -58,10 +58,14 @@ vi.mock('@/components/ui/skeleton', () => ({
 }));
 
 const dashboardStoreHook = Object.assign(
-  vi.fn(() => ({
+  vi.fn((selector?: (state: { fetchDashboard: typeof fetchDashboardMock; isRecalculating: boolean }) => unknown) => {
+    const state = {
     fetchDashboard: fetchDashboardMock,
     isRecalculating: false,
-  })),
+    };
+
+    return selector ? selector(state) : state;
+  }),
   {
     // Used by: `await import('@/store/dashboardStore')` inside handleRecalculate
     getState: () => ({ fetchDashboard: fetchDashboardMock }),
@@ -78,9 +82,14 @@ vi.mock('@/lib/services/centralSyncService', () => ({
 }));
 
 const useNotificacionesStoreMock = Object.assign(
-  () => ({
-    fetchNotificaciones: fetchNotificacionesMock,
-  }),
+  (selector?: (state: { fetchNotificaciones: typeof fetchNotificacionesMock; notificaciones: never[] }) => unknown) => {
+    const state = {
+      fetchNotificaciones: fetchNotificacionesMock,
+      notificaciones: [],
+    };
+
+    return selector ? selector(state) : state;
+  },
   {
     getState: () => ({
       notificaciones: [],
@@ -97,9 +106,13 @@ vi.mock('@/store/serviciosStore', () => ({
 }));
 
 vi.mock('@/store/categoriasStore', () => ({
-  useCategoriasStore: () => ({
-    fetchCategorias: fetchCategoriasMock,
-  }),
+  useCategoriasStore: (selector?: (state: { fetchCategorias: typeof fetchCategoriasMock }) => unknown) => {
+    const state = {
+      fetchCategorias: fetchCategoriasMock,
+    };
+
+    return selector ? selector(state) : state;
+  },
 }));
 
 vi.mock('@/store/usuariosStore', () => ({

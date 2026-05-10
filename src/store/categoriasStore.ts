@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 import {
   createCategoriaUseCase,
@@ -47,7 +47,7 @@ interface CategoriasState {
 const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useCategoriasStore = create<CategoriasState>()(
-  devtools(
+  subscribeWithSelector(devtools(
     (set, get) => ({
       categorias: [],
       isLoading: false,
@@ -166,5 +166,5 @@ export const useCategoriasStore = create<CategoriasState>()(
       },
     }),
     { name: 'categorias-store' }
-  )
+  ))
 );

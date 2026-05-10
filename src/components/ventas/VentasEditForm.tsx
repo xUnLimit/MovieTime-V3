@@ -76,10 +76,12 @@ interface VentasEditFormProps {
 
 export function VentasEditForm({ venta }: VentasEditFormProps) {
   const router = useRouter();
-  const { categorias, fetchCategorias } = useCategoriasStore();
-  const { fetchMetodosPagoUsuarios } = useMetodosPagoStore();
-  const { updatePerfilOcupado } = useServiciosStore();
-  const { usuarios, fetchUsuarios } = useUsuariosStore();
+  const categorias = useCategoriasStore((state) => state.categorias);
+  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const fetchMetodosPagoUsuarios = useMetodosPagoStore((state) => state.fetchMetodosPagoUsuarios);
+  const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
+  const usuarios = useUsuariosStore((state) => state.usuarios);
+  const fetchUsuarios = useUsuariosStore((state) => state.fetchUsuarios);
 
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
 

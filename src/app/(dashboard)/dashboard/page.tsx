@@ -95,9 +95,10 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { fetchDashboard, isRecalculating } = useDashboardStore();
-  const { fetchNotificaciones } = useNotificacionesStore();
-  const { fetchCategorias } = useCategoriasStore();
+  const fetchDashboard = useDashboardStore((state) => state.fetchDashboard);
+  const isRecalculating = useDashboardStore((state) => state.isRecalculating);
+  const fetchNotificaciones = useNotificacionesStore((state) => state.fetchNotificaciones);
+  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
   const toastShown = useRef(false);
 
   useEffect(() => {
