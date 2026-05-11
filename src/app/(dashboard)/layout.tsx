@@ -69,7 +69,7 @@ export default function DashboardLayout({
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Mobile top bar — fixed para cubrir el border-r del sidebar en la safe area */}
           <div
-            className="fixed top-0 left-0 right-0 flex items-center px-4 bg-background md:hidden z-[60]"
+            className="fixed top-0 left-0 right-0 flex items-center px-4 bg-sidebar md:hidden z-[60]"
             style={{
               height: 'calc(3.5rem + env(safe-area-inset-top))',
               paddingTop: 'env(safe-area-inset-top)',
@@ -93,7 +93,13 @@ export default function DashboardLayout({
           />
 
           {/* Main */}
-          <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background">
+          <main
+            className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background"
+            style={{
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              backgroundClip: 'content-box',
+            }}
+          >
             <div className="h-full min-w-0 overflow-x-hidden p-3 sm:p-4 md:p-6">
               <PwaStatusBanner />
               {children}

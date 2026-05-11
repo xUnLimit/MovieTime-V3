@@ -134,8 +134,9 @@
   }
 
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    @apply text-foreground overflow-x-hidden;
     overscroll-behavior: none;
+    background-color: var(--sidebar);
   }
 }
 
