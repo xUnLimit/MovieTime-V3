@@ -127,6 +127,12 @@ export function PagoDialog(props: PagoDialogProps) {
     ? getUsuarioMetodoPagoNombre(metodoPagoIdValue, metodoPagoSeleccionado?.nombre)
     : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar método');
   const currencySymbol = getCurrencySymbol(getUsuarioMetodoPagoMoneda(metodoPagoIdValue, metodoPagoSeleccionado?.moneda));
+  const selectedPlan = useMemo(() => {
+    if (!periodoValue || !props.categoriaPlanes?.length) return null;
+    return props.categoriaPlanes.find((plan) =>
+      plan.cicloPago === periodoValue && (!props.tipoPlan || plan.tipoPlan === props.tipoPlan)
+    ) ?? null;
+  }, [periodoValue, props.categoriaPlanes, props.tipoPlan]);
   const costoNormalizado = roundToDecimals(Number(costoValue) || 0);
   const descuentoNumero = Number(descuentoValue) || 0;
   const precioFinal = calculateDiscountedAmount(costoNormalizado, descuentoNumero);
@@ -300,6 +306,9 @@ export function PagoDialog(props: PagoDialogProps) {
       notas: data.notas?.trim() ?? '',
       metodoPagoNombre: getUsuarioMetodoPagoNombre(data.metodoPagoId, metodoPago?.nombre),
       moneda: getUsuarioMetodoPagoMoneda(data.metodoPagoId, metodoPago?.moneda),
+      planId: selectedPlan?.id ?? venta?.planId,
+      planNombre: selectedPlan?.nombre ?? venta?.planNombre,
+      planTipoNombre: venta?.planTipoNombre,
       // Pasar el mensaje editado (solo si hay WhatsApp activado)
       mensajeWhatsApp: data.notificarWhatsApp && previewMessage ? previewMessage : undefined,
     };

@@ -59,7 +59,10 @@ export async function crearPagoRenovacion(
   fechaInicio?: Date,
   fechaVencimiento?: Date,
   precio?: number,          // Precio original
-  descuento?: number        // Porcentaje de descuento
+  descuento?: number,       // Porcentaje de descuento
+  planId?: string,
+  planNombre?: string,
+  planTipoNombre?: string
 ): Promise<string> {
   const pagoId = await createPagoVenta({
     ventaId,
@@ -78,6 +81,9 @@ export async function crearPagoRenovacion(
     cicloPago,
     fechaInicio,
     fechaVencimiento,
+    planId,
+    planNombre,
+    planTipoNombre,
   });
 
   return pagoId;

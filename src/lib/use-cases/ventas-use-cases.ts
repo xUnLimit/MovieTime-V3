@@ -62,6 +62,9 @@ type VentaPagoInput = {
   fechaInicio: Date;
   fechaVencimiento: Date;
   notas?: string;
+  planId?: string;
+  planNombre?: string;
+  planTipoNombre?: string;
 };
 
 type VentaPagoResult = {
@@ -225,6 +228,9 @@ export async function createVentaUseCase(
   ventaData: VentaInput,
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
+  if (!ventaData.planId || !ventaData.planNombre) {
+    throw new Error('Una venta debe tener un plan seleccionado.');
+  }
   const { pagos, ...ventaDataLimpia } = ventaData;
   const pagoInicial = pagos?.[0];
   const ventaId = pagoInicial
@@ -257,9 +263,9 @@ export async function createVentaUseCase(
           p_metodo_pago_nombre_snapshot: ventaData.metodoPagoNombre ?? null,
           p_fecha_pago: toIso(pagoInicial.fecha ?? new Date()),
           p_pago_notas: pagoInicial.notas ?? '',
-          p_plan_id: null,
-          p_plan_nombre_snapshot: null,
-          p_plan_tipo_nombre_snapshot: null,
+          p_plan_id: ventaData.planId,
+          p_plan_nombre_snapshot: ventaData.planNombre,
+          p_plan_tipo_nombre_snapshot: ventaData.planTipoNombre ?? null,
         });
       })()
     : await createVenta(getVentaTableUpdates(ventaDataLimpia) as Omit<VentaDoc, 'id'>);
@@ -339,6 +345,12 @@ export async function renewVentaUseCase(
 ): Promise<VentaPagoResult> {
   if (!venta.id) throw new Error('Venta sin id');
   const { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda } = getPagoValues(venta, input);
+  const planId = input.planId ?? venta.planId;
+  const planNombre = input.planNombre ?? venta.planNombre;
+  const planTipoNombre = input.planTipoNombre ?? venta.planTipoNombre;
+  if (!planId || !planNombre) {
+    throw new Error('Una renovación debe tener un plan seleccionado.');
+  }
 
   await crearPagoRenovacion(
     venta.id,
@@ -354,7 +366,10 @@ export async function renewVentaUseCase(
     input.fechaInicio,
     input.fechaVencimiento,
     costo,
-    descuentoNumero
+    descuentoNumero,
+    planId,
+    planNombre,
+    planTipoNombre
   );
 
   await updateVenta(venta.id, getVentaTableUpdates({ notas: notaPrincipal }));
@@ -497,6 +512,9 @@ export async function updateVentaWithLatestPagoUseCase(
     cicloPago?: VentaDoc['cicloPago'];
     fechaInicio: Date;
     fechaVencimiento: Date;
+    planId?: string | null;
+    planNombre?: string | null;
+    planTipoNombre?: string | null;
   },
   options: {
     currentVenta?: VentaDoc;
@@ -529,6 +547,9 @@ export async function updateVentaWithLatestPagoUseCase(
       fechaVencimiento: pagoUpdates.fechaVencimiento,
       metodoPagoId: pagoUpdates.metodoPagoId,
       metodoPagoNombre: pagoUpdates.metodoPago,
+      planId: pagoUpdates.planId,
+      planNombre: pagoUpdates.planNombre,
+      planTipoNombre: pagoUpdates.planTipoNombre,
     });
   } else {
     await updateLatestVentaPeriodo(id, {
@@ -541,6 +562,9 @@ export async function updateVentaWithLatestPagoUseCase(
       cicloPago,
       fechaInicio: pagoUpdates.fechaInicio,
       fechaVencimiento: pagoUpdates.fechaVencimiento,
+      planId: pagoUpdates.planId,
+      planNombre: pagoUpdates.planNombre,
+      planTipoNombre: pagoUpdates.planTipoNombre,
     });
   }
 

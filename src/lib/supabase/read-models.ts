@@ -35,6 +35,9 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
       metodoPagoId: camel.metodoPagoId ?? camel.ultimoMetodoPagoId,
       metodoPagoNombre: camel.metodoPagoNombre ?? camel.ultimoMetodoPagoNombre,
       moneda: camel.moneda ?? camel.ultimaMoneda ?? 'USD',
+      planId: camel.planId ?? camel.ultimoPlanId,
+      planNombre: camel.planNombre ?? camel.ultimoPlanNombre,
+      planTipoNombre: camel.planTipoNombre ?? camel.ultimoPlanTipoNombre,
     } as T;
   }
 

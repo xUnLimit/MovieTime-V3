@@ -729,8 +729,13 @@ export function VentasForm() {
 
     try {
       setSaving(true);
-      const writes = items.map((item) =>
-        createVenta({
+      const writes = items.map((item) => {
+        const itemCategoria = categorias.find((c) => c.id === item.categoriaId);
+        const itemPlan = itemCategoria?.planes?.find((p) => p.id === item.planId);
+        const itemTipoPlanNombre = itemCategoria?.tiposPlanes?.find(
+          (t) => t.id === itemPlan?.tipoPlan,
+        )?.nombre;
+        return createVenta({
           clienteId: clienteIdValue,
           clienteNombre,
           clienteTelefono: clienteSeleccionado?.telefono || "", // For WhatsApp notifications
@@ -751,6 +756,9 @@ export function VentasForm() {
           servicioContrasena: item.servicioContrasena ?? "",
           cicloPago: item.cicloPago || "mensual",
           perfilNumero: item.perfilNumero ?? null,
+          planId: item.planId,
+          planNombre: itemPlan?.nombre,
+          planTipoNombre: itemTipoPlanNombre,
           precio: item.precio,
           descuento: item.descuento,
           precioFinal: item.precioFinal,
@@ -775,8 +783,8 @@ export function VentasForm() {
           itemId: item.itemId,
           ventaId,
           totalVenta: totalFinal,
-        }),
-      );
+        });
+      });
       await Promise.all(writes);
 
       try {

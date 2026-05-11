@@ -3180,6 +3180,7 @@ export type Database = {
             | null
           ultimo_numero_periodo: number | null
           ultimo_periodo_id: string | null
+          ultimo_plan_id: string | null
           ultimo_plan_nombre: string | null
           ultimo_plan_tipo_nombre: string | null
           ultimo_precio_original: number | null

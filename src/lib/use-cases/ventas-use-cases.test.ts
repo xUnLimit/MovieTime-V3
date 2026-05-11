@@ -61,8 +61,10 @@ vi.mock('@/lib/supabase/catalogos-repository', () => ({
 import {
   createVentaUseCase,
   deleteVentaUseCase,
+  renewVentaUseCase,
   toVentaPronostico,
   updateVentaUseCase,
+  updateVentaWithLatestPagoUseCase,
 } from './ventas-use-cases';
 import type { VentaDoc } from '@/types';
 
@@ -79,6 +81,9 @@ const ventaBase: VentaDoc = {
   servicioNombre: 'Netflix',
   categoriaId: '00000000-0000-4000-8000-000000000013',
   categoriaNombre: 'Streaming',
+  planId: '00000000-0000-4000-8000-000000000014',
+  planNombre: 'Mensual',
+  planTipoNombre: 'Individual',
   estado: 'activo',
   precio: 12,
   precioFinal: 10,
@@ -116,6 +121,9 @@ describe('ventas use cases', () => {
       p_total_original: 10,
       p_total_usd: 10,
       p_pago_notas: 'Pago inicial',
+      p_plan_id: ventaBase.planId,
+      p_plan_nombre_snapshot: ventaBase.planNombre,
+      p_plan_tipo_nombre_snapshot: ventaBase.planTipoNombre,
     }));
     expect(ventasRepository.createVenta).not.toHaveBeenCalled();
     expect(ventasRepository.adjustServiciosActivos).toHaveBeenCalledWith(ventaBase.clienteId, 1);
@@ -125,6 +133,76 @@ describe('ventas use cases', () => {
       entidadId: 'venta-nueva',
     }));
     expect(result.venta.id).toBe('venta-nueva');
+  });
+
+  it('rejects creating a venta when the selected plan data is missing', async () => {
+    await expect(createVentaUseCase({
+      ...ventaBase,
+      id: undefined as never,
+      planId: undefined,
+      pagos: [{ fecha: new Date('2026-05-01T12:00:00.000Z'), total: 10 }],
+    }, {
+      logContext,
+    })).rejects.toThrow('Una venta debe tener un plan seleccionado.');
+
+    expect(ventasRepository.createVentaWithInitialPayment).not.toHaveBeenCalled();
+    expect(ventasRepository.createVenta).not.toHaveBeenCalled();
+  });
+
+  it('passes plan data when renewing a venta', async () => {
+    pagosVentaService.crearPagoRenovacion.mockResolvedValueOnce('pago-renovacion');
+
+    await renewVentaUseCase(ventaBase, {
+      periodoRenovacion: 'mensual',
+      metodoPagoId: '00000000-0000-4000-8000-000000000015',
+      metodoPagoNombre: 'Zelle',
+      moneda: 'USD',
+      costo: 12,
+      descuento: 0,
+      fechaInicio: new Date('2026-06-01T00:00:00.000Z'),
+      fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
+      planId: ventaBase.planId,
+      planNombre: ventaBase.planNombre,
+      planTipoNombre: ventaBase.planTipoNombre,
+    });
+
+    expect(pagosVentaService.crearPagoRenovacion).toHaveBeenCalledWith(
+      ventaBase.id,
+      ventaBase.clienteId,
+      ventaBase.clienteNombre,
+      ventaBase.categoriaId,
+      12,
+      'Zelle',
+      '00000000-0000-4000-8000-000000000015',
+      'USD',
+      'mensual',
+      '',
+      new Date('2026-06-01T00:00:00.000Z'),
+      new Date('2026-07-01T00:00:00.000Z'),
+      12,
+      0,
+      ventaBase.planId,
+      ventaBase.planNombre,
+      ventaBase.planTipoNombre
+    );
+  });
+
+  it('rejects renewing a venta when the selected plan data is missing', async () => {
+    await expect(renewVentaUseCase({
+      ...ventaBase,
+      planId: undefined,
+      planNombre: undefined,
+    }, {
+      periodoRenovacion: 'mensual',
+      metodoPagoId: '00000000-0000-4000-8000-000000000015',
+      metodoPagoNombre: 'Zelle',
+      moneda: 'USD',
+      costo: 12,
+      fechaInicio: new Date('2026-06-01T00:00:00.000Z'),
+      fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
+    })).rejects.toThrow('Una renovación debe tener un plan seleccionado.');
+
+    expect(pagosVentaService.crearPagoRenovacion).not.toHaveBeenCalled();
   });
 
   it('updates active counters and returns a profile delta when suspending a venta', async () => {
@@ -149,6 +227,43 @@ describe('ventas use cases', () => {
       shouldIncrement: false,
     });
     expect(result.pronostico).toBeNull();
+  });
+
+  it('passes plan data when editing the latest venta payment period', async () => {
+    ventasRepository.queryPagosVenta.mockResolvedValueOnce([{
+      id: 'pago-actual',
+      ventaId: ventaBase.id,
+      fecha: new Date('2026-05-01T00:00:00.000Z'),
+    }]);
+
+    await updateVentaWithLatestPagoUseCase(
+      ventaBase.id,
+      { notas: 'Actualizada' },
+      {
+        precio: 12,
+        descuento: 0,
+        monto: 12,
+        metodoPagoId: '00000000-0000-4000-8000-000000000015',
+        metodoPago: 'Zelle',
+        moneda: 'USD',
+        cicloPago: 'mensual',
+        fechaInicio: new Date('2026-05-01T00:00:00.000Z'),
+        fechaVencimiento: new Date('2026-06-01T00:00:00.000Z'),
+        planId: ventaBase.planId,
+        planNombre: ventaBase.planNombre,
+        planTipoNombre: ventaBase.planTipoNombre,
+      },
+      {
+        currentVenta: ventaBase,
+        logContext,
+      }
+    );
+
+    expect(ventasRepository.updateVentaPaymentAndPeriod).toHaveBeenCalledWith('pago-actual', expect.objectContaining({
+      planId: ventaBase.planId,
+      planNombre: ventaBase.planNombre,
+      planTipoNombre: ventaBase.planTipoNombre,
+    }));
   });
 
   it('deletes a venta through the delete-with-payments RPC when requested', async () => {

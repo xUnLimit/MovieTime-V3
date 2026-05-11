@@ -68,6 +68,9 @@ export async function createPagoVenta(payload: Record<string, unknown>): Promise
     p_metodo_pago_nombre_snapshot: payload.metodoPago || null,
     p_fecha_pago: toIso(payload.fecha ?? new Date()),
     p_pago_notas: payload.notas ?? null,
+    p_plan_id: payload.planId || null,
+    p_plan_nombre_snapshot: payload.planNombre || null,
+    p_plan_tipo_nombre_snapshot: payload.planTipoNombre || null,
   });
 
   if (error) throw new Error(error.message);

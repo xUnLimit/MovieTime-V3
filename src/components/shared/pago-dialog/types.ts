@@ -6,6 +6,9 @@ export type EnrichedPagoDialogFormData = PagoDialogFormData & {
   metodoPagoNombre?: string;
   moneda?: string;
   mensajeWhatsApp?: string;
+  planId?: string;
+  planNombre?: string;
+  planTipoNombre?: string;
 };
 
 export type PagoDialogMode = 'edit' | 'renew';
@@ -36,6 +39,9 @@ interface VentaDialogProps extends BaseProps {
     precioFinal: number;
     fechaFin: Date;
     notas?: string;
+    planId?: string;
+    planNombre?: string;
+    planTipoNombre?: string;
   };
   pago?: {
     id?: string;

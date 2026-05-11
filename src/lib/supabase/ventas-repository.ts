@@ -81,6 +81,9 @@ export type VentaPeriodoUpdate = {
   moneda: string;
   montoUsd: number;
   exchangeRate: number | null;
+  planId?: string | null;
+  planNombre?: string | null;
+  planTipoNombre?: string | null;
 };
 
 export async function updateLatestVentaPeriodo(
@@ -107,19 +110,27 @@ export async function updateVentaPeriodoById(
   payload: VentaPeriodoUpdate
 ): Promise<void> {
   assertOnlineMutation();
+  const updatePayload: Record<string, unknown> = {
+    fecha_inicio: toDateOnly(payload.fechaInicio),
+    fecha_fin: toDateOnly(payload.fechaVencimiento),
+    ciclo_pago: payload.cicloPago,
+    precio_original: payload.precio,
+    descuento: payload.descuento,
+    total_original: payload.monto,
+    moneda_original: payload.moneda,
+    total_usd: payload.montoUsd,
+    exchange_rate: payload.exchangeRate,
+  };
+
+  if (payload.planId !== undefined) {
+    updatePayload.plan_id = payload.planId || null;
+    updatePayload.plan_nombre_snapshot = payload.planNombre ?? '';
+    updatePayload.plan_tipo_nombre_snapshot = payload.planTipoNombre ?? '';
+  }
+
   const { error } = await supabase
     .from('venta_periodos')
-    .update({
-      fecha_inicio: toDateOnly(payload.fechaInicio),
-      fecha_fin: toDateOnly(payload.fechaVencimiento),
-      ciclo_pago: payload.cicloPago,
-      precio_original: payload.precio,
-      descuento: payload.descuento,
-      total_original: payload.monto,
-      moneda_original: payload.moneda,
-      total_usd: payload.montoUsd,
-      exchange_rate: payload.exchangeRate,
-    } as never)
+    .update(updatePayload as never)
     .eq('id', periodoId);
 
   if (error) throw new Error(error.message);
@@ -151,6 +162,28 @@ export async function updateVentaPaymentAndPeriod(
   });
 
   if (error) throw new Error(error.message);
+
+  if (payload.planId !== undefined) {
+    const { data: pago, error: selectError } = await supabase
+      .from('pagos_venta')
+      .select('venta_periodo_id')
+      .eq('id', pagoId)
+      .maybeSingle();
+
+    if (selectError) throw new Error(selectError.message);
+    const periodoId = assertRecordId(pago, 'select venta_periodo for pago_venta');
+
+    const { error: planError } = await supabase
+      .from('venta_periodos')
+      .update({
+        plan_id: payload.planId || null,
+        plan_nombre_snapshot: payload.planNombre ?? '',
+        plan_tipo_nombre_snapshot: payload.planTipoNombre ?? '',
+      } as never)
+      .eq('id', periodoId);
+
+    if (planError) throw new Error(planError.message);
+  }
 }
 
 export { ENTITIES } from './entities';

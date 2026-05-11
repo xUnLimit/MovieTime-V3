@@ -45,6 +45,9 @@ export function VentaDetalleDialogs({
   servicioContrasena,
   venta,
 }: VentaDetalleDialogsProps) {
+  const currentPlan = categoriaPlanes.find((plan) => plan.id === venta.planId);
+  const currentPlanTipo = currentPlan?.tipoPlan;
+
   return (
     <>
       <PagoDialog
@@ -58,10 +61,13 @@ export function VentaDetalleDialogs({
           precioFinal: venta.precioFinal ?? 0,
           fechaFin: venta.fechaFin ?? new Date(),
           notas: venta.notas,
+          planId: venta.planId,
+          planNombre: venta.planNombre,
+          planTipoNombre: venta.planTipoNombre,
         }}
         metodosPago={metodosPago}
         categoriaPlanes={categoriaPlanes}
-        tipoPlan={undefined}
+        tipoPlan={currentPlanTipo}
         onConfirm={onConfirmRenovacion}
         clienteNombre={venta.clienteNombre}
         clienteSoloNombre={venta.clienteNombre.split(' ')[0]}
@@ -83,11 +89,14 @@ export function VentaDetalleDialogs({
           metodoPagoId: venta.metodoPagoId,
           precioFinal: venta.precioFinal ?? 0,
           fechaFin: venta.fechaFin ?? new Date(),
+          planId: venta.planId,
+          planNombre: venta.planNombre,
+          planTipoNombre: venta.planTipoNombre,
         }}
         pago={pagoToEdit}
         metodosPago={metodosPago}
         categoriaPlanes={categoriaPlanes}
-        tipoPlan={undefined}
+        tipoPlan={currentPlanTipo}
         onConfirm={onConfirmEditarPago}
       />
 

@@ -694,6 +694,13 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
       const servicio = serviciosCategoria.find((s) => s.id === data.servicioId);
       const categoria = categorias.find((c) => c.id === data.categoriaId);
       const plan = categoria?.planes?.find((p) => p.id === data.planId);
+      if (!plan) {
+        setError("planId", { type: "manual", message: "Seleccione un plan válido" });
+        return;
+      }
+      const planTipoNombre = categoria?.tiposPlanes?.find(
+        (tipo) => tipo.id === plan?.tipoPlan,
+      )?.nombre;
       const precio = roundToDecimals(Number(data.precio) || 0);
       const descuento = roundToDecimals(Number(data.descuento) || 0);
       const precioFinalValue = calculateDiscountedAmount(precio, descuento);
@@ -731,6 +738,9 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         precio,
         descuento,
         precioFinal: precioFinalValue,
+        planId: plan?.id,
+        planNombre: plan?.nombre,
+        planTipoNombre,
       };
 
       const { syncPaymentMethodFailed } = await updateVentaWithLatestPagoUseCase(
@@ -746,6 +756,9 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
           cicloPago: plan?.cicloPago || venta.cicloPago,
           fechaInicio: data.fechaInicio,
           fechaVencimiento: data.fechaFin,
+          planId: plan?.id,
+          planNombre: plan?.nombre,
+          planTipoNombre,
         },
         {
           currentVenta: venta as VentaDoc,

@@ -93,6 +93,9 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
         fechaInicio: (doc.fechaInicio as Date) || new Date(),
         fechaFin: (doc.fechaFin as Date) || new Date(),
         cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
+        planId: (doc.planId as string) || undefined,
+        planNombre: (doc.planNombre as string) || undefined,
+        planTipoNombre: (doc.planTipoNombre as string) || undefined,
       };
 
       const ventaConDatos = await getVentaConUltimoPago(ventaBase);

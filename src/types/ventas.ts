@@ -74,6 +74,9 @@ export interface VentaDoc {
   metodoPagoId?: string;
   metodoPagoNombre?: string;
   moneda?: string;
+  planId?: string;
+  planNombre?: string;
+  planTipoNombre?: string;
   precio?: number;
   descuento?: number;
   precioFinal?: number;

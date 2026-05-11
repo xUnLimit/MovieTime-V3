@@ -157,6 +157,9 @@ function mapPaginatedRow(collectionName: string, row: unknown): unknown {
       metodoPagoId: record.metodoPagoId ?? record.ultimoMetodoPagoId,
       metodoPagoNombre: record.metodoPagoNombre ?? record.ultimoMetodoPagoNombre,
       moneda: record.moneda ?? record.ultimaMoneda ?? 'USD',
+      planId: record.planId ?? record.ultimoPlanId,
+      planNombre: record.planNombre ?? record.ultimoPlanNombre,
+      planTipoNombre: record.planTipoNombre ?? record.ultimoPlanTipoNombre,
       renovaciones: Number(record.renovaciones ?? Math.max(Number(record.ultimoNumeroPeriodo ?? 1) - 1, 0)),
     };
   }
