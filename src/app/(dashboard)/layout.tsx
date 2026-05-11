@@ -8,7 +8,7 @@ import { PwaStatusBanner } from '@/components/pwa/PwaStatusBanner';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallback';
 import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 export default function DashboardLayout({
   children
@@ -76,13 +76,11 @@ export default function DashboardLayout({
             }}
           >
             <button
-              onClick={() => setMobileSidebarOpen(prev => !prev)}
+              onClick={() => setMobileSidebarOpen(true)}
               className="flex items-center justify-center h-9 w-9 rounded-lg text-foreground hover:bg-muted transition-colors"
-              aria-label={mobileSidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-label="Abrir menú"
             >
-              {mobileSidebarOpen
-                ? <X className="h-5 w-5" />
-                : <Menu className="h-5 w-5" />}
+              <Menu className="h-5 w-5" />
             </button>
             <span className="ml-3 text-base font-semibold">MovieTime PTY</span>
           </div>

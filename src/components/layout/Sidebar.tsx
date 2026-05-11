@@ -18,8 +18,7 @@ import {
   Pause,
   DollarSign,
   Sun,
-  ChevronLeft,
-  X
+  ChevronLeft
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useSidebarState } from '@/hooks/use-sidebar';
@@ -218,6 +217,8 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       )}
       style={{
         width: isMobile ? '200px' : (collapsed ? '48px' : '200px'),
+        paddingTop: isMobile ? 'env(safe-area-inset-top)' : undefined,
+        paddingBottom: isMobile ? 'min(env(safe-area-inset-bottom), 0.5rem)' : undefined,
       }}
     >
       {/* Header - Logo y Título */}
@@ -253,16 +254,6 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
         >
           MovieTime PTY
         </span>
-
-        {/* Botón cerrar en mobile */}
-        {isMobile && (
-          <button
-            onClick={onMobileClose}
-            className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center justify-center h-7 w-7 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
       </div>
 
       {/* Navigation */}
@@ -426,10 +417,8 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       />
       {/* Mobile drawer — siempre en el DOM para que el slide funcione al cerrar */}
       <div
-        className="fixed left-0 z-[70] md:hidden flex"
+        className="fixed left-0 top-0 bottom-0 z-[70] md:hidden flex"
         style={{
-          top: 'calc(3.5rem + env(safe-area-inset-top))',
-          bottom: 'env(safe-area-inset-bottom)',
           transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)',
           willChange: 'transform',
