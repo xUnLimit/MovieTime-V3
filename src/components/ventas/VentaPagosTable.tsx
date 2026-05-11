@@ -69,18 +69,18 @@ export const VentaPagosTable = memo(function VentaPagosTable({
   return (
     <>
       <div className="table-scroll-shell">
-        <table className="table-scroll-content min-w-[1240px]">
+        <table className="w-full min-w-[1100px]">
           <colgroup>
-            <col style={{ width: "140px" }} />
-            <col style={{ width: "180px" }} />
-            <col style={{ width: "160px" }} />
-            <col style={{ width: "150px" }} />
-            <col style={{ width: "150px" }} />
-            <col style={{ width: "150px" }} />
-            <col style={{ width: "110px" }} />
-            <col style={{ width: "110px" }} />
-            <col style={{ width: "110px" }} />
-            <col style={{ width: "80px" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "7%" }} />
           </colgroup>
           <thead>
             <tr className="border-b text-sm text-muted-foreground">

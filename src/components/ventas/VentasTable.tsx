@@ -348,7 +348,7 @@ export function VentasTable({
               className="w-full sm:w-[200px] justify-between gap-2"
             >
               <ListFilter className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">
+              <span className="min-w-0 truncate">
                 {selectedCategoriaId === "todas"
                   ? "Todas las categorías"
                   : (categorias.find((c) => c.id === selectedCategoriaId)
@@ -357,14 +357,10 @@ export function VentasTable({
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            <DropdownMenuItem onClick={() => onCategoriaChange?.("todas")}>
-              {selectedCategoriaId === "todas" && (
-                <Check className="h-4 w-4 mr-2" />
-              )}
-              <span className={selectedCategoriaId !== "todas" ? "pl-6" : ""}>
-                Todas las categorías
-              </span>
+          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+            <DropdownMenuItem onClick={() => onCategoriaChange?.("todas")} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">Todas las categorías</span>
+              {selectedCategoriaId === "todas" && <Check className="h-4 w-4 shrink-0" />}
             </DropdownMenuItem>
             {[...categorias]
               .sort((a, b) => a.nombre.localeCompare(b.nombre))
@@ -372,15 +368,10 @@ export function VentasTable({
                 <DropdownMenuItem
                   key={cat.id}
                   onClick={() => onCategoriaChange?.(cat.id)}
+                  className="dashboard-toolbar-menu-item"
                 >
-                  {selectedCategoriaId === cat.id && (
-                    <Check className="h-4 w-4 mr-2" />
-                  )}
-                  <span
-                    className={selectedCategoriaId !== cat.id ? "pl-6" : ""}
-                  >
-                    {cat.nombre}
-                  </span>
+                  <span className="dashboard-toolbar-menu-item-label">{cat.nombre}</span>
+                  {selectedCategoriaId === cat.id && <Check className="h-4 w-4 shrink-0" />}
                 </DropdownMenuItem>
               ))}
           </DropdownMenuContent>
@@ -392,24 +383,20 @@ export function VentasTable({
               className="w-full sm:w-[200px] justify-between gap-2"
             >
               <ArrowUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">
+              <span className="min-w-0 truncate">
                 {orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
               </span>
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            <DropdownMenuItem onClick={() => onOrderByChange?.("createdAt")}>
-              {orderBy === "createdAt" && <Check className="h-4 w-4 mr-2" />}
-              <span className={orderBy !== "createdAt" ? "pl-6" : ""}>
-                Más recientes
-              </span>
+          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+            <DropdownMenuItem onClick={() => onOrderByChange?.("createdAt")} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">Más recientes</span>
+              {orderBy === "createdAt" && <Check className="h-4 w-4 shrink-0" />}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onOrderByChange?.("updatedAt")}>
-              {orderBy === "updatedAt" && <Check className="h-4 w-4 mr-2" />}
-              <span className={orderBy !== "updatedAt" ? "pl-6" : ""}>
-                Última actividad
-              </span>
+            <DropdownMenuItem onClick={() => onOrderByChange?.("updatedAt")} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">Última actividad</span>
+              {orderBy === "updatedAt" && <Check className="h-4 w-4 shrink-0" />}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -1,23 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search, MoreHorizontal, BellRing, BellOff } from 'lucide-react';
+import { Check, ChevronDown, Search, MoreHorizontal, BellRing, BellOff } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -32,6 +26,13 @@ import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import type { NotificacionReposo } from '@/types/notificaciones';
 
 type ReposoRow = NotificacionReposo & { id: string };
+
+const ESTADO_REPOSO_OPTIONS = [
+  { value: 'todos', label: 'Todos los estados' },
+  { value: 'en_proceso', label: 'En proceso' },
+  { value: 'proximo_finalizar', label: 'Por finalizar' },
+  { value: 'completado', label: 'Completado' },
+];
 
 function getBellIconColor(diasRestantes: number): {
   bgColor: string;
@@ -94,6 +95,8 @@ export function ReposoNotificacionesTable() {
   const { notificaciones, toggleLeida } = useNotificacionesStore();
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('todos');
+  const estadoFilterLabel =
+    ESTADO_REPOSO_OPTIONS.find((option) => option.value === estadoFilter)?.label ?? 'Todos los estados';
 
   const reposoNotificaciones = useMemo(() => {
     return notificaciones
@@ -116,9 +119,9 @@ export function ReposoNotificacionesTable() {
     if (estadoFilter !== 'todos') {
       if (estadoFilter === 'completado') {
         result = result.filter((n) => n.diasRestantes <= 0);
-      } else if (estadoFilter === 'proximos') {
+      } else if (estadoFilter === 'proximo_finalizar') {
         result = result.filter((n) => n.diasRestantes > 0 && n.diasRestantes <= 7);
-      } else if (estadoFilter === 'en_reposo') {
+      } else if (estadoFilter === 'en_proceso') {
         result = result.filter((n) => n.diasRestantes > 7);
       }
     }
@@ -143,10 +146,10 @@ export function ReposoNotificacionesTable() {
   });
 
   return (
-    <Card className="min-w-0 p-3 pb-2 sm:p-4 sm:pb-2">
-      <h3 className="text-lg font-semibold sm:text-xl">Servicios en Reposo</h3>
-      <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center sm:gap-4">
-        <div className="relative min-w-0">
+    <Card className="min-w-0 p-4 pb-2">
+      <h3 className="text-xl font-semibold">Servicios en Reposo</h3>
+      <div className="dashboard-toolbar">
+        <div className="dashboard-toolbar-search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por categoría o correo..."
@@ -155,27 +158,33 @@ export function ReposoNotificacionesTable() {
               setSearch(e.target.value);
               resetPagination();
             }}
-            className="w-full pl-9"
+            className="pl-9"
           />
         </div>
 
-        <Select
-          value={estadoFilter}
-          onValueChange={(v) => {
-            setEstadoFilter(v);
-            resetPagination();
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Todos los estados" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos los estados</SelectItem>
-            <SelectItem value="en_reposo">En reposo (&gt;7 días)</SelectItem>
-            <SelectItem value="proximos">Próximos (≤7 días)</SelectItem>
-            <SelectItem value="completado">Completado</SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2 font-normal">
+              <span className="min-w-0 truncate">{estadoFilterLabel}</span>
+              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+            {ESTADO_REPOSO_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onSelect={() => {
+                  setEstadoFilter(option.value);
+                  resetPagination();
+                }}
+                className="dashboard-toolbar-menu-item"
+              >
+                <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+                {estadoFilter === option.value && <Check className="h-4 w-4" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div>

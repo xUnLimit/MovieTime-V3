@@ -159,19 +159,19 @@ export function GastosTable({
           <div className="flex flex-col gap-4 sm:flex-row xl:flex-none">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between font-normal sm:w-[220px]">
-                  {tipoFilterLabel}
+                <Button variant="outline" className="w-full justify-between font-normal sm:w-[280px]">
+                  <span className="min-w-0 truncate">{tipoFilterLabel}</span>
                   <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[220px]">
+              <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
                 {tipoOptions.map((option) => (
                   <DropdownMenuItem
                     key={option.value}
                     onClick={() => setTipoFilter(option.value)}
-                    className="flex items-center justify-between"
+                    className="dashboard-toolbar-menu-item"
                   >
-                    {option.label}
+                    <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
                     {tipoFilter === option.value && (
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -205,7 +205,7 @@ export function GastosTable({
                   <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
                   mode="range"
                   defaultMonth={dateRange?.from}

@@ -1,8 +1,8 @@
 export const ESTADO_FILTER_OPTIONS = [
   { value: 'todos', label: 'Todos los estados' },
+  { value: 'proximas', label: 'Próximas a vencer' },
+  { value: 'dia_pago', label: 'Día de pago' },
   { value: 'vencidas', label: 'Vencidas' },
-  { value: 'proximas', label: 'Próximas (=7 días)' },
-  { value: 'normales', label: 'Normales (>7 días)' },
 ] as const;
 
 export const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100] as const;

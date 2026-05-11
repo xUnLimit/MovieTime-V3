@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
+import { Search, MoreHorizontal, Eye, Edit, Trash2, Check, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -39,6 +39,7 @@ export function RevendedoresCategoriasTable({
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [tipoCategoriaFilter, setTipoCategoriaFilter] = useState("todos");
 
   // Filtrar solo categorías de revendedores
   const categoriasRevendedores = useMemo(() => {
@@ -48,11 +49,17 @@ export function RevendedoresCategoriasTable({
   // Aplicar filtros y ordenar alfabéticamente
   const filteredCategorias = useMemo(() => {
     const filtered = categoriasRevendedores.filter((categoria) => {
-      return categoria.nombre.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = categoria.nombre
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesTipoCategoria =
+        tipoCategoriaFilter === "todos" ||
+        categoria.tipoCategoria === tipoCategoriaFilter;
+      return matchesSearch && matchesTipoCategoria;
     });
     // Ordenar alfabéticamente por nombre
     return filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [categoriasRevendedores, searchQuery]);
+  }, [categoriasRevendedores, searchQuery, tipoCategoriaFilter]);
 
   const handleDelete = (categoria: Categoria) => {
     setCategoriaToDelete(categoria);
@@ -119,8 +126,8 @@ export function RevendedoresCategoriasTable({
     <>
       <Card className="p-4 pb-2">
         <h3 className="text-xl font-semibold">{title}</h3>
-        <div className="flex items-center gap-4 -mb-4">
-          <div className="relative flex-1">
+        <div className="dashboard-toolbar">
+          <div className="dashboard-toolbar-search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre..."
@@ -129,6 +136,41 @@ export function RevendedoresCategoriasTable({
               className="pl-9"
             />
           </div>
+          {(() => {
+            const opciones = [
+              { value: "todos", label: "Todos los tipos" },
+              { value: "plataforma_streaming", label: "Plataforma de Streaming" },
+              { value: "otros", label: "Otros" },
+            ];
+            const labelActual =
+              opciones.find((o) => o.value === tipoCategoriaFilter)?.label ??
+              "Todos los tipos";
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="dashboard-toolbar-control-wide justify-between font-normal"
+                  >
+                    <span className="min-w-0 truncate">{labelActual}</span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+                  {opciones.map((op) => (
+                    <DropdownMenuItem
+                      key={op.value}
+                      onClick={() => setTipoCategoriaFilter(op.value)}
+                      className="dashboard-toolbar-menu-item"
+                    >
+                      <span className="dashboard-toolbar-menu-item-label">{op.label}</span>
+                      {tipoCategoriaFilter === op.value && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
         </div>
 
         <DataTable

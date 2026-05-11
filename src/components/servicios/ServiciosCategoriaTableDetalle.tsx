@@ -11,13 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   MoreHorizontal,
   Edit,
   Trash2,
@@ -25,6 +18,8 @@ import {
   Search,
   RefreshCw,
   Eye,
+  Check,
+  ChevronDown,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -100,6 +95,20 @@ export const ServiciosCategoriaTableDetalle = memo(
       null,
     );
     const [deletePayments, setDeletePayments] = useState(false);
+    const cicloOptions = [
+      { value: "todos", label: "Todos los ciclos" },
+      { value: "mensual", label: "Mensual" },
+      { value: "trimestral", label: "Trimestral" },
+      { value: "semestral", label: "Semestral" },
+      { value: "anual", label: "Anual" },
+    ];
+    const perfilOptions = [
+      { value: "todos", label: "Todos los perfiles" },
+      { value: "con_disponibles", label: "Con perfiles disponibles" },
+      { value: "sin_disponibles", label: "Sin perfiles disponibles" },
+    ];
+    const cicloLabel = cicloOptions.find((option) => option.value === cicloFilter)?.label ?? "Todos los ciclos";
+    const perfilLabel = perfilOptions.find((option) => option.value === perfilFilter)?.label ?? "Todos los perfiles";
 
     const getCurrencySymbol = (moneda?: string) => {
       if (!moneda) return "$";
@@ -368,32 +377,46 @@ export const ServiciosCategoriaTableDetalle = memo(
                 className="w-full pl-9"
               />
             </div>
-            <Select value={cicloFilter} onValueChange={onCicloChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Todos los ciclos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los ciclos</SelectItem>
-                <SelectItem value="mensual">Mensual</SelectItem>
-                <SelectItem value="trimestral">Trimestral</SelectItem>
-                <SelectItem value="semestral">Semestral</SelectItem>
-                <SelectItem value="anual">Anual</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={perfilFilter} onValueChange={onPerfilChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Todos los perfiles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los perfiles</SelectItem>
-                <SelectItem value="con_disponibles">
-                  Con perfiles disponibles
-                </SelectItem>
-                <SelectItem value="sin_disponibles">
-                  Sin perfiles disponibles
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between gap-2 font-normal">
+                  <span className="min-w-0 truncate">{cicloLabel}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+                {cicloOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onSelect={() => onCicloChange(option.value)}
+                    className="dashboard-toolbar-menu-item"
+                  >
+                    <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+                    {cicloFilter === option.value && <Check className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between gap-2 font-normal">
+                  <span className="min-w-0 truncate">{perfilLabel}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+                {perfilOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onSelect={() => onPerfilChange(option.value)}
+                    className="dashboard-toolbar-menu-item"
+                  >
+                    <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+                    {perfilFilter === option.value && <Check className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div>

@@ -222,7 +222,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 -mb-3 sm:-mb-4 md:-mb-6">
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>

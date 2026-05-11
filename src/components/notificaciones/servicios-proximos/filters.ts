@@ -39,14 +39,12 @@ export function getServiciosNotificacionesFiltradas(
   }
 
   if (estadoFilter !== 'todos') {
-    if (estadoFilter === 'vencidas') {
+    if (estadoFilter === 'proximas') {
+      filtered = filtered.filter((notif) => notif.diasRestantes > 0);
+    } else if (estadoFilter === 'dia_pago') {
+      filtered = filtered.filter((notif) => notif.diasRestantes === 0);
+    } else if (estadoFilter === 'vencidas') {
       filtered = filtered.filter((notif) => notif.diasRestantes < 0);
-    } else if (estadoFilter === 'proximas') {
-      filtered = filtered.filter(
-        (notif) => notif.diasRestantes >= 0 && notif.diasRestantes <= 7
-      );
-    } else if (estadoFilter === 'normales') {
-      filtered = filtered.filter((notif) => notif.diasRestantes > 7);
     }
   }
 

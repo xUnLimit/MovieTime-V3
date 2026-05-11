@@ -6,7 +6,9 @@ import { differenceInDays, format, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   AlertTriangle,
+  Check,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Eye,
   MoreHorizontal,
@@ -35,13 +37,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
 import { fetchNotificacionesByFiltersUseCase } from "@/lib/use-cases/notificaciones-use-cases";
 import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
@@ -138,6 +133,14 @@ function ReposoPageContent() {
   const [selectedServicio, setSelectedServicio] =
     useState<ReposoServicio | null>(null);
   const [isActivating, setIsActivating] = useState(false);
+  const estadoOptions = [
+    { value: "all", label: "Todos los estados" },
+    { value: "en_proceso", label: "En proceso" },
+    { value: "proximo_finalizar", label: "Por finalizar" },
+    { value: "completado", label: "Completado" },
+  ];
+  const estadoFilterLabel =
+    estadoOptions.find((option) => option.value === estadoFilter)?.label ?? "Todos los estados";
 
   const loadMetodosPago = useCallback(async () => {
     if (metodosPago.length > 0) return;
@@ -522,17 +525,26 @@ function ReposoPageContent() {
               className="pl-9"
             />
           </div>
-          <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Todos los estados" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="en_proceso">En proceso</SelectItem>
-              <SelectItem value="proximo_finalizar">Por finalizar</SelectItem>
-              <SelectItem value="completado">Completado</SelectItem>
-            </SelectContent>
-          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full justify-between gap-2 font-normal sm:w-[180px]">
+                <span className="min-w-0 truncate">{estadoFilterLabel}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+              {estadoOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onSelect={() => setEstadoFilter(option.value)}
+                  className="dashboard-toolbar-menu-item"
+                >
+                  <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+                  {estadoFilter === option.value && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {isLoading ? (

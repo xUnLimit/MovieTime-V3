@@ -44,7 +44,7 @@ export function TodasCategoriasTable({
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [tipoFilter, setTipoFilter] = useState("todos");
+  const [tipoCategoriaFilter, setTipoCategoriaFilter] = useState("todos");
 
   // Filtrar y ordenar categorías
   const filteredCategorias = useMemo(() => {
@@ -52,14 +52,14 @@ export function TodasCategoriasTable({
       const matchesSearch = categoria.nombre
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
-      const matchesTipo =
-        tipoFilter === "todos" ||
-        categoria.tipo === tipoFilter;
-      return matchesSearch && matchesTipo;
+      const matchesTipoCategoria =
+        tipoCategoriaFilter === "todos" ||
+        categoria.tipoCategoria === tipoCategoriaFilter;
+      return matchesSearch && matchesTipoCategoria;
     });
     // Ordenar alfabéticamente por nombre
     return filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [categorias, searchQuery, tipoFilter]);
+  }, [categorias, searchQuery, tipoCategoriaFilter]);
 
   const handleDelete = (categoria: Categoria) => {
     setCategoriaToDelete(categoria);
@@ -150,11 +150,11 @@ export function TodasCategoriasTable({
           {(() => {
             const opciones = [
               { value: "todos", label: "Todos los tipos" },
-              { value: "cliente", label: "Cliente" },
-              { value: "revendedor", label: "Revendedor" },
+              { value: "plataforma_streaming", label: "Plataforma de Streaming" },
+              { value: "otros", label: "Otros" },
             ];
             const labelActual =
-              opciones.find((o) => o.value === tipoFilter)?.label ??
+              opciones.find((o) => o.value === tipoCategoriaFilter)?.label ??
               "Todos los tipos";
             return (
               <DropdownMenu>
@@ -163,7 +163,7 @@ export function TodasCategoriasTable({
                     variant="outline"
                     className="dashboard-toolbar-control-wide justify-between font-normal"
                   >
-                    {labelActual}
+                    <span className="min-w-0 truncate">{labelActual}</span>
                     <svg
                       className="h-4 w-4 opacity-50"
                       fill="none"
@@ -179,15 +179,15 @@ export function TodasCategoriasTable({
                     </svg>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="dashboard-toolbar-control-wide">
+                <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
                   {opciones.map((op) => (
                     <DropdownMenuItem
                       key={op.value}
-                      onClick={() => setTipoFilter(op.value)}
-                      className="flex items-center justify-between"
+                      onClick={() => setTipoCategoriaFilter(op.value)}
+                      className="dashboard-toolbar-menu-item"
                     >
-                      {op.label}
-                      {tipoFilter === op.value && (
+                      <span className="dashboard-toolbar-menu-item-label">{op.label}</span>
+                      {tipoCategoriaFilter === op.value && (
                         <svg
                           className="h-4 w-4"
                           fill="none"

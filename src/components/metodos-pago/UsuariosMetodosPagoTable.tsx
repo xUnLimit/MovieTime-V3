@@ -170,7 +170,9 @@ export function UsuariosMetodosPagoTable({
                 variant="outline"
                 className="dashboard-toolbar-control-wide justify-between font-normal"
               >
-                {paisFilter === "todos" ? "Todos los países" : paisFilter}
+                <span className="min-w-0 truncate">
+                  {paisFilter === "todos" ? "Todos los países" : paisFilter}
+                </span>
                 <svg
                   className="h-4 w-4 opacity-50"
                   fill="none"
@@ -186,7 +188,7 @@ export function UsuariosMetodosPagoTable({
                 </svg>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="dashboard-toolbar-control-wide">
+            <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
               {[
                 { value: "todos", label: "Todos los países" },
                 ...paisesUnicos.map((p) => ({ value: p, label: p })),
@@ -194,9 +196,9 @@ export function UsuariosMetodosPagoTable({
                 <DropdownMenuItem
                   key={op.value}
                   onClick={() => setPaisFilter(op.value)}
-                  className="flex items-center justify-between"
+                  className="dashboard-toolbar-menu-item"
                 >
-                  {op.label}
+                  <span className="dashboard-toolbar-menu-item-label">{op.label}</span>
                   {paisFilter === op.value && (
                     <svg
                       className="h-4 w-4"

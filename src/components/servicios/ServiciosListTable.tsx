@@ -126,7 +126,7 @@ export function ServiciosListTable({
       key: "nombre",
       header: "Nombre",
       sortable: true,
-      width: "16%",
+      width: "20%",
       render: (item) => (
         <div className="flex items-center gap-2">
           <Monitor
@@ -146,7 +146,7 @@ export function ServiciosListTable({
       key: "categoriaNombre",
       header: "Categoría",
       sortable: true,
-      width: "10",
+      width: "10%",
       render: (item) => (
         <span className="text-sm">{item.categoriaNombre}</span>
       ),
@@ -168,7 +168,7 @@ export function ServiciosListTable({
       key: "fechaInicio",
       header: "Fecha de Inicio",
       sortable: true,
-      width: "16%",
+      width: "14%",
       align: "center",
       render: (item) => (
         <div className="text-center">
@@ -192,7 +192,7 @@ export function ServiciosListTable({
       key: "costo",
       header: "Monto",
       sortable: true,
-      width: "12%",
+      width: "10%",
       align: "center",
       render: (item) => (
         <div className="text-center font-medium">
@@ -205,7 +205,7 @@ export function ServiciosListTable({
       key: "renovaciones",
       header: "Renovaciones",
       sortable: true,
-      width: "16%",
+      width: "12%",
       align: "center",
       render: (item) => (
         <div className="flex items-center justify-center gap-1.5 font-medium">
@@ -217,10 +217,10 @@ export function ServiciosListTable({
   ];
 
   return (
-    <Card className="p-4 pb-2">
+    <Card className="min-w-0 p-4 pb-2">
       {title && <h3 className="text-xl font-semibold">{title}</h3>}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center -mb-4">
-        <div className="relative flex-1">
+      <div className="dashboard-toolbar">
+        <div className="dashboard-toolbar-search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, correo o categoría..."
@@ -232,9 +232,9 @@ export function ServiciosListTable({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-[200px] justify-between gap-2">
+            <Button variant="outline" className="dashboard-toolbar-control-xl justify-between gap-2 font-normal">
               <ListFilter className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">
+              <span className="min-w-0 flex-1 truncate text-left">
                 {selectedCategoriaId === "todas"
                   ? "Todas las categorías"
                   : (categorias.find((c) => c.id === selectedCategoriaId)?.nombre ?? "Categoría")}
@@ -242,21 +242,17 @@ export function ServiciosListTable({
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            <DropdownMenuItem onClick={() => onCategoriaChange?.("todas")}>
-              {selectedCategoriaId === "todas" && <Check className="h-4 w-4 mr-2" />}
-              <span className={selectedCategoriaId !== "todas" ? "pl-6" : ""}>
-                Todas las categorías
-              </span>
+          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+            <DropdownMenuItem onClick={() => onCategoriaChange?.("todas")} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">Todas las categorías</span>
+              {selectedCategoriaId === "todas" && <Check className="h-4 w-4 shrink-0" />}
             </DropdownMenuItem>
             {[...categorias]
               .sort((a, b) => a.nombre.localeCompare(b.nombre))
               .map((cat) => (
-                <DropdownMenuItem key={cat.id} onClick={() => onCategoriaChange?.(cat.id)}>
-                  {selectedCategoriaId === cat.id && <Check className="h-4 w-4 mr-2" />}
-                  <span className={selectedCategoriaId !== cat.id ? "pl-6" : ""}>
-                    {cat.nombre}
-                  </span>
+                <DropdownMenuItem key={cat.id} onClick={() => onCategoriaChange?.(cat.id)} className="dashboard-toolbar-menu-item">
+                  <span className="dashboard-toolbar-menu-item-label">{cat.nombre}</span>
+                  {selectedCategoriaId === cat.id && <Check className="h-4 w-4 shrink-0" />}
                 </DropdownMenuItem>
               ))}
           </DropdownMenuContent>
@@ -264,22 +260,22 @@ export function ServiciosListTable({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-[200px] justify-between gap-2">
+            <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2 font-normal">
               <ArrowUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">
+              <span className="min-w-0 flex-1 truncate text-left">
                 {orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
               </span>
               <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            <DropdownMenuItem onClick={() => onOrderByChange?.("createdAt")}>
-              {orderBy === "createdAt" && <Check className="h-4 w-4 mr-2" />}
-              <span className={orderBy !== "createdAt" ? "pl-6" : ""}>Más recientes</span>
+          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+            <DropdownMenuItem onClick={() => onOrderByChange?.("createdAt")} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">Más recientes</span>
+              {orderBy === "createdAt" && <Check className="h-4 w-4 shrink-0" />}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onOrderByChange?.("updatedAt")}>
-              {orderBy === "updatedAt" && <Check className="h-4 w-4 mr-2" />}
-              <span className={orderBy !== "updatedAt" ? "pl-6" : ""}>Última actividad</span>
+            <DropdownMenuItem onClick={() => onOrderByChange?.("updatedAt")} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">Última actividad</span>
+              {orderBy === "updatedAt" && <Check className="h-4 w-4 shrink-0" />}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -300,6 +296,7 @@ export function ServiciosListTable({
             columns={columns}
             pagination={false}
             fixedLayout
+            tableClassName="min-w-[1100px]"
             actions={(item) => (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

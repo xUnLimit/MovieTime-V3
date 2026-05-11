@@ -136,6 +136,14 @@
     @apply bg-background text-foreground overflow-x-hidden;
     overscroll-behavior: none;
   }
+
+  @media (max-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @layer components {
@@ -161,6 +169,19 @@
 
   .dashboard-toolbar-control-2xl {
     @apply w-full sm:w-[240px];
+  }
+
+  .dashboard-toolbar-menu {
+    width: min(var(--radix-dropdown-menu-trigger-width), calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
+  }
+
+  .dashboard-toolbar-menu-item {
+    @apply min-w-0 justify-between gap-3;
+  }
+
+  .dashboard-toolbar-menu-item-label {
+    @apply min-w-0 truncate;
   }
 
   .dashboard-page-heading {

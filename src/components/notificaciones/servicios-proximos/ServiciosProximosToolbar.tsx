@@ -1,13 +1,13 @@
-import { Search } from 'lucide-react';
+import { Check, ChevronDown, Search } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 import { ESTADO_FILTER_OPTIONS } from './helpers';
 
@@ -24,30 +24,42 @@ export function ServiciosProximosToolbar({
   onSearchChange,
   onEstadoFilterChange,
 }: ServiciosProximosToolbarProps) {
+  const labelActual =
+    ESTADO_FILTER_OPTIONS.find((option) => option.value === estadoFilter)
+      ?.label ?? 'Todos los estados';
+
   return (
-    <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center sm:gap-4">
-      <div className="relative min-w-0">
+    <div className="dashboard-toolbar">
+      <div className="dashboard-toolbar-search">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por categoría o email..."
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="w-full pl-9"
+          className="pl-9"
         />
       </div>
 
-      <Select value={estadoFilter} onValueChange={onEstadoFilterChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Todos los estados" />
-        </SelectTrigger>
-        <SelectContent>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2 font-normal">
+            <span className="min-w-0 truncate">{labelActual}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
           {ESTADO_FILTER_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
+            <DropdownMenuItem
+              key={option.value}
+              onSelect={() => onEstadoFilterChange(option.value)}
+              className="dashboard-toolbar-menu-item"
+            >
+              <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+              {estadoFilter === option.value && <Check className="h-4 w-4" />}
+            </DropdownMenuItem>
           ))}
-        </SelectContent>
-      </Select>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

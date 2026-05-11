@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Check, ChevronDown, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -29,14 +29,14 @@ export function VentasProximasToolbar({
       ?.label ?? 'Todos los estados';
 
   return (
-    <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center sm:gap-4">
-      <div className="relative min-w-0">
+    <div className="dashboard-toolbar">
+      <div className="dashboard-toolbar-search">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar por cliente o categoría..."
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="w-full pl-9"
+          className="pl-9"
         />
       </div>
 
@@ -44,47 +44,21 @@ export function VentasProximasToolbar({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="w-full justify-between font-normal"
+            className="dashboard-toolbar-control-wide justify-between gap-2 font-normal"
           >
-            {labelActual}
-            <svg
-              className="h-4 w-4 opacity-50"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            <span className="min-w-0 truncate">{labelActual}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[12rem]">
+        <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
           {ESTADO_FILTER_OPTIONS.map((option) => (
             <DropdownMenuItem
               key={option.value}
-              onClick={() => onEstadoFilterChange(option.value)}
-              className="flex items-center justify-between"
+              onSelect={() => onEstadoFilterChange(option.value)}
+              className="dashboard-toolbar-menu-item"
             >
-              {option.label}
-              {estadoFilter === option.value && (
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              )}
+              <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+              {estadoFilter === option.value && <Check className="h-4 w-4" />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

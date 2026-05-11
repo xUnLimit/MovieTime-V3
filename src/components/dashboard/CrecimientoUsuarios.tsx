@@ -3,12 +3,11 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AreaChart,
   Area,
@@ -24,10 +23,21 @@ import { es } from 'date-fns/locale';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UsuariosMes, UsuariosDia } from '@/types/dashboard';
+import { Button } from '@/components/ui/button';
+import { Check, ChevronDown } from 'lucide-react';
+
+const PERIOD_OPTIONS = [
+  { value: 'actual', label: 'Mes actual' },
+  { value: '3meses', label: 'Últimos 3 meses' },
+  { value: '6meses', label: 'Últimos 6 meses' },
+  { value: '12meses', label: 'Últimos 12 meses' },
+];
 
 export function CrecimientoUsuarios() {
   const [selectedPeriod, setSelectedPeriod] = useState('actual');
   const { stats, isLoading } = useDashboardStore();
+  const selectedPeriodLabel =
+    PERIOD_OPTIONS.find((option) => option.value === selectedPeriod)?.label ?? 'Mes actual';
   const axisColor = 'var(--muted-foreground)';
   const gridColor = 'var(--border)';
   const tooltipBg = 'var(--background)';
@@ -92,17 +102,31 @@ export function CrecimientoUsuarios() {
           Nuevos clientes y revendedores adquiridos por mes.
         </CardDescription>
       </div>
-      <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-        <SelectTrigger className="w-[140px] h-7 text-xs">
-          <SelectValue placeholder="Período" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="actual">Mes actual</SelectItem>
-          <SelectItem value="3meses">Últimos 3 meses</SelectItem>
-          <SelectItem value="6meses">Últimos 6 meses</SelectItem>
-          <SelectItem value="12meses">Últimos 12 meses</SelectItem>
-        </SelectContent>
-      </Select>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 w-[140px] justify-between gap-2 text-xs font-normal"
+          >
+            <span className="min-w-0 truncate">{selectedPeriodLabel}</span>
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+          {PERIOD_OPTIONS.map((option) => (
+            <DropdownMenuItem
+              key={option.value}
+              onSelect={() => setSelectedPeriod(option.value)}
+              className="dashboard-toolbar-menu-item text-xs"
+            >
+              <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+              {selectedPeriod === option.value && <Check className="h-4 w-4" />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </CardHeader>
   );
 

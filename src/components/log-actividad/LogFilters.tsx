@@ -118,17 +118,19 @@ export function LogFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
-            {entidadFilter === 'all' ? 'Todas las entidades' : entityLabels[entidadFilter] || 'Todas las entidades'}
+            <span className="min-w-0 truncate">
+              {entidadFilter === 'all' ? 'Todas las entidades' : entityLabels[entidadFilter] || 'Todas las entidades'}
+            </span>
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="dashboard-toolbar-control-wide">
-          <DropdownMenuItem onClick={() => setEntidadFilter('all')}>
-            Todas las entidades
+        <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+          <DropdownMenuItem onClick={() => setEntidadFilter('all')} className="dashboard-toolbar-menu-item">
+            <span className="dashboard-toolbar-menu-item-label">Todas las entidades</span>
           </DropdownMenuItem>
           {Object.entries(entityLabels).map(([value, label]) => (
-            <DropdownMenuItem key={value} onClick={() => setEntidadFilter(value)}>
-              {label}
+            <DropdownMenuItem key={value} onClick={() => setEntidadFilter(value)} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">{label}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -137,17 +139,19 @@ export function LogFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
-            {accionFilter === 'all' ? 'Todas las acciones' : actionLabels[accionFilter] || 'Todas las acciones'}
+            <span className="min-w-0 truncate">
+              {accionFilter === 'all' ? 'Todas las acciones' : actionLabels[accionFilter] || 'Todas las acciones'}
+            </span>
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="dashboard-toolbar-control-wide">
-          <DropdownMenuItem onClick={() => setAccionFilter('all')}>
-            Todas las acciones
+        <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+          <DropdownMenuItem onClick={() => setAccionFilter('all')} className="dashboard-toolbar-menu-item">
+            <span className="dashboard-toolbar-menu-item-label">Todas las acciones</span>
           </DropdownMenuItem>
           {Object.entries(actionLabels).map(([value, label]) => (
-            <DropdownMenuItem key={value} onClick={() => setAccionFilter(value)}>
-              {label}
+            <DropdownMenuItem key={value} onClick={() => setAccionFilter(value)} className="dashboard-toolbar-menu-item">
+              <span className="dashboard-toolbar-menu-item-label">{label}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

@@ -262,7 +262,7 @@ export function TodosUsuariosTable({
                 variant="outline"
                 className="dashboard-toolbar-control justify-between font-normal"
               >
-                {selectedMetodoPagoLabel}
+                <span className="min-w-0 truncate">{selectedMetodoPagoLabel}</span>
                 <svg
                   className="h-4 w-4 opacity-50"
                   fill="none"
@@ -278,14 +278,14 @@ export function TodosUsuariosTable({
                 </svg>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="dashboard-toolbar-control">
+            <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
               {metodoPagoOptions.map((option) => (
                 <DropdownMenuItem
                   key={option.value}
                   onClick={() => onMetodoPagoFilterChange(option.value)}
-                  className="flex items-center justify-between"
+                  className="dashboard-toolbar-menu-item"
                 >
-                  {option.label}
+                  <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
                   {metodoPagoFilter === option.value && (
                     <svg
                       className="h-4 w-4"
