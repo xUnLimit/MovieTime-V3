@@ -52,6 +52,7 @@
   html {
     font-size: 80%;
     overscroll-behavior: none;
+    background-color: var(--sidebar);
   }
 }
 
