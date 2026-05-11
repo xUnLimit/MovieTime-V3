@@ -404,8 +404,9 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
 
       {/* Mobile overlay — siempre en el DOM para que la transición CSS funcione */}
       <div
-        className="fixed inset-0 z-[65] bg-black/50 md:hidden"
+        className="fixed top-0 left-0 right-0 z-[65] bg-black/50 md:hidden"
         style={{
+          bottom: 'env(safe-area-inset-bottom)',
           opacity: mobileOpen ? 1 : 0,
           pointerEvents: mobileOpen ? 'auto' : 'none',
           transition: 'opacity 300ms ease-in-out',
@@ -423,7 +424,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
           visibility: mobileOpen ? 'visible' : 'hidden',
           transitionProperty: 'transform, visibility',
           paddingTop: 'env(safe-area-inset-top)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) * 0.5)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) * 0.25)',
         }}
         aria-hidden={!mobileOpen}
       >

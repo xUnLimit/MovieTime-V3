@@ -69,7 +69,7 @@ export default function DashboardLayout({
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Mobile top bar — fixed para cubrir el border-r del sidebar en la safe area */}
           <div
-            className="fixed top-0 left-0 right-0 flex items-center px-4 bg-sidebar md:hidden z-[60]"
+            className="fixed top-0 left-0 right-0 flex items-center px-4 bg-sidebar md:hidden z-[66]"
             style={{
               height: 'calc(3.5rem + env(safe-area-inset-top))',
               paddingTop: 'env(safe-area-inset-top)',
@@ -94,7 +94,7 @@ export default function DashboardLayout({
           <main
             className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background"
             style={{
-              paddingBottom: 'calc(env(safe-area-inset-bottom) * 0.5)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) * 0.25)',
               backgroundClip: 'content-box',
             }}
           >
