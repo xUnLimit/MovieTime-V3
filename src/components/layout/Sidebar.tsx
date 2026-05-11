@@ -217,8 +217,6 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       )}
       style={{
         width: isMobile ? '200px' : (collapsed ? '48px' : '200px'),
-        paddingTop: isMobile ? 'env(safe-area-inset-top)' : undefined,
-        paddingBottom: isMobile ? 'min(env(safe-area-inset-bottom), 0px)' : undefined,
       }}
     >
       {/* Header - Logo y Título */}
@@ -417,13 +415,15 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       />
       {/* Mobile drawer — siempre en el DOM para que el slide funcione al cerrar */}
       <div
-        className="fixed left-0 top-0 bottom-0 z-[70] md:hidden flex"
+        className="fixed left-0 top-0 bottom-0 z-[70] md:hidden flex flex-col bg-sidebar"
         style={{
           transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)',
           willChange: 'transform',
           visibility: mobileOpen ? 'visible' : 'hidden',
           transitionProperty: 'transform, visibility',
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) * 0.5)',
         }}
         aria-hidden={!mobileOpen}
       >
