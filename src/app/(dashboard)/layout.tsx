@@ -94,7 +94,7 @@ export default function DashboardLayout({
           <main
             className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background"
             style={{
-              paddingBottom: 'env(safe-area-inset-bottom)',
+              paddingBottom: 'min(env(safe-area-inset-bottom), 0px)',
               backgroundClip: 'content-box',
             }}
           >

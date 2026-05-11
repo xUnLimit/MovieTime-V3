@@ -212,13 +212,13 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
     <aside
       data-collapsed={isMobile ? false : collapsed}
       className={cn(
-        "relative flex flex-col bg-sidebar border-r border-sidebar-border h-full",
-        !isMobile && "transition-[width] duration-300 ease-in-out"
+        "relative flex flex-col bg-sidebar h-full",
+        !isMobile && "border-r border-sidebar-border transition-[width] duration-300 ease-in-out"
       )}
       style={{
         width: isMobile ? '200px' : (collapsed ? '48px' : '200px'),
         paddingTop: isMobile ? 'env(safe-area-inset-top)' : undefined,
-        paddingBottom: isMobile ? 'min(env(safe-area-inset-bottom), 0.5rem)' : undefined,
+        paddingBottom: isMobile ? 'min(env(safe-area-inset-bottom), 0px)' : undefined,
       }}
     >
       {/* Header - Logo y Título */}
