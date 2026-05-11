@@ -56,7 +56,7 @@ export default function DashboardLayout({
 
   return (
     <ErrorBoundary fallback={<DashboardErrorFallback />}>
-      <div className="flex h-[100dvh] overflow-hidden">
+      <div className="flex h-[100svh] overflow-hidden">
         {/* Sidebar */}
         <Sidebar
           collapsed={sidebarCollapsed}
