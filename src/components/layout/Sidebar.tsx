@@ -428,7 +428,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       <div
         className="fixed left-0 z-[70] md:hidden flex"
         style={{
-          top: 'env(safe-area-inset-top)',
+          top: 'calc(3.5rem + env(safe-area-inset-top))',
           bottom: 'env(safe-area-inset-bottom)',
           transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 350ms cubic-bezier(0.32, 0.72, 0, 1)',
