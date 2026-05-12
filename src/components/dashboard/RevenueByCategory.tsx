@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   BarChart,
@@ -27,10 +27,51 @@ const COLORS = [
   '#14b8a6', // teal
 ];
 const NEGATIVE_COLOR = '#dc2626';
+const MIN_NEGATIVE_AXIS_RATIO = 0.05;
+const MIN_NEGATIVE_AXIS_RATIO_MOBILE = 0.12;
+const VALUE_LABEL_GAP = 8;
+const COMPACT_CHART_QUERY = '(max-width: 640px)';
+
+function subscribeToCompactChart(callback: () => void) {
+  if (typeof window === 'undefined') {
+    return () => undefined;
+  }
+
+  const mediaQuery = window.matchMedia(COMPACT_CHART_QUERY);
+  mediaQuery.addEventListener('change', callback);
+
+  return () => mediaQuery.removeEventListener('change', callback);
+}
+
+function getIsCompactChart() {
+  return typeof window !== 'undefined' && window.matchMedia(COMPACT_CHART_QUERY).matches;
+}
+
+function useIsCompactChart() {
+  return useSyncExternalStore(subscribeToCompactChart, getIsCompactChart, () => false);
+}
+
+function getRentabilidadDomain(data: Array<{ rentabilidad: number }>, minNegativeAxisRatio: number): [number, number] {
+  const maxPositive = Math.max(0, ...data.map((entry) => entry.rentabilidad));
+  const minNegative = Math.min(0, ...data.map((entry) => entry.rentabilidad));
+
+  if (minNegative >= 0) {
+    return [0, maxPositive];
+  }
+
+  if (maxPositive <= 0) {
+    return [minNegative, 0];
+  }
+
+  const visibleNegativeRange = Math.max(Math.abs(minNegative), maxPositive * minNegativeAxisRatio);
+
+  return [-visibleNegativeRange, maxPositive];
+}
 
 export function RevenueByCategory() {
   const { stats, isLoading } = useDashboardStore();
   const { selectedYear } = useDashboardFilterStore();
+  const isCompactChart = useIsCompactChart();
   const axisColor = 'var(--muted-foreground)';
   const labelColor = 'var(--foreground)';
   const tooltipBg = 'var(--background)';
@@ -80,6 +121,19 @@ export function RevenueByCategory() {
     return { data, hasData };
   }, [stats, selectedYear]);
 
+  const rentabilidadDomain = useMemo(
+    () => getRentabilidadDomain(data, isCompactChart ? MIN_NEGATIVE_AXIS_RATIO_MOBILE : MIN_NEGATIVE_AXIS_RATIO),
+    [data, isCompactChart]
+  );
+  const chartHeight = isCompactChart ? 250 : 220;
+  const chartMargin = isCompactChart
+    ? { left: 0, right: 34, top: 8, bottom: 0 }
+    : { left: 0, right: 50, top: 5, bottom: 5 };
+  const yAxisWidth = isCompactChart ? 88 : 108;
+  const yAxisTickMargin = isCompactChart ? 8 : 10;
+  const valueLabelFontSize = isCompactChart ? 11 : 12;
+  const xAxisTickCount = isCompactChart ? 3 : 5;
+
   const renderRentabilidadLabel = (props: LabelProps) => {
     const xNum = Number(props.x);
     const yNum = Number(props.y);
@@ -94,7 +148,7 @@ export function RevenueByCategory() {
 
     const barEnd = Math.max(xNum, xNum + widthNum);
     const barStart = Math.min(xNum, xNum + widthNum);
-    const labelX = isNegative ? barStart - 6 : barEnd + 6;
+    const labelX = isNegative ? barStart - VALUE_LABEL_GAP : barEnd + VALUE_LABEL_GAP;
     const labelY = yNum + heightNum / 2 + 4;
 
     return (
@@ -102,7 +156,11 @@ export function RevenueByCategory() {
         x={labelX}
         y={labelY}
         fill={isNegative ? NEGATIVE_COLOR : labelColor}
-        fontSize={11}
+        stroke={tooltipBg}
+        strokeWidth={3}
+        paintOrder="stroke"
+        fontSize={valueLabelFontSize}
+        fontWeight={700}
         textAnchor={isNegative ? 'end' : 'start'}
       >
         {`$${safeValue.toLocaleString()}`}
@@ -120,7 +178,7 @@ export function RevenueByCategory() {
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="pt-1 h-[220px]">
+      <CardContent className="pt-1 h-[260px] sm:h-[220px]">
         {isLoading ? (
           <Skeleton className="w-full h-full rounded-lg" />
         ) : !hasData ? (
@@ -128,15 +186,18 @@ export function RevenueByCategory() {
             <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={data} layout="vertical" margin={{ left: 0, right: 50, top: 5, bottom: 5 }}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <BarChart data={data} layout="vertical" margin={chartMargin}>
               <XAxis
                 type="number"
+                domain={rentabilidadDomain}
+                allowDecimals={false}
+                tickCount={xAxisTickCount}
                 stroke={axisColor}
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `$${Math.round(Number(value))}`}
                 tick={{ fill: axisColor }}
               />
               <YAxis
@@ -147,7 +208,8 @@ export function RevenueByCategory() {
                 tickLine={false}
                 axisLine={false}
                 interval={0}
-                width={90}
+                width={yAxisWidth}
+                tickMargin={yAxisTickMargin}
                 tick={{ fill: labelColor }}
               />
               <Tooltip
@@ -159,6 +221,7 @@ export function RevenueByCategory() {
                 }}
                 labelStyle={{ color: tooltipText }}
                 itemStyle={{ color: tooltipText }}
+                wrapperStyle={{ maxWidth: isCompactChart ? 180 : undefined }}
                 formatter={(value: number | undefined) => [`$${(value ?? 0).toFixed(2)} USD`, 'Ganancia neta']}
                 cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
               />
