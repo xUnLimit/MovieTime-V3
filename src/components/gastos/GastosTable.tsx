@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronDown, Edit, MoreHorizontal, Search, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, Edit, ListFilter, MoreHorizontal, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Column, DataTable } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -159,9 +160,8 @@ export function GastosTable({
           <div className="flex flex-col gap-4 sm:flex-row xl:flex-none">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between font-normal sm:w-[280px]">
-                  <span className="min-w-0 truncate">{tipoFilterLabel}</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
+                <Button variant="outline" className="w-full justify-between gap-2 font-normal sm:w-[280px]">
+                  <FilterTriggerContent icon={ListFilter} label={tipoFilterLabel} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -172,11 +172,7 @@ export function GastosTable({
                     className="dashboard-toolbar-menu-item"
                   >
                     <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
-                    {tipoFilter === option.value && (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
+                    {tipoFilter === option.value && <Check className="h-4 w-4" />}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -188,21 +184,16 @@ export function GastosTable({
                   variant="outline"
                   className="w-full justify-between gap-2 text-left font-normal whitespace-nowrap sm:w-[280px]"
                 >
-                  <span className="flex min-w-0 items-center gap-2 overflow-hidden">
-                    <CalendarIcon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {dateRange?.from ? (
-                        dateRange.to ? (
-                          `${format(dateRange.from, 'dd MMM yyyy', { locale: es })} - ${format(dateRange.to, 'dd MMM yyyy', { locale: es })}`
-                        ) : (
-                          format(dateRange.from, 'dd MMM yyyy', { locale: es })
-                        )
-                      ) : (
-                        'Seleccionar rango de fecha'
-                      )}
-                    </span>
-                  </span>
-                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  <FilterTriggerContent
+                    icon={CalendarIcon}
+                    label={
+                      dateRange?.from
+                        ? dateRange.to
+                          ? `${format(dateRange.from, 'dd MMM yyyy', { locale: es })} - ${format(dateRange.to, 'dd MMM yyyy', { locale: es })}`
+                          : format(dateRange.from, 'dd MMM yyyy', { locale: es })
+                        : 'Seleccionar rango de fecha'
+                    }
+                  />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">

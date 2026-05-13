@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/shared/DataTable";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { PaginationFooter } from "@/components/shared/PaginationFooter";
 import {
   Search,
@@ -17,9 +18,8 @@ import {
   Eye,
   RefreshCw,
   ArrowUpDown,
-  ChevronDown,
   Check,
-  ListFilter,
+  Tags,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -347,14 +347,15 @@ export function VentasTable({
               variant="outline"
               className="w-full sm:w-[200px] justify-between gap-2"
             >
-              <ListFilter className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 truncate">
-                {selectedCategoriaId === "todas"
-                  ? "Todas las categorías"
-                  : (categorias.find((c) => c.id === selectedCategoriaId)
-                      ?.nombre ?? "Categoría")}
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              <FilterTriggerContent
+                icon={Tags}
+                label={
+                  selectedCategoriaId === "todas"
+                    ? "Todas las categorías"
+                    : (categorias.find((c) => c.id === selectedCategoriaId)
+                        ?.nombre ?? "Categoría")
+                }
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -382,11 +383,10 @@ export function VentasTable({
               variant="outline"
               className="w-full sm:w-[200px] justify-between gap-2"
             >
-              <ArrowUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 truncate">
-                {orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              <FilterTriggerContent
+                icon={ArrowUpDown}
+                label={orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

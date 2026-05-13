@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Categoria } from "@/types";
 import { DataTable, Column } from "@/components/shared/DataTable";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Eye, Edit, Trash2, Check, ChevronDown } from "lucide-react";
+import { Search, MoreHorizontal, Eye, Edit, Trash2, Check, ListFilter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -150,10 +151,9 @@ export function ClientesCategoriasTable({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="dashboard-toolbar-control-wide justify-between font-normal"
+                    className="dashboard-toolbar-control-wide justify-between gap-2 font-normal"
                   >
-                    <span className="min-w-0 truncate">{labelActual}</span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
+                    <FilterTriggerContent icon={ListFilter} label={labelActual} />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

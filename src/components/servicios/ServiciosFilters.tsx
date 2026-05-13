@@ -1,6 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Activity, Check, ListFilter, Search, Tags } from "lucide-react";
 import { Categoria } from "@/types";
 
 interface ServiciosFiltersProps {
@@ -68,8 +69,7 @@ export function ServiciosFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-full justify-between gap-2 font-normal">
-            <span className="min-w-0 truncate">{categoriaLabel}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            <FilterTriggerContent icon={Tags} label={categoriaLabel} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -89,8 +89,7 @@ export function ServiciosFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-full justify-between gap-2 font-normal">
-            <span className="min-w-0 truncate">{tipoLabel}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            <FilterTriggerContent icon={ListFilter} label={tipoLabel} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -106,8 +105,7 @@ export function ServiciosFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-full justify-between gap-2 font-normal">
-            <span className="min-w-0 truncate">{estadoLabel}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            <FilterTriggerContent icon={Activity} label={estadoLabel} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

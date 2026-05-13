@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { MetodoPago } from "@/types";
 import { DataTable, Column } from "@/components/shared/DataTable";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
+import { Check, Globe2, Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -170,24 +171,12 @@ export function ServiciosMetodosPagoTable({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="dashboard-toolbar-control-wide justify-between font-normal"
+                className="dashboard-toolbar-control-wide justify-between gap-2 font-normal"
               >
-                <span className="min-w-0 truncate">
-                  {paisFilter === "todos" ? "Todos los países" : paisFilter}
-                </span>
-                <svg
-                  className="h-4 w-4 opacity-50"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <FilterTriggerContent
+                  icon={Globe2}
+                  label={paisFilter === "todos" ? "Todos los países" : paisFilter}
+                />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -201,21 +190,7 @@ export function ServiciosMetodosPagoTable({
                   className="dashboard-toolbar-menu-item"
                 >
                   <span className="dashboard-toolbar-menu-item-label">{op.label}</span>
-                  {paisFilter === op.value && (
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
+                  {paisFilter === op.value && <Check className="h-4 w-4" />}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

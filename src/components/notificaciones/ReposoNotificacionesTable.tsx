@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, ChevronDown, Search, MoreHorizontal, BellRing, BellOff } from 'lucide-react';
+import { Activity, Check, Search, MoreHorizontal, BellRing, BellOff } from 'lucide-react';
+import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -165,8 +166,7 @@ export function ReposoNotificacionesTable() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2 font-normal">
-              <span className="min-w-0 truncate">{estadoFilterLabel}</span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              <FilterTriggerContent icon={Activity} label={estadoFilterLabel} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

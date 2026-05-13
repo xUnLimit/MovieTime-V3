@@ -3,6 +3,7 @@
 import { memo, useState } from "react";
 import { Servicio } from "@/types";
 import { DataTable, Column } from "@/components/shared/DataTable";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { PaginationFooter } from "@/components/shared/PaginationFooter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,8 @@ import {
   RefreshCw,
   Eye,
   Check,
-  ChevronDown,
+  Repeat,
+  UserRound,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -380,8 +382,7 @@ export const ServiciosCategoriaTableDetalle = memo(
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-between gap-2 font-normal">
-                  <span className="min-w-0 truncate">{cicloLabel}</span>
-                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  <FilterTriggerContent icon={Repeat} label={cicloLabel} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -400,8 +401,7 @@ export const ServiciosCategoriaTableDetalle = memo(
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-between gap-2 font-normal">
-                  <span className="min-w-0 truncate">{perfilLabel}</span>
-                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  <FilterTriggerContent icon={UserRound} label={perfilLabel} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

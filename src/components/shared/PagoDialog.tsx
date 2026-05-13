@@ -51,9 +51,10 @@ export function PagoDialog(props: PagoDialogProps) {
   const pago = props.pago ?? null;
   const { metodosPago } = props;
   const { getTemplateByTipo } = useTemplatesStore();
+  const isVentaRenew = isVenta && props.mode === 'renew';
 
   const defaultMetodoPagoId = isVenta
-    ? (venta?.metodoPagoId || PENDING_USER_PAYMENT_ID)
+    ? (isVentaRenew ? '' : venta?.metodoPagoId || PENDING_USER_PAYMENT_ID)
     : (isEdit && pago ? pago.metodoPagoId || '' : servicio?.metodoPagoId || '');
   const defaultCosto = venta
     ? (props.mode === 'renew' ? roundToDecimals(venta.precioFinal || 0) : 0)
@@ -108,8 +109,12 @@ export function PagoDialog(props: PagoDialogProps) {
       m.activo && (isVenta ? m.asociadoA === 'usuario' : m.asociadoA === 'servicio')
     );
 
-    return isVenta ? withPendingUserPaymentMethod(metodosBase) : metodosBase;
-  }, [isVenta, metodosPago]);
+    return isVenta
+      ? (isVentaRenew
+          ? metodosBase.filter((metodo) => !isPendingUserPaymentMethodId(metodo.id))
+          : withPendingUserPaymentMethod(metodosBase))
+      : metodosBase;
+  }, [isVenta, isVentaRenew, metodosPago]);
   const metodosPagoOrdenados = useMemo(() => {
     if (isVenta) {
       const pendientes = metodosFiltrados.filter((metodo) => isPendingUserPaymentMethodId(metodo.id));
@@ -169,7 +174,7 @@ export function PagoDialog(props: PagoDialogProps) {
       const fechaVencimientoActual = venta?.fechaFin ? new Date(venta.fechaFin) : new Date();
       reset({
         periodoRenovacion: '',
-        metodoPagoId: venta?.metodoPagoId || PENDING_USER_PAYMENT_ID,
+        metodoPagoId: '',
         costo: roundToDecimals(venta?.precioFinal || 0),
         descuento: 0,
         fechaInicio: fechaVencimientoActual,

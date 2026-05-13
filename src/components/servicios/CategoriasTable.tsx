@@ -15,8 +15,16 @@ import {
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { PaginationFooter } from "@/components/shared/PaginationFooter";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Check,
   Monitor,
   Users,
   ShoppingCart,
@@ -47,11 +55,27 @@ interface CategoriaRow {
   montoSinConsumir: number;
 }
 
+type PerfilDisponibilidadFilter =
+  | "todos"
+  | "con_disponibles"
+  | "sin_disponibles";
+
+const perfilDisponibilidadOptions: {
+  value: PerfilDisponibilidadFilter;
+  label: string;
+}[] = [
+  { value: "todos", label: "Todos los perfiles" },
+  { value: "con_disponibles", label: "Con perfiles disponibles" },
+  { value: "sin_disponibles", label: "Sin perfiles disponibles" },
+];
+
 export const CategoriasTable = memo(function CategoriasTable({
   categorias,
   title = "Todas las categorías",
 }: CategoriasTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [perfilDisponibilidadFilter, setPerfilDisponibilidadFilter] =
+    useState<PerfilDisponibilidadFilter>("todos");
   const [sortKey, setSortKey] = useState<keyof CategoriaRow | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(
     null,
@@ -137,10 +161,21 @@ export const CategoriasTable = memo(function CategoriasTable({
 
   // Filtrar por búsqueda
   const filteredRows = useMemo(() => {
-    return rows.filter((row) =>
-      row.categoria.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [rows, searchTerm]);
+    return rows.filter((row) => {
+      const matchesSearch = row.categoria.nombre
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+      if (perfilDisponibilidadFilter === "con_disponibles") {
+        return row.perfilesDisponibles > 0;
+      }
+      if (perfilDisponibilidadFilter === "sin_disponibles") {
+        return row.perfilesDisponibles === 0;
+      }
+      return true;
+    });
+  }, [perfilDisponibilidadFilter, rows, searchTerm]);
 
   // Sorting
   const sortedRows = useMemo(() => {
@@ -217,11 +252,16 @@ export const CategoriasTable = memo(function CategoriasTable({
     return Math.round((activos / total) * 100);
   };
 
+  const perfilDisponibilidadLabel =
+    perfilDisponibilidadOptions.find(
+      (option) => option.value === perfilDisponibilidadFilter,
+    )?.label ?? "Todos los perfiles";
+
   return (
     <Card className="p-4 pb-2">
       <h3 className="text-xl font-semibold">{title}</h3>
-      <div className="flex items-center gap-4 -mb-4">
-        <div className="relative flex-1">
+      <div className="-mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar categorías..."
@@ -233,6 +273,39 @@ export const CategoriasTable = memo(function CategoriasTable({
             className="pl-9"
           />
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-between gap-2 font-normal sm:w-[230px]"
+            >
+              <FilterTriggerContent
+                icon={Users}
+                label={perfilDisponibilidadLabel}
+              />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+            {perfilDisponibilidadOptions.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onSelect={() => {
+                  setPerfilDisponibilidadFilter(option.value);
+                  resetPagination();
+                }}
+                className="dashboard-toolbar-menu-item"
+              >
+                <span className="dashboard-toolbar-menu-item-label">
+                  {option.label}
+                </span>
+                {perfilDisponibilidadFilter === option.value && (
+                  <Check className="h-4 w-4" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="rounded-md border bg-background overflow-x-auto">

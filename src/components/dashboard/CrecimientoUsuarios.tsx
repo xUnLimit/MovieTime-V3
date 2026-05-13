@@ -22,9 +22,10 @@ import { subMonths, format, eachDayOfInterval, eachMonthOfInterval, startOfMonth
 import { es } from 'date-fns/locale';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import type { UsuariosMes, UsuariosDia } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronDown } from 'lucide-react';
+import { CalendarClock, Check } from 'lucide-react';
 
 const PERIOD_OPTIONS = [
   { value: 'actual', label: 'Mes actual' },
@@ -110,8 +111,7 @@ export function CrecimientoUsuarios() {
             size="sm"
             className="h-7 w-[140px] justify-between gap-2 text-xs font-normal"
           >
-            <span className="min-w-0 truncate">{selectedPeriodLabel}</span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <FilterTriggerContent icon={CalendarClock} label={selectedPeriodLabel} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

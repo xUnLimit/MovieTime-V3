@@ -22,9 +22,10 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, subMonths, eachMon
 import { es } from 'date-fns/locale';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import type { IngresosMes, IngresosDia } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronDown } from 'lucide-react';
+import { CalendarClock, Check } from 'lucide-react';
 
 interface DiaData {
   dia: string;
@@ -110,8 +111,7 @@ export function IngresosVsGastosChart() {
               size="sm"
               className="h-8 w-full justify-between gap-2 text-xs font-normal sm:w-[150px]"
             >
-              <span className="min-w-0 truncate">{selectedMonthLabel}</span>
-              <ChevronDown className="h-4 w-4 opacity-50" />
+              <FilterTriggerContent icon={CalendarClock} label={selectedMonthLabel} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

@@ -1,5 +1,6 @@
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { Activity, Check, Search } from 'lucide-react';
 
+import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -46,8 +47,7 @@ export function VentasProximasToolbar({
             variant="outline"
             className="dashboard-toolbar-control-wide justify-between gap-2 font-normal"
           >
-            <span className="min-w-0 truncate">{labelActual}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            <FilterTriggerContent icon={Activity} label={labelActual} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronDown, Search, Trash2 } from 'lucide-react';
+import { Activity, Calendar as CalendarIcon, Database, Search, Trash2 } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
 
+import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -87,20 +88,17 @@ export function LogFilters({
 
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="dashboard-toolbar-control-xl justify-start gap-2 text-left font-normal whitespace-nowrap">
-            <CalendarIcon className="h-4 w-4" />
-            {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, 'MMM dd, yyyy', { locale: es })} -{' '}
-                  {format(dateRange.to, 'MMM dd, yyyy', { locale: es })}
-                </>
-              ) : (
-                format(dateRange.from, 'MMM dd, yyyy', { locale: es })
-              )
-            ) : (
-              <span>Seleccionar rango de fecha</span>
-            )}
+          <Button variant="outline" className="dashboard-toolbar-control-xl justify-between gap-2 text-left font-normal whitespace-nowrap">
+            <FilterTriggerContent
+              icon={CalendarIcon}
+              label={
+                dateRange?.from
+                  ? dateRange.to
+                    ? `${format(dateRange.from, 'MMM dd, yyyy', { locale: es })} - ${format(dateRange.to, 'MMM dd, yyyy', { locale: es })}`
+                    : format(dateRange.from, 'MMM dd, yyyy', { locale: es })
+                  : 'Seleccionar rango de fecha'
+              }
+            />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -118,10 +116,10 @@ export function LogFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
-            <span className="min-w-0 truncate">
-              {entidadFilter === 'all' ? 'Todas las entidades' : entityLabels[entidadFilter] || 'Todas las entidades'}
-            </span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <FilterTriggerContent
+              icon={Database}
+              label={entidadFilter === 'all' ? 'Todas las entidades' : entityLabels[entidadFilter] || 'Todas las entidades'}
+            />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -139,10 +137,10 @@ export function LogFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
-            <span className="min-w-0 truncate">
-              {accionFilter === 'all' ? 'Todas las acciones' : actionLabels[accionFilter] || 'Todas las acciones'}
-            </span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <FilterTriggerContent
+              icon={Activity}
+              label={accionFilter === 'all' ? 'Todas las acciones' : actionLabels[accionFilter] || 'Todas las acciones'}
+            />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

@@ -6,9 +6,9 @@ import { differenceInDays, format, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   AlertTriangle,
+  Activity,
   Check,
   CheckCircle2,
-  ChevronDown,
   Clock,
   Eye,
   MoreHorizontal,
@@ -21,6 +21,7 @@ import {
 import { MetricCard } from "@/components/shared/MetricCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
@@ -528,8 +529,7 @@ function ReposoPageContent() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between gap-2 font-normal sm:w-[180px]">
-                <span className="min-w-0 truncate">{estadoFilterLabel}</span>
-                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                <FilterTriggerContent icon={Activity} label={estadoFilterLabel} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="dashboard-toolbar-menu">

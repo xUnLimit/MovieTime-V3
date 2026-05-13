@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Usuario } from "@/types";
 import { DataTable, Column } from "@/components/shared/DataTable";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Search,
+  Check,
+  CreditCard,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -260,22 +263,9 @@ export function TodosUsuariosTable({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="dashboard-toolbar-control justify-between font-normal"
+                className="dashboard-toolbar-control justify-between gap-2 font-normal"
               >
-                <span className="min-w-0 truncate">{selectedMetodoPagoLabel}</span>
-                <svg
-                  className="h-4 w-4 opacity-50"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <FilterTriggerContent icon={CreditCard} label={selectedMetodoPagoLabel} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -286,21 +276,7 @@ export function TodosUsuariosTable({
                   className="dashboard-toolbar-menu-item"
                 >
                   <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
-                  {metodoPagoFilter === option.value && (
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
+                  {metodoPagoFilter === option.value && <Check className="h-4 w-4" />}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

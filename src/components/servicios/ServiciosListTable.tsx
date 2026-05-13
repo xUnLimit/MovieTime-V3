@@ -11,9 +11,8 @@ import {
   Eye,
   RefreshCw,
   ArrowUpDown,
-  ChevronDown,
   Check,
-  ListFilter,
+  Tags,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTable, Column } from "@/components/shared/DataTable";
+import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { PaginationFooter } from "@/components/shared/PaginationFooter";
 import { Servicio, Categoria } from "@/types";
 import { cn } from "@/lib/utils";
@@ -233,13 +233,14 @@ export function ServiciosListTable({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="dashboard-toolbar-control-xl justify-between gap-2 font-normal">
-              <ListFilter className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate text-left">
-                {selectedCategoriaId === "todas"
-                  ? "Todas las categorías"
-                  : (categorias.find((c) => c.id === selectedCategoriaId)?.nombre ?? "Categoría")}
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              <FilterTriggerContent
+                icon={Tags}
+                label={
+                  selectedCategoriaId === "todas"
+                    ? "Todas las categorías"
+                    : (categorias.find((c) => c.id === selectedCategoriaId)?.nombre ?? "Categoría")
+                }
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
@@ -261,11 +262,10 @@ export function ServiciosListTable({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2 font-normal">
-              <ArrowUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate text-left">
-                {orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              <FilterTriggerContent
+                icon={ArrowUpDown}
+                label={orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
