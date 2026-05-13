@@ -583,6 +583,9 @@ export function VentasForm() {
     }
     setItemErrors({});
     if (!plan || !categoria || !tipoItem) return;
+    const planTipoNombre = categoria.tiposPlanes?.find(
+      (tipoPlan) => tipoPlan.id === plan.tipoPlan,
+    )?.nombre;
     const itemId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
@@ -592,6 +595,8 @@ export function VentasForm() {
       itemId,
       tipo: tipoItem,
       planId: plan.id,
+      planNombre: plan.nombre,
+      planTipoNombre,
       categoriaId: categoria.id,
       categoriaNombre: categoria.nombre, // <- Denormalizar nombre
       servicioId,
@@ -729,13 +734,8 @@ export function VentasForm() {
 
     try {
       setSaving(true);
-      const writes = items.map((item) => {
-        const itemCategoria = categorias.find((c) => c.id === item.categoriaId);
-        const itemPlan = itemCategoria?.planes?.find((p) => p.id === item.planId);
-        const itemTipoPlanNombre = itemCategoria?.tiposPlanes?.find(
-          (t) => t.id === itemPlan?.tipoPlan,
-        )?.nombre;
-        return createVenta({
+      const writes = items.map((item) =>
+        createVenta({
           clienteId: clienteIdValue,
           clienteNombre,
           clienteTelefono: clienteSeleccionado?.telefono || "", // For WhatsApp notifications
@@ -757,8 +757,8 @@ export function VentasForm() {
           cicloPago: item.cicloPago || "mensual",
           perfilNumero: item.perfilNumero ?? null,
           planId: item.planId,
-          planNombre: itemPlan?.nombre,
-          planTipoNombre: itemTipoPlanNombre,
+          planNombre: item.planNombre,
+          planTipoNombre: item.planTipoNombre,
           precio: item.precio,
           descuento: item.descuento,
           precioFinal: item.precioFinal,
@@ -783,8 +783,8 @@ export function VentasForm() {
           itemId: item.itemId,
           ventaId,
           totalVenta: totalFinal,
-        });
-      });
+        }),
+      );
       await Promise.all(writes);
 
       try {

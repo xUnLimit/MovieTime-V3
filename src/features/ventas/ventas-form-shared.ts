@@ -7,6 +7,8 @@ export interface VentaItem {
   itemId: string;
   tipo: TipoVentaItem;
   planId: string;
+  planNombre: string;
+  planTipoNombre?: string;
   categoriaId: string;
   categoriaNombre: string;
   servicioId: string;
