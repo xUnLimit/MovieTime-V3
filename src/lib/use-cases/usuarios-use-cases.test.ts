@@ -69,6 +69,37 @@ describe('usuarios use cases', () => {
     );
   });
 
+  it('stores pending user payment method as null when creating a user', async () => {
+    vi.mocked(createUsuario).mockResolvedValue('usuario-1');
+
+    await createUsuarioUseCase(
+      {
+        nombre: 'Ana',
+        apellido: 'Perez',
+        tipo: 'cliente',
+        telefono: '+507 6000-0000',
+        metodoPagoId: 'pendiente',
+        metodoPagoNombre: 'Pendiente',
+        moneda: 'USD',
+        notas: '',
+        active: true,
+        createdBy: 'current-user',
+      },
+      {
+        logContext: {
+          usuarioId: 'user-1',
+          usuarioEmail: 'user@example.com',
+        },
+      }
+    );
+
+    expect(createUsuario).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metodoPagoId: null,
+      })
+    );
+  });
+
   it('does not send derived payment or counter fields when updating a user', async () => {
     vi.mocked(updateUsuario).mockResolvedValue(undefined);
     vi.mocked(queryVentas).mockResolvedValue([]);
@@ -96,6 +127,33 @@ describe('usuarios use cases', () => {
         metodoPagoNombre: expect.anything(),
         moneda: expect.anything(),
         serviciosActivos: expect.anything(),
+      })
+    );
+  });
+
+  it('stores pending user payment method as null when updating a user', async () => {
+    vi.mocked(updateUsuario).mockResolvedValue(undefined);
+    vi.mocked(queryVentas).mockResolvedValue([]);
+
+    await updateUsuarioUseCase(
+      'usuario-1',
+      {
+        metodoPagoId: 'pendiente',
+        metodoPagoNombre: 'Pendiente',
+        moneda: 'USD',
+      },
+      {
+        logContext: {
+          usuarioId: 'user-1',
+          usuarioEmail: 'user@example.com',
+        },
+      }
+    );
+
+    expect(updateUsuario).toHaveBeenCalledWith(
+      'usuario-1',
+      expect.objectContaining({
+        metodoPagoId: null,
       })
     );
   });

@@ -12,6 +12,7 @@ import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { adjustUsuariosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { isPendingUserPaymentMethodId } from '@/lib/utils/usuarioMetodoPago';
 import type { ActivityLog, Usuario } from '@/types';
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
@@ -39,7 +40,10 @@ function getUsuarioSqlPayload(usuario: Partial<Usuario>) {
 
   for (const field of allowedFields) {
     if (usuario[field] !== undefined) {
-      payload[field] = usuario[field];
+      payload[field] =
+        field === 'metodoPagoId' && isPendingUserPaymentMethodId(usuario[field] as string | null)
+          ? null
+          : usuario[field];
     }
   }
 
