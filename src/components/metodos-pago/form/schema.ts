@@ -3,7 +3,7 @@ import * as z from "zod";
 export const metodoPagoSchemaComplete = z
   .object({
     nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-    asociadoA: z.enum(["usuario", "servicio"] as const, {
+    asociadoA: z.enum(["tercero", "servicio"] as const, {
       message: "Debe seleccionar asociado a",
     }),
     pais: z.string().min(2, "El país es requerido"),
@@ -21,7 +21,7 @@ export const metodoPagoSchemaComplete = z
     fechaExpiracion: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.asociadoA === "usuario") {
+    if (data.asociadoA === "tercero") {
       if (!data.tipoCuenta) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

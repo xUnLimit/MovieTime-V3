@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ function LogActividadPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [accionFilter, setAccionFilter] = useState('all');
   const [entidadFilter, setEntidadFilter] = useState('all');
-  const [usuarioFilter, setUsuarioFilter] = useState('all');
+  const [usuarioFilter, setTerceroFilter] = useState('all');
   const [pageSize, setPageSize] = useState(10);
   const user = useAuthStore((state) => state.user);
   const canDeleteLogs = user?.role === 'admin';
@@ -121,7 +121,7 @@ function LogActividadPageContent() {
         entidadFilter={entidadFilter}
         setEntidadFilter={setEntidadFilter}
         usuarioFilter={usuarioFilter}
-        setUsuarioFilter={setUsuarioFilter}
+        setTerceroFilter={setTerceroFilter}
         // Paginación
         hasMore={hasMore}
         hasPrevious={hasPrevious}

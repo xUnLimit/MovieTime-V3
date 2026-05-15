@@ -25,7 +25,7 @@ export function normalizeWritePayload(
   const snake = toSnakeCase<Record<string, unknown>>(payload);
   sanitizeUuidReferences(snake);
   const allowedByCollection: Partial<Record<CollectionName, string[]>> = {
-    usuarios: [
+    terceros: [
       'nombre',
       'apellido',
       'tipo',

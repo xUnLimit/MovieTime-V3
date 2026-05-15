@@ -49,7 +49,7 @@ export function onAuthStateChange(
 }
 
 /**
- * Read the profile row for the current auth user. Includes `role` (admin |
+ * Read the app user row for the current auth user. Includes `role` (admin |
  * operador) and `display_name`. Returns null if not signed in.
  */
 export async function getCurrentProfile(): Promise<User | null> {
@@ -57,7 +57,7 @@ export async function getCurrentProfile(): Promise<User | null> {
   if (!supaUser) return null;
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from('usuarios')
     .select('*')
     .eq('id', supaUser.id)
     .maybeSingle();

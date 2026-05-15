@@ -6,7 +6,7 @@ export const OFFLINE_STORE_NAME = 'snapshots';
 export const OFFLINE_SNAPSHOT_KEY = 'app-snapshot';
 
 export const OFFLINE_COLLECTIONS: CollectionName[] = [
-  ENTITIES.USUARIOS,
+  ENTITIES.TERCEROS,
   ENTITIES.SERVICIOS,
   ENTITIES.CATEGORIAS,
   ENTITIES.METODOS_PAGO,

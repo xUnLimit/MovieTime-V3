@@ -42,8 +42,8 @@ const navigationSections: NavSection[] = [
     label: 'GESTIÓN',
     items: [
       {
-        name: 'Usuarios',
-        href: '/usuarios',
+        name: 'Terceros',
+        href: '/terceros',
         icon: Users
       },
       {

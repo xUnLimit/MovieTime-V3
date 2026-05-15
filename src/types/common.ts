@@ -4,7 +4,7 @@
 
 // Activity Log Types
 export type AccionLog = 'creacion' | 'actualizacion' | 'corte' | 'eliminacion' | 'renovacion';
-export type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'usuario' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
+export type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'tercero' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
 
 export interface CambioLog {
   campo: string;        // Nombre del campo en español (ej: "Precio", "Estado")

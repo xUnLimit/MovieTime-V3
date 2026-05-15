@@ -22,7 +22,7 @@ import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { generarMensajeVenta, openWhatsApp } from '@/lib/utils/whatsapp';
-import { withPendingUserPaymentMethod } from '@/lib/utils/usuarioMetodoPago';
+import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
@@ -59,7 +59,7 @@ export function VentasProximasTable() {
     fetchNotificaciones,
   } = useNotificacionesStore();
   const { getTemplateByTipo } = useTemplatesStore();
-  const { fetchMetodosPagoUsuarios } = useMetodosPagoStore();
+  const { fetchMetodosPagoTerceros } = useMetodosPagoStore();
   const { updateVenta, fetchVentas } = useVentasStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<string>('todos');
@@ -73,7 +73,7 @@ export function VentasProximasTable() {
   const [accionesDialogOpen, setAccionesDialogOpen] = useState(false);
   const [notifSeleccionada, setNotifSeleccionada] =
     useState<NotificacionVentaConId | null>(null);
-  const [metodosPagoUsuarios, setMetodosPagoUsuarios] = useState<MetodoPago[]>(
+  const [metodosPagoTerceros, setMetodosPagoTerceros] = useState<MetodoPago[]>(
     []
   );
   const [categoriaPlanes, setCategoriaPlanes] = useState<Plan[]>([]);
@@ -242,7 +242,7 @@ export function VentasProximasTable() {
     setServicioTipoSeleccionado(undefined);
     try {
       const [metodos] = await Promise.all([
-        fetchMetodosPagoUsuarios(),
+        fetchMetodosPagoTerceros(),
         (async () => {
           if (notif.categoriaId) {
             const categoriaDoc = await getCategoriaUseCase<
@@ -264,7 +264,7 @@ export function VentasProximasTable() {
           }
         })(),
       ]);
-      setMetodosPagoUsuarios(withPendingUserPaymentMethod(metodos));
+      setMetodosPagoTerceros(withPendingTerceroPaymentMethod(metodos));
       setRenovarDialogOpen(true);
     } finally {
       setIsLoadingRenovar(false);
@@ -319,7 +319,7 @@ export function VentasProximasTable() {
       if (renovacion.syncPaymentMethodFailed) {
         toast.warning('Venta renovada con advertencia', {
           description:
-            'La renovación se guardó, pero no se pudo actualizar el método de pago en usuarios.',
+            'La renovación se guardó, pero no se pudo actualizar el método de pago en terceros.',
         });
       }
 
@@ -472,7 +472,7 @@ export function VentasProximasTable() {
         notifSeleccionada={notifSeleccionada}
         renovarDialogOpen={renovarDialogOpen}
         accionesDialogOpen={accionesDialogOpen}
-        metodosPagoUsuarios={metodosPagoUsuarios}
+        metodosPagoTerceros={metodosPagoTerceros}
         categoriaPlanes={categoriaPlanes}
         servicioTipoSeleccionado={servicioTipoSeleccionado}
         onRenovarOpenChange={setRenovarDialogOpen}

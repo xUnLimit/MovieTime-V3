@@ -1,11 +1,11 @@
-﻿import { queryDocuments, getCount, logCacheHit } from './record-core';
+import { queryDocuments, getCount, logCacheHit } from './record-core';
 import { ENTITIES, type QueryFilter } from './entities';
 import { getPaginated } from './pagination';
 
 export { logCacheHit };
 
 export const countVentas = (filters: QueryFilter[] = []) => getCount(ENTITIES.VENTAS, filters);
-export const countUsuarios = (filters: QueryFilter[] = []) => getCount(ENTITIES.USUARIOS, filters);
+export const countTerceros = (filters: QueryFilter[] = []) => getCount(ENTITIES.TERCEROS, filters);
 export const queryRecentActivityLogs = async <T>(limit = 6) => {
   const result = await getPaginated<T>(ENTITIES.ACTIVITY_LOG, {
     pageSize: limit,

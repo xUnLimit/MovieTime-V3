@@ -35,7 +35,7 @@ export interface VentaItemErrors {
   precio?: string;
 }
 
-export interface MetodoPagoUsuarioOption {
+export interface MetodoPagoTerceroOption {
   id: string;
   nombre: string;
   asociadoA: string;

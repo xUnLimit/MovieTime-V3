@@ -28,7 +28,7 @@ function emitProgress(
 
 function formatCollectionLabel(collectionName: CollectionName): string {
   const labels: Partial<Record<CollectionName, string>> = {
-    [ENTITIES.USUARIOS]: 'usuarios',
+    [ENTITIES.TERCEROS]: 'terceros',
     [ENTITIES.SERVICIOS]: 'servicios',
     [ENTITIES.CATEGORIAS]: 'categorias',
     [ENTITIES.METODOS_PAGO]: 'metodos de pago',

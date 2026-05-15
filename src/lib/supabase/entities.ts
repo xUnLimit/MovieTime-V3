@@ -1,7 +1,7 @@
 import type { Database } from './database.types';
 
 export const ENTITIES = {
-  USUARIOS: 'usuarios',
+  TERCEROS: 'terceros',
   SERVICIOS: 'servicios',
   CATEGORIAS: 'categorias',
   METODOS_PAGO: 'metodosPago',
@@ -41,7 +41,7 @@ export type QueryBuilder = {
 };
 
 export const TABLE_BY_COLLECTION: Record<CollectionName, PublicTableName> = {
-  usuarios: 'usuarios',
+  terceros: 'terceros',
   servicios: 'servicios',
   categorias: 'categorias',
   metodosPago: 'metodos_pago',

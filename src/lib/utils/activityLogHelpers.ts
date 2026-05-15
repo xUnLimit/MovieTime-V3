@@ -22,7 +22,7 @@ const TRACKEABLE_FIELDS: Record<string, Record<string, { label: string; tipo: Ca
     perfilNombre: { label: 'Perfil', tipo: 'string' },
     cicloPago: { label: 'Ciclo de Pago', tipo: 'string' },
   },
-  usuario: {
+  tercero: {
     nombre: { label: 'Nombre', tipo: 'string' },
     email: { label: 'Email', tipo: 'string' },
     telefono: { label: 'Teléfono', tipo: 'string' },

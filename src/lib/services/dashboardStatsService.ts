@@ -9,8 +9,8 @@ import type {
   IngresosDia,
   IngresosMes,
   ServicioPronostico,
-  UsuariosDia,
-  UsuariosMes,
+  TercerosDia,
+  TercerosMes,
   VentaPronostico,
   DashboardCounts,
 } from '@/types/dashboard';
@@ -20,8 +20,8 @@ type DashboardStatsRow = {
   id: string;
   gastos_total: number | string | null;
   ingresos_total: number | string | null;
-  usuarios_por_mes: Json | null;
-  usuarios_por_dia: Json | null;
+  terceros_por_mes: Json | null;
+  terceros_por_dia: Json | null;
   ingresos_por_mes: Json | null;
   ingresos_por_dia: Json | null;
   ingresos_por_categoria: Json | null;
@@ -41,8 +41,8 @@ function createEmptyStats(): DashboardStats {
   return {
     gastosTotal: 0,
     ingresosTotal: 0,
-    usuariosPorMes: [],
-    usuariosPorDia: [],
+    tercerosPorMes: [],
+    tercerosPorDia: [],
     ingresosPorMes: [],
     ingresosPorDia: [],
     ingresosPorCategoria: [],
@@ -117,7 +117,7 @@ export async function adjustGastosStats(_params: {
   void _params;
 }
 
-export async function adjustUsuariosPorMes(_params: {
+export async function adjustTercerosPorMes(_params: {
   mes: string;
   dia: string;
   tipo: 'cliente' | 'revendedor';
@@ -142,29 +142,6 @@ export async function upsertServicioPronostico(
   void _servicioId;
 }
 
-export async function rebuildDashboardStats(_preFetchedData?: unknown): Promise<void> {
-  void _preFetchedData;
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
-    throw new Error('Esta accion requiere conexion a internet.');
-  }
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw new Error(error.message);
-  const token = data.session?.access_token;
-  if (!token) throw new Error('No hay una sesion activa para recalcular el dashboard');
-
-  const response = await fetch('/api/dashboard/rebuild', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(typeof body.error === 'string' ? body.error : 'Error al recalcular el dashboard');
-  }
-}
-
 export function getMesKeyFromDate(date: Date): string {
   return format(date, 'yyyy-MM');
 }
@@ -177,8 +154,8 @@ function rowToStats(row: DashboardStatsRow): DashboardStats {
   return {
     gastosTotal: Number(row.gastos_total ?? 0),
     ingresosTotal: Number(row.ingresos_total ?? 0),
-    usuariosPorMes: jsonArray<UsuariosMes>(row.usuarios_por_mes),
-    usuariosPorDia: jsonArray<UsuariosDia>(row.usuarios_por_dia),
+    tercerosPorMes: jsonArray<TercerosMes>(row.terceros_por_mes),
+    tercerosPorDia: jsonArray<TercerosDia>(row.terceros_por_dia),
     ingresosPorMes: jsonArray<IngresosMes>(row.ingresos_por_mes),
     ingresosPorDia: jsonArray<IngresosDia>(row.ingresos_por_dia),
     ingresosPorCategoria: jsonArray<IngresoCategoria>(row.ingresos_por_categoria),

@@ -30,11 +30,11 @@ import { sincronizarUnaVenta } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
 import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
-import { syncUsuarioMetodoPago } from '@/lib/services/usuarioMetodoPagoSyncService';
+import { syncTerceroMetodoPago } from '@/lib/services/terceroMetodoPagoSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import { safeAsyncSideEffect, toMoneyNumber } from '@/lib/utils/safety';
-import { isPendingUserPaymentMethodId } from '@/lib/utils/usuarioMetodoPago';
+import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
 import type { ActivityLog, MetodoPago, PagoVenta, VentaDoc } from '@/types';
 import type { VentaPronostico } from '@/types/dashboard';
 
@@ -115,7 +115,7 @@ async function getUsdValues(amount: number, moneda: string) {
 }
 
 function nullableMetodoPagoId(id?: string | null) {
-  return isPendingUserPaymentMethodId(id) ? null : id;
+  return isPendingTerceroPaymentMethodId(id) ? null : id;
 }
 
 function ventaBaseFromRecord(doc: Record<string, unknown>): VentaDoc {
@@ -376,8 +376,8 @@ export async function renewVentaUseCase(
 
   let syncPaymentMethodFailed = false;
   try {
-    await syncUsuarioMetodoPago({
-      usuarioId: venta.clienteId,
+    await syncTerceroMetodoPago({
+      terceroId: venta.clienteId,
       metodoPagoId: input.metodoPagoId,
       metodoPagoNombre,
       moneda,
@@ -464,8 +464,8 @@ export async function updateVentaPagoUseCase(
 
   let syncPaymentMethodFailed = false;
   try {
-    await syncUsuarioMetodoPago({
-      usuarioId: venta.clienteId,
+    await syncTerceroMetodoPago({
+      terceroId: venta.clienteId,
       metodoPagoId: input.metodoPagoId,
       metodoPagoNombre,
       moneda,
@@ -570,8 +570,8 @@ export async function updateVentaWithLatestPagoUseCase(
 
   if (updates.clienteId && updates.metodoPagoId) {
     try {
-      await syncUsuarioMetodoPago({
-        usuarioId: updates.clienteId,
+      await syncTerceroMetodoPago({
+        terceroId: updates.clienteId,
         metodoPagoId: updates.metodoPagoId,
         metodoPagoNombre: updates.metodoPagoNombre,
         moneda: updates.moneda,

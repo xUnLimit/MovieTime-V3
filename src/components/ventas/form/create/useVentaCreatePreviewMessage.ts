@@ -2,12 +2,12 @@ import { useCallback, useEffect, useMemo } from "react";
 
 import type { VentaItem } from "@/features/ventas/ventas-form-shared";
 import { formatearFechaWhatsApp, getSaludo } from "@/lib/utils/whatsapp";
-import type { Categoria, Servicio, Usuario } from "@/types";
+import type { Categoria, Servicio, Tercero } from "@/types";
 
 interface UseVentaCreatePreviewMessageParams {
   categorias: Categoria[];
   categoriaSeleccionada?: Categoria;
-  clienteSeleccionado?: Usuario;
+  clienteSeleccionado?: Tercero;
   codigo?: string;
   fechaFin?: Date;
   items: VentaItem[];

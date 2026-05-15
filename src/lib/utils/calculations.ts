@@ -44,7 +44,7 @@ export function calcularMontoRestante(
 
 /**
  * Calcula el monto sin consumir de una venta basado en días calendar
- * Usa differenceInCalendarDays para consistencia con módulo de Usuarios
+ * Usa differenceInCalendarDays para consistencia con módulo de Terceros
  */
 export function calcularMontoSinConsumir(
   fechaInicio: Date,

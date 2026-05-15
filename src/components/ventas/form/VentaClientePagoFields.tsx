@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getUsuarioMetodoPagoNombre } from "@/lib/utils/usuarioMetodoPago";
-import type { Usuario } from "@/types/clientes";
+import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
+import type { Tercero } from "@/types/clientes";
 
 interface MetodoPagoOption {
   id: string;
@@ -18,8 +18,8 @@ interface MetodoPagoOption {
 }
 
 interface VentaClientePagoFieldsProps {
-  clienteSeleccionado?: Usuario;
-  usuariosFiltrados: Usuario[];
+  clienteSeleccionado?: Tercero;
+  tercerosFiltrados: Tercero[];
   searchCliente: string;
   metodoPagoId?: string;
   metodoPagoNombre?: string;
@@ -27,13 +27,13 @@ interface VentaClientePagoFieldsProps {
   clienteError?: string;
   metodoPagoError?: string;
   onSearchClienteChange: (value: string) => void;
-  onSelectUsuario: (usuario: Usuario) => void;
+  onSelectTercero: (usuario: Tercero) => void;
   onSelectMetodoPago: (metodoId: string) => void;
 }
 
 export function VentaClientePagoFields({
   clienteSeleccionado,
-  usuariosFiltrados,
+  tercerosFiltrados,
   searchCliente,
   metodoPagoId,
   metodoPagoNombre,
@@ -41,7 +41,7 @@ export function VentaClientePagoFields({
   clienteError,
   metodoPagoError,
   onSearchClienteChange,
-  onSelectUsuario,
+  onSelectTercero,
   onSelectMetodoPago,
 }: VentaClientePagoFieldsProps) {
   return (
@@ -72,7 +72,7 @@ export function VentaClientePagoFields({
                   </span>
                 </span>
               ) : (
-                "Seleccionar usuario"
+                "Seleccionar tercero"
               )}
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
@@ -89,7 +89,7 @@ export function VentaClientePagoFields({
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar usuario..."
+                  placeholder="Buscar tercero..."
                   value={searchCliente}
                   onChange={(event) => onSearchClienteChange(event.target.value)}
                   onKeyDown={(event) => event.stopPropagation()}
@@ -99,15 +99,15 @@ export function VentaClientePagoFields({
               </div>
             </div>
             <div className="max-h-[300px] overflow-y-auto">
-              {usuariosFiltrados.length === 0 ? (
+              {tercerosFiltrados.length === 0 ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">
-                  No se encontraron usuarios
+                  No se encontraron terceros
                 </div>
               ) : (
-                usuariosFiltrados.map((usuario) => (
+                tercerosFiltrados.map((usuario) => (
                   <DropdownMenuItem
                     key={usuario.id}
-                    onClick={() => onSelectUsuario(usuario)}
+                    onClick={() => onSelectTercero(usuario)}
                   >
                     <div className="flex items-center gap-2">
                       <span>
@@ -150,7 +150,7 @@ export function VentaClientePagoFields({
               className="w-full justify-between"
             >
               {metodoPagoId
-                ? getUsuarioMetodoPagoNombre(metodoPagoId, metodoPagoNombre)
+                ? getTerceroMetodoPagoNombre(metodoPagoId, metodoPagoNombre)
                 : "Seleccionar método de pago"}
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>

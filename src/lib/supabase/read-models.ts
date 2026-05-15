@@ -98,12 +98,12 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
   return camel as T;
 }
 
-export async function enrichUsuarios<T>(usuarios: T[]): Promise<T[]> {
-  const ids = usuarios
+export async function enrichTerceros<T>(terceros: T[]): Promise<T[]> {
+  const ids = terceros
     .map((usuario) => (usuario as Record<string, unknown>).id)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
-  if (ids.length === 0) return usuarios;
-  const metodoIds = usuarios
+  if (ids.length === 0) return terceros;
+  const metodoIds = terceros
     .map((usuario) => (usuario as Record<string, unknown>).metodoPagoId)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
@@ -112,9 +112,9 @@ export async function enrichUsuarios<T>(usuarios: T[]): Promise<T[]> {
       ? supabase.from('metodos_pago').select('id,nombre,moneda').in('id', metodoIds)
       : Promise.resolve({ data: [], error: null }),
     supabase
-      .from('v_usuarios_servicios_activos')
-      .select('usuario_id,servicios_activos')
-      .in('usuario_id', ids),
+      .from('v_terceros_servicios_activos')
+      .select('tercero_id,servicios_activos')
+      .in('tercero_id', ids),
   ]);
 
   if (metodosResult.error) throw new Error(metodosResult.error.message);
@@ -128,12 +128,12 @@ export async function enrichUsuarios<T>(usuarios: T[]): Promise<T[]> {
   );
   const serviciosActivos = new Map(
     (serviciosResult.data ?? []).map((row) => [
-      row.usuario_id,
+      row.tercero_id,
       Number(row.servicios_activos ?? 0),
     ])
   );
 
-  return usuarios.map((usuario) => {
+  return terceros.map((usuario) => {
     const record = usuario as Record<string, unknown>;
     const metodoPagoId = typeof record.metodoPagoId === 'string' ? record.metodoPagoId : undefined;
     const metodo = metodoPagoId ? metodos.get(metodoPagoId) : undefined;

@@ -7,7 +7,7 @@ describe('buildOfflineDetailRoutes', () => {
     const routes = buildOfflineDetailRoutes({
       ventas: [{ id: 'venta-1' }],
       servicios: [{ id: 'servicio-1', categoriaId: 'categoria-1' }],
-      usuarios: [{ id: 'usuario-1' }],
+      terceros: [{ id: 'usuario-1' }],
       categorias: [{ id: 'categoria-1' }],
       metodosPago: [{ id: 'metodo-1' }],
     });

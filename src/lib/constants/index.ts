@@ -9,8 +9,8 @@ export const NAVIGATION_ITEMS = [
     icon: 'LayoutDashboard'
   },
   {
-    label: 'Usuarios',
-    href: '/usuarios',
+    label: 'Terceros',
+    href: '/terceros',
     icon: 'Users'
   },
   {

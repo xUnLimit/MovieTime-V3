@@ -24,12 +24,12 @@ import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema
 import { formatearFecha } from "@/lib/utils/calculations";
 import { cn } from "@/lib/utils";
 import {
-  isPendingUserPaymentMethodId,
-  PENDING_USER_PAYMENT_ID,
-} from "@/lib/utils/usuarioMetodoPago";
+  isPendingTerceroPaymentMethodId,
+  PENDING_TERCERO_PAYMENT_ID,
+} from "@/lib/utils/terceroMetodoPago";
 import { VentaClientePagoFields } from "@/components/ventas/form/VentaClientePagoFields";
 import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSelector";
-import type { Categoria, MetodoPago, Plan, Servicio, Usuario } from "@/types";
+import type { Categoria, MetodoPago, Plan, Servicio, Tercero } from "@/types";
 
 const CODIGO_CONTROL_KEYS = [
   "Backspace",
@@ -57,8 +57,8 @@ interface VentaEditDatosTabProps {
   setValue: UseFormSetValue<VentaEditFormData>;
   clearErrors: UseFormClearErrors<VentaEditFormData>;
   errors: FieldErrors<VentaEditFormData>;
-  clienteSeleccionado?: Usuario;
-  usuariosFiltrados: Usuario[];
+  clienteSeleccionado?: Tercero;
+  tercerosFiltrados: Tercero[];
   searchCliente: string;
   metodoPagoIdValue: string;
   metodoPagoNombre?: string;
@@ -98,7 +98,7 @@ export function VentaEditDatosTab({
   clearErrors,
   errors,
   clienteSeleccionado,
-  usuariosFiltrados,
+  tercerosFiltrados,
   searchCliente,
   metodoPagoIdValue,
   metodoPagoNombre,
@@ -138,7 +138,7 @@ export function VentaEditDatosTab({
     <>
       <VentaClientePagoFields
         clienteSeleccionado={clienteSeleccionado}
-        usuariosFiltrados={usuariosFiltrados}
+        tercerosFiltrados={tercerosFiltrados}
         searchCliente={searchCliente}
         metodoPagoId={metodoPagoIdValue}
         metodoPagoNombre={metodoPagoNombre}
@@ -146,12 +146,12 @@ export function VentaEditDatosTab({
         clienteError={errors.clienteId?.message}
         metodoPagoError={errors.metodoPagoId?.message}
         onSearchClienteChange={onSearchClienteChange}
-        onSelectUsuario={(usuario) => {
+        onSelectTercero={(usuario) => {
           setValue("clienteId", usuario.id);
           setValue(
             "metodoPagoId",
-            isPendingUserPaymentMethodId(usuario.metodoPagoId)
-              ? PENDING_USER_PAYMENT_ID
+            isPendingTerceroPaymentMethodId(usuario.metodoPagoId)
+              ? PENDING_TERCERO_PAYMENT_ID
               : usuario.metodoPagoId,
           );
           clearErrors("clienteId");
@@ -223,7 +223,7 @@ export function VentaEditDatosTab({
                     ? tiposPlanes.find((tipo) => tipo.id === tipoPlanId)?.nombre
                     : categoriaIdValue
                       ? "Seleccionar tipo"
-                      : "Primero selecciona categorÃ­a"}
+                      : "Primero selecciona categoría"}
                   <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>

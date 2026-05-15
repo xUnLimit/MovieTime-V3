@@ -31,7 +31,7 @@ interface LogFiltersProps {
   entidadFilter: string;
   setEntidadFilter: (value: string) => void;
   usuarioFilter: string;
-  setUsuarioFilter: (value: string) => void;
+  setTerceroFilter: (value: string) => void;
   selectedCount: number;
   canDeleteLogs?: boolean;
   onDeleteSelected: () => void;
@@ -44,7 +44,7 @@ const entityLabels: Record<string, string> = {
   cliente: 'Cliente',
   revendedor: 'Revendedor',
   servicio: 'Servicio',
-  usuario: 'Usuario',
+  tercero: 'Tercero',
   categoria: 'Categoría',
   metodo_pago: 'Método de Pago',
   gasto: 'Gasto',

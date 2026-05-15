@@ -2,7 +2,7 @@ import { logCacheHit } from '@/lib/supabase/dashboard-repository';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { getDashboardHome, getDashboardStats, rebuildDashboardStats } from '@/lib/services/dashboardStatsService';
+import { getDashboardHome, getDashboardStats } from '@/lib/services/dashboardStatsService';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { DashboardStats, DashboardCounts } from '@/types/dashboard';
 import type { ActivityLog } from '@/types';
@@ -18,7 +18,7 @@ interface DashboardState {
   lastStatsFetch: number | null;
 
   fetchDashboard: (force?: boolean) => Promise<void>;
-  /** Solo carga métricas financieras del dashboard (sin counts de usuarios ni actividad) */
+  /** Solo carga métricas financieras del dashboard (sin counts de terceros ni actividad) */
   fetchDashboardStats: (force?: boolean) => Promise<void>;
   recalculateDashboard: () => Promise<void>;
   /** Invalidate cache so the dashboard re-fetches on next visit */
@@ -95,8 +95,6 @@ export const useDashboardStore = create<DashboardState>()(
       recalculateDashboard: async () => {
         set({ isRecalculating: true, error: null });
         try {
-          await rebuildDashboardStats();
-          // Force-refresh after admin repair so UI reflects the live SQL read model.
           await get().fetchDashboard(true);
         } catch (error) {
           const errorMessage =

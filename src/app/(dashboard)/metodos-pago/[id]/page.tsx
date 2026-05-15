@@ -120,7 +120,7 @@ function VerMetodoPagoPageContent() {
     );
   }
 
-  const isUsuario = metodo.asociadoA === 'usuario';
+  const isTercero = metodo.asociadoA === 'tercero';
 
   return (
     <div className="space-y-5">
@@ -180,7 +180,7 @@ function VerMetodoPagoPageContent() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                 <span>Asociado a</span>
               </div>
-              <p className="text-sm font-medium">{isUsuario ? 'Usuario' : 'Servicio'}</p>
+              <p className="text-sm font-medium">{isTercero ? 'Tercero' : 'Servicio'}</p>
             </div>
 
             <div>
@@ -220,11 +220,11 @@ function VerMetodoPagoPageContent() {
         {/* Información Adicional / Datos de la Cuenta / Datos del Servicio */}
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold mb-6">
-            {isUsuario ? 'Datos de la Cuenta' : 'Información Adicional'}
+            {isTercero ? 'Datos de la Cuenta' : 'Información Adicional'}
           </h2>
 
           <div className="space-y-5">
-            {isUsuario ? (
+            {isTercero ? (
               <>
                 <div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">

@@ -144,13 +144,13 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
     : null;
 
   const iconMap: Record<string, IconComponent> = {
-    venta: ShoppingCart, servicio: Tv2, usuario: UserCog,
+    venta: ShoppingCart, servicio: Tv2, tercero: UserCog,
     cliente: UserCog, revendedor: UserCog, categoria: Tag,
     metodo_pago: CreditCard, template: FileText,
   };
 
   const entidadLabels: Record<string, string> = {
-    venta: 'Venta', servicio: 'Servicio', usuario: 'Usuario',
+    venta: 'Venta', servicio: 'Servicio', tercero: 'Tercero',
     cliente: 'Cliente', revendedor: 'Revendedor', categoria: 'Categoría',
     metodo_pago: 'Método de pago', template: 'Template',
   };
@@ -162,7 +162,7 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
 
   switch (log.accion) {
     case 'creacion': {
-      const icon = (log.entidad === 'usuario' || log.entidad === 'cliente' || log.entidad === 'revendedor')
+      const icon = (log.entidad === 'tercero' || log.entidad === 'cliente' || log.entidad === 'revendedor')
         ? UserPlus
         : (iconMap[log.entidad] ?? Plus);
 
@@ -236,7 +236,7 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
     }
 
     case 'eliminacion': {
-      const icon = (log.entidad === 'usuario' || log.entidad === 'cliente' || log.entidad === 'revendedor')
+      const icon = (log.entidad === 'tercero' || log.entidad === 'cliente' || log.entidad === 'revendedor')
         ? UserMinus
         : Trash2;
       if (log.entidad === 'servicio') {

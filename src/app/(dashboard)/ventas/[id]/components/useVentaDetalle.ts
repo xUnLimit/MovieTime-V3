@@ -20,7 +20,7 @@ import {
   timestampToDate,
   updateVentaPagoUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
-import { withPendingUserPaymentMethod } from '@/lib/utils/usuarioMetodoPago';
+import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
 import { generarMensajeVenta } from '@/lib/utils/whatsapp';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useTemplatesStore } from '@/store/templatesStore';
@@ -201,9 +201,9 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     try {
       if (metodosPago.length === 0) {
         const methods = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
-          { field: 'asociadoA', operator: '==', value: 'usuario' },
+          { field: 'asociadoA', operator: '==', value: 'tercero' },
         ]);
-        setMetodosPago(Array.isArray(methods) ? withPendingUserPaymentMethod(methods) : withPendingUserPaymentMethod([]));
+        setMetodosPago(Array.isArray(methods) ? withPendingTerceroPaymentMethod(methods) : withPendingTerceroPaymentMethod([]));
       }
 
       if (categoriaPlanes.length === 0 && venta?.categoriaId) {
@@ -259,7 +259,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       if (renovacion.syncPaymentMethodFailed) {
         toast.warning('Venta renovada con advertencia', {
-          description: 'La renovación se guardó, pero no se pudo actualizar el método de pago en usuarios.',
+          description: 'La renovación se guardó, pero no se pudo actualizar el método de pago en terceros.',
         });
       }
 
@@ -356,7 +356,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       if (updateResult.syncPaymentMethodFailed) {
         toast.warning('Pago actualizado con advertencia', {
-          description: 'El pago se actualizó, pero no se pudo reflejar el método de pago en usuarios.',
+          description: 'El pago se actualizó, pero no se pudo reflejar el método de pago en terceros.',
         });
       }
 

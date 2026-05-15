@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState, type WheelEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -26,7 +26,7 @@ import { useVentaEditProfilePendingData } from "@/components/ventas/form/edit/us
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useUsuariosStore } from "@/store/usuariosStore";
+import { useTercerosStore } from "@/store/tercerosStore";
 import { MetodoPago, Servicio } from "@/types";
 import type { VentaDoc } from "@/types/ventas";
 import { toast } from "sonner";
@@ -38,12 +38,12 @@ import {
 import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import { rankServicios } from "@/lib/utils/servicioRanking";
 import {
-  getUsuarioMetodoPagoMoneda,
-  getUsuarioMetodoPagoNombre,
-  isPendingUserPaymentMethodId,
-  PENDING_USER_PAYMENT_ID,
-  withPendingUserPaymentMethod,
-} from "@/lib/utils/usuarioMetodoPago";
+  getTerceroMetodoPagoMoneda,
+  getTerceroMetodoPagoNombre,
+  isPendingTerceroPaymentMethodId,
+  PENDING_TERCERO_PAYMENT_ID,
+  withPendingTerceroPaymentMethod,
+} from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 
 export interface VentaEditData {
@@ -78,10 +78,10 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   const router = useRouter();
   const categorias = useCategoriasStore((state) => state.categorias);
   const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
-  const fetchMetodosPagoUsuarios = useMetodosPagoStore((state) => state.fetchMetodosPagoUsuarios);
+  const fetchMetodosPagoTerceros = useMetodosPagoStore((state) => state.fetchMetodosPagoTerceros);
   const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
-  const usuarios = useUsuariosStore((state) => state.usuarios);
-  const fetchUsuarios = useUsuariosStore((state) => state.fetchUsuarios);
+  const terceros = useTercerosStore((state) => state.terceros);
+  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
 
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
 
@@ -106,14 +106,14 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   useEffect(() => {
     const loadData = async () => {
       fetchCategorias();
-      fetchUsuarios();
+      fetchTerceros();
 
-      // Cargar solo métodos de pago de usuarios
-      const metodos = await fetchMetodosPagoUsuarios();
-      setMetodosPago(withPendingUserPaymentMethod(metodos));
+      // Cargar solo métodos de pago de terceros
+      const metodos = await fetchMetodosPagoTerceros();
+      setMetodosPago(withPendingTerceroPaymentMethod(metodos));
     };
     loadData();
-  }, [fetchCategorias, fetchMetodosPagoUsuarios, fetchUsuarios]);
+  }, [fetchCategorias, fetchMetodosPagoTerceros, fetchTerceros]);
 
   const {
     register,
@@ -127,7 +127,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     resolver: zodResolver(ventaEditSchema),
     defaultValues: {
       clienteId: venta.clienteId,
-      metodoPagoId: venta.metodoPagoId || PENDING_USER_PAYMENT_ID,
+      metodoPagoId: venta.metodoPagoId || PENDING_TERCERO_PAYMENT_ID,
       categoriaId: venta.categoriaId,
       servicioId: venta.servicioId,
       planId: "",
@@ -158,18 +158,18 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   const estadoValue = watch("estado");
   const notasValue = watch("notas");
 
-  const usuariosOrdenados = useMemo(() => {
-    return [...usuarios].sort((a, b) => {
+  const tercerosOrdenados = useMemo(() => {
+    return [...terceros].sort((a, b) => {
       const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bDate - aDate;
     });
-  }, [usuarios]);
-  const usuariosFiltrados = useMemo(() => {
-    if (!searchCliente) return usuariosOrdenados;
+  }, [terceros]);
+  const tercerosFiltrados = useMemo(() => {
+    if (!searchCliente) return tercerosOrdenados;
     const search = normalizeSearchText(searchCliente);
     const phoneQuery = normalizePhoneSearch(searchCliente);
-    return usuariosOrdenados.filter((usuario) => {
+    return tercerosOrdenados.filter((usuario) => {
       const nombreCompleto = normalizeSearchText(
         `${usuario.nombre} ${usuario.apellido || ""}`,
       );
@@ -179,7 +179,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
         (phoneQuery.length > 0 && telefono.includes(phoneQuery))
       );
     });
-  }, [usuariosOrdenados, searchCliente]);
+  }, [tercerosOrdenados, searchCliente]);
   const categoriasOrdenadas = useMemo(
     () =>
       [...categorias].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
@@ -187,15 +187,15 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   );
   const metodosPagoOrdenados = useMemo(() => {
     const pendientes = metodosPago.filter((metodo) =>
-      isPendingUserPaymentMethodId(metodo.id),
+      isPendingTerceroPaymentMethodId(metodo.id),
     );
     const restantes = metodosPago
-      .filter((metodo) => !isPendingUserPaymentMethodId(metodo.id))
+      .filter((metodo) => !isPendingTerceroPaymentMethodId(metodo.id))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
     return [...pendientes, ...restantes];
   }, [metodosPago]);
-  const clienteSeleccionado = usuariosOrdenados.find(
+  const clienteSeleccionado = tercerosOrdenados.find(
     (usuario) => usuario.id === clienteIdValue,
   );
   const metodoPagoSeleccionado = metodosPagoOrdenados.find(
@@ -569,7 +569,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   } = useVentaPerfilDetalle(perfilesPendientesDetalle);
 
   const simboloMoneda = getCurrencySymbol(
-    getUsuarioMetodoPagoMoneda(
+    getTerceroMetodoPagoMoneda(
       metodoPagoIdValue,
       metodoPagoSeleccionado?.moneda || venta.moneda,
     ),
@@ -704,11 +704,11 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
       const precio = roundToDecimals(Number(data.precio) || 0);
       const descuento = roundToDecimals(Number(data.descuento) || 0);
       const precioFinalValue = calculateDiscountedAmount(precio, descuento);
-      const metodoPagoNombre = getUsuarioMetodoPagoNombre(
+      const metodoPagoNombre = getTerceroMetodoPagoNombre(
         data.metodoPagoId,
         metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
       );
-      const monedaMetodoPago = getUsuarioMetodoPagoMoneda(
+      const monedaMetodoPago = getTerceroMetodoPagoMoneda(
         data.metodoPagoId,
         metodoPagoSeleccionado?.moneda || venta.moneda,
       );
@@ -769,7 +769,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
       if (syncPaymentMethodFailed) {
         toast.warning("Venta actualizada con advertencia", {
           description:
-            "La venta se guardó, pero no se pudo actualizar el método de pago en usuarios.",
+            "La venta se guardó, pero no se pudo actualizar el método de pago en terceros.",
         });
       }
 
@@ -842,7 +842,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
             clearErrors={clearErrors}
             errors={errors}
             clienteSeleccionado={clienteSeleccionado}
-            usuariosFiltrados={usuariosFiltrados}
+            tercerosFiltrados={tercerosFiltrados}
             searchCliente={searchCliente}
             metodoPagoIdValue={metodoPagoIdValue}
             metodoPagoNombre={metodoPagoSeleccionado?.nombre}
@@ -884,7 +884,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
                 ? `${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}`
                 : venta.clienteNombre
             }
-            metodoPagoNombre={getUsuarioMetodoPagoNombre(
+            metodoPagoNombre={getTerceroMetodoPagoNombre(
               metodoPagoIdValue,
               metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
             )}

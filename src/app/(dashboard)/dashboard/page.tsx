@@ -30,14 +30,14 @@ function IngresosVsGastosChartSkeleton() {
   );
 }
 
-function CrecimientoUsuariosSkeleton() {
+function CrecimientoTercerosSkeleton() {
   // Replica exacta del estado isLoading=true del componente real:
   // header y descripción con texto real, solo el chart es skeleton.
   return (
     <Card className="py-1">
       <CardHeader className="flex flex-row items-center justify-between pt-3 pb-2 px-6">
         <div className="space-y-0.5">
-          <CardTitle className="text-base">Crecimiento de Usuarios</CardTitle>
+          <CardTitle className="text-base">Crecimiento de Terceros</CardTitle>
           <CardDescription className="text-sm">
             Nuevos clientes y revendedores adquiridos por mes.
           </CardDescription>
@@ -75,9 +75,9 @@ const IngresosVsGastosChart = dynamic(
   () => import('@/components/dashboard/IngresosVsGastosChart').then(m => ({ default: m.IngresosVsGastosChart })),
   { loading: () => <IngresosVsGastosChartSkeleton />, ssr: false }
 );
-const CrecimientoUsuarios = dynamic(
-  () => import('@/components/dashboard/CrecimientoUsuarios').then(m => ({ default: m.CrecimientoUsuarios })),
-  { loading: () => <CrecimientoUsuariosSkeleton />, ssr: false }
+const CrecimientoTerceros = dynamic(
+  () => import('@/components/dashboard/CrecimientoTerceros').then(m => ({ default: m.CrecimientoTerceros })),
+  { loading: () => <CrecimientoTercerosSkeleton />, ssr: false }
 );
 const RevenueByCategory = dynamic(
   () => import('@/components/dashboard/RevenueByCategory').then(m => ({ default: m.RevenueByCategory })),
@@ -258,7 +258,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        <CrecimientoUsuarios />
+        <CrecimientoTerceros />
         <RevenueByCategory />
         <RecentActivity />
       </div>

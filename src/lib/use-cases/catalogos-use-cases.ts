@@ -1,4 +1,4 @@
-import {
+﻿import {
   getMetodoPagoById,
   queryMetodosPago,
 } from '@/lib/supabase/catalogos-repository';
@@ -13,8 +13,8 @@ export function fetchMetodosPagoByFiltersUseCase<T = MetodoPago>(filters: QueryF
   return queryMetodosPago<T>(filters);
 }
 
-export function fetchMetodosPagoUsuariosUseCase<T = MetodoPago>() {
-  return queryMetodosPago<T>([{ field: 'asociadoA', operator: '==', value: 'usuario' }]);
+export function fetchMetodosPagoTercerosUseCase<T = MetodoPago>() {
+  return queryMetodosPago<T>([{ field: 'asociadoA', operator: '==', value: 'tercero' }]);
 }
 
 export function fetchMetodosPagoServiciosUseCase<T = MetodoPago>() {

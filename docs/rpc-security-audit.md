@@ -13,10 +13,8 @@ The exposed transactional RPCs are payment/period operations:
 
 Internal/admin functions include:
 
-- `public.auth_role`
 - `private.auth_role`
 - `handle_new_auth_user`
-- `rebuild_dashboard_financial_stats`
 
 ## Required Contract
 

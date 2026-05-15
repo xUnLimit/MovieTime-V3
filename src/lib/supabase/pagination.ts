@@ -1,4 +1,4 @@
-import { supabase } from './client';
+﻿import { supabase } from './client';
 import { ENTITIES, type CollectionName } from './entities';
 import { readField, normalizeFilterValue } from './filters';
 import type { Database } from './database.types';
@@ -45,7 +45,7 @@ type QueryLike<T> = PromiseLike<{ data: T[] | null; count?: number | null; error
 };
 
 const READ_ENTITY_BY_COLLECTION: Record<string, PublicEntity> = {
-  [ENTITIES.USUARIOS]: 'usuarios',
+  [ENTITIES.TERCEROS]: 'terceros',
   [ENTITIES.SERVICIOS]: 'v_servicios_full',
   [ENTITIES.CATEGORIAS]: 'categorias',
   [ENTITIES.METODOS_PAGO]: 'metodos_pago',
@@ -94,8 +94,8 @@ export async function getPaginated<T>(
     .slice(0, pageSize)
     .map((row: unknown) => mapPaginatedRow(collectionName, reviveDates(toCamelCaseObject(row))) as T);
   const enrichedDocs =
-    collectionName === ENTITIES.USUARIOS
-      ? await enrichUsuarios(docs)
+    collectionName === ENTITIES.TERCEROS
+      ? await enrichTerceros(docs)
       : collectionName === ENTITIES.SERVICIOS
         ? await enrichServicios(docs)
         : docs;
@@ -167,13 +167,13 @@ function mapPaginatedRow(collectionName: string, row: unknown): unknown {
   return record;
 }
 
-async function enrichUsuarios<T>(usuarios: T[]): Promise<T[]> {
-  const ids = usuarios
+async function enrichTerceros<T>(terceros: T[]): Promise<T[]> {
+  const ids = terceros
     .map((usuario) => (usuario as Record<string, unknown>).id)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
-  if (ids.length === 0) return usuarios;
+  if (ids.length === 0) return terceros;
 
-  const metodoIds = usuarios
+  const metodoIds = terceros
     .map((usuario) => (usuario as Record<string, unknown>).metodoPagoId)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
@@ -182,9 +182,9 @@ async function enrichUsuarios<T>(usuarios: T[]): Promise<T[]> {
       ? supabase.from('metodos_pago').select('id,nombre,moneda').in('id', metodoIds)
       : Promise.resolve({ data: [], error: null }),
     supabase
-      .from('v_usuarios_servicios_activos')
-      .select('usuario_id,servicios_activos')
-      .in('usuario_id', ids),
+      .from('v_terceros_servicios_activos')
+      .select('tercero_id,servicios_activos')
+      .in('tercero_id', ids),
   ]);
 
   if (metodosResult.error) throw new Error(metodosResult.error.message);
@@ -198,12 +198,12 @@ async function enrichUsuarios<T>(usuarios: T[]): Promise<T[]> {
   );
   const serviciosActivos = new Map(
     (serviciosResult.data ?? []).map((row) => [
-      row.usuario_id,
+      row.tercero_id,
       Number(row.servicios_activos ?? 0),
     ])
   );
 
-  return usuarios.map((usuario) => {
+  return terceros.map((usuario) => {
     const record = usuario as Record<string, unknown>;
     const metodoPagoId = typeof record.metodoPagoId === 'string' ? record.metodoPagoId : undefined;
     const metodo = metodoPagoId ? metodos.get(metodoPagoId) : undefined;

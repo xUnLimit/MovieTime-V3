@@ -10,7 +10,7 @@ interface VentasProximasDialogsProps {
   notifSeleccionada: NotificacionVentaConId | null;
   renovarDialogOpen: boolean;
   accionesDialogOpen: boolean;
-  metodosPagoUsuarios: MetodoPago[];
+  metodosPagoTerceros: MetodoPago[];
   categoriaPlanes: Plan[];
   servicioTipoSeleccionado: string | undefined;
   onRenovarOpenChange: (open: boolean) => void;
@@ -25,7 +25,7 @@ export function VentasProximasDialogs({
   notifSeleccionada,
   renovarDialogOpen,
   accionesDialogOpen,
-  metodosPagoUsuarios,
+  metodosPagoTerceros,
   categoriaPlanes,
   servicioTipoSeleccionado,
   onRenovarOpenChange,
@@ -49,7 +49,7 @@ export function VentasProximasDialogs({
             precioFinal: notifSeleccionada.precioFinal || 0,
             fechaFin: new Date(notifSeleccionada.fechaFin),
           }}
-          metodosPago={metodosPagoUsuarios}
+          metodosPago={metodosPagoTerceros}
           categoriaPlanes={categoriaPlanes}
           tipoPlan={servicioTipoSeleccionado}
           onConfirm={onConfirmRenovacion}

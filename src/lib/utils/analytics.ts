@@ -9,12 +9,12 @@ export function trackVentaCreada(_data: {
   monto: number;
   servicio: string;
   ciclo: string;
-  tipoUsuario: 'cliente' | 'revendedor';
+  tipoTercero: 'cliente' | 'revendedor';
 }) {
   void _data;
 }
 
-export function trackUsuarioCreado(_tipo: 'cliente' | 'revendedor') {
+export function trackTerceroCreado(_tipo: 'cliente' | 'revendedor') {
   void _tipo;
 }
 

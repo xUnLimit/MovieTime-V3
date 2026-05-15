@@ -6,7 +6,7 @@ import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { CreditCard, Users, Package } from "lucide-react";
 
 export const MetodosPagoMetrics = memo(function MetodosPagoMetrics() {
-  const { totalMetodos, metodosUsuarios, metodosServicios, fetchCounts } =
+  const { totalMetodos, metodosTerceros, metodosServicios, fetchCounts } =
     useMetodosPagoStore();
 
   useEffect(() => {
@@ -23,8 +23,8 @@ export const MetodosPagoMetrics = memo(function MetodosPagoMetrics() {
         underlineColor="bg-blue-500"
       />
       <MetricCard
-        title="Asociados a Usuarios"
-        value={metodosUsuarios}
+        title="Asociados a Terceros"
+        value={metodosTerceros}
         icon={Users}
         iconColor="text-purple-500"
         underlineColor="bg-purple-500"

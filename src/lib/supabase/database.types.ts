@@ -63,7 +63,7 @@ export type Database = {
             foreignKeyName: "activity_log_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -113,7 +113,7 @@ export type Database = {
             foreignKeyName: "categorias_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -220,7 +220,7 @@ export type Database = {
             foreignKeyName: "push_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -240,51 +240,6 @@ export type Database = {
           activo?: boolean
           code?: string
           nombre?: string | null
-        }
-        Relationships: []
-      }
-      dashboard_stats: {
-        Row: {
-          gastos_total: number
-          id: string
-          ingresos_categorias_por_mes: Json
-          ingresos_por_categoria: Json
-          ingresos_por_dia: Json
-          ingresos_por_mes: Json
-          ingresos_total: number
-          servicios_pronostico: Json
-          updated_at: string
-          usuarios_por_dia: Json
-          usuarios_por_mes: Json
-          ventas_pronostico: Json
-        }
-        Insert: {
-          gastos_total?: number
-          id?: string
-          ingresos_categorias_por_mes?: Json
-          ingresos_por_categoria?: Json
-          ingresos_por_dia?: Json
-          ingresos_por_mes?: Json
-          ingresos_total?: number
-          servicios_pronostico?: Json
-          updated_at?: string
-          usuarios_por_dia?: Json
-          usuarios_por_mes?: Json
-          ventas_pronostico?: Json
-        }
-        Update: {
-          gastos_total?: number
-          id?: string
-          ingresos_categorias_por_mes?: Json
-          ingresos_por_categoria?: Json
-          ingresos_por_dia?: Json
-          ingresos_por_mes?: Json
-          ingresos_total?: number
-          servicios_pronostico?: Json
-          updated_at?: string
-          usuarios_por_dia?: Json
-          usuarios_por_mes?: Json
-          ventas_pronostico?: Json
         }
         Relationships: []
       }
@@ -354,7 +309,7 @@ export type Database = {
             foreignKeyName: "gastos_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -372,39 +327,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      legacy_orphan_records: {
-        Row: {
-          detected_at: string
-          id: string
-          orphan_reason: string
-          payload: Json
-          resolution: string | null
-          resolved_at: string | null
-          source_collection: string
-          source_id: string
-        }
-        Insert: {
-          detected_at?: string
-          id?: string
-          orphan_reason: string
-          payload: Json
-          resolution?: string | null
-          resolved_at?: string | null
-          source_collection: string
-          source_id: string
-        }
-        Update: {
-          detected_at?: string
-          id?: string
-          orphan_reason?: string
-          payload?: Json
-          resolution?: string | null
-          resolved_at?: string | null
-          source_collection?: string
-          source_id?: string
-        }
-        Relationships: []
       }
       metodos_pago: {
         Row: {
@@ -478,7 +400,7 @@ export type Database = {
             foreignKeyName: "metodos_pago_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -898,15 +820,15 @@ export type Database = {
             foreignKeyName: "notificaciones_venta_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "terceros"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "notificaciones_venta_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "v_usuarios_servicios_activos"
-            referencedColumns: ["usuario_id"]
+            referencedRelation: "v_terceros_servicios_activos"
+            referencedColumns: ["tercero_id"]
           },
           {
             foreignKeyName: "notificaciones_venta_notificacion_id_fkey"
@@ -1074,14 +996,14 @@ export type Database = {
             foreignKeyName: "pagos_servicio_anulada_by_fkey"
             columns: ["anulada_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pagos_servicio_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -1212,14 +1134,14 @@ export type Database = {
             foreignKeyName: "pagos_venta_anulada_by_fkey"
             columns: ["anulada_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pagos_venta_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -1386,7 +1308,7 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      usuarios: {
         Row: {
           active: boolean
           created_at: string
@@ -1467,7 +1389,7 @@ export type Database = {
             foreignKeyName: "servicio_periodos_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -1588,7 +1510,7 @@ export type Database = {
             foreignKeyName: "servicios_archivado_by_fkey"
             columns: ["archivado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -1609,14 +1531,14 @@ export type Database = {
             foreignKeyName: "servicios_cortado_by_fkey"
             columns: ["cortado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "servicios_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -1625,32 +1547,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "planes_tipos"
             referencedColumns: ["id", "categoria_id"]
-          },
-        ]
-      }
-      template_placeholders: {
-        Row: {
-          id: string
-          placeholder: string
-          template_id: string
-        }
-        Insert: {
-          id?: string
-          placeholder: string
-          template_id: string
-        }
-        Update: {
-          id?: string
-          placeholder?: string
-          template_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "template_placeholders_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "templates"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -1711,7 +1607,7 @@ export type Database = {
         }
         Relationships: []
       }
-      usuarios: {
+      terceros: {
         Row: {
           active: boolean
           apellido: string
@@ -1723,7 +1619,7 @@ export type Database = {
           nombre: string
           notas: string | null
           telefono: string
-          tipo: Database["public"]["Enums"]["usuario_tipo_enum"]
+          tipo: Database["public"]["Enums"]["tercero_tipo_enum"]
           updated_at: string
         }
         Insert: {
@@ -1737,7 +1633,7 @@ export type Database = {
           nombre: string
           notas?: string | null
           telefono: string
-          tipo: Database["public"]["Enums"]["usuario_tipo_enum"]
+          tipo: Database["public"]["Enums"]["tercero_tipo_enum"]
           updated_at?: string
         }
         Update: {
@@ -1751,19 +1647,19 @@ export type Database = {
           nombre?: string
           notas?: string | null
           telefono?: string
-          tipo?: Database["public"]["Enums"]["usuario_tipo_enum"]
+          tipo?: Database["public"]["Enums"]["tercero_tipo_enum"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "usuarios_created_by_fkey"
+            foreignKeyName: "terceros_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "usuarios_metodo_pago_id_fkey"
+            foreignKeyName: "terceros_metodo_pago_id_fkey"
             columns: ["metodo_pago_id"]
             isOneToOne: false
             referencedRelation: "metodos_pago"
@@ -1837,7 +1733,7 @@ export type Database = {
             foreignKeyName: "venta_periodos_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -1943,7 +1839,7 @@ export type Database = {
             foreignKeyName: "ventas_archivado_by_fkey"
             columns: ["archivado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -1964,28 +1860,28 @@ export type Database = {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "terceros"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "v_usuarios_servicios_activos"
-            referencedColumns: ["usuario_id"]
+            referencedRelation: "v_terceros_servicios_activos"
+            referencedColumns: ["tercero_id"]
           },
           {
             foreignKeyName: "ventas_cortada_by_fkey"
             columns: ["cortada_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2060,7 +1956,7 @@ export type Database = {
             foreignKeyName: "gastos_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2321,15 +2217,15 @@ export type Database = {
             foreignKeyName: "notificaciones_venta_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "terceros"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "notificaciones_venta_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "v_usuarios_servicios_activos"
-            referencedColumns: ["usuario_id"]
+            referencedRelation: "v_terceros_servicios_activos"
+            referencedColumns: ["tercero_id"]
           },
           {
             foreignKeyName: "notificaciones_venta_servicio_id_fkey"
@@ -2435,14 +2331,14 @@ export type Database = {
             foreignKeyName: "pagos_servicio_anulada_by_fkey"
             columns: ["anulada_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pagos_servicio_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2558,14 +2454,14 @@ export type Database = {
             foreignKeyName: "pagos_venta_anulada_by_fkey"
             columns: ["anulada_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pagos_venta_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2642,15 +2538,15 @@ export type Database = {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "terceros"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "v_usuarios_servicios_activos"
-            referencedColumns: ["usuario_id"]
+            referencedRelation: "v_terceros_servicios_activos"
+            referencedColumns: ["tercero_id"]
           },
           {
             foreignKeyName: "ventas_servicio_id_fkey"
@@ -2708,7 +2604,7 @@ export type Database = {
             foreignKeyName: "servicio_periodos_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2781,7 +2677,7 @@ export type Database = {
             foreignKeyName: "servicios_archivado_by_fkey"
             columns: ["archivado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2802,14 +2698,14 @@ export type Database = {
             foreignKeyName: "servicios_cortado_by_fkey"
             columns: ["cortado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "servicios_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2923,7 +2819,7 @@ export type Database = {
             foreignKeyName: "servicios_archivado_by_fkey"
             columns: ["archivado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2944,14 +2840,14 @@ export type Database = {
             foreignKeyName: "servicios_cortado_by_fkey"
             columns: ["cortado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "servicios_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -2963,13 +2859,13 @@ export type Database = {
           },
         ]
       }
-      v_usuarios_servicios_activos: {
+      v_terceros_servicios_activos: {
         Row: {
           apellido: string | null
           nombre: string | null
           servicios_activos: number | null
-          tipo: Database["public"]["Enums"]["usuario_tipo_enum"] | null
-          usuario_id: string | null
+          tipo: Database["public"]["Enums"]["tercero_tipo_enum"] | null
+          tercero_id: string | null
         }
         Relationships: []
       }
@@ -3003,7 +2899,7 @@ export type Database = {
             foreignKeyName: "venta_periodos_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -3072,7 +2968,7 @@ export type Database = {
             foreignKeyName: "ventas_archivado_by_fkey"
             columns: ["archivado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -3093,28 +2989,28 @@ export type Database = {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "terceros"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "v_usuarios_servicios_activos"
-            referencedColumns: ["usuario_id"]
+            referencedRelation: "v_terceros_servicios_activos"
+            referencedColumns: ["tercero_id"]
           },
           {
             foreignKeyName: "ventas_cortada_by_fkey"
             columns: ["cortada_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -3203,7 +3099,7 @@ export type Database = {
             foreignKeyName: "ventas_archivado_by_fkey"
             columns: ["archivado_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -3224,28 +3120,28 @@ export type Database = {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "terceros"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "v_usuarios_servicios_activos"
-            referencedColumns: ["usuario_id"]
+            referencedRelation: "v_terceros_servicios_activos"
+            referencedColumns: ["tercero_id"]
           },
           {
             foreignKeyName: "ventas_cortada_by_fkey"
             columns: ["cortada_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
           {
@@ -3374,8 +3270,8 @@ export type Database = {
           id: string
           ingresos_total: number
           gastos_total: number
-          usuarios_por_mes: Json
-          usuarios_por_dia: Json
+          terceros_por_mes: Json
+          terceros_por_dia: Json
           ingresos_por_mes: Json
           ingresos_por_dia: Json
           ingresos_por_categoria: Json
@@ -3396,7 +3292,6 @@ export type Database = {
         Args: { p_servicio_id: string; p_delete_payments?: boolean }
         Returns: undefined
       }
-      rebuild_dashboard_financial_stats: { Args: never; Returns: undefined }
       run_all_validations: { Args: never; Returns: Json }
     }
     Enums: {
@@ -3406,7 +3301,7 @@ export type Database = {
         | "corte"
         | "eliminacion"
         | "renovacion"
-      asociado_a_enum: "usuario" | "servicio"
+      asociado_a_enum: "tercero" | "servicio"
       categoria_tipo_cat_enum: "plataforma_streaming" | "otros"
       categoria_tipo_enum: "cliente" | "revendedor"
       ciclo_pago_enum: "mensual" | "trimestral" | "semestral" | "anual"
@@ -3414,7 +3309,7 @@ export type Database = {
         | "cliente"
         | "revendedor"
         | "servicio"
-        | "usuario"
+        | "tercero"
         | "categoria"
         | "metodo_pago"
         | "gasto"
@@ -3437,7 +3332,7 @@ export type Database = {
         | "renovacion"
         | "suscripcion"
         | "cancelacion"
-      usuario_tipo_enum: "cliente" | "revendedor"
+      tercero_tipo_enum: "cliente" | "revendedor"
       venta_estado_enum: "activo" | "inactivo"
     }
     CompositeTypes: {
@@ -3573,7 +3468,7 @@ export const Constants = {
         "eliminacion",
         "renovacion",
       ],
-      asociado_a_enum: ["usuario", "servicio"],
+      asociado_a_enum: ["tercero", "servicio"],
       categoria_tipo_cat_enum: ["plataforma_streaming", "otros"],
       categoria_tipo_enum: ["cliente", "revendedor"],
       ciclo_pago_enum: ["mensual", "trimestral", "semestral", "anual"],
@@ -3581,7 +3476,7 @@ export const Constants = {
         "cliente",
         "revendedor",
         "servicio",
-        "usuario",
+        "tercero",
         "categoria",
         "metodo_pago",
         "gasto",
@@ -3607,7 +3502,7 @@ export const Constants = {
         "suscripcion",
         "cancelacion",
       ],
-      usuario_tipo_enum: ["cliente", "revendedor"],
+      tercero_tipo_enum: ["cliente", "revendedor"],
       venta_estado_enum: ["activo", "inactivo"],
     },
   },

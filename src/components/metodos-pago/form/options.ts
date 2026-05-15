@@ -39,14 +39,14 @@ export const TIPO_CUENTA_OPTIONS = [
 ] as const;
 
 export const ASOCIADO_A_OPTIONS = [
-  { value: "usuario", label: "Usuario" },
+  { value: "tercero", label: "Tercero" },
   { value: "servicio", label: "Servicio" },
 ] as const;
 
 export function getAsociadoALabel(tipo: string | undefined) {
   switch (tipo) {
-    case "usuario":
-      return "Usuario";
+    case "tercero":
+      return "Tercero";
     case "servicio":
       return "Servicio";
     default:

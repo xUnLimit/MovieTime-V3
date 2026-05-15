@@ -43,7 +43,7 @@ describe('metodo pago form helpers', () => {
   it('hydrates saved notes and detects no changes for user payment methods', () => {
     const metodoPago: MetodoPago = {
       ...baseMetodoPago,
-      asociadoA: 'usuario',
+      asociadoA: 'tercero',
       tipoCuenta: 'ahorro',
     };
 

@@ -14,7 +14,7 @@ import { ventaSchema, type VentaFormData } from "@/features/ventas/venta-form-sc
 import {
   MESES_POR_CICLO,
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
-  type MetodoPagoUsuarioOption,
+  type MetodoPagoTerceroOption,
   type TipoVentaItem,
   type VentaItem,
   type VentaItemErrors,
@@ -36,27 +36,27 @@ import {
   roundToDecimals,
 } from "@/lib/utils/calculations";
 import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
-import { syncUsuarioMetodoPago } from "@/lib/services/usuarioMetodoPagoSyncService";
+import { syncTerceroMetodoPago } from "@/lib/services/terceroMetodoPagoSyncService";
 import {
-  isPendingUserPaymentMethodId,
-  PENDING_USER_PAYMENT_CURRENCY,
-  PENDING_USER_PAYMENT_ID,
-  PENDING_USER_PAYMENT_NAME,
-} from "@/lib/utils/usuarioMetodoPago";
+  isPendingTerceroPaymentMethodId,
+  PENDING_TERCERO_PAYMENT_CURRENCY,
+  PENDING_TERCERO_PAYMENT_ID,
+  PENDING_TERCERO_PAYMENT_NAME,
+} from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { rankServicios } from "@/lib/utils/servicioRanking";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useTemplatesStore } from "@/store/templatesStore";
-import { useUsuariosStore } from "@/store/usuariosStore";
+import { useTercerosStore } from "@/store/tercerosStore";
 import { useVentasStore } from "@/store/ventasStore";
 import type { Plan, Servicio, VentaDoc } from "@/types";
 
-const PENDING_METODO_PAGO_OPTION: MetodoPagoUsuarioOption = {
-  id: PENDING_USER_PAYMENT_ID,
-  nombre: PENDING_USER_PAYMENT_NAME,
-  asociadoA: "usuario",
-  moneda: PENDING_USER_PAYMENT_CURRENCY,
+const PENDING_METODO_PAGO_OPTION: MetodoPagoTerceroOption = {
+  id: PENDING_TERCERO_PAYMENT_ID,
+  nombre: PENDING_TERCERO_PAYMENT_NAME,
+  asociadoA: "tercero",
+  moneda: PENDING_TERCERO_PAYMENT_CURRENCY,
 };
 
 export function VentasForm() {
@@ -64,17 +64,17 @@ export function VentasForm() {
   const categorias = useCategoriasStore((state) => state.categorias);
   const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
   const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
-  const usuarios = useUsuariosStore((state) => state.usuarios);
-  const fetchUsuarios = useUsuariosStore((state) => state.fetchUsuarios);
+  const terceros = useTercerosStore((state) => state.terceros);
+  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
   const createVenta = useVentasStore((state) => state.createVenta);
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
   const templateNotificacion = useTemplatesStore((state) =>
     state.getTemplateByTipo("suscripcion"),
   );
 
-  // Estado local para métodos de pago filtrados (solo usuarios)
-  const [metodosPagoUsuarios, setMetodosPagoUsuarios] = useState<
-    MetodoPagoUsuarioOption[]
+  // Estado local para métodos de pago filtrados (solo terceros)
+  const [metodosPagoTerceros, setMetodosPagoTerceros] = useState<
+    MetodoPagoTerceroOption[]
   >([]);
 
   // Estado local para servicios (cargados solo cuando se selecciona categoría)
@@ -141,23 +141,23 @@ export function VentasForm() {
   // Efecto inicial: solo cargar datos que no dependen de selección
   useEffect(() => {
     fetchCategorias();
-    fetchUsuarios();
+    fetchTerceros();
     fetchTemplates();
 
-    // Cargar métodos de pago filtrados (solo usuarios)
-    const loadMetodosPagoUsuarios = async () => {
+    // Cargar métodos de pago filtrados (solo terceros)
+    const loadMetodosPagoTerceros = async () => {
       try {
-        const metodos = await fetchMetodosPagoByFiltersUseCase<MetodoPagoUsuarioOption>([
-          { field: "asociadoA", operator: "==", value: "usuario" },
+        const metodos = await fetchMetodosPagoByFiltersUseCase<MetodoPagoTerceroOption>([
+          { field: "asociadoA", operator: "==", value: "tercero" },
         ]);
-        setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION, ...metodos]);
+        setMetodosPagoTerceros([PENDING_METODO_PAGO_OPTION, ...metodos]);
       } catch (error) {
         console.error("Error cargando métodos de pago:", error);
-        setMetodosPagoUsuarios([PENDING_METODO_PAGO_OPTION]);
+        setMetodosPagoTerceros([PENDING_METODO_PAGO_OPTION]);
       }
     };
-    loadMetodosPagoUsuarios();
-  }, [fetchCategorias, fetchUsuarios, fetchTemplates]);
+    loadMetodosPagoTerceros();
+  }, [fetchCategorias, fetchTerceros, fetchTemplates]);
 
   // Efecto para cargar servicios cuando se selecciona una categoría
   useEffect(() => {
@@ -188,21 +188,21 @@ export function VentasForm() {
     [categorias, categoriaId],
   );
 
-  // Usuarios (clientes + revendedores) ordenados por fecha de creación (más reciente primero)
-  const usuariosOrdenados = useMemo(() => {
-    return [...usuarios].sort((a, b) => {
+  // Terceros (clientes + revendedores) ordenados por fecha de creación (más reciente primero)
+  const tercerosOrdenados = useMemo(() => {
+    return [...terceros].sort((a, b) => {
       const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bDate - aDate; // Más reciente primero
     });
-  }, [usuarios]);
+  }, [terceros]);
 
-  // Usuarios filtrados por búsqueda
-  const usuariosFiltrados = useMemo(() => {
-    if (!searchCliente) return usuariosOrdenados;
+  // Terceros filtrados por búsqueda
+  const tercerosFiltrados = useMemo(() => {
+    if (!searchCliente) return tercerosOrdenados;
     const search = normalizeSearchText(searchCliente);
     const phoneQuery = normalizePhoneSearch(searchCliente);
-    return usuariosOrdenados.filter((u) => {
+    return tercerosOrdenados.filter((u) => {
       const nombreCompleto = normalizeSearchText(
         `${u.nombre} ${u.apellido || ""}`,
       );
@@ -212,7 +212,7 @@ export function VentasForm() {
         (phoneQuery.length > 0 && telefono.includes(phoneQuery))
       );
     });
-  }, [usuariosOrdenados, searchCliente]);
+  }, [tercerosOrdenados, searchCliente]);
 
   const categoriasOrdenadas = useMemo(
     () =>
@@ -220,16 +220,16 @@ export function VentasForm() {
     [categorias],
   );
   const metodosPagoOrdenados = useMemo(() => {
-    const metodosReales = metodosPagoUsuarios
-      .filter((metodo) => metodo.id !== PENDING_USER_PAYMENT_ID)
+    const metodosReales = metodosPagoTerceros
+      .filter((metodo) => metodo.id !== PENDING_TERCERO_PAYMENT_ID)
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
     return [PENDING_METODO_PAGO_OPTION, ...metodosReales];
-  }, [metodosPagoUsuarios]);
-  const clienteSeleccionado = usuariosOrdenados.find(
+  }, [metodosPagoTerceros]);
+  const clienteSeleccionado = tercerosOrdenados.find(
     (c) => c.id === clienteIdValue,
   );
-  const metodoPagoSeleccionado = metodosPagoUsuarios.find(
+  const metodoPagoSeleccionado = metodosPagoTerceros.find(
     (m) => m.id === metodoPagoIdValue,
   );
   const servicioSeleccionado = serviciosCategoria.find(
@@ -788,20 +788,20 @@ export function VentasForm() {
       await Promise.all(writes);
 
       try {
-        await syncUsuarioMetodoPago({
-          usuarioId: clienteIdValue,
+        await syncTerceroMetodoPago({
+          terceroId: clienteIdValue,
           metodoPagoId: metodoPagoIdValue,
           metodoPagoNombre,
           moneda,
         });
       } catch (syncError) {
         console.error(
-          "Error sincronizando método de pago del usuario:",
+          "Error sincronizando método de pago del tercero:",
           syncError,
         );
         toast.warning("Venta guardada con advertencia", {
           description:
-            "La venta se creó, pero no se pudo actualizar el método de pago en usuarios.",
+            "La venta se creó, pero no se pudo actualizar el método de pago en terceros.",
         });
       }
 
@@ -979,7 +979,7 @@ export function VentasForm() {
           <div className="space-y-6">
             <VentaClientePagoFields
               clienteSeleccionado={clienteSeleccionado}
-              usuariosFiltrados={usuariosFiltrados}
+              tercerosFiltrados={tercerosFiltrados}
               searchCliente={searchCliente}
               metodoPagoId={metodoPagoIdValue}
               metodoPagoNombre={metodoPagoSeleccionado?.nombre}
@@ -987,13 +987,13 @@ export function VentasForm() {
               clienteError={errors.clienteId?.message}
               metodoPagoError={errors.metodoPagoId?.message}
               onSearchClienteChange={setSearchCliente}
-              onSelectUsuario={(usuario) => {
+              onSelectTercero={(usuario) => {
                 setValue("clienteId", usuario.id);
                 clearErrors("clienteId");
-                const nextMetodoPagoId = isPendingUserPaymentMethodId(
+                const nextMetodoPagoId = isPendingTerceroPaymentMethodId(
                   usuario.metodoPagoId,
                 )
-                  ? PENDING_USER_PAYMENT_ID
+                  ? PENDING_TERCERO_PAYMENT_ID
                   : usuario.metodoPagoId;
                 setValue("metodoPagoId", nextMetodoPagoId);
                 clearErrors("metodoPagoId");

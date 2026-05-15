@@ -27,12 +27,12 @@ interface MetodosPagoState {
 
   // Counts for metrics (free queries)
   totalMetodos: number;
-  metodosUsuarios: number;
+  metodosTerceros: number;
   metodosServicios: number;
 
   // Actions
   fetchMetodosPago: (force?: boolean) => Promise<void>;
-  fetchMetodosPagoUsuarios: () => Promise<MetodoPago[]>;
+  fetchMetodosPagoTerceros: () => Promise<MetodoPago[]>;
   fetchMetodosPagoServicios: () => Promise<MetodoPago[]>;
   fetchCounts: () => Promise<void>;
   createMetodoPago: (metodo: Omit<MetodoPago, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -41,7 +41,7 @@ interface MetodosPagoState {
   deleteMetodoPago: (id: string) => Promise<void>;
   setSelectedMetodo: (metodo: MetodoPago | null) => void;
   getMetodoPago: (id: string) => MetodoPago | undefined;
-  getMetodosPagoUsuarios: () => MetodoPago[];
+  getMetodosPagoTerceros: () => MetodoPago[];
   getMetodosPagoServicios: () => MetodoPago[];
 }
 
@@ -56,7 +56,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
       lastFetch: null,
       selectedMetodo: null,
       totalMetodos: 0,
-      metodosUsuarios: 0,
+      metodosTerceros: 0,
       metodosServicios: 0,
 
       fetchMetodosPago: async (force = false) => {
@@ -77,15 +77,15 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
         }
       },
 
-      fetchMetodosPagoUsuarios: async () => {
+      fetchMetodosPagoTerceros: async () => {
         try {
           const metodos = await queryMetodosPago<MetodoPago>([
-            { field: 'asociadoA', operator: '==', value: 'usuario' },
+            { field: 'asociadoA', operator: '==', value: 'tercero' },
             { field: 'activo', operator: '==', value: true }
           ]);
           return metodos;
         } catch (error) {
-          console.error('Error fetching metodos pago usuarios:', error);
+          console.error('Error fetching metodos pago terceros:', error);
           return [];
         }
       },
@@ -105,15 +105,15 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
       fetchCounts: async () => {
         try {
-          const [totalMetodos, metodosUsuarios, metodosServicios] = await Promise.all([
-            countMetodosPago([{ field: 'asociadoA', operator: 'in', value: ['usuario', 'servicio'] }]),
-            countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'usuario' }]),
+          const [totalMetodos, metodosTerceros, metodosServicios] = await Promise.all([
+            countMetodosPago([{ field: 'asociadoA', operator: 'in', value: ['tercero', 'servicio'] }]),
+            countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'tercero' }]),
             countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'servicio' }]),
           ]);
-          set({ totalMetodos, metodosUsuarios, metodosServicios });
+          set({ totalMetodos, metodosTerceros, metodosServicios });
         } catch (error) {
           console.error('Error fetching counts:', error);
-          set({ totalMetodos: 0, metodosUsuarios: 0, metodosServicios: 0 });
+          set({ totalMetodos: 0, metodosTerceros: 0, metodosServicios: 0 });
         }
       },
 
@@ -182,22 +182,22 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             );
 
             // Actualizar contadores si cambió el asociadoA
-            let newMetodosUsuarios = state.metodosUsuarios;
+            let newMetodosTerceros = state.metodosTerceros;
             let newMetodosServicios = state.metodosServicios;
 
             if (cambioAsociado && oldMetodo) {
-              if (oldMetodo.asociadoA === 'usuario' && updates.asociadoA === 'servicio') {
-                newMetodosUsuarios--;
+              if (oldMetodo.asociadoA === 'tercero' && updates.asociadoA === 'servicio') {
+                newMetodosTerceros--;
                 newMetodosServicios++;
-              } else if (oldMetodo.asociadoA === 'servicio' && updates.asociadoA === 'usuario') {
-                newMetodosUsuarios++;
+              } else if (oldMetodo.asociadoA === 'servicio' && updates.asociadoA === 'tercero') {
+                newMetodosTerceros++;
                 newMetodosServicios--;
               }
             }
 
             return {
               metodosPago: updatedMetodos,
-              metodosUsuarios: newMetodosUsuarios,
+              metodosTerceros: newMetodosTerceros,
               metodosServicios: newMetodosServicios
             };
           });
@@ -272,8 +272,8 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
         return get().metodosPago.find((metodo) => metodo.id === id);
       },
 
-      getMetodosPagoUsuarios: () => {
-        return get().metodosPago.filter((metodo) => metodo.asociadoA === 'usuario' && metodo.activo);
+      getMetodosPagoTerceros: () => {
+        return get().metodosPago.filter((metodo) => metodo.asociadoA === 'tercero' && metodo.activo);
       },
 
       getMetodosPagoServicios: () => {

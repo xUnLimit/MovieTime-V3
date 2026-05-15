@@ -8,10 +8,10 @@ export interface DashboardStats {
   ingresosTotal: number;
 
   // Chart: User growth (last 12 months)
-  usuariosPorMes: UsuariosMes[];
+  tercerosPorMes: TercerosMes[];
 
   // Chart: User growth (current month, by day)
-  usuariosPorDia: UsuariosDia[];
+  tercerosPorDia: TercerosDia[];
 
   // Chart: Income vs Expenses (last 12 months)
   ingresosPorMes: IngresosMes[];
@@ -61,13 +61,13 @@ export interface IngresosDia {
   gastos: number;   // USD
 }
 
-export interface UsuariosDia {
+export interface TercerosDia {
   dia: string;  // "YYYY-MM-DD"
   clientes: number;
   revendedores: number;
 }
 
-export interface UsuariosMes {
+export interface TercerosMes {
   mes: string; // "YYYY-MM"
   clientes: number;
   revendedores: number;

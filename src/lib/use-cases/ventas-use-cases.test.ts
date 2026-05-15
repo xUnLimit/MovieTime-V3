@@ -41,8 +41,8 @@ const ventaSyncService = vi.hoisted(() => ({
   getVentaConUltimoPago: vi.fn(),
 }));
 
-const usuarioMetodoPagoSyncService = vi.hoisted(() => ({
-  syncUsuarioMetodoPago: vi.fn(),
+const terceroMetodoPagoSyncService = vi.hoisted(() => ({
+  syncTerceroMetodoPago: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/ventas-repository', () => ventasRepository);
@@ -53,7 +53,7 @@ vi.mock('@/lib/services/currencyService', () => ({
 vi.mock('@/lib/services/notificationSyncService', () => notificationSyncService);
 vi.mock('@/lib/services/pagosVentaService', () => pagosVentaService);
 vi.mock('@/lib/services/ventaSyncService', () => ventaSyncService);
-vi.mock('@/lib/services/usuarioMetodoPagoSyncService', () => usuarioMetodoPagoSyncService);
+vi.mock('@/lib/services/terceroMetodoPagoSyncService', () => terceroMetodoPagoSyncService);
 vi.mock('@/lib/supabase/catalogos-repository', () => ({
   getMetodoPagoById: vi.fn(),
 }));

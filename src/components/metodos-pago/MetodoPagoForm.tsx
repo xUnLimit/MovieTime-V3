@@ -254,7 +254,7 @@ export function MetodoPagoForm({
         };
         if (data.alias) metodoPagoData.alias = data.alias;
         if (data.notas) metodoPagoData.notas = data.notas;
-        if (data.asociadoA === "usuario" && data.tipoCuenta) {
+        if (data.asociadoA === "tercero" && data.tipoCuenta) {
           metodoPagoData.identificador = data.identificador || "";
           metodoPagoData.tipoCuenta = data.tipoCuenta;
         } else if (data.asociadoA === "servicio") {
@@ -286,7 +286,7 @@ export function MetodoPagoForm({
           alias: data.alias || "",
           notas: data.notas || "",
         };
-        if (data.asociadoA === "usuario") {
+        if (data.asociadoA === "tercero") {
           updates.tipoCuenta = data.tipoCuenta;
           updates.identificador = data.identificador || "";
         } else if (data.asociadoA === "servicio") {

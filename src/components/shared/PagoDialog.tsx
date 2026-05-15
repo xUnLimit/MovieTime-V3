@@ -15,12 +15,12 @@ import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculat
 import { generarMensajeVenta } from '@/lib/utils/whatsapp';
 import { useTemplatesStore } from '@/store/templatesStore';
 import {
-  getUsuarioMetodoPagoMoneda,
-  getUsuarioMetodoPagoNombre,
-  isPendingUserPaymentMethodId,
-  PENDING_USER_PAYMENT_ID,
-  withPendingUserPaymentMethod,
-} from '@/lib/utils/usuarioMetodoPago';
+  getTerceroMetodoPagoMoneda,
+  getTerceroMetodoPagoNombre,
+  isPendingTerceroPaymentMethodId,
+  PENDING_TERCERO_PAYMENT_ID,
+  withPendingTerceroPaymentMethod,
+} from '@/lib/utils/terceroMetodoPago';
 import { getServicioMetodoPagoNombre } from '@/lib/utils/servicioMetodoPago';
 import {
   CostoField,
@@ -54,7 +54,7 @@ export function PagoDialog(props: PagoDialogProps) {
   const isVentaRenew = isVenta && props.mode === 'renew';
 
   const defaultMetodoPagoId = isVenta
-    ? (isVentaRenew ? '' : venta?.metodoPagoId || PENDING_USER_PAYMENT_ID)
+    ? (isVentaRenew ? '' : venta?.metodoPagoId || PENDING_TERCERO_PAYMENT_ID)
     : (isEdit && pago ? pago.metodoPagoId || '' : servicio?.metodoPagoId || '');
   const defaultCosto = venta
     ? (props.mode === 'renew' ? roundToDecimals(venta.precioFinal || 0) : 0)
@@ -106,20 +106,20 @@ export function PagoDialog(props: PagoDialogProps) {
 
   const metodosFiltrados = useMemo(() => {
     const metodosBase = metodosPago.filter((m) =>
-      m.activo && (isVenta ? m.asociadoA === 'usuario' : m.asociadoA === 'servicio')
+      m.activo && (isVenta ? m.asociadoA === 'tercero' : m.asociadoA === 'servicio')
     );
 
     return isVenta
       ? (isVentaRenew
-          ? metodosBase.filter((metodo) => !isPendingUserPaymentMethodId(metodo.id))
-          : withPendingUserPaymentMethod(metodosBase))
+          ? metodosBase.filter((metodo) => !isPendingTerceroPaymentMethodId(metodo.id))
+          : withPendingTerceroPaymentMethod(metodosBase))
       : metodosBase;
   }, [isVenta, isVentaRenew, metodosPago]);
   const metodosPagoOrdenados = useMemo(() => {
     if (isVenta) {
-      const pendientes = metodosFiltrados.filter((metodo) => isPendingUserPaymentMethodId(metodo.id));
+      const pendientes = metodosFiltrados.filter((metodo) => isPendingTerceroPaymentMethodId(metodo.id));
       const restantes = metodosFiltrados
-        .filter((metodo) => !isPendingUserPaymentMethodId(metodo.id))
+        .filter((metodo) => !isPendingTerceroPaymentMethodId(metodo.id))
         .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
       return [...pendientes, ...restantes];
@@ -129,9 +129,9 @@ export function PagoDialog(props: PagoDialogProps) {
   }, [isVenta, metodosFiltrados]);
   const metodoPagoSeleccionado = metodosPagoOrdenados.find((m) => m.id === metodoPagoIdValue);
   const metodoPagoDisplayName = isVenta
-    ? getUsuarioMetodoPagoNombre(metodoPagoIdValue, metodoPagoSeleccionado?.nombre)
+    ? getTerceroMetodoPagoNombre(metodoPagoIdValue, metodoPagoSeleccionado?.nombre)
     : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar método');
-  const currencySymbol = getCurrencySymbol(getUsuarioMetodoPagoMoneda(metodoPagoIdValue, metodoPagoSeleccionado?.moneda));
+  const currencySymbol = getCurrencySymbol(getTerceroMetodoPagoMoneda(metodoPagoIdValue, metodoPagoSeleccionado?.moneda));
   const selectedPlan = useMemo(() => {
     if (!periodoValue || !props.categoriaPlanes?.length) return null;
     return props.categoriaPlanes.find((plan) =>
@@ -150,7 +150,7 @@ export function PagoDialog(props: PagoDialogProps) {
         if (props.pago) {
           reset({
             periodoRenovacion: props.pago.cicloPago || '',
-            metodoPagoId: (props.pago.metodoPagoId as string) || venta?.metodoPagoId || PENDING_USER_PAYMENT_ID,
+            metodoPagoId: (props.pago.metodoPagoId as string) || venta?.metodoPagoId || PENDING_TERCERO_PAYMENT_ID,
             costo: roundToDecimals(props.pago.precio ?? 0),
             descuento: (props.pago.descuento as number) ?? 0,
             fechaInicio: props.pago.fechaInicio ? new Date(props.pago.fechaInicio) : new Date(),
@@ -161,7 +161,7 @@ export function PagoDialog(props: PagoDialogProps) {
         }
         reset({
           periodoRenovacion: '',
-          metodoPagoId: venta?.metodoPagoId || PENDING_USER_PAYMENT_ID,
+          metodoPagoId: venta?.metodoPagoId || PENDING_TERCERO_PAYMENT_ID,
           costo: 0,
           descuento: 0,
           fechaInicio: new Date(),
@@ -309,8 +309,8 @@ export function PagoDialog(props: PagoDialogProps) {
       costo,
       descuento,
       notas: data.notas?.trim() ?? '',
-      metodoPagoNombre: getUsuarioMetodoPagoNombre(data.metodoPagoId, metodoPago?.nombre),
-      moneda: getUsuarioMetodoPagoMoneda(data.metodoPagoId, metodoPago?.moneda),
+      metodoPagoNombre: getTerceroMetodoPagoNombre(data.metodoPagoId, metodoPago?.nombre),
+      moneda: getTerceroMetodoPagoMoneda(data.metodoPagoId, metodoPago?.moneda),
       planId: selectedPlan?.id ?? venta?.planId,
       planNombre: selectedPlan?.nombre ?? venta?.planNombre,
       planTipoNombre: venta?.planTipoNombre,

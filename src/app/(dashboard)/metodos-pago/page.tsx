@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { UsuariosMetodosPagoTable } from '@/components/metodos-pago/UsuariosMetodosPagoTable';
+import { TercerosMetodosPagoTable } from '@/components/metodos-pago/TercerosMetodosPagoTable';
 import { ServiciosMetodosPagoTable } from '@/components/metodos-pago/ServiciosMetodosPagoTable';
 import { MetodosPagoMetrics } from '@/components/metodos-pago/MetodosPagoMetrics';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
@@ -13,7 +13,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
 function MetodosPagoPageContent() {
   const { metodosPago, fetchMetodosPago } = useMetodosPagoStore();
-  const [activeTab, setActiveTab] = useState('usuarios');
+  const [activeTab, setActiveTab] = useState('terceros');
 
   useEffect(() => {
     fetchMetodosPago();
@@ -41,10 +41,10 @@ function MetodosPagoPageContent() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex border-b border-border">
           <TabsTrigger
-            value="usuarios"
+            value="terceros"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
-            Usuarios
+            Terceros
           </TabsTrigger>
           <TabsTrigger
             value="servicios"
@@ -54,10 +54,10 @@ function MetodosPagoPageContent() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="usuarios" className="space-y-4">
-          <UsuariosMetodosPagoTable
+        <TabsContent value="terceros" className="space-y-4">
+          <TercerosMetodosPagoTable
             metodosPago={metodosPago}
-            title="Métodos de pago de Usuarios"
+            title="Métodos de pago de Terceros"
           />
         </TabsContent>
 

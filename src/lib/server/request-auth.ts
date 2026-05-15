@@ -19,7 +19,7 @@ export async function requireAuthenticatedAdmin(request: Request): Promise<Authe
   }
 
   const { data: profile, error: profileError } = await userClient
-    .from('profiles')
+    .from('usuarios')
     .select('active,role')
     .eq('id', userData.user.id)
     .maybeSingle();

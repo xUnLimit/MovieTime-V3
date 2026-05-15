@@ -40,7 +40,7 @@ interface LogTimelineProps {
   entidadFilter: string;
   setEntidadFilter: (value: string) => void;
   usuarioFilter: string;
-  setUsuarioFilter: (value: string) => void;
+  setTerceroFilter: (value: string) => void;
   // Paginación
   hasMore: boolean;
   hasPrevious: boolean;
@@ -69,7 +69,7 @@ export function LogTimeline({
   entidadFilter,
   setEntidadFilter,
   usuarioFilter,
-  setUsuarioFilter,
+  setTerceroFilter,
   hasMore,
   hasPrevious,
   page,
@@ -127,7 +127,7 @@ export function LogTimeline({
       cliente: 'Cliente',
       revendedor: 'Revendedor',
       servicio: 'Servicio',
-      usuario: 'Usuario',
+      tercero: 'Tercero',
       categoria: 'Categoría',
       metodo_pago: 'Método de Pago',
       gasto: 'Gasto',
@@ -256,7 +256,7 @@ export function LogTimeline({
     },
     {
       key: 'usuarioEmail',
-      header: 'Usuario',
+      header: 'Tercero',
       sortable: true,
       align: 'center',
       width: '180px',
@@ -346,7 +346,7 @@ export function LogTimeline({
           entidadFilter={entidadFilter}
           setEntidadFilter={setEntidadFilter}
           usuarioFilter={usuarioFilter}
-          setUsuarioFilter={setUsuarioFilter}
+          setTerceroFilter={setTerceroFilter}
           selectedCount={selectedLogs.size}
           canDeleteLogs={canDeleteLogs}
           onDeleteSelected={handleDeleteSelected}

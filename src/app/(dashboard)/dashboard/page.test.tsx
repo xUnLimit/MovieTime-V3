@@ -115,8 +115,8 @@ vi.mock('@/store/categoriasStore', () => ({
   },
 }));
 
-vi.mock('@/store/usuariosStore', () => ({
-  useUsuariosStore: () => ({}),
+vi.mock('@/store/tercerosStore', () => ({
+  useTercerosStore: () => ({}),
 }));
 
 vi.mock('@/types/notificaciones', () => ({

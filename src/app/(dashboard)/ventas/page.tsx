@@ -73,13 +73,13 @@ function VentasPageContent() {
   // Cargar categorías al montar
   useEffect(() => { fetchCategorias(); }, [fetchCategorias]);
 
-  // Recargar ventas si se actualizó el nombre de un cliente desde el módulo de usuarios
+  // Recargar ventas si se actualizó el nombre de un cliente desde el módulo de terceros
   useEffect(() => {
     const handler = () => {
       refresh();
     };
-    window.addEventListener('usuario-nombre-updated', handler);
-    return () => window.removeEventListener('usuario-nombre-updated', handler);
+    window.addEventListener('tercero-nombre-updated', handler);
+    return () => window.removeEventListener('tercero-nombre-updated', handler);
   }, [refresh]);
 
   const tituloTab = useMemo(() => {

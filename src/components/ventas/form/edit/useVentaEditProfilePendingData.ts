@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 
-import type { Usuario } from "@/types";
+import type { Tercero } from "@/types";
 import type { PendingVentaPerfil } from "@/components/ventas/form/useVentaPerfilDetalle";
 
 interface UseVentaEditProfilePendingDataParams {
-  clienteSeleccionado?: Usuario;
+  clienteSeleccionado?: Tercero;
   ventaClienteNombre: string;
   perfilNumeroValue?: string;
   perfilNombreValue?: string;

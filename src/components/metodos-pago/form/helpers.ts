@@ -1,4 +1,4 @@
-import type { DefaultValues } from "react-hook-form";
+﻿import type { DefaultValues } from "react-hook-form";
 import type { MetodoPago } from "@/types";
 import type { MetodoPagoFormData } from "./schema";
 
@@ -40,7 +40,7 @@ export function getMetodoPagoDefaultValues(
 
   return {
     nombre: "",
-    asociadoA: undefined as "servicio" | "usuario" | undefined,
+    asociadoA: undefined as "servicio" | "tercero" | undefined,
     pais: "",
     moneda: "",
     alias: "",
@@ -74,7 +74,7 @@ export function hasMetodoPagoFormChanges(
   if (values.asociadoA !== metodoPago.asociadoA) return true;
   if ((values.alias || "") !== (metodoPago.alias || "")) return true;
   if ((values.notas || "") !== (metodoPago.notas || "")) return true;
-  if (values.asociadoA === "usuario") {
+  if (values.asociadoA === "tercero") {
     if (values.tipoCuenta !== metodoPago.tipoCuenta) return true;
     if (values.identificador !== metodoPago.identificador) return true;
   } else if (values.asociadoA === "servicio") {
