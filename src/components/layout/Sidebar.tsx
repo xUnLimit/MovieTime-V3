@@ -30,6 +30,7 @@ type NavSection = { label?: string; items: NavItem[] };
 
 const navigationSections: NavSection[] = [
   {
+    label: 'Inicio',
     items: [
       {
         name: 'Dashboard',
@@ -39,7 +40,7 @@ const navigationSections: NavSection[] = [
     ]
   },
   {
-    label: 'GESTIÓN',
+    label: 'Operación',
     items: [
       {
         name: 'Terceros',
@@ -47,25 +48,45 @@ const navigationSections: NavSection[] = [
         icon: Users
       },
       {
+        name: 'Ventas',
+        href: '/ventas',
+        icon: ShoppingCart
+      },
+      {
         name: 'Servicios',
         href: '/servicios',
         icon: Tv2
       },
       {
-        name: 'Ventas',
-        href: '/ventas',
-        icon: ShoppingCart
+        name: 'Gastos',
+        href: '/gastos',
+        icon: DollarSign
       },
     ]
   },
   {
-    label: 'ADMINISTRACIÓN',
+    label: 'Seguimiento',
     items: [
       {
         name: 'Notificaciones',
         href: '/notificaciones',
         icon: Bell
       },
+      {
+        name: 'Servicios en Reposo',
+        href: '/reposo',
+        icon: Pause
+      },
+      {
+        name: 'Log de Actividad',
+        href: '/log-actividad',
+        icon: FileText
+      }
+    ]
+  },
+  {
+    label: 'Configuración',
+    items: [
       {
         name: 'Categorías',
         href: '/categorias',
@@ -75,31 +96,11 @@ const navigationSections: NavSection[] = [
         name: 'Métodos de Pago',
         href: '/metodos-pago',
         icon: Wallet
-      }
-    ]
-  },
-  {
-    label: 'OTROS',
-    items: [
-      {
-        name: 'Gastos',
-        href: '/gastos',
-        icon: DollarSign
       },
       {
-        name: 'Reposo',
-        href: '/reposo',
-        icon: Pause
-      },
-      {
-        name: 'Editor de Mensajes',
+        name: 'Plantillas de Mensajes',
         href: '/editor-mensajes',
         icon: MessageSquare
-      },
-      {
-        name: 'Log de Actividad',
-        href: '/log-actividad',
-        icon: FileText
       }
     ]
   }
@@ -321,7 +322,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
             </div>
 
             {/* Separador - POSICIÓN FIJA */}
-            {sectionIdx < navigationSections.length - 1 && (
+            {sectionIdx < filteredSections.length - 1 && (
               <div className="h-px w-full bg-sidebar-border my-4" />
             )}
           </div>

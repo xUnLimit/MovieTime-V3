@@ -13,6 +13,7 @@ import type {
   TercerosMes,
   VentaPronostico,
   DashboardCounts,
+  ChurnStats,
 } from '@/types/dashboard';
 import type { ActivityLog } from '@/types';
 
@@ -28,6 +29,7 @@ type DashboardStatsRow = {
   ingresos_categorias_por_mes: Json | null;
   ventas_pronostico: Json | null;
   servicios_pronostico: Json | null;
+  churn_stats?: Json | null;
   updated_at: string | null;
 };
 
@@ -49,6 +51,7 @@ function createEmptyStats(): DashboardStats {
     ingresosCategoriasPorMes: [],
     ventasPronostico: [],
     serviciosPronostico: [],
+    churnStats: createEmptyChurnStats(),
   };
 }
 
@@ -57,12 +60,22 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     return (await getOfflineDashboardHome())?.stats ?? createEmptyStats();
   }
 
-  const { data, error } = await supabase.rpc('get_dashboard_stats_live').maybeSingle();
+  const [statsResult, churnStats] = await Promise.all([
+    supabase.rpc('get_dashboard_stats_live').maybeSingle(),
+    getDashboardChurnStats(),
+  ]);
 
+  const { data, error } = statsResult;
   if (error) throw new Error(error.message);
-  if (!data) return createEmptyStats();
+  if (!data) return { ...createEmptyStats(), churnStats };
 
-  return rowToStats(data as DashboardStatsRow);
+  return rowToStats({ ...(data as DashboardStatsRow), churn_stats: churnStats as unknown as Json });
+}
+
+export async function getDashboardChurnStats(): Promise<ChurnStats> {
+  const { data, error } = await supabase.rpc('get_dashboard_churn_stats');
+  if (error) throw new Error(error.message);
+  return jsonToChurnStats(data);
 }
 
 export async function adjustIngresosStats(_params: {
@@ -162,6 +175,7 @@ function rowToStats(row: DashboardStatsRow): DashboardStats {
     ingresosCategoriasPorMes: jsonArray<IngresoCategoriaMes>(row.ingresos_categorias_por_mes),
     ventasPronostico: jsonArray<VentaPronostico>(row.ventas_pronostico),
     serviciosPronostico: jsonArray<ServicioPronostico>(row.servicios_pronostico),
+    churnStats: jsonToChurnStats(row.churn_stats ?? null),
     updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
   };
 }
@@ -174,6 +188,36 @@ function asRecord(value: Json | undefined): Record<string, Json> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, Json>
     : {};
+}
+
+function createEmptyChurnStats(): ChurnStats {
+  return {
+    kpis: {
+      clientesActivos: 0,
+      clientesInactivos: 0,
+      tasaChurnMesActual: 0,
+    },
+    porMes: [],
+  };
+}
+
+function jsonToChurnStats(value: Json | null): ChurnStats {
+  const record = asRecord(value ?? undefined);
+  const kpis = asRecord(record.kpis);
+
+  return {
+    kpis: {
+      clientesActivos: Number(kpis.clientesActivos ?? 0),
+      clientesInactivos: Number(kpis.clientesInactivos ?? 0),
+      tasaChurnMesActual: Number(kpis.tasaChurnMesActual ?? 0),
+    },
+    porMes: jsonArray<Record<string, Json>>(record.porMes).map((item) => ({
+      mes: String(item.mes ?? ''),
+      perdidos: Number(item.perdidos ?? 0),
+      activosInicio: Number(item.activosInicio ?? 0),
+      churnPct: Number(item.churnPct ?? 0),
+    })),
+  };
 }
 
 function activityLogFromJson(row: Record<string, unknown>): ActivityLog {

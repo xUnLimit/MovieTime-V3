@@ -3285,6 +3285,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_dashboard_churn_stats: { Args: never; Returns: Json }
       get_categorias_full: { Args: never; Returns: Json }
       get_categorias_counts: { Args: never; Returns: Json }
       get_dashboard_home: { Args: never; Returns: Json }

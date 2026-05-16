@@ -32,6 +32,9 @@ export interface DashboardStats {
   ventasPronostico?: VentaPronostico[];
   serviciosPronostico?: ServicioPronostico[];
 
+  // Customer churn read model
+  churnStats?: ChurnStats;
+
   updatedAt?: Date;
 }
 
@@ -105,4 +108,20 @@ export interface PronosticoMensual {
   ingresos: number;
   gastos: number;
   ganancias: number;
+}
+
+export interface ChurnMes {
+  mes: string;
+  perdidos: number;
+  activosInicio: number;
+  churnPct: number;
+}
+
+export interface ChurnStats {
+  kpis: {
+    clientesActivos: number;
+    clientesInactivos: number;
+    tasaChurnMesActual: number;
+  };
+  porMes: ChurnMes[];
 }

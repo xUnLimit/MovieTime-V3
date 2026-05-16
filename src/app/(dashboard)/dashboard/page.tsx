@@ -35,14 +35,19 @@ function CrecimientoTercerosSkeleton() {
   // header y descripción con texto real, solo el chart es skeleton.
   return (
     <Card className="py-1">
-      <CardHeader className="flex flex-row items-center justify-between pt-3 pb-2 px-6">
+      <CardHeader className="flex flex-row items-start justify-between gap-2 pt-3 pb-2 px-6">
         <div className="space-y-0.5">
-          <CardTitle className="text-base">Nuevos Terceros</CardTitle>
+          <CardTitle className="text-base">Terceros Nuevos</CardTitle>
           <CardDescription className="text-sm">
             Clientes y revendedores nuevos por día en el mes actual.
           </CardDescription>
         </div>
-        <Skeleton className="h-7 w-[140px] rounded-md" />
+        <div className="flex items-center gap-1 shrink-0">
+          <Skeleton className="h-7 w-[140px] rounded-md" />
+          <span className="text-[11px] tabular-nums text-muted-foreground px-1">1/3</span>
+          <Skeleton className="h-7 w-7 rounded-md" />
+          <Skeleton className="h-7 w-7 rounded-md" />
+        </div>
       </CardHeader>
       <CardContent className="pt-0 px-6 pb-2">
         <Skeleton className="w-full h-[240px] rounded-lg" />
