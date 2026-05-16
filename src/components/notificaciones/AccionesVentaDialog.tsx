@@ -24,13 +24,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import type { NotificacionVenta } from '@/types/notificaciones';
 
 interface AccionesVentaDialogProps {
   notificacion: (NotificacionVenta & { id: string }) | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onCortar: () => Promise<void>;
+  onCortar: (motivoCorte: string) => Promise<void>;
   onResaltar: () => Promise<void>;
   onDescartar: () => Promise<void>;
 }
@@ -44,6 +45,7 @@ export function AccionesVentaDialog({
   onDescartar,
 }: AccionesVentaDialogProps) {
   const [accion, setAccion] = useState<'cortar' | 'resaltar' | 'descartar'>('resaltar');
+  const [motivoCorte, setMotivoCorte] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const yaResaltada = notificacion?.resaltada ?? false;
@@ -51,6 +53,7 @@ export function AccionesVentaDialog({
   // Reset accion when notification changes (e.g. opening for different row)
   useEffect(() => {
     setAccion(yaResaltada ? 'cortar' : 'resaltar');
+    setMotivoCorte('');
   }, [notificacion?.id, yaResaltada]);
 
   if (!notificacion) return null;
@@ -74,10 +77,11 @@ export function AccionesVentaDialog({
         : `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`;
 
   const handleConfirmar = async () => {
+    if (accion === 'cortar' && motivoCorte.trim().length === 0) return;
     setIsSubmitting(true);
     try {
       if (accion === 'cortar') {
-        await onCortar();
+        await onCortar(motivoCorte.trim());
       } else if (accion === 'descartar') {
         await onDescartar();
       } else {
@@ -89,6 +93,7 @@ export function AccionesVentaDialog({
     } finally {
       setIsSubmitting(false);
       setAccion(yaResaltada ? 'cortar' : 'resaltar');
+      setMotivoCorte('');
     }
   };
 
@@ -96,6 +101,7 @@ export function AccionesVentaDialog({
     if (!isSubmitting) {
       onOpenChange(false);
       setAccion(yaResaltada ? 'cortar' : 'resaltar');
+      setMotivoCorte('');
     }
   };
 
@@ -186,6 +192,16 @@ export function AccionesVentaDialog({
                   </div>
                 </label>
               </RadioGroup>
+              {accion === 'cortar' ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">Motivo de corte</p>
+                  <Textarea
+                    value={motivoCorte}
+                    onChange={(event) => setMotivoCorte(event.target.value)}
+                    placeholder="Escribe el motivo del corte..."
+                  />
+                </div>
+              ) : null}
             </div>
           ) : (
             // Flujo 1: Normal — elegir entre Cortar o Resaltar
@@ -238,6 +254,16 @@ export function AccionesVentaDialog({
                   </div>
                 </label>
               </RadioGroup>
+              {accion === 'cortar' ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">Motivo de corte</p>
+                  <Textarea
+                    value={motivoCorte}
+                    onChange={(event) => setMotivoCorte(event.target.value)}
+                    placeholder="Escribe el motivo del corte..."
+                  />
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -256,7 +282,7 @@ export function AccionesVentaDialog({
           <Button
             type="button"
             onClick={handleConfirmar}
-            disabled={isSubmitting}
+            disabled={isSubmitting || (accion === 'cortar' && motivoCorte.trim().length === 0)}
             className="flex-1 bg-purple-600 hover:bg-purple-700 text-white border-transparent"
           >
             {isSubmitting

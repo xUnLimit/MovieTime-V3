@@ -55,7 +55,7 @@ export function usePagosVenta(ventaId: string) {
   }, [ventaId, refreshKey]);
 
   // Contar renovaciones (pagos que no son iniciales)
-  const renovaciones = pagos.filter(p => !p.isPagoInicial).length;
+  const renovaciones = pagos.filter(p => p.estado !== 'reembolsado' && p.estado !== 'anulado' && !p.isPagoInicial).length;
 
   return {
     pagos,

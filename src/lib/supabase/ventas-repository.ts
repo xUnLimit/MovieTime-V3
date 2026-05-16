@@ -55,6 +55,13 @@ export async function createVentaWithInitialPayment(
   return assertRpcStringId(data, 'create_venta_with_initial_payment');
 }
 
+export async function createVentaRefund(payload: Record<string, unknown>): Promise<string> {
+  assertOnlineMutation();
+  const { data, error } = await rpcClient.rpc('create_venta_refund', payload);
+  if (error) throw new Error(error.message);
+  return assertRpcStringId(data, 'create_venta_refund');
+}
+
 export const getPagoVentaById = <T>(id: string) => getById<T>(ENTITIES.PAGOS_VENTA, id);
 export const queryPagosVenta = <T>(filters: QueryFilter[] = []) => queryDocuments<T>(ENTITIES.PAGOS_VENTA, filters);
 export const countPagosVenta = (filters: QueryFilter[] = []) => getCount(ENTITIES.PAGOS_VENTA, filters);

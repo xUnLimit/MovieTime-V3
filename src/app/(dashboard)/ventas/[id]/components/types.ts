@@ -14,7 +14,20 @@ export interface VentaPagoFormData {
   notificarWhatsApp?: boolean;
 }
 
+export interface VentaReembolsoFormData {
+  monto: number;
+  metodoPagoId: string;
+  metodoPagoNombre?: string;
+  destinoReembolso: string;
+  moneda?: string;
+  fecha: Date;
+  nota?: string;
+  cortarServicio: boolean;
+  motivoCorte?: string;
+}
+
 export type VentaPagoConfirm = (data: VentaPagoFormData) => void | Promise<void>;
+export type VentaReembolsoConfirm = (data: VentaReembolsoFormData) => void | Promise<void>;
 export type VentaPagoAction = (pago: VentaPago) => void | Promise<void>;
 
 export interface VentaEstadoDetalle {
@@ -37,17 +50,22 @@ export interface VentaDetalleViewModel extends VentaEstadoDetalle {
   perfilDisplay: string;
   renovaciones: number;
   renovarDialogOpen: boolean;
+  reembolsoDialogOpen: boolean;
+  reembolsoMontoSugerido: number;
   servicioContrasena: string;
   venta: VentaDoc | null;
   handleConfirmDeletePago: () => Promise<void>;
   handleConfirmEditarPago: VentaPagoConfirm;
   handleConfirmRenovacion: VentaPagoConfirm;
+  handleConfirmReembolso: VentaReembolsoConfirm;
   handleDelete: (deletePagos: boolean) => Promise<void>;
   handleDeletePago: VentaPagoAction;
   handleEditarPago: VentaPagoAction;
   handleOpenRenovar: () => Promise<void>;
+  handleOpenReembolso: () => Promise<void>;
   setDeleteDialogOpen: (open: boolean) => void;
   setDeletePagoDialogOpen: (open: boolean) => void;
   setEditarPagoDialogOpen: (open: boolean) => void;
   setRenovarDialogOpen: (open: boolean) => void;
+  setReembolsoDialogOpen: (open: boolean) => void;
 }

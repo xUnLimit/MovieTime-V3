@@ -1077,6 +1077,7 @@ export type Database = {
           anulada_by: string | null
           created_at: string
           created_by: string | null
+          destino_reembolso: string | null
           estado: Database["public"]["Enums"]["pago_estado_enum"]
           exchange_rate: number | null
           fecha_pago: string
@@ -1096,6 +1097,7 @@ export type Database = {
           anulada_by?: string | null
           created_at?: string
           created_by?: string | null
+          destino_reembolso?: string | null
           estado?: Database["public"]["Enums"]["pago_estado_enum"]
           exchange_rate?: number | null
           fecha_pago?: string
@@ -1115,6 +1117,7 @@ export type Database = {
           anulada_by?: string | null
           created_at?: string
           created_by?: string | null
+          destino_reembolso?: string | null
           estado?: Database["public"]["Enums"]["pago_estado_enum"]
           exchange_rate?: number | null
           fecha_pago?: string
@@ -2430,6 +2433,7 @@ export type Database = {
           cliente_nombre: string | null
           created_at: string | null
           created_by: string | null
+          destino_reembolso: string | null
           estado: Database["public"]["Enums"]["pago_estado_enum"] | null
           exchange_rate: number | null
           fecha_pago: string | null
@@ -3288,6 +3292,24 @@ export type Database = {
         Args: { p_venta_id: string; p_delete_payments?: boolean }
         Returns: undefined
       }
+      create_venta_refund: {
+        Args: {
+          p_venta_id: string
+          p_monto_original: number
+          p_moneda_original: string
+          p_monto_usd: number
+          p_exchange_rate: number | null
+          p_metodo_pago_id: string | null
+          p_metodo_pago_nombre_snapshot: string | null
+          p_destino_reembolso?: string | null
+          p_fecha_reembolso?: string
+          p_nota?: string | null
+          p_cortar?: boolean
+          p_motivo_corte?: string | null
+          p_created_by?: string | null
+        }
+        Returns: string
+      }
       delete_servicio_with_payments: {
         Args: { p_servicio_id: string; p_delete_payments?: boolean }
         Returns: undefined
@@ -3301,6 +3323,7 @@ export type Database = {
         | "corte"
         | "eliminacion"
         | "renovacion"
+        | "reembolso"
       asociado_a_enum: "tercero" | "servicio"
       categoria_tipo_cat_enum: "plataforma_streaming" | "otros"
       categoria_tipo_enum: "cliente" | "revendedor"

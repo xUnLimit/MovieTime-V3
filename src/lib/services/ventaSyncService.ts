@@ -43,8 +43,10 @@ export async function getVentaConUltimoPago(
     ]);
   }
 
+  const pagosRegistrados = pagosList.filter((pago) => pago.estado !== 'reembolsado' && pago.estado !== 'anulado');
+
   // Ordenar por fechaVencimiento descendente para encontrar el pago vigente (más reciente)
-  const sorted = pagosList.sort((a, b) => {
+  const sorted = pagosRegistrados.sort((a, b) => {
     // Manejar casos donde fechaVencimiento puede ser undefined/null
     const dateA = a.fechaVencimiento
       ? (a.fechaVencimiento instanceof Date ? a.fechaVencimiento : new Date(a.fechaVencimiento))
@@ -57,7 +59,7 @@ export async function getVentaConUltimoPago(
 
   const pagoMasReciente = sorted[0];
 
-  const renovaciones = pagosList.filter(p => p.isPagoInicial === false).length;
+  const renovaciones = pagosRegistrados.filter(p => p.isPagoInicial === false).length;
 
   // Si no hay pagos, retornar valores por defecto
   if (!pagoMasReciente) {
@@ -135,10 +137,11 @@ export async function getVentasConUltimoPago(
   // Combinar cada venta con su pago más reciente
   return ventas.map(venta => {
     const pagosVenta = pagosPorVenta.get(venta.id) ?? [];
-    const renovaciones = pagosVenta.filter(p => p.isPagoInicial === false).length;
+    const pagosRegistrados = pagosVenta.filter((pago) => pago.estado !== 'reembolsado' && pago.estado !== 'anulado');
+    const renovaciones = pagosRegistrados.filter(p => p.isPagoInicial === false).length;
 
     // Ordenar por fechaVencimiento descendente para encontrar el pago vigente (más reciente)
-    const sorted = pagosVenta.sort((a, b) => {
+    const sorted = pagosRegistrados.sort((a, b) => {
       const dateA = a.fechaVencimiento
         ? (a.fechaVencimiento instanceof Date ? a.fechaVencimiento : new Date(a.fechaVencimiento))
         : new Date(0);

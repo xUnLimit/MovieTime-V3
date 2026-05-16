@@ -401,12 +401,14 @@ export function VentasProximasTable() {
     }
   };
 
-  const handleCortarFromModal = async () => {
+  const handleCortarFromModal = async (motivoCorte: string) => {
     if (!notifSeleccionada) return;
 
     try {
       await updateVenta(notifSeleccionada.ventaId, {
         estado: 'inactivo',
+        cortadaAt: new Date(),
+        motivoCorte,
       });
 
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);

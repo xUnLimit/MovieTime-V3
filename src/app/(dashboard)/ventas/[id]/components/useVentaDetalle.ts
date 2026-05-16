@@ -13,6 +13,7 @@ import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import {
+  createVentaRefundUseCase,
   deleteVentaPagoUseCase,
   getVentaConPagoActualUseCase,
   getVentaUseCase,
@@ -22,12 +23,15 @@ import {
 } from '@/lib/use-cases/ventas-use-cases';
 import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
 import { generarMensajeVenta } from '@/lib/utils/whatsapp';
+import { calcularMontoSinConsumir, roundToDecimals } from '@/lib/utils/calculations';
+import { useActivityLogStore } from '@/store/activityLogStore';
+import { useAuthStore } from '@/store/authStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useTemplatesStore } from '@/store/templatesStore';
 import type { MetodoPago, VentaDoc, VentaPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
-import type { VentaDetalleViewModel, VentaPagoFormData } from './types';
+import type { VentaDetalleViewModel, VentaPagoFormData, VentaReembolsoFormData } from './types';
 
 const getEstadoDetalle = (venta: VentaDoc | null) => {
   const esCortada = venta?.estado === 'inactivo' && !!venta?.cortadaAt;
@@ -42,6 +46,14 @@ const getEstadoDetalle = (venta: VentaDoc | null) => {
   return { esCortada, estadoBadgeClass, estadoLabel };
 };
 
+function getLogContext() {
+  const user = useAuthStore.getState().user;
+  return {
+    usuarioId: user?.id ?? 'sistema',
+    usuarioEmail: user?.email ?? 'sistema',
+  };
+}
+
 export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
 
@@ -55,6 +67,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
+  const [reembolsoDialogOpen, setReembolsoDialogOpen] = useState(false);
   const [editarPagoDialogOpen, setEditarPagoDialogOpen] = useState(false);
   const [deletePagoDialogOpen, setDeletePagoDialogOpen] = useState(false);
   const [pagoToEdit, setPagoToEdit] = useState<VentaPago | null>(null);
@@ -89,6 +102,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
         notas: (doc.notas as string) || '',
         estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
         cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
+        motivoCorte: (doc.motivoCorte as string | null | undefined) ?? null,
         createdAt: doc.createdAt ? timestampToDate(doc.createdAt) : undefined,
         fechaInicio: (doc.fechaInicio as Date) || new Date(),
         fechaFin: (doc.fechaFin as Date) || new Date(),
@@ -132,6 +146,15 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     return differenceInCalendarDays(venta.fechaFin, new Date());
   }, [venta?.fechaFin]);
 
+  const reembolsoMontoSugerido = useMemo(() => {
+    if (!venta?.fechaInicio || !venta.fechaFin || !venta.precioFinal || venta.estado === 'inactivo') return 0;
+    return roundToDecimals(calcularMontoSinConsumir(
+      new Date(venta.fechaInicio),
+      new Date(venta.fechaFin),
+      venta.precioFinal
+    ));
+  }, [venta?.fechaInicio, venta?.fechaFin, venta?.precioFinal, venta?.estado]);
+
   const perfilDisplay = venta?.perfilNombre?.trim() || '—';
 
   const paymentRows = useMemo(() => {
@@ -169,13 +192,16 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
           descuento: p.descuento ?? 0,
           total: p.monto,
           metodoPagoNombre: p.metodoPago,
-          moneda: venta.moneda,
+          destinoReembolso: p.destinoReembolso,
+          moneda: p.moneda ?? venta.moneda,
           isPagoInicial: p.isPagoInicial,
           notas: p.notas,
           cicloPago: p.cicloPago,
           metodoPagoId: p.metodoPagoId,
           fechaInicio,
           fechaVencimiento,
+          estado: p.estado,
+          motivoAnulacion: p.motivoAnulacion,
         } as VentaPago;
       });
     }
@@ -192,6 +218,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
         metodoPagoNombre: venta.metodoPagoNombre,
         moneda: venta.moneda,
         isPagoInicial: true,
+        estado: 'registrado' as const,
       },
     ];
   }, [venta, pagosVenta, loadingPagos]);
@@ -222,6 +249,11 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const handleOpenRenovar = async () => {
     await Promise.all([loadMetodosPagoYPlanes(), fetchTemplates()]);
     setRenovarDialogOpen(true);
+  };
+
+  const handleOpenReembolso = async () => {
+    await loadMetodosPagoYPlanes();
+    setReembolsoDialogOpen(true);
   };
 
   const handleDelete = async (deletePagos: boolean) => {
@@ -335,6 +367,59 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     setEditarPagoDialogOpen(true);
   };
 
+  const handleConfirmReembolso = async (data: VentaReembolsoFormData) => {
+    if (!venta) return;
+    try {
+      const result = await createVentaRefundUseCase(
+        venta,
+        {
+          ventaId: venta.id,
+          monto: data.monto,
+          metodoPagoId: data.metodoPagoId,
+          metodoPagoNombre: data.metodoPagoNombre,
+          destinoReembolso: data.destinoReembolso,
+          moneda: data.moneda,
+          fecha: data.fecha,
+          nota: data.nota,
+          cortarServicio: data.cortarServicio,
+          motivoCorte: data.motivoCorte,
+        },
+        {
+          logContext: getLogContext(),
+          recordActivityLog: useActivityLogStore.getState().addLog,
+        }
+      );
+
+      if (result.serviceProfileDelta) {
+        const { useServiciosStore } = await import('@/store/serviciosStore');
+        await useServiciosStore
+          .getState()
+          .updatePerfilOcupado(result.serviceProfileDelta.servicioId, result.serviceProfileDelta.shouldIncrement);
+      }
+
+      if (result.ventaActualizada) setVenta(result.ventaActualizada);
+      refreshPagos();
+      syncVentaPronosticoLocal(id, result.pronostico);
+      invalidateDashboardCache({ entity: 'venta', entityId: id });
+
+      if (data.cortarServicio) {
+        await deleteNotificacionesPorVenta(id);
+        fetchNotificaciones(true);
+      }
+
+      setReembolsoDialogOpen(false);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('venta-updated'));
+      }
+
+      toast.success(data.cortarServicio ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
+    } catch (error) {
+      console.error('Error registrando reembolso:', error);
+      toast.error('Error al registrar reembolso', { description: error instanceof Error ? error.message : undefined });
+    }
+  };
+
   const handleDeletePago = (pago: VentaPago) => {
     setPagoToDelete(pago);
     setDeletePagoDialogOpen(true);
@@ -410,10 +495,12 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     handleConfirmDeletePago,
     handleConfirmEditarPago,
     handleConfirmRenovacion,
+    handleConfirmReembolso,
     handleDelete,
     handleDeletePago,
     handleEditarPago,
     handleOpenRenovar,
+    handleOpenReembolso,
     loading,
     loadingPagos,
     metodosPago,
@@ -422,11 +509,14 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     perfilDisplay,
     renovaciones,
     renovarDialogOpen,
+    reembolsoDialogOpen,
+    reembolsoMontoSugerido,
     servicioContrasena,
     setDeleteDialogOpen,
     setDeletePagoDialogOpen,
     setEditarPagoDialogOpen,
     setRenovarDialogOpen,
+    setReembolsoDialogOpen,
     venta,
   };
 }

@@ -60,24 +60,30 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
   if (collectionName === ENTITIES.PAGOS_VENTA) {
     const numeroPeriodo = Number(camel.numeroPeriodo ?? (camel.isPagoInicial === false ? 2 : 1));
     const isPagoInicial = Boolean(camel.isPagoInicial ?? numeroPeriodo === 1);
+    const estado = typeof camel.estado === 'string' ? camel.estado : 'registrado';
     const descripcion = isPagoInicial
       ? 'Pago inicial'
       : `Renovación #${Math.max(numeroPeriodo - 1, 1)}`;
 
+    const descripcionFinal = estado === 'reembolsado' ? 'Reembolso' : descripcion;
+
     return {
       ...camel,
       fecha: camel.fecha ?? camel.fechaPago,
-      descripcion: camel.descripcion ?? descripcion,
+      descripcion: camel.descripcion ?? descripcionFinal,
       numeroPeriodo,
       monto: Number(camel.monto ?? camel.montoOriginal ?? 0),
       precio: Number(camel.precio ?? camel.precioOriginal ?? camel.montoOriginal ?? 0),
       descuento: Number(camel.descuento ?? 0),
+      estado,
       moneda: camel.moneda ?? camel.monedaOriginal ?? 'USD',
       metodoPago: camel.metodoPago ?? camel.metodoPagoNombreSnapshot ?? '',
+      motivoAnulacion: camel.motivoAnulacion ?? null,
+      destinoReembolso: camel.destinoReembolso ?? null,
       cicloPago: camel.cicloPago ?? camel.periodoCicloPago,
       fechaInicio: camel.fechaInicio ?? camel.periodoInicio,
       fechaVencimiento: camel.fechaVencimiento ?? camel.periodoFin,
-      isPagoInicial,
+      isPagoInicial: estado === 'reembolsado' ? false : isPagoInicial,
     } as T;
   }
 

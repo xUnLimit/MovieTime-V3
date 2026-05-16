@@ -25,6 +25,8 @@ interface VentaPagosTableProps {
   onDelete: (pago: VentaPago) => void;
 }
 
+const EMPTY_VALUE = "-";
+
 const getCicloPagoLabel = (ciclo?: string | null) => {
   const labels: Record<string, string> = {
     mensual: "Mensual",
@@ -32,7 +34,7 @@ const getCicloPagoLabel = (ciclo?: string | null) => {
     semestral: "Semestral",
     anual: "Anual",
   };
-  return ciclo ? labels[ciclo] || ciclo : "—";
+  return ciclo ? labels[ciclo] || ciclo : EMPTY_VALUE;
 };
 
 export const VentaPagosTable = memo(function VentaPagosTable({
@@ -51,7 +53,12 @@ export const VentaPagosTable = memo(function VentaPagosTable({
       try {
         const total = await sumInUSD(
           pagos.map((p) => ({
-            monto: p.total ?? 0,
+            monto:
+              p.estado === "reembolsado"
+                ? -(p.total ?? 0)
+                : p.estado === "anulado"
+                  ? 0
+                  : p.total ?? 0,
             moneda: p.moneda || moneda || "USD",
           })),
         );
@@ -85,20 +92,20 @@ export const VentaPagosTable = memo(function VentaPagosTable({
           <thead>
             <tr className="border-b text-sm text-muted-foreground">
               <th className="text-left py-3 font-medium whitespace-nowrap">
-                Fecha de Pago
+                Fecha de pago
               </th>
-              <th className="text-left py-3 font-medium">Descripción</th>
+              <th className="text-left py-3 font-medium">Descripcion</th>
               <th className="text-left py-3 font-medium whitespace-nowrap">
-                Método de pago
+                Metodo de pago
               </th>
               <th className="text-left py-3 font-medium">
-                Ciclo de facturación
+                Ciclo de facturacion
               </th>
               <th className="text-left py-3 font-medium whitespace-nowrap">
-                Fecha de Inicio
+                Fecha de inicio
               </th>
               <th className="text-left py-3 font-medium whitespace-nowrap">
-                Fecha de Fin
+                Fecha de fin
               </th>
               <th className="text-center py-3 font-medium">Precio</th>
               <th className="text-center py-3 font-medium">Descuento</th>
@@ -112,44 +119,50 @@ export const VentaPagosTable = memo(function VentaPagosTable({
               const esInicial =
                 (pago.isPagoInicial ?? false) ||
                 pago.descripcion.toLowerCase() === "pago inicial";
+              const esReembolso = pago.estado === "reembolsado";
               const esUltimo = index === 0;
-              const puedeGestionar = canManagePagos && esUltimo && !esInicial;
+              const puedeGestionar =
+                canManagePagos && esUltimo && !esInicial && !esReembolso && pago.estado !== "anulado";
               const metodoPagoNombre =
-                pago.metodoPagoNombre?.trim() || "Sin método";
+                pago.metodoPagoNombre?.trim() || "Sin metodo";
+              const fechaPago = pago.fecha ? formatearFecha(new Date(pago.fecha)) : EMPTY_VALUE;
+              const fechaInicio = pago.fechaInicio ? formatearFecha(new Date(pago.fechaInicio)) : EMPTY_VALUE;
+              const fechaFin = pago.fechaVencimiento ? formatearFecha(new Date(pago.fechaVencimiento)) : EMPTY_VALUE;
+              const refundClass = esReembolso ? "text-red-600 dark:text-red-400" : "";
 
               return (
                 <tr
-                  key={`${pago.descripcion}-${index}`}
+                  key={`${pago.id ?? pago.descripcion}-${index}`}
                   className="border-b text-sm"
                 >
-                  <td className="py-3 whitespace-nowrap">
-                    {pago.fecha ? formatearFecha(new Date(pago.fecha)) : "—"}
+                  <td className="py-3 whitespace-nowrap">{fechaPago}</td>
+                  <td className={`py-3 font-medium ${refundClass}`}>
+                    {pago.descripcion}
                   </td>
-                  <td className="py-3 font-medium">{pago.descripcion}</td>
                   <td className="py-3 whitespace-nowrap">
                     {metodoPagoNombre}
                   </td>
-                  <td className="py-3">{getCicloPagoLabel(pago.cicloPago)}</td>
-                  <td className="py-3 whitespace-nowrap">
-                    {pago.fechaInicio
-                      ? formatearFecha(new Date(pago.fechaInicio))
-                      : "—"}
+                  <td className="py-3">
+                    {esReembolso ? EMPTY_VALUE : getCicloPagoLabel(pago.cicloPago)}
                   </td>
                   <td className="py-3 whitespace-nowrap">
-                    {pago.fechaVencimiento
-                      ? formatearFecha(new Date(pago.fechaVencimiento))
-                      : "—"}
+                    {esReembolso ? EMPTY_VALUE : fechaInicio}
+                  </td>
+                  <td className="py-3 whitespace-nowrap">
+                    {esReembolso ? EMPTY_VALUE : fechaFin}
                   </td>
                   <td className="py-3 text-center">
-                    {rowCurrency} {pago.precio.toFixed(2)}
+                    {esReembolso ? EMPTY_VALUE : `${rowCurrency} ${pago.precio.toFixed(2)}`}
                   </td>
                   <td className="py-3 text-center text-red-500">
-                    {pago.descuento > 0
-                      ? `% ${pago.descuento.toFixed(2)}`
-                      : `% 0.00`}
+                    {esReembolso
+                      ? EMPTY_VALUE
+                      : pago.descuento > 0
+                        ? `% ${pago.descuento.toFixed(2)}`
+                        : `% 0.00`}
                   </td>
-                  <td className="py-3 text-center font-semibold">
-                    {rowCurrency} {pago.total.toFixed(2)}
+                  <td className={`py-3 text-center font-semibold ${refundClass}`}>
+                    {esReembolso ? "-" : ""}{rowCurrency} {pago.total.toFixed(2)}
                   </td>
                   <td className="py-3 text-center">
                     {puedeGestionar ? (
@@ -179,7 +192,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
                       </DropdownMenu>
                     ) : (
                       <div className="h-7 flex items-center justify-center text-muted-foreground">
-                        —
+                        {EMPTY_VALUE}
                       </div>
                     )}
                   </td>

@@ -27,7 +27,10 @@ export async function calculateVentasMetrics(
   // Ingreso Total: suma TODOS los pagos recibidos (inicial + renovaciones)
   // Convertir cada pago a USD antes de sumar
   const ingresoTotal = await sumInUSD(
-    pagosVentas.map(p => ({ monto: p.monto || 0, moneda: p.moneda }))
+    pagosVentas.map(p => ({
+      monto: p.estado === 'reembolsado' ? -(p.monto || 0) : p.estado === 'anulado' ? 0 : p.monto || 0,
+      moneda: p.moneda,
+    }))
   );
 
   const activas = ventas.filter((v) => v.estado !== 'inactivo');

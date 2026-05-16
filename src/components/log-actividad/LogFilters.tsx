@@ -57,6 +57,7 @@ const actionLabels: Record<string, string> = {
   corte: 'Corte',
   eliminacion: 'Eliminación',
   renovacion: 'Renovación',
+  reembolso: 'Reembolso',
 };
 
 export function LogFilters({

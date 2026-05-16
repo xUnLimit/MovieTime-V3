@@ -105,6 +105,7 @@ export function LogTimeline({
       corte:        'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30',
       eliminacion:  'bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
       renovacion:   'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30',
+      reembolso:    'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30',
     };
     return styles[item.accion] ?? activityActionColors[item.accion] ?? '';
   };
@@ -118,6 +119,7 @@ export function LogTimeline({
       corte: 'Corte',
       eliminacion: 'Eliminación',
       renovacion: 'Renovación',
+      reembolso: 'Reembolso',
     };
     return labels[item.accion];
   };

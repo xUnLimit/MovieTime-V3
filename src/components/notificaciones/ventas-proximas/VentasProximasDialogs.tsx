@@ -16,7 +16,7 @@ interface VentasProximasDialogsProps {
   onRenovarOpenChange: (open: boolean) => void;
   onAccionesOpenChange: (open: boolean) => void;
   onConfirmRenovacion: (data: EnrichedPagoDialogFormData) => void;
-  onCortar: () => Promise<void>;
+  onCortar: (motivoCorte: string) => Promise<void>;
   onResaltar: () => Promise<void>;
   onDescartar: () => Promise<void>;
 }

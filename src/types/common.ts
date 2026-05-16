@@ -3,7 +3,7 @@
 // ===========================
 
 // Activity Log Types
-export type AccionLog = 'creacion' | 'actualizacion' | 'corte' | 'eliminacion' | 'renovacion';
+export type AccionLog = 'creacion' | 'actualizacion' | 'corte' | 'eliminacion' | 'renovacion' | 'reembolso';
 export type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'tercero' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
 
 export interface CambioLog {

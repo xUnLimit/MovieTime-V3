@@ -4,7 +4,8 @@ import { PagoDialog } from '@/components/shared/PagoDialog';
 import type { MetodoPago, VentaDoc, VentaPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
-import type { VentaPagoConfirm } from './types';
+import { VentaReembolsoDialog } from './VentaReembolsoDialog';
+import type { VentaPagoConfirm, VentaReembolsoConfirm } from './types';
 
 interface VentaDetalleDialogsProps {
   categoriaPlanes: Plan[];
@@ -13,6 +14,8 @@ interface VentaDetalleDialogsProps {
   editarPagoDialogOpen: boolean;
   metodosPago: MetodoPago[];
   pagoToEdit: VentaPago | null;
+  reembolsoDialogOpen: boolean;
+  reembolsoMontoSugerido: number;
   renovarDialogOpen: boolean;
   servicioContrasena: string;
   venta: VentaDoc;
@@ -20,10 +23,12 @@ interface VentaDetalleDialogsProps {
   onConfirmDeletePago: () => void | Promise<void>;
   onConfirmEditarPago: VentaPagoConfirm;
   onConfirmRenovacion: VentaPagoConfirm;
+  onConfirmReembolso: VentaReembolsoConfirm;
   onDeleteDialogOpenChange: (open: boolean) => void;
   onDeletePagoDialogOpenChange: (open: boolean) => void;
   onEditarPagoDialogOpenChange: (open: boolean) => void;
   onRenovarDialogOpenChange: (open: boolean) => void;
+  onReembolsoDialogOpenChange: (open: boolean) => void;
 }
 
 export function VentaDetalleDialogs({
@@ -36,11 +41,15 @@ export function VentaDetalleDialogs({
   onConfirmDeletePago,
   onConfirmEditarPago,
   onConfirmRenovacion,
+  onConfirmReembolso,
   onDeleteDialogOpenChange,
   onDeletePagoDialogOpenChange,
   onEditarPagoDialogOpenChange,
   onRenovarDialogOpenChange,
+  onReembolsoDialogOpenChange,
   pagoToEdit,
+  reembolsoDialogOpen,
+  reembolsoMontoSugerido,
   renovarDialogOpen,
   servicioContrasena,
   venta,
@@ -98,6 +107,15 @@ export function VentaDetalleDialogs({
         categoriaPlanes={categoriaPlanes}
         tipoPlan={currentPlanTipo}
         onConfirm={onConfirmEditarPago}
+      />
+
+      <VentaReembolsoDialog
+        open={reembolsoDialogOpen}
+        onOpenChange={onReembolsoDialogOpenChange}
+        venta={venta}
+        metodosPago={metodosPago}
+        montoSugerido={reembolsoMontoSugerido}
+        onConfirm={onConfirmReembolso}
       />
 
       <ConfirmDialog

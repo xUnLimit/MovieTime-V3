@@ -12,6 +12,7 @@ export const activityActionColors: Record<string, string> = {
   corte:        'bg-orange-500/10 text-orange-500',
   eliminacion:  'bg-red-500/10 text-red-500',
   renovacion:   'bg-purple-500/10 text-purple-500',
+  reembolso:    'bg-emerald-500/10 text-emerald-500',
 };
 
 type IconComponent = React.ComponentType<{ className?: string }>;
@@ -261,6 +262,13 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
         return { icon: RefreshCw, color: colorClass, message: <><span>Venta renovada —</span> {nameEl}{renDetallesEl}</> };
       }
       return { icon: RefreshCw, color: colorClass, message: <><span>{label} {gen('renovado', 'renovada')} —</span> {nameEl}{renDetallesEl}</> };
+    }
+
+    case 'reembolso': {
+      if (log.entidad === 'venta') {
+        return { icon: RotateCcw, color: colorClass, message: <><span>Venta reembolsada —</span> {nameEl}</> };
+      }
+      return { icon: RotateCcw, color: colorClass, message: <><span>{label} reembolsado —</span> {nameEl}</> };
     }
 
     default: {

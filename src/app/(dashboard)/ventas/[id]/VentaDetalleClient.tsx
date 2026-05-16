@@ -27,6 +27,7 @@ function VentaDetallePageBody({ id }: { id: string }) {
       <VentaDetalleHeader
         venta={venta}
         onDelete={() => detalle.setDeleteDialogOpen(true)}
+        onReembolso={detalle.handleOpenReembolso}
         onRenovar={detalle.handleOpenRenovar}
       />
 
@@ -50,7 +51,11 @@ function VentaDetallePageBody({ id }: { id: string }) {
             onEditarPago={detalle.handleEditarPago}
           />
         </div>
-        <VentaNotesCard notas={venta.notas} />
+        <VentaNotesCard
+          notas={venta.notas}
+          motivoCorte={venta.motivoCorte}
+          reembolsos={detalle.paymentRows.filter((pago) => pago.estado === 'reembolsado')}
+        />
       </div>
 
       <VentaDetalleDialogs
@@ -61,16 +66,20 @@ function VentaDetallePageBody({ id }: { id: string }) {
         metodosPago={detalle.metodosPago}
         pagoToEdit={detalle.pagoToEdit}
         renovarDialogOpen={detalle.renovarDialogOpen}
+        reembolsoDialogOpen={detalle.reembolsoDialogOpen}
+        reembolsoMontoSugerido={detalle.reembolsoMontoSugerido}
         servicioContrasena={detalle.servicioContrasena}
         venta={venta}
         onConfirmDelete={detalle.handleDelete}
         onConfirmDeletePago={detalle.handleConfirmDeletePago}
         onConfirmEditarPago={detalle.handleConfirmEditarPago}
         onConfirmRenovacion={detalle.handleConfirmRenovacion}
+        onConfirmReembolso={detalle.handleConfirmReembolso}
         onDeleteDialogOpenChange={detalle.setDeleteDialogOpen}
         onDeletePagoDialogOpenChange={detalle.setDeletePagoDialogOpen}
         onEditarPagoDialogOpenChange={detalle.setEditarPagoDialogOpen}
         onRenovarDialogOpenChange={detalle.setRenovarDialogOpen}
+        onReembolsoDialogOpenChange={detalle.setReembolsoDialogOpen}
       />
     </div>
   );

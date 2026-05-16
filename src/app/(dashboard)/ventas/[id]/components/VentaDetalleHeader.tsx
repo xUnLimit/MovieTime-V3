@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Edit, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import type { VentaDoc } from '@/types';
@@ -7,10 +7,11 @@ import type { VentaDoc } from '@/types';
 interface VentaDetalleHeaderProps {
   venta: VentaDoc;
   onDelete: () => void;
+  onReembolso: () => void | Promise<void>;
   onRenovar: () => void | Promise<void>;
 }
 
-export function VentaDetalleHeader({ onDelete, onRenovar, venta }: VentaDetalleHeaderProps) {
+export function VentaDetalleHeader({ onDelete, onReembolso, onRenovar, venta }: VentaDetalleHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex min-w-0 items-center gap-3">
@@ -39,6 +40,15 @@ export function VentaDetalleHeader({ onDelete, onRenovar, venta }: VentaDetalleH
         >
           <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
           Renovar
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onReembolso}
+          disabled={venta.estado === 'inactivo'}
+        >
+          <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+          Reembolso
         </Button>
         <Button asChild variant="outline" size="sm">
           <Link prefetch={false} href={`/ventas/${venta.id}/editar`}>

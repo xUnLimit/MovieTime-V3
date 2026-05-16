@@ -13,6 +13,21 @@ export interface VentaPago {
   fechaInicio?: Date | null;
   fechaVencimiento?: Date | null;
   notas?: string;
+  destinoReembolso?: string | null;
+}
+
+export type PagoVentaEstado = 'registrado' | 'anulado' | 'reembolsado';
+
+export interface VentaPago {
+  estado?: PagoVentaEstado;
+  motivoAnulacion?: string | null;
+  destinoReembolso?: string | null;
+}
+
+export interface PagoVenta {
+  estado?: PagoVentaEstado;
+  motivoAnulacion?: string | null;
+  destinoReembolso?: string | null;
 }
 
 /**
@@ -41,6 +56,29 @@ export interface PagoVenta {
   createdAt: Date;
 }
 
+export interface VentaReembolsoInput {
+  ventaId: string;
+  monto: number;
+  metodoPagoId: string;
+  metodoPagoNombre?: string;
+  moneda?: string;
+  fecha: Date;
+  nota?: string;
+  destinoReembolso: string;
+  cortarServicio: boolean;
+  motivoCorte?: string;
+}
+
+export interface VentaReembolsoResult {
+  pagoId: string;
+  monto: number;
+  montoUsd: number;
+  moneda: string;
+  ventaActualizada: VentaDoc | null;
+  pronostico: import('./dashboard').VentaPronostico | null;
+  serviceProfileDelta: { servicioId: string; shouldIncrement: boolean } | null;
+}
+
 /**
  * Documento de venta en la colección ventas
  *
@@ -62,6 +100,8 @@ export interface VentaDoc {
   categoriaNombre?: string;           // Denormalizado
   estado?: 'activo' | 'inactivo';
   cortadaAt?: Date | null;
+  cortadaBy?: string | null;
+  motivoCorte?: string | null;
   perfilNumero?: number | null;
   perfilNombre?: string;
   codigo?: string;
