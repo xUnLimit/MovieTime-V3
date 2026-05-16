@@ -56,7 +56,7 @@ export const VentasMetrics = memo(function VentasMetrics() {
         underlineColor="bg-orange-500"
       />
       <MetricCard
-        title="Ingreso Mensual Esperado"
+        title="Ingresos Esperados del Mes"
         value={
           isLoadingMensual
             ? "Calculando..."

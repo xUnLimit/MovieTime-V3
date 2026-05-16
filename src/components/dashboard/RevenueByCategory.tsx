@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -32,6 +34,28 @@ const MIN_NEGATIVE_AXIS_RATIO_MOBILE = 0.12;
 const VALUE_LABEL_GAP = 8;
 const COMPACT_CHART_QUERY = '(max-width: 640px)';
 
+type Vista = 'ganancia' | 'margen';
+
+const VISTAS: Array<{
+  id: Vista;
+  title: string;
+  description: string;
+  tooltipLabel: string;
+}> = [
+  {
+    id: 'ganancia',
+    title: 'Ganancia Neta por Categoría',
+    description: 'Ganancia neta generada por cada categoría de servicio.',
+    tooltipLabel: 'Ganancia neta',
+  },
+  {
+    id: 'margen',
+    title: 'Rentabilidad por Categoría',
+    description: 'Margen porcentual de ganancia sobre los ingresos de cada categoría.',
+    tooltipLabel: 'Rentabilidad',
+  },
+];
+
 function subscribeToCompactChart(callback: () => void) {
   if (typeof window === 'undefined') {
     return () => undefined;
@@ -51,9 +75,9 @@ function useIsCompactChart() {
   return useSyncExternalStore(subscribeToCompactChart, getIsCompactChart, () => false);
 }
 
-function getRentabilidadDomain(data: Array<{ rentabilidad: number }>, minNegativeAxisRatio: number): [number, number] {
-  const maxPositive = Math.max(0, ...data.map((entry) => entry.rentabilidad));
-  const minNegative = Math.min(0, ...data.map((entry) => entry.rentabilidad));
+function getValueDomain(data: Array<{ valor: number }>, minNegativeAxisRatio: number): [number, number] {
+  const maxPositive = Math.max(0, ...data.map((entry) => entry.valor));
+  const minNegative = Math.min(0, ...data.map((entry) => entry.valor));
 
   if (minNegative >= 0) {
     return [0, maxPositive];
@@ -72,6 +96,17 @@ export function RevenueByCategory() {
   const { stats, isLoading } = useDashboardStore();
   const { selectedYear } = useDashboardFilterStore();
   const isCompactChart = useIsCompactChart();
+
+  const [vistaIndex, setVistaIndex] = useState(0);
+  const [animacionFase, setAnimacionFase] = useState<'idle' | 'exit' | 'enter'>('idle');
+  const [animacionDireccion, setAnimacionDireccion] = useState<1 | -1>(1);
+  const animationTimerRef = useRef<number | null>(null);
+
+  const vista = VISTAS[vistaIndex];
+  const totalVistas = VISTAS.length;
+  const puedeIrAtras = vistaIndex > 0;
+  const puedeIrAdelante = vistaIndex < totalVistas - 1;
+
   const axisColor = 'var(--muted-foreground)';
   const labelColor = 'var(--foreground)';
   const tooltipBg = 'var(--background)';
@@ -82,7 +117,6 @@ export function RevenueByCategory() {
     const cutoff = `${selectedYear}-01`;
     const porMes = stats?.ingresosCategoriasPorMes ?? [];
 
-    // Aggregate from per-month breakdown filtered by year
     const totalesPorCategoria = new Map<string, { nombre: string; total: number; gastos: number }>();
     const filteredMeses = porMes.filter((e) => e.mes >= cutoff);
 
@@ -101,7 +135,6 @@ export function RevenueByCategory() {
         }
       }
     } else {
-      // Fallback: use cumulative ingresosPorCategoria if no per-month data yet
       for (const c of (stats?.ingresosPorCategoria ?? [])) {
         totalesPorCategoria.set(c.categoriaId, {
           nombre: c.nombre,
@@ -111,18 +144,28 @@ export function RevenueByCategory() {
       }
     }
 
-    const mapped = Array.from(totalesPorCategoria.values()).map((c) => ({
-      categoria: c.nombre,
-      rentabilidad: Math.round(c.total - c.gastos),
-    }));
-    const filtered = mapped.filter((c) => c.rentabilidad !== 0);
-    const hasData = filtered.length > 0;
-    const data = filtered.sort((a, b) => b.rentabilidad - a.rentabilidad);
-    return { data, hasData };
-  }, [stats, selectedYear]);
+    const mapped = Array.from(totalesPorCategoria.values()).map((c) => {
+      const ganancia = c.total - c.gastos;
+      const margen = c.total > 0 ? (ganancia / c.total) * 100 : 0;
+      return {
+        categoria: c.nombre,
+        ganancia: Math.round(ganancia),
+        margen: Math.round(margen * 10) / 10,
+        ingresos: c.total,
+      };
+    });
 
-  const rentabilidadDomain = useMemo(
-    () => getRentabilidadDomain(data, isCompactChart ? MIN_NEGATIVE_AXIS_RATIO_MOBILE : MIN_NEGATIVE_AXIS_RATIO),
+    const valor = vista.id === 'ganancia' ? 'ganancia' : 'margen';
+    const filtered = mapped
+      .filter((c) => c.ingresos > 0 && c[valor] !== 0)
+      .map((c) => ({ ...c, valor: c[valor] }));
+    const hasData = filtered.length > 0;
+    const data = filtered.sort((a, b) => b.valor - a.valor);
+    return { data, hasData };
+  }, [stats, selectedYear, vista]);
+
+  const valueDomain = useMemo(
+    () => getValueDomain(data, isCompactChart ? MIN_NEGATIVE_AXIS_RATIO_MOBILE : MIN_NEGATIVE_AXIS_RATIO),
     [data, isCompactChart]
   );
   const chartHeight = isCompactChart ? 250 : 220;
@@ -134,7 +177,52 @@ export function RevenueByCategory() {
   const valueLabelFontSize = isCompactChart ? 11 : 12;
   const xAxisTickCount = isCompactChart ? 3 : 5;
 
-  const renderRentabilidadLabel = (props: LabelProps) => {
+  useEffect(() => {
+    return () => {
+      if (animationTimerRef.current !== null) {
+        window.clearTimeout(animationTimerRef.current);
+      }
+    };
+  }, []);
+
+  const navegar = (direction: 1 | -1) => {
+    if (animacionFase !== 'idle') return;
+    const siguienteIndex = vistaIndex + direction;
+    if (siguienteIndex < 0 || siguienteIndex >= totalVistas) return;
+
+    setAnimacionDireccion(direction);
+    setAnimacionFase('exit');
+
+    if (animationTimerRef.current !== null) {
+      window.clearTimeout(animationTimerRef.current);
+    }
+
+    animationTimerRef.current = window.setTimeout(() => {
+      setVistaIndex(siguienteIndex);
+      setAnimacionFase('enter');
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setAnimacionFase('idle');
+        });
+      });
+    }, 180);
+  };
+
+  const animationClass =
+    animacionFase === 'exit'
+      ? animacionDireccion === 1
+        ? '-translate-x-3 opacity-0'
+        : 'translate-x-3 opacity-0'
+      : animacionFase === 'enter'
+        ? animacionDireccion === 1
+          ? 'translate-x-3 opacity-0'
+          : '-translate-x-3 opacity-0'
+        : 'translate-x-0 opacity-100';
+
+  const formatValue = (value: number) =>
+    vista.id === 'ganancia' ? `$${value.toLocaleString()}` : `${value.toFixed(1)}%`;
+
+  const renderValueLabel = (props: LabelProps) => {
     const xNum = Number(props.x);
     const yNum = Number(props.y);
     const widthNum = Number(props.width);
@@ -163,19 +251,46 @@ export function RevenueByCategory() {
         fontWeight={700}
         textAnchor={isNegative ? 'end' : 'start'}
       >
-        {`$${safeValue.toLocaleString()}`}
+        {formatValue(safeValue)}
       </text>
     );
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-2">
-        <div>
-          <CardTitle className="text-base">Rentabilidad por Categoría</CardTitle>
-          <CardDescription className="text-sm">
-            Ganancia neta generada por cada categoría de servicio.
-          </CardDescription>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="text-base">{vista.title}</CardTitle>
+            <CardDescription className="text-sm">{vista.description}</CardDescription>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-[11px] tabular-nums text-muted-foreground px-1">
+              {vistaIndex + 1}/{totalVistas}
+            </span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={() => navegar(-1)}
+              disabled={!puedeIrAtras || isLoading || animacionFase !== 'idle'}
+              aria-label="Vista anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={() => navegar(1)}
+              disabled={!puedeIrAdelante || isLoading || animacionFase !== 'idle'}
+              aria-label="Vista siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-1 h-[260px] sm:h-[220px]">
@@ -186,66 +301,76 @@ export function RevenueByCategory() {
             <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={chartHeight}>
-            <BarChart data={data} layout="vertical" margin={chartMargin}>
-              <XAxis
-                type="number"
-                domain={rentabilidadDomain}
-                allowDecimals={false}
-                tickCount={xAxisTickCount}
-                stroke={axisColor}
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `$${Math.round(Number(value))}`}
-                tick={{ fill: axisColor }}
-              />
-              <YAxis
-                type="category"
-                dataKey="categoria"
-                stroke={labelColor}
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-                interval={0}
-                width={yAxisWidth}
-                tickMargin={yAxisTickMargin}
-                tick={{ fill: labelColor }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  border: `1px solid ${tooltipBorder}`,
-                  borderRadius: '6px',
-                  color: tooltipText,
-                }}
-                labelStyle={{ color: tooltipText }}
-                itemStyle={{ color: tooltipText }}
-                wrapperStyle={{ maxWidth: isCompactChart ? 180 : undefined }}
-                formatter={(value: number | undefined) => [`$${(value ?? 0).toFixed(2)} USD`, 'Ganancia neta']}
-                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
-              />
-              <Bar
-                dataKey="rentabilidad"
-                radius={[0, 12, 12, 0]}
-                isAnimationActive
-                animationDuration={900}
-                animationEasing="ease-out"
-                barSize={20}
-              >
-                {data.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.rentabilidad < 0 ? NEGATIVE_COLOR : COLORS[index % COLORS.length]}
-                  />
-                ))}
-                <LabelList
-                  dataKey="rentabilidad"
-                  content={renderRentabilidadLabel}
+          <div className={`w-full h-full transition-all duration-200 ease-out will-change-transform ${animationClass}`}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart data={data} layout="vertical" margin={chartMargin}>
+                <XAxis
+                  type="number"
+                  domain={valueDomain}
+                  allowDecimals={vista.id === 'margen'}
+                  tickCount={xAxisTickCount}
+                  stroke={axisColor}
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) =>
+                    vista.id === 'ganancia'
+                      ? `$${Math.round(Number(value))}`
+                      : `${Math.round(Number(value))}%`
+                  }
+                  tick={{ fill: axisColor }}
                 />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                <YAxis
+                  type="category"
+                  dataKey="categoria"
+                  stroke={labelColor}
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                  width={yAxisWidth}
+                  tickMargin={yAxisTickMargin}
+                  tick={{ fill: labelColor }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: tooltipBg,
+                    border: `1px solid ${tooltipBorder}`,
+                    borderRadius: '6px',
+                    color: tooltipText,
+                  }}
+                  labelStyle={{ color: tooltipText }}
+                  itemStyle={{ color: tooltipText }}
+                  wrapperStyle={{ maxWidth: isCompactChart ? 180 : undefined }}
+                  formatter={(value: number | undefined) => {
+                    const v = value ?? 0;
+                    const formatted =
+                      vista.id === 'ganancia'
+                        ? `$${v.toFixed(2)} USD`
+                        : `${v.toFixed(1)}%`;
+                    return [formatted, vista.tooltipLabel];
+                  }}
+                  cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
+                />
+                <Bar
+                  dataKey="valor"
+                  radius={[0, 12, 12, 0]}
+                  isAnimationActive
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                  barSize={20}
+                >
+                  {data.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.valor < 0 ? NEGATIVE_COLOR : COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                  <LabelList dataKey="valor" content={renderValueLabel} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>

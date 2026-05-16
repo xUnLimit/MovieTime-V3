@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { RefreshCw, Bell, ShoppingCart, Server, Pause } from 'lucide-react';
+import { RefreshCw, Bell, ShoppingCart, Server, Pause, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
@@ -18,6 +18,7 @@ import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNot
 import { MetricCard } from '@/components/shared/MetricCard';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useTemplatesStore } from '@/store/templatesStore';
+import { useMontoMoraTotal } from '@/hooks/use-monto-mora-total';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import {
@@ -30,9 +31,10 @@ import { toast } from 'sonner';
 function NotificacionesMetrics() {
   const { totalNotificaciones, ventasProximas, serviciosProximos, reposoCompletados } =
     useNotificacionesStore();
+  const { value: montoMora, isLoading: loadingMora } = useMontoMoraTotal();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
       <MetricCard
         title="Total Notificaciones"
         value={totalNotificaciones}
@@ -60,6 +62,14 @@ function NotificacionesMetrics() {
         icon={Pause}
         iconColor="text-purple-500"
         underlineColor="bg-purple-500"
+      />
+      <MetricCard
+        title="Monto Total en Retraso"
+        value={montoMora != null ? `$${montoMora.toFixed(2)}` : '$0.00'}
+        icon={AlertTriangle}
+        iconColor="text-red-600"
+        underlineColor="bg-red-600"
+        loading={loadingMora}
       />
     </div>
   );

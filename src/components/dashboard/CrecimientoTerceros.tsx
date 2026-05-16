@@ -98,9 +98,11 @@ export function CrecimientoTerceros() {
       {/* px-6 = separación del borde izquierdo/derecho (24px) */}
       <div className="space-y-0.5">
         {/* space-y-0.5 = espacio mínimo entre título y descripción (2px, igual que Ingresos por Categoría) */}
-        <CardTitle className="text-base">Crecimiento de Terceros</CardTitle>
+        <CardTitle className="text-base">Nuevos Terceros</CardTitle>
         <CardDescription className="text-sm">
-          Nuevos clientes y revendedores adquiridos por mes.
+          {selectedPeriod === 'actual'
+            ? 'Clientes y revendedores nuevos por día en el mes actual.'
+            : 'Clientes y revendedores nuevos por mes.'}
         </CardDescription>
       </div>
       <DropdownMenu>

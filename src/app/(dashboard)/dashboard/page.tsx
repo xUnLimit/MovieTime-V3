@@ -18,7 +18,7 @@ function IngresosVsGastosChartSkeleton() {
         <div>
           <CardTitle className="text-base">Ingresos vs Gastos</CardTitle>
           <CardDescription className="text-sm hidden sm:block">
-            Comparativa mensual de los ingresos totales por ventas y los gastos totales registrados.
+            Comparativa diaria de ingresos por ventas y gastos del mes actual.
           </CardDescription>
         </div>
         <Skeleton className="h-8 w-full sm:w-[140px] rounded-md" />
@@ -37,9 +37,9 @@ function CrecimientoTercerosSkeleton() {
     <Card className="py-1">
       <CardHeader className="flex flex-row items-center justify-between pt-3 pb-2 px-6">
         <div className="space-y-0.5">
-          <CardTitle className="text-base">Crecimiento de Terceros</CardTitle>
+          <CardTitle className="text-base">Nuevos Terceros</CardTitle>
           <CardDescription className="text-sm">
-            Nuevos clientes y revendedores adquiridos por mes.
+            Clientes y revendedores nuevos por día en el mes actual.
           </CardDescription>
         </div>
         <Skeleton className="h-7 w-[140px] rounded-md" />
@@ -53,15 +53,22 @@ function CrecimientoTercerosSkeleton() {
 
 function RevenueByCategorySkeleton() {
   // Replica exacta del estado isLoading=true del componente real:
-  // header y descripción con texto real, solo el contenido es skeleton.
+  // header con título, descripción y controles de paginación; solo el chart es skeleton.
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-2">
-        <div>
-          <CardTitle className="text-base">Rentabilidad por Categoría</CardTitle>
-          <CardDescription className="text-sm">
-            Ganancia neta generada por cada categoría de servicio.
-          </CardDescription>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="text-base">Ganancia Neta por Categoría</CardTitle>
+            <CardDescription className="text-sm">
+              Ganancia neta generada por cada categoría de servicio.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-[11px] tabular-nums text-muted-foreground px-1">1/2</span>
+            <Skeleton className="h-7 w-7 rounded-md" />
+            <Skeleton className="h-7 w-7 rounded-md" />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-1 h-[220px]">

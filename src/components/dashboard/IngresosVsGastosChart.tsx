@@ -100,7 +100,9 @@ export function IngresosVsGastosChart() {
         <div>
           <CardTitle className="text-base">Ingresos vs Gastos</CardTitle>
           <CardDescription className="text-sm hidden sm:block">
-            Comparativa mensual de los ingresos totales por ventas y los gastos totales registrados.
+            {selectedMonth === 'actual'
+              ? 'Comparativa diaria de ingresos por ventas y gastos del mes actual.'
+              : `Comparativa de ingresos por ventas y gastos en los ${selectedMonth === '3meses' ? 'últimos 3 meses' : selectedMonth === '6meses' ? 'últimos 6 meses' : 'últimos 12 meses'}.`}
           </CardDescription>
         </div>
         <DropdownMenu>

@@ -68,7 +68,7 @@ export function DashboardMetrics() {
         loading={isLoading}
       />
       <MetricCard
-        title="Gasto Mensual Esperado"
+        title="Gastos Esperados del Mes"
         value={isLoadingMensual ? '...' : (gastoMensual !== null ? formatUSD(gastoMensual) : '$0.00')}
         description="Gastos a pagar este mes"
         icon={CalendarClock}
@@ -77,7 +77,7 @@ export function DashboardMetrics() {
         loading={isLoadingMensual}
       />
       <MetricCard
-        title="Ingreso Mensual Esperado"
+        title="Ingresos Esperados del Mes"
         value={isLoadingMensual ? '...' : (ingresoMensual !== null ? formatUSD(ingresoMensual) : '$0.00')}
         description="Ingresos a recibir este mes"
         icon={CalendarRange}
