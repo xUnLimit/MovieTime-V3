@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bell, ShoppingCart, Banknote, Pause, ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -158,6 +158,7 @@ function MetricValue({
 export function NotificationBell() {
   const { notificaciones, fetchNotificaciones } = useNotificacionesStore();
   const [isOpen, setIsOpen] = useState(false);
+  const closeWasPointerDrivenRef = useRef(false);
 
   useEffect(() => {
     fetchNotificaciones();
@@ -213,9 +214,15 @@ export function NotificationBell() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-10 w-10 rounded-full hover:bg-muted/50 focus-visible:border-transparent focus-visible:ring-1 focus-visible:ring-muted-foreground/30"
+          className="relative h-10 w-10 rounded-full hover:bg-transparent focus-visible:border-transparent focus-visible:ring-1 focus-visible:ring-muted-foreground/30 [@media(hover:hover)]:hover:bg-muted/50"
           aria-label="Abrir notificaciones"
           title="Notificaciones"
+          onPointerDown={() => {
+            closeWasPointerDrivenRef.current = true;
+          }}
+          onKeyDown={() => {
+            closeWasPointerDrivenRef.current = false;
+          }}
         >
           <Bell className={`h-6 w-6 ${bellColor}`} />
 
@@ -227,7 +234,28 @@ export function NotificationBell() {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-[min(400px,calc(100vw-2rem))] p-2">
+      <DropdownMenuContent
+        align="end"
+        className="w-[min(400px,calc(100vw-2rem))] p-2"
+        onPointerDownCapture={() => {
+          closeWasPointerDrivenRef.current = true;
+        }}
+        onKeyDownCapture={() => {
+          closeWasPointerDrivenRef.current = false;
+        }}
+        onInteractOutside={() => {
+          closeWasPointerDrivenRef.current = true;
+        }}
+        onEscapeKeyDown={() => {
+          closeWasPointerDrivenRef.current = false;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (!closeWasPointerDrivenRef.current) return;
+
+          event.preventDefault();
+          closeWasPointerDrivenRef.current = false;
+        }}
+      >
         <div className="grid gap-2">
           {hasRelevantNotifications ? (
             <>

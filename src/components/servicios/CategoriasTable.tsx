@@ -358,7 +358,7 @@ export const CategoriasTable = memo(function CategoriasTable({
                   onClick={() => handleSort("ventasTotales")}
                   className={`h-8 w-full justify-center ${sortKey === "ventasTotales" ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  Ventas Totales
+                  Suscripciones Activas
                   {getSortIcon("ventasTotales")}
                 </Button>
               </TableHead>

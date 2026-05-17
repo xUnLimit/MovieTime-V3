@@ -37,13 +37,13 @@ export const ServiciosMetrics = memo(function ServiciosMetrics() {
       />
       <MetricCard
         title="Servicios Activos"
-        value={`${serviciosActivos}/${totalServicios}`}
+        value={serviciosActivos}
         icon={CheckCircle}
         underlineColor="bg-green-500"
         iconColor="text-green-500"
       />
       <MetricCard
-        title="Suscripciones Activas"
+        title="Total Suscripciones Activas"
         value={ventasActivas}
         icon={ShoppingBag}
         underlineColor="bg-purple-500"
