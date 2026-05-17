@@ -77,7 +77,7 @@ function NotificacionesPageContent() {
     useNotificacionesStore();
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
 
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'ventas');
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'ventas');
   const serviciosAutorrenovables = useMemo(
     () =>
       notificaciones.filter(
@@ -87,13 +87,6 @@ function NotificacionesPageContent() {
       ).length,
     [notificaciones]
   );
-
-  useEffect(() => {
-    const requestedTab = searchParams.get('tab');
-    if (requestedTab) {
-      setActiveTab(requestedTab);
-    }
-  }, [searchParams]);
 
   // Initialize on mount
   useEffect(() => {

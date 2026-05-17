@@ -47,17 +47,11 @@ describe('getOfflineAuthDecision', () => {
     expect(getOfflineAuthDecision({ isOnline: true, hasPersistedUser: true })).toBe('clear');
   });
 
-  it('stores a local user fallback for offline read-only access', () => {
+  it('does not persist a local user fallback in browser storage', () => {
     saveOfflineAuthUser(user);
 
-    expect(hasOfflineAuthUser()).toBe(true);
-    expect(loadOfflineAuthUser()).toMatchObject({
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      role: user.role,
-      active: true,
-    });
+    expect(hasOfflineAuthUser()).toBe(false);
+    expect(loadOfflineAuthUser()).toBeNull();
   });
 
   it('clears the local user fallback on logout', () => {

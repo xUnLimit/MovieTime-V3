@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 import { User } from '@/types';
 import {
   signIn,
@@ -15,28 +15,15 @@ import {
   setOfflineAuthSessionActive,
 } from '@/lib/pwa/offline-auth';
 
-const STORAGE_KEY = 'auth-storage';
 const REMEMBER_KEY = 'auth-remember';
 let authListenerInitialized = false;
-
-/**
- * Returns the active storage based on the "Recordarme" flag.
- * - rememberMe = true  -> localStorage  (persists across browser close)
- * - rememberMe = false -> sessionStorage (cleared on browser close)
- */
-function getActiveStorage(): Storage {
-  if (typeof window === 'undefined') return localStorage; // SSR fallback
-  return localStorage.getItem(REMEMBER_KEY) === 'true'
-    ? localStorage
-    : sessionStorage;
-}
 
 /** Clear auth data from both storages. Preserves the rememberMe preference
  * so the next login defaults to the user's last choice. */
 function clearAllAuthStorage() {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEY);
-  sessionStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem('auth-storage');
+  sessionStorage.removeItem('auth-storage');
   clearOfflineAuthUser();
 }
 
@@ -74,8 +61,7 @@ async function loadActiveProfile(): Promise<User> {
 
 export const useAuthStore = create<AuthState>()(
   devtools(
-    persist(
-      (set) => ({
+    (set) => ({
         user: null,
         isAuthenticated: false,
         isLoading: false,
@@ -85,9 +71,7 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
 
           try {
-            // Clear old auth data and set the remember flag BEFORE signIn so
-            // both Supabase's storage adapter and Zustand's persist middleware
-            // pick the right storage (localStorage vs sessionStorage).
+            // Clear legacy client auth state before Supabase writes a fresh session.
             clearAllAuthStorage();
             if (rememberMe) {
               localStorage.setItem(REMEMBER_KEY, 'true');
@@ -105,10 +89,11 @@ export const useAuthStore = create<AuthState>()(
               user,
               isAuthenticated: true,
               isLoading: false,
+              isHydrated: true,
             });
           } catch (error) {
             await supabaseSignOut().catch(() => undefined);
-            set({ isLoading: false });
+            set({ isLoading: false, isHydrated: true });
             const message = error instanceof Error ? error.message : 'Error al iniciar sesion';
             throw new Error(message);
           }
@@ -128,6 +113,7 @@ export const useAuthStore = create<AuthState>()(
             user,
             isAuthenticated: true,
             isLoading: false,
+            isHydrated: true,
           });
           setOfflineAuthSessionActive(true);
         },
@@ -140,6 +126,7 @@ export const useAuthStore = create<AuthState>()(
               user: null,
               isAuthenticated: false,
               isLoading: false,
+              isHydrated: true,
             });
           } catch (error) {
             console.error('Error logging out:', error);
@@ -164,15 +151,19 @@ export const useAuthStore = create<AuthState>()(
         },
 
         initAuth: () => {
-          if (authListenerInitialized) return;
+          if (authListenerInitialized) {
+            set({ isHydrated: true });
+            return;
+          }
           authListenerInitialized = true;
+          clearAllAuthStorage();
           onAuthStateChange(async (session) => {
             if (session) {
               try {
                 const user = await loadActiveProfile();
                 saveOfflineAuthUser(user);
                 setOfflineAuthSessionActive(false);
-                set({ user, isAuthenticated: true, isLoading: false });
+                set({ user, isAuthenticated: true, isLoading: false, isHydrated: true });
               } catch (error) {
                 void error;
                 // Offline profile checks can fail even when the persisted session is valid.
@@ -187,16 +178,17 @@ export const useAuthStore = create<AuthState>()(
                     user: offlineUser,
                     isAuthenticated: decision === 'preserve',
                     isLoading: false,
+                    isHydrated: true,
                   });
                   setOfflineAuthSessionActive(decision === 'preserve');
                   return;
                 }
                 await supabaseSignOut().catch(() => undefined);
                 clearAllAuthStorage();
-                set({ user: null, isAuthenticated: false, isLoading: false });
+                set({ user: null, isAuthenticated: false, isLoading: false, isHydrated: true });
               }
             } else {
-              // Keep persisted auth while offline so read-only navigation keeps working.
+              // Keep the in-memory user while offline so read-only navigation keeps working.
               const current = useAuthStore.getState();
               const offlineUser = current.user ?? loadOfflineAuthUser();
               const decision = getOfflineAuthDecision({
@@ -208,54 +200,16 @@ export const useAuthStore = create<AuthState>()(
                   user: offlineUser,
                   isAuthenticated: decision === 'preserve',
                   isLoading: false,
+                  isHydrated: true,
                 });
                 setOfflineAuthSessionActive(decision === 'preserve');
                 return;
               }
               clearAllAuthStorage();
-              set({ user: null, isAuthenticated: false, isLoading: false });
+              set({ user: null, isAuthenticated: false, isLoading: false, isHydrated: true });
             }
           });
         },
-      }),
-      {
-        name: STORAGE_KEY,
-        storage: {
-          getItem: (name) => {
-            if (typeof window === 'undefined') return null;
-            // Try localStorage first (remembered), then sessionStorage
-            const raw = localStorage.getItem(name) ?? sessionStorage.getItem(name);
-            return raw ? JSON.parse(raw) : null;
-          },
-          setItem: (name, value) => {
-            if (typeof window === 'undefined') return;
-            const storage = getActiveStorage();
-            storage.setItem(name, JSON.stringify(value));
-          },
-          removeItem: (name) => {
-            if (typeof window === 'undefined') return;
-            localStorage.removeItem(name);
-            sessionStorage.removeItem(name);
-          },
-        },
-        partialize: (state) => ({
-          user: state.user,
-          isAuthenticated: state.isAuthenticated,
-        }) as AuthState,
-        onRehydrateStorage: () => {
-          return (state) => {
-            if (state && !state.user && !isBrowserOnline()) {
-              const offlineUser = loadOfflineAuthUser();
-              if (offlineUser) {
-                state.user = offlineUser;
-                state.isAuthenticated = true;
-                setOfflineAuthSessionActive(true);
-              }
-            }
-            state?.setHydrated(true);
-          };
-        },
-      }
-    )
+      })
   )
 );

@@ -14,6 +14,11 @@ function isRemembered(): boolean {
   return window.localStorage.getItem(REMEMBER_KEY) === 'true';
 }
 
+function isSecureOrigin(): boolean {
+  if (typeof window === 'undefined') return process.env.NODE_ENV === 'production';
+  return window.location.protocol === 'https:';
+}
+
 // Storage adapter that routes Supabase auth tokens to localStorage when
 // "Recordarme" is on, or sessionStorage otherwise. The active storage is
 // resolved on every call so toggling rememberMe before signIn is enough.
@@ -50,6 +55,10 @@ export function getSupabaseClient(): SupabaseClient<Database> {
 
   if (!browserClient) {
     browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+      cookieOptions: {
+        sameSite: 'lax',
+        secure: isSecureOrigin(),
+      },
       auth: {
         storage: rememberAwareStorage,
         persistSession: true,
