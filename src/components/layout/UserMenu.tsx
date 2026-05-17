@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { LogOut, User, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ConfiguracionDialog } from './ConfiguracionDialog';
 
-export function UserMenu() {
+type UserMenuProps = {
+  variant?: 'header' | 'sidebar';
+  collapsed?: boolean;
+  isMobile?: boolean;
+};
+
+export function UserMenu({ variant = 'header', collapsed = false, isMobile = false }: UserMenuProps) {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [configuracionOpen, setConfiguracionOpen] = useState(false);
@@ -36,17 +43,56 @@ export function UserMenu() {
     .toUpperCase()
     .slice(0, 2);
 
+  const showSidebarText = variant === 'sidebar' && (isMobile || !collapsed);
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-          </Button>
+          {variant === 'sidebar' ? (
+            <button
+              type="button"
+              className={cn(
+                "relative flex h-11 w-full items-center overflow-hidden rounded-lg",
+                "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                "transition-colors duration-200"
+              )}
+              title={collapsed && !isMobile ? user.email : undefined}
+              aria-label="Abrir menú de usuario"
+            >
+              <div className="absolute left-0 flex h-11 w-11 items-center justify-center">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+              </div>
+              <span
+                className="absolute left-11 right-2 flex min-w-0 flex-col items-start text-left"
+                style={{
+                  opacity: showSidebarText ? 1 : 0,
+                  transition: 'opacity 200ms ease-in-out',
+                  pointerEvents: showSidebarText ? 'auto' : 'none',
+                }}
+              >
+                <span className="w-full truncate text-xs font-medium leading-4">{user.email}</span>
+                <span className="text-[11px] leading-4 text-muted-foreground">
+                  {user.role === 'admin' ? 'Administrador' : 'Operador'}
+                </span>
+              </span>
+            </button>
+          ) : (
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+            </Button>
+          )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuContent
+          className="w-56"
+          side={variant === 'sidebar' ? 'right' : 'bottom'}
+          align={variant === 'sidebar' ? 'end' : 'end'}
+          forceMount
+        >
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{user.email}</p>

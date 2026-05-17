@@ -12,7 +12,6 @@ interface DashboardState {
   counts: DashboardCounts;
   recentActivity: ActivityLog[];
   isLoading: boolean;
-  isRecalculating: boolean;
   error: string | null;
   lastFetch: number | null;
   lastStatsFetch: number | null;
@@ -20,7 +19,6 @@ interface DashboardState {
   fetchDashboard: (force?: boolean) => Promise<void>;
   /** Solo carga métricas financieras del dashboard (sin counts de terceros ni actividad) */
   fetchDashboardStats: (force?: boolean) => Promise<void>;
-  recalculateDashboard: () => Promise<void>;
   /** Invalidate cache so the dashboard re-fetches on next visit */
   invalidateCache: () => void;
 }
@@ -40,7 +38,6 @@ export const useDashboardStore = create<DashboardState>()(
       counts: EMPTY_COUNTS,
       recentActivity: [],
       isLoading: false,
-      isRecalculating: false,
       error: null,
       lastFetch: null,
       lastStatsFetch: null,
@@ -90,20 +87,6 @@ export const useDashboardStore = create<DashboardState>()(
 
       invalidateCache: () => {
         set({ lastFetch: null, lastStatsFetch: null });
-      },
-
-      recalculateDashboard: async () => {
-        set({ isRecalculating: true, error: null });
-        try {
-          await get().fetchDashboard(true);
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : 'Error al recalcular el dashboard';
-          console.error('Error recalculating dashboard:', error);
-          set({ error: errorMessage });
-        } finally {
-          set({ isRecalculating: false });
-        }
       },
     }),
     { name: 'dashboard-store' }

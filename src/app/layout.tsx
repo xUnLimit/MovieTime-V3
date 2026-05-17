@@ -4,6 +4,7 @@ import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { PwaBootstrap } from '@/components/pwa/PwaBootstrap';
 import { Toaster } from '@/components/ui/sonner';
+import { PendingWhatsAppToast } from '@/components/whatsapp/PendingWhatsAppToast';
 import { siteConfig } from '@/config';
 
 import './globals.css';
@@ -57,6 +58,7 @@ export default function RootLayout({
           <AuthInitializer />
           <PwaBootstrap />
           {children}
+          <PendingWhatsAppToast />
           <Toaster position="bottom-right" />
         </ThemeProvider>
       </body>

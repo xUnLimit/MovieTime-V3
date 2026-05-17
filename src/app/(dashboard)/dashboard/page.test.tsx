@@ -1,15 +1,9 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchDashboardMock = vi.fn();
 const fetchNotificacionesMock = vi.fn();
-const fetchCategoriasMock = vi.fn();
-const performGlobalSyncMock = vi.fn();
-const toastLoadingMock = vi.fn();
-const toastSuccessMock = vi.fn();
-const toastErrorMock = vi.fn();
 
 vi.mock('next/dynamic', () => ({
   default: () => () => null,
@@ -31,18 +25,8 @@ vi.mock('@/components/dashboard/PronosticoFinanciero', () => ({
   PronosticoFinanciero: () => <div>PronosticoFinanciero</div>,
 }));
 
-vi.mock('@/components/layout/UserMenu', () => ({
-  UserMenu: () => <div>UserMenu</div>,
-}));
-
 vi.mock('@/components/notificaciones/NotificationBell', () => ({
   NotificationBell: () => <div>NotificationBell</div>,
-}));
-
-vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button {...props}>{children}</button>
-  ),
 }));
 
 vi.mock('@/components/ui/card', () => ({
@@ -58,27 +42,18 @@ vi.mock('@/components/ui/skeleton', () => ({
 }));
 
 const dashboardStoreHook = Object.assign(
-  vi.fn((selector?: (state: { fetchDashboard: typeof fetchDashboardMock; isRecalculating: boolean }) => unknown) => {
+  vi.fn((selector?: (state: { fetchDashboard: typeof fetchDashboardMock }) => unknown) => {
     const state = {
-    fetchDashboard: fetchDashboardMock,
-    isRecalculating: false,
+      fetchDashboard: fetchDashboardMock,
     };
 
     return selector ? selector(state) : state;
   }),
-  {
-    // Used by: `await import('@/store/dashboardStore')` inside handleRecalculate
-    getState: () => ({ fetchDashboard: fetchDashboardMock }),
-  }
+  { getState: () => ({ fetchDashboard: fetchDashboardMock }) }
 );
 
 vi.mock('@/store/dashboardStore', () => ({
   useDashboardStore: dashboardStoreHook,
-}));
-
-// Mock the dynamic import of centralSyncService used inside handleRecalculate
-vi.mock('@/lib/services/centralSyncService', () => ({
-  performGlobalSync: performGlobalSyncMock,
 }));
 
 const useNotificacionesStoreMock = Object.assign(
@@ -105,16 +80,6 @@ vi.mock('@/store/serviciosStore', () => ({
   useServiciosStore: () => ({}),
 }));
 
-vi.mock('@/store/categoriasStore', () => ({
-  useCategoriasStore: (selector?: (state: { fetchCategorias: typeof fetchCategoriasMock }) => unknown) => {
-    const state = {
-      fetchCategorias: fetchCategoriasMock,
-    };
-
-    return selector ? selector(state) : state;
-  },
-}));
-
 vi.mock('@/store/tercerosStore', () => ({
   useTercerosStore: () => ({}),
 }));
@@ -126,48 +91,25 @@ vi.mock('@/types/notificaciones', () => ({
 
 vi.mock('sonner', () => ({
   toast: {
-    loading: toastLoadingMock,
-    success: toastSuccessMock,
-    error: toastErrorMock,
     custom: vi.fn(),
     dismiss: vi.fn(),
   },
 }));
 
-describe('Dashboard sync button', () => {
+describe('Dashboard header', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     fetchDashboardMock.mockResolvedValue(undefined);
     fetchNotificacionesMock.mockResolvedValue(undefined);
-    toastLoadingMock.mockReturnValue('toast-1');
-
-    performGlobalSyncMock.mockResolvedValue({
-      dashboardRebuilt: true,
-    });
-
-    fetchCategoriasMock.mockResolvedValue(undefined);
   });
 
-  it('dispara la resincronizacion de servicios al hacer click en Sincronizar sistema', async () => {
+  it('no muestra el control manual de sincronizacion del sistema', async () => {
     const { default: DashboardPage } = await import('./page');
 
     render(<DashboardPage />);
 
-    const button = await screen.findByRole('button', { name: /sincronizar sistema/i });
-    await userEvent.click(button);
-
-    await waitFor(() => {
-      expect(performGlobalSyncMock).toHaveBeenCalledTimes(1);
-      expect(fetchCategoriasMock).toHaveBeenCalledWith(true);
-    });
-
-    expect(toastSuccessMock).toHaveBeenCalledWith(
-      'Sistema sincronizado correctamente',
-      expect.objectContaining({
-        id: 'toast-1',
-        description: expect.stringContaining('Notificaciones regeneradas'),
-      })
-    );
+    expect(screen.queryByRole('button', { name: /sincronizar sistema/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^sincronizar$/i })).toBeNull();
   });
 });

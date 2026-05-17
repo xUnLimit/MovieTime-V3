@@ -42,6 +42,11 @@ export interface DataTableProps<T> {
 
 type SortDirection = 'asc' | 'desc' | null;
 
+function getDefaultMinTableWidth(columnCount: number, hasActions: boolean) {
+  const effectiveColumns = columnCount + (hasActions ? 1 : 0);
+  return Math.max(720, effectiveColumns * 140);
+}
+
 // Memoized TableRow component for better performance
 const MemoizedTableRow = memo(function MemoizedTableRow<T extends Record<string, unknown>>({
   item,
@@ -165,11 +170,18 @@ function DataTableComponent<T extends Record<string, unknown>>({
   }
 
   const displayData = pagination ? paginatedData : sortedData;
+  const hasExplicitMinWidth = /\bmin-w-/.test(tableClassName ?? '');
+  const tableStyle = hasExplicitMinWidth
+    ? undefined
+    : { minWidth: `max(100%, ${getDefaultMinTableWidth(columns.length, Boolean(actions))}px)` };
 
   return (
     <div>
-      <div className={`rounded-md border bg-background ${containerClassName ?? 'overflow-x-auto'}`}>
-        <Table className={[fixedLayout ? 'table-fixed' : '', tableClassName].filter(Boolean).join(' ') || undefined}>
+      <div className={`min-w-0 rounded-md border bg-background ${containerClassName ?? ''}`}>
+        <Table
+          className={[fixedLayout ? 'table-fixed' : '', tableClassName].filter(Boolean).join(' ') || undefined}
+          style={tableStyle}
+        >
           {fixedLayout ? (
             <colgroup>
               {columns.map((column) => (

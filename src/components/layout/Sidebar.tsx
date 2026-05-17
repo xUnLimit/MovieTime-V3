@@ -23,6 +23,7 @@ import {
 import { useTheme } from 'next-themes';
 import { useSidebarState } from '@/hooks/use-sidebar';
 import { useAuthStore } from '@/store/authStore';
+import { UserMenu } from './UserMenu';
 import React, { useEffect, useRef, useMemo } from 'react';
 
 type NavItem = { name: string; href: string; icon: React.ComponentType<{ className?: string }>; badge?: string };
@@ -391,6 +392,8 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
               </span>
             </button>
           )}
+
+          <UserMenu variant="sidebar" collapsed={!isMobile && collapsed} isMobile={isMobile} />
         </div>
       </div>
     </aside>

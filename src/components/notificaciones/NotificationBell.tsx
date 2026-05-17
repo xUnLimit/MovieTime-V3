@@ -1,23 +1,8 @@
-/**
- * NotificationBell Component
- *
- * Features:
- * - Bell icon with dynamic badge color (orange > red > yellow hierarchy)
- * - Dropdown showing recent notifications summary
- * - "Ver todas" link to notification center
- * - Real-time updates from notificacionesStore
- *
- * Badge Color Hierarchy:
- * 1. Red (🔴): Any "critica" priority notifications
- * 2. Orange (ðŸŸ ): Any resaltadas (highlighted) notifications
- * 3. Yellow (🟡): Any "alta" or "media" priority notifications
- * 4. Gray (⚫): Only "baja" priority or empty
- */
-
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, ShoppingCart, Banknote, Moon, ArrowRight } from 'lucide-react';
+import { Bell, ShoppingCart, Banknote, Pause, ArrowRight } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,44 +10,216 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { esNotificacionVenta, esNotificacionServicio, esNotificacionReposo } from '@/types/notificaciones';
+import {
+  esNotificacionReposo,
+  esNotificacionServicio,
+  esNotificacionVenta,
+} from '@/types/notificaciones';
+
+type NotificationSummary = {
+  today: number;
+  overdue: number;
+  upcoming: number;
+  highlighted: number;
+};
+
+type ReposoSummary = {
+  inProgress: number;
+  endingSoon: number;
+  completed: number;
+};
+
+type MetricTone = 'today' | 'overdue' | 'upcoming' | 'completed' | 'info' | 'highlighted';
+
+type SummaryMetric = {
+  label: string;
+  value: number;
+  tone: MetricTone;
+};
+
+type SummaryIcon = typeof ShoppingCart;
+
+function getNotificationSummary<T extends { diasRestantes: number; resaltada: boolean }>(
+  items: T[]
+): NotificationSummary {
+  return {
+    today: items.filter((item) => item.diasRestantes === 0).length,
+    overdue: items.filter((item) => item.diasRestantes < 0).length,
+    upcoming: items.filter((item) => item.diasRestantes > 0).length,
+    highlighted: items.filter((item) => item.resaltada).length,
+  };
+}
+
+function getReposoSummary<T extends { diasRestantes: number; resaltada: boolean }>(
+  items: T[]
+): ReposoSummary {
+  return (
+    {
+      inProgress: items.filter((item) => item.diasRestantes > 7).length,
+      endingSoon: items.filter((item) => item.diasRestantes > 0 && item.diasRestantes <= 7).length,
+      completed: items.filter((item) => item.diasRestantes <= 0).length,
+    }
+  );
+}
+
+function getNotificationMetrics(summary: NotificationSummary): SummaryMetric[] {
+  return [
+    { label: 'Hoy', value: summary.today, tone: 'today' },
+    { label: 'Retrasados', value: summary.overdue, tone: 'overdue' },
+    { label: 'Proximos', value: summary.upcoming, tone: 'upcoming' },
+    { label: 'Resaltados', value: summary.highlighted, tone: 'highlighted' },
+  ];
+}
+
+function getReposoMetrics(summary: ReposoSummary): SummaryMetric[] {
+  return [
+    { label: 'En proceso', value: summary.inProgress, tone: 'info' },
+    { label: 'Por finalizar', value: summary.endingSoon, tone: 'upcoming' },
+    { label: 'Completados', value: summary.completed, tone: 'completed' },
+  ];
+}
+
+function hasMetricItems(metrics: SummaryMetric[]) {
+  return metrics.some((metric) => metric.value > 0);
+}
+
+function SummaryRow({
+  icon: Icon,
+  label,
+  metrics,
+  alwaysShow = false,
+}: {
+  icon: SummaryIcon;
+  label: string;
+  metrics: SummaryMetric[];
+  alwaysShow?: boolean;
+}) {
+  if (!alwaysShow && !hasMetricItems(metrics)) return null;
+
+  return (
+    <div className="grid grid-cols-[minmax(0,82px)_1fr] items-center gap-1.5 rounded-md px-2 py-2 hover:bg-muted/40">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        <span className="truncate text-xs font-semibold">{label}</span>
+      </div>
+
+      <div
+        className={`grid min-w-0 gap-1 text-center ${
+          metrics.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
+        }`}
+      >
+        {metrics.map((metric) => (
+          <MetricValue
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+            tone={metric.tone}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MetricValue({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: MetricTone;
+}) {
+  const valueClass =
+    value === 0
+      ? 'text-muted-foreground'
+      : tone === 'today' || tone === 'overdue'
+        ? 'text-red-500'
+        : tone === 'upcoming'
+          ? 'text-yellow-500'
+          : tone === 'completed'
+            ? 'text-green-500'
+            : tone === 'info'
+              ? 'text-blue-500'
+              : 'text-orange-500';
+
+  return (
+    <div className="min-w-0">
+      <div className={`text-sm font-semibold leading-4 tabular-nums ${valueClass}`}>{value}</div>
+      <div className="mt-0.5 whitespace-normal break-words text-[9px] leading-[10px] text-muted-foreground">
+        {label}
+      </div>
+    </div>
+  );
+}
 
 export function NotificationBell() {
   const { notificaciones, fetchNotificaciones } = useNotificacionesStore();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch notifications on mount
   useEffect(() => {
     fetchNotificaciones();
   }, [fetchNotificaciones]);
 
-  // Get unread notifications
-  const unreadNotifications = notificaciones.filter((n) => !n.leida);
+  const ventasSummary = getNotificationSummary(notificaciones.filter(esNotificacionVenta));
+  const serviciosSummary = getNotificationSummary(notificaciones.filter(esNotificacionServicio));
+  const reposoSummary = getReposoSummary(notificaciones.filter(esNotificacionReposo));
+  const ventasMetrics = getNotificationMetrics(ventasSummary);
+  const serviciosMetrics = getNotificationMetrics(serviciosSummary);
+  const reposoMetrics = getReposoMetrics(reposoSummary);
 
-  // Count by type
-  const ventasPorVencer = unreadNotifications.filter(esNotificacionVenta).length;
-  const serviciosPorPagar = unreadNotifications.filter(esNotificacionServicio).length;
-  const reposoCompletados = unreadNotifications.filter(esNotificacionReposo).length;
-
-  // Color logic: red if any critica/vencida, yellow if any unread, off if none
-  const hasRed = unreadNotifications.some((n) => n.prioridad === 'critica');
-  const hasUnread = unreadNotifications.length > 0;
-  const bellColor = hasRed ? 'text-red-500' : hasUnread ? 'text-yellow-500' : 'text-muted-foreground';
-  const dotColor = hasRed ? 'bg-red-500' : 'bg-yellow-500';
+  const summaries = [ventasSummary, serviciosSummary];
+  const hasOverdue = summaries.some((summary) => summary.overdue > 0);
+  const hasToday = summaries.some((summary) => summary.today > 0);
+  const hasUpcoming = summaries.some((summary) => summary.upcoming > 0);
+  const hasCompletedReposo = reposoSummary.completed > 0;
+  const hasEndingReposo = reposoSummary.endingSoon > 0;
+  const hasReposoInProgress = reposoSummary.inProgress > 0;
+  const hasHighlighted = summaries.some((summary) => summary.highlighted > 0);
+  const hasRelevantNotifications =
+    hasOverdue ||
+    hasToday ||
+    hasUpcoming ||
+    hasCompletedReposo ||
+    hasEndingReposo ||
+    hasReposoInProgress ||
+    hasHighlighted;
+  const bellColor = hasOverdue || hasToday
+    ? 'text-red-500'
+    : hasCompletedReposo
+      ? 'text-green-500'
+    : hasHighlighted
+      ? 'text-orange-500'
+      : hasUpcoming || hasEndingReposo
+        ? 'text-yellow-500'
+        : hasReposoInProgress
+          ? 'text-blue-500'
+        : 'text-muted-foreground';
+  const dotColor =
+    hasOverdue || hasToday
+      ? 'bg-red-500'
+      : hasCompletedReposo
+        ? 'bg-green-500'
+        : hasHighlighted
+          ? 'bg-orange-500'
+          : hasUpcoming || hasEndingReposo
+            ? 'bg-yellow-500'
+            : 'bg-blue-500';
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-10 w-10 rounded-full hover:bg-muted/50"
+          className="relative h-10 w-10 rounded-full hover:bg-muted/50 focus-visible:border-transparent focus-visible:ring-1 focus-visible:ring-muted-foreground/30"
           aria-label="Abrir notificaciones"
           title="Notificaciones"
         >
           <Bell className={`h-6 w-6 ${bellColor}`} />
 
-          {/* Pulsing dot when there are unread notifications */}
-          {hasUnread && (
+          {hasRelevantNotifications && (
             <span className={`absolute top-1 right-1 block h-2.5 w-2.5 rounded-full ${dotColor}`}>
               <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${dotColor}`} />
             </span>
@@ -70,72 +227,40 @@ export function NotificationBell() {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-[min(320px,calc(100vw-2rem))] p-4">
-        <div className="grid gap-4">
-          {/* Header - solo cuando hay notificaciones */}
-          {unreadNotifications.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Resumen de Notificaciones</h4>
+      <DropdownMenuContent align="end" className="w-[min(400px,calc(100vw-2rem))] p-2">
+        <div className="grid gap-2">
+          {hasRelevantNotifications ? (
+            <>
+              <div className="px-1.5 py-1">
+                <h4 className="text-sm font-medium leading-none">Notificaciones</h4>
+                <p className="mt-0.5 text-[11px] leading-3 text-muted-foreground">
+                  Ventas, servicios y reposo con sus estados actuales.
+                </p>
+              </div>
+
+              <div className="grid divide-y divide-border rounded-md border bg-background/40">
+                <SummaryRow icon={ShoppingCart} label="Ventas" metrics={ventasMetrics} />
+                <SummaryRow icon={Banknote} label="Servicios" metrics={serviciosMetrics} />
+                <SummaryRow icon={Pause} label="Reposo" metrics={reposoMetrics} alwaysShow />
+              </div>
+
+              <a
+                href="/notificaciones"
+                className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                onClick={() => setIsOpen(false)}
+              >
+                Ver todas las notificaciones
+                <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            </>
+          ) : (
+            <div className="space-y-2 py-4 text-center">
+              <Bell className="mx-auto h-8 w-8 text-muted-foreground" />
+              <h4 className="font-medium leading-none">Todo al dia</h4>
               <p className="text-sm text-muted-foreground">
-                Tienes {unreadNotifications.length} alerta(s) pendiente(s).
+                No tienes notificaciones relevantes para ventas, servicios o reposo.
               </p>
             </div>
-          )}
-
-          {/* Summary */}
-          {unreadNotifications.length > 0 ? (
-            <div className="grid gap-2">
-              {/* Ventas por vencer */}
-              {ventasPorVencer > 0 && (
-                <div className="grid grid-cols-3 items-center gap-4">
-                  <span className="col-span-2 flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Ventas por vencer</span>
-                  </span>
-                  <span className="text-right text-sm">{ventasPorVencer}</span>
-                </div>
-              )}
-
-              {/* Servicios por pagar */}
-              {serviciosPorPagar > 0 && (
-                <div className="grid grid-cols-3 items-center gap-4">
-                  <span className="col-span-2 flex items-center gap-2">
-                    <Banknote className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Servicios por pagar</span>
-                  </span>
-                  <span className="text-right text-sm">{serviciosPorPagar}</span>
-                </div>
-              )}
-
-              {/* Servicios en reposo */}
-              {reposoCompletados > 0 && (
-                <div className="grid grid-cols-3 items-center gap-4">
-                  <span className="col-span-2 flex items-center gap-2">
-                    <Moon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Servicios en reposo</span>
-                  </span>
-                  <span className="text-right text-sm">{reposoCompletados}</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center space-y-2 py-4">
-              <Bell className="h-8 w-8 mx-auto text-muted-foreground" />
-              <h4 className="font-medium leading-none">Todo al día</h4>
-              <p className="text-sm text-muted-foreground">No tienes notificaciones pendientes.</p>
-            </div>
-          )}
-
-          {/* Footer - Ver todas */}
-          {unreadNotifications.length > 0 && (
-            <a
-              href="/notificaciones"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-              onClick={() => setIsOpen(false)}
-            >
-              Ver todas las notificaciones
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
           )}
         </div>
       </DropdownMenuContent>

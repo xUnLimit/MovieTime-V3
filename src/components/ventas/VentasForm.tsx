@@ -50,6 +50,7 @@ import { useServiciosStore } from "@/store/serviciosStore";
 import { useTemplatesStore } from "@/store/templatesStore";
 import { useTercerosStore } from "@/store/tercerosStore";
 import { useVentasStore } from "@/store/ventasStore";
+import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Plan, Servicio, VentaDoc } from "@/types";
 
 const PENDING_METODO_PAGO_OPTION: MetodoPagoTerceroOption = {
@@ -67,6 +68,7 @@ export function VentasForm() {
   const terceros = useTercerosStore((state) => state.terceros);
   const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
   const createVenta = useVentasStore((state) => state.createVenta);
+  const setPendingWhatsApp = useWhatsAppToastStore((state) => state.setPending);
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
   const templateNotificacion = useTemplatesStore((state) =>
     state.getTemplateByTipo("suscripcion"),
@@ -822,24 +824,11 @@ export function VentasForm() {
       if (notifyCliente && estadoVenta !== "inactivo" && editedMessage) {
         const phoneRaw = clienteSeleccionado?.telefono || "";
         const phone = phoneRaw.replace(/[^\d+]/g, "");
-        const mensajeAEnviar = editedMessage;
-        toast.success("Venta registrada", {
+        setPendingWhatsApp({
+          phone,
+          message: editedMessage,
+          title: "Venta registrada",
           description: "La venta ha sido guardada correctamente en el sistema.",
-          duration: Infinity,
-          action: {
-            label: "Enviar WhatsApp",
-            onClick: () => {
-              const base = phone
-                ? `https://web.whatsapp.com/send?phone=${phone}&text=`
-                : `https://web.whatsapp.com/send?text=`;
-              window.open(
-                base + encodeURIComponent(mensajeAEnviar),
-                "_blank",
-                "noopener,noreferrer",
-              );
-            },
-          },
-          actionButtonStyle: { backgroundColor: "#15803d", color: "#fff" },
         });
       } else {
         toast.success("Venta registrada", {

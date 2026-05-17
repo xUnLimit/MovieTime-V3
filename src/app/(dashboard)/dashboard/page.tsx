@@ -95,22 +95,17 @@ const RevenueByCategory = dynamic(
   () => import('@/components/dashboard/RevenueByCategory').then(m => ({ default: m.RevenueByCategory })),
   { loading: () => <RevenueByCategorySkeleton />, ssr: false }
 );
-import { UserMenu } from '@/components/layout/UserMenu';
 import { NotificationBell } from '@/components/notificaciones/NotificationBell';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useCategoriasStore } from '@/store/categoriasStore';
 import { esNotificacionVenta, esNotificacionServicio } from '@/types/notificaciones';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Bell, ArrowRight } from 'lucide-react';
+import { Bell, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const fetchDashboard = useDashboardStore((state) => state.fetchDashboard);
-  const isRecalculating = useDashboardStore((state) => state.isRecalculating);
   const fetchNotificaciones = useNotificacionesStore((state) => state.fetchNotificaciones);
-  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
   const toastShown = useRef(false);
 
   useEffect(() => {
@@ -211,28 +206,6 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleRecalculate = async () => {
-    const toastId = toast.loading('Sincronizando sistema...');
-    try {
-      const { performGlobalSync } = await import('@/lib/services/centralSyncService');
-      await performGlobalSync();
-
-      // Refrescar stores locales para reflejar cambios
-      const { useDashboardStore } = await import('@/store/dashboardStore');
-      await useDashboardStore.getState().fetchDashboard(true);
-      await fetchCategorias(true);
-
-      toast.success('Sistema sincronizado correctamente', {
-        id: toastId,
-        description:
-          'Notificaciones regeneradas y dashboard actualizado desde consultas SQL vivas.',
-      });
-    } catch (error) {
-      console.error('Error during global sync:', error);
-      toast.error('Error al sincronizar el sistema', { id: toastId });
-    }
-  };
-
   return (
     <div className="space-y-4 -mb-3 sm:-mb-4 md:-mb-6">
       <div className="flex items-center justify-between gap-3">
@@ -243,18 +216,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRecalculate}
-            disabled={isRecalculating}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRecalculating ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isRecalculating ? 'Sincronizando...' : 'Sincronizar sistema'}</span>
-            <span className="sm:hidden">{isRecalculating ? '...' : 'Sincronizar'}</span>
-          </Button>
           <NotificationBell />
-          <UserMenu />
         </div>
       </div>
 

@@ -8,8 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { RefreshCw, Bell, ShoppingCart, Server, Pause, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Bell, ShoppingCart, Server, Pause, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { VentasProximasTable } from '@/components/notificaciones/VentasProximasTable';
@@ -21,10 +20,7 @@ import { useTemplatesStore } from '@/store/templatesStore';
 import { useMontoMoraTotal } from '@/hooks/use-monto-mora-total';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import {
-  sincronizarNotificaciones,
-  sincronizarNotificacionesForzado,
-} from '@/lib/services/notificationSyncService';
+import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
 import { toast } from 'sonner';
 
 // Metrics component matching CategoriasMetrics style
@@ -82,7 +78,6 @@ function NotificacionesPageContent() {
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'ventas');
-  const [isSyncing, setIsSyncing] = useState(false);
   const serviciosAutorrenovables = useMemo(
     () =>
       notificaciones.filter(
@@ -119,27 +114,6 @@ function NotificacionesPageContent() {
     init();
   }, [fetchNotificaciones, fetchCounts, fetchTemplates]);
 
-  /**
-   * Manual sync trigger
-   */
-  const handleForzarSync = async () => {
-    setIsSyncing(true);
-    try {
-      await sincronizarNotificacionesForzado();
-      await Promise.all([
-        fetchNotificaciones(true),
-        fetchCounts(),
-        fetchTemplates(true),
-      ]);
-      toast.success('Sincronización completada', { description: 'Las notificaciones han sido actualizadas correctamente.' });
-    } catch (error) {
-      console.error('Error during sync:', error);
-      toast.error('Error durante sincronización', { description: 'No se pudo completar la sincronización. Intenta nuevamente.' });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
       {/* Page Header */}
@@ -153,10 +127,6 @@ function NotificacionesPageContent() {
             / <span className="text-foreground">Notificaciones</span>
           </p>
         </div>
-        <Button onClick={handleForzarSync} disabled={isSyncing} variant="outline" className="shrink-0 whitespace-nowrap">
-          <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Sincronizando...' : 'Actualizar'}
-        </Button>
       </div>
 
       {/* Metrics - matching CategoriasMetrics style */}

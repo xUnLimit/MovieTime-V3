@@ -210,12 +210,23 @@
 
   .table-scroll-shell {
     @apply min-w-0 overflow-x-auto overflow-y-hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    scrollbar-gutter: stable;
   }
 
   .table-scroll-shell::-webkit-scrollbar {
-    display: none;
+    display: block;
+    height: 8px;
+  }
+
+  .table-scroll-shell::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .table-scroll-shell::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--border);
   }
 
   .notification-table-scroll-shell [data-slot="table-container"] {
