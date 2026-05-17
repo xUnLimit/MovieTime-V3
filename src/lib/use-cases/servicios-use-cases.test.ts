@@ -55,11 +55,18 @@ vi.mock('@/lib/utils/activityLogHelpers', () => ({
   detectarCambios: vi.fn(() => []),
 }));
 
-import { adjustCategoriaGastos, getServicioById, removePagoServicio } from '@/lib/supabase/servicios-repository';
+import {
+  adjustCategoriaGastos,
+  getServicioById,
+  queryPagosServicio,
+  removePagoServicio,
+  updateServicio,
+} from '@/lib/supabase/servicios-repository';
 import { adjustGastosStats, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
+import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
-import { deleteServicioPagoUseCase } from './servicios-use-cases';
+import { deleteServicioPagoUseCase, renewServicioUseCase } from './servicios-use-cases';
 
 const servicio: Servicio = {
   id: 'servicio-1',
@@ -100,25 +107,31 @@ const pago: PagoServicio = {
   updatedAt: new Date('2026-05-06T00:00:00Z'),
 };
 
-describe('deleteServicioPagoUseCase', () => {
-  beforeEach(() => {
-    vi.mocked(removePagoServicio).mockReset();
-    vi.mocked(adjustCategoriaGastos).mockReset();
-    vi.mocked(adjustGastosStats).mockClear();
-    vi.mocked(getServicioById).mockReset();
-    vi.mocked(upsertServicioPronostico).mockClear();
-    vi.mocked(sincronizarUnServicio).mockClear();
-    vi.mocked(currencyService.convertToUSD).mockReset();
+beforeEach(() => {
+  vi.mocked(removePagoServicio).mockReset();
+  vi.mocked(queryPagosServicio).mockReset();
+  vi.mocked(updateServicio).mockReset();
+  vi.mocked(crearPagoRenovacion).mockReset();
+  vi.mocked(adjustCategoriaGastos).mockReset();
+  vi.mocked(adjustGastosStats).mockClear();
+  vi.mocked(getServicioById).mockReset();
+  vi.mocked(upsertServicioPronostico).mockClear();
+  vi.mocked(sincronizarUnServicio).mockClear();
+  vi.mocked(currencyService.convertToUSD).mockReset();
 
-    vi.mocked(removePagoServicio).mockResolvedValue(undefined);
-    vi.mocked(currencyService.convertToUSD).mockResolvedValue(10);
-    vi.mocked(adjustCategoriaGastos).mockResolvedValue(undefined);
-    vi.mocked(getServicioById).mockResolvedValue({
-      ...servicio,
-      fechaVencimiento: new Date('2026-05-01T00:00:00Z'),
-    });
+  vi.mocked(removePagoServicio).mockResolvedValue(undefined);
+  vi.mocked(queryPagosServicio).mockResolvedValue([]);
+  vi.mocked(updateServicio).mockResolvedValue(undefined);
+  vi.mocked(crearPagoRenovacion).mockResolvedValue(undefined);
+  vi.mocked(currencyService.convertToUSD).mockResolvedValue(10);
+  vi.mocked(adjustCategoriaGastos).mockResolvedValue(undefined);
+  vi.mocked(getServicioById).mockResolvedValue({
+    ...servicio,
+    fechaVencimiento: new Date('2026-05-01T00:00:00Z'),
   });
+});
 
+describe('deleteServicioPagoUseCase', () => {
   it('hard-deletes the payment and reverses service expense stats', async () => {
     await deleteServicioPagoUseCase(servicio, pago, [], {
       isLatestPayment: true,
@@ -137,5 +150,39 @@ describe('deleteServicioPagoUseCase', () => {
     );
     expect(upsertServicioPronostico).toHaveBeenCalled();
     expect(sincronizarUnServicio).toHaveBeenCalledWith('servicio-1');
+  });
+});
+
+describe('renewServicioUseCase', () => {
+  it('uses the renewal dialog autorenew value for the new service period', async () => {
+    const result = await renewServicioUseCase(servicio, {
+      periodoRenovacion: 'mensual',
+      metodoPagoId: 'metodo-1',
+      metodoPagoNombre: 'Banco',
+      moneda: 'USD',
+      costo: 10,
+      fechaInicio: new Date('2026-06-01T00:00:00Z'),
+      fechaVencimiento: new Date('2026-07-01T00:00:00Z'),
+      notas: 'Renovado',
+      renovacionAutomatica: true,
+    }, {
+      numeroRenovacion: 1,
+    });
+
+    expect(crearPagoRenovacion).toHaveBeenCalledWith(
+      'servicio-1',
+      'categoria-1',
+      10,
+      'metodo-1',
+      'Banco',
+      'USD',
+      'mensual',
+      new Date('2026-06-01T00:00:00Z'),
+      new Date('2026-07-01T00:00:00Z'),
+      1,
+      'Renovado',
+      true
+    );
+    expect(result.servicioActualizado.renovacionAutomatica).toBe(true);
   });
 });

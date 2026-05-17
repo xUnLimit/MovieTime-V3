@@ -13,6 +13,7 @@ export const pagoDialogSchema = z.object({
   fechaVencimiento: z.date(),
   notas: z.string().optional(),
   notificarWhatsApp: z.boolean().optional(),
+  renovacionAutomatica: z.boolean().optional(),
 });
 
 export type PagoDialogFormData = z.infer<typeof pagoDialogSchema>;

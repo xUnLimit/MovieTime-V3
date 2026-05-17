@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Pencil, RefreshCw } from 'lucide-react';
 import { addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -79,6 +80,7 @@ export function PagoDialog(props: PagoDialogProps) {
       fechaVencimiento: new Date(),
       notas: '',
       notificarWhatsApp: false,
+      renovacionAutomatica: false,
     },
   });
 
@@ -90,6 +92,7 @@ export function PagoDialog(props: PagoDialogProps) {
   const fechaInicioValue = watch('fechaInicio');
   const fechaVencimientoValue = watch('fechaVencimiento');
   const notasValue = watch('notas');
+  const renovacionAutomaticaValue = watch('renovacionAutomatica');
 
   // Sincronizar inputs locales con valores del formulario cuando cambian externamente (ej: dropdown de ciclo)
   useEffect(() => {
@@ -156,6 +159,7 @@ export function PagoDialog(props: PagoDialogProps) {
             fechaInicio: props.pago.fechaInicio ? new Date(props.pago.fechaInicio) : new Date(),
             fechaVencimiento: props.pago.fechaVencimiento ? new Date(props.pago.fechaVencimiento) : new Date(),
             notas: props.pago.notas ?? '',
+            renovacionAutomatica: false,
           });
           return;
         }
@@ -167,6 +171,7 @@ export function PagoDialog(props: PagoDialogProps) {
           fechaInicio: new Date(),
           fechaVencimiento: new Date(),
           notas: '',
+          renovacionAutomatica: false,
         });
         return;
       }
@@ -180,6 +185,7 @@ export function PagoDialog(props: PagoDialogProps) {
         fechaInicio: fechaVencimientoActual,
         fechaVencimiento: fechaVencimientoActual,
         notas: venta?.notas ?? '',
+        renovacionAutomatica: false,
       });
       return;
     }
@@ -193,6 +199,7 @@ export function PagoDialog(props: PagoDialogProps) {
         fechaInicio: new Date(props.pago.fechaInicio),
         fechaVencimiento: new Date(props.pago.fechaVencimiento),
         notas: props.pago.notas ?? servicio?.notas ?? '',
+        renovacionAutomatica: servicio.renovacionAutomatica ?? false,
       });
       return;
     }
@@ -207,9 +214,17 @@ export function PagoDialog(props: PagoDialogProps) {
       fechaInicio: fechaVencimientoActual,
       fechaVencimiento: fechaVencimientoActual,
       notas: servicio?.notas ?? '',
+      renovacionAutomatica: servicio?.renovacionAutomatica ?? false,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.open, props.pago, servicio?.fechaVencimiento, servicio?.metodoPagoId, servicio?.costoServicio]);
+  }, [
+    props.open,
+    props.pago,
+    servicio?.fechaVencimiento,
+    servicio?.metodoPagoId,
+    servicio?.costoServicio,
+    servicio?.renovacionAutomatica,
+  ]);
 
   useEffect(() => {
     if (fechaInicioValue && periodoValue && periodoValue !== '') {
@@ -399,6 +414,22 @@ export function PagoDialog(props: PagoDialogProps) {
     />
   );
 
+  const renderAutorrenovacionField = () => (
+    <div className="flex items-center justify-between gap-4 rounded-md border p-3">
+      <div className="space-y-1">
+        <Label htmlFor="renovacionAutomatica">Autorrenovable</Label>
+        <p className="text-sm text-muted-foreground">
+          Marca si este servicio se paga automaticamente.
+        </p>
+      </div>
+      <Switch
+        id="renovacionAutomatica"
+        checked={Boolean(renovacionAutomaticaValue)}
+        onCheckedChange={(checked) => setValue('renovacionAutomatica', checked)}
+      />
+    </div>
+  );
+
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent className={cn('max-w-[calc(100vw-2rem)]', dialogContentClassName)}>
@@ -462,6 +493,8 @@ export function PagoDialog(props: PagoDialogProps) {
             placeholder={notasPlaceholder}
             register={register}
           />
+
+          {!isEdit && !isVenta && renderAutorrenovacionField()}
 
           {!isEdit && isVenta && (
             <PreviewSection

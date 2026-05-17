@@ -27,6 +27,7 @@ export interface PagoFormData {
   notas?: string;
   metodoPagoNombre?: string;
   moneda?: string;
+  renovacionAutomatica?: boolean;
 }
 
 export type CategoriaDetalle = Pick<Categoria, 'id' | 'nombre'> & Partial<Categoria>;

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(Get-ChildItem -Recurse -Force)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "mcp__claude_ai_Supabase__list_tables"
+      "mcp__claude_ai_Supabase__list_tables",
+      "Bash(Get-ChildItem -Recurse -Directory)"
     ]
   }
 }

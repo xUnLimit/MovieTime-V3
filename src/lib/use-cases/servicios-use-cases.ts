@@ -49,6 +49,7 @@ type ServicioPagoInput = {
   notas?: string;
   metodoPagoNombre?: string;
   moneda?: string;
+  renovacionAutomatica?: boolean;
 };
 
 function normalizeServicioPagoInput(
@@ -438,6 +439,7 @@ export async function renewServicioUseCase(
     options.metodoPago,
     servicio.moneda
   );
+  const renovacionAutomatica = input.renovacionAutomatica ?? servicio.renovacionAutomatica ?? false;
 
   const numeroRenovacion = options.numeroRenovacion ?? (
     await queryPagosServicio<PagoServicio>([{ field: 'servicioId', operator: '==', value: servicio.id }])
@@ -455,7 +457,7 @@ export async function renewServicioUseCase(
     input.fechaVencimiento,
     numeroRenovacion,
     notaPrincipal,
-    servicio.renovacionAutomatica
+    renovacionAutomatica
   );
 
   const costoUSD = await currencyService.convertToUSD(input.costo, moneda);
@@ -519,6 +521,7 @@ export async function renewServicioUseCase(
       metodoPagoNombre,
       moneda,
       cicloPago,
+      renovacionAutomatica,
       notas: notaPrincipal,
       updatedAt: new Date(),
     } as Servicio,
