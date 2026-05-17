@@ -3356,6 +3356,7 @@ export type Database = {
         | "renovacion"
         | "suscripcion"
         | "cancelacion"
+        | "actualizacion_credenciales"
       tercero_tipo_enum: "cliente" | "revendedor"
       venta_estado_enum: "activo" | "inactivo"
     }
@@ -3525,6 +3526,7 @@ export const Constants = {
         "renovacion",
         "suscripcion",
         "cancelacion",
+        "actualizacion_credenciales",
       ],
       tercero_tipo_enum: ["cliente", "revendedor"],
       venta_estado_enum: ["activo", "inactivo"],

@@ -29,7 +29,14 @@ import { toast } from 'sonner';
 
 const templateSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  tipo: z.enum(['notificacion_regular', 'dia_pago', 'renovacion', 'suscripcion', 'cancelacion']),
+  tipo: z.enum([
+    'notificacion_regular',
+    'dia_pago',
+    'renovacion',
+    'suscripcion',
+    'cancelacion',
+    'actualizacion_credenciales',
+  ]),
   contenido: z.string().min(10, 'El contenido debe tener al menos 10 caracteres'),
 });
 
@@ -49,6 +56,9 @@ const AVAILABLE_PLACEHOLDERS = [
   '{vencimiento}',
   '{correo}',
   '{contrasena}',
+  '{credenciales_cambiadas}',
+  '{cambio_correo}',
+  '{cambio_contrasena}',
   '{dias_retraso}',
   '{fecha_inicio}',
   '{ciclo_pago}',
@@ -154,7 +164,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
               <Label htmlFor="tipo">Tipo</Label>
               <Select
                 value={tipoValue}
-                onValueChange={(value) => setValue('tipo', value as 'notificacion_regular' | 'dia_pago' | 'renovacion' | 'suscripcion' | 'cancelacion')}
+                onValueChange={(value) => setValue('tipo', value as TemplateFormData['tipo'])}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -165,6 +175,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
                   <SelectItem value="renovacion">Renovación</SelectItem>
                   <SelectItem value="suscripcion">Suscripción</SelectItem>
                   <SelectItem value="cancelacion">Cancelación</SelectItem>
+                  <SelectItem value="actualizacion_credenciales">Actualización de Credenciales</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -20,6 +20,7 @@ const TIPO_TEMPLATES: { value: TipoTemplate; label: string }[] = [
   { value: 'renovacion', label: 'Notificación de Renovación' },
   { value: 'suscripcion', label: 'Notificación de Suscripción' },
   { value: 'cancelacion', label: 'Cancelación de Servicio' },
+  { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales' },
 ];
 
 const PLACEHOLDERS = [
@@ -34,6 +35,9 @@ const PLACEHOLDERS = [
   { key: '{correo}', description: 'El correo electrónico del servicio', icon: Mail },
   { key: '{contrasena}', description: 'La contraseña del servicio', icon: Lock },
   { key: '{codigo}', description: 'El código de la venta', icon: Lock },
+  { key: '{credenciales_cambiadas}', description: 'Resumen de los datos que cambiaron', icon: Lock },
+  { key: '{cambio_correo}', description: 'Línea solo para cambio de correo', icon: Mail },
+  { key: '{cambio_contrasena}', description: 'Línea solo para cambio de contraseña', icon: Lock },
   { key: '{vencimiento}', description: 'La fecha de vencimiento', icon: Calendar },
   { key: '{monto}', description: 'El monto a pagar', icon: DollarSign },
 ];

@@ -111,7 +111,13 @@ export interface ExecutivePushSummaryPayload {
 }
 
 // Template Mensaje Types
-export type TipoTemplate = 'notificacion_regular' | 'dia_pago' | 'renovacion' | 'suscripcion' | 'cancelacion';
+export type TipoTemplate =
+  | 'notificacion_regular'
+  | 'dia_pago'
+  | 'renovacion'
+  | 'suscripcion'
+  | 'cancelacion'
+  | 'actualizacion_credenciales';
 
 export interface TemplateMensaje {
   id: string;

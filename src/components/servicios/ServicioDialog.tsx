@@ -146,12 +146,14 @@ export function ServicioDialog({
         toast.success("Servicio actualizado", {
           description:
             "Los datos del servicio han sido guardados correctamente.",
+          duration: 3000,
         });
       } else {
         await createServicio(servicioData);
         toast.success("Servicio creado", {
           description:
             "El nuevo servicio ha sido registrado correctamente en el sistema.",
+          duration: 3000,
         });
       }
 

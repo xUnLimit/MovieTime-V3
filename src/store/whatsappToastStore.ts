@@ -12,37 +12,51 @@ export interface PendingWhatsAppToast {
 
 interface WhatsAppToastState {
   pending: PendingWhatsAppToast | null;
+  queue: PendingWhatsAppToast[];
   hydrate: () => void;
   setPending: (pending: Omit<PendingWhatsAppToast, 'id'>) => void;
+  enqueueMany: (pending: Array<Omit<PendingWhatsAppToast, 'id'>>) => void;
   clearPending: (id?: string) => void;
 }
 
-function readPending(): PendingWhatsAppToast | null {
-  if (typeof window === 'undefined') return null;
+function normalizePending(rawValue: unknown): PendingWhatsAppToast | null {
+  if (!rawValue || typeof rawValue !== 'object') return null;
+  const parsed = rawValue as Partial<PendingWhatsAppToast>;
+  if (!parsed.id || !parsed.message) return null;
+  return {
+    id: parsed.id,
+    phone: parsed.phone ?? '',
+    message: parsed.message,
+    title: parsed.title ?? 'WhatsApp pendiente',
+    description: parsed.description ?? 'Hay un mensaje pendiente para enviar.',
+  };
+}
+
+function readQueue(): PendingWhatsAppToast[] {
+  if (typeof window === 'undefined') return [];
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<PendingWhatsAppToast>;
-    if (!parsed.id || !parsed.message) return null;
-    return {
-      id: parsed.id,
-      phone: parsed.phone ?? '',
-      message: parsed.message,
-      title: parsed.title ?? 'WhatsApp pendiente',
-      description: parsed.description ?? 'La venta fue guardada. Puedes enviar el mensaje cuando quieras.',
-    };
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((item) => normalizePending(item))
+        .filter((item): item is PendingWhatsAppToast => item !== null);
+    }
+    const pending = normalizePending(parsed);
+    return pending ? [pending] : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-function writePending(pending: PendingWhatsAppToast | null) {
+function writeQueue(queue: PendingWhatsAppToast[]) {
   if (typeof window === 'undefined') return;
-  if (!pending) {
+  if (queue.length === 0) {
     window.sessionStorage.removeItem(STORAGE_KEY);
     return;
   }
-  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
+  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
 }
 
 function createPendingId() {
@@ -54,9 +68,11 @@ function createPendingId() {
 
 export const useWhatsAppToastStore = create<WhatsAppToastState>((set) => ({
   pending: null,
+  queue: [],
 
   hydrate: () => {
-    set({ pending: readPending() });
+    const queue = readQueue();
+    set({ queue, pending: queue[0] ?? null });
   },
 
   setPending: (payload) => {
@@ -64,13 +80,28 @@ export const useWhatsAppToastStore = create<WhatsAppToastState>((set) => ({
       ...payload,
       id: createPendingId(),
     };
-    writePending(pending);
-    set({ pending });
+    const queue = [...useWhatsAppToastStore.getState().queue, pending];
+    writeQueue(queue);
+    set({ queue, pending: queue[0] ?? null });
+  },
+
+  enqueueMany: (payloads) => {
+    if (payloads.length === 0) return;
+    const newItems = payloads.map((payload) => ({
+      ...payload,
+      id: createPendingId(),
+    }));
+    const queue = [...useWhatsAppToastStore.getState().queue, ...newItems];
+    writeQueue(queue);
+    set({ queue, pending: queue[0] ?? null });
   },
 
   clearPending: (id) => {
-    if (id && useWhatsAppToastStore.getState().pending?.id !== id) return;
-    writePending(null);
-    set({ pending: null });
+    const currentQueue = useWhatsAppToastStore.getState().queue;
+    const queue = id
+      ? currentQueue.filter((item) => item.id !== id)
+      : currentQueue.slice(1);
+    writeQueue(queue);
+    set({ queue, pending: queue[0] ?? null });
   },
 }));

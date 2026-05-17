@@ -15,4 +15,7 @@ export interface WhatsAppData {
   codigo: string;
   items: string;
   diasRetraso?: number;
+  cambioCorreo?: string;
+  cambioContrasena?: string;
+  credencialesCambiadas?: string;
 }

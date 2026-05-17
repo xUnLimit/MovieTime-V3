@@ -134,8 +134,9 @@ export const TIPOS_TEMPLATE = [
   { value: 'notificacion_regular', label: 'Notificación Regular' },
   { value: 'dia_pago', label: 'Día de Pago' },
   { value: 'renovacion', label: 'Renovación' },
-  { value: 'venta', label: 'Nueva Venta' },
-  { value: 'cancelacion', label: 'Cancelación' }
+  { value: 'suscripcion', label: 'Nueva Venta' },
+  { value: 'cancelacion', label: 'Cancelación' },
+  { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales' }
 ] as const;
 
 // ===========================
@@ -148,6 +149,9 @@ export const PLACEHOLDERS_DISPONIBLES = [
   { placeholder: '{categoria}', descripcion: 'Categoría del servicio' },
   { placeholder: '{correo}', descripcion: 'Correo de acceso' },
   { placeholder: '{contrasena}', descripcion: 'Contraseña de acceso' },
+  { placeholder: '{credenciales_cambiadas}', descripcion: 'Resumen de credenciales cambiadas' },
+  { placeholder: '{cambio_correo}', descripcion: 'Línea de cambio de correo' },
+  { placeholder: '{cambio_contrasena}', descripcion: 'Línea de cambio de contraseña' },
   { placeholder: '{vencimiento}', descripcion: 'Fecha de vencimiento' },
   { placeholder: '{monto}', descripcion: 'Monto a pagar' },
   { placeholder: '{diasRetraso}', descripcion: 'Días de retraso (si aplica)' }

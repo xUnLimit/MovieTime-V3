@@ -29,6 +29,12 @@ export interface ExchangeRateAPIResponse {
 
 const CACHE_TTL_HOURS = 24;
 const API_BASE_URL = 'https://open.er-api.com/v6'; // Public endpoint, no API key required
+const FALLBACK_RATES: CachedRates = {
+  rates: { USD_USD: 1 },
+  lastUpdated: new Date(0),
+  source: 'fallback',
+  apiVersion: 'v6',
+};
 
 // ===========================
 // CURRENCY SERVICE CLASS
@@ -90,7 +96,7 @@ class CurrencyService {
 
       return amountInUSD * toRate;
     } catch (error) {
-      console.error('[CurrencyService] Error getting exchange rate:', error);
+      console.warn('[CurrencyService] Error getting exchange rate, defaulting to 1.0:', error);
       return 1.0;
     }
   }
@@ -132,7 +138,7 @@ class CurrencyService {
       await this.refreshExchangeRates();
       return this.memoryCache;
     } catch (error) {
-      console.error('[CurrencyService] Failed to refresh rates:', error);
+      console.warn('[CurrencyService] Failed to refresh rates, using cached/default rates:', error);
 
       // Use stale cache if available
       if (supabaseCache) {
@@ -140,7 +146,8 @@ class CurrencyService {
         return supabaseCache;
       }
 
-      return null;
+      this.memoryCache = FALLBACK_RATES;
+      return FALLBACK_RATES;
     }
   }
 
@@ -179,14 +186,15 @@ class CurrencyService {
         apiVersion: 'v6'
       };
 
-      // Save to Supabase
-      await this.saveRatesToCache(cachedRates);
-
-      // Save to memory cache
+      // Keep fresh rates usable even if persisting the cache fails.
       this.memoryCache = cachedRates;
 
+      try {
+        await this.saveRatesToCache(cachedRates);
+      } catch (cacheError) {
+        console.warn('[CurrencyService] Fresh rates loaded but could not be saved to Supabase:', cacheError);
+      }
     } catch (error) {
-      console.error('[CurrencyService] Error refreshing exchange rates:', error);
       throw error;
     }
   }
@@ -224,7 +232,7 @@ class CurrencyService {
         apiVersion: 'v6'
       };
     } catch (error) {
-      console.error('[CurrencyService] Error reading cached rates from Supabase:', error);
+      console.warn('[CurrencyService] Error reading cached rates from Supabase:', error);
       return null;
     }
   }
@@ -248,7 +256,7 @@ class CurrencyService {
         .upsert(rows, { onConflict: 'currency_pair' });
       if (error) throw new Error(error.message);
     } catch (error) {
-      console.error('[CurrencyService] Error saving rates to Supabase:', error);
+      console.warn('[CurrencyService] Error saving rates to Supabase:', error);
       throw error;
     }
   }

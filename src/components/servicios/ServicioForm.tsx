@@ -14,12 +14,23 @@ import {
 } from "@/features/servicios/servicio-form-schema";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas-use-cases";
+import {
+  countVentasActivasByServicioUseCase,
+  fetchVentasByFiltersUseCase,
+} from "@/lib/use-cases/ventas-use-cases";
+import {
+  buildCredentialUpdateMessage,
+  changedCredentialsCount,
+  hasCredentialChanges,
+} from "@/lib/utils/credentialNotification";
 import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
 import { useCategoriasStore } from "@/store/categoriasStore";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useServiciosStore } from "@/store/serviciosStore";
-import type { MetodoPago, Servicio } from "@/types";
+import { useTemplatesStore } from "@/store/templatesStore";
+import { useTercerosStore } from "@/store/tercerosStore";
+import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
+import type { MetodoPago, Servicio, VentaDoc } from "@/types";
 
 import { ServicioDatosTab } from "./form/ServicioDatosTab";
 import { ServicioPreviewTab } from "./form/ServicioPreviewTab";
@@ -44,6 +55,14 @@ export function ServicioForm({
   const categorias = useCategoriasStore((state) => state.categorias);
   const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
   const fetchMetodosPagoServicios = useMetodosPagoStore((state) => state.fetchMetodosPagoServicios);
+  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
+  const credentialTemplate = useTemplatesStore((state) =>
+    state.getTemplateByTipo("actualizacion_credenciales"),
+  );
+  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
+  const enqueueWhatsAppMessages = useWhatsAppToastStore(
+    (state) => state.enqueueMany,
+  );
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [activeTab, setActiveTab] = useState("datos");
   const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
@@ -89,7 +108,8 @@ export function ServicioForm({
 
   useEffect(() => {
     fetchCategorias();
-  }, [fetchCategorias]);
+    fetchTemplates();
+  }, [fetchCategorias, fetchTemplates]);
 
   const {
     register,
@@ -345,6 +365,9 @@ export function ServicioForm({
 
   const onSubmit = async (data: ServicioFormData) => {
     try {
+      const credentialChanges = servicio?.id
+        ? hasCredentialChanges(servicio, data)
+        : { correo: false, contrasena: false };
       const categoria = categorias.find((c) => c.id === data.categoriaId);
       const metodoPagoSeleccionado = metodosPago.find(
         (m) => m.id === data.metodoPagoId,
@@ -432,13 +455,80 @@ export function ServicioForm({
         toast.success("Servicio actualizado", {
           description:
             "Los datos del servicio han sido guardados correctamente.",
+          duration: 3000,
         });
         refreshPagos();
+
+        if (changedCredentialsCount(credentialChanges) > 0) {
+          const ventasActivas = await fetchVentasByFiltersUseCase<VentaDoc>([
+            { field: "servicioId", operator: "==", value: servicio.id },
+            { field: "estado", operator: "!=", value: "inactivo" },
+          ]);
+
+          if (ventasActivas.length > 0) {
+            await fetchTerceros(true);
+            const terceros = useTercerosStore.getState().terceros;
+            const tercerosById = new Map(
+              terceros.map((tercero) => [tercero.id, tercero]),
+            );
+            const servicioActualizado = {
+              ...servicio,
+              nombre: data.nombre,
+              categoriaNombre: categoria?.nombre || servicio.categoriaNombre,
+              correo: data.correo,
+              contrasena: data.contrasena,
+            };
+            const messages = ventasActivas.map((venta) => {
+              const tercero = venta.clienteId
+                ? tercerosById.get(venta.clienteId)
+                : undefined;
+              const phone = (
+                venta.clienteTelefono ||
+                tercero?.telefono ||
+                ""
+              ).replace(/[^\d+]/g, "");
+              const message = buildCredentialUpdateMessage(
+                credentialTemplate?.contenido,
+                venta,
+                servicioActualizado,
+                credentialChanges,
+              );
+
+              return {
+                id: venta.id,
+                clienteNombre: venta.clienteNombre,
+                phone,
+                message,
+                title: phone
+                  ? "Credenciales listas para enviar"
+                  : "Credenciales sin telefono",
+                description: phone
+                  ? `${venta.clienteNombre} recibira los nuevos datos de ${servicioActualizado.nombre}.`
+                  : `${venta.clienteNombre} no tiene telefono registrado. Puedes copiar el mensaje.`,
+              };
+            });
+
+            enqueueWhatsAppMessages(messages);
+            toast.info("Notificaciones preparadas", {
+              description: `${ventasActivas.length} cliente${
+                ventasActivas.length !== 1 ? "s" : ""
+              } pendiente${ventasActivas.length !== 1 ? "s" : ""} por WhatsApp.`,
+              duration: 3000,
+            });
+          } else {
+            toast.info("Credenciales actualizadas", {
+              description:
+                "No hay ventas activas para este servicio, por eso no se prepararon mensajes.",
+              duration: 3000,
+            });
+          }
+        }
       } else {
         await createServicio(servicioData);
         toast.success("Servicio creado", {
           description:
             "El nuevo servicio ha sido registrado correctamente en el sistema.",
+          duration: 3000,
         });
       }
 

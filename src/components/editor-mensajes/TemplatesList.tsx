@@ -63,6 +63,7 @@ export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListPro
       renovacion: 'Renovación',
       suscripcion: 'Suscripción',
       cancelacion: 'Cancelación',
+      actualizacion_credenciales: 'Actualización de Credenciales',
     };
     return labels[tipo];
   };

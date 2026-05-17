@@ -14,6 +14,7 @@ function buildWhatsAppUrl(phone: string, message: string) {
 
 export function PendingWhatsAppToast() {
   const pending = useWhatsAppToastStore((state) => state.pending);
+  const queueLength = useWhatsAppToastStore((state) => state.queue.length);
   const hydrate = useWhatsAppToastStore((state) => state.hydrate);
   const clearPending = useWhatsAppToastStore((state) => state.clearPending);
   const activeToastRef = useRef<string | number | null>(null);
@@ -40,19 +41,38 @@ export function PendingWhatsAppToast() {
     }
 
     activePendingIdRef.current = pending.id;
+    const description =
+      queueLength > 1
+        ? `${pending.description} (${queueLength} mensajes pendientes)`
+        : pending.description;
+    const action = pending.phone
+      ? {
+          label: 'Enviar WhatsApp',
+          onClick: () => {
+            window.open(
+              buildWhatsAppUrl(pending.phone, pending.message),
+              '_blank',
+              'noopener,noreferrer'
+            );
+            clearPending(pending.id);
+          },
+        }
+      : {
+          label: 'Copiar mensaje',
+          onClick: async () => {
+            await navigator.clipboard.writeText(pending.message);
+            clearPending(pending.id);
+          },
+        };
+
     activeToastRef.current = toast.success(pending.title, {
-      description: pending.description,
+      description,
       duration: Infinity,
-      action: {
-        label: 'Enviar WhatsApp',
-        onClick: () => {
-          window.open(
-            buildWhatsAppUrl(pending.phone, pending.message),
-            '_blank',
-            'noopener,noreferrer'
-          );
-          clearPending(pending.id);
-        },
+      action,
+      actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
+      cancelButtonStyle: {
+        backgroundColor: 'transparent',
+        color: 'var(--muted-foreground)',
       },
       cancel: {
         label: 'Descartar',
@@ -60,7 +80,7 @@ export function PendingWhatsAppToast() {
       },
       onDismiss: () => clearPending(pending.id),
     });
-  }, [clearPending, pending]);
+  }, [clearPending, pending, queueLength]);
 
   return null;
 }

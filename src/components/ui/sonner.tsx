@@ -42,6 +42,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "text-muted-foreground hover:text-foreground transition-colors",
             "opacity-0 group-hover:opacity-100 focus:opacity-100",
           ].join(" "),
+          actionButton: [
+            "rounded-md bg-green-700 px-3 py-1.5 text-xs font-semibold text-white",
+            "hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500",
+          ].join(" "),
+          cancelButton: [
+            "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground",
+            "hover:bg-muted hover:text-foreground",
+          ].join(" "),
         },
       }}
       icons={{

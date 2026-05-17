@@ -32,7 +32,10 @@ export function replacePlaceholders(
     '{vencimiento}': data.vencimiento,
     '{monto}': data.monto,
     '{codigo}': data.codigo,
-    '{items}': data.items
+    '{items}': data.items,
+    '{cambio_correo}': data.cambioCorreo ?? '',
+    '{cambio_contrasena}': data.cambioContrasena ?? '',
+    '{credenciales_cambiadas}': data.credencialesCambiadas ?? ''
   };
 
   // Si hay días de retraso, agregar al mensaje
