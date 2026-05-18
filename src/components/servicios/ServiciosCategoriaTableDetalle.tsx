@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Servicio } from "@/types";
 import { DataTable, Column } from "@/components/shared/DataTable";
 import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
@@ -66,6 +66,10 @@ interface ServiciosCategoriaTableDetalleProps {
   onNext: () => void;
   onPrevious: () => void;
 }
+
+type ServicioCategoriaRow = Servicio & {
+  fechaVencimientoSort: number;
+};
 
 export const ServiciosCategoriaTableDetalle = memo(
   function ServiciosCategoriaTableDetalle({
@@ -156,6 +160,17 @@ export const ServiciosCategoriaTableDetalle = memo(
       return calcularDiasRelativosCalendario(fechaVencimiento) ?? 0;
     };
 
+    const serviciosOrdenables = useMemo<ServicioCategoriaRow[]>(
+      () =>
+        servicios.map((servicio) => ({
+          ...servicio,
+          fechaVencimientoSort: servicio.fechaVencimiento
+            ? new Date(servicio.fechaVencimiento).getTime()
+            : Number.POSITIVE_INFINITY,
+        })),
+      [servicios],
+    );
+
     const getEstadoBadge = (
       dias: number,
     ): { className: string; text: string } => {
@@ -220,9 +235,9 @@ export const ServiciosCategoriaTableDetalle = memo(
         ),
       },
       {
-        key: "fechaVencimientoDisplay",
+        key: "fechaVencimientoSort",
         header: "Fecha de Vencimiento",
-        sortable: false,
+        sortable: true,
         align: "center",
         width: "12%",
         render: (item) => (
@@ -238,7 +253,7 @@ export const ServiciosCategoriaTableDetalle = memo(
         ),
       },
       {
-        key: "costo",
+        key: "costoServicio",
         header: "Costo",
         sortable: true,
         align: "center",
@@ -421,7 +436,7 @@ export const ServiciosCategoriaTableDetalle = memo(
 
           <div>
             <DataTable
-              data={servicios as unknown as Record<string, unknown>[]}
+              data={serviciosOrdenables as unknown as Record<string, unknown>[]}
               columns={columns as unknown as Column<Record<string, unknown>>[]}
               emptyMessage="No hay servicios para mostrar"
               loading={isLoading}
