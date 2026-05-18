@@ -43,13 +43,13 @@ export const useDashboardStore = create<DashboardState>()(
       lastStatsFetch: null,
 
       fetchDashboard: async (force = false) => {
-        const { lastFetch } = get();
+        const { lastFetch, stats } = get();
         if (!force && lastFetch && Date.now() - lastFetch < CACHE_TIMEOUT) {
           logCacheHit('dashboard');
           return;
         }
 
-        set({ isLoading: true, error: null });
+        set({ isLoading: stats === null, error: null });
 
         try {
           const { stats, counts, recentActivity } = await getDashboardHome();
