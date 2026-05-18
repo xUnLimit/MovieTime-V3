@@ -99,6 +99,7 @@ vi.mock('sonner', () => ({
 describe('Dashboard header', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    globalThis.__movietimeDashboardToastState = undefined;
 
     fetchDashboardMock.mockResolvedValue(undefined);
     fetchNotificacionesMock.mockResolvedValue(undefined);
@@ -111,5 +112,17 @@ describe('Dashboard header', () => {
 
     expect(screen.queryByRole('button', { name: /sincronizar sistema/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /^sincronizar$/i })).toBeNull();
+  });
+
+  it('shows the pending-notifications toast only once per browser runtime', async () => {
+    const toast = await import('sonner').then((module) => module.toast);
+    const { default: DashboardPage } = await import('./page');
+
+    const { unmount } = render(<DashboardPage />);
+    unmount();
+    render(<DashboardPage />);
+
+    expect(toast.custom).not.toHaveBeenCalled();
+    expect(fetchNotificacionesMock).toHaveBeenCalledTimes(1);
   });
 });

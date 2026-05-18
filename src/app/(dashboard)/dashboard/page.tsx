@@ -103,7 +103,25 @@ import { Bell, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
-let dashboardToastShownInRuntime = false;
+declare global {
+  var __movietimeDashboardToastState: 'idle' | 'pending' | 'shown' | undefined;
+}
+
+function claimDashboardToastRuntimeSlot() {
+  if (globalThis.__movietimeDashboardToastState && globalThis.__movietimeDashboardToastState !== 'idle') {
+    return false;
+  }
+  globalThis.__movietimeDashboardToastState = 'pending';
+  return true;
+}
+
+function completeDashboardToastRuntimeSlot() {
+  globalThis.__movietimeDashboardToastState = 'shown';
+}
+
+function releaseDashboardToastRuntimeSlot() {
+  globalThis.__movietimeDashboardToastState = 'idle';
+}
 
 export default function DashboardPage() {
   const fetchDashboard = useDashboardStore((state) => state.fetchDashboard);
@@ -117,16 +135,23 @@ export default function DashboardPage() {
   // Fetch notifications and show welcome toast on first visit
   useEffect(() => {
     const showWelcomeToast = async () => {
-      await fetchNotificaciones();
-
       // Only show once while this browser runtime is alive.
-      if (toastShown.current || dashboardToastShownInRuntime) return;
+      if (toastShown.current || !claimDashboardToastRuntimeSlot()) return;
       toastShown.current = true;
-      dashboardToastShownInRuntime = true;
+
+      try {
+        await fetchNotificaciones();
+      } catch (error) {
+        releaseDashboardToastRuntimeSlot();
+        throw error;
+      }
 
       const store = useNotificacionesStore.getState();
       const unread = store.notificaciones.filter((n) => !n.leida);
-      if (unread.length === 0) return;
+      if (unread.length === 0) {
+        completeDashboardToastRuntimeSlot();
+        return;
+      }
 
       const hasRed = unread.some((n) => n.prioridad === 'critica');
       const ventasCount = unread.filter(esNotificacionVenta).length;
@@ -202,9 +227,14 @@ export default function DashboardPage() {
           toast: '!bg-transparent !border-0 !shadow-none !p-0 !rounded-none !gap-0 !flex-none w-full',
         },
       });
+
+      completeDashboardToastRuntimeSlot();
     };
 
-    showWelcomeToast();
+    showWelcomeToast().catch((error) => {
+      toastShown.current = false;
+      console.error('[Dashboard] Error showing notification toast:', error);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
