@@ -100,6 +100,7 @@ describe('Dashboard header', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     globalThis.__movietimeDashboardToastState = undefined;
+    window.sessionStorage.clear();
 
     fetchDashboardMock.mockResolvedValue(undefined);
     fetchNotificacionesMock.mockResolvedValue(undefined);
@@ -123,6 +124,18 @@ describe('Dashboard header', () => {
     render(<DashboardPage />);
 
     expect(toast.custom).not.toHaveBeenCalled();
+    expect(fetchNotificacionesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show the pending-notifications toast again after a full document reload in the same tab', async () => {
+    const { default: DashboardPage } = await import('./page');
+
+    const { unmount } = render(<DashboardPage />);
+    unmount();
+
+    globalThis.__movietimeDashboardToastState = undefined;
+    render(<DashboardPage />);
+
     expect(fetchNotificacionesMock).toHaveBeenCalledTimes(1);
   });
 });

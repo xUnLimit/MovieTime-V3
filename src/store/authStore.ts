@@ -16,6 +16,7 @@ import {
 } from '@/lib/pwa/offline-auth';
 
 const REMEMBER_KEY = 'auth-remember';
+const DASHBOARD_TOAST_SESSION_KEY = 'movietime:dashboard-toast-state';
 let authListenerInitialized = false;
 
 /** Clear auth data from both storages. Preserves the rememberMe preference
@@ -25,6 +26,11 @@ function clearAllAuthStorage() {
   localStorage.removeItem('auth-storage');
   sessionStorage.removeItem('auth-storage');
   clearOfflineAuthUser();
+}
+
+function clearDashboardToastSessionState() {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(DASHBOARD_TOAST_SESSION_KEY);
 }
 
 function isBrowserOnline() {
@@ -73,6 +79,7 @@ export const useAuthStore = create<AuthState>()(
           try {
             // Clear legacy client auth state before Supabase writes a fresh session.
             clearAllAuthStorage();
+            clearDashboardToastSessionState();
             if (rememberMe) {
               localStorage.setItem(REMEMBER_KEY, 'true');
             } else {
@@ -122,6 +129,7 @@ export const useAuthStore = create<AuthState>()(
           try {
             await supabaseSignOut();
             clearAllAuthStorage();
+            clearDashboardToastSessionState();
             set({
               user: null,
               isAuthenticated: false,

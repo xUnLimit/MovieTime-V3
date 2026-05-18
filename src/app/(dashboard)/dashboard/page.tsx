@@ -107,20 +107,57 @@ declare global {
   var __movietimeDashboardToastState: 'idle' | 'pending' | 'shown' | undefined;
 }
 
+const DASHBOARD_TOAST_SESSION_KEY = 'movietime:dashboard-toast-state';
+
+function getDashboardToastSessionState() {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const value = window.sessionStorage.getItem(DASHBOARD_TOAST_SESSION_KEY);
+    return value === 'shown' ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function setDashboardToastSessionShown() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(DASHBOARD_TOAST_SESSION_KEY, 'shown');
+  } catch {
+    // Session storage is a best-effort guard. Runtime state still prevents remount duplicates.
+  }
+}
+
+function clearDashboardToastSessionState() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(DASHBOARD_TOAST_SESSION_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 function claimDashboardToastRuntimeSlot() {
   if (globalThis.__movietimeDashboardToastState && globalThis.__movietimeDashboardToastState !== 'idle') {
     return false;
   }
+  if (getDashboardToastSessionState() === 'shown') {
+    globalThis.__movietimeDashboardToastState = 'shown';
+    return false;
+  }
   globalThis.__movietimeDashboardToastState = 'pending';
+  setDashboardToastSessionShown();
   return true;
 }
 
 function completeDashboardToastRuntimeSlot() {
   globalThis.__movietimeDashboardToastState = 'shown';
+  setDashboardToastSessionShown();
 }
 
 function releaseDashboardToastRuntimeSlot() {
   globalThis.__movietimeDashboardToastState = 'idle';
+  clearDashboardToastSessionState();
 }
 
 export default function DashboardPage() {
