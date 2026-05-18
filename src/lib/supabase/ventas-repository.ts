@@ -176,7 +176,7 @@ export async function updateVentaPaymentAndPeriod(
       .maybeSingle();
 
     if (selectError) throw new Error(selectError.message);
-    const periodoId = assertRecordId(pago, 'select venta_periodo for pago_venta');
+    const periodoId = getVentaPeriodoIdFromPago(pago);
 
     const { error: planError } = await supabase
       .from('venta_periodos')
@@ -189,6 +189,19 @@ export async function updateVentaPaymentAndPeriod(
 
     if (planError) throw new Error(planError.message);
   }
+}
+
+function getVentaPeriodoIdFromPago(pago: unknown): string {
+  if (!pago || typeof pago !== 'object' || !('venta_periodo_id' in pago)) {
+    throw new Error('select venta_periodo for pago_venta no retorno un registro con venta_periodo_id');
+  }
+
+  const periodoId = (pago as { venta_periodo_id?: unknown }).venta_periodo_id;
+  if (typeof periodoId !== 'string' || periodoId.trim() === '') {
+    throw new Error('select venta_periodo for pago_venta retorno un venta_periodo_id invalido');
+  }
+
+  return periodoId;
 }
 
 export { ENTITIES } from './entities';

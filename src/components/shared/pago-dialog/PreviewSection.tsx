@@ -21,6 +21,8 @@ export function PreviewSection({
     <div className="rounded-lg border bg-background/40 p-3">
       <div className="flex items-center gap-3">
         <Switch
+          id="notificar-whatsapp"
+          aria-label="Notificar al cliente por WhatsApp"
           checked={Boolean(notificarWhatsAppValue)}
           onCheckedChange={(checked) => setValue('notificarWhatsApp', checked as boolean)}
         />
@@ -32,9 +34,13 @@ export function PreviewSection({
 
       {notificarWhatsAppValue && (
         <div className="mt-4 space-y-2">
-          <p className="text-sm font-semibold">Vista Previa del Mensaje</p>
+          <label htmlFor="whatsapp-preview-message" className="text-sm font-semibold">
+            Vista Previa del Mensaje
+          </label>
           <p className="text-xs text-muted-foreground">Puedes ajustar el mensaje antes de enviarlo. Los cambios no se guardan en las plantillas.</p>
           <Textarea
+            id="whatsapp-preview-message"
+            name="whatsappPreviewMessage"
             value={previewMessage}
             onChange={(event) => setPreviewMessage(event.target.value)}
             rows={10}

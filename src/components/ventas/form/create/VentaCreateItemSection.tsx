@@ -370,12 +370,14 @@ export function VentaCreateItemSection({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Precio</Label>
+          <Label htmlFor="venta-create-precio">Precio</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
               {simboloMoneda}
             </span>
             <Input
+              id="venta-create-precio"
+              name="precio"
               type="text"
               inputMode="decimal"
               value={precio}
@@ -392,8 +394,10 @@ export function VentaCreateItemSection({
         </div>
 
         <div className="space-y-2">
-          <Label>Descuento %</Label>
+          <Label htmlFor="venta-create-descuento">Descuento %</Label>
           <Input
+            id="venta-create-descuento"
+            name="descuento"
             type="text"
             inputMode="decimal"
             value={descuento}
@@ -469,8 +473,10 @@ export function VentaCreateItemSection({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Nombre del Perfil</Label>
+          <Label htmlFor="venta-create-perfil-nombre">Nombre del Perfil</Label>
           <Input
+            id="venta-create-perfil-nombre"
+            name="perfilNombre"
             type="text"
             value={perfilNombre}
             onChange={(event) => onPerfilNombreChange(event.target.value)}
@@ -479,8 +485,9 @@ export function VentaCreateItemSection({
         </div>
 
         <div className="space-y-2">
-          <Label>Codigo</Label>
+          <Label htmlFor="venta-create-codigo">Codigo</Label>
           <Input
+            id="venta-create-codigo"
             type="text"
             inputMode="numeric"
             {...codigoRegistration}
@@ -491,12 +498,14 @@ export function VentaCreateItemSection({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Precio Final</Label>
+          <Label htmlFor="venta-create-precio-final">Precio Final</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
               {simboloMoneda}
             </span>
             <Input
+              id="venta-create-precio-final"
+              name="precioFinalCalculado"
               type="text"
               value={precioFinalNumero.toFixed(2)}
               readOnly
@@ -535,8 +544,10 @@ export function VentaCreateItemSection({
       </div>
 
       <div className="space-y-2">
-        <Label>Notas</Label>
+        <Label htmlFor="venta-create-notas">Notas</Label>
         <Textarea
+          id="venta-create-notas"
+          name="notasItem"
           rows={3}
           value={notasItem}
           onChange={(event) => onNotasItemChange(event.target.value)}

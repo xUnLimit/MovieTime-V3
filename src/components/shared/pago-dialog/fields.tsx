@@ -172,6 +172,7 @@ export function CostoField({
         <span className="text-muted-foreground shrink-0 pr-2">{currencySymbol}</span>
         <input
           id="costo"
+          name="costo"
           type="text"
           inputMode="decimal"
           value={isCostoFocused ? costoInput : costoNormalizado.toFixed(2)}
@@ -232,6 +233,7 @@ export function DescuentoField({
       <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent dark:bg-input/30 px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] outline-none">
         <input
           id="descuento"
+          name="descuento"
           type="text"
           inputMode="decimal"
           value={isDescuentoFocused ? descuentoInput : (descuentoValue ?? 0).toString()}

@@ -397,12 +397,13 @@ export function VentaEditDatosTab({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Precio</Label>
+          <Label htmlFor="venta-edit-precio">Precio</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
               {simboloMoneda}
             </span>
             <Input
+              id="venta-edit-precio"
               type="text"
               inputMode="decimal"
               className="pl-10"
@@ -415,8 +416,8 @@ export function VentaEditDatosTab({
         </div>
 
         <div className="space-y-2">
-          <Label>Descuento %</Label>
-          <Input type="text" inputMode="decimal" {...register("descuento")} />
+          <Label htmlFor="venta-edit-descuento">Descuento %</Label>
+          <Input id="venta-edit-descuento" type="text" inputMode="decimal" {...register("descuento")} />
         </div>
       </div>
 
@@ -492,8 +493,9 @@ export function VentaEditDatosTab({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Nombre del Perfil</Label>
+          <Label htmlFor="venta-edit-perfil-nombre">Nombre del Perfil</Label>
           <Input
+            id="venta-edit-perfil-nombre"
             type="text"
             {...register("perfilNombre")}
             placeholder="Ej: Perfil Kids"
@@ -501,8 +503,9 @@ export function VentaEditDatosTab({
         </div>
 
         <div className="space-y-2">
-          <Label>Codigo</Label>
+          <Label htmlFor="venta-edit-codigo">Codigo</Label>
           <Input
+            id="venta-edit-codigo"
             type="text"
             inputMode="numeric"
             {...register("codigo")}
@@ -513,12 +516,14 @@ export function VentaEditDatosTab({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Precio final</Label>
+          <Label htmlFor="venta-edit-precio-final">Precio final</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
               {simboloMoneda}
             </span>
             <Input
+              id="venta-edit-precio-final"
+              name="precioFinalCalculado"
               type="text"
               value={precioFinal.toFixed(2)}
               readOnly
@@ -557,8 +562,9 @@ export function VentaEditDatosTab({
       </div>
 
       <div className="space-y-2">
-        <Label>Notas</Label>
+        <Label htmlFor="venta-edit-notas">Notas</Label>
         <Textarea
+          id="venta-edit-notas"
           rows={4}
           {...register("notas")}
           placeholder="Notas adicionales"
