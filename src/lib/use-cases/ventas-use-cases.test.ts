@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ventasRepository = vi.hoisted(() => ({
-  adjustCategoriaSuscripciones: vi.fn(),
-  adjustServiciosActivos: vi.fn(),
   createVenta: vi.fn(),
   createVentaWithInitialPayment: vi.fn(),
   getPagoVentaById: vi.fn(),
@@ -126,7 +124,6 @@ describe('ventas use cases', () => {
       p_plan_tipo_nombre_snapshot: ventaBase.planTipoNombre,
     }));
     expect(ventasRepository.createVenta).not.toHaveBeenCalled();
-    expect(ventasRepository.adjustServiciosActivos).toHaveBeenCalledWith(ventaBase.clienteId, 1);
     expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({
       accion: 'creacion',
       entidad: 'venta',
@@ -205,7 +202,7 @@ describe('ventas use cases', () => {
     expect(pagosVentaService.crearPagoRenovacion).not.toHaveBeenCalled();
   });
 
-  it('updates active counters and returns a profile delta when suspending a venta', async () => {
+  it('returns a profile delta when suspending a venta', async () => {
     const recordActivityLog = vi.fn();
 
     const result = await updateVentaUseCase(ventaBase.id, { estado: 'inactivo' }, {
@@ -215,8 +212,6 @@ describe('ventas use cases', () => {
     });
 
     expect(ventasRepository.updateVenta).toHaveBeenCalledWith(ventaBase.id, { estado: 'inactivo' });
-    expect(ventasRepository.adjustServiciosActivos).toHaveBeenCalledWith(ventaBase.clienteId, -1);
-    expect(ventasRepository.adjustCategoriaSuscripciones).toHaveBeenCalledWith(ventaBase.categoriaId, -1, -10);
     expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({
       accion: 'corte',
       entidad: 'venta',
@@ -280,7 +275,6 @@ describe('ventas use cases', () => {
 
     expect(ventasRepository.removeVentaWithPayments).toHaveBeenCalledWith(ventaBase.id, true);
     expect(ventasRepository.removeVenta).not.toHaveBeenCalled();
-    expect(ventasRepository.adjustServiciosActivos).toHaveBeenCalledWith(ventaBase.clienteId, -1);
     expect(dashboardStatsService.upsertVentaPronostico).toHaveBeenCalledWith(null, ventaBase.id);
     expect(result.serviceProfileDelta).toEqual({
       servicioId: ventaBase.servicioId,

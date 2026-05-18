@@ -4,8 +4,6 @@ import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { timestampToDate, toDateOnly, toIso } from '@/lib/supabase/dates';
 import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
 import {
-  adjustCategoriaSuscripciones,
-  adjustServiciosActivos,
   createVenta,
   createVentaRefund,
   createVentaWithInitialPayment,
@@ -295,10 +293,6 @@ export async function createVentaUseCase(
     updatedAt: new Date(),
   };
 
-  if (ventaData.clienteId && (ventaData.estado ?? 'activo') !== 'inactivo') {
-    await adjustServiciosActivos(ventaData.clienteId, 1);
-  }
-
   await options.recordActivityLog?.({
     ...options.logContext,
     accion: 'creacion',
@@ -317,11 +311,6 @@ export async function createVentaUseCase(
       origen: 'createVentaUseCase',
     },
   });
-
-  if (ventaDataLimpia.categoriaId && ventaData.precioFinal) {
-    const precioFinalUSD = await currencyService.convertToUSD(ventaData.precioFinal, ventaData.moneda ?? 'USD');
-    await adjustCategoriaSuscripciones(ventaDataLimpia.categoriaId, 1, precioFinalUSD);
-  }
 
   adjustIngresosStats({
     delta: ventaData.precioFinal ?? 0,
@@ -729,10 +718,6 @@ export async function updateVentaUseCase(
 
   await updateVenta(id, getVentaTableUpdates(finalUpdates));
 
-  const precioAnterior = ventaAnterior.precioFinal || 0;
-  const precioNuevo = updates.precioFinal !== undefined ? updates.precioFinal : precioAnterior;
-  const categoriaAnterior = ventaAnterior.categoriaId;
-  const categoriaNueva = updates.categoriaId || categoriaAnterior;
   const estadoAnterior = ventaAnterior.estado || 'activo';
   const estadoNuevo = updates.estado || estadoAnterior;
   const esCorteVenta = estadoAnterior !== estadoNuevo && estadoNuevo === 'inactivo';
@@ -740,43 +725,11 @@ export async function updateVentaUseCase(
   let serviceProfileDelta: { servicioId: string; shouldIncrement: boolean } | null = null;
 
   if (updates.estado !== undefined && estadoAnterior !== estadoNuevo) {
-    const clienteId = ventaAnterior.clienteId;
-    if (clienteId) {
-      if (estadoNuevo === 'inactivo') {
-        await adjustServiciosActivos(clienteId, -1);
-      } else if (estadoAnterior === 'inactivo') {
-        await adjustServiciosActivos(clienteId, 1);
-      }
-    }
-
     if (ventaAnterior.servicioId) {
       serviceProfileDelta = {
         servicioId: ventaAnterior.servicioId,
         shouldIncrement: estadoAnterior === 'inactivo',
       };
-    }
-  }
-
-  if (updates.categoriaId && categoriaAnterior !== categoriaNueva) {
-    if (categoriaAnterior) {
-      const precioUSD = await currencyService.convertToUSD(precioAnterior, ventaAnterior.moneda ?? 'USD');
-      await adjustCategoriaSuscripciones(categoriaAnterior, -1, -precioUSD);
-    }
-    if (categoriaNueva) {
-      const precioUSD = await currencyService.convertToUSD(precioNuevo, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
-      await adjustCategoriaSuscripciones(categoriaNueva, 1, precioUSD);
-    }
-  } else if (estadoAnterior !== estadoNuevo) {
-    if (categoriaAnterior) {
-      const precioUSD = await currencyService.convertToUSD(precioNuevo, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
-      const delta = estadoNuevo === 'inactivo' ? -1 : 1;
-      await adjustCategoriaSuscripciones(categoriaAnterior, delta, delta * precioUSD);
-    }
-  } else if (updates.precioFinal !== undefined && precioAnterior !== precioNuevo) {
-    const diffOriginal = precioNuevo - precioAnterior;
-    const diffUSD = await currencyService.convertToUSD(diffOriginal, updates.moneda ?? ventaAnterior.moneda ?? 'USD');
-    if (categoriaAnterior && diffUSD !== 0) {
-      await adjustCategoriaSuscripciones(categoriaAnterior, 0, diffUSD);
     }
   }
 
@@ -839,15 +792,6 @@ export async function deleteVentaUseCase(
   const serviceProfileDelta = options.servicioId && options.perfilNumero
     ? { servicioId: options.servicioId, shouldIncrement: false }
     : null;
-
-  if (ventaEliminada?.clienteId && (ventaEliminada.estado ?? 'activo') !== 'inactivo') {
-    await adjustServiciosActivos(ventaEliminada.clienteId, -1);
-  }
-
-  if (ventaEliminada?.categoriaId && ventaEliminada?.precioFinal) {
-    const precioFinalUSD = await currencyService.convertToUSD(ventaEliminada.precioFinal, ventaEliminada.moneda ?? 'USD');
-    await adjustCategoriaSuscripciones(ventaEliminada.categoriaId, -1, -precioFinalUSD);
-  }
 
   if (ventaEliminada?.precioFinal) {
     adjustIngresosStats({

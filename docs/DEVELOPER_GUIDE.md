@@ -14,7 +14,7 @@ export interface Servicio {
 ```
 
 #### 2. Update Store
-**File:** `src/stores/serviciosStore.ts`
+**File:** `src/store/serviciosStore.ts`
 ```typescript
 createServicio: async (data) => {
   const newServicio: Servicio = {
@@ -508,7 +508,7 @@ npm run lint         # Run ESLint
 touch src/components/module/ComponentName.tsx
 
 # Create new store
-touch src/stores/entityStore.ts
+touch src/store/entityStore.ts
 
 # Create new page
 mkdir -p src/app/\(dashboard\)/module-name
@@ -542,7 +542,7 @@ console.log('Filters:', { searchTerm, categoryFilter, statusFilter });
 ## Quick Checklist for New Features
 
 - [ ] Update type definitions in `src/types/index.ts`
-- [ ] Update store in `src/stores/`
+- [ ] Update store in `src/store/`
 - [ ] Update form schema in dialog component
 - [ ] Add form fields to dialog UI
 - [ ] Update table columns
@@ -588,4 +588,4 @@ refactor/what-is-refactored
 
 ---
 
-This guide provides quick reference patterns for common development tasks in the MovieTime PTY system. For more detailed information, refer to the main IMPLEMENTATION_SUMMARY.md document.
+This guide provides quick reference patterns for common development tasks in the MovieTime PTY system. For domain vocabulary and current architecture rules, see `CONTEXT.md`.

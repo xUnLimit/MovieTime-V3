@@ -7,7 +7,7 @@
  * - One query per entity (not two): Uses single query with fechaFin/fechaVencimiento <= (today + 7 days)
  * - This single query includes both próximas AND vencidas (because vencidas are subset of próximas)
  * - No duplicate queries for vencidas (saves 50% of sync queries)
- * - Run once per day via localStorage cache
+ * - Run once per day per browser runtime
  *
  * IMPORTANT: Requires fechaInicio, fechaFin, cicloPago to be populated in VentaDoc
  * Run migration first: npm run migrate:venta-fechas
@@ -31,21 +31,20 @@ import type { MetodoPago } from '@/types/metodos-pago';
 /**
  * In-memory flag to prevent concurrent sync executions.
  * Without this, layout.tsx and notificaciones/page.tsx mount simultaneously
- * and both pass the localStorage check before either writes marcarSincronizado().
+ * and both pass the sync check before either writes marcarSincronizado().
  */
 let sincronizandoEnCurso = false;
+let ultimaSincronizacion: string | null = null;
 
 /**
  * Check if we've already synchronized today
- * Uses localStorage to store last sync date (local time)
  */
 function debesSincronizar(): boolean {
   if (typeof window === 'undefined') return false;
 
-  const lastSync = localStorage.getItem('lastNotificationSync');
   const today = new Date().toDateString();
 
-  return lastSync !== today;
+  return ultimaSincronizacion !== today;
 }
 
 /**
@@ -54,8 +53,7 @@ function debesSincronizar(): boolean {
 function marcarSincronizado(): void {
   if (typeof window === 'undefined') return;
 
-  const today = new Date().toDateString();
-  localStorage.setItem('lastNotificationSync', today);
+  ultimaSincronizacion = new Date().toDateString();
 }
 
 /**
@@ -463,13 +461,13 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
 
     // If any individual item failed, revert the sync marker so it retries today
     if (huboFallosParciales && !forzarActualizacion && typeof window !== 'undefined') {
-      localStorage.removeItem('lastNotificationSync');
+      ultimaSincronizacion = null;
       console.warn('[NotificationSync] Partial failures detected — sync will retry on next load.');
     }
 
   } catch (error) {
     if (!forzarActualizacion && typeof window !== 'undefined') {
-      localStorage.removeItem('lastNotificationSync');
+      ultimaSincronizacion = null;
     }
     console.error('[NotificationSync] ❌ Error during synchronization:', error);
     throw error;
@@ -484,10 +482,8 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
  * Also removes orphan notifications for deleted ventas/servicios.
  */
 export async function sincronizarNotificacionesForzado(): Promise<void> {
-  // Reset daily cache so sincronizarNotificaciones runs unconditionally
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('lastNotificationSync');
-  }
+  // Reset daily marker so sincronizarNotificaciones runs unconditionally.
+  ultimaSincronizacion = null;
   
   sincronizandoEnCurso = false;
 

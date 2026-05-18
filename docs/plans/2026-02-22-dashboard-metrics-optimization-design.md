@@ -44,7 +44,7 @@ When a venta/servicio is renewed:
 
 **File:** `src/components/ventas/VentasEditForm.tsx`
 
-After the existing `adjustServiciosActivos` block (line ~546), add forecast sync:
+After the status update flow, add forecast sync:
 
 ```typescript
 // Sync dashboard forecast when estado changes
@@ -147,7 +147,7 @@ if (updates.activo !== undefined && updates.activo !== servicio.activo) {
 
 **File:** `src/app/(dashboard)/servicios/detalle/[id]/page.tsx`
 
-In `handleConfirmRenovacion` (after `adjustCategoriaGastos`), add:
+In `handleConfirmRenovacion`, add:
 
 ```typescript
 // Sync dashboard gastos for the new payment
@@ -174,7 +174,7 @@ upsertServicioPronostico({
 
 **File:** `src/components/notificaciones/ServiciosProximosTable.tsx`
 
-In `handleConfirmRenovacion` (after `adjustCategoriaGastos`), add the same pattern as Fix 6.
+In `handleConfirmRenovacion`, add the same pattern as Fix 6.
 
 ### Fix 8: Dashboard store cache invalidation
 

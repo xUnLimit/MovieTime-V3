@@ -20,7 +20,7 @@ import {
   Sun,
   ChevronLeft
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/layout/ThemeProvider';
 import { useSidebarState } from '@/hooks/use-sidebar';
 import { useAuthStore } from '@/store/authStore';
 import { UserMenu } from './UserMenu';
@@ -202,7 +202,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
       }
     });
 
-    // Sincronizar next-themes solo después de que la animación termine
+    // Sincronizar el estado de tema solo después de que la animación termine
     // para evitar el re-render de React durante la transición
     transition.finished.then(() => {
       try { localStorage.setItem('theme', nextTheme); } catch {}

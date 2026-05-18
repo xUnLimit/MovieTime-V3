@@ -12,16 +12,13 @@ Centralized configuration files for the application.
 ## Usage
 
 ```typescript
-import { env, siteConfig, NAVIGATION_ITEMS } from '@/config';
+import { env, siteConfig } from '@/config';
 
 // Use environment variables
-console.log(env.apiUrl);
+console.log(env.appUrl);
 
 // Use site configuration
 console.log(siteConfig.name);
-
-// Use constants
-console.log(NAVIGATION_ITEMS);
 ```
 
 ## Environment Variables
@@ -31,8 +28,13 @@ Create a `.env.local` file in the project root:
 ```env
 NEXT_PUBLIC_APP_NAME=MovieTime PTY
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_ENABLE_MOCK_AUTH=true
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_ENABLE_SW_DEV=false
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=...
+VAPID_SUBJECT=mailto:admin@example.com
+PUSH_CRON_SECRET=...
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 ## Adding New Configuration

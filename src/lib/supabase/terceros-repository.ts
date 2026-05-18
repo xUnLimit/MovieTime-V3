@@ -7,11 +7,10 @@ import {
   update,
   remove,
   logCacheHit,
-  adjustServiciosActivos,
 } from './record-core';
 import { ENTITIES, type QueryFilter } from './entities';
 
-export { logCacheHit, adjustServiciosActivos };
+export { logCacheHit };
 
 export const getTerceros = <T>() => getAll<T>(ENTITIES.TERCEROS);
 export const getTerceroById = <T>(id: string) => getById<T>(ENTITIES.TERCEROS, id);

@@ -6,12 +6,10 @@ vi.mock('@/lib/supabase/catalogos-repository', () => ({
 }));
 
 vi.mock('@/lib/supabase/categorias-repository', () => ({
-  adjustCategoriaGastos: vi.fn(),
   countCategorias: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/servicios-repository', () => ({
-  adjustCategoriaGastos: vi.fn(),
   countServicios: vi.fn(),
   createServicioWithInitialPayment: vi.fn(),
   getPagoServicioById: vi.fn(),
@@ -56,7 +54,6 @@ vi.mock('@/lib/utils/activityLogHelpers', () => ({
 }));
 
 import {
-  adjustCategoriaGastos,
   getServicioById,
   queryPagosServicio,
   removePagoServicio,
@@ -112,7 +109,6 @@ beforeEach(() => {
   vi.mocked(queryPagosServicio).mockReset();
   vi.mocked(updateServicio).mockReset();
   vi.mocked(crearPagoRenovacion).mockReset();
-  vi.mocked(adjustCategoriaGastos).mockReset();
   vi.mocked(adjustGastosStats).mockClear();
   vi.mocked(getServicioById).mockReset();
   vi.mocked(upsertServicioPronostico).mockClear();
@@ -124,7 +120,6 @@ beforeEach(() => {
   vi.mocked(updateServicio).mockResolvedValue(undefined);
   vi.mocked(crearPagoRenovacion).mockResolvedValue(undefined);
   vi.mocked(currencyService.convertToUSD).mockResolvedValue(10);
-  vi.mocked(adjustCategoriaGastos).mockResolvedValue(undefined);
   vi.mocked(getServicioById).mockResolvedValue({
     ...servicio,
     fechaVencimiento: new Date('2026-05-01T00:00:00Z'),
@@ -139,7 +134,6 @@ describe('deleteServicioPagoUseCase', () => {
     });
 
     expect(removePagoServicio).toHaveBeenCalledWith('pago-1');
-    expect(adjustCategoriaGastos).toHaveBeenCalledWith('categoria-1', -10);
     expect(adjustGastosStats).toHaveBeenCalledWith(
       expect.objectContaining({
         delta: -10,

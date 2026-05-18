@@ -181,18 +181,6 @@ export async function remove(collectionName: CollectionName, id: string): Promis
   if (error) throw new Error(error.message);
 }
 
-export async function adjustServiciosActivos(..._args: unknown[]) {
-  void _args;
-}
-
-export async function adjustCategoriaSuscripciones(..._args: unknown[]) {
-  void _args;
-}
-
-export async function adjustCategoriaGastos(..._args: unknown[]) {
-  void _args;
-}
-
 function applyFilters<T>(
   collectionName: CollectionName,
   query: QueryResult<T>,

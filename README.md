@@ -36,6 +36,7 @@ npm install
 npm run dev
 npm run lint
 npm test -- --run
+npm run test:coverage
 npm run build
 npm run migrate:validate
 ```
@@ -68,3 +69,7 @@ Directorios principales:
 ## Validacion
 
 `npm run migrate:validate` cuenta tablas Supabase y ejecuta `run_all_validations()`. Los reportes aceptables se mantienen codificados en `scripts/validate-supabase-migration.ts`; cualquier otro fallo bloquea con exit code `1`.
+
+## Contexto del dominio
+
+El vocabulario del dominio y las reglas de arquitectura estan en `CONTEXT.md`. Actualizalo cuando cambien conceptos como ventas, servicios, pagos, pronosticos o metricas derivadas.

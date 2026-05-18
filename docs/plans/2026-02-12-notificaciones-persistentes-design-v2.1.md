@@ -526,12 +526,7 @@ const handleCortar = async () => {
     await updatePerfilOcupado(selectedVenta.servicioId, false);
   }
 
-  // 3. Decrementar contador del cliente
-  if (selectedVenta.clienteId) {
-    await adjustServiciosActivos(selectedVenta.clienteId, -1);
-  }
-
-  // 4. Eliminar notificaciones
+  // 3. Eliminar notificaciones. Los contadores se derivan desde Supabase.
   await deleteNotificacionesPorEntidad(selectedVenta.id, undefined);
 
   toast.success('Venta cortada exitosamente');

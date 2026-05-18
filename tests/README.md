@@ -1,57 +1,30 @@
 # Tests Directory
 
-This directory contains all test files for the MovieTime PTY application.
+This directory contains shared test files for the MovieTime PTY application. Most feature tests are colocated next to the source files under `src/`.
 
 ## Structure
 
-```
+```txt
 tests/
-├── unit/           # Unit tests for individual functions/components
-│   ├── lib/        # Tests for utility functions
-│   └── store/      # Tests for Zustand stores
-├── integration/    # Integration tests for features
-└── e2e/            # End-to-end tests with Playwright
+  unit/           # Shared unit tests
+  integration/    # Shared integration tests, when needed
+
+src/
+  **/*.test.ts    # Colocated unit and use-case tests
+  **/*.test.tsx   # Colocated component tests
 ```
 
 ## Running Tests
 
 ```bash
-# Run all tests
 npm test
-
-# Run tests in watch mode
+npm test -- --run
 npm run test:watch
-
-# Run tests with coverage
 npm run test:coverage
-
-# Run specific test file
-npm test path/to/test.spec.ts
 ```
 
 ## Writing Tests
 
-Tests use:
-- **Vitest** as test runner
-- **@testing-library/react** for component testing
-- **Playwright** for E2E tests (when configured)
+Tests use Vitest as the runner and Testing Library for React components. E2E tests are not currently configured in this repo.
 
-Example unit test:
-```typescript
-import { describe, it, expect } from 'vitest';
-import { calcularConsumo } from '@/lib/utils/calculations';
-
-describe('calcularConsumo', () => {
-  it('should calculate consumption percentage', () => {
-    const result = calcularConsumo(new Date(), addMonths(new Date(), 1));
-    expect(result).toBeGreaterThanOrEqual(0);
-  });
-});
-```
-
-## Test Coverage Goals
-
-- Utilities: 100%
-- Stores: 80%
-- Components: 70%
-- Pages: 60%
+Focus coverage on critical use-cases, repositories, shared utilities, and user-visible UI behavior.

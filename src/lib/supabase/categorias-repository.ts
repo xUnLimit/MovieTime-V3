@@ -6,8 +6,6 @@
   create,
   update,
   logCacheHit,
-  adjustCategoriaGastos,
-  adjustCategoriaSuscripciones,
 } from './record-core';
 import { supabase } from './client';
 import { ENTITIES, type QueryFilter } from './entities';
@@ -16,7 +14,7 @@ import type { Categoria, Plan, TipoPlanConfig } from '@/types';
 import { readOfflineCollection, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
-export { logCacheHit, adjustCategoriaGastos, adjustCategoriaSuscripciones };
+export { logCacheHit };
 
 export const getCategorias = <T>() => getAll<T>(ENTITIES.CATEGORIAS);
 export const getCategoriaById = <T>(id: string) => getById<T>(ENTITIES.CATEGORIAS, id);

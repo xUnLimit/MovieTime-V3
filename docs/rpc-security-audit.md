@@ -11,6 +11,11 @@ The exposed transactional RPCs are payment/period operations:
 - `delete_venta_payment_and_empty_period`
 - `delete_servicio_payment_and_empty_period`
 
+Dashboard read RPCs exposed to `authenticated`:
+
+- `get_dashboard_stats_live`
+- `get_dashboard_churn_stats`
+
 Internal/admin functions include:
 
 - `private.auth_role`

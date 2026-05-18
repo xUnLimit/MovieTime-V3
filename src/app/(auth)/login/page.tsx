@@ -18,16 +18,10 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('auth-remember') === 'true';
-  });
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const offlineRestoreAttemptedRef = useRef(false);
-  const [isOnline, setIsOnline] = useState(() => {
-    if (typeof navigator === 'undefined') return true;
-    return navigator.onLine;
-  });
+  const [isOnline, setIsOnline] = useState(true);
   const [canUseOfflineAccess, setCanUseOfflineAccess] = useState(false);
 
   useEffect(() => {
@@ -39,6 +33,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const updateOfflineState = () => {
+      setRememberMe(localStorage.getItem('auth-remember') === 'true');
       setIsOnline(navigator.onLine);
       setCanUseOfflineAccess(hasOfflineAuthUser());
     };

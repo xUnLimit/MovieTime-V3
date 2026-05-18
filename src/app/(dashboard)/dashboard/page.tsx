@@ -103,6 +103,8 @@ import { Bell, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
+let dashboardToastShownInRuntime = false;
+
 export default function DashboardPage() {
   const fetchDashboard = useDashboardStore((state) => state.fetchDashboard);
   const fetchNotificaciones = useNotificacionesStore((state) => state.fetchNotificaciones);
@@ -117,10 +119,10 @@ export default function DashboardPage() {
     const showWelcomeToast = async () => {
       await fetchNotificaciones();
 
-      // Only show once per session
-      if (toastShown.current || sessionStorage.getItem('dashboard-toast-shown')) return;
+      // Only show once while this browser runtime is alive.
+      if (toastShown.current || dashboardToastShownInRuntime) return;
       toastShown.current = true;
-      sessionStorage.setItem('dashboard-toast-shown', '1');
+      dashboardToastShownInRuntime = true;
 
       const store = useNotificacionesStore.getState();
       const unread = store.notificaciones.filter((n) => !n.leida);

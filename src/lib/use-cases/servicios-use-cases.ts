@@ -2,7 +2,6 @@ import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { countCategorias } from '@/lib/supabase/categorias-repository';
 import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
 import {
-  adjustCategoriaGastos,
   countServicios,
   createServicioWithInitialPayment,
   getPagoServicioById,
@@ -204,11 +203,6 @@ export async function createServicioUseCase(
     p_pago_notas: servicioData.notas ?? '',
   });
 
-  if (servicioData.costoServicio) {
-    const costoUSD = await currencyService.convertToUSD(servicioData.costoServicio, moneda ?? 'USD');
-    await adjustCategoriaGastos(servicioData.categoriaId, costoUSD);
-  }
-
   adjustGastosStats({
     delta: servicioData.costoServicio ?? 0,
     moneda: moneda ?? 'USD',
@@ -386,10 +380,6 @@ export async function deleteServicioUseCase(
     await removeServicio(id);
   }
 
-  if (gastosRealUSD > 0) {
-    await adjustCategoriaGastos(servicio.categoriaId, -gastosRealUSD);
-  }
-
   if (servicio.costoServicio) {
     adjustGastosStats({
       delta: -servicio.costoServicio,
@@ -459,11 +449,6 @@ export async function renewServicioUseCase(
     notaPrincipal,
     renovacionAutomatica
   );
-
-  const costoUSD = await currencyService.convertToUSD(input.costo, moneda);
-  if (servicio.categoriaId) {
-    await adjustCategoriaGastos(servicio.categoriaId, costoUSD);
-  }
 
   safeAsyncSideEffect(adjustGastosStats({
     delta: input.costo,
@@ -587,14 +572,6 @@ export async function deleteServicioPagoUseCase(
 ) {
   void _remainingPayments;
   await removePagoServicio(pago.id);
-
-  const montoToRevertUSD = await currencyService.convertToUSD(
-    pago.monto ?? 0,
-    pago.moneda || options.fallbackMoneda || 'USD'
-  );
-  if (servicio.categoriaId) {
-    await adjustCategoriaGastos(servicio.categoriaId, -montoToRevertUSD);
-  }
 
   safeAsyncSideEffect(adjustGastosStats({
     delta: -(pago.monto ?? 0),

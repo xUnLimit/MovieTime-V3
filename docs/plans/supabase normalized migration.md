@@ -202,7 +202,7 @@ Si hay correcciones, ejecutar de nuevo y exportar solo cuando el segundo resulta
 ```bash
 rg "clientesStore|revendedoresStore" src
 rg "adjustVentasActivas" src
-rg "adjustServiciosActivos|adjustCategoriaGastos|updatePerfilOcupado" src
+rg "updatePerfilOcupado" src
 rg "syncServicioDependencias|syncUsuarioMetodoPago|syncMetodoPagoDependencias" src
 rg "serviciosActivos|perfilesOcupados|ingresosTotales|gastosTotal|ventasTotales" src
 ```
@@ -2774,7 +2774,7 @@ Greps:
 
 ```bash
 rg "@/lib/firebase" src
-rg "adjustServiciosActivos|adjustCategoriaGastos|updatePerfilOcupado" src
+rg "updatePerfilOcupado" src
 rg "syncServicioDependencias|syncUsuarioMetodoPago|syncMetodoPagoDependencias" src
 ```
 

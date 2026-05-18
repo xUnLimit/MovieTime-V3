@@ -7,8 +7,6 @@
   update,
   remove,
   logCacheHit,
-  adjustServiciosActivos,
-  adjustCategoriaSuscripciones,
 } from './record-core';
 import { supabase } from './client';
 import { timestampToDate, toDateOnly } from './dates';
@@ -16,7 +14,7 @@ import { ENTITIES, type QueryFilter } from './entities';
 import { assertRecordId, assertRpcStringId } from '@/lib/utils/safety';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
-export { logCacheHit, adjustServiciosActivos, adjustCategoriaSuscripciones, timestampToDate };
+export { logCacheHit, timestampToDate };
 
 type RpcResult = {
   data: unknown;

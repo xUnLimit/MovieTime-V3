@@ -488,7 +488,7 @@ function ReposoPageContent() {
   return (
     <div className="space-y-4">
       {/* Page Header */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="space-y-1">
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Servicios en Reposo
@@ -500,14 +500,6 @@ function ReposoPageContent() {
             / <span className="text-foreground">Servicios en Reposo</span>
           </p>
         </div>
-        <Button
-          onClick={fetchReposoServices}
-          variant="outline"
-          className="shrink-0 whitespace-nowrap"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Actualizar
-        </Button>
       </div>
 
       {/* Metrics */}

@@ -1,9 +1,2 @@
-/**
- * Application Constants
- *
- * Centralized constants for the application.
- * Moved from src/lib/constants/index.ts for better organization.
- */
-
-// Re-export all constants from original location
+// Compatibility re-export. Prefer importing runtime constants from '@/lib/constants'.
 export * from '@/lib/constants';
