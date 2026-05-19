@@ -48,6 +48,7 @@ export function VentasProximasDialogs({
             metodoPagoId: notifSeleccionada.metodoPagoId,
             precioFinal: notifSeleccionada.precioFinal || 0,
             fechaFin: new Date(notifSeleccionada.fechaFin),
+            notas: notifSeleccionada.notas,
           }}
           metodosPago={metodosPagoTerceros}
           categoriaPlanes={categoriaPlanes}

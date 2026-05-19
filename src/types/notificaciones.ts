@@ -51,6 +51,7 @@ export interface NotificacionVenta extends NotificacionBase {
   categoriaNombre: string; // Category name
   perfilNombre?: string; // Profile name (optional, for shared accounts)
   codigo?: string; // PIN code (for WhatsApp messages)
+  notas?: string; // Live sale note used as renewal payment default
   estado: 'activo' | 'inactivo';
 
   // Denormalized from PagoVenta (most recent)

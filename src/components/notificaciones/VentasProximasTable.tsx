@@ -295,6 +295,7 @@ export function VentasProximasTable() {
           clienteTelefono: notifSeleccionada.clienteTelefono,
           perfilNombre: notifSeleccionada.perfilNombre,
           codigo: notifSeleccionada.codigo,
+          notas: notifSeleccionada.notas,
           metodoPagoId: notifSeleccionada.metodoPagoId,
           moneda: notifSeleccionada.moneda,
           precioFinal: notifSeleccionada.precioFinal,

@@ -2191,6 +2191,7 @@ export type Database = {
           mensaje: string | null
           metodo_pago_nombre_snapshot: string | null
           moneda_snapshot: string | null
+          notas: string | null
           perfil_nombre_snapshot: string | null
           precio_final_snapshot: number | null
           prioridad:

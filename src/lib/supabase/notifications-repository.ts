@@ -232,6 +232,7 @@ function mapNotificationRow(row: unknown): Record<string, unknown> {
       categoriaNombre: item.categoriaNombreSnapshot,
       perfilNombre: item.perfilNombreSnapshot,
       codigo: item.codigoSnapshot,
+      notas: item.notas,
       fechaInicio: item.fechaInicioSnapshot,
       fechaFin: item.fechaFinSnapshot,
       cicloPago: item.cicloPagoSnapshot,
