@@ -103,9 +103,14 @@ export function ServiciosProximosTableRow({
       </TableCell>
 
       <TableCell className="px-2 py-2 text-center">
-        <span className="inline-block max-w-[130px] truncate align-middle">
-          {notif.categoriaNombre}
-        </span>
+        <div className="mx-auto flex max-w-[130px] flex-col items-center gap-0.5">
+          <span className="w-full truncate font-medium">
+            {notif.categoriaNombre}
+          </span>
+          <span className="w-full truncate text-xs text-muted-foreground">
+            {notif.servicioNombre || '-'}
+          </span>
+        </div>
       </TableCell>
 
       <TableCell className="px-2 py-2 text-center">

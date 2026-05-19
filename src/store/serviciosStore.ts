@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
-import { ENTITIES, getServicioById, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
+import { ENTITIES, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
 import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas-use-cases';
 import {
   createServicioUseCase,
@@ -210,29 +210,27 @@ export const useServiciosStore = create<ServiciosState>()(
         const delta = shouldIncrement ? 1 : -1;
 
         try {
-          let servicio = get().servicios.find((item) => item.id === id);
+          const state = get();
+          const servicio =
+            state.servicios.find((item) => item.id === id) ??
+            (state.selectedServicio?.id === id ? state.selectedServicio : null);
 
-          if (!servicio) {
-            const servicioDoc = await getServicioById<Servicio>(id);
-            if (!servicioDoc) {
-              console.error('Servicio not found in Supabase for updatePerfilOcupado');
-              return;
-            }
-            servicio = servicioDoc;
-          }
+          if (!servicio) return;
 
           const previousCount = servicio.perfilesOcupados || 0;
           const fallbackCount = Math.max(0, previousCount + delta);
 
-          if (get().servicios.find((item) => item.id === id)) {
-            set((state) => ({
-              servicios: state.servicios.map((item) =>
-                item.id === id
-                  ? { ...item, perfilesOcupados: fallbackCount, updatedAt: new Date() }
-                  : item
-              ),
-            }));
-          }
+          set((state) => ({
+            servicios: state.servicios.map((item) =>
+              item.id === id
+                ? { ...item, perfilesOcupados: fallbackCount, updatedAt: new Date() }
+                : item
+            ),
+            selectedServicio:
+              state.selectedServicio?.id === id
+                ? { ...state.selectedServicio, perfilesOcupados: fallbackCount, updatedAt: new Date() }
+                : state.selectedServicio,
+          }));
 
           let realCount = fallbackCount;
           try {
@@ -241,24 +239,31 @@ export const useServiciosStore = create<ServiciosState>()(
             console.error('Error counting active ventas for perfil ocupado:', countError);
           }
 
-          if (get().servicios.find((item) => item.id === id)) {
-            set((state) => ({
-              servicios: state.servicios.map((item) =>
-                item.id === id
-                  ? { ...item, perfilesOcupados: realCount, updatedAt: new Date() }
-                  : item
-              ),
-            }));
-          }
+          set((state) => ({
+            servicios: state.servicios.map((item) =>
+              item.id === id
+                ? { ...item, perfilesOcupados: realCount, updatedAt: new Date() }
+                : item
+            ),
+            selectedServicio:
+              state.selectedServicio?.id === id
+                ? { ...state.selectedServicio, perfilesOcupados: realCount, updatedAt: new Date() }
+                : state.selectedServicio,
+          }));
         } catch (error) {
           console.error('Error updating perfil ocupado:', error);
-          if (get().servicios.find((item) => item.id === id)) {
-            set((state) => ({
-              servicios: state.servicios.map((item) =>
-                item.id === id ? { ...item, perfilesOcupados: Math.max(0, item.perfilesOcupados - delta) } : item
-              ),
-            }));
-          }
+          set((state) => ({
+            servicios: state.servicios.map((item) =>
+              item.id === id ? { ...item, perfilesOcupados: Math.max(0, item.perfilesOcupados - delta) } : item
+            ),
+            selectedServicio:
+              state.selectedServicio?.id === id
+                ? {
+                    ...state.selectedServicio,
+                    perfilesOcupados: Math.max(0, state.selectedServicio.perfilesOcupados - delta),
+                  }
+                : state.selectedServicio,
+          }));
         }
       },
 
