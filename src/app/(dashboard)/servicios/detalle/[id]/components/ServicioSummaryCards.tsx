@@ -16,6 +16,22 @@ interface ServicioSummaryCardsProps {
   getCicloPagoLabel: (ciclo: string) => string;
 }
 
+function getCardTermination(numeroTarjeta?: string): string {
+  return numeroTarjeta?.replace(/\D/g, '').slice(-4) || '';
+}
+
+function getMetodoPagoDisplay(metodoPago: MetodoPagoDetalle | null): string {
+  if (!metodoPago?.nombre) return 'Sin método';
+
+  const terminacion = getCardTermination(metodoPago.numeroTarjeta);
+  const alias = metodoPago.alias?.trim();
+  const detalle = [alias, terminacion ? `•••• ${terminacion}` : '']
+    .filter(Boolean)
+    .join(' ');
+
+  return detalle ? `${metodoPago.nombre} - ${detalle}` : metodoPago.nombre;
+}
+
 export function ServicioSummaryCards({
   categoria,
   currencySymbol,
@@ -23,6 +39,8 @@ export function ServicioSummaryCards({
   metodoPago,
   servicio,
 }: ServicioSummaryCardsProps) {
+  const metodoPagoDisplay = getMetodoPagoDisplay(metodoPago);
+
   return (
     <div className="min-w-0 space-y-4">
       <Card className="min-w-0 p-6">
@@ -87,7 +105,9 @@ export function ServicioSummaryCards({
             })()}
             <div className="flex items-start gap-2">
               <span className="text-sm text-muted-foreground mt-0.5">Método de Pago</span>
-              <span className="text-sm font-medium ml-auto text-right text-purple-600">{metodoPago?.nombre || 'Sin método'}</span>
+              <span className="text-sm font-medium ml-auto max-w-[220px] truncate text-right text-purple-600">
+                {metodoPagoDisplay}
+              </span>
             </div>
           </div>
         </div>

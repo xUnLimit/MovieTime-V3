@@ -53,18 +53,18 @@ export function ServicioPaymentsHistory({
         <table className="w-full min-w-[1100px]">
           <colgroup>
             <col style={{ width: '12%' }} />
-            <col style={{ width: '16%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '18%' }} />
             <col style={{ width: '14%' }} />
-            <col style={{ width: '13%' }} />
-            <col style={{ width: '13%' }} />
             <col style={{ width: '14%' }} />
+            <col style={{ width: '12%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '8%' }} />
           </colgroup>
           <thead>
             <tr className="border-b text-sm text-muted-foreground">
               <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Pago</th>
-              <th className="text-left py-3 font-medium">Descripción</th>
+              <th className="text-left py-3 pr-3 font-medium">Descripción</th>
               <th className="text-left py-3 font-medium whitespace-nowrap">Método de pago</th>
               <th className="text-left py-3 font-medium">Ciclo de facturación</th>
               <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Inicio</th>
@@ -99,7 +99,7 @@ export function ServicioPaymentsHistory({
                     <td className="py-3 whitespace-nowrap">
                       {pago.fecha ? formatearFecha(new Date(pago.fecha)) : '—'}
                     </td>
-                    <td className="py-3 font-medium">{pago.descripcion}</td>
+                    <td className="py-3 pr-3 font-medium">{pago.descripcion}</td>
                     <td className="py-3 whitespace-nowrap">{metodoPagoNombre}</td>
                     <td className="py-3">{getCicloPagoLabel(pago.cicloPago ?? '') || '—'}</td>
                     <td className="py-3 whitespace-nowrap">

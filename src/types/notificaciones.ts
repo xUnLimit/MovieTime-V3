@@ -85,6 +85,7 @@ export interface NotificacionServicio extends NotificacionBase {
   correo: string; // Email del servicio
   contrasena: string; // Contraseña del servicio
   metodoPagoNombre: string; // Payment method name
+  metodoPagoAlias?: string; // Payment method alias
   metodoPagoTarjetaTerminacion?: string; // Last 4 digits of the service payment card
   moneda: string; // Currency (USD, TRY, ARS, etc.)
   costoServicio: number; // Service cost

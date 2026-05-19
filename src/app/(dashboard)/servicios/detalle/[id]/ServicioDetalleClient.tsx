@@ -8,7 +8,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
 import { getCurrencySymbol } from '@/lib/constants';
-import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { fetchMetodosPagoByFiltersUseCase, getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import {
   deleteServicioPagoUseCase,
   getServicioUseCase,
@@ -114,11 +114,16 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
 
         // 3. Crear objeto sintético de metodoPago desde datos denormalizados
         if (servicioData.metodoPagoId) {
+          const metodoPagoReal = await getMetodoPagoUseCase<MetodoPago>(servicioData.metodoPagoId).catch(() => null);
           setMetodoPago({
             id: servicioData.metodoPagoId,
-            nombre: servicioData.metodoPagoNombre || '',
-            moneda: servicioData.moneda || 'USD',
+            nombre: metodoPagoReal?.nombre || servicioData.metodoPagoNombre || '',
+            moneda: metodoPagoReal?.moneda || servicioData.moneda || 'USD',
+            alias: metodoPagoReal?.alias,
+            numeroTarjeta: metodoPagoReal?.numeroTarjeta,
           });
+        } else {
+          setMetodoPago(null);
         }
 
         // Nota: metodosPago (para dropdown) se carga en lazy load al abrir diálogo de renovación

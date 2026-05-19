@@ -153,6 +153,8 @@ async function upsertNotificationDetail(notificacionId: string, payload: Record<
       costo_servicio_snapshot: payload.costoServicio ?? null,
       moneda_snapshot: payload.moneda ?? null,
       metodo_pago_nombre_snapshot: payload.metodoPagoNombre ?? null,
+      metodo_pago_alias_snapshot: payload.metodoPagoAlias ?? null,
+      metodo_pago_tarjeta_terminacion_snapshot: payload.metodoPagoTarjetaTerminacion ?? null,
       renovacion_automatica_snapshot: payload.renovacionAutomatica ?? null,
     } as never);
     if (error) throw new Error(error.message);
@@ -249,6 +251,8 @@ function mapNotificationRow(row: unknown): Record<string, unknown> {
       correo: item.servicioCorreoSnapshot,
       contrasena: item.servicioContrasenaSnapshot,
       metodoPagoNombre: item.metodoPagoNombreSnapshot,
+      metodoPagoAlias: item.metodoPagoAliasSnapshot,
+      metodoPagoTarjetaTerminacion: item.metodoPagoTarjetaTerminacionSnapshot,
       moneda: item.monedaSnapshot,
       costoServicio: item.costoServicioSnapshot,
       cicloPago: item.cicloPagoSnapshot,

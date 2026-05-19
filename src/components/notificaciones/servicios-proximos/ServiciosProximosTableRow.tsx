@@ -57,6 +57,12 @@ export function ServiciosProximosTableRow({
   const bellColors = getBellIconColor(notif.diasRestantes);
   const estadoBadge = getEstadoBadge(notif.diasRestantes, notif.resaltada);
   const isPasswordVisible = visiblePasswords.has(notif.id);
+  const paymentDetail = [
+    notif.metodoPagoAlias?.trim(),
+    notif.metodoPagoTarjetaTerminacion
+      ? `•••• ${notif.metodoPagoTarjetaTerminacion}`
+      : '',
+  ].filter(Boolean).join(' ');
 
   return (
     <TableRow
@@ -153,13 +159,13 @@ export function ServiciosProximosTableRow({
 
       <TableCell className="px-2 py-2 text-center">
         {notif.metodoPagoNombre ? (
-          <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+          <div className="flex flex-col items-center justify-center gap-0.5">
             <span className="max-w-[110px] truncate font-medium">
               {notif.metodoPagoNombre}
             </span>
-            {notif.metodoPagoTarjetaTerminacion && (
-              <span className="text-xs text-muted-foreground">
-                •••• {notif.metodoPagoTarjetaTerminacion}
+            {paymentDetail && (
+              <span className="max-w-[130px] truncate text-xs leading-tight text-muted-foreground">
+                {paymentDetail}
               </span>
             )}
           </div>

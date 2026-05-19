@@ -5,6 +5,7 @@ const queryDocumentsMock = vi.fn();
 const createMock = vi.fn();
 const updateMock = vi.fn();
 const removeMock = vi.fn();
+const getMetodoPagoByIdMock = vi.fn();
 
 vi.mock('@/lib/supabase/notifications-repository', () => ({
   createNotificacion: createMock,
@@ -15,6 +16,11 @@ vi.mock('@/lib/supabase/notifications-repository', () => ({
 
 vi.mock('@/lib/supabase/servicios-repository', () => ({
   getServicioById: getByIdMock,
+}));
+
+vi.mock('@/lib/supabase/catalogos-repository', () => ({
+  getMetodoPagoById: getMetodoPagoByIdMock,
+  queryMetodosPago: vi.fn().mockResolvedValue([]),
 }));
 
 const servicioBase = {
@@ -44,6 +50,7 @@ describe('notificationSyncService', () => {
     createMock.mockResolvedValue('notificacion-1');
     updateMock.mockResolvedValue(undefined);
     removeMock.mockResolvedValue(undefined);
+    getMetodoPagoByIdMock.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -86,6 +93,7 @@ describe('notificationSyncService', () => {
           leida: true,
           resaltada: true,
           metodoPagoNombre: 'Tarjeta principal',
+          metodoPagoAlias: '',
           metodoPagoTarjetaTerminacion: '',
           renovacionAutomatica: true,
         },
@@ -102,6 +110,31 @@ describe('notificationSyncService', () => {
         renovacionAutomatica: false,
         leida: true,
         resaltada: true,
+      })
+    );
+  });
+
+  it('denormaliza alias y terminacion de tarjeta del metodo de pago de servicio', async () => {
+    getByIdMock.mockResolvedValue({
+      ...servicioBase,
+      metodoPagoId: 'metodo-1',
+    });
+    getMetodoPagoByIdMock.mockResolvedValue({
+      id: 'metodo-1',
+      alias: 'Personal',
+      numeroTarjeta: '4111 1111 1111 4321',
+    });
+    queryDocumentsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+    const { sincronizarUnServicio } = await import('./notificationSyncService');
+
+    await sincronizarUnServicio('servicio-1');
+
+    expect(createMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entidad: 'servicio',
+        metodoPagoAlias: 'Personal',
+        metodoPagoTarjetaTerminacion: '4321',
       })
     );
   });

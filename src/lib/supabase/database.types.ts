@@ -586,7 +586,9 @@ export type Database = {
           costo_servicio_snapshot: number | null
           fecha_inicio_snapshot: string | null
           fecha_vencimiento_snapshot: string | null
+          metodo_pago_alias_snapshot: string | null
           metodo_pago_nombre_snapshot: string | null
+          metodo_pago_tarjeta_terminacion_snapshot: string | null
           moneda_snapshot: string | null
           notificacion_id: string
           renovacion_automatica_snapshot: boolean | null
@@ -605,7 +607,9 @@ export type Database = {
           costo_servicio_snapshot?: number | null
           fecha_inicio_snapshot?: string | null
           fecha_vencimiento_snapshot?: string | null
+          metodo_pago_alias_snapshot?: string | null
           metodo_pago_nombre_snapshot?: string | null
+          metodo_pago_tarjeta_terminacion_snapshot?: string | null
           moneda_snapshot?: string | null
           notificacion_id: string
           renovacion_automatica_snapshot?: boolean | null
@@ -624,7 +628,9 @@ export type Database = {
           costo_servicio_snapshot?: number | null
           fecha_inicio_snapshot?: string | null
           fecha_vencimiento_snapshot?: string | null
+          metodo_pago_alias_snapshot?: string | null
           metodo_pago_nombre_snapshot?: string | null
+          metodo_pago_tarjeta_terminacion_snapshot?: string | null
           moneda_snapshot?: string | null
           notificacion_id?: string
           renovacion_automatica_snapshot?: boolean | null
@@ -2074,7 +2080,9 @@ export type Database = {
           id: string | null
           leida: boolean | null
           mensaje: string | null
+          metodo_pago_alias_snapshot: string | null
           metodo_pago_nombre_snapshot: string | null
+          metodo_pago_tarjeta_terminacion_snapshot: string | null
           moneda_snapshot: string | null
           prioridad:
             | Database["public"]["Enums"]["notificacion_prioridad_enum"]

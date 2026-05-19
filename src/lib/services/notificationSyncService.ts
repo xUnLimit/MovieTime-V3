@@ -91,6 +91,10 @@ function obtenerTerminacionTarjeta(metodoPago?: Pick<MetodoPago, 'numeroTarjeta'
   return metodoPago?.numeroTarjeta?.replace(/\D/g, '').slice(-4) || '';
 }
 
+function obtenerAliasMetodoPago(metodoPago?: Pick<MetodoPago, 'alias'> | null): string {
+  return metodoPago?.alias?.trim() || '';
+}
+
 /**
  * Check if priority increased (notification should be unmarked as read)
  */
@@ -204,6 +208,7 @@ async function procesarNotificacionServicio(
   const metodoPago = servicio.metodoPagoId
     ? metodosPagoById?.get(servicio.metodoPagoId) ?? await getMetodoPagoById<MetodoPago>(servicio.metodoPagoId)
     : null;
+  const metodoPagoAlias = obtenerAliasMetodoPago(metodoPago);
   const metodoPagoTarjetaTerminacion = obtenerTerminacionTarjeta(metodoPago);
   const renovacionAutomatica = servicio.renovacionAutomatica === true;
 
@@ -228,6 +233,7 @@ async function procesarNotificacionServicio(
     correo: servicio.correo,
     contrasena: servicio.contrasena,
     metodoPagoNombre: servicio.metodoPagoNombre || '',
+    metodoPagoAlias,
     metodoPagoTarjetaTerminacion,
     moneda: servicio.moneda || 'USD',
     costoServicio: servicio.costoServicio,
@@ -245,6 +251,7 @@ async function procesarNotificacionServicio(
       forzarActualizacion ||
       notifExistente.diasRestantes !== diasRestantes ||
       notifExistente.metodoPagoNombre !== datosNotificacion.metodoPagoNombre ||
+      (notifExistente.metodoPagoAlias || '') !== metodoPagoAlias ||
       (notifExistente.metodoPagoTarjetaTerminacion || '') !== metodoPagoTarjetaTerminacion ||
       (notifExistente.renovacionAutomatica ?? false) !== renovacionAutomatica;
 
