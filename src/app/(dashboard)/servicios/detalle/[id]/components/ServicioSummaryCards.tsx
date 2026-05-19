@@ -24,8 +24,8 @@ export function ServicioSummaryCards({
   servicio,
 }: ServicioSummaryCardsProps) {
   return (
-    <div className="space-y-4">
-      <Card className="p-6">
+    <div className="min-w-0 space-y-4">
+      <Card className="min-w-0 p-6">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-32 h-32 flex items-center justify-center">
             <Monitor className="h-16 w-16 text-muted-foreground" />
@@ -93,13 +93,13 @@ export function ServicioSummaryCards({
         </div>
       </Card>
 
-      <Card className="p-6">
+      <Card className="min-w-0 p-6">
         <h2 className="text-lg font-semibold mb-0.5">Información Adicional</h2>
         <div className="space-y-3">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Email</p>
-            <p className="text-sm font-medium flex items-center gap-2">
-              {servicio.correo || 'Sin especificar'}
+            <p className="flex min-w-0 items-center gap-2 text-sm font-medium">
+              <span className="min-w-0 break-all">{servicio.correo || 'Sin especificar'}</span>
               {servicio.correo && (
                 <Button
                   variant="ghost"
@@ -119,8 +119,8 @@ export function ServicioSummaryCards({
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-1">Contraseña</p>
-            <p className="text-sm font-medium flex items-center gap-2">
-              {servicio.contrasena || 'Sin especificar'}
+            <p className="flex min-w-0 items-center gap-2 text-sm font-medium">
+              <span className="min-w-0 break-all">{servicio.contrasena || 'Sin especificar'}</span>
               {servicio.contrasena && (
                 <Button
                   variant="ghost"
@@ -149,7 +149,7 @@ export function ServicioSummaryCards({
         </div>
       </Card>
 
-      <Card className="p-6">
+      <Card className="min-w-0 p-6">
         <h2 className="text-lg font-semibold">Notas</h2>
         <p className="text-sm text-muted-foreground whitespace-pre-line">
           {servicio.notas || 'Sin notas'}

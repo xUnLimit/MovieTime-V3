@@ -15,10 +15,20 @@ import {
   renewServicioUseCase,
   updateServicioPagoUseCase,
 } from '@/lib/use-cases/servicios-use-cases';
-import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas-use-cases';
+import {
+  fetchVentasByFiltersUseCase,
+  getVentaUseCase,
+  updateVentaUseCase,
+} from '@/lib/use-cases/ventas-use-cases';
+import { buildServiceTransferMessage } from '@/lib/utils/credentialNotification';
+import { useActivityLogStore } from '@/store/activityLogStore';
+import { useAuthStore } from '@/store/authStore';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
+import { useTemplatesStore } from '@/store/templatesStore';
+import { useTercerosStore } from '@/store/tercerosStore';
+import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
 import type { MetodoPago, PagoServicio, Servicio, VentaDoc } from '@/types';
 
 import { ServicioDetalleDialogs } from './components/ServicioDetalleDialogs';
@@ -26,16 +36,37 @@ import { ServicioDetalleHeader } from './components/ServicioDetalleHeader';
 import { ServicioLoadingState, ServicioNotFoundState } from './components/ServicioDetalleStates';
 import { ServicioPaymentsHistory } from './components/ServicioPaymentsHistory';
 import { ServicioProfilesSection } from './components/ServicioProfilesSection';
+import {
+  CutVentaDialog,
+  TransferVentaDialog,
+  type TransferSalePayload,
+} from './components/ServicioSaleActionsDialogs';
 import { ServicioSummaryCards } from './components/ServicioSummaryCards';
 import type { CategoriaDetalle, MetodoPagoDetalle, PagoFormData, PerfilVenta } from './components/types';
 import { useServicioProfiles } from './components/useServicioProfiles';
 import { useTotalGastadoUSD } from './components/useTotalGastadoUSD';
 
+function getLogContext() {
+  const user = useAuthStore.getState().user;
+  return {
+    usuarioId: user?.id ?? 'sistema',
+    usuarioEmail: user?.email ?? 'sistema',
+  };
+}
+
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
   const router = useRouter();
-  const { deleteServicio, fetchCounts } = useServiciosStore();
+  const { deleteServicio, fetchCounts, fetchServicios, servicios, updatePerfilOcupado } = useServiciosStore();
   const { fetchCategorias } = useCategoriasStore();
-  const { deleteNotificacionesPorServicio, fetchNotificaciones } = useNotificacionesStore();
+  const {
+    deleteNotificacionesPorServicio,
+    deleteNotificacionesPorVenta,
+    fetchNotificaciones,
+  } = useNotificacionesStore();
+  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
+  const getTemplateByTipo = useTemplatesStore((state) => state.getTemplateByTipo);
+  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
+  const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
 
   // Estados locales para los datos específicos de esta página
   const [servicio, setServicio] = useState<Servicio | null>(null);
@@ -47,10 +78,14 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePayments, setDeletePayments] = useState(false);
   const [deleteRenovacionDialogOpen, setDeleteRenovacionDialogOpen] = useState(false);
+  const [cutVentaDialogOpen, setCutVentaDialogOpen] = useState(false);
+  const [isSaleActionSubmitting, setIsSaleActionSubmitting] = useState(false);
   const [pagoToDelete, setPagoToDelete] = useState<PagoServicio | null>(null);
   const [editarPagoDialogOpen, setEditarPagoDialogOpen] = useState(false);
   const [pagoToEdit, setPagoToEdit] = useState<PagoServicio | null>(null);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
+  const [selectedActionVenta, setSelectedActionVenta] = useState<VentaDoc | null>(null);
+  const [transferVentaDialogOpen, setTransferVentaDialogOpen] = useState(false);
   const [ventasServicio, setVentasServicio] = useState<Array<PerfilVenta & { perfilNumero?: number | null }>>([]);
 
   // Usar el hook para cargar pagos (con cache)
@@ -113,8 +148,10 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         // Mostrar perfiles de inmediato con los datos básicos de VentaDoc
         setVentasServicio(ventasActivas.map((venta) => ({
           ventaId: venta.id || undefined,
+          clienteId: venta.clienteId || undefined,
           perfilNumero: venta.perfilNumero ?? null,
           clienteNombre: venta.clienteNombre || undefined,
+          clienteTelefono: venta.clienteTelefono || undefined,
           createdAt: venta.createdAt,
           precioFinal: venta.precioFinal ?? venta.precio ?? 0,
           descuento: venta.descuento ?? 0,
@@ -182,6 +219,166 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const handleRenovar = async () => {
     await loadMetodosPagoIfNeeded();
     setRenovarDialogOpen(true);
+  };
+
+  const loadVentaForAction = async (ventaId: string) => {
+    const venta = await getVentaUseCase<VentaDoc>(ventaId);
+    if (!venta) throw new Error('Venta no encontrada');
+    setSelectedActionVenta(venta);
+    return venta;
+  };
+
+  const handleOpenCutVenta = async (ventaId: string) => {
+    try {
+      await loadVentaForAction(ventaId);
+      setCutVentaDialogOpen(true);
+    } catch (error) {
+      toast.error('No se pudo cargar la venta', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+
+  const handleOpenTransferVenta = async (ventaId: string) => {
+    try {
+      await Promise.all([fetchServicios(true), fetchTemplates(true)]);
+      await loadVentaForAction(ventaId);
+      setTransferVentaDialogOpen(true);
+    } catch (error) {
+      toast.error('No se pudo preparar la transferencia', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+
+  const handleConfirmCutVenta = async (motivoCorte: string) => {
+    if (!selectedActionVenta?.id) return;
+    setIsSaleActionSubmitting(true);
+    try {
+      const { serviceProfileDelta } = await updateVentaUseCase(
+        selectedActionVenta.id,
+        {
+          estado: 'inactivo',
+          cortadaAt: new Date(),
+          motivoCorte,
+        },
+        {
+          currentVenta: selectedActionVenta,
+          logContext: getLogContext(),
+          recordActivityLog: useActivityLogStore.getState().addLog,
+        },
+      );
+
+      if (serviceProfileDelta) {
+        await updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
+      }
+
+      setVentasServicio((current) =>
+        current.filter((venta) => venta.ventaId !== selectedActionVenta.id),
+      );
+      invalidateDashboardCache({ entity: 'venta', entityId: selectedActionVenta.id });
+      await deleteNotificacionesPorVenta(selectedActionVenta.id);
+      fetchNotificaciones(true);
+      setCutVentaDialogOpen(false);
+      setSelectedActionVenta(null);
+      toast.success('Venta cortada', {
+        description: 'La venta quedo inactiva y el perfil fue liberado.',
+      });
+    } catch (error) {
+      toast.error('Error al cortar la venta', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setIsSaleActionSubmitting(false);
+    }
+  };
+
+  const handleConfirmTransferVenta = async ({
+    codigo,
+    notificarWhatsApp,
+    perfilNombre,
+    perfilNumero,
+    servicio: targetServicio,
+  }: TransferSalePayload) => {
+    if (!selectedActionVenta?.id) return;
+    setIsSaleActionSubmitting(true);
+    try {
+      const updatedVentaForMessage: VentaDoc = {
+        ...selectedActionVenta,
+        servicioId: targetServicio.id,
+        servicioNombre: targetServicio.nombre,
+        servicioCorreo: targetServicio.correo,
+        perfilNumero,
+        perfilNombre,
+        codigo,
+      };
+
+      await updateVentaUseCase(
+        selectedActionVenta.id,
+        {
+          servicioId: targetServicio.id,
+          perfilNumero,
+          perfilNombre,
+          codigo,
+        },
+        {
+          currentVenta: selectedActionVenta,
+          logContext: getLogContext(),
+          recordActivityLog: useActivityLogStore.getState().addLog,
+        },
+      );
+
+      if ((selectedActionVenta.estado ?? 'activo') !== 'inactivo') {
+        await Promise.all([
+          updatePerfilOcupado(selectedActionVenta.servicioId, false),
+          updatePerfilOcupado(targetServicio.id, true),
+        ]);
+      }
+
+      if (notificarWhatsApp) {
+        await fetchTerceros(true);
+        const tercero = selectedActionVenta.clienteId
+          ? useTercerosStore.getState().terceros.find((item) => item.id === selectedActionVenta.clienteId)
+          : undefined;
+        const phone = (selectedActionVenta.clienteTelefono || tercero?.telefono || '').replace(/[^\d+]/g, '');
+        const template = getTemplateByTipo('transferencia_servicio');
+        const message = buildServiceTransferMessage(
+          template?.contenido,
+          updatedVentaForMessage,
+          targetServicio,
+        );
+
+        enqueueWhatsAppMessages([
+          {
+            phone,
+            message,
+            title: phone ? 'Transferencia lista para enviar' : 'Transferencia sin telefono',
+            description: phone
+              ? `${selectedActionVenta.clienteNombre} recibira las credenciales de ${targetServicio.nombre}.`
+              : `${selectedActionVenta.clienteNombre} no tiene telefono registrado. Puedes copiar el mensaje.`,
+          },
+        ]);
+      }
+
+      setVentasServicio((current) =>
+        current.filter((venta) => venta.ventaId !== selectedActionVenta.id),
+      );
+      invalidateDashboardCache({ entity: 'venta', entityId: selectedActionVenta.id });
+      fetchNotificaciones(true);
+      setTransferVentaDialogOpen(false);
+      setSelectedActionVenta(null);
+      toast.success('Venta transferida', {
+        description: notificarWhatsApp
+          ? 'La venta fue movida y el WhatsApp quedo preparado.'
+          : 'La venta fue movida al nuevo servicio.',
+      });
+    } catch (error) {
+      toast.error('Error al transferir la venta', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setIsSaleActionSubmitting(false);
+    }
   };
 
   const handleDeleteRenovacion = (pago: PagoServicio) => {
@@ -348,7 +545,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
 
   return (
     <>
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         <ServicioDetalleHeader
           categoria={categoria}
           id={id}
@@ -358,8 +555,8 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
           onRenovar={handleRenovar}
         />
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[380px_1fr]">
+        <div className="min-w-0 space-y-4">
+          <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
             <ServicioSummaryCards
               categoria={categoria}
               currencySymbol={currencySymbol}
@@ -368,14 +565,16 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
               servicio={servicio}
             />
 
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <ServicioProfilesSection
                 expandedProfileNumber={expandedProfileNumber}
                 getCicloPagoLabel={getCicloPagoLabel}
                 metodoPagoMoneda={metodoPago?.moneda}
+                onCutSale={handleOpenCutVenta}
                 onNextPage={goToNextProfilePage}
                 onPreviousPage={goToPreviousProfilePage}
                 onProfileSearchChange={handleProfileSearchChange}
+                onTransferSale={handleOpenTransferVenta}
                 onToggleProfile={toggleProfile}
                 perfilesDisponibles={perfilesDisponibles}
                 profilePage={profilePage}
@@ -422,6 +621,31 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         pagoToEdit={pagoToEdit}
         renovarDialogOpen={renovarDialogOpen}
         servicio={servicio}
+      />
+
+      <CutVentaDialog
+        key={selectedActionVenta ? `cut-${selectedActionVenta.id}` : 'cut-empty'}
+        isSubmitting={isSaleActionSubmitting}
+        open={cutVentaDialogOpen}
+        venta={selectedActionVenta}
+        onConfirm={handleConfirmCutVenta}
+        onOpenChange={(open) => {
+          setCutVentaDialogOpen(open);
+          if (!open) setSelectedActionVenta(null);
+        }}
+      />
+
+      <TransferVentaDialog
+        key={selectedActionVenta ? `transfer-${selectedActionVenta.id}` : 'transfer-empty'}
+        isSubmitting={isSaleActionSubmitting}
+        open={transferVentaDialogOpen}
+        servicios={servicios}
+        venta={selectedActionVenta}
+        onConfirm={handleConfirmTransferVenta}
+        onOpenChange={(open) => {
+          setTransferVentaDialogOpen(open);
+          if (!open) setSelectedActionVenta(null);
+        }}
       />
     </>
   );

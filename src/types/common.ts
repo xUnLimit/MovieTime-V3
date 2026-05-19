@@ -117,7 +117,8 @@ export type TipoTemplate =
   | 'renovacion'
   | 'suscripcion'
   | 'cancelacion'
-  | 'actualizacion_credenciales';
+  | 'actualizacion_credenciales'
+  | 'transferencia_servicio';
 
 export interface TemplateMensaje {
   id: string;

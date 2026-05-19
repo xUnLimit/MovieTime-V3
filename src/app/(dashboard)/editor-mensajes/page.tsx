@@ -10,7 +10,7 @@ function EditorMensajesPageContent() {
   const { templates, fetchTemplates } = useTemplatesStore();
 
   useEffect(() => {
-    fetchTemplates();
+    fetchTemplates(true);
   }, [fetchTemplates]);
 
   return (

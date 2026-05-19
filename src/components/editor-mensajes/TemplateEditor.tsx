@@ -21,6 +21,7 @@ const TIPO_TEMPLATES: { value: TipoTemplate; label: string }[] = [
   { value: 'suscripcion', label: 'Notificación de Suscripción' },
   { value: 'cancelacion', label: 'Cancelación de Servicio' },
   { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales' },
+  { value: 'transferencia_servicio', label: 'Transferencia de Servicio' },
 ];
 
 const PLACEHOLDERS = [

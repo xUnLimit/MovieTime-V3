@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Bell, ShoppingCart, Server, Pause, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Banknote, Bell, Pause, Server, ShoppingCart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { VentasProximasTable } from '@/components/notificaciones/VentasProximasTable';
@@ -17,7 +17,7 @@ import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNot
 import { MetricCard } from '@/components/shared/MetricCard';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useTemplatesStore } from '@/store/templatesStore';
-import { useMontoMoraTotal } from '@/hooks/use-monto-mora-total';
+import { useNotificacionesMontos } from '@/hooks/use-notificaciones-montos';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
@@ -27,10 +27,14 @@ import { toast } from 'sonner';
 function NotificacionesMetrics() {
   const { totalNotificaciones, ventasProximas, serviciosProximos, reposoCompletados } =
     useNotificacionesStore();
-  const { value: montoMora, isLoading: loadingMora } = useMontoMoraTotal();
+  const {
+    ventasEnRetraso,
+    serviciosPorPagar,
+    isLoading: loadingMontos,
+  } = useNotificacionesMontos();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <MetricCard
         title="Total Notificaciones"
         value={totalNotificaciones}
@@ -60,12 +64,20 @@ function NotificacionesMetrics() {
         underlineColor="bg-purple-500"
       />
       <MetricCard
-        title="Monto Total en Retraso"
-        value={montoMora != null ? `$${montoMora.toFixed(2)}` : '$0.00'}
+        title="Monto Ventas en Retraso"
+        value={ventasEnRetraso != null ? `$${ventasEnRetraso.toFixed(2)}` : '$0.00'}
         icon={AlertTriangle}
         iconColor="text-red-600"
         underlineColor="bg-red-600"
-        loading={loadingMora}
+        loading={loadingMontos}
+      />
+      <MetricCard
+        title="Monto Servicios en Retraso"
+        value={serviciosPorPagar != null ? `$${serviciosPorPagar.toFixed(2)}` : '$0.00'}
+        icon={Banknote}
+        iconColor="text-emerald-500"
+        underlineColor="bg-emerald-500"
+        loading={loadingMontos}
       />
     </div>
   );

@@ -36,6 +36,7 @@ const templateSchema = z.object({
     'suscripcion',
     'cancelacion',
     'actualizacion_credenciales',
+    'transferencia_servicio',
   ]),
   contenido: z.string().min(10, 'El contenido debe tener al menos 10 caracteres'),
 });
@@ -50,12 +51,15 @@ interface TemplateDialogProps {
 
 const AVAILABLE_PLACEHOLDERS = [
   '{cliente}',
+  '{nombre_cliente}',
   '{servicio}',
   '{categoria}',
+  '{perfil_nombre}',
   '{monto}',
   '{vencimiento}',
   '{correo}',
   '{contrasena}',
+  '{codigo}',
   '{credenciales_cambiadas}',
   '{cambio_correo}',
   '{cambio_contrasena}',
@@ -176,6 +180,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
                   <SelectItem value="suscripcion">Suscripción</SelectItem>
                   <SelectItem value="cancelacion">Cancelación</SelectItem>
                   <SelectItem value="actualizacion_credenciales">Actualización de Credenciales</SelectItem>
+                  <SelectItem value="transferencia_servicio">Transferencia de Servicio</SelectItem>
                 </SelectContent>
               </Select>
             </div>

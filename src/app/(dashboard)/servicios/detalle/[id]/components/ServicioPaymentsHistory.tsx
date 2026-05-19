@@ -38,7 +38,7 @@ export function ServicioPaymentsHistory({
   totalGastadoUSD,
 }: ServicioPaymentsHistoryProps) {
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="min-w-0 space-y-4 p-6">
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <CreditCard className="h-5 w-5" />

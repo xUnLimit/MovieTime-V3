@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildCredentialUpdateMessage,
+  buildServiceTransferMessage,
   changedCredentialsCount,
   getCredentialChangeSummary,
   hasCredentialChanges,
@@ -60,5 +61,33 @@ describe('credential notification helpers', () => {
     expect(message).toContain('clave-nueva');
     expect(message).toContain('Ana');
     expect(message).toContain('1234');
+  });
+
+  it('falls back to the profile number when the profile name is empty', () => {
+    const message = buildCredentialUpdateMessage(
+      'Perfil: {perfil_nombre}',
+      {
+        ...venta,
+        perfilNombre: '',
+        perfilNumero: 7,
+      },
+      servicio,
+      { correo: true, contrasena: true },
+    );
+
+    expect(message).toContain('Perfil: Perfil 7');
+  });
+
+  it('renders the service transfer template with the target service and profile name', () => {
+    const message = buildServiceTransferMessage(
+      'Servicio: {servicio}\nCorreo: {correo}\nPerfil: {perfil_nombre}\nCodigo: {codigo}',
+      venta,
+      servicio,
+    );
+
+    expect(message).toContain('Servicio: Netflix');
+    expect(message).toContain('Correo: nuevo@example.com');
+    expect(message).toContain('Perfil: Ana');
+    expect(message).toContain('Codigo: 1234');
   });
 });

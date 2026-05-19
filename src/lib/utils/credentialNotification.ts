@@ -19,6 +19,19 @@ export const DEFAULT_CREDENTIAL_UPDATE_TEMPLATE = [
   'Por favor usa estos datos desde ahora.',
 ].join('\n');
 
+export const DEFAULT_SERVICE_TRANSFER_TEMPLATE = [
+  '{saludo} {nombre_cliente}, tu acceso fue transferido a *{servicio}*.',
+  '',
+  'Estas son tus credenciales actualizadas:',
+  '',
+  'Correo: {correo}',
+  'Contrasena: {contrasena}',
+  'Perfil: {perfil_nombre}',
+  'Codigo: {codigo}',
+  '',
+  'Por favor usa este servicio desde ahora.',
+].join('\n');
+
 function firstName(fullName: string) {
   return fullName.trim().split(/\s+/)[0] || fullName;
 }
@@ -38,27 +51,52 @@ export function buildCredentialUpdateMessage(
   servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena'>,
   changes: CredentialChangeFlags,
 ) {
+  return buildCredentialMessage(template || DEFAULT_CREDENTIAL_UPDATE_TEMPLATE, venta, servicio, {
+    cambioCorreo: changes.correo ? `Correo actualizado: ${servicio.correo}` : '',
+    cambioContrasena: changes.contrasena ? `Contrasena actualizada: ${servicio.contrasena}` : '',
+    credencialesCambiadas: getCredentialChangeSummary(changes),
+  });
+}
+
+export function buildServiceTransferMessage(
+  template: string | undefined,
+  venta: VentaDoc,
+  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena'>,
+) {
+  return buildCredentialMessage(template || DEFAULT_SERVICE_TRANSFER_TEMPLATE, venta, servicio, {
+    cambioCorreo: '',
+    cambioContrasena: '',
+    credencialesCambiadas: 'La venta fue transferida a otro servicio.',
+  });
+}
+
+function buildCredentialMessage(
+  template: string,
+  venta: VentaDoc,
+  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena'>,
+  extraData: Pick<WhatsAppData, 'cambioCorreo' | 'cambioContrasena' | 'credencialesCambiadas'>,
+) {
   const fechaVencimiento = venta.fechaFin
     ? formatearFechaWhatsApp(new Date(venta.fechaFin))
     : '';
+  const perfilNombre = venta.perfilNombre?.trim()
+    || (venta.perfilNumero ? `Perfil ${venta.perfilNumero}` : '');
   const data: WhatsAppData = {
     cliente: venta.clienteNombre,
     nombreCliente: firstName(venta.clienteNombre),
     servicio: servicio.nombre || venta.servicioNombre || '',
     categoria: servicio.categoriaNombre || venta.categoriaNombre || '',
-    perfilNombre: venta.perfilNombre || '',
+    perfilNombre,
     correo: servicio.correo || '',
     contrasena: servicio.contrasena || '',
     vencimiento: fechaVencimiento,
     monto: venta.precioFinal ? `$${venta.precioFinal.toFixed(2)}` : '',
     codigo: venta.codigo || '',
     items: venta.servicioNombre || servicio.nombre || '',
-    cambioCorreo: changes.correo ? `Correo actualizado: ${servicio.correo}` : '',
-    cambioContrasena: changes.contrasena ? `Contrasena actualizada: ${servicio.contrasena}` : '',
-    credencialesCambiadas: getCredentialChangeSummary(changes),
+    ...extraData,
   };
 
-  return replacePlaceholders(template || DEFAULT_CREDENTIAL_UPDATE_TEMPLATE, data);
+  return replacePlaceholders(template, data);
 }
 
 export function hasCredentialChanges(

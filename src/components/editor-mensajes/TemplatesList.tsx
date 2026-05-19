@@ -64,6 +64,7 @@ export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListPro
       suscripcion: 'Suscripción',
       cancelacion: 'Cancelación',
       actualizacion_credenciales: 'Actualización de Credenciales',
+      transferencia_servicio: 'Transferencia de Servicio',
     };
     return labels[tipo];
   };

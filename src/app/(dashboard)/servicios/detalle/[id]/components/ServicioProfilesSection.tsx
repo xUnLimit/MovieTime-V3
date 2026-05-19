@@ -7,7 +7,9 @@ import {
   DollarSign,
   ExternalLink,
   Lock,
+  MoveRight,
   RefreshCw,
+  Scissors,
   Tag,
   User,
 } from 'lucide-react';
@@ -34,7 +36,9 @@ interface ServicioProfilesSectionProps {
   getCicloPagoLabel: (ciclo: string) => string;
   onNextPage: () => void;
   onPreviousPage: () => void;
+  onCutSale: (ventaId: string) => void | Promise<void>;
   onProfileSearchChange: (value: string) => void;
+  onTransferSale: (ventaId: string) => void | Promise<void>;
   onToggleProfile: (profileNumber: number) => void;
 }
 
@@ -42,9 +46,11 @@ export function ServicioProfilesSection({
   expandedProfileNumber,
   getCicloPagoLabel,
   metodoPagoMoneda,
+  onCutSale,
   onNextPage,
   onPreviousPage,
   onProfileSearchChange,
+  onTransferSale,
   onToggleProfile,
   perfilesDisponibles,
   profilePage,
@@ -55,9 +61,9 @@ export function ServicioProfilesSection({
   visiblePerfiles,
 }: ServicioProfilesSectionProps) {
   return (
-    <Card className="h-full p-6">
-      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+    <Card className="h-full min-w-0 p-6">
+      <div className="mb-2 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold">Perfiles</h2>
           <p className="text-sm text-muted-foreground">
             {servicio.activo ? `${perfilesDisponibles} de ${servicio.perfilesDisponibles} perfiles disponibles` : 'Servicio inactivo'}
@@ -93,22 +99,22 @@ export function ServicioProfilesSection({
               <button
                 type="button"
                 onClick={() => perfil.estado === 'ocupado' && onToggleProfile(perfil.numero)}
-                className="w-full flex items-center justify-between"
+                className="flex w-full min-w-0 items-center justify-between gap-3 text-left"
                 disabled={perfil.estado === 'inactivo'}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <User className={`h-5 w-5 ${
                     perfil.estado === 'ocupado' ? 'text-green-500' :
                     perfil.estado === 'inactivo' ? 'text-gray-600' :
                     'text-blue-500'
-                  }`} />
-                  <span className={`font-medium ${perfil.estado === 'inactivo' ? 'text-gray-600' : ''}`}>
+                  } shrink-0`} />
+                  <span className={`truncate font-medium ${perfil.estado === 'inactivo' ? 'text-gray-600' : ''}`}>
                     {perfil.estado === 'ocupado' && perfil.clienteNombre
                       ? perfil.clienteNombre
                       : perfil.nombre}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   {perfil.estado === 'inactivo' ? (
                     <Badge variant="secondary" className="bg-gray-200 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-700">
                       Inactivo
@@ -126,19 +132,41 @@ export function ServicioProfilesSection({
               {perfil.estado === 'ocupado' && expandedProfileNumber === perfil.numero && venta && (
                 <div className="mt-4 space-y-3">
                   <div className="pt-3 border-t border-border">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="mb-2 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm text-muted-foreground">Detalles de la venta:</p>
                       {venta.ventaId && (
-                        <Link prefetch={false} href={`/ventas/${venta.ventaId}`}>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            Ver venta
+                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs gap-1 text-orange-500 hover:text-orange-400"
+                            onClick={() => onCutSale(venta.ventaId!)}
+                          >
+                            <Scissors className="h-3.5 w-3.5" />
+                            Cortar
                           </Button>
-                        </Link>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs gap-1 text-blue-500 hover:text-blue-400"
+                            onClick={() => onTransferSale(venta.ventaId!)}
+                          >
+                            <MoveRight className="h-3.5 w-3.5" />
+                            Transferir
+                          </Button>
+                          <Link prefetch={false} href={`/ventas/${venta.ventaId}`}>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Ver venta
+                            </Button>
+                          </Link>
+                        </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-                      <div className="space-y-2">
+                    <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                      <div className="min-w-0 space-y-2">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="font-medium truncate">{venta.clienteNombre || 'Sin cliente'}</span>
@@ -152,7 +180,7 @@ export function ServicioProfilesSection({
                           <span className="font-medium">Desc: {(venta.descuento ?? 0).toFixed(2)}%</span>
                         </div>
                       </div>
-                      <div className="space-y-2">
+                      <div className="min-w-0 space-y-2">
                         <div className="flex items-center gap-2">
                           <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="text-muted-foreground">Ciclo:</span>
@@ -171,7 +199,7 @@ export function ServicioProfilesSection({
                           </span>
                         </div>
                       </div>
-                      <div className="space-y-2">
+                      <div className="min-w-0 space-y-2">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="text-muted-foreground">Perfil:</span>
@@ -181,7 +209,7 @@ export function ServicioProfilesSection({
                           <div className="flex items-center gap-2">
                             <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
                             <span className="text-muted-foreground">Código:</span>
-                            <span className="font-medium select-all">{venta.codigo}</span>
+                            <span className="min-w-0 break-all font-medium select-all">{venta.codigo}</span>
                           </div>
                         )}
                         {diasRestantes !== null && (() => {
@@ -226,8 +254,8 @@ export function ServicioProfilesSection({
         })}
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-sm">
-        <div className="flex items-center gap-3">
+      <div className="mt-2 flex min-w-0 flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-600"></div>
             <span className="text-muted-foreground">En uso</span>
@@ -244,7 +272,7 @@ export function ServicioProfilesSection({
           )}
         </div>
         {showProfileControls ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <span className="whitespace-nowrap text-muted-foreground mr-2">
               Pagina {Math.min(profilePage + 1, profilePageCount)} de {profilePageCount}
             </span>

@@ -136,7 +136,8 @@ export const TIPOS_TEMPLATE = [
   { value: 'renovacion', label: 'Renovación' },
   { value: 'suscripcion', label: 'Nueva Venta' },
   { value: 'cancelacion', label: 'Cancelación' },
-  { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales' }
+  { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales' },
+  { value: 'transferencia_servicio', label: 'Transferencia de Servicio' }
 ] as const;
 
 // ===========================
@@ -146,9 +147,13 @@ export const TIPOS_TEMPLATE = [
 export const PLACEHOLDERS_DISPONIBLES = [
   { placeholder: '{saludo}', descripcion: 'Saludo según hora del día' },
   { placeholder: '{cliente}', descripcion: 'Nombre del cliente' },
+  { placeholder: '{nombre_cliente}', descripcion: 'Primer nombre del cliente' },
+  { placeholder: '{servicio}', descripcion: 'Nombre del servicio' },
   { placeholder: '{categoria}', descripcion: 'Categoría del servicio' },
+  { placeholder: '{perfil_nombre}', descripcion: 'Nombre del perfil' },
   { placeholder: '{correo}', descripcion: 'Correo de acceso' },
   { placeholder: '{contrasena}', descripcion: 'Contraseña de acceso' },
+  { placeholder: '{codigo}', descripcion: 'Código de la venta' },
   { placeholder: '{credenciales_cambiadas}', descripcion: 'Resumen de credenciales cambiadas' },
   { placeholder: '{cambio_correo}', descripcion: 'Línea de cambio de correo' },
   { placeholder: '{cambio_contrasena}', descripcion: 'Línea de cambio de contraseña' },

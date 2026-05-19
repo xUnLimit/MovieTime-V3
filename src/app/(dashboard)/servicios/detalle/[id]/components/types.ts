@@ -2,7 +2,9 @@ import type { Categoria, MetodoPago, PagoServicio, Servicio } from '@/types';
 
 export interface PerfilVenta {
   ventaId?: string;
+  clienteId?: string;
   clienteNombre?: string;
+  clienteTelefono?: string;
   createdAt?: Date;
   precioFinal?: number;
   descuento?: number;
