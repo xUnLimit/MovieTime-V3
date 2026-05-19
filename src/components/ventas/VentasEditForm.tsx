@@ -867,6 +867,7 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
             onWheelServicios={handleServiciosDropdownWheel}
             planSeleccionado={planSeleccionado}
             planesDisponibles={planesDisponibles}
+            planIdValue={planIdValue}
             perfilNumeroValue={perfilNumeroValue}
             perfilesDropdown={perfilesDropdown}
             fechaInicioValue={fechaInicioValue}

@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
+import { MESES_POR_CICLO } from "@/features/ventas/ventas-form-shared";
 import { formatearFecha } from "@/lib/utils/calculations";
 import { cn } from "@/lib/utils";
 import {
@@ -43,10 +44,26 @@ const CODIGO_CONTROL_KEYS = [
   "ArrowDown",
 ];
 
+function shouldAllowControlKey(event: KeyboardEvent<HTMLInputElement>) {
+  return CODIGO_CONTROL_KEYS.includes(event.key) || event.ctrlKey || event.metaKey;
+}
+
+function handleDecimalKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  const char = event.key;
+  const currentValue = event.currentTarget.value;
+
+  if (shouldAllowControlKey(event)) return;
+  if (!/[0-9.]/.test(char)) {
+    event.preventDefault();
+  }
+  if (char === "." && currentValue.includes(".")) {
+    event.preventDefault();
+  }
+}
+
 function handleCodigoKeyDown(event: KeyboardEvent<HTMLInputElement>) {
   const char = event.key;
-  if (CODIGO_CONTROL_KEYS.includes(char)) return;
-  if (event.ctrlKey || event.metaKey) return;
+  if (shouldAllowControlKey(event)) return;
   if (!/[0-9]/.test(char)) {
     event.preventDefault();
   }
@@ -83,6 +100,7 @@ interface VentaEditDatosTabProps {
   onWheelServicios: (event: WheelEvent<HTMLDivElement>) => void;
   planSeleccionado?: Plan;
   planesDisponibles: Plan[];
+  planIdValue: string;
   perfilNumeroValue?: string;
   perfilesDropdown: number[];
   fechaInicioValue?: Date;
@@ -123,6 +141,7 @@ export function VentaEditDatosTab({
   onWheelServicios,
   planSeleccionado,
   planesDisponibles,
+  planIdValue,
   perfilNumeroValue,
   perfilesDropdown,
   fechaInicioValue,
@@ -193,6 +212,7 @@ export function VentaEditDatosTab({
                     setValue("servicioId", "");
                     setValue("planId", "");
                     setValue("perfilNumero", "");
+                    setValue("perfilNombre", "");
                     clearErrors("categoriaId");
                   }}
                 >
@@ -235,20 +255,11 @@ export function VentaEditDatosTab({
                   <DropdownMenuItem
                     key={tipo.id}
                     onClick={() => {
-                      const planesTipo =
-                        categoriaSeleccionada?.planes?.filter(
-                          (plan) => plan.tipoPlan === tipo.id,
-                        ) ?? [];
-                      const siguientePlan = planesTipo.length > 0
-                        ? planesTipo.find(
-                            (plan) =>
-                              plan.cicloPago === planSeleccionado?.cicloPago,
-                          ) ?? planesTipo[0]
-                        : undefined;
                       onTipoPlanSelect(tipo.id);
                       setValue("servicioId", "");
-                      setValue("planId", siguientePlan?.id ?? "");
+                      setValue("planId", "");
                       setValue("perfilNumero", "");
+                      setValue("perfilNombre", "");
                       clearErrors("servicioId");
                       clearErrors("planId");
                       clearErrors("perfilNumero");
@@ -262,8 +273,65 @@ export function VentaEditDatosTab({
           </div>
         ) : null}
 
+        <div className="space-y-2">
+          <Label>Plan</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full justify-between"
+                disabled={!categoriaIdValue || (tiposPlanes.length > 1 && !tipoPlanId)}
+              >
+                {planSeleccionado
+                  ? planSeleccionado.nombre
+                  : tiposPlanes.length > 1 && !tipoPlanId
+                    ? "Primero selecciona tipo"
+                    : categoriaIdValue
+                      ? "Seleccionar plan"
+                      : "Primero selecciona categoría"}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[var(--radix-dropdown-menu-trigger-width)]"
+            >
+              {planesDisponibles.map((plan) => (
+                <DropdownMenuItem
+                  key={plan.id}
+                  onClick={() => {
+                    setValue("planId", plan.id);
+                    setValue("servicioId", "");
+                    setValue("perfilNumero", "");
+                    setValue("perfilNombre", "");
+                    if (fechaInicioValue) {
+                      const meses = MESES_POR_CICLO[plan.cicloPago] ?? 1;
+                      const fechaFin = new Date(fechaInicioValue);
+                      fechaFin.setMonth(fechaFin.getMonth() + meses);
+                      setValue("fechaFin", fechaFin);
+                    }
+                    clearErrors("planId");
+                    clearErrors("servicioId");
+                    clearErrors("perfilNumero");
+                  }}
+                >
+                  {plan.nombre}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {errors.planId && (
+            <p className="text-sm text-red-500">{errors.planId.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <VentaServicioSelector
           categoriaId={categoriaIdValue}
+          planId={planIdValue}
+          requirePlan
           servicioId={servicioIdValue}
           servicioSeleccionado={servicioSeleccionado}
           servicios={serviciosVentana}
@@ -279,64 +347,13 @@ export function VentaEditDatosTab({
           onScroll={onScrollServicios}
           onWheel={onWheelServicios}
           onSelectServicio={(servicio) => {
-            const planesServicio = categoriaSeleccionada?.planes?.filter(
-              (plan) => plan.tipoPlan === servicio.tipo,
-            ) ?? [];
-            const siguientePlan = planesServicio.length > 0
-              ? planesServicio.find(
-                  (plan) => plan.cicloPago === planSeleccionado?.cicloPago,
-                ) ?? planesServicio[0]
-              : undefined;
-            onTipoPlanSelect(servicio.tipo);
             setValue("servicioId", servicio.id);
-            setValue("planId", siguientePlan?.id ?? "");
             setValue("perfilNumero", "");
+            setValue("perfilNombre", "");
             clearErrors("servicioId");
-            clearErrors("planId");
+            clearErrors("perfilNumero");
           }}
         />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label>Plan</Label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full justify-between"
-                disabled={!categoriaIdValue}
-              >
-                {planSeleccionado
-                  ? planSeleccionado.nombre
-                  : categoriaIdValue
-                    ? "Seleccionar plan"
-                    : "Primero selecciona categoría"}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-[var(--radix-dropdown-menu-trigger-width)]"
-            >
-              {planesDisponibles.map((plan) => (
-                <DropdownMenuItem
-                  key={plan.id}
-                  onClick={() => {
-                    setValue("planId", plan.id);
-                    clearErrors("planId");
-                  }}
-                >
-                  {plan.nombre}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {errors.planId && (
-            <p className="text-sm text-red-500">{errors.planId.message}</p>
-          )}
-        </div>
 
         <div className="space-y-2">
           <Label>Perfil</Label>
@@ -408,6 +425,10 @@ export function VentaEditDatosTab({
               inputMode="decimal"
               className="pl-10"
               {...register("precio")}
+              onChange={(event) =>
+                setValue("precio", event.target.value.replace(",", "."))
+              }
+              onKeyDown={handleDecimalKeyDown}
             />
           </div>
           {errors.precio && (
@@ -417,7 +438,16 @@ export function VentaEditDatosTab({
 
         <div className="space-y-2">
           <Label htmlFor="venta-edit-descuento">Descuento %</Label>
-          <Input id="venta-edit-descuento" type="text" inputMode="decimal" {...register("descuento")} />
+          <Input
+            id="venta-edit-descuento"
+            type="text"
+            inputMode="decimal"
+            {...register("descuento")}
+            onChange={(event) =>
+              setValue("descuento", event.target.value.replace(",", "."))
+            }
+            onKeyDown={handleDecimalKeyDown}
+          />
         </div>
       </div>
 
@@ -444,7 +474,17 @@ export function VentaEditDatosTab({
               <Calendar
                 mode="single"
                 selected={fechaInicioValue}
-                onSelect={(date) => setValue("fechaInicio", date || new Date())}
+                onSelect={(date) => {
+                  const nextDate = date || new Date();
+                  setValue("fechaInicio", nextDate);
+                  clearErrors("fechaInicio");
+                  if (planSeleccionado) {
+                    const meses = MESES_POR_CICLO[planSeleccionado.cicloPago] ?? 1;
+                    const fechaFin = new Date(nextDate);
+                    fechaFin.setMonth(fechaFin.getMonth() + meses);
+                    setValue("fechaFin", fechaFin);
+                  }
+                }}
                 defaultMonth={fechaInicioValue ?? new Date()}
                 locale={es}
               />
@@ -479,7 +519,10 @@ export function VentaEditDatosTab({
               <Calendar
                 mode="single"
                 selected={fechaFinValue}
-                onSelect={(date) => setValue("fechaFin", date || new Date())}
+                onSelect={(date) => {
+                  setValue("fechaFin", date || new Date());
+                  clearErrors("fechaFin");
+                }}
                 defaultMonth={fechaFinValue ?? new Date()}
                 locale={es}
               />
