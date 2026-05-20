@@ -48,12 +48,14 @@ export function ServiciosMetodosPagoTable({
 
   // Filtrar y ordenar métodos de pago
   const filteredMetodos = useMemo(() => {
+    const query = searchQuery.toLowerCase();
     const filtered = metodosConServicios.filter((metodo) => {
       const matchesSearch =
-        metodo.nombre?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        metodo.titular?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        metodo.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        metodo.numeroTarjeta?.toLowerCase().includes(searchQuery.toLowerCase());
+        metodo.nombre?.toLowerCase().includes(query) ||
+        metodo.titular?.toLowerCase().includes(query) ||
+        metodo.alias?.toLowerCase().includes(query) ||
+        metodo.email?.toLowerCase().includes(query) ||
+        metodo.numeroTarjeta?.toLowerCase().includes(query);
       const matchesPais = paisFilter === "todos" || metodo.pais === paisFilter;
       return matchesSearch && matchesPais;
     });
@@ -87,9 +89,23 @@ export function ServiciosMetodosPagoTable({
       header: "Método",
       sortable: true,
       width: "15%",
-      render: (item) => (
-        <span className="font-medium">{item.banco || item.nombre}</span>
-      ),
+      render: (item) => {
+        const alias = item.alias?.trim();
+
+        return (
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate font-medium">{item.banco || item.nombre}</span>
+            <span
+              className={`truncate text-xs leading-tight text-muted-foreground ${
+                alias ? "" : "invisible"
+              }`}
+              aria-hidden={!alias}
+            >
+              {alias || "\u00a0"}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: "pais",
@@ -161,7 +177,7 @@ export function ServiciosMetodosPagoTable({
           <div className="dashboard-toolbar-search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por método, titular, email..."
+              placeholder="Buscar por método, titular, alias..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"

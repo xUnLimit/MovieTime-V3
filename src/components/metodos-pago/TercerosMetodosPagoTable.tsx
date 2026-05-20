@@ -48,11 +48,13 @@ export function TercerosMetodosPagoTable({
 
   // Filtrar y ordenar métodos de pago
   const filteredMetodos = useMemo(() => {
+    const query = searchQuery.toLowerCase();
     const filtered = metodosTerceros.filter((metodo) => {
       const matchesSearch =
-        metodo.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        metodo.titular.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        metodo.identificador.toLowerCase().includes(searchQuery.toLowerCase());
+        metodo.nombre.toLowerCase().includes(query) ||
+        metodo.titular.toLowerCase().includes(query) ||
+        metodo.identificador.toLowerCase().includes(query) ||
+        metodo.alias?.toLowerCase().includes(query);
       const matchesPais = paisFilter === "todos" || metodo.pais === paisFilter;
       return matchesSearch && matchesPais;
     });
@@ -94,9 +96,23 @@ export function TercerosMetodosPagoTable({
       header: "Método",
       sortable: true,
       width: "15%",
-      render: (item) => (
-        <span className="font-medium">{item.banco || item.nombre}</span>
-      ),
+      render: (item) => {
+        const alias = item.alias?.trim();
+
+        return (
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate font-medium">{item.banco || item.nombre}</span>
+            <span
+              className={`truncate text-xs leading-tight text-muted-foreground ${
+                alias ? "" : "invisible"
+              }`}
+              aria-hidden={!alias}
+            >
+              {alias || "\u00a0"}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: "pais",

@@ -168,14 +168,22 @@ export function ServiciosProximosTableRow({
             <span className="max-w-[110px] truncate font-medium">
               {notif.metodoPagoNombre}
             </span>
-            {paymentDetail && (
-              <span className="max-w-[130px] truncate text-xs leading-tight text-muted-foreground">
-                {paymentDetail}
-              </span>
-            )}
+            <span
+              className={`max-w-[130px] truncate text-xs leading-tight text-muted-foreground ${
+                paymentDetail ? '' : 'invisible'
+              }`}
+              aria-hidden={!paymentDetail}
+            >
+              {paymentDetail || '\u00a0'}
+            </span>
           </div>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <div className="flex flex-col items-center justify-center gap-0.5">
+            <span className="text-muted-foreground">-</span>
+            <span className="invisible text-xs leading-tight" aria-hidden>
+              {'\u00a0'}
+            </span>
+          </div>
         )}
       </TableCell>
 
