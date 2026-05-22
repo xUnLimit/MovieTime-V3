@@ -8,6 +8,8 @@ const webPushMocks = vi.hoisted(() => ({
 const supabaseMocks = vi.hoisted(() => ({
   from: vi.fn(),
   configUpdateEq: vi.fn(),
+  runUpdate: vi.fn(),
+  runUpdateEq: vi.fn(),
   subscriptionUpdateEq: vi.fn(),
 }));
 
@@ -66,6 +68,7 @@ function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: s
   ];
 
   supabaseMocks.configUpdateEq.mockResolvedValue({ error: null });
+  supabaseMocks.runUpdateEq.mockResolvedValue({ error: null });
   supabaseMocks.subscriptionUpdateEq.mockResolvedValue({ error: null });
   supabaseMocks.from.mockImplementation((table: string) => {
     if (table === 'config') {
@@ -89,6 +92,14 @@ function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: s
         update: () => ({
           eq: supabaseMocks.subscriptionUpdateEq,
         }),
+      };
+    }
+
+    if (table === 'executive_push_runs') {
+      return {
+        update: supabaseMocks.runUpdate.mockImplementation(() => ({
+          eq: supabaseMocks.runUpdateEq,
+        })),
       };
     }
 
@@ -127,6 +138,8 @@ describe('sendExecutivePushDailySummary', () => {
     webPushMocks.sendNotification.mockReset().mockResolvedValue({ statusCode: 201, body: '', headers: {} });
     supabaseMocks.from.mockReset();
     supabaseMocks.configUpdateEq.mockReset();
+    supabaseMocks.runUpdate.mockReset();
+    supabaseMocks.runUpdateEq.mockReset();
     supabaseMocks.subscriptionUpdateEq.mockReset();
     setupSupabaseMock();
   });
@@ -156,6 +169,25 @@ describe('sendExecutivePushDailySummary', () => {
     );
     expect(result).toMatchObject({ sent: 1, disabled: 0, failed: 0 });
     expect(supabaseMocks.configUpdateEq).toHaveBeenCalledWith('id', 'global');
+  });
+
+  it('marks scheduler-owned runs as running and sent', async () => {
+    const result = await sendExecutivePushDailySummary({ runId: 'run-1' });
+
+    expect(result).toMatchObject({ sent: 1, disabled: 0, failed: 0 });
+    expect(supabaseMocks.runUpdateEq).toHaveBeenNthCalledWith(1, 'id', 'run-1');
+    expect(supabaseMocks.runUpdateEq).toHaveBeenNthCalledWith(2, 'id', 'run-1');
+    expect(supabaseMocks.runUpdate).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      status: 'running',
+      started_at: expect.any(String),
+    }));
+    expect(supabaseMocks.runUpdate).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      status: 'sent',
+      sent: 1,
+      failed: 0,
+      disabled: 0,
+      finished_at: expect.any(String),
+    }));
   });
 
   it('disables subscriptions rejected with invalid push status codes', async () => {

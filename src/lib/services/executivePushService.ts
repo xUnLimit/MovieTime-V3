@@ -19,6 +19,14 @@ type PushFailure = {
   body?: string;
   message: string;
 };
+type ExecutivePushResult = {
+  sent: number;
+  disabled: number;
+  failed: number;
+  failures?: PushFailure[];
+  skipped?: string;
+  pushDate?: string;
+};
 
 const PUSH_PAYLOAD = JSON.stringify({ kind: 'executive_daily_summary' });
 const PUSH_REQUEST_TIMEOUT_MS = 15_000;
@@ -103,6 +111,51 @@ async function getExecutivePushSettings(client: ServiceClient) {
       ? data.executive_push_block_order as ExecutivePushBlock[]
       : [],
   };
+}
+
+async function updateExecutivePushRun(
+  client: ServiceClient,
+  runId: string | undefined,
+  values: {
+    status: 'running' | 'sent' | 'skipped' | 'failed';
+    reason?: string | null;
+    sent?: number;
+    failed?: number;
+    disabled?: number;
+    error?: string | null;
+    finished_at?: string | null;
+  }
+) {
+  if (!runId) return;
+
+  const { error } = await client
+    .from('executive_push_runs')
+    .update({
+      ...values,
+      started_at: values.status === 'running' ? new Date().toISOString() : undefined,
+      finished_at: values.finished_at ?? (values.status === 'running' ? undefined : new Date().toISOString()),
+    })
+    .eq('id', runId);
+
+  if (error) {
+    console.error('Error updating executive push run:', {
+      runId,
+      status: values.status,
+      message: error.message,
+    });
+  }
+}
+
+async function finishExecutivePushRun(client: ServiceClient, runId: string | undefined, result: ExecutivePushResult) {
+  if (!runId) return;
+
+  await updateExecutivePushRun(client, runId, {
+    status: result.skipped ? 'skipped' : 'sent',
+    reason: result.skipped ?? null,
+    sent: result.sent,
+    failed: result.failed,
+    disabled: result.disabled,
+  });
 }
 
 async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushSummaryBlock[]> {
@@ -238,103 +291,115 @@ async function sendSubscriptionPing(subscription: Pick<PushSubscriptionRecord, '
   );
 }
 
-export async function sendExecutivePushDailySummary(options?: { force?: boolean }): Promise<{
-  sent: number;
-  disabled: number;
-  failed: number;
-  failures?: PushFailure[];
-  skipped?: string;
-  pushDate?: string;
-}> {
+export async function sendExecutivePushDailySummary(options?: { force?: boolean; runId?: string }): Promise<ExecutivePushResult> {
   const force = options?.force === true;
+  const runId = options?.runId;
   const client = createServiceRoleClient();
-  const settings = await getExecutivePushSettings(client);
+  await updateExecutivePushRun(client, runId, { status: 'running' });
 
-  const dueStatus = getExecutivePushDueStatus(settings);
-  // Forced sends bypass the window/interval guards but still require enabled=true
-  // to avoid "test" buttons firing notifications when the feature is off.
-  if (!dueStatus.due && !(force && settings.enabled)) {
-    return { sent: 0, disabled: 0, failed: 0, skipped: dueStatus.reason, pushDate: dueStatus.today };
-  }
+  try {
+    const settings = await getExecutivePushSettings(client);
 
-  const blocks = filterExecutivePushActiveBlocks(await buildSummaryBlocks(client));
-  if (blocks.length === 0) {
-    return { sent: 0, disabled: 0, failed: 0, skipped: 'no_active_items', pushDate: dueStatus.today };
-  }
+    const dueStatus = getExecutivePushDueStatus(settings);
+    // Forced sends bypass the window/interval guards but still require enabled=true
+    // to avoid "test" buttons firing notifications when the feature is off.
+    if (!dueStatus.due && !(force && settings.enabled)) {
+      const result = { sent: 0, disabled: 0, failed: 0, skipped: dueStatus.reason, pushDate: dueStatus.today };
+      await finishExecutivePushRun(client, runId, result);
+      return result;
+    }
 
-  const { data, error } = await client
-    .from('push_subscriptions')
-    .select('*')
-    .eq('enabled', true);
+    const blocks = filterExecutivePushActiveBlocks(await buildSummaryBlocks(client));
+    if (blocks.length === 0) {
+      const result = { sent: 0, disabled: 0, failed: 0, skipped: 'no_active_items', pushDate: dueStatus.today };
+      await finishExecutivePushRun(client, runId, result);
+      return result;
+    }
 
-  if (error) throw new Error(error.message);
-  const subscriptions = (data ?? []) as unknown as PushSubscriptionRecord[];
+    const { data, error } = await client
+      .from('push_subscriptions')
+      .select('*')
+      .eq('enabled', true);
 
-  let sent = 0;
-  let disabled = 0;
-  const failures: PushFailure[] = [];
+    if (error) throw new Error(error.message);
+    const subscriptions = (data ?? []) as unknown as PushSubscriptionRecord[];
 
-  for (let index = 0; index < subscriptions.length; index += PUSH_DELIVERY_CONCURRENCY) {
-    const batch = subscriptions.slice(index, index + PUSH_DELIVERY_CONCURRENCY);
-    await Promise.all(
-      batch.map(async (subscription) => {
-        try {
-          await sendSubscriptionPing(subscription);
-          sent += 1;
-        } catch (error) {
-          const statusCode = isWebPushError(error) ? error.statusCode : undefined;
-          const body = isWebPushError(error) ? error.body : undefined;
-          const message = error instanceof Error ? error.message : 'Unknown push delivery error.';
-          const endpointOrigin = getEndpointOrigin(subscription.endpoint);
-          failures.push({
-            endpointOrigin,
-            statusCode,
-            body,
-            message,
-          });
+    let sent = 0;
+    let disabled = 0;
+    const failures: PushFailure[] = [];
 
-          console.error('Error sending executive push ping:', {
-            endpointOrigin,
-            statusCode,
-            body,
-            message,
-          });
+    for (let index = 0; index < subscriptions.length; index += PUSH_DELIVERY_CONCURRENCY) {
+      const batch = subscriptions.slice(index, index + PUSH_DELIVERY_CONCURRENCY);
+      await Promise.all(
+        batch.map(async (subscription) => {
+          try {
+            await sendSubscriptionPing(subscription);
+            sent += 1;
+          } catch (error) {
+            const statusCode = isWebPushError(error) ? error.statusCode : undefined;
+            const body = isWebPushError(error) ? error.body : undefined;
+            const message = error instanceof Error ? error.message : 'Unknown push delivery error.';
+            const endpointOrigin = getEndpointOrigin(subscription.endpoint);
+            failures.push({
+              endpointOrigin,
+              statusCode,
+              body,
+              message,
+            });
 
-          if (shouldDisableSubscription(statusCode)) {
-            disabled += 1;
-            await client.from('push_subscriptions').update({ enabled: false }).eq('id', subscription.id);
+            console.error('Error sending executive push ping:', {
+              endpointOrigin,
+              statusCode,
+              body,
+              message,
+            });
+
+            if (shouldDisableSubscription(statusCode)) {
+              disabled += 1;
+              await client.from('push_subscriptions').update({ enabled: false }).eq('id', subscription.id);
+            }
           }
-        }
-      }
-    ));
-  }
+        })
+      );
+    }
 
-  const deliverySkipReason = getExecutivePushDeliverySkipReason(subscriptions.length, sent);
-  if (deliverySkipReason) {
-    return {
+    const deliverySkipReason = getExecutivePushDeliverySkipReason(subscriptions.length, sent);
+    if (deliverySkipReason) {
+      const result = {
+        sent,
+        disabled,
+        failed: failures.length,
+        failures,
+        skipped: deliverySkipReason,
+        pushDate: dueStatus.today,
+      };
+      await finishExecutivePushRun(client, runId, result);
+      return result;
+    }
+
+    const { error: markSentError } = await client
+      .from('config')
+      .update({
+        executive_push_last_sent_at: new Date().toISOString(),
+        executive_push_last_sent_date: dueStatus.today,
+      })
+      .eq('id', 'global');
+    if (markSentError) throw new Error(markSentError.message);
+
+    const result = {
       sent,
       disabled,
       failed: failures.length,
-      failures,
-      skipped: deliverySkipReason,
+      failures: failures.length > 0 ? failures : undefined,
       pushDate: dueStatus.today,
     };
+    await finishExecutivePushRun(client, runId, result);
+    return result;
+  } catch (error) {
+    await updateExecutivePushRun(client, runId, {
+      status: 'failed',
+      error: error instanceof Error ? error.message : 'Unknown executive push error.',
+    });
+    throw error;
   }
-
-  const { error: markSentError } = await client
-    .from('config')
-    .update({
-      executive_push_last_sent_at: new Date().toISOString(),
-      executive_push_last_sent_date: dueStatus.today,
-    })
-    .eq('id', 'global');
-  if (markSentError) throw new Error(markSentError.message);
-
-  return {
-    sent,
-    disabled,
-    failed: failures.length,
-    failures: failures.length > 0 ? failures : undefined,
-    pushDate: dueStatus.today,
-  };
 }

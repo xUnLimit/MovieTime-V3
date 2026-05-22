@@ -175,6 +175,51 @@ export type Database = {
         }
         Relationships: []
       }
+      executive_push_runs: {
+        Row: {
+          claimed_at: string
+          disabled: number
+          error: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          metadata: Json
+          reason: string | null
+          request_id: number | null
+          sent: number
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          claimed_at?: string
+          disabled?: number
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          request_id?: number | null
+          sent?: number
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          claimed_at?: string
+          disabled?: number
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          request_id?: number | null
+          sent?: number
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
