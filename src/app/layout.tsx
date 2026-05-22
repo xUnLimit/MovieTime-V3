@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 import { PwaBootstrap } from '@/components/pwa/PwaBootstrap';
 import { Toaster } from '@/components/ui/sonner';
 import { PendingWhatsAppToast } from '@/components/whatsapp/PendingWhatsAppToast';
@@ -58,11 +59,13 @@ export default async function RootLayout({
           defaultTheme="dark"
           enableSystem
         >
-          <AuthInitializer />
-          <PwaBootstrap />
-          {children}
-          <PendingWhatsAppToast />
-          <Toaster position="bottom-right" />
+          <QueryProvider>
+            <AuthInitializer />
+            <PwaBootstrap />
+            {children}
+            <PendingWhatsAppToast />
+            <Toaster position="bottom-right" />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
