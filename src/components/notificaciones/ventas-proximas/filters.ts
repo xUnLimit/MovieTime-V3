@@ -11,20 +11,6 @@ function esNotificacionVentaConId(
   return esNotificacionVenta(notif);
 }
 
-function getFechaLocalKey(fecha: Date): string {
-  const date = new Date(fecha);
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
-
-function getGrupoPaginacionVenta(notif: NotificacionVentaConId): string {
-  return [
-    notif.resaltada ? 'resaltada' : 'normal',
-    notif.diasRestantes,
-    getFechaLocalKey(notif.fechaFin),
-    notif.clienteId || notif.clienteNombre.toLocaleLowerCase('es'),
-  ].join('|');
-}
-
 export function getVentasNotificacionesFiltradas(
   notificaciones: NotificacionConId[],
   searchQuery: string,
@@ -77,49 +63,9 @@ export function getPaginasNotificacionesVenta(
   itemsPerPage: number
 ): NotificacionVentaConId[][] {
   const pages: NotificacionVentaConId[][] = [];
-  let currentPageItems: NotificacionVentaConId[] = [];
 
-  for (let index = 0; index < ventasNotificaciones.length;) {
-    const groupKey = getGrupoPaginacionVenta(ventasNotificaciones[index]);
-    const group: NotificacionVentaConId[] = [];
-
-    while (
-      index < ventasNotificaciones.length &&
-      getGrupoPaginacionVenta(ventasNotificaciones[index]) === groupKey
-    ) {
-      group.push(ventasNotificaciones[index]);
-      index++;
-    }
-
-    if (
-      currentPageItems.length > 0 &&
-      group.length <= itemsPerPage &&
-      currentPageItems.length + group.length > itemsPerPage
-    ) {
-      pages.push(currentPageItems);
-      currentPageItems = [];
-    }
-
-    if (group.length > itemsPerPage) {
-      if (currentPageItems.length > 0) {
-        pages.push(currentPageItems);
-        currentPageItems = [];
-      }
-
-      for (
-        let groupIndex = 0;
-        groupIndex < group.length;
-        groupIndex += itemsPerPage
-      ) {
-        pages.push(group.slice(groupIndex, groupIndex + itemsPerPage));
-      }
-    } else {
-      currentPageItems.push(...group);
-    }
-  }
-
-  if (currentPageItems.length > 0) {
-    pages.push(currentPageItems);
+  for (let index = 0; index < ventasNotificaciones.length; index += itemsPerPage) {
+    pages.push(ventasNotificaciones.slice(index, index + itemsPerPage));
   }
 
   return pages;
