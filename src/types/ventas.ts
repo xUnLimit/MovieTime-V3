@@ -13,22 +13,12 @@ export interface VentaPago {
   fechaInicio?: Date | null;
   fechaVencimiento?: Date | null;
   notas?: string;
+  estado?: PagoVentaEstado;
+  motivoAnulacion?: string | null;
   destinoReembolso?: string | null;
 }
 
 export type PagoVentaEstado = 'registrado' | 'anulado' | 'reembolsado';
-
-export interface VentaPago {
-  estado?: PagoVentaEstado;
-  motivoAnulacion?: string | null;
-  destinoReembolso?: string | null;
-}
-
-export interface PagoVenta {
-  estado?: PagoVentaEstado;
-  motivoAnulacion?: string | null;
-  destinoReembolso?: string | null;
-}
 
 /**
  * Documento de pago de venta en la colección pagosVenta
@@ -47,6 +37,9 @@ export interface PagoVenta {
   metodoPago: string;                 // Nombre del método de pago (denormalizado)
   moneda?: string;                    // Denormalizado de MetodoPago
   notas?: string;
+  estado?: PagoVentaEstado;
+  motivoAnulacion?: string | null;
+  destinoReembolso?: string | null;
   descripcion?: string;                // "Pago inicial" o "Renovacion #1", "Renovacion #2", etc.
   numeroPeriodo?: number;              // 1 = pago inicial, 2+ = renovaciones
   isPagoInicial: boolean;             // true para el primer pago

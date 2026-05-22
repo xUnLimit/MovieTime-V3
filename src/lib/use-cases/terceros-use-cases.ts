@@ -12,6 +12,7 @@ import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { adjustTercerosPorMes, getDiaKeyFromDate } from '@/lib/services/dashboardStatsService';
 import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
 import type { ActivityLog, Tercero } from '@/types';
 
@@ -87,12 +88,16 @@ export async function createTerceroUseCase(
     detalles: `${usuarioData.tipo === 'cliente' ? 'Cliente' : 'Revendedor'} creado: "${usuarioData.nombre}"`,
   });
 
-  adjustTercerosPorMes({
+  safeAsyncSideEffect(adjustTercerosPorMes({
     mes: format(new Date(), 'yyyy-MM'),
     dia: getDiaKeyFromDate(new Date()),
     tipo: usuarioData.tipo,
     delta: 1,
-  }).catch((err) => console.error('[TercerosUseCases] Error updating dashboard stats:', err));
+  }), {
+    operation: 'adjustTercerosPorMes',
+    entity: usuarioData.tipo === 'cliente' ? 'cliente' : 'revendedor',
+    entityId: id,
+  });
 
   return usuario;
 }
@@ -183,11 +188,15 @@ export async function deleteTerceroUseCase(
   });
 
   if (deletedUser.createdAt) {
-    adjustTercerosPorMes({
+    safeAsyncSideEffect(adjustTercerosPorMes({
       mes: format(new Date(deletedUser.createdAt), 'yyyy-MM'),
       dia: getDiaKeyFromDate(new Date(deletedUser.createdAt)),
       tipo: deletedUser.tipo,
       delta: -1,
-    }).catch((err) => console.error('[TercerosUseCases] Error reverting dashboard stats:', err));
+    }), {
+      operation: 'adjustTercerosPorMes',
+      entity: (deletedUser.tipo ?? 'cliente') === 'cliente' ? 'cliente' : 'revendedor',
+      entityId: id,
+    });
   }
 }

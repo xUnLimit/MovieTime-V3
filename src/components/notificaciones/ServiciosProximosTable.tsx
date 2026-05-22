@@ -23,8 +23,8 @@ import {
   getServicioUseCase,
   renewServicioUseCase,
 } from '@/lib/use-cases/servicios-use-cases';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import type { MetodoPago, Servicio } from '@/types';
@@ -43,14 +43,6 @@ interface ServiciosProximosTableProps {
   soloAutorrenovables?: boolean;
   title?: string;
   emptyMessage?: string;
-}
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
 }
 
 export function ServiciosProximosTable({
@@ -259,7 +251,7 @@ export function ServiciosProximosTable({
       );
       await renewServicioUseCase(servicioParaRenovar, data, {
         metodoPago: metodoPagoSeleccionado,
-        logContext: getLogContext(),
+        logContext: getStoreLogContext(),
         recordActivityLog: useActivityLogStore.getState().addLog,
         logPrefix: 'Servicio renovado desde notificaciones',
       });

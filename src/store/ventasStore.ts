@@ -8,18 +8,11 @@ import {
   updateVentaUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
 import { syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 function dispatchVentaEvent(name: 'venta-created' | 'venta-updated' | 'venta-deleted') {
   if (typeof window === 'undefined') return;
@@ -97,7 +90,7 @@ export const useVentasStore = create<VentasState>()(
       createVenta: async (ventaData) => {
         try {
           const { venta, pronostico } = await createVentaUseCase(ventaData, {
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -121,7 +114,7 @@ export const useVentasStore = create<VentasState>()(
           const currentVenta = get().ventas.find((venta) => venta.id === id);
           const { ventaActualizada, pronostico, serviceProfileDelta } = await updateVentaUseCase(id, updates, {
             currentVenta,
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -165,7 +158,7 @@ export const useVentasStore = create<VentasState>()(
             servicioId,
             perfilNumero,
             deletePagos,
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -176,12 +169,16 @@ export const useVentasStore = create<VentasState>()(
               .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
           }
 
-          try {
-            const { useNotificacionesStore } = await import('./notificacionesStore');
-            await useNotificacionesStore.getState().deleteNotificacionesPorVenta(id);
-          } catch {
-            // Notifications cleanup is best-effort.
-          }
+          safeAsyncSideEffect(
+            import('./notificacionesStore').then(({ useNotificacionesStore }) =>
+              useNotificacionesStore.getState().deleteNotificacionesPorVenta(id)
+            ),
+            {
+              operation: 'deleteNotificacionesPorVenta',
+              entity: 'venta',
+              entityId: id,
+            }
+          );
 
           syncVentaPronosticoLocal(id, null);
           dispatchVentaEvent('venta-deleted');

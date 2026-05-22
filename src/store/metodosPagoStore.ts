@@ -3,20 +3,11 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { MetodoPago } from '@/types';
-
-// Helper para obtener contexto de usuario
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 interface MetodosPagoState {
   metodosPago: MetodoPago[];
@@ -134,7 +125,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
           // Registrar en log de actividad
           safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getLogContext(),
+            ...getStoreLogContext(),
             accion: 'creacion',
             entidad: 'metodo_pago',
             entidadId: id,
@@ -204,7 +195,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
           // Registrar en log de actividad con cambios
           safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getLogContext(),
+            ...getStoreLogContext(),
             accion: 'actualizacion',
             entidad: 'metodo_pago',
             entidadId: id,
@@ -251,7 +242,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
           // Registrar en log de actividad
           safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getLogContext(),
+            ...getStoreLogContext(),
             accion: 'eliminacion',
             entidad: 'metodo_pago',
             entidadId: id,

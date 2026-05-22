@@ -11,18 +11,11 @@ import {
   updateServicioUseCase,
 } from '@/lib/use-cases/servicios-use-cases';
 import { syncServicioPronosticoLocal } from '@/lib/commands/client-cache';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Servicio } from '@/types/servicios';
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 function dispatchServicioDeleted() {
   if (typeof window === 'undefined') return;
@@ -110,7 +103,7 @@ export const useServiciosStore = create<ServiciosState>()(
       createServicio: async (servicioData) => {
         try {
           const { servicio, pronostico } = await createServicioUseCase(servicioData, {
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -130,7 +123,7 @@ export const useServiciosStore = create<ServiciosState>()(
       updateServicio: async (id, updates) => {
         try {
           const { servicioActualizado, pronostico } = await updateServicioUseCase(id, updates, {
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -161,16 +154,20 @@ export const useServiciosStore = create<ServiciosState>()(
         try {
           await deleteServicioUseCase(id, {
             deletePayments,
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          try {
-            const { useNotificacionesStore } = await import('./notificacionesStore');
-            await useNotificacionesStore.getState().deleteNotificacionesPorServicio(id);
-          } catch {
-            // Notifications cleanup is best-effort.
-          }
+          safeAsyncSideEffect(
+            import('./notificacionesStore').then(({ useNotificacionesStore }) =>
+              useNotificacionesStore.getState().deleteNotificacionesPorServicio(id)
+            ),
+            {
+              operation: 'deleteNotificacionesPorServicio',
+              entity: 'servicio',
+              entityId: id,
+            }
+          );
 
           syncServicioPronosticoLocal(id, null);
           dispatchServicioDeleted();

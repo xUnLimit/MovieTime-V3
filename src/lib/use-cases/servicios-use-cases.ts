@@ -203,14 +203,18 @@ export async function createServicioUseCase(
     p_pago_notas: servicioData.notas ?? '',
   });
 
-  adjustGastosStats({
+  safeAsyncSideEffect(adjustGastosStats({
     delta: servicioData.costoServicio ?? 0,
     moneda: moneda ?? 'USD',
     mes: getMesKeyFromDate(servicioData.fechaInicio ?? new Date()),
     dia: getDiaKeyFromDate(servicioData.fechaInicio ?? new Date()),
     categoriaId: servicioData.categoriaId,
     categoriaNombre: servicioData.categoriaNombre,
-  }).catch((err) => console.error('[ServiciosUseCases] Error updating dashboard gastos:', err));
+  }), {
+    operation: 'adjustGastosStats',
+    entity: 'servicio',
+    entityId: id,
+  });
 
   const servicio = {
     ...servicioData,
@@ -223,8 +227,10 @@ export async function createServicioUseCase(
   } as Servicio;
 
   const pronostico = toServicioPronostico(servicio);
-  upsertServicioPronostico(pronostico, id).catch((err) => {
-    console.error('[ServiciosUseCases] Error upserting pronostico:', err);
+  safeAsyncSideEffect(upsertServicioPronostico(pronostico, id), {
+    operation: 'upsertServicioPronostico',
+    entity: 'servicio',
+    entityId: id,
   });
 
   await options.recordActivityLog?.({
@@ -381,18 +387,24 @@ export async function deleteServicioUseCase(
   }
 
   if (servicio.costoServicio) {
-    adjustGastosStats({
+    safeAsyncSideEffect(adjustGastosStats({
       delta: -servicio.costoServicio,
       moneda: servicio.moneda ?? 'USD',
       mes: getMesKeyFromDate(servicio.fechaInicio ?? new Date()),
       dia: getDiaKeyFromDate(servicio.fechaInicio ?? new Date()),
       categoriaId: servicio.categoriaId,
       categoriaNombre: servicio.categoriaNombre,
-    }).catch((err) => console.error('[ServiciosUseCases] Error reverting dashboard gastos:', err));
+    }), {
+      operation: 'adjustGastosStats',
+      entity: 'servicio',
+      entityId: id,
+    });
   }
 
-  upsertServicioPronostico(null, id).catch((err) => {
-    console.error('[ServiciosUseCases] Error removing pronostico:', err);
+  safeAsyncSideEffect(upsertServicioPronostico(null, id), {
+    operation: 'removeServicioPronostico',
+    entity: 'servicio',
+    entityId: id,
   });
 
   await options.recordActivityLog?.({

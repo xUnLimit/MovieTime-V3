@@ -10,18 +10,10 @@ import {
   resolveTerceroForDelete,
   updateTerceroUseCase,
 } from '@/lib/use-cases/terceros-use-cases';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Tercero } from '@/types';
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 function dispatchTerceroEvent(name: 'tercero-deleted' | 'tercero-nombre-updated') {
   if (typeof window === 'undefined') return;
@@ -116,7 +108,7 @@ export const useTercerosStore = create<TercerosState>()(
       createTercero: async (usuarioData) => {
         try {
           const usuario = await createTerceroUseCase(usuarioData, {
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -144,7 +136,7 @@ export const useTercerosStore = create<TercerosState>()(
 
           const { shouldRefreshNotificaciones, shouldDispatchTerceroNombreUpdated } = await updateTerceroUseCase(id, updates, {
             oldTercero,
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -233,7 +225,7 @@ export const useTercerosStore = create<TercerosState>()(
 
         try {
           await deleteTerceroUseCase(id, deletedUser, {
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 

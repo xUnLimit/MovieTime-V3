@@ -23,8 +23,8 @@ import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { generarMensajeVenta, openWhatsApp } from '@/lib/utils/whatsapp';
 import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useTemplatesStore } from '@/store/templatesStore';
@@ -41,14 +41,6 @@ import { VentasProximasPagination } from './ventas-proximas/VentasProximasPagina
 import { VentasProximasTableContent } from './ventas-proximas/VentasProximasTableContent';
 import { VentasProximasToolbar } from './ventas-proximas/VentasProximasToolbar';
 import type { NotificacionVentaConId } from './ventas-proximas/types';
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 export function VentasProximasTable() {
   const {
@@ -312,7 +304,7 @@ export function VentasProximasTable() {
             'USD',
         },
         {
-          logContext: getLogContext(),
+          logContext: getStoreLogContext(),
           recordActivityLog: useActivityLogStore.getState().addLog,
         }
       );

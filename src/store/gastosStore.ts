@@ -5,22 +5,14 @@ import { devtools } from 'zustand/middleware';
 import type { Gasto, TipoGasto } from '@/types';
 
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { invalidateDashboardCache as invalidateDashboardCacheCommand } from '@/lib/commands/client-cache';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import { adjustGastosStats, getDiaKeyFromDate, getMesKeyFromDate } from '@/lib/services/dashboardStatsService';
 
 const CACHE_TIMEOUT = CACHE_TTL_MS;
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 function sortGastos(gastos: Gasto[]) {
   return [...gastos].sort((a, b) => {
@@ -131,7 +123,7 @@ export const useGastosStore = create<GastosState>()(
           invalidateDashboardCache();
 
           safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getLogContext(),
+            ...getStoreLogContext(),
             accion: 'creacion',
             entidad: 'gasto',
             entidadId: gastoId,
@@ -214,7 +206,7 @@ export const useGastosStore = create<GastosState>()(
             gastoActualizado as unknown as Record<string, unknown>
           );
           safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getLogContext(),
+            ...getStoreLogContext(),
             accion: 'actualizacion',
             entidad: 'gasto',
             entidadId: id,
@@ -250,7 +242,7 @@ export const useGastosStore = create<GastosState>()(
           invalidateDashboardCache();
 
           safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getLogContext(),
+            ...getStoreLogContext(),
             accion: 'eliminacion',
             entidad: 'gasto',
             entidadId: id,

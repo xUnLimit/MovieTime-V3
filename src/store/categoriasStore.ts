@@ -9,18 +9,10 @@ import {
   updateCategoriaUseCase,
 } from '@/lib/use-cases/categorias-use-cases';
 import { ENTITIES, logCacheHit } from '@/lib/supabase/categorias-repository';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Categoria } from '@/types';
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 interface CategoriasState {
   categorias: Categoria[];
@@ -88,7 +80,7 @@ export const useCategoriasStore = create<CategoriasState>()(
       createCategoria: async (categoriaData) => {
         try {
           const newCategoria = await createCategoriaUseCase(categoriaData, {
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -109,7 +101,7 @@ export const useCategoriasStore = create<CategoriasState>()(
           const oldCategoria = get().categorias.find((categoria) => categoria.id === id);
           const updatedCategoria = await updateCategoriaUseCase(id, updates, {
             oldCategoria,
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
@@ -135,7 +127,7 @@ export const useCategoriasStore = create<CategoriasState>()(
         try {
           await deleteCategoriaUseCase(id, {
             categoria: categoriaEliminada,
-            logContext: getLogContext(),
+            logContext: getStoreLogContext(),
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 

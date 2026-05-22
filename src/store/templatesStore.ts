@@ -3,20 +3,11 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { TemplateMensaje, TipoTemplate } from '@/types';
-
-// Helper para obtener contexto de usuario
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 interface TemplatesState {
   templates: TemplateMensaje[];
@@ -81,7 +72,7 @@ export const useTemplatesStore = create<TemplatesState>()(
 
             // Registrar en log de actividad
             safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-              ...getLogContext(),
+              ...getStoreLogContext(),
               accion: 'creacion',
               entidad: 'template',
               entidadId: id,
@@ -116,7 +107,7 @@ export const useTemplatesStore = create<TemplatesState>()(
 
             // Registrar en log de actividad con cambios
             safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-              ...getLogContext(),
+              ...getStoreLogContext(),
               accion: 'actualizacion',
               entidad: 'template',
               entidadId: id,
@@ -142,7 +133,7 @@ export const useTemplatesStore = create<TemplatesState>()(
 
             // Registrar en log de actividad
             safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-              ...getLogContext(),
+              ...getStoreLogContext(),
               accion: 'eliminacion',
               entidad: 'template',
               entidadId: id,

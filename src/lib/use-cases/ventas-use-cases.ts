@@ -123,7 +123,7 @@ async function getUsdValues(amount: number, moneda: string) {
 }
 
 function nullableMetodoPagoId(id?: string | null) {
-  return isPendingTerceroPaymentMethodId(id) ? null : id;
+  return isPendingTerceroPaymentMethodId(id) ? null : id ?? null;
 }
 
 function nullableUuid(id?: string | null) {
@@ -312,18 +312,24 @@ export async function createVentaUseCase(
     },
   });
 
-  adjustIngresosStats({
+  safeAsyncSideEffect(adjustIngresosStats({
     delta: ventaData.precioFinal ?? 0,
     moneda: ventaData.moneda ?? 'USD',
     mes: getMesKeyFromDate(ventaData.fechaInicio ?? new Date()),
     dia: getDiaKeyFromDate(ventaData.fechaInicio ?? new Date()),
     categoriaId: ventaData.categoriaId ?? '',
     categoriaNombre: ventaData.categoriaNombre ?? '',
-  }).catch((err) => console.error('[VentasUseCases] Error updating dashboard ingresos:', err));
+  }), {
+    operation: 'adjustIngresosStats',
+    entity: 'venta',
+    entityId: venta.id,
+  });
 
   const pronostico = toVentaPronostico(venta);
-  upsertVentaPronostico(pronostico, venta.id).catch((err) => {
-    console.error('[VentasUseCases] Error upserting pronostico:', err);
+  safeAsyncSideEffect(upsertVentaPronostico(pronostico, venta.id), {
+    operation: 'upsertVentaPronostico',
+    entity: 'venta',
+    entityId: venta.id,
   });
 
   safeAsyncSideEffect(sincronizarUnaVenta(ventaId), {
@@ -763,8 +769,10 @@ export async function updateVentaUseCase(
   });
 
   const pronostico = toVentaPronostico(ventaActualizada);
-  upsertVentaPronostico(pronostico, id).catch((err) => {
-    console.error('[VentasUseCases] Error upserting pronostico:', err);
+  safeAsyncSideEffect(upsertVentaPronostico(pronostico, id), {
+    operation: 'upsertVentaPronostico',
+    entity: 'venta',
+    entityId: id,
   });
 
   return { ventaAnterior, ventaActualizada, finalUpdates, pronostico, serviceProfileDelta };
@@ -794,14 +802,18 @@ export async function deleteVentaUseCase(
     : null;
 
   if (ventaEliminada?.precioFinal) {
-    adjustIngresosStats({
+    safeAsyncSideEffect(adjustIngresosStats({
       delta: -ventaEliminada.precioFinal,
       moneda: ventaEliminada.moneda ?? 'USD',
       mes: getMesKeyFromDate(ventaEliminada.fechaInicio ?? new Date()),
       dia: getDiaKeyFromDate(ventaEliminada.fechaInicio ?? new Date()),
       categoriaId: ventaEliminada.categoriaId ?? '',
       categoriaNombre: ventaEliminada.categoriaNombre ?? '',
-    }).catch((err) => console.error('[VentasUseCases] Error reverting dashboard ingresos:', err));
+    }), {
+      operation: 'adjustIngresosStats',
+      entity: 'venta',
+      entityId: id,
+    });
   }
 
   await options.recordActivityLog?.({
@@ -820,8 +832,10 @@ export async function deleteVentaUseCase(
     },
   });
 
-  upsertVentaPronostico(null, id).catch((err) => {
-    console.error('[VentasUseCases] Error removing pronostico:', err);
+  safeAsyncSideEffect(upsertVentaPronostico(null, id), {
+    operation: 'removeVentaPronostico',
+    entity: 'venta',
+    entityId: id,
   });
 
   return { ventaEliminada, serviceProfileDelta };
