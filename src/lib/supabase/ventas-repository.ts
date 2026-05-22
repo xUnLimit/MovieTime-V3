@@ -13,6 +13,10 @@ import { timestampToDate, toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
 import { assertRecordId, assertRpcStringId } from '@/lib/utils/safety';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import {
+  createVentaWithInitialPaymentRpc,
+  type CreateVentaWithInitialPaymentPayload,
+} from './ventas-rpc-adapter';
 
 export { logCacheHit, timestampToDate };
 
@@ -45,12 +49,9 @@ export async function removeVentaWithPayments(id: string, deletePayments: boolea
 }
 
 export async function createVentaWithInitialPayment(
-  payload: Record<string, unknown>
+  payload: CreateVentaWithInitialPaymentPayload
 ): Promise<string> {
-  assertOnlineMutation();
-  const { data, error } = await rpcClient.rpc('create_venta_with_initial_payment', payload);
-  if (error) throw new Error(error.message);
-  return assertRpcStringId(data, 'create_venta_with_initial_payment');
+  return createVentaWithInitialPaymentRpc(payload);
 }
 
 export async function createVentaRefund(payload: Record<string, unknown>): Promise<string> {
