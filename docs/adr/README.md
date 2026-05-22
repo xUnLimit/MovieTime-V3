@@ -1,0 +1,17 @@
+# Architecture Decision Records
+
+Este directorio registra decisiones arquitecturales que deben guiar refactors futuros. Cada ADR debe explicar el contexto, la decision, consecuencias y alternativas consideradas.
+
+Convencion:
+
+- `Accepted`: decision vigente.
+- `Superseded`: reemplazada por otro ADR.
+- `Proposed`: en discusion, no aplicar como regla todavia.
+
+ADRs iniciales para la ruta enterprise:
+
+- [0001 - Dashboard read models desde Postgres](0001-dashboard-read-models-postgres.md)
+- [0002 - React Query para lecturas y Zustand para estado UI](0002-react-query-zustand-ownership.md)
+- [0003 - RPCs criticas con adapters tipados e idempotencia](0003-typed-rpc-adapters-and-idempotency.md)
+- [0004 - Eventos cliente tipados en lugar de DOM/localStorage](0004-typed-client-events.md)
+- [0005 - Arquitectura modular monolitica con modulos profundos](0005-modular-monolith-deep-modules.md)
