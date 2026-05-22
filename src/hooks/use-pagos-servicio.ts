@@ -1,65 +1,38 @@
-import { useEffect, useState } from 'react';
-import { obtenerPagosDeServicio, contarRenovacionesDeServicio } from '@/lib/services/pagosServicioService';
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+
 import { CACHE_TTL_MS } from '@/lib/constants';
-import { PagoServicio } from '@/types';
+import { queryKeys } from '@/lib/query-keys';
+import { obtenerPagosDeServicio } from '@/lib/services/pagosServicioService';
+import type { PagoServicio } from '@/types';
 
 /**
- * Hook para cargar pagos de un servicio desde la colección pagosServicio
- * Con cache de 5 minutos a nivel de módulo
+ * Hook para cargar pagos de un servicio desde la coleccion pagosServicio.
  */
-
-// Cache a nivel de módulo (compartido entre todas las instancias del hook)
-const pagosCache = new Map<string, { data: PagoServicio[]; timestamp: number }>();
-const CACHE_TTL = CACHE_TTL_MS;
-
 export function usePagosServicio(servicioId: string | null) {
-  const [pagos, setPagos] = useState<PagoServicio[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [renovaciones, setRenovaciones] = useState(0);
+  const { data: pagos = [], isLoading, refetch } = useQuery({
+    queryKey: servicioId
+      ? queryKeys.servicios.pagos(servicioId)
+      : [...queryKeys.servicios.all, 'pagos', 'empty'],
+    queryFn: async () => {
+      if (!servicioId) return [];
 
-  const loadPagos = async (force = false) => {
-    if (!servicioId) {
-      setPagos([]);
-      setIsLoading(false);
-      return;
-    }
-
-    // Verificar cache
-    if (!force) {
-      const cached = pagosCache.get(servicioId);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        setPagos(cached.data);
-        setRenovaciones(cached.data.filter(p => !p.isPagoInicial && p.descripcion !== 'Pago inicial').length);
-        setIsLoading(false);
-        return;
+      try {
+        return await obtenerPagosDeServicio(servicioId);
+      } catch (error) {
+        console.error('[usePagosServicio] Error loading pagos:', error);
+        return [];
       }
-    }
+    },
+    enabled: !!servicioId,
+    staleTime: CACHE_TTL_MS,
+    gcTime: CACHE_TTL_MS,
+  });
 
-    setIsLoading(true);
-    try {
-      const data = await obtenerPagosDeServicio(servicioId);
-      const renovacionesCount = await contarRenovacionesDeServicio(servicioId);
+  const renovaciones = pagos.filter(
+    (p: PagoServicio) => !p.isPagoInicial && p.descripcion !== 'Pago inicial'
+  ).length;
 
-      // Guardar en cache
-      pagosCache.set(servicioId, { data, timestamp: Date.now() });
-
-      setPagos(data);
-      setRenovaciones(renovacionesCount);
-    } catch (error) {
-      console.error('[usePagosServicio] Error loading pagos:', error);
-      setPagos([]);
-      setRenovaciones(0);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPagos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servicioId]);
-
-  const refresh = () => loadPagos(true);
-
-  return { pagos, isLoading, renovaciones, refresh };
+  return { pagos, isLoading, renovaciones, refresh: refetch };
 }
