@@ -1,7 +1,14 @@
 # Dashboard Implementation Design
 
 **Date:** 2026-02-13  
-**Status:** Approved
+**Status:** Legacy - superseded by Supabase live dashboard RPCs
+
+> Legacy note, 2026-05-22: this document describes the pre-Supabase/Firebase
+> dashboard design based on an incremental `config/dashboard_stats` cache.
+> The current architecture uses Supabase/Postgres read models exposed through
+> live RPCs such as `get_dashboard_stats_live`, `get_dashboard_home`, and
+> `get_dashboard_churn_stats`. New work should follow
+> `docs/adr/0001-dashboard-read-models-postgres.md`.
 
 ## Overview
 

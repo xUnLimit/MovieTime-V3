@@ -78,6 +78,10 @@ export async function getDashboardChurnStats(): Promise<ChurnStats> {
   return jsonToChurnStats(data);
 }
 
+/**
+ * @deprecated Dashboard metrics are Postgres read models. Invalidate/refetch
+ * dashboard reads instead of mutating derived metrics on the client.
+ */
 export async function adjustIngresosStats(_params: {
   delta: number;
   moneda: string;
@@ -119,6 +123,10 @@ export async function getDashboardHome(): Promise<DashboardHome> {
   };
 }
 
+/**
+ * @deprecated Dashboard metrics are Postgres read models. Invalidate/refetch
+ * dashboard reads instead of mutating derived metrics on the client.
+ */
 export async function adjustGastosStats(_params: {
   delta: number;
   moneda: string;
@@ -130,6 +138,10 @@ export async function adjustGastosStats(_params: {
   void _params;
 }
 
+/**
+ * @deprecated Dashboard metrics are Postgres read models. Invalidate/refetch
+ * dashboard reads instead of mutating derived metrics on the client.
+ */
 export async function adjustTercerosPorMes(_params: {
   mes: string;
   dia: string;
@@ -139,6 +151,10 @@ export async function adjustTercerosPorMes(_params: {
   void _params;
 }
 
+/**
+ * @deprecated Forecasts are derived in Postgres read models. Invalidate/refetch
+ * dashboard reads instead of upserting forecast state on the client.
+ */
 export async function upsertVentaPronostico(
   _venta: VentaPronostico | null,
   _ventaId: string
@@ -147,6 +163,10 @@ export async function upsertVentaPronostico(
   void _ventaId;
 }
 
+/**
+ * @deprecated Forecasts are derived in Postgres read models. Invalidate/refetch
+ * dashboard reads instead of upserting forecast state on the client.
+ */
 export async function upsertServicioPronostico(
   _servicio: ServicioPronostico | null,
   _servicioId: string

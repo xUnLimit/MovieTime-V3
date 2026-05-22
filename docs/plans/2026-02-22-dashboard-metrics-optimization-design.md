@@ -1,7 +1,13 @@
 # Dashboard Metrics Optimization Design
 
 **Date:** 2026-02-22
-**Status:** Approved
+**Status:** Legacy - superseded by Supabase live dashboard RPCs
+
+> Legacy note, 2026-05-22: this document assumes incremental client-side
+> dashboard mutation helpers. The current architecture treats dashboard metrics
+> as Postgres read models and the client should invalidate/refetch instead of
+> mutating derived metrics. New work should follow
+> `docs/adr/0001-dashboard-read-models-postgres.md`.
 
 ## Problem
 
