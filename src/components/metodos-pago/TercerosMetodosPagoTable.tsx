@@ -23,11 +23,13 @@ import Link from "next/link";
 interface TercerosMetodosPagoTableProps {
   metodosPago: MetodoPago[];
   title?: string;
+  onMetodoDeleted?: () => void | Promise<void>;
 }
 
 export function TercerosMetodosPagoTable({
   metodosPago,
   title = "Métodos de pago de Terceros",
+  onMetodoDeleted,
 }: TercerosMetodosPagoTableProps) {
     const { deleteMetodoPago, fetchCounts } = useMetodosPagoStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -73,6 +75,7 @@ export function TercerosMetodosPagoTable({
       try {
         await deleteMetodoPago(metodoToDelete.id);
         await fetchCounts(); // Actualizar métricas
+        await onMetodoDeleted?.();
         toast.success("Método de pago eliminado");
       } catch (error) {
         toast.error("Error al eliminar método de pago", {

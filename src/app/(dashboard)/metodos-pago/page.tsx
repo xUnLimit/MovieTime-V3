@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -8,16 +8,12 @@ import { Plus } from 'lucide-react';
 import { TercerosMetodosPagoTable } from '@/components/metodos-pago/TercerosMetodosPagoTable';
 import { ServiciosMetodosPagoTable } from '@/components/metodos-pago/ServiciosMetodosPagoTable';
 import { MetodosPagoMetrics } from '@/components/metodos-pago/MetodosPagoMetrics';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
+import { useMetodosPago } from '@/hooks/use-metodos-pago';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
 function MetodosPagoPageContent() {
-  const { metodosPago, fetchMetodosPago } = useMetodosPagoStore();
   const [activeTab, setActiveTab] = useState('terceros');
-
-  useEffect(() => {
-    fetchMetodosPago();
-  }, [fetchMetodosPago]);
+  const { data: metodosPago = [], refetch: refetchMetodosPago } = useMetodosPago();
 
   return (
     <div className="space-y-4">
@@ -58,6 +54,9 @@ function MetodosPagoPageContent() {
           <TercerosMetodosPagoTable
             metodosPago={metodosPago}
             title="Métodos de pago de Terceros"
+            onMetodoDeleted={() => {
+              void refetchMetodosPago();
+            }}
           />
         </TabsContent>
 
@@ -65,6 +64,9 @@ function MetodosPagoPageContent() {
           <ServiciosMetodosPagoTable
             metodosPago={metodosPago}
             title="Métodos de pago de Servicios"
+            onMetodoDeleted={() => {
+              void refetchMetodosPago();
+            }}
           />
         </TabsContent>
       </Tabs>
