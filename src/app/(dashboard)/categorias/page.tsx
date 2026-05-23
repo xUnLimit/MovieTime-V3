@@ -11,27 +11,28 @@ import { TodasCategoriasTable } from '@/components/categorias/TodasCategoriasTab
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useCategoriasStore } from '@/store/categoriasStore';
 
 function CategoriasPageContent() {
-  const { categorias, fetchCategorias, fetchCounts } = useCategoriasStore();
+  const fetchCounts = useCategoriasStore((state) => state.fetchCounts);
+  const { data: categorias = [], refetch: refetchCategorias } = useCategoriasFull();
   const [activeTab, setActiveTab] = useState('todos');
 
   useEffect(() => {
-    fetchCategorias();
     fetchCounts();
-  }, [fetchCategorias, fetchCounts]);
+  }, [fetchCounts]);
 
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'categoria-deleted') {
-        fetchCategorias(true);
+        void refetchCategorias();
         fetchCounts();
       }
     };
 
     const handleCategoriaDeleted = () => {
-      fetchCategorias(true);
+      void refetchCategorias();
       fetchCounts();
     };
 
@@ -42,7 +43,12 @@ function CategoriasPageContent() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('categoria-deleted', handleCategoriaDeleted);
     };
-  }, [fetchCategorias, fetchCounts]);
+  }, [fetchCounts, refetchCategorias]);
+
+  const handleCategoriaDeleted = async () => {
+    await refetchCategorias();
+    await fetchCounts();
+  };
 
   return (
     <div className="space-y-4">
@@ -89,15 +95,27 @@ function CategoriasPageContent() {
         </TabsList>
 
         <TabsContent value="todos" className="space-y-4">
-          <TodasCategoriasTable categorias={categorias} title="Todas las categorias" />
+          <TodasCategoriasTable
+            categorias={categorias}
+            title="Todas las categorias"
+            onCategoriaDeleted={handleCategoriaDeleted}
+          />
         </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">
-          <ClientesCategoriasTable categorias={categorias} title="Categorias de Clientes" />
+          <ClientesCategoriasTable
+            categorias={categorias}
+            title="Categorias de Clientes"
+            onCategoriaDeleted={handleCategoriaDeleted}
+          />
         </TabsContent>
 
         <TabsContent value="revendedores" className="space-y-4">
-          <RevendedoresCategoriasTable categorias={categorias} title="Categorias de Revendedores" />
+          <RevendedoresCategoriasTable
+            categorias={categorias}
+            title="Categorias de Revendedores"
+            onCategoriaDeleted={handleCategoriaDeleted}
+          />
         </TabsContent>
       </Tabs>
     </div>

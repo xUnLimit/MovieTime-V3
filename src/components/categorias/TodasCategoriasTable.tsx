@@ -33,11 +33,13 @@ const tipoCategoriaLabels: Record<string, string> = {
 interface TodasCategoriasTableProps {
   categorias: Categoria[];
   title?: string;
+  onCategoriaDeleted?: () => void | Promise<void>;
 }
 
 export function TodasCategoriasTable({
   categorias,
   title = "Todas las categorías",
+  onCategoriaDeleted,
 }: TodasCategoriasTableProps) {
     const { deleteCategoria } = useCategoriasStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -71,6 +73,7 @@ export function TodasCategoriasTable({
     if (categoriaToDelete) {
       try {
         await deleteCategoria(categoriaToDelete.id);
+        await onCategoriaDeleted?.();
         toast.success("Categoría eliminada", {
           description: "La categoría ha sido eliminada correctamente.",
         });
