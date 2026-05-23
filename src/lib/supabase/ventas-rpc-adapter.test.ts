@@ -14,7 +14,9 @@ vi.mock('@/lib/pwa/mutation-guard', () => ({
 }));
 
 import {
+  createVentaRefundRpc,
   createVentaWithInitialPaymentRpc,
+  type CreateVentaRefundPayload,
   type CreateVentaWithInitialPaymentPayload,
 } from './ventas-rpc-adapter';
 
@@ -45,6 +47,22 @@ const payload: CreateVentaWithInitialPaymentPayload = {
   p_plan_tipo_nombre_snapshot: 'Individual',
 };
 
+const refundPayload: CreateVentaRefundPayload = {
+  p_venta_id: 'venta-1',
+  p_monto_original: 5,
+  p_moneda_original: 'USD',
+  p_monto_usd: 5,
+  p_exchange_rate: 1,
+  p_metodo_pago_id: 'metodo-1',
+  p_metodo_pago_nombre_snapshot: 'Yappy',
+  p_destino_reembolso: 'Cuenta destino',
+  p_fecha_reembolso: '2026-05-22T00:00:00.000Z',
+  p_nota: 'Reembolso',
+  p_cortar: false,
+  p_motivo_corte: null,
+  p_created_by: '00000000-0000-0000-0000-000000000000',
+};
+
 describe('createVentaWithInitialPaymentRpc', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -70,6 +88,35 @@ describe('createVentaWithInitialPaymentRpc', () => {
 
     await expect(createVentaWithInitialPaymentRpc(payload)).rejects.toThrow(
       'create_venta_with_initial_payment no retorno un id valido'
+    );
+  });
+});
+
+describe('createVentaRefundRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed RPC with the expected payload and returns the pago id', async () => {
+    rpcMock.mockResolvedValue({ data: 'pago-1', error: null });
+
+    await expect(createVentaRefundRpc(refundPayload)).resolves.toBe('pago-1');
+
+    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock).toHaveBeenCalledWith('create_venta_refund', refundPayload);
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
+
+    await expect(createVentaRefundRpc(refundPayload)).rejects.toThrow('RPC failed');
+  });
+
+  it('validates the RPC response id', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: null });
+
+    await expect(createVentaRefundRpc(refundPayload)).rejects.toThrow(
+      'create_venta_refund no retorno un id valido'
     );
   });
 });

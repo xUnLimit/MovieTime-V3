@@ -11,10 +11,12 @@
 import { supabase } from './client';
 import { timestampToDate, toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
-import { assertRecordId, assertRpcStringId } from '@/lib/utils/safety';
+import { assertRecordId } from '@/lib/utils/safety';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import {
+  createVentaRefundRpc,
   createVentaWithInitialPaymentRpc,
+  type CreateVentaRefundPayload,
   type CreateVentaWithInitialPaymentPayload,
 } from './ventas-rpc-adapter';
 
@@ -54,11 +56,8 @@ export async function createVentaWithInitialPayment(
   return createVentaWithInitialPaymentRpc(payload);
 }
 
-export async function createVentaRefund(payload: Record<string, unknown>): Promise<string> {
-  assertOnlineMutation();
-  const { data, error } = await rpcClient.rpc('create_venta_refund', payload);
-  if (error) throw new Error(error.message);
-  return assertRpcStringId(data, 'create_venta_refund');
+export async function createVentaRefund(payload: CreateVentaRefundPayload): Promise<string> {
+  return createVentaRefundRpc(payload);
 }
 
 export const getPagoVentaById = <T>(id: string) => getById<T>(ENTITIES.PAGOS_VENTA, id);

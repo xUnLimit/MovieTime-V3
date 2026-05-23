@@ -1,5 +1,6 @@
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import { assertRpcStringId } from '@/lib/utils/safety';
+import type { Database } from '@/lib/supabase/database.types';
 
 import { supabase } from './client';
 
@@ -12,6 +13,13 @@ type CreateVentaWithInitialPaymentRpcClient = {
   rpc: (
     fn: 'create_venta_with_initial_payment',
     args: CreateVentaWithInitialPaymentPayload
+  ) => Promise<RpcResult>;
+};
+
+type CreateVentaRefundRpcClient = {
+  rpc: (
+    fn: 'create_venta_refund',
+    args: CreateVentaRefundPayload
   ) => Promise<RpcResult>;
 };
 
@@ -43,7 +51,11 @@ export type CreateVentaWithInitialPaymentPayload = {
   p_created_by?: string | null;
 };
 
+export type CreateVentaRefundPayload =
+  Database['public']['Functions']['create_venta_refund']['Args'];
+
 const ventaInitialPaymentRpcClient = supabase as unknown as CreateVentaWithInitialPaymentRpcClient;
+const ventaRefundRpcClient = supabase as unknown as CreateVentaRefundRpcClient;
 
 export async function createVentaWithInitialPaymentRpc(
   payload: CreateVentaWithInitialPaymentPayload
@@ -55,4 +67,11 @@ export async function createVentaWithInitialPaymentRpc(
   );
   if (error) throw new Error(error.message);
   return assertRpcStringId(data, 'create_venta_with_initial_payment');
+}
+
+export async function createVentaRefundRpc(payload: CreateVentaRefundPayload): Promise<string> {
+  assertOnlineMutation();
+  const { data, error } = await ventaRefundRpcClient.rpc('create_venta_refund', payload);
+  if (error) throw new Error(error.message);
+  return assertRpcStringId(data, 'create_venta_refund');
 }
