@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Edit, Trash2, Copy } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTemplatesStore } from '@/store/templatesStore';
+import { queryKeys } from '@/lib/query-keys';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
 
@@ -18,6 +20,7 @@ interface TemplatesListProps {
 }
 
 export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListProps) {
+  const queryClient = useQueryClient();
   const { updateTemplate, deleteTemplate } = useTemplatesStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<TemplateMensaje | null>(null);
@@ -25,6 +28,7 @@ export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListPro
   const handleToggleActive = async (template: TemplateMensaje) => {
     try {
       await updateTemplate(template.id, { activo: !template.activo });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
       toast.success(`Template ${template.activo ? 'desactivado' : 'activado'}`, { description: template.activo ? 'El template ha sido desactivado y no se usará en notificaciones.' : 'El template está activo y listo para usarse.' });
     } catch (error) {
       toast.error('Error al actualizar template', { description: error instanceof Error ? error.message : undefined });
@@ -40,6 +44,7 @@ export function TemplatesList({ templates, onEdit, onPreview }: TemplatesListPro
     if (templateToDelete) {
       try {
         await deleteTemplate(templateToDelete.id);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
         toast.success('Template eliminado', { description: 'El template de mensaje ha sido eliminado correctamente.' });
       } catch (error) {
         toast.error('Error al eliminar template', { description: error instanceof Error ? error.message : undefined });

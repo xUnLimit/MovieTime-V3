@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import * as z from 'zod';
 import {
   Dialog,
@@ -25,6 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { TemplateMensaje } from '@/types';
 import { useTemplatesStore } from '@/store/templatesStore';
+import { queryKeys } from '@/lib/query-keys';
 import { toast } from 'sonner';
 
 const templateSchema = z.object({
@@ -69,6 +71,7 @@ const AVAILABLE_PLACEHOLDERS = [
 ];
 
 export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogProps) {
+  const queryClient = useQueryClient();
   const { createTemplate, updateTemplate } = useTemplatesStore();
   const [detectedPlaceholders, setDetectedPlaceholders] = useState<string[]>([]);
 
@@ -135,6 +138,7 @@ export function TemplateDialog({ open, onOpenChange, template }: TemplateDialogP
         await createTemplate(templateData);
         toast.success('Template creado', { description: 'El nuevo template de mensaje ha sido creado correctamente.' });
       }
+      await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
       onOpenChange(false);
     } catch (error) {
       toast.error('Error al guardar template', { description: error instanceof Error ? error.message : undefined });

@@ -6,8 +6,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Copy, Calendar, DollarSign, Mail, Lock, User } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { TemplateMensaje, TipoTemplate } from '@/types';
 import { useTemplatesStore } from '@/store/templatesStore';
+import { queryKeys } from '@/lib/query-keys';
 import { toast } from 'sonner';
 
 interface TemplateEditorProps {
@@ -45,6 +47,7 @@ const PLACEHOLDERS = [
 ];
 
 export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorProps) {
+  const queryClient = useQueryClient();
   const { updateTemplate, createTemplate } = useTemplatesStore();
   const [selectedTipo, setSelectedTipo] = useState<TipoTemplate>('notificacion_regular');
 
@@ -84,6 +87,7 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
           contenido,
           placeholders: detectedPlaceholders,
         });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
         await onTemplateSaved?.();
         toast.success('Plantilla actualizada', { description: 'Los cambios en la plantilla han sido guardados correctamente.' });
       } else {
@@ -96,6 +100,7 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
           placeholders: detectedPlaceholders,
           activo: true,
         });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
         await onTemplateSaved?.();
         toast.success('Plantilla creada', { description: 'La nueva plantilla de mensaje ha sido creada correctamente.' });
       }
