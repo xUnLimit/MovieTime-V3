@@ -1,81 +1,79 @@
 ﻿'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
+import { queryKeys } from '@/lib/query-keys';
 import { getVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { isUuid } from '@/lib/utils/safety';
-import { VentaDoc } from '@/types';
+import type { VentaDoc } from '@/types';
 import { toast } from 'sonner';
+
+async function fetchVentaEditData(id: string): Promise<VentaEditData | null> {
+  const doc = await getVentaUseCase<Record<string, unknown>>(id);
+  if (!doc) return null;
+
+  const ventaBase: VentaDoc = {
+    id: doc.id as string,
+    clienteId: (doc.clienteId as string) || '',
+    clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
+    categoriaId: (doc.categoriaId as string) || '',
+    servicioId: (doc.servicioId as string) || '',
+    servicioNombre: (doc.servicioNombre as string) || 'Servicio',
+    servicioCorreo: (doc.servicioCorreo as string) || '',
+    perfilNumero: (doc.perfilNumero as number | null | undefined) ?? null,
+    perfilNombre: (doc.perfilNombre as string) || '',
+    codigo: (doc.codigo as string) || '',
+    estado: (doc.estado as 'activo' | 'inactivo') || 'activo',
+    notas: (doc.notas as string) || '',
+    fechaInicio: (doc.fechaInicio as Date) || new Date(),
+    fechaFin: (doc.fechaFin as Date) || new Date(),
+    cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
+  };
+
+  const ventaConDatos = await getVentaConUltimoPago(ventaBase);
+
+  return {
+    ...ventaConDatos,
+    clienteId: ventaConDatos.clienteId || '',
+    metodoPagoId: ventaConDatos.metodoPagoId || '',
+    categoriaId: ventaConDatos.categoriaId || '',
+    servicioId: ventaConDatos.servicioId || '',
+    servicioCorreo: ventaConDatos.servicioCorreo || '',
+    fechaInicio: ventaConDatos.fechaInicio || new Date(),
+    fechaFin: ventaConDatos.fechaFin || new Date(),
+  };
+}
 
 function EditarVentaPageContent() {
   const params = useParams();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const [venta, setVenta] = useState<VentaEditData | null>(null);
+  const {
+    data: venta = null,
+    error,
+    isError,
+    isLoading,
+  } = useQuery({
+    queryKey: queryKeys.ventas.detail(id ?? 'invalid'),
+    queryFn: () => fetchVentaEditData(id!),
+    enabled: Boolean(id),
+  });
 
   useEffect(() => {
-    const loadVenta = async () => {
-      if (!id) {
-        setVenta(null);
-        return;
-      }
-
-      try {
-        const doc = await getVentaUseCase<Record<string, unknown>>(id);
-        if (!doc) {
-          setVenta(null);
-          return;
-        }
-        // Crear VentaDoc base (sin datos de pago)
-        const ventaBase: VentaDoc = {
-          id: doc.id as string,
-          clienteId: (doc.clienteId as string) || '',
-          clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-          categoriaId: (doc.categoriaId as string) || '',
-          servicioId: (doc.servicioId as string) || '',
-          servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-          servicioCorreo: (doc.servicioCorreo as string) || '',
-          perfilNumero: (doc.perfilNumero as number | null | undefined) ?? null,
-          perfilNombre: (doc.perfilNombre as string) || '',
-          codigo: (doc.codigo as string) || '',
-          estado: (doc.estado as 'activo' | 'inactivo') || 'activo',
-          notas: (doc.notas as string) || '',
-          // Denormalized fields (required) - will be populated from PagoVenta
-          fechaInicio: (doc.fechaInicio as Date) || new Date(),
-          fechaFin: (doc.fechaFin as Date) || new Date(),
-          cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
-        };
-
-        // Obtener datos actuales desde PagoVenta (fuente de verdad)
-        const ventaConDatos = await getVentaConUltimoPago(ventaBase);
-
-        // Convertir a VentaEditData
-        setVenta({
-          ...ventaConDatos,
-          clienteId: ventaConDatos.clienteId || '',
-          metodoPagoId: ventaConDatos.metodoPagoId || '',
-          categoriaId: ventaConDatos.categoriaId || '',
-          servicioId: ventaConDatos.servicioId || '',
-          servicioCorreo: ventaConDatos.servicioCorreo || '',
-          fechaInicio: ventaConDatos.fechaInicio || new Date(),
-          fechaFin: ventaConDatos.fechaFin || new Date(),
-        });
-      } catch (error) {
-        console.error('Error cargando venta:', error);
-        toast.error('Error cargando venta', { description: error instanceof Error ? error.message : undefined });
-        setVenta(null);
-      }
-    };
-
-    loadVenta();
-  }, [id]);
+    if (!isError) return;
+    console.error('Error cargando venta:', error);
+    toast.error('Error cargando venta', {
+      description: error instanceof Error ? error.message : undefined,
+    });
+  }, [error, isError]);
 
   if (!id) {
     return (
@@ -119,7 +117,9 @@ function EditarVentaPageContent() {
       </div>
 
       <div className="bg-card border rounded-lg p-6">
-        {venta ? (
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Cargando venta...</p>
+        ) : venta ? (
           <VentasEditForm venta={venta} />
         ) : (
           <p className="text-sm text-muted-foreground">No se encontró la venta solicitada.</p>
