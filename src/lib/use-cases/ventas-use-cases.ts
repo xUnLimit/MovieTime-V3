@@ -23,163 +23,30 @@ import {
   upsertVentaPronostico,
 } from '@/lib/services/dashboardStatsService';
 import { sincronizarUnaVenta } from '@/lib/services/notificationSyncService';
-import { currencyService } from '@/lib/services/currencyService';
 import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
-import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { syncTerceroMetodoPago } from '@/lib/services/terceroMetodoPagoSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
-import { safeAsyncSideEffect, toMoneyNumber } from '@/lib/utils/safety';
-import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
-import type { ActivityLog, MetodoPago, PagoVenta, VentaDoc, VentaReembolsoInput, VentaReembolsoResult } from '@/types';
-import type { VentaPronostico } from '@/types/dashboard';
+import { roundToDecimals } from '@/lib/utils/calculations';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import type { MetodoPago, PagoVenta, VentaDoc, VentaReembolsoInput, VentaReembolsoResult } from '@/types';
+import {
+  getNetPaidAmount,
+  getPagoValues,
+  getUsdValues,
+  getVentaConPagoActualUseCase,
+  getVentaTableUpdates,
+  nullableMetodoPagoId,
+  nullableUuid,
+  toVentaPronostico,
+  type LogContext,
+  type RecordActivityLog,
+  type VentaInput,
+  type VentaPagoInput,
+  type VentaPagoResult,
+} from '@/lib/use-cases/ventas/ventas-shared';
 
 export * from '@/lib/use-cases/ventas/ventas-query-use-cases';
-
-type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
-type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
-
-type VentaInput = Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'> & {
-  pagos?: Array<{
-    fecha?: Date | null;
-    total?: number;
-    notas?: string;
-  }>;
-};
-
-type VentaPagoInput = {
-  periodoRenovacion: string;
-  metodoPagoId: string;
-  metodoPagoNombre?: string;
-  moneda?: string;
-  costo: number;
-  descuento?: number;
-  fechaInicio: Date;
-  fechaVencimiento: Date;
-  notas?: string;
-  planId?: string;
-  planNombre?: string;
-  planTipoNombre?: string;
-};
-
-type VentaPagoResult = {
-  costo: number;
-  descuentoNumero: number;
-  monto: number;
-  notaPrincipal: string;
-  metodoPagoNombre: string;
-  moneda: string;
-  pronostico: VentaPronostico;
-  syncPaymentMethodFailed: boolean;
-};
-
-function getPagoSignedUsd(pago: PagoVenta) {
-  const amount = toMoneyNumber((pago as PagoVenta & { montoUsd?: number }).montoUsd ?? pago.monto ?? 0);
-  return pago.estado === 'reembolsado' ? -amount : pago.estado === 'anulado' ? 0 : amount;
-}
-
-function getNetPaidAmount(pagos: PagoVenta[]) {
-  return roundToDecimals(pagos.reduce((sum, pago) => sum + getPagoSignedUsd(pago), 0));
-}
-
-const VENTA_TABLE_UPDATE_KEYS = new Set([
-  'clienteId',
-  'servicioId',
-  'categoriaId',
-  'estado',
-  'perfilNumero',
-  'perfilNombre',
-  'codigo',
-  'cortadaAt',
-  'cortadaBy',
-  'motivoCorte',
-  'archivadoAt',
-  'archivadoBy',
-  'motivoArchivado',
-  'notas',
-]);
-
-function getVentaTableUpdates(updates: Partial<VentaDoc>): Partial<VentaDoc> {
-  const result: Partial<VentaDoc> = {};
-  const source = updates as Record<string, unknown>;
-  const target = result as Record<string, unknown>;
-  for (const key of VENTA_TABLE_UPDATE_KEYS) {
-    if (source[key] !== undefined) target[key] = source[key];
-  }
-  return result;
-}
-
-async function getUsdValues(amount: number, moneda: string) {
-  const normalizedAmount = toMoneyNumber(amount);
-  const usd = await currencyService.convertToUSD(normalizedAmount, moneda);
-  return {
-    usd,
-    rate: moneda === 'USD' || normalizedAmount === 0 || usd === 0 ? 1 : normalizedAmount / usd,
-  };
-}
-
-function nullableMetodoPagoId(id?: string | null) {
-  return isPendingTerceroPaymentMethodId(id) ? null : id ?? null;
-}
-
-function nullableUuid(id?: string | null) {
-  if (!id) return null;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
-    ? id
-    : null;
-}
-
-function ventaBaseFromRecord(doc: Record<string, unknown>): VentaDoc {
-  return {
-    id: doc.id as string,
-    clienteId: (doc.clienteId as string) || '',
-    clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-    categoriaId: (doc.categoriaId as string) || '',
-    categoriaNombre: (doc.categoriaNombre as string) || undefined,
-    servicioId: (doc.servicioId as string) || '',
-    servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-    servicioCorreo: (doc.servicioCorreo as string) || undefined,
-    servicioContrasena: (doc.servicioContrasena as string) || undefined,
-    clienteTelefono: (doc.clienteTelefono as string) || undefined,
-    estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
-    cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
-    motivoCorte: (doc.motivoCorte as string | null | undefined) ?? null,
-    perfilNumero: (doc.perfilNumero as number) ?? null,
-    perfilNombre: (doc.perfilNombre as string) || undefined,
-    codigo: (doc.codigo as string) || undefined,
-    notas: (doc.notas as string) || undefined,
-    createdAt: (doc.createdAt as Date) || undefined,
-    updatedAt: (doc.updatedAt as Date) || undefined,
-    fechaInicio: (doc.fechaInicio as Date) || new Date(),
-    fechaFin: (doc.fechaFin as Date) || new Date(),
-    cicloPago: (doc.cicloPago as VentaDoc['cicloPago']) || 'mensual',
-  };
-}
-
-function getPagoValues(venta: VentaDoc, input: VentaPagoInput) {
-  const costo = roundToDecimals(input.costo);
-  const descuentoNumero = roundToDecimals(Number(input.descuento) || 0);
-  const monto = calculateDiscountedAmount(costo, descuentoNumero);
-  const notaPrincipal = input.notas?.trim() ?? '';
-  const metodoPagoNombre = input.metodoPagoNombre || venta.metodoPagoNombre || '';
-  const moneda = input.moneda || venta.moneda || 'USD';
-
-  return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda };
-}
-
-export function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
-  const precioFinal = v.precioFinal ?? v.precio ?? 0;
-  if (v.estado === 'inactivo' || !v.fechaFin || !v.cicloPago || precioFinal <= 0) return null;
-  return {
-    id: v.id,
-    categoriaId: v.categoriaId ?? '',
-    fechaInicio: v.fechaInicio instanceof Date ? format(v.fechaInicio, "yyyy-MM-dd'T'HH:mm:ss") : String(v.fechaInicio ?? new Date()),
-    fechaFin: v.fechaFin instanceof Date ? format(v.fechaFin, "yyyy-MM-dd'T'HH:mm:ss") : String(v.fechaFin),
-    cicloPago: v.cicloPago,
-    precioFinal,
-    moneda: v.moneda || 'USD',
-  };
-}
+export { getVentaConPagoActualUseCase, toVentaPronostico } from '@/lib/use-cases/ventas/ventas-shared';
 
 export async function createVentaUseCase(
   ventaData: VentaInput,
@@ -280,12 +147,6 @@ export async function createVentaUseCase(
   });
 
   return { venta, pronostico };
-}
-
-export async function getVentaConPagoActualUseCase(id: string): Promise<VentaDoc | null> {
-  const doc = await getVentaById<Record<string, unknown>>(id);
-  if (!doc) return null;
-  return getVentaConUltimoPago(ventaBaseFromRecord(doc));
 }
 
 export async function renewVentaUseCase(
