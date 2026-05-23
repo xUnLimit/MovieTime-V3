@@ -45,7 +45,8 @@ function readQueue(): PendingWhatsAppToast[] {
     }
     const pending = normalizePending(parsed);
     return pending ? [pending] : [];
-  } catch {
+  } catch (error) {
+    void error;
     return [];
   }
 }

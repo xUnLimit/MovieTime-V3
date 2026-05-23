@@ -79,7 +79,8 @@ function shouldDisableSubscription(statusCode: number | undefined) {
 function getEndpointOrigin(endpoint: string) {
   try {
     return new URL(endpoint).origin;
-  } catch {
+  } catch (error) {
+    void error;
     return 'unknown';
   }
 }
