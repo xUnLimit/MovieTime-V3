@@ -31,11 +31,11 @@ Completado hasta esta iteracion:
 - Fase 2 ventas: `ventas-use-cases.ts` convertido en barrel; use-cases separados en `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`.
 - Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
-- Fase 2/3 eventos: bridge legacy DOM/localStorage centralizado en `store-event-bus`, imports dinamicos runtime removidos y emisiones directas de negocio reemplazadas por bus tipado + bridge legacy.
+- Fase 2/3 eventos: bridge legacy DOM/localStorage centralizado en `store-event-bus`, imports dinamicos runtime removidos, emisiones directas de negocio reemplazadas por bus tipado + bridge legacy, y paginas/hooks principales de ventas/terceros/categorias/servicios consumen eventos tipados.
 - Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime y retiradas de `dashboardStatsService`; el dashboard queda orientado a invalidacion/refetch sobre read models live.
-- Fase 2 limpieza de capas: `notificaciones-use-cases.ts` eliminado porque era pass-through puro hacia el repositorio.
+- Fase 2 limpieza de capas: `notificaciones-use-cases.ts` y `templates-use-cases.ts` eliminados porque eran pass-through puros hacia repositorios.
 - Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos, RPCs de categorias y read RPCs de dashboard; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
-- Fase 0 side-effects: fallos esperados de sync de metodo de pago en ventas usan logging estructurado compartido sin cambiar el resultado `syncPaymentMethodFailed`.
+- Fase 0 side-effects: fallos esperados de sync de metodo de pago en ventas y cleanup de auth usan logging estructurado compartido sin cambiar el resultado del flujo principal.
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
 - Cobertura: suite actual en 160 tests pasando.
 
@@ -115,6 +115,10 @@ Commits de referencia de esta iteracion:
 - `71da426` feat: add feature flag foundation
 - `94f440a` refactor: centralize venta sync side-effect logging
 - `b86a454` test: cover feature flag hook
+- `daaad40` refactor: use typed events for venta tercero refresh
+- `18e3c37` refactor: log auth cleanup side effects
+- `46b7825` refactor: remove template pass-through use case
+- `cfced3a` refactor: use typed events for catalog refresh
 
 Validacion recurrente ejecutada por PR logico:
 
