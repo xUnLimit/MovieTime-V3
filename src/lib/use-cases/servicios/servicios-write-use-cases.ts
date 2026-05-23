@@ -1,3 +1,4 @@
+import { NotFoundError } from '@/lib/errors/domain-errors';
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import {
   createServicioWithInitialPayment,
@@ -137,7 +138,7 @@ export async function updateServicioUseCase(
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
   const servicio = await getServicioById<Servicio>(id);
-  if (!servicio) throw new Error('Servicio not found');
+  if (!servicio) throw new NotFoundError('Servicio not found', { servicioId: id });
 
   let finalUpdates = { ...updates };
   if (updates.metodoPagoId !== undefined) {
@@ -241,7 +242,7 @@ export async function deleteServicioUseCase(
   }
 ) {
   const servicio = await getServicioById<Servicio>(id);
-  if (!servicio) throw new Error('Servicio not found');
+  if (!servicio) throw new NotFoundError('Servicio not found', { servicioId: id });
 
   const pagosActuales = await queryPagosServicio<{ id: string; monto: number; moneda?: string }>([
     { field: 'servicioId', operator: '==', value: id },

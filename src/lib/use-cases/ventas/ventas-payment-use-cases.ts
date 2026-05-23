@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 
+import { ValidationError } from '@/lib/errors/domain-errors';
 import { toDateOnly } from '@/lib/supabase/dates';
 import {
   getPagoVentaById,
@@ -42,13 +43,13 @@ export async function renewVentaUseCase(
     logPrefix?: string;
   } = {}
 ): Promise<VentaPagoResult> {
-  if (!venta.id) throw new Error('Venta sin id');
+  if (!venta.id) throw new ValidationError('Venta sin id');
   const { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda } = getPagoValues(venta, input);
   const planId = input.planId ?? venta.planId;
   const planNombre = input.planNombre ?? venta.planNombre;
   const planTipoNombre = input.planTipoNombre ?? venta.planTipoNombre;
   if (!planId || !planNombre) {
-    throw new Error('Una renovación debe tener un plan seleccionado.');
+    throw new ValidationError('Una renovación debe tener un plan seleccionado.');
   }
 
   await crearPagoRenovacion(

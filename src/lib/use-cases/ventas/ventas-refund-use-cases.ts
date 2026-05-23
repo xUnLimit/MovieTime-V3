@@ -1,3 +1,4 @@
+import { InsufficientFundsError, ValidationError } from '@/lib/errors/domain-errors';
 import { toDateOnly, toIso } from '@/lib/supabase/dates';
 import {
   createVentaRefund,
@@ -26,15 +27,15 @@ export async function createVentaRefundUseCase(
     recordActivityLog?: RecordActivityLog;
   }
 ): Promise<VentaReembolsoResult> {
-  if (!venta.id) throw new Error('Venta sin id');
+  if (!venta.id) throw new ValidationError('Venta sin id');
 
   const monto = roundToDecimals(Number(input.monto) || 0);
-  if (monto <= 0) throw new Error('El monto del reembolso debe ser mayor a 0.');
+  if (monto <= 0) throw new ValidationError('El monto del reembolso debe ser mayor a 0.');
 
   const nota = input.nota?.trim() ?? '';
   const destinoReembolso = input.destinoReembolso?.trim() ?? '';
   if (!destinoReembolso) {
-    throw new Error('La cuenta destino del cliente es obligatoria.');
+    throw new ValidationError('La cuenta destino del cliente es obligatoria.');
   }
   const notaReembolso = [`Cuenta destino del cliente: ${destinoReembolso}`, nota]
     .filter((line) => line.length > 0)
@@ -42,7 +43,7 @@ export async function createVentaRefundUseCase(
 
   const motivoCorte = input.motivoCorte?.trim() ?? '';
   if (input.cortarServicio && !motivoCorte) {
-    throw new Error('El motivo de corte es obligatorio.');
+    throw new ValidationError('El motivo de corte es obligatorio.');
   }
 
   const moneda = input.moneda || venta.moneda || 'USD';
@@ -51,7 +52,11 @@ export async function createVentaRefundUseCase(
   const saldoDisponibleUsd = getNetPaidAmount(pagos);
 
   if (usd > saldoDisponibleUsd + 0.0001) {
-    throw new Error('El reembolso supera el saldo disponible de la venta.');
+    throw new InsufficientFundsError('El reembolso supera el saldo disponible de la venta.', {
+      ventaId: venta.id,
+      montoUsd: usd,
+      saldoDisponibleUsd,
+    });
   }
 
   const pagoId = await createVentaRefund({

@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 
+import { NotFoundError, ValidationError } from '@/lib/errors/domain-errors';
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { toDateOnly, toIso } from '@/lib/supabase/dates';
 import {
@@ -35,7 +36,7 @@ export async function createVentaUseCase(
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
   if (!ventaData.planId || !ventaData.planNombre) {
-    throw new Error('Una venta debe tener un plan seleccionado.');
+    throw new ValidationError('Una venta debe tener un plan seleccionado.');
   }
   const { pagos, ...ventaDataLimpia } = ventaData;
   const pagoInicial = pagos?.[0];
@@ -141,7 +142,7 @@ export async function updateVentaUseCase(
   }
 ) {
   const ventaAnterior = options.currentVenta ?? await getVentaById<VentaDoc>(id);
-  if (!ventaAnterior) throw new Error('Venta no encontrada');
+  if (!ventaAnterior) throw new NotFoundError('Venta no encontrada', { ventaId: id });
 
   let finalUpdates = { ...updates };
   if (updates.metodoPagoId !== undefined) {
