@@ -1,5 +1,6 @@
 import { supabase } from './client';
 import { toDateOnly, toIso } from './dates';
+import { currencyService } from '@/lib/services/currencyService';
 import { assertRpcStringId } from '@/lib/utils/safety';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 
@@ -78,7 +79,6 @@ export async function createPagoVenta(payload: Record<string, unknown>): Promise
 }
 
 async function convertAmountToUSD(amount: number, moneda: string) {
-  const { currencyService } = await import('@/lib/services/currencyService');
   const usd = await currencyService.convertToUSD(amount, moneda);
   return {
     usd,
