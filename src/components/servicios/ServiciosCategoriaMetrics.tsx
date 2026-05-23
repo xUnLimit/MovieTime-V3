@@ -1,9 +1,11 @@
 ﻿"use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { memo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Calendar, Monitor } from "lucide-react";
 
 import { MetricCard } from "@/components/shared/MetricCard";
+import { queryKeys } from "@/lib/query-keys";
 import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { Categoria, Servicio } from "@/types";
 
@@ -15,34 +17,22 @@ export const ServiciosCategoriaMetrics = memo(
   function ServiciosCategoriaMetrics({
     categoria,
   }: ServiciosCategoriaMetricsProps) {
-    const [proximosPagos, setProximosPagos] = useState(0);
-    const fetchingRef = useRef(false);
+    const categoriaId = categoria?.id ?? null;
+    const { data: proximosPagos = 0 } = useQuery({
+      queryKey: queryKeys.servicios.proximosPagosByCategoria(categoriaId ?? 'invalid'),
+      queryFn: async () => {
+        const en7Dias = new Date();
+        en7Dias.setDate(en7Dias.getDate() + 7);
 
-    useEffect(() => {
-      if (!categoria || fetchingRef.current) return;
+        const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
+          { field: "categoriaId", operator: "==", value: categoriaId },
+          { field: "fechaVencimiento", operator: "<=", value: en7Dias },
+        ]);
 
-      const fetchProximosPagos = async () => {
-        fetchingRef.current = true;
-        try {
-          const en7Dias = new Date();
-          en7Dias.setDate(en7Dias.getDate() + 7);
-
-          const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
-            { field: "categoriaId", operator: "==", value: categoria.id },
-            { field: "fechaVencimiento", operator: "<=", value: en7Dias },
-          ]);
-
-          setProximosPagos(servicios.length);
-        } catch (error) {
-          console.error("Error fetching próximos pagos:", error);
-          setProximosPagos(0);
-        } finally {
-          fetchingRef.current = false;
-        }
-      };
-
-      fetchProximosPagos();
-    }, [categoria]);
+        return servicios.length;
+      },
+      enabled: Boolean(categoriaId),
+    });
 
     if (!categoria) {
       return (
