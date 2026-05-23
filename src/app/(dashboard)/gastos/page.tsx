@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Tags } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,25 +11,27 @@ import { GastosTable } from '@/components/gastos/GastosTable';
 import { GastoForm } from '@/components/gastos/GastoForm';
 import { TipoGastoDialog } from '@/components/gastos/TipoGastoDialog';
 import { TiposGastoTable } from '@/components/gastos/TiposGastoTable';
+import { useGastos } from '@/hooks/use-gastos';
+import { useTiposGasto } from '@/hooks/use-tipos-gasto';
 import { useGastosStore } from '@/store/gastosStore';
 import { useTiposGastoStore } from '@/store/tiposGastoStore';
 import { Gasto, TipoGasto } from '@/types';
 
 function GastosPageContent() {
-  const { gastos, fetchGastos, deleteGasto } = useGastosStore();
-  const { tiposGasto, fetchTiposGasto, toggleActivo, deleteTipoGasto } = useTiposGastoStore();
+  const deleteGasto = useGastosStore((state) => state.deleteGasto);
+  const { toggleActivo, deleteTipoGasto } = useTiposGastoStore();
+  const { data: gastos = [], refetch: refetchGastos } = useGastos();
+  const { data: tiposGasto = [], refetch: refetchTiposGasto } = useTiposGasto();
   const [activeTab, setActiveTab] = useState('gastos');
   const [gastoDialogOpen, setGastoDialogOpen] = useState(false);
   const [tipoDialogOpen, setTipoDialogOpen] = useState(false);
   const [gastoToEdit, setGastoToEdit] = useState<Gasto | null>(null);
   const [tipoToEdit, setTipoToEdit] = useState<TipoGasto | null>(null);
 
-  useEffect(() => {
-    fetchGastos();
-    fetchTiposGasto();
-  }, [fetchGastos, fetchTiposGasto]);
-
   const tiposActivos = tiposGasto.filter((tipo) => tipo.activo);
+  const refetchGastosModule = async () => {
+    await Promise.all([refetchGastos(), refetchTiposGasto()]);
+  };
 
   const handleCreateGasto = () => {
     setGastoToEdit(null);
@@ -53,10 +55,17 @@ function GastosPageContent() {
 
   const handleToggleTipoActivo = async (tipoGasto: TipoGasto) => {
     await toggleActivo(tipoGasto.id);
+    await refetchTiposGasto();
   };
 
   const handleDeleteTipo = async (tipoGasto: TipoGasto) => {
     await deleteTipoGasto(tipoGasto.id);
+    await refetchTiposGasto();
+  };
+
+  const handleDeleteGasto = async (id: string) => {
+    await deleteGasto(id);
+    await refetchGastos();
   };
 
   return (
@@ -112,7 +121,7 @@ function GastosPageContent() {
             gastos={gastos}
             tiposGasto={tiposGasto}
             onEdit={handleEditGasto}
-            onDelete={deleteGasto}
+            onDelete={handleDeleteGasto}
           />
         </TabsContent>
 
@@ -131,12 +140,14 @@ function GastosPageContent() {
         onOpenChange={setGastoDialogOpen}
         gasto={gastoToEdit}
         tiposGasto={tiposGasto}
+        onSaved={refetchGastosModule}
       />
 
       <TipoGastoDialog
         open={tipoDialogOpen}
         onOpenChange={setTipoDialogOpen}
         tipoGasto={tipoToEdit}
+        onSaved={refetchGastosModule}
       />
     </div>
   );

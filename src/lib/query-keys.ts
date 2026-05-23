@@ -91,6 +91,14 @@ export const queryKeys = {
     all: ['templates'] as const,
     list: () => [...queryKeys.templates.all, 'list'] as const,
   },
+  gastos: {
+    all: ['gastos'] as const,
+    list: () => [...queryKeys.gastos.all, 'list'] as const,
+  },
+  tiposGasto: {
+    all: ['tipos-gasto'] as const,
+    list: () => [...queryKeys.tiposGasto.all, 'list'] as const,
+  },
   notificaciones: {
     all: ['notificaciones'] as const,
     lists: () => [...queryKeys.notificaciones.all, 'list'] as const,

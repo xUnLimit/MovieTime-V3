@@ -49,13 +49,14 @@ interface GastoFormProps {
   onOpenChange: (open: boolean) => void;
   gasto: Gasto | null;
   tiposGasto: TipoGasto[];
+  onSaved?: () => void | Promise<void>;
 }
 
 function toDateInputValue(date: Date) {
   return format(date, 'yyyy-MM-dd');
 }
 
-export function GastoForm({ open, onOpenChange, gasto, tiposGasto }: GastoFormProps) {
+export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: GastoFormProps) {
   const { createGasto, updateGasto } = useGastosStore();
   const [openFecha, setOpenFecha] = useState(false);
   const {
@@ -126,6 +127,7 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto }: GastoFormPr
         });
       }
 
+      await onSaved?.();
       onOpenChange(false);
     } catch (error) {
       toast.error(gasto ? 'Error al actualizar gasto' : 'Error al registrar gasto', {

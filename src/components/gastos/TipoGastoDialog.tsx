@@ -33,9 +33,10 @@ interface TipoGastoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tipoGasto: TipoGasto | null;
+  onSaved?: () => void | Promise<void>;
 }
 
-export function TipoGastoDialog({ open, onOpenChange, tipoGasto }: TipoGastoDialogProps) {
+export function TipoGastoDialog({ open, onOpenChange, tipoGasto, onSaved }: TipoGastoDialogProps) {
   const { createTipoGasto, updateTipoGasto } = useTiposGastoStore();
   const {
     register,
@@ -92,6 +93,7 @@ export function TipoGastoDialog({ open, onOpenChange, tipoGasto }: TipoGastoDial
         });
       }
 
+      await onSaved?.();
       onOpenChange(false);
     } catch (error) {
       toast.error(tipoGasto ? 'Error al actualizar tipo de gasto' : 'Error al crear tipo de gasto', {
