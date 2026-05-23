@@ -17,7 +17,13 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
-import { countNotificaciones, queryNotificaciones, removeNotificacion, updateNotificacion } from '@/lib/supabase/notifications-repository';
+import {
+  countNotificaciones,
+  queryNotificaciones,
+  queryNotifications,
+  removeNotificacion,
+  updateNotificacion,
+} from '@/lib/supabase/notifications-repository';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
 import { esNotificacionVenta, esNotificacionServicio, esNotificacionReposo } from '@/types/notificaciones';
@@ -244,10 +250,15 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
   deleteNotificacionesPorVenta: async (ventaId: string) => {
     const state = get();
 
-    // Find notifications to delete
-    const notifsToDelete = state.notificaciones.filter(
+    const localNotifsToDelete = state.notificaciones.filter(
       (n) => esNotificacionVenta(n) && n.ventaId === ventaId
     );
+    const notifsToDelete = localNotifsToDelete.length > 0
+      ? localNotifsToDelete
+      : await queryNotifications<(Notificacion & { id: string })>([
+          { field: 'entidad', operator: '==', value: 'venta' },
+          { field: 'ventaId', operator: '==', value: ventaId },
+        ]);
 
     // Optimistic update
     const updatedNotifs = state.notificaciones.filter(
@@ -294,10 +305,15 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
   deleteNotificacionesPorServicio: async (servicioId: string) => {
     const state = get();
 
-    // Find notifications to delete
-    const notifsToDelete = state.notificaciones.filter(
+    const localNotifsToDelete = state.notificaciones.filter(
       (n) => esNotificacionServicio(n) && n.servicioId === servicioId
     );
+    const notifsToDelete = localNotifsToDelete.length > 0
+      ? localNotifsToDelete
+      : await queryNotifications<(Notificacion & { id: string })>([
+          { field: 'entidad', operator: '==', value: 'servicio' },
+          { field: 'servicioId', operator: '==', value: servicioId },
+        ]);
 
     // Optimistic update
     const updatedNotifs = state.notificaciones.filter(

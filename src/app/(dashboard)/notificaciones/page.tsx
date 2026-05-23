@@ -16,7 +16,6 @@ import { VentasProximasTable } from '@/components/notificaciones/VentasProximasT
 import { ServiciosProximosTable } from '@/components/notificaciones/ServiciosProximosTable';
 import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNotificacionesTable';
 import { MetricCard } from '@/components/shared/MetricCard';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useNotificacionesMontos } from '@/hooks/use-notificaciones-montos';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { queryKeys } from '@/lib/query-keys';
@@ -92,7 +91,6 @@ function NotificacionesPageContent() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { data: notificaciones = [] } = useNotificaciones();
-  const fetchNotificaciones = useNotificacionesStore((state) => state.fetchNotificaciones);
   const ventasProximas = notificaciones.filter((notificacion) => notificacion.entidad === 'venta').length;
   const serviciosProximos = notificaciones.filter((notificacion) => notificacion.entidad === 'servicio').length;
   const reposoCompletados = notificaciones.filter((notificacion) => notificacion.entidad === 'reposo').length;
@@ -113,10 +111,7 @@ function NotificacionesPageContent() {
     const init = async () => {
       try {
         await sincronizarNotificaciones();
-        await Promise.all([
-          fetchNotificaciones(true),
-          queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
-        ]);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       } catch (error) {
         console.error('Error initializing notifications:', error);
         toast.error('Error al cargar notificaciones', { description: 'No se pudieron obtener las notificaciones. Intenta nuevamente.' });
@@ -124,7 +119,7 @@ function NotificacionesPageContent() {
     };
 
     init();
-  }, [fetchNotificaciones, queryClient]);
+  }, [queryClient]);
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
