@@ -29,10 +29,3 @@ export function fetchMetodosPagoByFiltersUseCase<T = MetodoPago>(filters: QueryF
   return queryMetodosPago<T>(filters);
 }
 
-export function fetchMetodosPagoTercerosUseCase<T = MetodoPago>() {
-  return queryMetodosPago<T>([{ field: 'asociadoA', operator: '==', value: 'tercero' }]);
-}
-
-export function fetchMetodosPagoServiciosUseCase<T = MetodoPago>() {
-  return queryMetodosPago<T>([{ field: 'asociadoA', operator: '==', value: 'servicio' }]);
-}
