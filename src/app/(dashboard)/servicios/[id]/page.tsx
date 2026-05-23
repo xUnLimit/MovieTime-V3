@@ -10,10 +10,10 @@ import { ServiciosCategoriaMetrics } from '@/components/servicios/ServiciosCateg
 import { ServiciosCategoriaTableDetalle } from '@/components/servicios/ServiciosCategoriaTableDetalle';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
+import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
 import { isUuid } from '@/lib/utils/safety';
-import { useCategoriasStore } from '@/store/categoriasStore';
 import { Servicio } from '@/types';
 import type { FilterOption } from '@/lib/supabase/pagination';
 
@@ -23,8 +23,7 @@ function ServiciosCategoriaPageContent() {
   const rawCategoriaId = Array.isArray(params.id) ? params.id[0] : params.id;
   const categoriaId = isUuid(rawCategoriaId) ? rawCategoriaId : null;
 
-  const categorias = useCategoriasStore((state) => state.categorias);
-  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const { data: categorias = [] } = useCategoriasFull();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [cicloFilter, setCicloFilter] = useState('todos');
@@ -32,10 +31,6 @@ function ServiciosCategoriaPageContent() {
   const [estadoFilter, setEstadoFilter] = useState('activo');
   const [pageSize, setPageSize] = useState(10);
   const isSearchMode = searchTerm.trim().length > 0;
-
-  useEffect(() => {
-    fetchCategorias();
-  }, [fetchCategorias]);
 
   // Construir filtros dinámicos
   const filters = useMemo(() => {
