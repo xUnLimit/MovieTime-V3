@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
 import { getCurrencySymbol } from '@/lib/constants';
-import { fetchMetodosPagoByFiltersUseCase, getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import {
   deleteServicioPagoUseCase,
   getServicioUseCase,
@@ -72,7 +73,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const [servicio, setServicio] = useState<Servicio | null>(null);
   const [categoria, setCategoria] = useState<CategoriaDetalle | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPagoDetalle | null>(null);
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -90,6 +90,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
 
   // Usar el hook para cargar pagos (con cache)
   const { pagos: pagosServicio, isLoading: pagosHistorialLoading, renovaciones, refresh: refreshPagos } = usePagosServicio(id);
+  const { data: metodosPago = [] } = useMetodosPagoServicios();
 
   // Cargar solo el servicio (1 lectura única)
   useEffect(() => {
@@ -126,7 +127,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
           setMetodoPago(null);
         }
 
-        // Nota: metodosPago (para dropdown) se carga en lazy load al abrir diálogo de renovación
       } catch (error) {
         console.error('Error cargando datos del servicio:', error);
         toast.error('Error al cargar el servicio', { description: 'Ocurrió un problema al obtener los datos. Intenta nuevamente.' });
@@ -207,22 +207,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     }
   };
 
-  // Lazy load de métodos de pago (solo cuando se necesita renovar)
-  const loadMetodosPagoIfNeeded = async () => {
-    if (metodosPago.length > 0) return; // Ya están cargados
-    try {
-      const methods = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
-        { field: 'asociadoA', operator: '==', value: 'servicio' }
-      ]);
-      setMetodosPago(methods);
-    } catch (error) {
-      console.error('Error cargando métodos de pago:', error);
-      setMetodosPago([]);
-    }
-  };
-
-  const handleRenovar = async () => {
-    await loadMetodosPagoIfNeeded();
+  const handleRenovar = () => {
     setRenovarDialogOpen(true);
   };
 
@@ -391,8 +376,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     setDeleteRenovacionDialogOpen(true);
   };
 
-  const handleEditarPago = async (pago: PagoServicio) => {
-    await loadMetodosPagoIfNeeded();
+  const handleEditarPago = (pago: PagoServicio) => {
     setPagoToEdit(pago);
     setEditarPagoDialogOpen(true);
   };
