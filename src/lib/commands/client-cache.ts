@@ -1,5 +1,7 @@
 import type { ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { useCategoriasStore } from '@/store/categoriasStore';
+import { useDashboardStore } from '@/store/dashboardStore';
 
 type CacheContext = {
   entity?: string;
@@ -7,7 +9,7 @@ type CacheContext = {
 };
 
 export function invalidateDashboardCache(context: CacheContext = {}) {
-  safeAsyncSideEffect(import('@/store/dashboardStore').then(({ useDashboardStore }) => {
+  safeAsyncSideEffect(Promise.resolve().then(() => {
     useDashboardStore.getState().invalidateCache();
   }), {
     operation: 'invalidateDashboardCache',
@@ -17,7 +19,7 @@ export function invalidateDashboardCache(context: CacheContext = {}) {
 }
 
 export function refreshCategoriasCache(context: CacheContext = {}) {
-  safeAsyncSideEffect(import('@/store/categoriasStore').then(({ useCategoriasStore }) => {
+  safeAsyncSideEffect(Promise.resolve().then(() => {
     useCategoriasStore.getState().fetchCategorias(true);
   }), {
     operation: 'refreshCategorias',
@@ -27,7 +29,7 @@ export function refreshCategoriasCache(context: CacheContext = {}) {
 }
 
 export function syncVentaPronosticoLocal(ventaId: string, pronostico: VentaPronostico | null) {
-  safeAsyncSideEffect(import('@/store/dashboardStore').then(({ useDashboardStore }) => {
+  safeAsyncSideEffect(Promise.resolve().then(() => {
     const currentStats = useDashboardStore.getState().stats;
     if (!currentStats) return;
 
@@ -54,7 +56,7 @@ export function syncServicioPronosticoLocal(
 ) {
   if (pronostico === undefined) return;
 
-  safeAsyncSideEffect(import('@/store/dashboardStore').then(({ useDashboardStore }) => {
+  safeAsyncSideEffect(Promise.resolve().then(() => {
     const store = useDashboardStore.getState();
     const currentStats = store.stats;
     if (!currentStats) return;
