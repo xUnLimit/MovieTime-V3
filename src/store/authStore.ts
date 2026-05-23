@@ -14,6 +14,7 @@ import {
   saveOfflineAuthUser,
   setOfflineAuthSessionActive,
 } from '@/lib/pwa/offline-auth';
+import { logAsyncSideEffectError } from '@/lib/utils/safety';
 
 const REMEMBER_KEY = 'auth-remember';
 const DASHBOARD_TOAST_SESSION_KEY = 'movietime:dashboard-toast-state';
@@ -99,7 +100,12 @@ export const useAuthStore = create<AuthState>()(
               isHydrated: true,
             });
           } catch (error) {
-            await supabaseSignOut().catch(() => undefined);
+            await supabaseSignOut().catch((signOutError) => {
+              logAsyncSideEffectError(signOutError, {
+                operation: 'supabaseSignOutAfterLoginFailure',
+                entity: 'auth',
+              });
+            });
             set({ isLoading: false, isHydrated: true });
             const message = error instanceof Error ? error.message : 'Error al iniciar sesion';
             throw new Error(message);
@@ -191,7 +197,12 @@ export const useAuthStore = create<AuthState>()(
                   setOfflineAuthSessionActive(decision === 'preserve');
                   return;
                 }
-                await supabaseSignOut().catch(() => undefined);
+                await supabaseSignOut().catch((signOutError) => {
+                  logAsyncSideEffectError(signOutError, {
+                    operation: 'supabaseSignOutAfterProfileFailure',
+                    entity: 'auth',
+                  });
+                });
                 clearAllAuthStorage();
                 set({ user: null, isAuthenticated: false, isLoading: false, isHydrated: true });
               }
