@@ -26,6 +26,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { formatSyncDate } from '@/lib/pwa/format-sync-date';
 import { EXECUTIVE_PUSH_BLOCKS } from '@/lib/pwa/push-constants';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import {
   getPushSubscriptionStatus,
   registerPushSubscription,
@@ -73,16 +74,21 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
 
   useEffect(() => {
     if (!open) return;
-    fetchConfig(true).catch((error) => {
-      console.error('Error fetching config:', error);
+    safeAsyncSideEffect(fetchConfig(true), {
+      operation: 'fetchConfig',
+      entity: 'config',
     });
-    hydrateOfflineState().catch(() => undefined);
-    getPushSubscriptionStatus()
-      .then((status) => {
+    safeAsyncSideEffect(hydrateOfflineState(), {
+      operation: 'hydrateOfflineState',
+      entity: 'pwa',
+    });
+    safeAsyncSideEffect(
+      getPushSubscriptionStatus().then((status) => {
         setPushSubscribed(status.subscribed);
         setNotificationPermission(status.permission);
-      })
-      .catch(() => undefined);
+      }),
+      { operation: 'getPushSubscriptionStatus', entity: 'pwa' },
+    );
   }, [open, fetchConfig, hydrateOfflineState, setNotificationPermission]);
 
   const availableYears = useMemo(() => {
@@ -262,7 +268,10 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
         toast.warning('Push procesada sin entregas. Verifica las suscripciones activas.');
       }
       // Refresh config so the "last sent" indicator reflects the test send.
-      fetchConfig(true).catch(() => undefined);
+      safeAsyncSideEffect(fetchConfig(true), {
+        operation: 'fetchConfigAfterPushTest',
+        entity: 'config',
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo enviar la push de prueba.');
     } finally {
