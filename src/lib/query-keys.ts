@@ -49,6 +49,7 @@ export const queryKeys = {
     list: (filters: unknown) => [...queryKeys.servicios.lists(), filters] as const,
     reposo: () => [...queryKeys.servicios.all, 'reposo'] as const,
     byCategoria: (categoriaId: string) => [...queryKeys.servicios.all, 'categoria', categoriaId] as const,
+    byIds: (serviciosKey: string) => [...queryKeys.servicios.all, 'ids', serviciosKey] as const,
     detail: (servicioId: string) => [...queryKeys.servicios.all, 'detail', servicioId] as const,
     pagos: (servicioId: string) => [...queryKeys.servicios.detail(servicioId), 'pagos'] as const,
     pagosTotalUsd: (signature: string) =>

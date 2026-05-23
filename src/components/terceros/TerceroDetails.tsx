@@ -1,7 +1,8 @@
 ﻿"use client";
 
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { differenceInCalendarDays } from "date-fns";
 import Link from "next/link";
 import {
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getCurrencySymbol } from "@/lib/constants";
 import { useVentasTercero } from "@/hooks/use-ventas-tercero";
+import { queryKeys } from "@/lib/query-keys";
 import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { formatearFecha, formatearFechaHora } from "@/lib/utils/calculations";
 import { toast } from "sonner";
@@ -52,14 +54,47 @@ interface TerceroDetailsProps {
   usuario: Tercero;
 }
 
+type TerceroServicioCredential = {
+  correo: string;
+  contrasena: string;
+  nombre: string;
+};
+
+async function fetchServiciosCredentialsByIds(
+  servicioIds: string[],
+): Promise<Record<string, TerceroServicioCredential>> {
+  const chunks: string[][] = [];
+  for (let i = 0; i < servicioIds.length; i += 10) {
+    chunks.push(servicioIds.slice(i, i + 10));
+  }
+
+  const allServicios = await Promise.all(
+    chunks.map((chunk) =>
+      fetchServiciosByFiltersUseCase<Record<string, unknown>>([
+        { field: "__name__", operator: "in", value: chunk },
+      ]),
+    ),
+  );
+
+  return allServicios.flat().reduce<Record<string, TerceroServicioCredential>>(
+    (acc, servicio) => {
+      const servicioId = servicio.id as string;
+      acc[servicioId] = {
+        correo: (servicio.correo as string) || "—",
+        contrasena: (servicio.contrasena as string) || "—",
+        nombre: (servicio.nombre as string) || "Servicio",
+      };
+      return acc;
+    },
+    {},
+  );
+}
+
 export function TerceroDetails({ usuario }: TerceroDetailsProps) {
   const isRevendedor = usuario.tipo === "revendedor";
   const { ventas: ventasTercero, renovacionesByServicio } = useVentasTercero(
     usuario.id,
   );
-  const [servicios, setServicios] = useState<
-    Record<string, { correo: string; contrasena: string; nombre: string }>
-  >({});
   const updateVenta = useVentasStore((s) => s.updateVenta);
   const updateServicio = useServiciosStore((s) => s.updateServicio);
   const [estadoDialog, setEstadoDialog] = useState<{
@@ -89,68 +124,17 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
     }
   };
 
-  // Query solo los servicios que el tercero tiene (en lugar de getAll)
-  useEffect(() => {
-    const servicioIds = Array.from(
-      new Set(ventasTercero.map((v) => v.servicioId).filter(Boolean)),
-    );
-
-    if (servicioIds.length === 0) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        // Chunks de 10 (limitación de 'in')
-        const chunks: string[][] = [];
-        for (let i = 0; i < servicioIds.length; i += 10) {
-          chunks.push(servicioIds.slice(i, i + 10));
-        }
-
-        const allServicios = await Promise.all(
-          chunks.map((chunk) =>
-            fetchServiciosByFiltersUseCase<Record<string, unknown>>([
-              { field: "__name__", operator: "in", value: chunk },
-            ]),
-          ),
-        );
-
-        if (cancelled) return;
-
-        const serviciosMap = allServicios.flat().reduce(
-          (acc, s) => {
-            acc[s.id as string] = {
-              correo: (s.correo as string) || "—",
-              contrasena: (s.contrasena as string) || "—",
-              nombre: (s.nombre as string) || "Servicio",
-            };
-            return acc;
-          },
-          {} as Record<
-            string,
-            { correo: string; contrasena: string; nombre: string }
-          >,
-        );
-
-        setServicios(
-          serviciosMap as Record<
-            string,
-            { correo: string; contrasena: string; nombre: string }
-          >,
-        );
-      } catch (error) {
-        console.error("Error cargando servicios:", error);
-        if (!cancelled) setServicios({});
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [ventasTercero]);
+  const servicioIds = useMemo(
+    () =>
+      Array.from(new Set(ventasTercero.map((venta) => venta.servicioId).filter(Boolean))).sort(),
+    [ventasTercero],
+  );
+  const serviciosKey = servicioIds.join("|");
+  const { data: servicios = {} } = useQuery({
+    queryKey: queryKeys.servicios.byIds(serviciosKey || "empty"),
+    queryFn: () => fetchServiciosCredentialsByIds(servicioIds),
+    enabled: servicioIds.length > 0,
+  });
 
   const getCicloPagoLabel = (ciclo?: string) => {
     const labels: Record<string, string> = {
