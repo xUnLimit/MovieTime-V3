@@ -11,9 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
+import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas-use-cases';
-import { useCategoriasStore } from '@/store/categoriasStore';
 import { useVentasStore } from '@/store/ventasStore';
 import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
@@ -21,8 +21,7 @@ import { FilterOption } from '@/lib/supabase/pagination';
 function VentasPageContent() {
   const deleteVenta = useVentasStore((state) => state.deleteVenta);
   const fetchCounts = useVentasStore((state) => state.fetchCounts);
-  const categorias = useCategoriasStore((state) => state.categorias);
-  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const { data: categorias = [] } = useCategoriasFull();
 
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'inactivas'>('todas');
   const [pageSize, setPageSize] = useState(10);
@@ -69,9 +68,6 @@ function VentasPageContent() {
     orderDirection: 'desc',
     includeTotalCount: true,
   });
-
-  // Cargar categorías al montar
-  useEffect(() => { fetchCategorias(); }, [fetchCategorias]);
 
   // Recargar ventas si se actualizó el nombre de un cliente desde el módulo de terceros
   useEffect(() => {
