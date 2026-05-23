@@ -26,9 +26,9 @@ import {
   useServiciosByCategoria,
   useVentasActivasByServicio,
 } from "@/components/ventas/form/useVentaFormQueries";
-import { useCategoriasStore } from "@/store/categoriasStore";
+import { useCategoriasFull } from "@/hooks/use-categorias-full";
+import { useTerceros } from "@/hooks/use-terceros";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useTercerosStore } from "@/store/tercerosStore";
 import type { VentaDoc } from "@/types";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/lib/constants";
@@ -76,23 +76,15 @@ interface VentasEditFormProps {
 
 export function VentasEditForm({ venta }: VentasEditFormProps) {
   const router = useRouter();
-  const categorias = useCategoriasStore((state) => state.categorias);
-  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const { data: categorias = [] } = useCategoriasFull();
   const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
-  const terceros = useTercerosStore((state) => state.terceros);
-  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
+  const { data: terceros = [] } = useTerceros();
 
   const [activeTab, setActiveTab] = useState<"datos" | "preview">("datos");
   const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
   const [serviciosWindowStart, setServiciosWindowStart] = useState(0);
   const [searchCliente, setSearchCliente] = useState("");
   const [tipoPlanId, setTipoPlanId] = useState("");
-
-  // Efecto inicial: solo cargar datos que no dependen de selección
-  useEffect(() => {
-    fetchCategorias();
-    fetchTerceros();
-  }, [fetchCategorias, fetchTerceros]);
 
   const {
     register,

@@ -84,6 +84,7 @@ export const queryKeys = {
   terceros: {
     all: ['terceros'] as const,
     lists: () => [...queryKeys.terceros.all, 'list'] as const,
+    list: (filters: unknown) => [...queryKeys.terceros.lists(), filters] as const,
     counts: () => [...queryKeys.terceros.all, 'counts'] as const,
     detail: (terceroId: string) => [...queryKeys.terceros.all, 'detail', terceroId] as const,
   },

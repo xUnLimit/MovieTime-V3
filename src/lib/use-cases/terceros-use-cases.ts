@@ -4,6 +4,7 @@ import { NotFoundError } from '@/lib/errors/domain-errors';
 import {
   countTerceros,
   createTercero,
+  getTerceros,
   getTerceroById,
   removeTercero,
   updateTercero,
@@ -22,6 +23,10 @@ export const TERCEROS_COLLECTION = ENTITIES.TERCEROS;
 
 export function getTerceroUseCase<T = Tercero>(id: string) {
   return getTerceroById<T>(id);
+}
+
+export function fetchTercerosUseCase<T = Tercero>() {
+  return getTerceros<T>();
 }
 
 function getTerceroSqlPayload(usuario: Partial<Tercero>) {

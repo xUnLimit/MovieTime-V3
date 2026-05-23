@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
+import { useTemplates } from "@/hooks/use-templates";
+import { useTerceros } from "@/hooks/use-terceros";
+import { queryKeys } from "@/lib/query-keys";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
 import {
@@ -15,10 +20,7 @@ import {
   changedCredentialsCount,
   hasCredentialChanges,
 } from "@/lib/utils/credentialNotification";
-import { useCategoriasStore } from "@/store/categoriasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useTemplatesStore } from "@/store/templatesStore";
-import { useTercerosStore } from "@/store/tercerosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio, VentaDoc } from "@/types";
 
@@ -52,16 +54,22 @@ export function ServicioEditForm({
   returnTo = "/servicios",
 }: ServicioEditFormProps) {
   const router = useRouter();
-  const { updateServicio, fetchCounts } = useServiciosStore();
-  const { categorias, fetchCategorias } = useCategoriasStore();
-  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
-  const credentialTemplate = useTemplatesStore((state) =>
-    state.getTemplateByTipo("actualizacion_credenciales"),
+  const queryClient = useQueryClient();
+  const { updateServicio } = useServiciosStore();
+  const { data: categorias = [] } = useCategoriasFull();
+  const { data: templates = [] } = useTemplates();
+  const credentialTemplate = useMemo(
+    () =>
+      templates.find(
+        (template) =>
+          template.tipo === "actualizacion_credenciales" && template.activo,
+      ),
+    [templates],
   );
   const enqueueWhatsAppMessages = useWhatsAppToastStore(
     (state) => state.enqueueMany,
   );
-  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
+  const { data: terceros = [] } = useTerceros();
   const { data: metodosPago = [] } = useMetodosPagoServicios();
   const [openFechaInicio, setOpenFechaInicio] = useState(false);
   const [openFechaVencimiento, setOpenFechaVencimiento] = useState(false);
@@ -71,11 +79,6 @@ export function ServicioEditForm({
   );
   const ultimoPago = pagosServicio[0];
   const perfilesOcupadosReal = usePerfilesOcupadosReal(servicio);
-
-  useEffect(() => {
-    fetchCategorias();
-    fetchTemplates();
-  }, [fetchCategorias, fetchTemplates]);
 
   const {
     register,
@@ -235,7 +238,10 @@ export function ServicioEditForm({
       });
 
       refreshPagos();
-      await Promise.all([fetchCategorias(true), fetchCounts(true)]);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
+      ]);
 
       if (changedCredentialsCount(credentialChanges) > 0) {
         try {
@@ -245,8 +251,6 @@ export function ServicioEditForm({
           ]);
 
           if (ventasActivas.length > 0) {
-            await fetchTerceros(true);
-            const terceros = useTercerosStore.getState().terceros;
             const tercerosById = new Map(
               terceros.map((tercero) => [tercero.id, tercero]),
             );

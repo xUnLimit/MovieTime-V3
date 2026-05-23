@@ -30,6 +30,9 @@ import {
   useServiciosByCategoria,
   useVentasActivasByServicio,
 } from "@/components/ventas/form/useVentaFormQueries";
+import { useCategoriasFull } from "@/hooks/use-categorias-full";
+import { useTemplates } from "@/hooks/use-templates";
+import { useTerceros } from "@/hooks/use-terceros";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCurrencySymbol } from "@/lib/constants";
 import {
@@ -44,26 +47,25 @@ import {
 } from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { rankServicios } from "@/lib/utils/servicioRanking";
-import { useCategoriasStore } from "@/store/categoriasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useTemplatesStore } from "@/store/templatesStore";
-import { useTercerosStore } from "@/store/tercerosStore";
 import { useVentasStore } from "@/store/ventasStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Plan, Servicio } from "@/types";
 
 export function VentasForm() {
   const router = useRouter();
-  const categorias = useCategoriasStore((state) => state.categorias);
-  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
+  const { data: categorias = [] } = useCategoriasFull();
   const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
-  const terceros = useTercerosStore((state) => state.terceros);
-  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
+  const { data: terceros = [] } = useTerceros();
   const createVenta = useVentasStore((state) => state.createVenta);
   const setPendingWhatsApp = useWhatsAppToastStore((state) => state.setPending);
-  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
-  const templateNotificacion = useTemplatesStore((state) =>
-    state.getTemplateByTipo("suscripcion"),
+  const { data: templates = [] } = useTemplates();
+  const templateNotificacion = useMemo(
+    () =>
+      templates.find(
+        (template) => template.tipo === "suscripcion" && template.activo,
+      ),
+    [templates],
   );
 
   const [activeTab, setActiveTab] = useState<"datos" | "preview">("datos");
@@ -117,13 +119,6 @@ export function VentasForm() {
       setNotifyCliente(false);
     }
   }, [estadoValue, notifyCliente]);
-
-  // Efecto inicial: solo cargar datos que no dependen de selección
-  useEffect(() => {
-    fetchCategorias();
-    fetchTerceros();
-    fetchTemplates();
-  }, [fetchCategorias, fetchTerceros, fetchTemplates]);
 
   const { data: metodosPagoTerceros = [] } = useMetodosPagoTercerosOptions();
   const { data: serviciosCategoria = [], isLoading: loadingServicios } =

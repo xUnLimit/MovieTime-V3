@@ -4,10 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FieldErrors } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useRouter } from "next/navigation";
+import { queryKeys } from "@/lib/query-keys";
 import { MetodoPago } from "@/types";
 import { AdditionalInfoSection } from "./form/AdditionalInfoSection";
 import { BasicInfoSection } from "./form/BasicInfoSection";
@@ -44,8 +46,8 @@ export function MetodoPagoForm({
   returnTo = "/metodos-pago",
 }: MetodoPagoFormProps) {
   const router = useRouter();
-  const { createMetodoPago, updateMetodoPago, fetchCounts } =
-    useMetodosPagoStore();
+  const queryClient = useQueryClient();
+  const { createMetodoPago, updateMetodoPago } = useMetodosPagoStore();
   const [activeTab, setActiveTab] = useState("basica");
   const [paisSearch, setPaisSearch] = useState("");
   const [isBasicaTabComplete, setIsBasicaTabComplete] = useState(
@@ -266,7 +268,7 @@ export function MetodoPagoForm({
             metodoPagoData.fechaExpiracion = data.fechaExpiracion;
         }
         await createMetodoPago(metodoPagoData);
-        await fetchCounts();
+        await queryClient.invalidateQueries({ queryKey: queryKeys.metodosPago.all });
         toast.success("Método de pago creado", {
           description:
             "El nuevo método de pago ha sido registrado correctamente.",
@@ -297,7 +299,7 @@ export function MetodoPagoForm({
           updates.fechaExpiracion = data.fechaExpiracion || "";
         }
         await updateMetodoPago(metodoPago.id, updates);
-        await fetchCounts();
+        await queryClient.invalidateQueries({ queryKey: queryKeys.metodosPago.all });
         toast.success("Método de pago actualizado", {
           description:
             "Los datos del método de pago han sido guardados correctamente.",

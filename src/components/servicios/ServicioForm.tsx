@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -12,8 +13,12 @@ import {
   servicioSchema,
   type ServicioFormData,
 } from "@/features/servicios/servicio-form-schema";
+import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
+import { useTemplates } from "@/hooks/use-templates";
+import { useTerceros } from "@/hooks/use-terceros";
+import { queryKeys } from "@/lib/query-keys";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import {
   countVentasActivasByServicioUseCase,
@@ -25,10 +30,7 @@ import {
   hasCredentialChanges,
 } from "@/lib/utils/credentialNotification";
 import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
-import { useCategoriasStore } from "@/store/categoriasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useTemplatesStore } from "@/store/templatesStore";
-import { useTercerosStore } from "@/store/tercerosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio, VentaDoc } from "@/types";
 
@@ -49,16 +51,20 @@ export function ServicioForm({
   returnTo = "/servicios",
 }: ServicioFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const createServicio = useServiciosStore((state) => state.createServicio);
   const updateServicio = useServiciosStore((state) => state.updateServicio);
-  const fetchCounts = useServiciosStore((state) => state.fetchCounts);
-  const categorias = useCategoriasStore((state) => state.categorias);
-  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
-  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
-  const credentialTemplate = useTemplatesStore((state) =>
-    state.getTemplateByTipo("actualizacion_credenciales"),
+  const { data: categorias = [] } = useCategoriasFull();
+  const { data: templates = [] } = useTemplates();
+  const credentialTemplate = useMemo(
+    () =>
+      templates.find(
+        (template) =>
+          template.tipo === "actualizacion_credenciales" && template.activo,
+      ),
+    [templates],
   );
-  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
+  const { data: terceros = [] } = useTerceros();
   const enqueueWhatsAppMessages = useWhatsAppToastStore(
     (state) => state.enqueueMany,
   );
@@ -96,11 +102,6 @@ export function ServicioForm({
       setPerfilesOcupadosReal(count),
     );
   }, [servicio?.id]);
-
-  useEffect(() => {
-    fetchCategorias();
-    fetchTemplates();
-  }, [fetchCategorias, fetchTemplates]);
 
   const {
     register,
@@ -457,8 +458,6 @@ export function ServicioForm({
           ]);
 
           if (ventasActivas.length > 0) {
-            await fetchTerceros(true);
-            const terceros = useTercerosStore.getState().terceros;
             const tercerosById = new Map(
               terceros.map((tercero) => [tercero.id, tercero]),
             );
@@ -524,8 +523,8 @@ export function ServicioForm({
       }
 
       await Promise.all([
-        fetchCategorias(true),
-        fetchCounts(true),
+        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
       ]);
 
       router.push(returnTo);
