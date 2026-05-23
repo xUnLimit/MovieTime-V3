@@ -37,8 +37,8 @@ import { getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 import { useAuthStore } from '@/store/authStore';
 import { useConfigStore } from '@/store/configStore';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
-import { useDashboardStore } from '@/store/dashboardStore';
 import { usePwaStore } from '@/store/pwaStore';
+import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 interface ConfiguracionDialogProps {
   open: boolean;
@@ -48,7 +48,7 @@ interface ConfiguracionDialogProps {
 
 export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogProps) {
   const user = useAuthStore((state) => state.user);
-  const { stats } = useDashboardStore();
+  const { data: stats } = useDashboardStats();
   const { selectedYear, setSelectedYear } = useDashboardFilterStore();
   const { config, fetchConfig, updateExecutivePush } = useConfigStore();
   const {

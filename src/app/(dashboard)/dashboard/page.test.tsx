@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const fetchDashboardMock = vi.fn();
 const fetchNotificacionesMock = vi.fn();
 
 vi.mock('next/dynamic', () => ({
@@ -39,21 +38,6 @@ vi.mock('@/components/ui/card', () => ({
 
 vi.mock('@/components/ui/skeleton', () => ({
   Skeleton: () => <div>Skeleton</div>,
-}));
-
-const dashboardStoreHook = Object.assign(
-  vi.fn((selector?: (state: { fetchDashboard: typeof fetchDashboardMock }) => unknown) => {
-    const state = {
-      fetchDashboard: fetchDashboardMock,
-    };
-
-    return selector ? selector(state) : state;
-  }),
-  { getState: () => ({ fetchDashboard: fetchDashboardMock }) }
-);
-
-vi.mock('@/store/dashboardStore', () => ({
-  useDashboardStore: dashboardStoreHook,
 }));
 
 const useNotificacionesStoreMock = Object.assign(
@@ -102,7 +86,6 @@ describe('Dashboard header', () => {
     globalThis.__movietimeDashboardToastState = undefined;
     window.sessionStorage.clear();
 
-    fetchDashboardMock.mockResolvedValue(undefined);
     fetchNotificacionesMock.mockResolvedValue(undefined);
   });
 

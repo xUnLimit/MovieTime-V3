@@ -15,9 +15,9 @@ import {
   LabelList,
 } from 'recharts';
 import type { LabelProps } from 'recharts';
-import { useDashboardStore } from '@/store/dashboardStore';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
 const COLORS = [
   '#3b82f6', // blue
@@ -93,7 +93,8 @@ function getValueDomain(data: Array<{ valor: number }>, minNegativeAxisRatio: nu
 }
 
 export function RevenueByCategory() {
-  const { stats, isLoading } = useDashboardStore();
+  const { data: dashboardHome, isLoading } = useDashboardHome();
+  const stats = dashboardHome?.stats;
   const { selectedYear } = useDashboardFilterStore();
   const isCompactChart = useIsCompactChart();
 

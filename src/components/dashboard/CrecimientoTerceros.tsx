@@ -24,12 +24,12 @@ import {
 import type { LabelProps } from 'recharts';
 import { subMonths, format, eachDayOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useDashboardStore } from '@/store/dashboardStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import type { TercerosMes, TercerosDia } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
 const PERIOD_OPTIONS = [
   { value: 'actual', label: 'Mes actual' },
@@ -51,7 +51,8 @@ export function CrecimientoTerceros() {
   const [animacionDireccion, setAnimacionDireccion] = useState<1 | -1>(1);
   const animationTimerRef = useRef<number | null>(null);
 
-  const { stats, isLoading } = useDashboardStore();
+  const { data: dashboardHome, isLoading } = useDashboardHome();
+  const stats = dashboardHome?.stats;
   const vista = VISTAS[vistaIndex];
   const totalVistas = VISTAS.length;
   const puedeIrAtras = vistaIndex > 0;

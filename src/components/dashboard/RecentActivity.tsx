@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { useDashboardStore } from '@/store/dashboardStore';
 import { getActivityDisplayConfig } from '@/lib/utils/activityDisplayHelpers';
+import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
 export function RecentActivity() {
-  const { recentActivity, isLoading } = useDashboardStore();
-  const recentLogs = recentActivity;
+  const { data: dashboardHome, isLoading } = useDashboardHome();
+  const recentLogs = dashboardHome?.recentActivity ?? [];
 
   return (
     <Card className="flex flex-col py-1">

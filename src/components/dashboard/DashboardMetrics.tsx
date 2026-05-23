@@ -1,18 +1,19 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useDashboardStore } from '@/store/dashboardStore';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { TrendingUp, TrendingDown, Wallet, CalendarClock, CalendarRange } from 'lucide-react';
 import { usePronosticoFinanciero } from '@/hooks/use-pronostico-financiero';
+import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
 function formatUSD(value: number): string {
   return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function DashboardMetrics() {
-  const { stats, isLoading, error } = useDashboardStore();
+  const { data: dashboardHome, isLoading, error } = useDashboardHome();
+  const stats = dashboardHome?.stats;
   const { selectedYear } = useDashboardFilterStore();
   const { meses, isLoading: isLoadingMensual } = usePronosticoFinanciero();
   const gastoMensual = meses[0]?.gastos ?? null;

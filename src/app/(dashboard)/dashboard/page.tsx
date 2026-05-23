@@ -96,7 +96,6 @@ const RevenueByCategory = dynamic(
   { loading: () => <RevenueByCategorySkeleton />, ssr: false }
 );
 import { NotificationBell } from '@/components/notificaciones/NotificationBell';
-import { useDashboardStore } from '@/store/dashboardStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { esNotificacionVenta, esNotificacionServicio } from '@/types/notificaciones';
 import { Bell, ArrowRight } from 'lucide-react';
@@ -161,13 +160,8 @@ function releaseDashboardToastRuntimeSlot() {
 }
 
 export default function DashboardPage() {
-  const fetchDashboard = useDashboardStore((state) => state.fetchDashboard);
   const fetchNotificaciones = useNotificacionesStore((state) => state.fetchNotificaciones);
   const toastShown = useRef(false);
-
-  useEffect(() => {
-    fetchDashboard();
-  }, [fetchDashboard]);
 
   // Fetch notifications and show welcome toast on first visit
   useEffect(() => {

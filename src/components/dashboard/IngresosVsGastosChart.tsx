@@ -20,12 +20,12 @@ import {
 } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, subMonths, eachMonthOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useDashboardStore } from '@/store/dashboardStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import type { IngresosMes, IngresosDia } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, Check } from 'lucide-react';
+import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
 interface DiaData {
   dia: string;
@@ -42,7 +42,8 @@ const PERIOD_OPTIONS = [
 
 export function IngresosVsGastosChart() {
   const [selectedMonth, setSelectedMonth] = useState('actual');
-  const { stats, isLoading } = useDashboardStore();
+  const { data: dashboardHome, isLoading } = useDashboardHome();
+  const stats = dashboardHome?.stats;
   const selectedMonthLabel =
     PERIOD_OPTIONS.find((option) => option.value === selectedMonth)?.label ?? 'Mes actual';
   const axisColor = 'var(--muted-foreground)';
