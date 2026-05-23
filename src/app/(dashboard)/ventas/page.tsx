@@ -14,6 +14,7 @@ import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
 import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
@@ -73,11 +74,11 @@ function VentasPageContent() {
 
   // Recargar ventas si se actualizó el nombre de un cliente desde el módulo de terceros
   useEffect(() => {
-    const handler = () => {
+    const unsubscribe = storeEventBus.on('TERCERO_NOMBRE_UPDATED', () => {
       refresh();
-    };
-    window.addEventListener('tercero-nombre-updated', handler);
-    return () => window.removeEventListener('tercero-nombre-updated', handler);
+    });
+
+    return unsubscribe;
   }, [refresh]);
 
   const tituloTab = useMemo(() => {
@@ -123,14 +124,14 @@ function VentasPageContent() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
     };
 
-    window.addEventListener('venta-created', handleVentaChange);
-    window.addEventListener('venta-updated', handleVentaChange);
-    window.addEventListener('venta-deleted', handleVentaChange);
+    const unsubscribeCreated = storeEventBus.on('VENTA_CREATED', handleVentaChange);
+    const unsubscribeUpdated = storeEventBus.on('VENTA_UPDATED', handleVentaChange);
+    const unsubscribeDeleted = storeEventBus.on('VENTA_DELETED', handleVentaChange);
 
     return () => {
-      window.removeEventListener('venta-created', handleVentaChange);
-      window.removeEventListener('venta-updated', handleVentaChange);
-      window.removeEventListener('venta-deleted', handleVentaChange);
+      unsubscribeCreated();
+      unsubscribeUpdated();
+      unsubscribeDeleted();
     };
   }, [queryClient, refresh]);
 

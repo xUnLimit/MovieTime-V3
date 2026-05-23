@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
-import { TERCERO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/terceroMetodoPago';
 import type { Categoria, MetodoPago, Servicio, Tercero } from '@/types';
 
 export function useCategoriaDetail(categoriaId: string | null) {
@@ -39,14 +39,15 @@ export function useTerceroDetail(terceroId: string | null) {
   useEffect(() => {
     if (!terceroId) return;
 
-    const invalidateTercero = () => {
+    const unsubscribe = storeEventBus.on('TERCERO_METODO_PAGO_UPDATED', (event) => {
+      if (event.terceroId !== terceroId) return;
+
       void queryClient.invalidateQueries({
         queryKey: queryKeys.terceros.detail(terceroId),
       });
-    };
+    });
 
-    window.addEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, invalidateTercero);
-    return () => window.removeEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, invalidateTercero);
+    return unsubscribe;
   }, [queryClient, terceroId]);
 
   return useQuery({

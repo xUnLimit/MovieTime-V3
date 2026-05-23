@@ -110,26 +110,12 @@ export function useVentasTercero(usuarioId: string) {
     const unsubscribeServicioUpdated = storeEventBus.on('SERVICIO_UPDATED', invalidate);
     const unsubscribeServiciosInvalidated = storeEventBus.on('SERVICIOS_INVALIDATED', invalidate);
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('venta-created', invalidate);
-      window.addEventListener('venta-updated', invalidate);
-      window.addEventListener('venta-deleted', invalidate);
-      window.addEventListener('servicio-updated', invalidate);
-    }
-
     return () => {
       unsubscribeVentaCreated();
       unsubscribeVentaUpdated();
       unsubscribeVentaDeleted();
       unsubscribeServicioUpdated();
       unsubscribeServiciosInvalidated();
-
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('venta-created', invalidate);
-        window.removeEventListener('venta-updated', invalidate);
-        window.removeEventListener('venta-deleted', invalidate);
-        window.removeEventListener('servicio-updated', invalidate);
-      }
     };
   }, [queryClient, queryEnabled, queryKey]);
 

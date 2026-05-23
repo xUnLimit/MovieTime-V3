@@ -18,6 +18,7 @@ import { invalidateVentasPorTercerosCache } from '@/hooks/use-ventas-por-tercero
 import { useTerceros } from '@/hooks/use-terceros';
 import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
 import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
@@ -25,7 +26,6 @@ import { FilterOption } from '@/lib/supabase/pagination';
 import {
   getTerceroMetodoPagoNombre,
   isPendingTerceroPaymentMethodId,
-  TERCERO_METODO_PAGO_UPDATED_EVENT,
   withPendingTerceroPaymentMethod,
 } from '@/lib/utils/terceroMetodoPago';
 import type { MetodoPago, Tercero } from '@/types';
@@ -197,8 +197,7 @@ function TercerosPageContent() {
     setSearchPageIndex(0);
   }, []);
 
-  // Escuchar cuando se elimina una venta en la MISMA página (ej: desde TerceroDetails)
-  // La sincronización entre páginas diferentes ya la maneja useVentasPorTerceros via shouldInvalidateCache()
+  // Escuchar cambios emitidos por otros modulos mientras esta pagina esta montada.
   useEffect(() => {
     const handleVentaDeleted = () => {
       invalidateVentasPorTercerosCache();
@@ -216,14 +215,17 @@ function TercerosPageContent() {
       void refetchMetodoPagoOptions();
     };
 
-    window.addEventListener('venta-deleted', handleVentaDeleted);
-    window.addEventListener('tercero-deleted', handleTerceroDeleted);
-    window.addEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, handleTerceroMetodoPagoUpdated);
+    const unsubscribeVentaDeleted = storeEventBus.on('VENTA_DELETED', handleVentaDeleted);
+    const unsubscribeTerceroDeleted = storeEventBus.on('TERCERO_DELETED', handleTerceroDeleted);
+    const unsubscribeMetodoPagoUpdated = storeEventBus.on(
+      'TERCERO_METODO_PAGO_UPDATED',
+      handleTerceroMetodoPagoUpdated,
+    );
 
     return () => {
-      window.removeEventListener('venta-deleted', handleVentaDeleted);
-      window.removeEventListener('tercero-deleted', handleTerceroDeleted);
-      window.removeEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, handleTerceroMetodoPagoUpdated);
+      unsubscribeVentaDeleted();
+      unsubscribeTerceroDeleted();
+      unsubscribeMetodoPagoUpdated();
     };
   }, [queryClient, refetchMetodoPagoOptions, refresh]);
 

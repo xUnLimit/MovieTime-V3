@@ -100,23 +100,11 @@ export function useVentasPorTerceros(clienteIds: string[], { enabled = true } = 
     const unsubscribeUpdated = storeEventBus.on('VENTA_UPDATED', invalidate);
     const unsubscribeDeleted = storeEventBus.on('VENTA_DELETED', invalidate);
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('venta-created', invalidate);
-      window.addEventListener('venta-updated', invalidate);
-      window.addEventListener('venta-deleted', invalidate);
-    }
-
     return () => {
       invalidationListeners.delete(invalidate);
       unsubscribeCreated();
       unsubscribeUpdated();
       unsubscribeDeleted();
-
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('venta-created', invalidate);
-        window.removeEventListener('venta-updated', invalidate);
-        window.removeEventListener('venta-deleted', invalidate);
-      }
     };
   }, [queryClient, queryEnabled, queryKey]);
 
