@@ -4,6 +4,7 @@ import { devtools } from 'zustand/middleware';
 
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { syncMetodoPagoDependencias } from '@/lib/services/metodoPagoSyncService';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { CACHE_TTL_MS } from '@/lib/constants';
@@ -149,7 +150,6 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
           // Si cambió el nombre o la moneda, sincronizar en cascada todas las entidades que usan este método
           if ((cambioNombre || cambioMoneda) && oldMetodo) {
-            const { syncMetodoPagoDependencias } = await import('@/lib/services/metodoPagoSyncService');
             await syncMetodoPagoDependencias({
               id,
               nombre: updates.nombre,

@@ -13,6 +13,7 @@ import {
 } from '@/lib/use-cases/terceros-use-cases';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
+import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Tercero } from '@/types';
 
@@ -145,7 +146,6 @@ export const useTercerosStore = create<TercerosState>()(
           });
 
           if (shouldRefreshNotificaciones) {
-            const { useNotificacionesStore } = await import('@/store/notificacionesStore');
             await useNotificacionesStore.getState().fetchNotificaciones(true);
           }
 

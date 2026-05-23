@@ -12,6 +12,7 @@ import {
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { useGastosStore } from '@/store/gastosStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { TipoGasto } from '@/types';
 
@@ -143,8 +144,8 @@ export const useTiposGastoStore = create<TiposGastoState>()(
         await updateTipoGasto(id, finalUpdates);
 
         if (finalUpdates.nombre && finalUpdates.nombre !== tipoActual.nombre) {
-          safeAsyncSideEffect(import('./gastosStore')
-            .then(({ useGastosStore }) => {
+          safeAsyncSideEffect(Promise.resolve()
+            .then(() => {
               useGastosStore.setState((state) => ({
                 gastos: state.gastos.map((gasto) =>
                   gasto.tipoGastoId === id

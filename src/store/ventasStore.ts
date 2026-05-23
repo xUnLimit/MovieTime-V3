@@ -12,6 +12,8 @@ import { syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
+import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { useServiciosStore } from '@/store/serviciosStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
@@ -127,7 +129,6 @@ export const useVentasStore = create<VentasState>()(
           });
 
           if (serviceProfileDelta) {
-            const { useServiciosStore } = await import('./serviciosStore');
             await useServiciosStore
               .getState()
               .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
@@ -171,14 +172,13 @@ export const useVentasStore = create<VentasState>()(
           });
 
           if (serviceProfileDelta) {
-            const { useServiciosStore } = await import('./serviciosStore');
             await useServiciosStore
               .getState()
               .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
           }
 
           safeAsyncSideEffect(
-            import('./notificacionesStore').then(({ useNotificacionesStore }) =>
+            Promise.resolve().then(() =>
               useNotificacionesStore.getState().deleteNotificacionesPorVenta(id)
             ),
             {

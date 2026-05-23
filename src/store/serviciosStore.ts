@@ -15,6 +15,7 @@ import { syncServicioPronosticoLocal } from '@/lib/commands/client-cache';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
+import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Servicio } from '@/types/servicios';
 
@@ -164,7 +165,7 @@ export const useServiciosStore = create<ServiciosState>()(
           });
 
           safeAsyncSideEffect(
-            import('./notificacionesStore').then(({ useNotificacionesStore }) =>
+            Promise.resolve().then(() =>
               useNotificacionesStore.getState().deleteNotificacionesPorServicio(id)
             ),
             {
