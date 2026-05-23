@@ -37,6 +37,8 @@ export const queryKeys = {
     list: (filters: unknown) => [...queryKeys.ventas.lists(), filters] as const,
     detail: (ventaId: string) => [...queryKeys.ventas.all, 'detail', ventaId] as const,
     pagos: (ventaId: string) => [...queryKeys.ventas.detail(ventaId), 'pagos'] as const,
+    pagosTotalUsd: (signature: string) =>
+      [...queryKeys.ventas.all, 'pagos-total-usd', signature] as const,
     byTercero: (terceroId: string) => [...queryKeys.ventas.all, 'tercero', terceroId] as const,
     byTerceros: (tercerosKey: string) => [...queryKeys.ventas.all, 'terceros', tercerosKey] as const,
     byServicio: (servicioId: string) => [...queryKeys.ventas.all, 'servicio', servicioId] as const,

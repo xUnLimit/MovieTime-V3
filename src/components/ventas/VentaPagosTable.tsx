@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
   sumInUSD,
   formatAggregateInUSD,
 } from "@/lib/utils/calculations";
+import { queryKeys } from "@/lib/query-keys";
 import { VentaPago } from "@/types";
 
 interface VentaPagosTableProps {
@@ -44,34 +46,43 @@ export const VentaPagosTable = memo(function VentaPagosTable({
   onEdit,
   onDelete,
 }: VentaPagosTableProps) {
-  const [totalIngresosUSD, setTotalIngresosUSD] = useState<number>(0);
-  const [isCalculatingTotal, setIsCalculatingTotal] = useState(false);
+  const totalSignature = useMemo(
+    () =>
+      pagos
+        .map((pago) =>
+          [
+            pago.id,
+            pago.estado,
+            pago.total ?? 0,
+            pago.moneda || moneda || "USD",
+          ].join(":"),
+        )
+        .join("|"),
+    [pagos, moneda],
+  );
 
-  useEffect(() => {
-    const calculateTotal = async () => {
-      setIsCalculatingTotal(true);
-      try {
-        const total = await sumInUSD(
-          pagos.map((p) => ({
-            monto:
-              p.estado === "reembolsado"
-                ? -(p.total ?? 0)
-                : p.estado === "anulado"
-                  ? 0
-                  : p.total ?? 0,
-            moneda: p.moneda || moneda || "USD",
-          })),
-        );
-        setTotalIngresosUSD(total);
-      } catch (error) {
-        console.error("[VentaPagosTable] Error calculating total:", error);
-        setTotalIngresosUSD(0);
-      } finally {
-        setIsCalculatingTotal(false);
-      }
-    };
-    calculateTotal();
-  }, [pagos, moneda]);
+  const { data: totalIngresosUSD = 0, isFetching: isCalculatingTotal } =
+    useQuery({
+      queryKey: queryKeys.ventas.pagosTotalUsd(totalSignature),
+      queryFn: async () => {
+        try {
+          return await sumInUSD(
+            pagos.map((p) => ({
+              monto:
+                p.estado === "reembolsado"
+                  ? -(p.total ?? 0)
+                  : p.estado === "anulado"
+                    ? 0
+                    : p.total ?? 0,
+              moneda: p.moneda || moneda || "USD",
+            })),
+          );
+        } catch (error) {
+          console.error("[VentaPagosTable] Error calculating total:", error);
+          return 0;
+        }
+      },
+    });
 
   return (
     <>
