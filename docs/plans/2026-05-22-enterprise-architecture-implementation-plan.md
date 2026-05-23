@@ -27,7 +27,7 @@ Completado hasta esta iteracion:
 - PR 5/6 slice: adapter tipado para `create_venta_with_initial_payment`.
 - PR 7 slice: tests de ventas ampliados para create, renew, refund, delete y chunking.
 - PR 8/9 slice: infraestructura React Query y StoreEventBus base.
-- Migraciones adicionales de Fase 3: hooks principales migrados a React Query, paginas detalle/edicion de catalogos migradas a queries, reposo migrado a queries, dependencias de formularios de ventas y servicios migradas a queries, detalle de perfiles migrado a query, ranking de transferencia de ventas en servicio migrado a query, credenciales de servicios en tercero migradas a query, filtros de pago de terceros migrados a query, totales USD de pagos de ventas/servicios migrados a queries, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
+- Migraciones adicionales de Fase 3: hooks principales migrados a React Query, paginas detalle/edicion de catalogos migradas a queries, reposo migrado a queries, dependencias de formularios de ventas y servicios migradas a queries, detalle de perfiles migrado a query, ranking de transferencia de ventas en servicio migrado a query, credenciales de servicios en tercero migradas a query, filtros de pago de terceros migrados a query, totales USD de pagos de ventas/servicios migrados a queries, detalle de servicio y ventas por servicio migrados a query, metodos de pago/categorias/editor de mensajes migrados a query, categorias compartidas usadas por paginas de ventas y servicios, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
 - Fase 2 ventas: `ventas-use-cases.ts` convertido en barrel; use-cases separados en `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`.
 - Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
@@ -79,6 +79,15 @@ Commits de referencia de esta iteracion:
 - `8e091eb` feat: query servicio detail payment methods
 - `2594310` feat: query tercero payment filters
 - `22d8af3` feat: query venta payment total
+- `3756972` feat: query servicio detail ventas
+- `21cc716` feat: query servicio detail bundle
+- `836adf1` feat: query tercero payment methods
+- `1c1a988` feat: query payment methods page
+- `2a52e2a` feat: query servicio category page
+- `d34f9ad` feat: query categorias page
+- `66507a9` feat: query servicios page categories
+- `8adaade` feat: query ventas page categories
+- `1d8add3` feat: query message editor templates
 
 Validacion recurrente ejecutada por PR logico:
 
