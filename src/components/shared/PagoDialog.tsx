@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -10,11 +10,11 @@ import { Switch } from '@/components/ui/switch';
 import { Pencil, RefreshCw } from 'lucide-react';
 import { addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { PagoServicio } from '@/types';
+import type { PagoServicio, TemplateMensaje } from '@/types';
 import { getCurrencySymbol } from '@/lib/constants';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import { generarMensajeVenta } from '@/lib/utils/whatsapp';
-import { useTemplatesStore } from '@/store/templatesStore';
+import { useTemplates } from '@/hooks/use-templates';
 import {
   getTerceroMetodoPagoMoneda,
   getTerceroMetodoPagoNombre,
@@ -51,7 +51,12 @@ export function PagoDialog(props: PagoDialogProps) {
   const servicio = props.context === 'servicio' ? props.servicio : null;
   const pago = props.pago ?? null;
   const { metodosPago } = props;
-  const { getTemplateByTipo } = useTemplatesStore();
+  const { data: templates = [] } = useTemplates();
+  const getTemplateByTipo = useCallback(
+    (tipo: TemplateMensaje['tipo']) =>
+      templates.find((template) => template.tipo === tipo && template.activo),
+    [templates],
+  );
   const isVentaRenew = isVenta && props.mode === 'renew';
 
   const defaultMetodoPagoId = isVenta

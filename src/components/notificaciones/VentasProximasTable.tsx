@@ -9,11 +9,12 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Card } from '@/components/ui/card';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
+import { useTemplates } from '@/hooks/use-templates';
 import {
   invalidateDashboardCache,
   syncVentaPronosticoLocal,
@@ -27,9 +28,8 @@ import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useTemplatesStore } from '@/store/templatesStore';
 import { useVentasStore } from '@/store/ventasStore';
-import type { MetodoPago, VentaDoc } from '@/types';
+import type { MetodoPago, TemplateMensaje, VentaDoc } from '@/types';
 import type { Plan } from '@/types/categorias';
 
 import {
@@ -50,7 +50,12 @@ export function VentasProximasTable() {
     deleteNotificacionesPorVenta,
     fetchNotificaciones,
   } = useNotificacionesStore();
-  const { getTemplateByTipo } = useTemplatesStore();
+  const { data: templates = [] } = useTemplates();
+  const getTemplateByTipo = useCallback(
+    (tipo: TemplateMensaje['tipo']) =>
+      templates.find((template) => template.tipo === tipo && template.activo),
+    [templates],
+  );
   const { fetchMetodosPagoTerceros } = useMetodosPagoStore();
   const { updateVenta, fetchVentas } = useVentasStore();
   const [searchQuery, setSearchQuery] = useState('');

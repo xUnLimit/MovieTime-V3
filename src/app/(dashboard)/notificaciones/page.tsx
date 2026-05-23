@@ -16,7 +16,6 @@ import { ServiciosProximosTable } from '@/components/notificaciones/ServiciosPro
 import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNotificacionesTable';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useTemplatesStore } from '@/store/templatesStore';
 import { useNotificacionesMontos } from '@/hooks/use-notificaciones-montos';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
@@ -87,7 +86,6 @@ function NotificacionesPageContent() {
   const searchParams = useSearchParams();
   const { notificaciones, fetchNotificaciones, fetchCounts, ventasProximas, serviciosProximos, reposoCompletados } =
     useNotificacionesStore();
-  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
 
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'ventas');
   const serviciosAutorrenovables = useMemo(
@@ -108,7 +106,6 @@ function NotificacionesPageContent() {
         await Promise.all([
           fetchNotificaciones(true),
           fetchCounts(),
-          fetchTemplates(true),
         ]);
       } catch (error) {
         console.error('Error initializing notifications:', error);
@@ -117,7 +114,7 @@ function NotificacionesPageContent() {
     };
 
     init();
-  }, [fetchNotificaciones, fetchCounts, fetchTemplates]);
+  }, [fetchNotificaciones, fetchCounts]);
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
