@@ -55,10 +55,10 @@ describe('storeEventBus', () => {
     const setItem = vi.mocked(window.localStorage.setItem);
 
     setItem.mockClear();
-    emitLegacyBrowserEvent('venta-updated');
+    emitLegacyBrowserEvent('venta-updated', { timestamp: '123' });
     emitLegacyBrowserEvent('tercero-nombre-updated', { persistTimestamp: false });
 
-    expect(setItem).toHaveBeenCalledWith('venta-updated', expect.any(String));
+    expect(setItem).toHaveBeenCalledWith('venta-updated', '123');
     expect(setItem).not.toHaveBeenCalledWith('tercero-nombre-updated', expect.any(String));
     expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'venta-updated' }));
     expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'tercero-nombre-updated' }));
