@@ -1,7 +1,12 @@
 import { format } from 'date-fns';
-import { supabase } from '@/lib/supabase/client';
 import type { Json } from '@/lib/supabase/database.types';
 import { getOfflineDashboardHome, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
+import {
+  getDashboardChurnStatsRpc,
+  getDashboardHomeRpc,
+  getDashboardStatsLiveRpc,
+  type DashboardStatsRpcRow,
+} from '@/lib/supabase/dashboard-rpc-adapter';
 import type {
   DashboardStats,
   IngresoCategoria,
@@ -18,19 +23,9 @@ import type {
 import type { ActivityLog } from '@/types';
 
 type DashboardStatsRow = {
-  id: string;
-  gastos_total: number | string | null;
-  ingresos_total: number | string | null;
-  terceros_por_mes: Json | null;
-  terceros_por_dia: Json | null;
-  ingresos_por_mes: Json | null;
-  ingresos_por_dia: Json | null;
-  ingresos_por_categoria: Json | null;
-  ingresos_categorias_por_mes: Json | null;
-  ventas_pronostico: Json | null;
-  servicios_pronostico: Json | null;
+  [K in keyof DashboardStatsRpcRow]: DashboardStatsRpcRow[K];
+} & {
   churn_stats?: Json | null;
-  updated_at: string | null;
 };
 
 type DashboardHome = {
@@ -61,20 +56,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   }
 
   const [statsResult, churnStats] = await Promise.all([
-    supabase.rpc('get_dashboard_stats_live').maybeSingle(),
+    getDashboardStatsLiveRpc(),
     getDashboardChurnStats(),
   ]);
 
-  const { data, error } = statsResult;
-  if (error) throw new Error(error.message);
-  if (!data) return { ...createEmptyStats(), churnStats };
+  if (!statsResult) return { ...createEmptyStats(), churnStats };
 
-  return rowToStats({ ...(data as DashboardStatsRow), churn_stats: churnStats as unknown as Json });
+  return rowToStats({ ...statsResult, churn_stats: churnStats as unknown as Json });
 }
 
 export async function getDashboardChurnStats(): Promise<ChurnStats> {
-  const { data, error } = await supabase.rpc('get_dashboard_churn_stats');
-  if (error) throw new Error(error.message);
+  const data = await getDashboardChurnStatsRpc();
   return jsonToChurnStats(data);
 }
 
@@ -84,8 +76,7 @@ export async function getDashboardHome(): Promise<DashboardHome> {
     if (offline) return offline;
   }
 
-  const { data, error } = await supabase.rpc('get_dashboard_home');
-  if (error) throw new Error(error.message);
+  const data = await getDashboardHomeRpc();
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return {
       stats: createEmptyStats(),
