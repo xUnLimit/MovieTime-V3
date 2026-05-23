@@ -24,10 +24,8 @@ vi.mock('@/lib/supabase/servicios-repository', () => ({
 }));
 
 vi.mock('@/lib/services/dashboardStatsService', () => ({
-  adjustGastosStats: vi.fn(() => Promise.resolve()),
   getDiaKeyFromDate: vi.fn(() => '2026-05-06'),
   getMesKeyFromDate: vi.fn(() => '2026-05'),
-  upsertServicioPronostico: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock('@/lib/services/pagosServicioService', () => ({
@@ -63,7 +61,6 @@ import {
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { adjustGastosStats, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
 import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { syncServicioDependencias } from '@/lib/services/servicioSyncService';
@@ -125,9 +122,7 @@ beforeEach(() => {
   vi.mocked(updateServicio).mockReset();
   vi.mocked(crearPagoRenovacion).mockReset();
   vi.mocked(syncServicioDependencias).mockReset();
-  vi.mocked(adjustGastosStats).mockClear();
   vi.mocked(getServicioById).mockReset();
-  vi.mocked(upsertServicioPronostico).mockClear();
   vi.mocked(sincronizarUnServicio).mockClear();
   vi.mocked(currencyService.convertToUSD).mockReset();
 

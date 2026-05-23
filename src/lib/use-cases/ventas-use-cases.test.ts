@@ -18,10 +18,8 @@ const ventasRepository = vi.hoisted(() => ({
 }));
 
 const dashboardStatsService = vi.hoisted(() => ({
-  adjustIngresosStats: vi.fn(),
   getDiaKeyFromDate: vi.fn(() => '2026-05-10'),
   getMesKeyFromDate: vi.fn(() => '2026-05'),
-  upsertVentaPronostico: vi.fn(),
 }));
 
 const currencyService = vi.hoisted(() => ({
@@ -97,8 +95,6 @@ describe('ventas use cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     currencyService.convertToUSD.mockImplementation(async (amount: number) => amount);
-    dashboardStatsService.adjustIngresosStats.mockResolvedValue(undefined);
-    dashboardStatsService.upsertVentaPronostico.mockResolvedValue(undefined);
     notificationSyncService.sincronizarUnaVenta.mockResolvedValue(undefined);
   });
 

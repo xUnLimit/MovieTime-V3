@@ -13,7 +13,6 @@ vi.mock('@/lib/supabase/ventas-repository', () => ({
 }));
 
 vi.mock('@/lib/services/dashboardStatsService', () => ({
-  adjustTercerosPorMes: vi.fn(() => Promise.resolve()),
   getDiaKeyFromDate: vi.fn(() => '2026-05-06'),
 }));
 
