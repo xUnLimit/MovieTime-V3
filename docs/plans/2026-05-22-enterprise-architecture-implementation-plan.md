@@ -47,7 +47,7 @@ Completado hasta esta iteracion:
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
 - Fase 4 idempotencia RPC: migracion `20260523183000_rpc_idempotency_keys.sql` agrega `rpc_idempotency_keys` y overloads con `p_idempotency_key` para creacion inicial de ventas/servicios, renovaciones de pagos y refunds; los adapters cliente generan key cuando el caller no la proporciona.
 - Pendiente Fase 4: aplicar migraciones pendientes al remoto, descomposicion de formularios grandes y cobertura >=80%.
-- Cobertura/tests: suite actual en 173 tests pasando; ultima cobertura medida 41.11% statements / 44.41% lines.
+- Cobertura/tests: suite actual en 178 tests pasando; ultima cobertura medida 41.90% statements / 45.33% lines.
 
 Commits de referencia de esta iteracion:
 
