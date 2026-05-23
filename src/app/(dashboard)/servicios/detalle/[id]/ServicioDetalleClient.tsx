@@ -89,6 +89,38 @@ async function fetchServicioVentasProfiles(id: string) {
     .map(toPerfilVenta);
 }
 
+async function fetchServicioDetalleBundle(id: string): Promise<{
+  categoria: CategoriaDetalle;
+  metodoPago: MetodoPagoDetalle | null;
+  servicio: Servicio;
+}> {
+  const servicio = await getServicioUseCase<Servicio>(id);
+  if (!servicio) {
+    throw new Error('Servicio no encontrado');
+  }
+
+  const metodoPagoReal = servicio.metodoPagoId
+    ? await getMetodoPagoUseCase<MetodoPago>(servicio.metodoPagoId).catch(() => null)
+    : null;
+
+  return {
+    servicio,
+    categoria: {
+      id: servicio.categoriaId,
+      nombre: servicio.categoriaNombre,
+    },
+    metodoPago: servicio.metodoPagoId
+      ? {
+          id: servicio.metodoPagoId,
+          nombre: metodoPagoReal?.nombre || servicio.metodoPagoNombre || '',
+          moneda: metodoPagoReal?.moneda || servicio.moneda || 'USD',
+          alias: metodoPagoReal?.alias,
+          numeroTarjeta: metodoPagoReal?.numeroTarjeta,
+        }
+      : null,
+  };
+}
+
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
   const router = useRouter();
   const { deleteServicio, fetchCounts, fetchServicios, servicios, updatePerfilOcupado } = useServiciosStore();
@@ -107,7 +139,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const [servicio, setServicio] = useState<Servicio | null>(null);
   const [categoria, setCategoria] = useState<CategoriaDetalle | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPagoDetalle | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePayments, setDeletePayments] = useState(false);
@@ -126,6 +157,16 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const { pagos: pagosServicio, isLoading: pagosHistorialLoading, renovaciones, refresh: refreshPagos } = usePagosServicio(id);
   const { data: metodosPago = [] } = useMetodosPagoServicios();
   const {
+    data: servicioDetalleBundle,
+    error: servicioDetalleError,
+    isError: isServicioDetalleError,
+    isLoading: isLoadingData,
+  } = useQuery({
+    queryKey: queryKeys.servicios.detailBundle(id),
+    queryFn: () => fetchServicioDetalleBundle(id),
+    enabled: Boolean(id),
+  });
+  const {
     data: ventasServicioQueryData = [],
     error: ventasServicioError,
     isError: isVentasServicioError,
@@ -135,52 +176,21 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     enabled: Boolean(id),
   });
 
-  // Cargar solo el servicio (1 lectura única)
   useEffect(() => {
-    const loadData = async () => {
-      if (!id) return;
-      setIsLoadingData(true);
-      try {
-        // 1. Cargar el servicio (categoriaNombre ya está denormalizado)
-        const servicioData = await getServicioUseCase<Servicio>(id);
-        if (!servicioData) {
-          toast.error('Servicio no encontrado', { description: 'No se encontró el servicio con el ID proporcionado.' });
-          setServicio(null);
-          return;
-        }
-        setServicio(servicioData);
+    if (!servicioDetalleBundle) return;
+    setServicio(servicioDetalleBundle.servicio);
+    setCategoria(servicioDetalleBundle.categoria);
+    setMetodoPago(servicioDetalleBundle.metodoPago);
+  }, [servicioDetalleBundle]);
 
-        // 2. Crear objeto de categoría sintético desde datos denormalizados
-        setCategoria({
-          id: servicioData.categoriaId,
-          nombre: servicioData.categoriaNombre,
-        });
-
-        // 3. Crear objeto sintético de metodoPago desde datos denormalizados
-        if (servicioData.metodoPagoId) {
-          const metodoPagoReal = await getMetodoPagoUseCase<MetodoPago>(servicioData.metodoPagoId).catch(() => null);
-          setMetodoPago({
-            id: servicioData.metodoPagoId,
-            nombre: metodoPagoReal?.nombre || servicioData.metodoPagoNombre || '',
-            moneda: metodoPagoReal?.moneda || servicioData.moneda || 'USD',
-            alias: metodoPagoReal?.alias,
-            numeroTarjeta: metodoPagoReal?.numeroTarjeta,
-          });
-        } else {
-          setMetodoPago(null);
-        }
-
-      } catch (error) {
-        console.error('Error cargando datos del servicio:', error);
-        toast.error('Error al cargar el servicio', { description: 'Ocurrió un problema al obtener los datos. Intenta nuevamente.' });
-        setServicio(null);
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-
-    loadData();
-  }, [id]);
+  useEffect(() => {
+    if (!isServicioDetalleError) return;
+    console.error('Error cargando datos del servicio:', servicioDetalleError);
+    toast.error('Error al cargar el servicio', {
+      description: 'Ocurrió un problema al obtener los datos. Intenta nuevamente.',
+    });
+    setServicio(null);
+  }, [isServicioDetalleError, servicioDetalleError]);
 
   useEffect(() => {
     setVentasServicio(ventasServicioQueryData);

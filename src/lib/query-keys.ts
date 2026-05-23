@@ -53,6 +53,7 @@ export const queryKeys = {
     byCategoria: (categoriaId: string) => [...queryKeys.servicios.all, 'categoria', categoriaId] as const,
     byIds: (serviciosKey: string) => [...queryKeys.servicios.all, 'ids', serviciosKey] as const,
     detail: (servicioId: string) => [...queryKeys.servicios.all, 'detail', servicioId] as const,
+    detailBundle: (servicioId: string) => [...queryKeys.servicios.detail(servicioId), 'bundle'] as const,
     ventas: (servicioId: string) => [...queryKeys.servicios.detail(servicioId), 'ventas'] as const,
     pagos: (servicioId: string) => [...queryKeys.servicios.detail(servicioId), 'pagos'] as const,
     pagosTotalUsd: (signature: string) =>
