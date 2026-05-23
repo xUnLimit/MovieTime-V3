@@ -34,8 +34,8 @@ Completado hasta esta iteracion:
 - Fase 2/3 eventos: bridge legacy DOM/localStorage centralizado en `store-event-bus`, imports dinamicos runtime removidos y emisiones directas de negocio reemplazadas por bus tipado + bridge legacy.
 - Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime y retiradas de `dashboardStatsService`; el dashboard queda orientado a invalidacion/refetch sobre read models live.
 - Fase 2 limpieza de capas: `notificaciones-use-cases.ts` eliminado porque era pass-through puro hacia el repositorio.
-- Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos y RPCs de categorias; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
-- Cobertura: suite actual en 152 tests pasando.
+- Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos, RPCs de categorias y read RPCs de dashboard; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
+- Cobertura: suite actual en 157 tests pasando.
 
 Commits de referencia de esta iteracion:
 
@@ -63,6 +63,7 @@ Commits de referencia de esta iteracion:
 - `25be9be` feat: type payment delete rpcs
 - `75b481c` feat: type payment update rpcs
 - `6345af7` feat: type categoria rpcs
+- `05d2730` feat: type dashboard read rpcs
 
 Validacion recurrente ejecutada por PR logico:
 
