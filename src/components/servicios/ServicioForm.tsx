@@ -12,6 +12,7 @@ import {
   servicioSchema,
   type ServicioFormData,
 } from "@/features/servicios/servicio-form-schema";
+import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import {
@@ -25,12 +26,11 @@ import {
 } from "@/lib/utils/credentialNotification";
 import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
 import { useCategoriasStore } from "@/store/categoriasStore";
-import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useTemplatesStore } from "@/store/templatesStore";
 import { useTercerosStore } from "@/store/tercerosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
-import type { MetodoPago, Servicio, VentaDoc } from "@/types";
+import type { Servicio, VentaDoc } from "@/types";
 
 import { ServicioDatosTab } from "./form/ServicioDatosTab";
 import { ServicioPreviewTab } from "./form/ServicioPreviewTab";
@@ -54,7 +54,6 @@ export function ServicioForm({
   const fetchCounts = useServiciosStore((state) => state.fetchCounts);
   const categorias = useCategoriasStore((state) => state.categorias);
   const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
-  const fetchMetodosPagoServicios = useMetodosPagoStore((state) => state.fetchMetodosPagoServicios);
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
   const credentialTemplate = useTemplatesStore((state) =>
     state.getTemplateByTipo("actualizacion_credenciales"),
@@ -63,7 +62,7 @@ export function ServicioForm({
   const enqueueWhatsAppMessages = useWhatsAppToastStore(
     (state) => state.enqueueMany,
   );
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
+  const { data: metodosPago = [] } = useMetodosPagoServicios();
   const [activeTab, setActiveTab] = useState("datos");
   const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
   const [manualFechaVencimiento, setManualFechaVencimiento] = useState(false);
@@ -97,14 +96,6 @@ export function ServicioForm({
       setPerfilesOcupadosReal(count),
     );
   }, [servicio?.id]);
-
-  useEffect(() => {
-    const loadMetodosPago = async () => {
-      const metodos = await fetchMetodosPagoServicios();
-      setMetodosPago(metodos);
-    };
-    loadMetodosPago();
-  }, [fetchMetodosPagoServicios]);
 
   useEffect(() => {
     fetchCategorias();

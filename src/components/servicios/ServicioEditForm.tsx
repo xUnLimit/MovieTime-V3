@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
@@ -15,12 +16,11 @@ import {
   hasCredentialChanges,
 } from "@/lib/utils/credentialNotification";
 import { useCategoriasStore } from "@/store/categoriasStore";
-import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useTemplatesStore } from "@/store/templatesStore";
 import { useTercerosStore } from "@/store/tercerosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
-import type { MetodoPago, Servicio, VentaDoc } from "@/types";
+import type { Servicio, VentaDoc } from "@/types";
 
 import { ServicioEditActions } from "./edit-form/ServicioEditActions";
 import { ServicioEditDatosSection } from "./edit-form/ServicioEditDatosSection";
@@ -54,7 +54,6 @@ export function ServicioEditForm({
   const router = useRouter();
   const { updateServicio, fetchCounts } = useServiciosStore();
   const { categorias, fetchCategorias } = useCategoriasStore();
-  const { fetchMetodosPagoServicios } = useMetodosPagoStore();
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
   const credentialTemplate = useTemplatesStore((state) =>
     state.getTemplateByTipo("actualizacion_credenciales"),
@@ -63,7 +62,7 @@ export function ServicioEditForm({
     (state) => state.enqueueMany,
   );
   const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
+  const { data: metodosPago = [] } = useMetodosPagoServicios();
   const [openFechaInicio, setOpenFechaInicio] = useState(false);
   const [openFechaVencimiento, setOpenFechaVencimiento] = useState(false);
 
@@ -72,15 +71,6 @@ export function ServicioEditForm({
   );
   const ultimoPago = pagosServicio[0];
   const perfilesOcupadosReal = usePerfilesOcupadosReal(servicio);
-
-  useEffect(() => {
-    const loadMetodosPago = async () => {
-      const metodos = await fetchMetodosPagoServicios();
-      setMetodosPago(metodos);
-    };
-
-    loadMetodosPago();
-  }, [fetchMetodosPagoServicios]);
 
   useEffect(() => {
     fetchCategorias();
