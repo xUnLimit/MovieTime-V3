@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ClientesTable } from '@/components/terceros/ClientesTable';
 import { RevendedoresTable } from '@/components/terceros/RevendedoresTable';
@@ -15,6 +15,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { invalidateVentasPorTercerosCache } from '@/hooks/use-ventas-por-terceros';
+import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { queryKeys } from '@/lib/query-keys';
 import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
@@ -39,16 +40,15 @@ const ALL_PAYMENT_METHODS_LABEL = 'Todos los métodos';
 
 function TercerosPageContent() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const {
-    totalClientes,
-    totalRevendedores,
-    totalNuevosHoy,
-    totalTercerosActivos,
     terceros,
     fetchTerceros,
-    fetchCounts,
     isLoading: isLoadingTerceros,
   } = useTercerosStore();
+  const { data: counts } = useTercerosCounts();
+  const totalClientes = counts?.totalClientes ?? 0;
+  const totalRevendedores = counts?.totalRevendedores ?? 0;
   const [activeTab, setActiveTab] = useState<TercerosTab>('todos');
   const [pageSize, setPageSize] = useState(10);
   const [searchPageIndex, setSearchPageIndex] = useState(0);
@@ -203,10 +203,6 @@ function TercerosPageContent() {
     setSearchPageIndex(0);
   }, []);
 
-  useEffect(() => {
-    fetchCounts();
-  }, [fetchCounts]);
-
   // Escuchar cuando se elimina una venta en la MISMA página (ej: desde TerceroDetails)
   // La sincronización entre páginas diferentes ya la maneja useVentasPorTerceros via shouldInvalidateCache()
   useEffect(() => {
@@ -215,19 +211,26 @@ function TercerosPageContent() {
       refresh();
     };
 
+    const handleTerceroDeleted = () => {
+      refresh();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.terceros.counts() });
+    };
+
     const handleTerceroMetodoPagoUpdated = () => {
       refresh();
       void refetchMetodoPagoOptions();
     };
 
     window.addEventListener('venta-deleted', handleVentaDeleted);
+    window.addEventListener('tercero-deleted', handleTerceroDeleted);
     window.addEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, handleTerceroMetodoPagoUpdated);
 
     return () => {
       window.removeEventListener('venta-deleted', handleVentaDeleted);
+      window.removeEventListener('tercero-deleted', handleTerceroDeleted);
       window.removeEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, handleTerceroMetodoPagoUpdated);
     };
-  }, [refetchMetodoPagoOptions, refresh]);
+  }, [queryClient, refetchMetodoPagoOptions, refresh]);
 
   const handleEdit = (usuario: Tercero) => {
     router.push(`/terceros/editar/${usuario.id}`);
@@ -256,12 +259,7 @@ function TercerosPageContent() {
         </div>
       </div>
 
-      <TercerosMetrics
-        totalClientes={totalClientes}
-        totalRevendedores={totalRevendedores}
-        tercerosActivos={totalTercerosActivos}
-        totalNuevosHoy={totalNuevosHoy}
-      />
+      <TercerosMetrics />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex border-b border-border">

@@ -2,21 +2,15 @@
 
 import { memo } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
+import { useTercerosCounts } from "@/hooks/use-terceros-counts";
 import { Users, Store, UserCheck, UserPlus } from "lucide-react";
 
-interface TercerosMetricsProps {
-  totalClientes: number;
-  totalRevendedores: number;
-  tercerosActivos: number;
-  totalNuevosHoy: number;
-}
-
-export const TercerosMetrics = memo(function TercerosMetrics({
-  totalClientes,
-  totalRevendedores,
-  tercerosActivos,
-  totalNuevosHoy,
-}: TercerosMetricsProps) {
+export const TercerosMetrics = memo(function TercerosMetrics() {
+  const { data: counts } = useTercerosCounts();
+  const totalClientes = counts?.totalClientes ?? 0;
+  const totalRevendedores = counts?.totalRevendedores ?? 0;
+  const tercerosActivos = counts?.totalTercerosActivos ?? 0;
+  const totalNuevosHoy = counts?.totalNuevosHoy ?? 0;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
