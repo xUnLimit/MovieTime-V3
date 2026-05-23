@@ -4,15 +4,13 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { TerceroForm } from '@/components/terceros/TerceroForm';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
-import { queryKeys } from '@/lib/query-keys';
+import { useMetodosPagoTerceros } from '@/hooks/use-metodos-pago-terceros';
 import { isUuid } from '@/lib/utils/safety';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { toast } from 'sonner';
 
 function EditarTerceroPageContent() {
@@ -20,7 +18,6 @@ function EditarTerceroPageContent() {
   const router = useRouter();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const fetchMetodosPagoTerceros = useMetodosPagoStore((state) => state.fetchMetodosPagoTerceros);
   const {
     data: usuario = null,
     isError: isUsuarioError,
@@ -30,11 +27,7 @@ function EditarTerceroPageContent() {
     data: metodosPago = [],
     isError: isMetodosPagoError,
     isLoading: isMetodosPagoLoading,
-  } = useQuery({
-    queryKey: queryKeys.metodosPago.terceros(),
-    queryFn: fetchMetodosPagoTerceros,
-    enabled: Boolean(id),
-  });
+  } = useMetodosPagoTerceros({ enabled: Boolean(id) });
 
   useEffect(() => {
     if (!isUsuarioError && !isMetodosPagoError) return;

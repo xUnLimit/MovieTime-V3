@@ -2,22 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 
 import { TerceroForm } from '@/components/terceros/TerceroForm';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
+import { useMetodosPagoTerceros } from '@/hooks/use-metodos-pago-terceros';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { queryKeys } from '@/lib/query-keys';
 
 function CrearTerceroPageContent() {
   const router = useRouter();
-  const fetchMetodosPagoTerceros = useMetodosPagoStore((state) => state.fetchMetodosPagoTerceros);
-  const { data: metodosPago = [], isLoading: loading } = useQuery({
-    queryKey: queryKeys.metodosPago.terceros(),
-    queryFn: fetchMetodosPagoTerceros,
-  });
+  const { data: metodosPago = [], isLoading: loading } = useMetodosPagoTerceros();
 
   const handleSuccess = () => {
     router.push('/terceros');
