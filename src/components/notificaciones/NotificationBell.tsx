@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Bell, ShoppingCart, Banknote, Pause, ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { useNotificaciones } from '@/hooks/use-notificaciones';
 import {
   esNotificacionReposo,
   esNotificacionServicio,
@@ -156,13 +156,9 @@ function MetricValue({
 }
 
 export function NotificationBell() {
-  const { notificaciones, fetchNotificaciones } = useNotificacionesStore();
+  const { data: notificaciones = [] } = useNotificaciones();
   const [isOpen, setIsOpen] = useState(false);
   const closeWasPointerDrivenRef = useRef(false);
-
-  useEffect(() => {
-    fetchNotificaciones();
-  }, [fetchNotificaciones]);
 
   const ventasSummary = getNotificationSummary(notificaciones.filter(esNotificacionVenta));
   const serviciosSummary = getNotificationSummary(notificaciones.filter(esNotificacionServicio));
