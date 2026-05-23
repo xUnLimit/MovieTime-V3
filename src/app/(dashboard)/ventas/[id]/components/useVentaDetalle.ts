@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -55,6 +55,61 @@ function emitVentaUpdated(ventaId: string) {
   storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
 }
 
+interface VentaDetalleQueryData {
+  servicioContrasena: string;
+  venta: VentaDoc | null;
+}
+
+function toVentaDetalleBase(doc: Record<string, unknown>): VentaDoc {
+  return {
+    id: doc.id as string,
+    clienteId: (doc.clienteId as string) || '',
+    clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
+    categoriaId: (doc.categoriaId as string) || '',
+    categoriaNombre: (doc.categoriaNombre as string) || undefined,
+    servicioId: (doc.servicioId as string) || '',
+    servicioNombre: (doc.servicioNombre as string) || 'Servicio',
+    servicioCorreo: (doc.servicioCorreo as string) || '',
+    clienteTelefono: (doc.clienteTelefono as string) || undefined,
+    perfilNumero: (doc.perfilNumero as number | null | undefined) ?? null,
+    perfilNombre: (doc.perfilNombre as string) || '',
+    codigo: (doc.codigo as string) || '',
+    notas: (doc.notas as string) || '',
+    estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
+    cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
+    motivoCorte: (doc.motivoCorte as string | null | undefined) ?? null,
+    createdAt: doc.createdAt ? timestampToDate(doc.createdAt) : undefined,
+    fechaInicio: (doc.fechaInicio as Date) || new Date(),
+    fechaFin: (doc.fechaFin as Date) || new Date(),
+    cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
+    planId: (doc.planId as string) || undefined,
+    planNombre: (doc.planNombre as string) || undefined,
+    planTipoNombre: (doc.planTipoNombre as string) || undefined,
+  };
+}
+async function fetchVentaDetalleQuery(id: string): Promise<VentaDetalleQueryData> {
+  if (!id) return { venta: null, servicioContrasena: '' };
+
+  const doc = await getVentaUseCase<Record<string, unknown>>(id);
+  if (!doc) return { venta: null, servicioContrasena: '' };
+
+  const ventaConDatos = await getVentaConUltimoPago(toVentaDetalleBase(doc));
+  let servicioContrasena = '';
+
+  if (ventaConDatos.servicioId) {
+    try {
+      const servicioDoc = await getServicioUseCase<Record<string, unknown>>(ventaConDatos.servicioId);
+      if (servicioDoc?.contrasena) {
+        servicioContrasena = servicioDoc.contrasena as string;
+      }
+    } catch (error) {
+      console.error('Error cargando contrasena del servicio:', error);
+    }
+  }
+
+  return { venta: ventaConDatos, servicioContrasena };
+}
+
 export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -67,11 +122,8 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     [templates],
   );
 
-  const [venta, setVenta] = useState<VentaDoc | null>(null);
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [categoriaPlanes, setCategoriaPlanes] = useState<Plan[]>([]);
-  const [servicioContrasena, setServicioContrasena] = useState<string>('');
-  const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [reembolsoDialogOpen, setReembolsoDialogOpen] = useState(false);
@@ -82,85 +134,53 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
   const { pagos: pagosVenta, isLoading: loadingPagos, renovaciones, refresh: refreshPagos } = usePagosVenta(id);
 
-  const loadVenta = async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const doc = await getVentaUseCase<Record<string, unknown>>(id);
-      if (!doc) {
-        setVenta(null);
-        setLoading(false);
-        return;
-      }
+  const ventaDetalleQuery = useQuery({
+    queryKey: queryKeys.ventas.detail(id || 'invalid'),
+    queryFn: () => fetchVentaDetalleQuery(id),
+    enabled: Boolean(id),
+  });
 
-      const ventaBase: VentaDoc = {
-        id: doc.id as string,
-        clienteId: (doc.clienteId as string) || '',
-        clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-        categoriaId: (doc.categoriaId as string) || '',
-        categoriaNombre: (doc.categoriaNombre as string) || undefined,
-        servicioId: (doc.servicioId as string) || '',
-        servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-        servicioCorreo: (doc.servicioCorreo as string) || '',
-        clienteTelefono: (doc.clienteTelefono as string) || undefined,
-        perfilNumero: (doc.perfilNumero as number | null | undefined) ?? null,
-        perfilNombre: (doc.perfilNombre as string) || '',
-        codigo: (doc.codigo as string) || '',
-        notas: (doc.notas as string) || '',
-        estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
-        cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
-        motivoCorte: (doc.motivoCorte as string | null | undefined) ?? null,
-        createdAt: doc.createdAt ? timestampToDate(doc.createdAt) : undefined,
-        fechaInicio: (doc.fechaInicio as Date) || new Date(),
-        fechaFin: (doc.fechaFin as Date) || new Date(),
-        cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
-        planId: (doc.planId as string) || undefined,
-        planNombre: (doc.planNombre as string) || undefined,
-        planTipoNombre: (doc.planTipoNombre as string) || undefined,
-      };
+  const venta = ventaDetalleQuery.data?.venta ?? null;
+  const servicioContrasena = ventaDetalleQuery.data?.servicioContrasena ?? '';
+  const loading = ventaDetalleQuery.isLoading;
 
-      const ventaConDatos = await getVentaConUltimoPago(ventaBase);
-      setVenta(ventaConDatos);
-
-      if (ventaConDatos.servicioId) {
-        try {
-          const servicioDoc = await getServicioUseCase<Record<string, unknown>>(ventaConDatos.servicioId);
-          if (servicioDoc && servicioDoc.contrasena) {
-            setServicioContrasena(servicioDoc.contrasena as string);
-          }
-        } catch (error) {
-          console.error('Error cargando contraseña del servicio:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error cargando venta:', error);
-      toast.error('Error cargando venta', { description: error instanceof Error ? error.message : undefined });
-      setVenta(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const setVentaData = useCallback(
+    (nextVenta: VentaDoc | null) => {
+      queryClient.setQueryData<VentaDetalleQueryData>(
+        queryKeys.ventas.detail(id || 'invalid'),
+        (current) => ({
+          servicioContrasena: current?.servicioContrasena ?? servicioContrasena,
+          venta: nextVenta,
+        }),
+      );
+    },
+    [id, queryClient, servicioContrasena],
+  );
 
   useEffect(() => {
-    loadVenta();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (!ventaDetalleQuery.error) return;
+
+    console.error('Error cargando venta:', ventaDetalleQuery.error);
+    toast.error('Error cargando venta', {
+      description:
+        ventaDetalleQuery.error instanceof Error ? ventaDetalleQuery.error.message : undefined,
+    });
+  }, [ventaDetalleQuery.error]);
 
   const { esCortada, estadoBadgeClass, estadoLabel } = getEstadoDetalle(venta);
 
-  const diasRestantes = useMemo(() => {
-    if (!venta?.fechaFin) return 0;
-    return differenceInCalendarDays(venta.fechaFin, new Date());
-  }, [venta?.fechaFin]);
+  const diasRestantes = venta?.fechaFin
+    ? differenceInCalendarDays(venta.fechaFin, new Date())
+    : 0;
 
-  const reembolsoMontoSugerido = useMemo(() => {
-    if (!venta?.fechaInicio || !venta.fechaFin || !venta.precioFinal || venta.estado === 'inactivo') return 0;
-    return roundToDecimals(calcularMontoSinConsumir(
-      new Date(venta.fechaInicio),
-      new Date(venta.fechaFin),
-      venta.precioFinal
-    ));
-  }, [venta?.fechaInicio, venta?.fechaFin, venta?.precioFinal, venta?.estado]);
+  const reembolsoMontoSugerido =
+    venta?.fechaInicio && venta.fechaFin && venta.precioFinal && venta.estado !== 'inactivo'
+      ? roundToDecimals(calcularMontoSinConsumir(
+          new Date(venta.fechaInicio),
+          new Date(venta.fechaFin),
+          venta.precioFinal
+        ))
+      : 0;
 
   const perfilDisplay = venta?.perfilNombre?.trim() || '—';
 
@@ -307,7 +327,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       if (id) {
         const ventaActualizada = await getVentaConPagoActualUseCase(id);
-        if (ventaActualizada) setVenta(ventaActualizada);
+        if (ventaActualizada) setVentaData(ventaActualizada);
       }
 
       refreshPagos();
@@ -400,7 +420,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
           .updatePerfilOcupado(result.serviceProfileDelta.servicioId, result.serviceProfileDelta.shouldIncrement);
       }
 
-      if (result.ventaActualizada) setVenta(result.ventaActualizada);
+      if (result.ventaActualizada) setVentaData(result.ventaActualizada);
       refreshPagos();
       syncVentaPronosticoLocal(id, result.pronostico);
       invalidateDashboardCache({ entity: 'venta', entityId: id });
@@ -451,7 +471,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       if (id) {
         const ventaActualizada = await getVentaConPagoActualUseCase(id);
-        if (ventaActualizada) setVenta(ventaActualizada);
+        if (ventaActualizada) setVentaData(ventaActualizada);
       }
 
       refreshPagos();
@@ -474,7 +494,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
       setDeletePagoDialogOpen(false);
       setPagoToDelete(null);
 
-      if (ventaActualizada) setVenta(ventaActualizada);
+      if (ventaActualizada) setVentaData(ventaActualizada);
 
       refreshPagos();
       toast.success('Pago eliminado exitosamente');
