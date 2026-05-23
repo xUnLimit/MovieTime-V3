@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -10,12 +11,14 @@ import { ServiciosMetrics } from '@/components/servicios/ServiciosMetrics';
 import { ServiciosListTable } from '@/components/servicios/ServiciosListTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { queryKeys } from '@/lib/query-keys';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
 import { FilterOption } from '@/lib/supabase/pagination';
 import { Servicio } from '@/types';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
 function ServiciosPageContent() {
+  const queryClient = useQueryClient();
   const { data: categorias = [], refetch: refetchCategorias } = useCategoriasFull();
 
   const [activeTab, setActiveTab] = useState<'categorias' | 'todos' | 'activos' | 'inactivos'>('categorias');
@@ -64,23 +67,25 @@ function ServiciosPageContent() {
   });
 
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'servicio-deleted') {
-        void refetchCategorias();
-        refresh();
-      }
-    };
-    const handleServicioDeleted = () => {
+    const refreshServicios = () => {
       void refetchCategorias();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.servicios.counts() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
       refresh();
     };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'servicio-deleted') {
+        refreshServicios();
+      }
+    };
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('servicio-deleted', handleServicioDeleted);
+    window.addEventListener('servicio-deleted', refreshServicios);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('servicio-deleted', handleServicioDeleted);
+      window.removeEventListener('servicio-deleted', refreshServicios);
     };
-  }, [refetchCategorias, refresh]);
+  }, [queryClient, refetchCategorias, refresh]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as 'categorias' | 'todos' | 'activos' | 'inactivos');

@@ -19,6 +19,16 @@ export function fetchVentasByFiltersUseCase<T = VentaDoc>(filters: QueryFilter[]
   return queryVentas<T>(filters);
 }
 
+export async function fetchVentasCountsUseCase() {
+  const [totalVentas, ventasActivas, ventasInactivas] = await Promise.all([
+    countVentas([]),
+    countVentas([{ field: 'estado', operator: '==', value: 'activo' }]),
+    countVentas([{ field: 'estado', operator: '==', value: 'inactivo' }]),
+  ]);
+
+  return { totalVentas, ventasActivas, ventasInactivas };
+}
+
 export function fetchVentasByClienteUseCase<T = VentaDoc>(clienteId: string) {
   return queryVentas<T>([{ field: 'clienteId', operator: '==', value: clienteId }]);
 }

@@ -1,23 +1,18 @@
 "use client";
 
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { Tag, Monitor, CheckCircle, ShoppingBag } from "lucide-react";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useVentasStore } from "@/store/ventasStore";
+import { useServiciosCounts } from "@/hooks/use-servicios-counts";
+import { useVentasCounts } from "@/hooks/use-ventas-counts";
 
 export const ServiciosMetrics = memo(function ServiciosMetrics() {
-  const totalServicios = useServiciosStore((state) => state.totalServicios);
-  const serviciosActivos = useServiciosStore((state) => state.serviciosActivos);
-  const totalCategoriasActivas = useServiciosStore((state) => state.totalCategoriasActivas);
-  const fetchCounts = useServiciosStore((state) => state.fetchCounts);
-  const ventasActivas = useVentasStore((state) => state.ventasActivas);
-  const fetchVentasCounts = useVentasStore((state) => state.fetchCounts);
-
-  useEffect(() => {
-    fetchCounts();
-    fetchVentasCounts();
-  }, [fetchCounts, fetchVentasCounts]);
+  const { data: serviciosCounts } = useServiciosCounts();
+  const { data: ventasCounts } = useVentasCounts();
+  const totalServicios = serviciosCounts?.totalServicios ?? 0;
+  const serviciosActivos = serviciosCounts?.serviciosActivos ?? 0;
+  const totalCategoriasActivas = serviciosCounts?.totalCategoriasActivas ?? 0;
+  const ventasActivas = ventasCounts?.ventasActivas ?? 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

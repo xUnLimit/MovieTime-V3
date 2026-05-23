@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { ConfirmDeleteVentaDialog } from '@/components/shared/ConfirmDeleteVentaDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
@@ -13,14 +14,15 @@ import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { queryKeys } from '@/lib/query-keys';
 import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
 import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
 
 function VentasPageContent() {
+  const queryClient = useQueryClient();
   const deleteVenta = useVentasStore((state) => state.deleteVenta);
-  const fetchCounts = useVentasStore((state) => state.fetchCounts);
   const { data: categorias = [] } = useCategoriasFull();
 
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'inactivas'>('todas');
@@ -107,7 +109,7 @@ function VentasPageContent() {
       setDeleteDialogOpen(false);
       // Refrescar la lista y las métricas después de eliminar
       refresh();
-      fetchCounts();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
     } catch (error) {
       console.error('Error eliminando venta:', error);
       toast.error('Error eliminando venta', { description: error instanceof Error ? error.message : undefined });
@@ -118,7 +120,7 @@ function VentasPageContent() {
   useEffect(() => {
     const handleVentaChange = () => {
       refresh();
-      fetchCounts();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
     };
 
     window.addEventListener('venta-created', handleVentaChange);
@@ -130,7 +132,7 @@ function VentasPageContent() {
       window.removeEventListener('venta-updated', handleVentaChange);
       window.removeEventListener('venta-deleted', handleVentaChange);
     };
-  }, [refresh, fetchCounts]);
+  }, [queryClient, refresh]);
 
   return (
     <>

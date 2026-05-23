@@ -1,0 +1,13 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+
+import { queryKeys } from "@/lib/query-keys";
+import { fetchVentasCountsUseCase } from "@/lib/use-cases/ventas-use-cases";
+
+export function useVentasCounts() {
+  return useQuery({
+    queryKey: queryKeys.ventas.counts(),
+    queryFn: fetchVentasCountsUseCase,
+  });
+}

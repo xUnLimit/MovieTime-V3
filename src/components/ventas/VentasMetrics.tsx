@@ -2,7 +2,6 @@
 
 import { memo, useEffect } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
-import { useVentasStore } from "@/store/ventasStore";
 import { useDashboardStore } from "@/store/dashboardStore";
 import {
   CreditCard,
@@ -14,12 +13,13 @@ import {
 } from "lucide-react";
 import { useIngresoMensualEsperado } from "@/hooks/use-ingreso-mensual-esperado";
 import { useMontoSinConsumirTotal } from "@/hooks/use-monto-sin-consumir-total";
+import { useVentasCounts } from "@/hooks/use-ventas-counts";
 
 export const VentasMetrics = memo(function VentasMetrics() {
-  const fetchCounts = useVentasStore((state) => state.fetchCounts);
-  const totalVentas = useVentasStore((state) => state.totalVentas);
-  const ventasActivas = useVentasStore((state) => state.ventasActivas);
-  const ventasInactivas = useVentasStore((state) => state.ventasInactivas);
+  const { data: ventasCounts } = useVentasCounts();
+  const totalVentas = ventasCounts?.totalVentas ?? 0;
+  const ventasActivas = ventasCounts?.ventasActivas ?? 0;
+  const ventasInactivas = ventasCounts?.ventasInactivas ?? 0;
   const dashboardStats = useDashboardStore((state) => state.stats);
   const fetchDashboardStats = useDashboardStore((state) => state.fetchDashboardStats);
   const { value: ingresoMensual, isLoading: isLoadingMensual } =
@@ -28,9 +28,8 @@ export const VentasMetrics = memo(function VentasMetrics() {
     useMontoSinConsumirTotal();
 
   useEffect(() => {
-    fetchCounts();
     fetchDashboardStats();
-  }, [fetchCounts, fetchDashboardStats]);
+  }, [fetchDashboardStats]);
 
   const ingresoTotal = dashboardStats?.ingresosTotal ?? null;
 

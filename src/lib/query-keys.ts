@@ -35,6 +35,7 @@ export const queryKeys = {
     all: ['ventas'] as const,
     lists: () => [...queryKeys.ventas.all, 'list'] as const,
     list: (filters: unknown) => [...queryKeys.ventas.lists(), filters] as const,
+    counts: () => [...queryKeys.ventas.all, 'counts'] as const,
     detail: (ventaId: string) => [...queryKeys.ventas.all, 'detail', ventaId] as const,
     pagos: (ventaId: string) => [...queryKeys.ventas.detail(ventaId), 'pagos'] as const,
     pagosTotalUsd: (signature: string) =>
@@ -49,6 +50,7 @@ export const queryKeys = {
     all: ['servicios'] as const,
     lists: () => [...queryKeys.servicios.all, 'list'] as const,
     list: (filters: unknown) => [...queryKeys.servicios.lists(), filters] as const,
+    counts: () => [...queryKeys.servicios.all, 'counts'] as const,
     reposo: () => [...queryKeys.servicios.all, 'reposo'] as const,
     byCategoria: (categoriaId: string) => [...queryKeys.servicios.all, 'categoria', categoriaId] as const,
     byIds: (serviciosKey: string) => [...queryKeys.servicios.all, 'ids', serviciosKey] as const,
