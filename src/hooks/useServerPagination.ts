@@ -10,7 +10,6 @@ interface UseServerPaginationOptions {
   orderByField?: string;
   orderDirection?: 'asc' | 'desc';
   enabled?: boolean;
-  realtime?: boolean; // Nuevo parámetro para activar listeners en tiempo real
   includeTotalCount?: boolean;
 }
 
