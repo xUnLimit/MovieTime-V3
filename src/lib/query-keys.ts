@@ -6,6 +6,8 @@ export const queryKeys = {
     churn: () => [...queryKeys.dashboard.all, 'churn'] as const,
     montoSinConsumir: (signature: string) =>
       [...queryKeys.dashboard.all, 'monto-sin-consumir', signature] as const,
+    pronostico: (signature: string, monthsCount: number, endAtCurrentYear: boolean) =>
+      [...queryKeys.dashboard.all, 'pronostico', signature, monthsCount, endAtCurrentYear] as const,
   },
   ventas: {
     all: ['ventas'] as const,
