@@ -54,16 +54,27 @@ vi.mock('@/lib/utils/activityLogHelpers', () => ({
 }));
 
 import {
+  createServicioWithInitialPayment,
   getServicioById,
   queryPagosServicio,
+  removeServicio,
   removePagoServicio,
+  updateLatestServicioPeriodo,
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
+import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { adjustGastosStats, upsertServicioPronostico } from '@/lib/services/dashboardStatsService';
 import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
+import { syncServicioDependencias } from '@/lib/services/servicioSyncService';
 import { currencyService } from '@/lib/services/currencyService';
-import { deleteServicioPagoUseCase, renewServicioUseCase } from './servicios-use-cases';
+import {
+  createServicioUseCase,
+  deleteServicioPagoUseCase,
+  deleteServicioUseCase,
+  renewServicioUseCase,
+  updateServicioUseCase,
+} from './servicios-use-cases';
 
 const servicio: Servicio = {
   id: 'servicio-1',
@@ -105,24 +116,125 @@ const pago: PagoServicio = {
 };
 
 beforeEach(() => {
+  vi.mocked(getMetodoPagoById).mockReset();
+  vi.mocked(createServicioWithInitialPayment).mockReset();
   vi.mocked(removePagoServicio).mockReset();
+  vi.mocked(removeServicio).mockReset();
   vi.mocked(queryPagosServicio).mockReset();
+  vi.mocked(updateLatestServicioPeriodo).mockReset();
   vi.mocked(updateServicio).mockReset();
   vi.mocked(crearPagoRenovacion).mockReset();
+  vi.mocked(syncServicioDependencias).mockReset();
   vi.mocked(adjustGastosStats).mockClear();
   vi.mocked(getServicioById).mockReset();
   vi.mocked(upsertServicioPronostico).mockClear();
   vi.mocked(sincronizarUnServicio).mockClear();
   vi.mocked(currencyService.convertToUSD).mockReset();
 
+  vi.mocked(getMetodoPagoById).mockResolvedValue({ id: 'metodo-1', nombre: 'Banco', moneda: 'USD' });
+  vi.mocked(createServicioWithInitialPayment).mockResolvedValue('servicio-1');
   vi.mocked(removePagoServicio).mockResolvedValue(undefined);
+  vi.mocked(removeServicio).mockResolvedValue(undefined);
   vi.mocked(queryPagosServicio).mockResolvedValue([]);
+  vi.mocked(updateLatestServicioPeriodo).mockResolvedValue(undefined);
   vi.mocked(updateServicio).mockResolvedValue(undefined);
   vi.mocked(crearPagoRenovacion).mockResolvedValue(undefined);
+  vi.mocked(syncServicioDependencias).mockResolvedValue(undefined);
   vi.mocked(currencyService.convertToUSD).mockResolvedValue(10);
   vi.mocked(getServicioById).mockResolvedValue({
     ...servicio,
     fechaVencimiento: new Date('2026-05-01T00:00:00Z'),
+  });
+});
+
+describe('createServicioUseCase', () => {
+  it('creates the service with an initial payment and records side effects', async () => {
+    const recordActivityLog = vi.fn();
+
+    const result = await createServicioUseCase({
+      categoriaId: 'categoria-1',
+      categoriaNombre: 'Netflix',
+      nombre: 'Cuenta Netflix',
+      tipo: 'tipo-1',
+      correo: 'netflix@example.com',
+      contrasena: 'secret',
+      perfilesDisponibles: 4,
+      costoServicio: 10,
+      moneda: 'USD',
+      cicloPago: 'mensual',
+      fechaInicio: new Date('2026-05-01T00:00:00Z'),
+      fechaVencimiento: new Date('2026-06-01T00:00:00Z'),
+      metodoPagoId: 'metodo-1',
+      activo: true,
+      renovacionAutomatica: false,
+    }, {
+      logContext: { usuarioId: 'user-1', usuarioEmail: 'user@example.com' },
+      recordActivityLog,
+    });
+
+    expect(getMetodoPagoById).toHaveBeenCalledWith('metodo-1');
+    expect(createServicioWithInitialPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        p_categoria_id: 'categoria-1',
+        p_nombre: 'Cuenta Netflix',
+        p_costo_original: 10,
+        p_metodo_pago_nombre_snapshot: 'Banco',
+      })
+    );
+    expect(result.servicio.id).toBe('servicio-1');
+    expect(adjustGastosStats).toHaveBeenCalled();
+    expect(upsertServicioPronostico).toHaveBeenCalled();
+    expect(sincronizarUnServicio).toHaveBeenCalledWith('servicio-1');
+    expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({ accion: 'creacion' }));
+  });
+});
+
+describe('updateServicioUseCase', () => {
+  it('updates service fields, syncs period data and denormalized references', async () => {
+    const recordActivityLog = vi.fn();
+
+    const result = await updateServicioUseCase('servicio-1', {
+      metodoPagoId: 'metodo-1',
+      costoServicio: 12,
+      fechaVencimiento: new Date('2026-07-01T00:00:00Z'),
+    }, {
+      logContext: { usuarioId: 'user-1', usuarioEmail: 'user@example.com' },
+      recordActivityLog,
+    });
+
+    expect(updateServicio).toHaveBeenCalledWith('servicio-1', expect.objectContaining({}));
+    expect(updateLatestServicioPeriodo).toHaveBeenCalledWith(
+      'servicio-1',
+      expect.objectContaining({
+        costo: 12,
+        moneda: 'USD',
+        fechaVencimiento: new Date('2026-07-01T00:00:00Z'),
+      })
+    );
+    expect(syncServicioDependencias).toHaveBeenCalled();
+    expect(result.finalUpdates).toEqual(expect.objectContaining({
+      metodoPagoNombre: 'Banco',
+      moneda: 'USD',
+    }));
+    expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({ accion: 'actualizacion' }));
+  });
+});
+
+describe('deleteServicioUseCase', () => {
+  it('deletes the service without payments and removes forecast data', async () => {
+    const recordActivityLog = vi.fn();
+
+    const result = await deleteServicioUseCase('servicio-1', {
+      deletePayments: false,
+      logContext: { usuarioId: 'user-1', usuarioEmail: 'user@example.com' },
+      recordActivityLog,
+    });
+
+    expect(removeServicio).toHaveBeenCalledWith('servicio-1');
+    expect(adjustGastosStats).toHaveBeenCalledWith(expect.objectContaining({ delta: -10 }));
+    expect(upsertServicioPronostico).toHaveBeenCalledWith(null, 'servicio-1');
+    expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({ accion: 'eliminacion' }));
+    expect(result.servicio?.id).toBe('servicio-1');
   });
 });
 
