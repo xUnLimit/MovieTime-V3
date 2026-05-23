@@ -12,6 +12,7 @@ export const queryKeys = {
     detail: (ventaId: string) => [...queryKeys.ventas.all, 'detail', ventaId] as const,
     pagos: (ventaId: string) => [...queryKeys.ventas.detail(ventaId), 'pagos'] as const,
     byTercero: (terceroId: string) => [...queryKeys.ventas.all, 'tercero', terceroId] as const,
+    byTerceros: (tercerosKey: string) => [...queryKeys.ventas.all, 'terceros', tercerosKey] as const,
   },
   servicios: {
     all: ['servicios'] as const,
