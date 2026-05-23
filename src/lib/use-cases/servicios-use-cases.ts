@@ -24,107 +24,22 @@ import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { sumPaymentsInUSD } from '@/lib/utils/payments';
-import { safeAsyncSideEffect, toMoneyNumber } from '@/lib/utils/safety';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { getCurrencySymbol } from '@/lib/constants';
-import type { ActivityLog, MetodoPago, PagoServicio, Servicio } from '@/types';
-import type { ServicioPronostico } from '@/types/dashboard';
+import type { MetodoPago, PagoServicio, Servicio } from '@/types';
+import {
+  getServicioTableUpdates,
+  getUsdValues,
+  hasServicioPeriodoUpdates,
+  normalizeServicioPagoInput,
+  toServicioPronostico,
+  type LogContext,
+  type RecordActivityLog,
+  type ServicioPagoInput,
+} from '@/lib/use-cases/servicios/servicios-shared';
 
 export * from '@/lib/use-cases/servicios/servicios-query-use-cases';
-
-type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
-type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
-
-type ServicioPagoInput = {
-  periodoRenovacion: string;
-  metodoPagoId: string;
-  costo: number;
-  descuento?: number;
-  fechaInicio: Date;
-  fechaVencimiento: Date;
-  notas?: string;
-  metodoPagoNombre?: string;
-  moneda?: string;
-  renovacionAutomatica?: boolean;
-};
-
-function normalizeServicioPagoInput(
-  input: ServicioPagoInput,
-  metodoPago?: MetodoPago | null,
-  fallbackMoneda = 'USD'
-) {
-  return {
-    notaPrincipal: input.notas?.trim() ?? '',
-    metodoPagoNombre: input.metodoPagoNombre || metodoPago?.nombre || '',
-    moneda: input.moneda || metodoPago?.moneda || fallbackMoneda || 'USD',
-    cicloPago: input.periodoRenovacion as 'mensual' | 'trimestral' | 'semestral' | 'anual',
-  };
-}
-
-const SERVICIO_TABLE_UPDATE_KEYS = new Set([
-  'categoriaId',
-  'tipo',
-  'nombre',
-  'correo',
-  'contrasena',
-  'perfilesDisponibles',
-  'activo',
-  'enReposo',
-  'diasReposo',
-  'fechaInicioReposo',
-  'fechaFinReposo',
-  'cortadoAt',
-  'cortadoBy',
-  'motivoCorte',
-  'archivadoAt',
-  'archivadoBy',
-  'motivoArchivado',
-  'notas',
-  'createdBy',
-]);
-
-function getServicioTableUpdates(updates: Partial<Servicio>): Partial<Servicio> {
-  const result: Partial<Servicio> = {};
-  const source = updates as Record<string, unknown>;
-  const target = result as Record<string, unknown>;
-  for (const key of SERVICIO_TABLE_UPDATE_KEYS) {
-    if (source[key] !== undefined) target[key] = source[key];
-  }
-  return result;
-}
-
-function hasServicioPeriodoUpdates(updates: Partial<Servicio>): boolean {
-  return [
-    'costoServicio',
-    'moneda',
-    'cicloPago',
-    'fechaInicio',
-    'fechaVencimiento',
-    'renovacionAutomatica',
-    'metodoPagoId',
-  ].some((key) => (updates as Record<string, unknown>)[key] !== undefined);
-}
-
-async function getUsdValues(amount: number, moneda: string) {
-  const normalizedAmount = toMoneyNumber(amount);
-  const usd = await currencyService.convertToUSD(normalizedAmount, moneda);
-  return {
-    usd,
-    rate: moneda === 'USD' || normalizedAmount === 0 || usd === 0 ? 1 : normalizedAmount / usd,
-  };
-}
-
-export function toServicioPronostico(s: Servicio): ServicioPronostico | null {
-  if (!s.activo || s.enReposo || !s.fechaVencimiento || !s.cicloPago || s.costoServicio <= 0) return null;
-  return {
-    id: s.id,
-    fechaVencimiento: s.fechaVencimiento instanceof Date
-      ? s.fechaVencimiento.toISOString()
-      : String(s.fechaVencimiento),
-    cicloPago: s.cicloPago,
-    costoServicio: s.costoServicio,
-    moneda: s.moneda || 'USD',
-  };
-}
+export { toServicioPronostico } from '@/lib/use-cases/servicios/servicios-shared';
 
 export async function createServicioUseCase(
   servicioData: Omit<Servicio, 'id' | 'createdAt' | 'updatedAt' | 'perfilesOcupados'>,
