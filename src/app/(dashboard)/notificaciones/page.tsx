@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Banknote, Bell, Pause, Server, ShoppingCart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
@@ -17,6 +18,8 @@ import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNot
 import { MetricCard } from '@/components/shared/MetricCard';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useNotificacionesMontos } from '@/hooks/use-notificaciones-montos';
+import { useNotificaciones } from '@/hooks/use-notificaciones';
+import { queryKeys } from '@/lib/query-keys';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
@@ -24,8 +27,11 @@ import { toast } from 'sonner';
 
 // Metrics component matching CategoriasMetrics style
 function NotificacionesMetrics() {
-  const { totalNotificaciones, ventasProximas, serviciosProximos, reposoCompletados } =
-    useNotificacionesStore();
+  const { data: notificaciones = [] } = useNotificaciones();
+  const totalNotificaciones = notificaciones.length;
+  const ventasProximas = notificaciones.filter((notificacion) => notificacion.entidad === 'venta').length;
+  const serviciosProximos = notificaciones.filter((notificacion) => notificacion.entidad === 'servicio').length;
+  const reposoCompletados = notificaciones.filter((notificacion) => notificacion.entidad === 'reposo').length;
   const {
     ventasEnRetraso,
     serviciosPorPagar,
@@ -84,8 +90,13 @@ function NotificacionesMetrics() {
 
 function NotificacionesPageContent() {
   const searchParams = useSearchParams();
-  const { notificaciones, fetchNotificaciones, fetchCounts, ventasProximas, serviciosProximos, reposoCompletados } =
+  const queryClient = useQueryClient();
+  const { data: notificaciones = [] } = useNotificaciones();
+  const { fetchNotificaciones, fetchCounts } =
     useNotificacionesStore();
+  const ventasProximas = notificaciones.filter((notificacion) => notificacion.entidad === 'venta').length;
+  const serviciosProximos = notificaciones.filter((notificacion) => notificacion.entidad === 'servicio').length;
+  const reposoCompletados = notificaciones.filter((notificacion) => notificacion.entidad === 'reposo').length;
 
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'ventas');
   const serviciosAutorrenovables = useMemo(
@@ -106,6 +117,7 @@ function NotificacionesPageContent() {
         await Promise.all([
           fetchNotificaciones(true),
           fetchCounts(),
+          queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
         ]);
       } catch (error) {
         console.error('Error initializing notifications:', error);
@@ -114,7 +126,7 @@ function NotificacionesPageContent() {
     };
 
     init();
-  }, [fetchNotificaciones, fetchCounts]);
+  }, [fetchNotificaciones, fetchCounts, queryClient]);
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
