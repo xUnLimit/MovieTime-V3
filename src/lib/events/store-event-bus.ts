@@ -2,9 +2,11 @@ export type StoreEvent =
   | { type: 'VENTA_CREATED'; ventaId: string }
   | { type: 'VENTA_UPDATED'; ventaId: string }
   | { type: 'VENTA_DELETED'; ventaId: string }
+  | { type: 'SERVICIO_CREATED'; servicioId: string }
   | { type: 'SERVICIO_UPDATED'; servicioId: string }
   | { type: 'SERVICIO_DELETED'; servicioId: string }
   | { type: 'SERVICIO_ARCHIVED'; servicioId: string }
+  | { type: 'SERVICIOS_INVALIDATED' }
   | { type: 'CATEGORIA_DELETED'; categoriaId: string }
   | { type: 'TERCERO_DELETED'; terceroId: string }
   | { type: 'TERCERO_NOMBRE_UPDATED'; terceroId: string }

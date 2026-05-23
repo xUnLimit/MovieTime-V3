@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { ENTITIES, getTerceros, logCacheHit } from '@/lib/supabase/terceros-repository';
 import {
   createTerceroUseCase,
@@ -15,7 +16,10 @@ import { useActivityLogStore } from '@/store/activityLogStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Tercero } from '@/types';
 
-function dispatchTerceroEvent(name: 'tercero-deleted' | 'tercero-nombre-updated') {
+function dispatchTerceroEvent(name: 'tercero-deleted' | 'tercero-nombre-updated', terceroId: string) {
+  if (name === 'tercero-deleted') storeEventBus.emit({ type: 'TERCERO_DELETED', terceroId });
+  if (name === 'tercero-nombre-updated') storeEventBus.emit({ type: 'TERCERO_NOMBRE_UPDATED', terceroId });
+
   if (typeof window === 'undefined') return;
   if (name === 'tercero-deleted') {
     window.localStorage.setItem(name, Date.now().toString());
@@ -146,7 +150,7 @@ export const useTercerosStore = create<TercerosState>()(
           }
 
           if (shouldDispatchTerceroNombreUpdated) {
-            dispatchTerceroEvent('tercero-nombre-updated');
+            dispatchTerceroEvent('tercero-nombre-updated', id);
           }
 
           set((state) => {
@@ -229,7 +233,7 @@ export const useTercerosStore = create<TercerosState>()(
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          dispatchTerceroEvent('tercero-deleted');
+          dispatchTerceroEvent('tercero-deleted', id);
           set({ error: null });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar tercero';

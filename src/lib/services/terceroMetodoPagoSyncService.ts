@@ -1,9 +1,10 @@
-﻿import { updateTercero } from '@/lib/supabase/terceros-repository';
-import { useTercerosStore } from '@/store/tercerosStore';
+import { storeEventBus } from '@/lib/events/store-event-bus';
+import { updateTercero } from '@/lib/supabase/terceros-repository';
 import {
   isPendingTerceroPaymentMethodId,
   TERCERO_METODO_PAGO_UPDATED_EVENT,
 } from '@/lib/utils/terceroMetodoPago';
+import { useTercerosStore } from '@/store/tercerosStore';
 
 interface SyncTerceroMetodoPagoInput {
   terceroId?: string | null;
@@ -35,6 +36,8 @@ export async function syncTerceroMetodoPago(input: SyncTerceroMetodoPagoInput): 
         ? { ...state.selectedTercero, metodoPagoId: storeMetodoPagoId, updatedAt: new Date() }
         : state.selectedTercero,
   }));
+
+  storeEventBus.emit({ type: 'TERCERO_METODO_PAGO_UPDATED', terceroId });
 
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(TERCERO_METODO_PAGO_UPDATED_EVENT, Date.now().toString());

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { ENTITIES, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
 import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas-use-cases';
 import {
@@ -17,7 +18,9 @@ import { useActivityLogStore } from '@/store/activityLogStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Servicio } from '@/types/servicios';
 
-function dispatchServicioDeleted() {
+function dispatchServicioDeleted(servicioId: string) {
+  storeEventBus.emit({ type: 'SERVICIO_DELETED', servicioId });
+
   if (typeof window === 'undefined') return;
   window.localStorage.setItem('servicio-deleted', Date.now().toString());
   window.dispatchEvent(new Event('servicio-deleted'));
@@ -112,6 +115,7 @@ export const useServiciosStore = create<ServiciosState>()(
             error: null,
           }));
           syncServicioPronosticoLocal(servicio.id, pronostico);
+          storeEventBus.emit({ type: 'SERVICIO_CREATED', servicioId: servicio.id });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear servicio';
           set({ error: errorMessage });
@@ -137,6 +141,7 @@ export const useServiciosStore = create<ServiciosState>()(
           }));
 
           syncServicioPronosticoLocal(id, pronostico);
+          storeEventBus.emit({ type: 'SERVICIO_UPDATED', servicioId: id });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar servicio';
           set({ error: errorMessage });
@@ -170,7 +175,7 @@ export const useServiciosStore = create<ServiciosState>()(
           );
 
           syncServicioPronosticoLocal(id, null);
-          dispatchServicioDeleted();
+          dispatchServicioDeleted(id);
           set({ error: null });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar servicio';

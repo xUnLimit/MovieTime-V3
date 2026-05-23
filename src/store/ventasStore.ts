@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 import { countVentas, ENTITIES, getVentas, logCacheHit } from '@/lib/supabase/ventas-repository';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import {
   createVentaUseCase,
   deleteVentaUseCase,
@@ -14,7 +15,14 @@ import { useActivityLogStore } from '@/store/activityLogStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
-function dispatchVentaEvent(name: 'venta-created' | 'venta-updated' | 'venta-deleted') {
+function dispatchVentaEvent(
+  name: 'venta-created' | 'venta-updated' | 'venta-deleted',
+  ventaId: string
+) {
+  if (name === 'venta-created') storeEventBus.emit({ type: 'VENTA_CREATED', ventaId });
+  if (name === 'venta-updated') storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
+  if (name === 'venta-deleted') storeEventBus.emit({ type: 'VENTA_DELETED', ventaId });
+
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(name, Date.now().toString());
   window.dispatchEvent(new Event(name));
@@ -100,7 +108,7 @@ export const useVentasStore = create<VentasState>()(
           }));
 
           syncVentaPronosticoLocal(venta.id, pronostico);
-          dispatchVentaEvent('venta-created');
+          dispatchVentaEvent('venta-created', venta.id);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear venta';
           set({ error: errorMessage });
@@ -135,7 +143,7 @@ export const useVentasStore = create<VentasState>()(
           }));
 
           syncVentaPronosticoLocal(id, pronostico);
-          dispatchVentaEvent('venta-updated');
+          dispatchVentaEvent('venta-updated', id);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar venta';
           set({ error: errorMessage });
@@ -181,7 +189,7 @@ export const useVentasStore = create<VentasState>()(
           );
 
           syncVentaPronosticoLocal(id, null);
-          dispatchVentaEvent('venta-deleted');
+          dispatchVentaEvent('venta-deleted', id);
           set({ error: null });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar venta';

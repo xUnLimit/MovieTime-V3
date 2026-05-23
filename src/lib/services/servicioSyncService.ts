@@ -1,5 +1,6 @@
 ﻿import { getServicios } from '@/lib/supabase/servicios-repository';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { sincronizarUnServicio, sincronizarUnaVenta, sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { Servicio, VentaDoc } from '@/types';
@@ -18,7 +19,17 @@ export interface SyncServicioDependenciasResult {
   ventasActualizadas: number;
 }
 
-function emitServicioSyncEvents(ventasWereUpdated: boolean) {
+function emitServicioSyncEvents(servicioId: string | null, ventaIds: string[]) {
+  if (servicioId) {
+    storeEventBus.emit({ type: 'SERVICIO_UPDATED', servicioId });
+  } else {
+    storeEventBus.emit({ type: 'SERVICIOS_INVALIDATED' });
+  }
+
+  ventaIds.forEach((ventaId) => {
+    storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
+  });
+
   if (typeof window === 'undefined') {
     return;
   }
@@ -27,7 +38,7 @@ function emitServicioSyncEvents(ventasWereUpdated: boolean) {
   window.localStorage.setItem('servicio-updated', syncTimestamp);
   window.dispatchEvent(new Event('servicio-updated'));
 
-  if (ventasWereUpdated) {
+  if (ventaIds.length > 0) {
     window.localStorage.setItem('venta-updated', syncTimestamp);
     window.dispatchEvent(new Event('venta-updated'));
   }
@@ -70,7 +81,7 @@ export async function syncServicioDependencias(
   }
 
   if (emitEvents) {
-    emitServicioSyncEvents(ventasDelServicioIds.length > 0);
+    emitServicioSyncEvents(nextServicio.id, ventasDelServicioIds);
   }
 
   return { ventasActualizadas: 0 };
@@ -95,7 +106,7 @@ export async function resyncServiciosDenormalizedData(preFetchedData?: {
     useNotificacionesStore.getState().fetchCounts(),
   ]);
 
-  emitServicioSyncEvents(false);
+  emitServicioSyncEvents(null, []);
 
   return {
     serviciosRevisados: servicios.length,
