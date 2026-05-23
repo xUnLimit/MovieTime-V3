@@ -35,6 +35,8 @@ Completado hasta esta iteracion:
 - Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime y retiradas de `dashboardStatsService`; el dashboard queda orientado a invalidacion/refetch sobre read models live.
 - Fase 2 limpieza de capas: `notificaciones-use-cases.ts` eliminado porque era pass-through puro hacia el repositorio.
 - Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos, RPCs de categorias y read RPCs de dashboard; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
+- Fase 0 side-effects: fallos esperados de sync de metodo de pago en ventas usan logging estructurado compartido sin cambiar el resultado `syncPaymentMethodFailed`.
+- Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
 - Cobertura: suite actual en 156 tests pasando.
 
 Commits de referencia de esta iteracion:
@@ -110,12 +112,15 @@ Commits de referencia de esta iteracion:
 - `8208626` feat: query notification amount metrics
 - `3075e13` feat: query reposo notifications table
 - `4a650ad` refactor: replace dashboard store cache
+- `71da426` feat: add feature flag foundation
+- `94f440a` refactor: centralize venta sync side-effect logging
 
 Validacion recurrente ejecutada por PR logico:
 
 - `npm run lint`
 - `npm test -- --run`
 - `npm run build`
+- `npm run migrate:validate` cuando el PR toca Supabase/schema
 
 ## PR 0 - Baseline de Arquitectura
 
