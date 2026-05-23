@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 
 interface TemplateEditorProps {
   templates: TemplateMensaje[];
+  onTemplateSaved?: () => void | Promise<void>;
 }
 
 const TIPO_TEMPLATES: { value: TipoTemplate; label: string }[] = [
@@ -43,7 +44,7 @@ const PLACEHOLDERS = [
   { key: '{monto}', description: 'El monto a pagar', icon: DollarSign },
 ];
 
-export function TemplateEditor({ templates }: TemplateEditorProps) {
+export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorProps) {
   const { updateTemplate, createTemplate } = useTemplatesStore();
   const [selectedTipo, setSelectedTipo] = useState<TipoTemplate>('notificacion_regular');
 
@@ -83,6 +84,7 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
           contenido,
           placeholders: detectedPlaceholders,
         });
+        await onTemplateSaved?.();
         toast.success('Plantilla actualizada', { description: 'Los cambios en la plantilla han sido guardados correctamente.' });
       } else {
         // Create new template
@@ -94,6 +96,7 @@ export function TemplateEditor({ templates }: TemplateEditorProps) {
           placeholders: detectedPlaceholders,
           activo: true,
         });
+        await onTemplateSaved?.();
         toast.success('Plantilla creada', { description: 'La nueva plantilla de mensaje ha sido creada correctamente.' });
       }
     } catch (error) {

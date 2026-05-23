@@ -1,17 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
-import { useTemplatesStore } from '@/store/templatesStore';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { TemplateEditor } from '@/components/editor-mensajes/TemplateEditor';
+import { useTemplates } from '@/hooks/use-templates';
 
 function EditorMensajesPageContent() {
-  const { templates, fetchTemplates } = useTemplatesStore();
-
-  useEffect(() => {
-    fetchTemplates(true);
-  }, [fetchTemplates]);
+  const { data: templates = [], refetch: refetchTemplates } = useTemplates();
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
@@ -22,7 +17,12 @@ function EditorMensajesPageContent() {
         </p>
       </div>
 
-      <TemplateEditor templates={templates} />
+      <TemplateEditor
+        templates={templates}
+        onTemplateSaved={async () => {
+          await refetchTemplates();
+        }}
+      />
     </div>
   );
 }

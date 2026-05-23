@@ -83,6 +83,10 @@ export const queryKeys = {
     lists: () => [...queryKeys.terceros.all, 'list'] as const,
     detail: (terceroId: string) => [...queryKeys.terceros.all, 'detail', terceroId] as const,
   },
+  templates: {
+    all: ['templates'] as const,
+    list: () => [...queryKeys.templates.all, 'list'] as const,
+  },
   notificaciones: {
     all: ['notificaciones'] as const,
     lists: () => [...queryKeys.notificaciones.all, 'list'] as const,
