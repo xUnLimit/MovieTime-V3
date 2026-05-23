@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowRightLeft, ChevronDown, Scissors } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { useVentasActivasByServicio } from '@/components/ventas/form/useVentaFormQueries';
 import { rankServicios } from '@/lib/utils/servicioRanking';
 import { cn } from '@/lib/utils';
 import { calcularDiasRelativosCalendario } from '@/lib/utils/calculations';
@@ -190,10 +190,8 @@ export function TransferVentaDialog({
   servicios,
   venta,
 }: TransferVentaDialogProps) {
-  const [loadingVentasRanking, setLoadingVentasRanking] = useState(false);
   const [notificarWhatsApp, setNotificarWhatsApp] = useState(false);
   const [servicioId, setServicioId] = useState('');
-  const [ventasActivasPorServicio, setVentasActivasPorServicio] = useState<Record<string, VentaDoc[]>>({});
 
   const servicioOrigen = useMemo(
     () => servicios.find((servicio) => servicio.id === venta?.servicioId) ?? null,
@@ -214,8 +212,20 @@ export function TransferVentaDialog({
           );
         })
         .sort((a, b) => a.nombre.localeCompare(b.nombre)),
-    [servicios, servicioOrigen?.tipo, venta],
+    [servicios, servicioOrigen, venta],
   );
+
+  const servicioRankingCandidateIds = useMemo(
+    () => (open ? serviciosCandidatos.map((servicio) => servicio.id) : []),
+    [open, serviciosCandidatos],
+  );
+
+  const {
+    ventasActivasPorServicio,
+    isLoading: loadingVentasRanking,
+  } = useVentasActivasByServicio(servicioRankingCandidateIds, {
+    excludeVentaId: venta?.id,
+  });
 
   const serviciosDestino = useMemo(
     () =>
@@ -236,7 +246,7 @@ export function TransferVentaDialog({
           0;
         return (servicio.perfilesDisponibles ?? 0) - ocupados > 0;
       }),
-    [serviciosCandidatos, venta?.cicloPago, venta?.fechaFin, venta?.fechaInicio, ventasActivasPorServicio],
+    [serviciosCandidatos, venta, ventasActivasPorServicio],
   );
 
   const selectedServicioId = servicioId || serviciosDestino[0]?.id || '';
@@ -281,42 +291,6 @@ export function TransferVentaDialog({
     if (ratio <= 0.5) return 'text-[#ffea00]';
     return 'text-[#00ff85]';
   };
-
-  useEffect(() => {
-    if (!open || serviciosCandidatos.length === 0) return;
-
-    let cancelled = false;
-    const candidateIds = serviciosCandidatos.map((servicio) => servicio.id);
-    const loadVentasRanking = async () => {
-      setLoadingVentasRanking(true);
-      try {
-        const ventas = await fetchVentasByFiltersUseCase<VentaDoc>([
-          { field: 'servicioId', operator: 'in', value: candidateIds },
-          { field: 'estado', operator: '!=', value: 'inactivo' },
-        ]);
-        if (cancelled) return;
-        const grouped: Record<string, VentaDoc[]> = Object.fromEntries(
-          candidateIds.map((id) => [id, []]),
-        );
-        ventas.forEach((venta) => {
-          if (grouped[venta.servicioId]) {
-            grouped[venta.servicioId].push(venta);
-          }
-        });
-        setVentasActivasPorServicio(grouped);
-      } catch (error) {
-        console.error('Error cargando ventas activas para transferencia:', error);
-        if (!cancelled) setVentasActivasPorServicio({});
-      } finally {
-        if (!cancelled) setLoadingVentasRanking(false);
-      }
-    };
-
-    loadVentasRanking();
-    return () => {
-      cancelled = true;
-    };
-  }, [open, serviciosCandidatos]);
 
   const handleConfirm = async () => {
     if (!servicioSeleccionado || !perfilNumeroDisponible) return;
