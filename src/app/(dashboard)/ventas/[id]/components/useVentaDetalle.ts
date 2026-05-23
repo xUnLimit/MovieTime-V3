@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { differenceInCalendarDays } from 'date-fns';
 import { toast } from 'sonner';
 
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
+import { useTemplates } from '@/hooks/use-templates';
 import { invalidateDashboardCache, syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
@@ -29,9 +30,8 @@ import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
-import { useTemplatesStore } from '@/store/templatesStore';
 import { useVentasStore } from '@/store/ventasStore';
-import type { MetodoPago, VentaDoc, VentaPago } from '@/types';
+import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
 import type { VentaDetalleViewModel, VentaPagoFormData, VentaReembolsoFormData } from './types';
@@ -66,7 +66,12 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
 
   const { deleteNotificacionesPorVenta, fetchNotificaciones } = useNotificacionesStore();
-  const { getTemplateByTipo, fetchTemplates } = useTemplatesStore();
+  const { data: templates = [] } = useTemplates();
+  const getTemplateByTipo = useCallback(
+    (tipo: TemplateMensaje['tipo']) =>
+      templates.find((template) => template.tipo === tipo && template.activo),
+    [templates],
+  );
 
   const [venta, setVenta] = useState<VentaDoc | null>(null);
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
@@ -255,7 +260,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   };
 
   const handleOpenRenovar = async () => {
-    await Promise.all([loadMetodosPagoYPlanes(), fetchTemplates()]);
+    await loadMetodosPagoYPlanes();
     setRenovarDialogOpen(true);
   };
 
