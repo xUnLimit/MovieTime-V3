@@ -39,6 +39,7 @@ export const queryKeys = {
     pagos: (ventaId: string) => [...queryKeys.ventas.detail(ventaId), 'pagos'] as const,
     byTercero: (terceroId: string) => [...queryKeys.ventas.all, 'tercero', terceroId] as const,
     byTerceros: (tercerosKey: string) => [...queryKeys.ventas.all, 'terceros', tercerosKey] as const,
+    byServicio: (servicioId: string) => [...queryKeys.ventas.all, 'servicio', servicioId] as const,
     activeByServicios: (serviciosKey: string, excludeVentaId?: string) =>
       [...queryKeys.ventas.all, 'active-by-servicios', serviciosKey, excludeVentaId ?? null] as const,
   },

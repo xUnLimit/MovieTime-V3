@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
+import { queryKeys } from "@/lib/query-keys";
 import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
 import type {
   PerfilDetalleOcupado,
@@ -14,63 +16,73 @@ export interface PendingVentaPerfil {
   perfilNombre: string;
 }
 
+const EMPTY_PERFILES_OCUPADOS_DETALLE: PerfilDetalleOcupado[] = [];
+
+function buildPerfilesOcupadosDetalle(ventas: VentaDoc[]): PerfilDetalleOcupado[] {
+  const ocupadosPorPerfil = new Map<number, PerfilDetalleOcupado>();
+
+  ventas.forEach((venta) => {
+    const estado = venta.estado ?? "activo";
+    if (estado === "inactivo") return;
+
+    const perfilNumero = venta.perfilNumero ?? null;
+    if (!perfilNumero) return;
+
+    const existente = ocupadosPorPerfil.get(perfilNumero);
+    const actualMs = venta.createdAt ? new Date(venta.createdAt).getTime() : 0;
+    const existenteMs = existente?.createdAt
+      ? new Date(existente.createdAt).getTime()
+      : 0;
+
+    if (!existente || actualMs >= existenteMs) {
+      ocupadosPorPerfil.set(perfilNumero, {
+        perfilNumero,
+        clienteNombre: venta.clienteNombre || "Cliente sin nombre",
+        perfilNombre: venta.perfilNombre || `Perfil ${perfilNumero}`,
+        createdAt: venta.createdAt,
+        fechaFin: venta.fechaFin ? new Date(venta.fechaFin as unknown as string) : undefined,
+        cicloPago: venta.cicloPago,
+      });
+    }
+  });
+
+  return Array.from(ocupadosPorPerfil.values());
+}
+
 export function useVentaPerfilDetalle(pendingProfiles: PendingVentaPerfil[]) {
   const [perfilDetalleOpen, setPerfilDetalleOpen] = useState(false);
   const [servicioDetalle, setServicioDetalle] = useState<Servicio | null>(null);
-  const [perfilesOcupadosDetalle, setPerfilesOcupadosDetalle] = useState<
-    PerfilDetalleOcupado[]
-  >([]);
-  const [loadingPerfilesDetalle, setLoadingPerfilesDetalle] = useState(false);
   const [errorPerfilesDetalle, setErrorPerfilesDetalle] = useState<
     string | null
   >(null);
 
-  const handleOpenPerfilDetalle = useCallback(async (servicio: Servicio) => {
-    setServicioDetalle(servicio);
-    setPerfilDetalleOpen(true);
-    setLoadingPerfilesDetalle(true);
-    setErrorPerfilesDetalle(null);
-    try {
+  const perfilesDetalleQuery = useQuery({
+    queryKey: servicioDetalle
+      ? queryKeys.ventas.byServicio(servicioDetalle.id)
+      : queryKeys.ventas.byServicio("invalid"),
+    queryFn: async () => {
       const ventas = await fetchVentasByFiltersUseCase<VentaDoc>([
-        { field: "servicioId", operator: "==", value: servicio.id },
+        { field: "servicioId", operator: "==", value: servicioDetalle!.id },
       ]);
 
-      const ocupadosPorPerfil = new Map<number, PerfilDetalleOcupado>();
-      ventas.forEach((venta) => {
-        const estado = venta.estado ?? "activo";
-        if (estado === "inactivo") return;
+      return buildPerfilesOcupadosDetalle(ventas);
+    },
+    enabled: perfilDetalleOpen && Boolean(servicioDetalle),
+  });
 
-        const perfilNumero = venta.perfilNumero ?? null;
-        if (!perfilNumero) return;
+  const perfilesOcupadosDetalle =
+    perfilesDetalleQuery.data ?? EMPTY_PERFILES_OCUPADOS_DETALLE;
+  const loadingPerfilesDetalle = perfilesDetalleQuery.isFetching;
+  const resolvedErrorPerfilesDetalle =
+    errorPerfilesDetalle ??
+    (perfilesDetalleQuery.isError
+      ? "No se pudo cargar el detalle de perfiles."
+      : null);
 
-        const existente = ocupadosPorPerfil.get(perfilNumero);
-        const actualMs = venta.createdAt
-          ? new Date(venta.createdAt).getTime()
-          : 0;
-        const existenteMs = existente?.createdAt
-          ? new Date(existente.createdAt).getTime()
-          : 0;
-
-        if (!existente || actualMs >= existenteMs) {
-          ocupadosPorPerfil.set(perfilNumero, {
-            perfilNumero,
-            clienteNombre: venta.clienteNombre || "Cliente sin nombre",
-            perfilNombre: venta.perfilNombre || `Perfil ${perfilNumero}`,
-            createdAt: venta.createdAt,
-            fechaFin: venta.fechaFin ? new Date(venta.fechaFin as unknown as string) : undefined,
-            cicloPago: venta.cicloPago,
-          });
-        }
-      });
-
-      setPerfilesOcupadosDetalle(Array.from(ocupadosPorPerfil.values()));
-    } catch (error) {
-      console.error("Error cargando detalle de perfiles:", error);
-      setPerfilesOcupadosDetalle([]);
-      setErrorPerfilesDetalle("No se pudo cargar el detalle de perfiles.");
-    } finally {
-      setLoadingPerfilesDetalle(false);
-    }
+  const handleOpenPerfilDetalle = useCallback((servicio: Servicio) => {
+    setServicioDetalle(servicio);
+    setPerfilDetalleOpen(true);
+    setErrorPerfilesDetalle(null);
   }, []);
 
   const perfilesPendientesDetalle = useMemo(() => {
@@ -173,7 +185,7 @@ export function useVentaPerfilDetalle(pendingProfiles: PendingVentaPerfil[]) {
     perfilesDetalleVisual,
     resumenPerfilesDetalle,
     loadingPerfilesDetalle,
-    errorPerfilesDetalle,
+    errorPerfilesDetalle: resolvedErrorPerfilesDetalle,
     setErrorPerfilesDetalle,
     handleOpenPerfilDetalle,
   };
