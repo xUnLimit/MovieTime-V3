@@ -30,6 +30,7 @@ import {
 } from "@/lib/utils/terceroMetodoPago";
 import { VentaClientePagoFields } from "@/components/ventas/form/VentaClientePagoFields";
 import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSelector";
+import { VentaEditPlanFields } from "@/components/ventas/form/edit/VentaEditPlanFields";
 import {
   handleDecimalKeyDown,
   handleIntegerKeyDown,
@@ -150,150 +151,20 @@ export function VentaEditDatosTab({
         }}
       />
 
-      <div className={`grid grid-cols-1 gap-6 ${tiposPlanes.length > 1 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
-        <div className="space-y-2">
-          <Label>Categoría</Label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full justify-between"
-              >
-                {categoriaSeleccionada
-                  ? categoriaSeleccionada.nombre
-                  : "Seleccionar categoría"}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-[var(--radix-dropdown-menu-trigger-width)]"
-            >
-              {categoriasOrdenadas.map((categoria) => (
-                <DropdownMenuItem
-                  key={categoria.id}
-                  onClick={() => {
-                    setValue("categoriaId", categoria.id);
-                    onTipoPlanSelect("");
-                    setValue("servicioId", "");
-                    setValue("planId", "");
-                    setValue("perfilNumero", "");
-                    setValue("perfilNombre", "");
-                    clearErrors("categoriaId");
-                  }}
-                >
-                  {categoria.nombre}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {errors.categoriaId && (
-            <p className="text-sm text-red-500">
-              {errors.categoriaId.message}
-            </p>
-          )}
-        </div>
-
-        {tiposPlanes.length > 1 ? (
-          <div className="space-y-2">
-            <Label>Tipo de plan</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  type="button"
-                  className="w-full justify-between"
-                  disabled={!categoriaIdValue}
-                >
-                  {tipoPlanId
-                    ? tiposPlanes.find((tipo) => tipo.id === tipoPlanId)?.nombre
-                    : categoriaIdValue
-                      ? "Seleccionar tipo"
-                      : "Primero selecciona categoría"}
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-[var(--radix-dropdown-menu-trigger-width)]"
-              >
-                {tiposPlanes.map((tipo) => (
-                  <DropdownMenuItem
-                    key={tipo.id}
-                    onClick={() => {
-                      onTipoPlanSelect(tipo.id);
-                      setValue("servicioId", "");
-                      setValue("planId", "");
-                      setValue("perfilNumero", "");
-                      setValue("perfilNombre", "");
-                      clearErrors("servicioId");
-                      clearErrors("planId");
-                      clearErrors("perfilNumero");
-                    }}
-                  >
-                    {tipo.nombre}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : null}
-
-        <div className="space-y-2">
-          <Label>Plan</Label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full justify-between"
-                disabled={!categoriaIdValue || (tiposPlanes.length > 1 && !tipoPlanId)}
-              >
-                {planSeleccionado
-                  ? planSeleccionado.nombre
-                  : tiposPlanes.length > 1 && !tipoPlanId
-                    ? "Primero selecciona tipo"
-                    : categoriaIdValue
-                      ? "Seleccionar plan"
-                      : "Primero selecciona categoría"}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-[var(--radix-dropdown-menu-trigger-width)]"
-            >
-              {planesDisponibles.map((plan) => (
-                <DropdownMenuItem
-                  key={plan.id}
-                  onClick={() => {
-                    setValue("planId", plan.id);
-                    setValue("servicioId", "");
-                    setValue("perfilNumero", "");
-                    setValue("perfilNombre", "");
-                    if (fechaInicioValue) {
-                      const meses = MESES_POR_CICLO[plan.cicloPago] ?? 1;
-                      const fechaFin = new Date(fechaInicioValue);
-                      fechaFin.setMonth(fechaFin.getMonth() + meses);
-                      setValue("fechaFin", fechaFin);
-                    }
-                    clearErrors("planId");
-                    clearErrors("servicioId");
-                    clearErrors("perfilNumero");
-                  }}
-                >
-                  {plan.nombre}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {errors.planId && (
-            <p className="text-sm text-red-500">{errors.planId.message}</p>
-          )}
-        </div>
-      </div>
-
+      <VentaEditPlanFields
+        categoriaIdValue={categoriaIdValue}
+        categoriaSeleccionada={categoriaSeleccionada}
+        categoriasOrdenadas={categoriasOrdenadas}
+        clearErrors={clearErrors}
+        errors={errors}
+        fechaInicioValue={fechaInicioValue}
+        onTipoPlanSelect={onTipoPlanSelect}
+        planSeleccionado={planSeleccionado}
+        planesDisponibles={planesDisponibles}
+        setValue={setValue}
+        tipoPlanId={tipoPlanId}
+        tiposPlanes={tiposPlanes}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <VentaServicioSelector
           categoriaId={categoriaIdValue}
