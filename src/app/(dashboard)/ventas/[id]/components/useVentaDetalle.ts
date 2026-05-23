@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 import { toast } from 'sonner';
 
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
 import { useTemplates } from '@/hooks/use-templates';
+import { queryKeys } from '@/lib/query-keys';
 import { invalidateDashboardCache, syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
@@ -64,8 +66,9 @@ function getLogContext() {
 
 export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const { deleteNotificacionesPorVenta, fetchNotificaciones } = useNotificacionesStore();
+  const deleteNotificacionesPorVenta = useNotificacionesStore((state) => state.deleteNotificacionesPorVenta);
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
     (tipo: TemplateMensaje['tipo']) =>
@@ -318,7 +321,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       refreshPagos();
       await deleteNotificacionesPorVenta(id);
-      fetchNotificaciones(true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       setRenovarDialogOpen(false);
 
       emitVentaUpdated(id);
@@ -413,7 +416,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       if (data.cortarServicio) {
         await deleteNotificacionesPorVenta(id);
-        fetchNotificaciones(true);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       }
 
       setReembolsoDialogOpen(false);
