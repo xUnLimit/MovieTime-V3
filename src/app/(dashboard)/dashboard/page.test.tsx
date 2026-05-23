@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createQueryClient } from '@/lib/query-client';
 
-const fetchNotificacionesMock = vi.fn();
+const queryNotificationsMock = vi.fn();
 
 vi.mock('next/dynamic', () => ({
   default: () => () => null,
@@ -28,6 +30,10 @@ vi.mock('@/components/notificaciones/NotificationBell', () => ({
   NotificationBell: () => <div>NotificationBell</div>,
 }));
 
+vi.mock('@/lib/supabase/notifications-repository', () => ({
+  queryNotifications: queryNotificationsMock,
+}));
+
 vi.mock('@/components/ui/card', () => ({
   Card: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   CardContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -38,26 +44,6 @@ vi.mock('@/components/ui/card', () => ({
 
 vi.mock('@/components/ui/skeleton', () => ({
   Skeleton: () => <div>Skeleton</div>,
-}));
-
-const useNotificacionesStoreMock = Object.assign(
-  (selector?: (state: { fetchNotificaciones: typeof fetchNotificacionesMock; notificaciones: never[] }) => unknown) => {
-    const state = {
-      fetchNotificaciones: fetchNotificacionesMock,
-      notificaciones: [],
-    };
-
-    return selector ? selector(state) : state;
-  },
-  {
-    getState: () => ({
-      notificaciones: [],
-    }),
-  }
-);
-
-vi.mock('@/store/notificacionesStore', () => ({
-  useNotificacionesStore: useNotificacionesStoreMock,
 }));
 
 vi.mock('@/store/serviciosStore', () => ({
@@ -81,18 +67,27 @@ vi.mock('sonner', () => ({
 }));
 
 describe('Dashboard header', () => {
+  function renderDashboardPage(Component: () => ReactNode) {
+    const queryClient = createQueryClient();
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <Component />
+      </QueryClientProvider>
+    );
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     globalThis.__movietimeDashboardToastState = undefined;
     window.sessionStorage.clear();
 
-    fetchNotificacionesMock.mockResolvedValue(undefined);
+    queryNotificationsMock.mockResolvedValue([]);
   });
 
   it('no muestra el control manual de sincronizacion del sistema', async () => {
     const { default: DashboardPage } = await import('./page');
 
-    render(<DashboardPage />);
+    renderDashboardPage(DashboardPage);
 
     expect(screen.queryByRole('button', { name: /sincronizar sistema/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /^sincronizar$/i })).toBeNull();
@@ -102,23 +97,23 @@ describe('Dashboard header', () => {
     const toast = await import('sonner').then((module) => module.toast);
     const { default: DashboardPage } = await import('./page');
 
-    const { unmount } = render(<DashboardPage />);
+    const { unmount } = renderDashboardPage(DashboardPage);
     unmount();
-    render(<DashboardPage />);
+    renderDashboardPage(DashboardPage);
 
     expect(toast.custom).not.toHaveBeenCalled();
-    expect(fetchNotificacionesMock).toHaveBeenCalledTimes(1);
+    expect(queryNotificationsMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not show the pending-notifications toast again after a full document reload in the same tab', async () => {
     const { default: DashboardPage } = await import('./page');
 
-    const { unmount } = render(<DashboardPage />);
+    const { unmount } = renderDashboardPage(DashboardPage);
     unmount();
 
     globalThis.__movietimeDashboardToastState = undefined;
-    render(<DashboardPage />);
+    renderDashboardPage(DashboardPage);
 
-    expect(fetchNotificacionesMock).toHaveBeenCalledTimes(1);
+    expect(queryNotificationsMock).toHaveBeenCalledTimes(1);
   });
 });

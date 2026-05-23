@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { useQueryClient } from '@tanstack/react-query';
 import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { PronosticoFinanciero } from '@/components/dashboard/PronosticoFinanciero';
@@ -96,7 +97,9 @@ const RevenueByCategory = dynamic(
   { loading: () => <RevenueByCategorySkeleton />, ssr: false }
 );
 import { NotificationBell } from '@/components/notificaciones/NotificationBell';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { queryKeys } from '@/lib/query-keys';
+import { queryNotifications } from '@/lib/supabase/notifications-repository';
+import type { NotificacionConId } from '@/hooks/use-notificaciones';
 import { esNotificacionVenta, esNotificacionServicio } from '@/types/notificaciones';
 import { Bell, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -160,7 +163,7 @@ function releaseDashboardToastRuntimeSlot() {
 }
 
 export default function DashboardPage() {
-  const fetchNotificaciones = useNotificacionesStore((state) => state.fetchNotificaciones);
+  const queryClient = useQueryClient();
   const toastShown = useRef(false);
 
   // Fetch notifications and show welcome toast on first visit
@@ -170,15 +173,18 @@ export default function DashboardPage() {
       if (toastShown.current || !claimDashboardToastRuntimeSlot()) return;
       toastShown.current = true;
 
+      let unread: NotificacionConId[] = [];
       try {
-        await fetchNotificaciones();
+        const notificaciones = await queryClient.ensureQueryData({
+          queryKey: queryKeys.notificaciones.lists(),
+          queryFn: () => queryNotifications<NotificacionConId>([]),
+        });
+        unread = notificaciones.filter((n) => !n.leida);
       } catch (error) {
         releaseDashboardToastRuntimeSlot();
         throw error;
       }
 
-      const store = useNotificacionesStore.getState();
-      const unread = store.notificaciones.filter((n) => !n.leida);
       if (unread.length === 0) {
         completeDashboardToastRuntimeSlot();
         return;
@@ -266,8 +272,7 @@ export default function DashboardPage() {
       toastShown.current = false;
       console.error('[Dashboard] Error showing notification toast:', error);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [queryClient]);
 
   return (
     <div className="space-y-4 -mb-3 sm:-mb-4 md:-mb-6">
