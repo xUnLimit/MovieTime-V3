@@ -1,4 +1,4 @@
-import type { KeyboardEvent, WheelEvent } from "react";
+import type { WheelEvent } from "react";
 import { CalendarIcon, ChevronDown, Plus } from "lucide-react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
@@ -17,6 +17,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { VentaItemsCart } from "@/components/ventas/form/VentaItemsCart";
 import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSelector";
 import {
+  handleDecimalKeyDown,
+  handleIntegerKeyDown,
+} from "@/components/ventas/form/input-key-handlers";
+import {
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
   type VentaItem,
   type VentaItemErrors,
@@ -25,44 +29,6 @@ import { formatearFecha } from "@/lib/utils/calculations";
 import { cn } from "@/lib/utils";
 import type { Categoria, Plan, Servicio } from "@/types";
 import { es } from "date-fns/locale";
-
-const INPUT_CONTROL_KEYS = [
-  "Backspace",
-  "Delete",
-  "Tab",
-  "Escape",
-  "Enter",
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowUp",
-  "ArrowDown",
-];
-
-function shouldAllowControlKey(event: KeyboardEvent<HTMLInputElement>) {
-  return INPUT_CONTROL_KEYS.includes(event.key) || event.ctrlKey || event.metaKey;
-}
-
-function handleDecimalKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-  const char = event.key;
-  const currentValue = event.currentTarget.value;
-
-  if (shouldAllowControlKey(event)) return;
-  if (!/[0-9.]/.test(char)) {
-    event.preventDefault();
-  }
-  if (char === "." && currentValue.includes(".")) {
-    event.preventDefault();
-  }
-}
-
-function handleIntegerKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-  const char = event.key;
-
-  if (shouldAllowControlKey(event)) return;
-  if (!/[0-9]/.test(char)) {
-    event.preventDefault();
-  }
-}
 
 interface VentaCreateItemSectionProps {
   categoriaId: string;

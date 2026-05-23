@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type WheelEvent } from "react";
+import { useState, type WheelEvent } from "react";
 import { es } from "date-fns/locale";
 import { CalendarIcon, ChevronDown } from "lucide-react";
 import type {
@@ -30,44 +30,11 @@ import {
 } from "@/lib/utils/terceroMetodoPago";
 import { VentaClientePagoFields } from "@/components/ventas/form/VentaClientePagoFields";
 import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSelector";
+import {
+  handleDecimalKeyDown,
+  handleIntegerKeyDown,
+} from "@/components/ventas/form/input-key-handlers";
 import type { Categoria, MetodoPago, Plan, Servicio, Tercero } from "@/types";
-
-const CODIGO_CONTROL_KEYS = [
-  "Backspace",
-  "Delete",
-  "Tab",
-  "Escape",
-  "Enter",
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowUp",
-  "ArrowDown",
-];
-
-function shouldAllowControlKey(event: KeyboardEvent<HTMLInputElement>) {
-  return CODIGO_CONTROL_KEYS.includes(event.key) || event.ctrlKey || event.metaKey;
-}
-
-function handleDecimalKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-  const char = event.key;
-  const currentValue = event.currentTarget.value;
-
-  if (shouldAllowControlKey(event)) return;
-  if (!/[0-9.]/.test(char)) {
-    event.preventDefault();
-  }
-  if (char === "." && currentValue.includes(".")) {
-    event.preventDefault();
-  }
-}
-
-function handleCodigoKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-  const char = event.key;
-  if (shouldAllowControlKey(event)) return;
-  if (!/[0-9]/.test(char)) {
-    event.preventDefault();
-  }
-}
 
 interface VentaEditDatosTabProps {
   register: UseFormRegister<VentaEditFormData>;
@@ -550,10 +517,10 @@ export function VentaEditDatosTab({
           <Input
             id="venta-edit-codigo"
             type="text"
-            inputMode="numeric"
-            {...register("codigo")}
-            onKeyDown={handleCodigoKeyDown}
-          />
+              inputMode="numeric"
+              {...register("codigo")}
+              onKeyDown={handleIntegerKeyDown}
+            />
         </div>
       </div>
 
