@@ -3,8 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
+import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
-import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
 import type { Categoria, MetodoPago, Servicio, Tercero } from '@/types';
@@ -20,7 +20,7 @@ export function useCategoriaDetail(categoriaId: string | null) {
 export function useMetodoPagoDetail(metodoPagoId: string | null) {
   return useQuery({
     queryKey: queryKeys.metodosPago.detail(metodoPagoId ?? 'invalid'),
-    queryFn: () => getMetodoPagoUseCase<MetodoPago>(metodoPagoId!),
+    queryFn: () => getMetodoPagoById<MetodoPago>(metodoPagoId!),
     enabled: Boolean(metodoPagoId),
   });
 }

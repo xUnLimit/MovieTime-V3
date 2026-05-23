@@ -11,7 +11,7 @@ import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
 import { getCurrencySymbol } from '@/lib/constants';
 import { queryKeys } from '@/lib/query-keys';
-import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import {
   deleteServicioPagoUseCase,
   getServicioUseCase,
@@ -99,7 +99,7 @@ async function fetchServicioDetalleBundle(id: string): Promise<{
   }
 
   const metodoPagoReal = servicio.metodoPagoId
-    ? await getMetodoPagoUseCase<MetodoPago>(servicio.metodoPagoId).catch(() => null)
+    ? await getMetodoPagoById<MetodoPago>(servicio.metodoPagoId).catch(() => null)
     : null;
 
   return {
