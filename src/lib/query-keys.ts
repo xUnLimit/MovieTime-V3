@@ -1,4 +1,26 @@
 export const queryKeys = {
+  pagination: {
+    all: ['pagination'] as const,
+    page: (
+      collectionName: string,
+      filtersKey: string,
+      pageSize: number,
+      pageIndex: number,
+      orderKey: string,
+      includeTotalCount: boolean,
+      refreshKey: number,
+    ) =>
+      [
+        ...queryKeys.pagination.all,
+        collectionName,
+        filtersKey,
+        pageSize,
+        pageIndex,
+        orderKey,
+        includeTotalCount,
+        refreshKey,
+      ] as const,
+  },
   dashboard: {
     all: ['dashboard'] as const,
     home: () => [...queryKeys.dashboard.all, 'home'] as const,
