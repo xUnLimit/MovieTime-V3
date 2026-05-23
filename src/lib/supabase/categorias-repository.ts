@@ -13,6 +13,11 @@ import type { Json } from './database.types';
 import type { Categoria, Plan, TipoPlanConfig } from '@/types';
 import { readOfflineCollection, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import {
+  deleteCategoriaRpc,
+  getCategoriasCountsRpc,
+  getCategoriasFullRpc,
+} from './categorias-rpc-adapter';
 
 export { logCacheHit };
 
@@ -44,9 +49,7 @@ export async function getCategoriasFull(): Promise<Categoria[]> {
     return readOfflineCollection<Categoria>(ENTITIES.CATEGORIAS);
   }
 
-  const { data, error } = await supabase.rpc('get_categorias_full');
-  if (error) throw new Error(error.message);
-  return jsonCategorias(data);
+  return jsonCategorias(await getCategoriasFullRpc());
 }
 
 export async function getCategoriasCounts() {
@@ -59,8 +62,7 @@ export async function getCategoriasCounts() {
     };
   }
 
-  const { data, error } = await supabase.rpc('get_categorias_counts');
-  if (error) throw new Error(error.message);
+  const data = await getCategoriasCountsRpc();
   const counts = data && typeof data === 'object' && !Array.isArray(data)
     ? data as Record<string, unknown>
     : {};
@@ -112,9 +114,7 @@ export async function updateCategoriaRecord(id: string, updates: Partial<Categor
 }
 
 export async function deleteCategoriaRecord(id: string) {
-  assertOnlineMutation();
-  const { error } = await supabase.rpc('delete_categoria', { p_categoria_id: id });
-  if (error) throw new Error(error.message);
+  await deleteCategoriaRpc(id);
 }
 
 export async function buildCategorias(categoriasRows: CategoriaRow[]): Promise<Categoria[]> {
