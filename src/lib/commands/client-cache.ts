@@ -1,7 +1,7 @@
-import type { ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useCategoriasStore } from '@/store/categoriasStore';
-import { useDashboardStore } from '@/store/dashboardStore';
+import { getActiveQueryClient } from '@/lib/query-client-registry';
+import { queryKeys } from '@/lib/query-keys';
 
 type CacheContext = {
   entity?: string;
@@ -10,7 +10,7 @@ type CacheContext = {
 
 export function invalidateDashboardCache(context: CacheContext = {}) {
   safeAsyncSideEffect(Promise.resolve().then(() => {
-    useDashboardStore.getState().invalidateCache();
+    return getActiveQueryClient()?.invalidateQueries({ queryKey: queryKeys.dashboard.all });
   }), {
     operation: 'invalidateDashboardCache',
     entity: context.entity,
@@ -28,21 +28,11 @@ export function refreshCategoriasCache(context: CacheContext = {}) {
   });
 }
 
-export function syncVentaPronosticoLocal(ventaId: string, pronostico: VentaPronostico | null) {
+export function syncVentaPronosticoLocal(ventaId: string, pronostico?: unknown) {
+  void pronostico;
+
   safeAsyncSideEffect(Promise.resolve().then(() => {
-    const currentStats = useDashboardStore.getState().stats;
-    if (!currentStats) return;
-
-    const existing = currentStats.ventasPronostico ?? [];
-    const updated = pronostico
-      ? existing.some((venta) => venta.id === ventaId)
-        ? existing.map((venta) => (venta.id === ventaId ? pronostico : venta))
-        : [...existing, pronostico]
-      : existing.filter((venta) => venta.id !== ventaId);
-
-    useDashboardStore.setState({
-      stats: { ...currentStats, ventasPronostico: updated },
-    });
+    return getActiveQueryClient()?.invalidateQueries({ queryKey: queryKeys.dashboard.all });
   }), {
     operation: 'syncVentaPronosticoLocal',
     entity: 'venta',
@@ -52,26 +42,12 @@ export function syncVentaPronosticoLocal(ventaId: string, pronostico: VentaProno
 
 export function syncServicioPronosticoLocal(
   servicioId: string,
-  pronostico: ServicioPronostico | null | undefined
+  pronostico: unknown
 ) {
   if (pronostico === undefined) return;
 
   safeAsyncSideEffect(Promise.resolve().then(() => {
-    const store = useDashboardStore.getState();
-    const currentStats = store.stats;
-    if (!currentStats) return;
-
-    const existing = currentStats.serviciosPronostico ?? [];
-    const updated = pronostico
-      ? existing.some((servicio) => servicio.id === servicioId)
-        ? existing.map((servicio) => (servicio.id === servicioId ? pronostico : servicio))
-        : [...existing, pronostico]
-      : existing.filter((servicio) => servicio.id !== servicioId);
-
-    useDashboardStore.setState({
-      stats: { ...currentStats, serviciosPronostico: updated },
-    });
-    store.invalidateCache();
+    return getActiveQueryClient()?.invalidateQueries({ queryKey: queryKeys.dashboard.all });
   }), {
     operation: 'syncServicioPronosticoLocal',
     entity: 'servicio',

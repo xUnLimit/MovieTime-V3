@@ -10,7 +10,7 @@ import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 /**
  * Calcula el monto sin consumir total de todas las ventas activas en USD.
- * Lee desde dashboardStore.stats.ventasPronostico — 0 reads extra a Supabase.
+ * Lee desde dashboard live stats; el calculo local no dispara reads adicionales.
  * Se recalcula automáticamente cuando el store se actualiza (create/delete/update venta).
  */
 export function useMontoSinConsumirTotal() {
