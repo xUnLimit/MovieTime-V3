@@ -27,7 +27,7 @@ Completado hasta esta iteracion:
 - PR 5/6 slice: adapter tipado para `create_venta_with_initial_payment`.
 - PR 7 slice: tests de ventas ampliados para create, renew, refund, delete y chunking.
 - PR 8/9 slice: infraestructura React Query y StoreEventBus base.
-- Migraciones adicionales de Fase 3: hooks principales migrados a React Query, paginas detalle/edicion de catalogos migradas a queries, reposo migrado a queries, dependencias de formularios de ventas y servicios migradas a queries, detalle de perfiles migrado a query, ranking de transferencia de ventas en servicio migrado a query, credenciales de servicios en tercero migradas a query, filtros de pago de terceros migrados a query, totales USD de pagos de ventas/servicios migrados a queries, detalle de servicio y ventas por servicio migrados a query, metodos de pago/categorias/editor de mensajes/gastos migrados a query, categorias compartidas usadas por paginas de ventas y servicios, metrics counts de catalogos/ventas/servicios/terceros migrados a query, busqueda de terceros migrada a query, dashboard financial stats migrado a query, templates de notificaciones/detalle de venta migrados a query, invalidacion de templates/metodos/servicios/categorias centralizada en React Query, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
+- Migraciones adicionales de Fase 3: hooks principales migrados a React Query, paginas detalle/edicion de catalogos migradas a queries, reposo migrado a queries, dependencias de formularios de ventas y servicios migradas a queries, detalle de perfiles migrado a query, ranking de transferencia de ventas en servicio migrado a query, credenciales de servicios en tercero migradas a query, filtros de pago de terceros migrados a query, totales USD de pagos de ventas/servicios migrados a queries, detalle de servicio y ventas por servicio migrados a query, metodos de pago/categorias/editor de mensajes/gastos migrados a query, categorias compartidas usadas por paginas de ventas y servicios, metrics counts de catalogos/ventas/servicios/terceros migrados a query, busqueda de terceros migrada a query, dashboard financial stats y dashboard home migrados a query, templates de notificaciones/detalle de venta migrados a query, lecturas principales de notificaciones y reposo migradas a query, invalidacion de templates/metodos/servicios/categorias/notificaciones centralizada en React Query, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
 - Fase 2 ventas: `ventas-use-cases.ts` convertido en barrel; use-cases separados en `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`.
 - Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
@@ -102,6 +102,13 @@ Commits de referencia de esta iteracion:
 - `5de9919` refactor: log bootstrap side effects
 - `4483448` feat: query notification templates
 - `824d1bf` feat: query venta detail templates
+- `07d07dd` feat: query dashboard home data
+- `abcca05` feat: query notification bell data
+- `98f60b3` feat: query dashboard notification toast
+- `7f71a78` feat: query notification page metrics
+- `c43f26a` fix: propagate notification delete failures
+- `8208626` feat: query notification amount metrics
+- `3075e13` feat: query reposo notifications table
 
 Validacion recurrente ejecutada por PR logico:
 
