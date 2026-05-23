@@ -1,75 +1,79 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
-import { useDashboardStore } from '@/store/dashboardStore';
+
+import { queryKeys } from '@/lib/query-keys';
 import { currencyService } from '@/lib/services/currencyService';
+import { useDashboardStore } from '@/store/dashboardStore';
 
 export interface VentasCategoriaStats {
-  montoSinConsumir: number; // Siempre en USD
+  montoSinConsumir: number;
 }
 
 /**
  * Calcula el monto sin consumir por categoría usando ventasPronostico del dashboardStore.
- * 0 reads a Supabase — los datos ya están en memoria desde fetchDashboardStats().
+ * 0 reads a Supabase: los datos ya están en memoria desde fetchDashboardStats().
  */
 export function useVentasPorCategorias(categoriaIds: string[], { enabled = true } = {}) {
   const ventasPronostico = useDashboardStore(s => s.stats?.ventasPronostico);
-  const [stats, setStats] = useState<Record<string, VentasCategoriaStats>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const idsKey = categoriaIds.join(',');
 
-  useEffect(() => {
-    if (!enabled || categoriaIds.length === 0) {
-      setStats({});
-      return;
-    }
-    if (!ventasPronostico) return;
+  const relevantVentas = useMemo(() => {
+    if (!enabled || !ventasPronostico || categoriaIds.length === 0) return [];
 
     const idSet = new Set(categoriaIds);
-    const relevant = ventasPronostico.filter(v => v.categoriaId && idSet.has(v.categoriaId) && v.fechaInicio && v.fechaFin && v.precioFinal > 0);
+    return ventasPronostico.filter(
+      v => v.categoriaId && idSet.has(v.categoriaId) && v.fechaInicio && v.fechaFin && v.precioFinal > 0,
+    );
+  }, [categoriaIds, enabled, ventasPronostico]);
 
-    if (relevant.length === 0) {
-      setStats({});
-      return;
-    }
+  const signature = useMemo(
+    () =>
+      [
+        idsKey,
+        ...relevantVentas.map((venta) =>
+          [
+            venta.id,
+            venta.categoriaId,
+            venta.fechaInicio,
+            venta.fechaFin,
+            venta.precioFinal,
+            venta.moneda ?? 'USD',
+          ].join(':'),
+        ),
+      ].join('|'),
+    [idsKey, relevantVentas],
+  );
 
-    let cancelled = false;
-    setIsLoading(true);
+  const { data: stats = {}, isLoading, isFetching } = useQuery({
+    queryKey: queryKeys.categorias.ventasMontos(signature),
+    queryFn: async () => {
+      const now = new Date();
+      const result: Record<string, VentasCategoriaStats> = {};
 
-    const calcular = async () => {
-      try {
-        const now = new Date();
-        const result: Record<string, VentasCategoriaStats> = {};
+      await Promise.all(
+        relevantVentas.map(async (venta) => {
+          const fechaInicio = new Date(venta.fechaInicio);
+          const fechaFin = new Date(venta.fechaFin);
+          const totalDias = Math.max(differenceInCalendarDays(fechaFin, fechaInicio), 0);
+          const diasRestantes = Math.max(differenceInCalendarDays(fechaFin, now), 0);
+          const ratio = totalDias > 0 ? Math.min(diasRestantes / totalDias, 1) : 0;
+          const monto = Math.max(venta.precioFinal * ratio, 0);
+          if (monto === 0) return;
 
-        await Promise.all(
-          relevant.map(async (v) => {
-            const fechaInicio = new Date(v.fechaInicio);
-            const fechaFin    = new Date(v.fechaFin);
-            const totalDias     = Math.max(differenceInCalendarDays(fechaFin, fechaInicio), 0);
-            const diasRestantes = Math.max(differenceInCalendarDays(fechaFin, now), 0);
-            const ratio         = totalDias > 0 ? Math.min(diasRestantes / totalDias, 1) : 0;
-            const monto         = Math.max(v.precioFinal * ratio, 0);
-            if (monto === 0) return;
+          const montoUSD = await currencyService.convertToUSD(monto, venta.moneda ?? 'USD');
+          if (!result[venta.categoriaId]) result[venta.categoriaId] = { montoSinConsumir: 0 };
+          result[venta.categoriaId].montoSinConsumir += montoUSD;
+        }),
+      );
 
-            const montoUSD = await currencyService.convertToUSD(monto, v.moneda ?? 'USD');
-            if (!result[v.categoriaId]) result[v.categoriaId] = { montoSinConsumir: 0 };
-            result[v.categoriaId].montoSinConsumir += montoUSD;
-          })
-        );
+      return result;
+    },
+    enabled: enabled && Boolean(ventasPronostico) && categoriaIds.length > 0,
+    retry: false,
+  });
 
-        if (!cancelled) setStats(result);
-      } catch (error) {
-        console.error('[useVentasPorCategorias] Error:', error);
-        if (!cancelled) setStats({});
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    calcular();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ventasPronostico, enabled, categoriaIds.join(',')]);
-
-  return { stats, isLoading };
+  return { stats, isLoading: isLoading || isFetching };
 }

@@ -29,6 +29,7 @@ export const queryKeys = {
     all: ['categorias'] as const,
     full: () => [...queryKeys.categorias.all, 'full'] as const,
     counts: () => [...queryKeys.categorias.all, 'counts'] as const,
+    ventasMontos: (signature: string) => [...queryKeys.categorias.all, 'ventas-montos', signature] as const,
   },
   terceros: {
     all: ['terceros'] as const,
