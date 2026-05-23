@@ -6,7 +6,7 @@ import { differenceInCalendarDays } from 'date-fns';
 
 import { queryKeys } from '@/lib/query-keys';
 import { currencyService } from '@/lib/services/currencyService';
-import { useDashboardStore } from '@/store/dashboardStore';
+import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 /**
  * Calcula el monto sin consumir total de todas las ventas activas en USD.
@@ -14,7 +14,8 @@ import { useDashboardStore } from '@/store/dashboardStore';
  * Se recalcula automáticamente cuando el store se actualiza (create/delete/update venta).
  */
 export function useMontoSinConsumirTotal() {
-  const ventasPronostico = useDashboardStore(s => s.stats?.ventasPronostico);
+  const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats();
+  const ventasPronostico = dashboardStats?.ventasPronostico;
 
   const signature = useMemo(
     () =>
@@ -61,5 +62,5 @@ export function useMontoSinConsumirTotal() {
     retry: false,
   });
 
-  return { value, isLoading: isLoading || isFetching };
+  return { value, isLoading: statsLoading || isLoading || isFetching };
 }

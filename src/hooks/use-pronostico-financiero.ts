@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale';
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { queryKeys } from '@/lib/query-keys';
 import { currencyService } from '@/lib/services/currencyService';
-import { useDashboardStore } from '@/store/dashboardStore';
+import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 import type { PronosticoMensual, ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 
 export interface MesPronostico extends PronosticoMensual {
@@ -49,7 +49,7 @@ export function usePronosticoFinanciero(
   options: UsePronosticoFinancieroOptions = {}
 ): UsePronosticoFinancieroResult {
   const { monthsCount = 4, endAtCurrentYear = false } = options;
-  const { stats, isLoading: statsLoading } = useDashboardStore();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
 
   const ventas = stats?.ventasPronostico ?? EMPTY_VENTAS_PRONOSTICO;
   const servicios = stats?.serviciosPronostico ?? EMPTY_SERVICIOS_PRONOSTICO;

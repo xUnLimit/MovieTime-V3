@@ -1,8 +1,7 @@
 "use client";
 
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
-import { useDashboardStore } from "@/store/dashboardStore";
 import {
   CreditCard,
   DollarSign,
@@ -11,6 +10,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { useIngresoMensualEsperado } from "@/hooks/use-ingreso-mensual-esperado";
 import { useMontoSinConsumirTotal } from "@/hooks/use-monto-sin-consumir-total";
 import { useVentasCounts } from "@/hooks/use-ventas-counts";
@@ -20,16 +20,12 @@ export const VentasMetrics = memo(function VentasMetrics() {
   const totalVentas = ventasCounts?.totalVentas ?? 0;
   const ventasActivas = ventasCounts?.ventasActivas ?? 0;
   const ventasInactivas = ventasCounts?.ventasInactivas ?? 0;
-  const dashboardStats = useDashboardStore((state) => state.stats);
-  const fetchDashboardStats = useDashboardStore((state) => state.fetchDashboardStats);
+  const { data: dashboardStats, isLoading: isLoadingDashboardStats } =
+    useDashboardStats();
   const { value: ingresoMensual, isLoading: isLoadingMensual } =
     useIngresoMensualEsperado();
   const { value: montoSinConsumir, isLoading: isLoadingMonto } =
     useMontoSinConsumirTotal();
-
-  useEffect(() => {
-    fetchDashboardStats();
-  }, [fetchDashboardStats]);
 
   const ingresoTotal = dashboardStats?.ingresosTotal ?? null;
 
@@ -49,7 +45,7 @@ export const VentasMetrics = memo(function VentasMetrics() {
       />
       <MetricCard
         title="Ingreso Total"
-        value={formatValue(ingresoTotal, dashboardStats === null)}
+        value={formatValue(ingresoTotal, isLoadingDashboardStats)}
         icon={DollarSign}
         iconColor="text-orange-500"
         underlineColor="bg-orange-500"

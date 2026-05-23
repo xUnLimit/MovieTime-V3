@@ -6,7 +6,7 @@ import { differenceInCalendarDays } from 'date-fns';
 
 import { queryKeys } from '@/lib/query-keys';
 import { currencyService } from '@/lib/services/currencyService';
-import { useDashboardStore } from '@/store/dashboardStore';
+import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 export interface VentasCategoriaStats {
   montoSinConsumir: number;
@@ -17,7 +17,8 @@ export interface VentasCategoriaStats {
  * 0 reads a Supabase: los datos ya están en memoria desde fetchDashboardStats().
  */
 export function useVentasPorCategorias(categoriaIds: string[], { enabled = true } = {}) {
-  const ventasPronostico = useDashboardStore(s => s.stats?.ventasPronostico);
+  const { data: dashboardStats } = useDashboardStats();
+  const ventasPronostico = dashboardStats?.ventasPronostico;
   const idsKey = categoriaIds.join(',');
 
   const relevantVentas = useMemo(() => {
