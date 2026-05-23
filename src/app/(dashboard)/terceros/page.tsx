@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 import { ClientesTable } from '@/components/terceros/ClientesTable';
 import { RevendedoresTable } from '@/components/terceros/RevendedoresTable';
@@ -15,8 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { invalidateVentasPorTercerosCache } from '@/hooks/use-ventas-por-terceros';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { queryKeys } from '@/lib/query-keys';
+import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { useTercerosStore } from '@/store/tercerosStore';
 import { FilterOption } from '@/lib/supabase/pagination';
 import {
@@ -25,7 +27,7 @@ import {
   TERCERO_METODO_PAGO_UPDATED_EVENT,
   withPendingTerceroPaymentMethod,
 } from '@/lib/utils/terceroMetodoPago';
-import type { Tercero } from '@/types';
+import type { MetodoPago, Tercero } from '@/types';
 
 interface MetodoPagoFilterOption {
   value: string;
@@ -47,20 +49,28 @@ function TercerosPageContent() {
     fetchCounts,
     isLoading: isLoadingTerceros,
   } = useTercerosStore();
-  const { fetchMetodosPagoTerceros } = useMetodosPagoStore();
-
   const [activeTab, setActiveTab] = useState<TercerosTab>('todos');
   const [pageSize, setPageSize] = useState(10);
   const [searchPageIndex, setSearchPageIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [metodoPagoFilter, setMetodoPagoFilter] = useState(ALL_PAYMENT_METHODS_VALUE);
-  const [metodoPagoOptions, setMetodoPagoOptions] = useState<MetodoPagoFilterOption[]>([
-    { value: ALL_PAYMENT_METHODS_VALUE, label: ALL_PAYMENT_METHODS_LABEL },
-  ]);
   const isSearchMode = searchQuery.trim().length > 0;
 
-  const fetchMetodoPagoOptions = useCallback(async (): Promise<MetodoPagoFilterOption[]> => {
-    const metodos = withPendingTerceroPaymentMethod(await fetchMetodosPagoTerceros());
+  const {
+    data: metodoPagoOptions = [
+      { value: ALL_PAYMENT_METHODS_VALUE, label: ALL_PAYMENT_METHODS_LABEL },
+    ],
+    refetch: refetchMetodoPagoOptions,
+  } = useQuery({
+    queryKey: queryKeys.metodosPago.tercerosWithPending(),
+    queryFn: async (): Promise<MetodoPagoFilterOption[]> => {
+      const metodos = withPendingTerceroPaymentMethod(
+        await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+          { field: 'asociadoA', operator: '==', value: 'tercero' },
+          { field: 'activo', operator: '==', value: true },
+        ]),
+      );
+
     const seen = new Set<string>();
     const options = metodos.reduce<MetodoPagoFilterOption[]>((acc, metodo) => {
       if (seen.has(metodo.id)) return acc;
@@ -77,24 +87,8 @@ function TercerosPageContent() {
       { value: ALL_PAYMENT_METHODS_VALUE, label: ALL_PAYMENT_METHODS_LABEL },
       ...options,
     ];
-  }, [fetchMetodosPagoTerceros]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadMetodoPagoOptions = async () => {
-      const options = await fetchMetodoPagoOptions();
-      if (!cancelled) {
-        setMetodoPagoOptions(options);
-      }
-    };
-
-    void loadMetodoPagoOptions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchMetodoPagoOptions]);
+    },
+  });
 
   const selectedMetodoPagoFilter = useMemo(() => {
     if (
@@ -223,7 +217,7 @@ function TercerosPageContent() {
 
     const handleTerceroMetodoPagoUpdated = () => {
       refresh();
-      void fetchMetodoPagoOptions().then(setMetodoPagoOptions);
+      void refetchMetodoPagoOptions();
     };
 
     window.addEventListener('venta-deleted', handleVentaDeleted);
@@ -233,7 +227,7 @@ function TercerosPageContent() {
       window.removeEventListener('venta-deleted', handleVentaDeleted);
       window.removeEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, handleTerceroMetodoPagoUpdated);
     };
-  }, [fetchMetodoPagoOptions, refresh]);
+  }, [refetchMetodoPagoOptions, refresh]);
 
   const handleEdit = (usuario: Tercero) => {
     router.push(`/terceros/editar/${usuario.id}`);
