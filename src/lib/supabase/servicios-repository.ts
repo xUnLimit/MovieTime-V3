@@ -11,8 +11,12 @@
 import { supabase } from './client';
 import { toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
-import { assertRecordId, assertRpcStringId } from '@/lib/utils/safety';
+import { assertRecordId } from '@/lib/utils/safety';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import {
+  createServicioWithInitialPaymentRpc,
+  type CreateServicioWithInitialPaymentPayload,
+} from './servicios-rpc-adapter';
 
 export { logCacheHit };
 
@@ -45,12 +49,9 @@ export async function removeServicioWithPayments(id: string, deletePayments: boo
 }
 
 export async function createServicioWithInitialPayment(
-  payload: Record<string, unknown>
+  payload: CreateServicioWithInitialPaymentPayload
 ): Promise<string> {
-  assertOnlineMutation();
-  const { data, error } = await rpcClient.rpc('create_servicio_with_initial_payment', payload);
-  if (error) throw new Error(error.message);
-  return assertRpcStringId(data, 'create_servicio_with_initial_payment');
+  return createServicioWithInitialPaymentRpc(payload);
 }
 
 export const queryPagosServicio = <T>(filters: QueryFilter[] = []) =>
