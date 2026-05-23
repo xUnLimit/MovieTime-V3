@@ -110,6 +110,21 @@ async function fetchVentaDetalleQuery(id: string): Promise<VentaDetalleQueryData
   return { venta: ventaConDatos, servicioContrasena };
 }
 
+async function fetchMetodosPagoTercerosWithPendingQuery(): Promise<MetodoPago[]> {
+  const methods = await queryMetodosPago<MetodoPago>([
+    { field: 'asociadoA', operator: '==', value: 'tercero' },
+  ]);
+
+  return withPendingTerceroPaymentMethod(Array.isArray(methods) ? methods : []);
+}
+
+async function fetchCategoriaPlanesQuery(categoriaId: string): Promise<Plan[]> {
+  const categoriaDoc = await getCategoriaUseCase<Record<string, unknown>>(categoriaId);
+  return categoriaDoc && Array.isArray(categoriaDoc.planes)
+    ? (categoriaDoc.planes as Plan[])
+    : [];
+}
+
 export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -122,8 +137,6 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     [templates],
   );
 
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
-  const [categoriaPlanes, setCategoriaPlanes] = useState<Plan[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [reembolsoDialogOpen, setReembolsoDialogOpen] = useState(false);
@@ -143,6 +156,20 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const venta = ventaDetalleQuery.data?.venta ?? null;
   const servicioContrasena = ventaDetalleQuery.data?.servicioContrasena ?? '';
   const loading = ventaDetalleQuery.isLoading;
+  const shouldLoadDialogDependencies =
+    renovarDialogOpen || reembolsoDialogOpen || editarPagoDialogOpen;
+  const metodosPagoQuery = useQuery({
+    queryKey: queryKeys.metodosPago.tercerosWithPending(),
+    queryFn: fetchMetodosPagoTercerosWithPendingQuery,
+    enabled: shouldLoadDialogDependencies,
+  });
+  const categoriaPlanesQuery = useQuery({
+    queryKey: queryKeys.categorias.detail(venta?.categoriaId ?? 'invalid'),
+    queryFn: () => fetchCategoriaPlanesQuery(venta!.categoriaId),
+    enabled: shouldLoadDialogDependencies && Boolean(venta?.categoriaId),
+  });
+  const metodosPago = metodosPagoQuery.data ?? [];
+  const categoriaPlanes = categoriaPlanesQuery.data ?? [];
 
   const setVentaData = useCallback(
     (nextVenta: VentaDoc | null) => {
@@ -250,36 +277,32 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     ];
   }, [venta, pagosVenta, loadingPagos]);
 
-  const loadMetodosPagoYPlanes = async () => {
-    if (metodosPago.length > 0 && categoriaPlanes.length > 0) return;
+  const ensureDialogDependencies = async () => {
     try {
-      if (metodosPago.length === 0) {
-        const methods = await queryMetodosPago<MetodoPago>([
-          { field: 'asociadoA', operator: '==', value: 'tercero' },
-        ]);
-        setMetodosPago(Array.isArray(methods) ? withPendingTerceroPaymentMethod(methods) : withPendingTerceroPaymentMethod([]));
-      }
-
-      if (categoriaPlanes.length === 0 && venta?.categoriaId) {
-        const categoriaDoc = await getCategoriaUseCase<Record<string, unknown>>(venta.categoriaId);
-        if (categoriaDoc && Array.isArray(categoriaDoc.planes)) {
-          setCategoriaPlanes(categoriaDoc.planes as Plan[]);
-        }
-      }
+      await Promise.all([
+        queryClient.ensureQueryData({
+          queryKey: queryKeys.metodosPago.tercerosWithPending(),
+          queryFn: fetchMetodosPagoTercerosWithPendingQuery,
+        }),
+        venta?.categoriaId
+          ? queryClient.ensureQueryData({
+              queryKey: queryKeys.categorias.detail(venta.categoriaId),
+              queryFn: () => fetchCategoriaPlanesQuery(venta.categoriaId),
+            })
+          : Promise.resolve([]),
+      ]);
     } catch (error) {
       console.error('Error cargando métodos de pago y planes:', error);
-      setMetodosPago([]);
-      setCategoriaPlanes([]);
     }
   };
 
   const handleOpenRenovar = async () => {
-    await loadMetodosPagoYPlanes();
+    await ensureDialogDependencies();
     setRenovarDialogOpen(true);
   };
 
   const handleOpenReembolso = async () => {
-    await loadMetodosPagoYPlanes();
+    await ensureDialogDependencies();
     setReembolsoDialogOpen(true);
   };
 
@@ -370,7 +393,8 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
               },
               actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
             });
-          } catch {
+          } catch (error) {
+            void error;
             toast.success('Venta renovada exitosamente');
           }
         } else {
@@ -386,7 +410,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   };
 
   const handleEditarPago = async (pago: VentaPago) => {
-    await loadMetodosPagoYPlanes();
+    await ensureDialogDependencies();
     setPagoToEdit(pago);
     setEditarPagoDialogOpen(true);
   };

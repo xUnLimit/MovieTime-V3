@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
 import { getPaginated, getCount, FilterOption } from '@/lib/supabase/pagination';
@@ -19,7 +19,6 @@ interface UseServerPaginationOptions {
 interface PaginationState {
   signature: string;
   pageIndex: number;
-  refreshKey: number;
   cursors: (number | undefined)[];
 }
 
@@ -37,13 +36,13 @@ export function useServerPagination<T>({
   enabled = true,
   includeTotalCount = false,
 }: UseServerPaginationOptions) {
+  const queryClient = useQueryClient();
   const filtersKey = JSON.stringify(filters);
   const orderKey = `${orderByField}:${orderDirection}`;
   const paginationSignature = `${filtersKey}:${pageSize}:${orderKey}`;
   const [paginationState, setPaginationState] = useState<PaginationState>(() => ({
     signature: paginationSignature,
     pageIndex: 0,
-    refreshKey: 0,
     cursors: [undefined],
   }));
 
@@ -52,7 +51,6 @@ export function useServerPagination<T>({
     setPaginationState({
       signature: paginationSignature,
       pageIndex: 0,
-      refreshKey: paginationState.refreshKey,
       cursors: [undefined],
     });
   }
@@ -69,7 +67,6 @@ export function useServerPagination<T>({
         effectivePageIndex,
         orderKey,
         includeTotalCount,
-        paginationState.refreshKey,
       ),
     [
       collectionName,
@@ -78,7 +75,6 @@ export function useServerPagination<T>({
       includeTotalCount,
       orderKey,
       pageSize,
-      paginationState.refreshKey,
     ],
   );
 
@@ -130,7 +126,6 @@ export function useServerPagination<T>({
       return {
         signature: paginationSignature,
         pageIndex: effectivePageIndex + 1,
-        refreshKey: current.refreshKey,
         cursors,
       };
     });
@@ -139,18 +134,17 @@ export function useServerPagination<T>({
     setPaginationState((current) => ({
       signature: paginationSignature,
       pageIndex: Math.max(0, effectivePageIndex - 1),
-      refreshKey: current.refreshKey,
       cursors: current.signature === paginationSignature ? current.cursors : [undefined],
     }));
   }, [effectivePageIndex, paginationSignature]);
   const refresh = useCallback(() => {
-    setPaginationState((current) => ({
+    setPaginationState({
       signature: paginationSignature,
       pageIndex: 0,
-      refreshKey: current.refreshKey + 1,
       cursors: [undefined],
-    }));
-  }, [paginationSignature]);
+    });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.pagination.all });
+  }, [paginationSignature, queryClient]);
 
   return {
     data,

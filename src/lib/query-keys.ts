@@ -8,7 +8,6 @@ export const queryKeys = {
       pageIndex: number,
       orderKey: string,
       includeTotalCount: boolean,
-      refreshKey: number,
     ) =>
       [
         ...queryKeys.pagination.all,
@@ -18,7 +17,6 @@ export const queryKeys = {
         pageIndex,
         orderKey,
         includeTotalCount,
-        refreshKey,
       ] as const,
   },
   dashboard: {
