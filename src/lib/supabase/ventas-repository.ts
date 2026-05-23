@@ -16,6 +16,8 @@ import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import {
   createVentaRefundRpc,
   createVentaWithInitialPaymentRpc,
+  deleteVentaPaymentRpc,
+  deleteVentaWithPaymentsRpc,
   type CreateVentaRefundPayload,
   type CreateVentaWithInitialPaymentPayload,
 } from './ventas-rpc-adapter';
@@ -42,12 +44,10 @@ export const updateVenta = <T extends Record<string, unknown>>(id: string, paylo
 export const removeVenta = (id: string) => remove(ENTITIES.VENTAS, id);
 
 export async function removeVentaWithPayments(id: string, deletePayments: boolean): Promise<void> {
-  assertOnlineMutation();
-  const { error } = await rpcClient.rpc('delete_venta_with_payments', {
+  await deleteVentaWithPaymentsRpc({
     p_venta_id: id,
     p_delete_payments: deletePayments,
   });
-  if (error) throw new Error(error.message);
 }
 
 export async function createVentaWithInitialPayment(
@@ -69,11 +69,9 @@ export const updatePagoVenta = <T extends Record<string, unknown>>(id: string, p
   update(ENTITIES.PAGOS_VENTA, id, payload);
 
 export async function removePagoVenta(id: string): Promise<void> {
-  assertOnlineMutation();
-  const { error } = await rpcClient.rpc('delete_venta_payment_and_empty_period', {
+  await deleteVentaPaymentRpc({
     p_pago_id: id,
   });
-  if (error) throw new Error(error.message);
 }
 
 export type VentaPeriodoUpdate = {

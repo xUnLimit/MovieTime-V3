@@ -15,6 +15,8 @@ import { assertRecordId } from '@/lib/utils/safety';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import {
   createServicioWithInitialPaymentRpc,
+  deleteServicioPaymentRpc,
+  deleteServicioWithPaymentsRpc,
   type CreateServicioWithInitialPaymentPayload,
 } from './servicios-rpc-adapter';
 
@@ -40,12 +42,10 @@ export const updateServicio = <T extends Record<string, unknown>>(id: string, pa
 export const removeServicio = (id: string) => remove(ENTITIES.SERVICIOS, id);
 
 export async function removeServicioWithPayments(id: string, deletePayments: boolean): Promise<void> {
-  assertOnlineMutation();
-  const { error } = await rpcClient.rpc('delete_servicio_with_payments', {
+  await deleteServicioWithPaymentsRpc({
     p_servicio_id: id,
     p_delete_payments: deletePayments,
   });
-  if (error) throw new Error(error.message);
 }
 
 export async function createServicioWithInitialPayment(
@@ -61,11 +61,9 @@ export const updatePagoServicio = <T extends Record<string, unknown>>(id: string
   update(ENTITIES.PAGOS_SERVICIO, id, payload);
 
 export async function removePagoServicio(id: string): Promise<void> {
-  assertOnlineMutation();
-  const { error } = await rpcClient.rpc('delete_servicio_payment_and_empty_period', {
+  await deleteServicioPaymentRpc({
     p_pago_id: id,
   });
-  if (error) throw new Error(error.message);
 }
 
 export type ServicioPeriodoUpdate = {

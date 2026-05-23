@@ -15,6 +15,8 @@ vi.mock('@/lib/pwa/mutation-guard', () => ({
 
 import {
   createServicioWithInitialPaymentRpc,
+  deleteServicioPaymentRpc,
+  deleteServicioWithPaymentsRpc,
   type CreateServicioWithInitialPaymentPayload,
 } from './servicios-rpc-adapter';
 
@@ -72,5 +74,51 @@ describe('createServicioWithInitialPaymentRpc', () => {
     await expect(createServicioWithInitialPaymentRpc(payload)).rejects.toThrow(
       'create_servicio_with_initial_payment no retorno un id valido'
     );
+  });
+});
+
+describe('deleteServicioWithPaymentsRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed RPC with the expected payload', async () => {
+    const payload = { p_servicio_id: 'servicio-1', p_delete_payments: true };
+    rpcMock.mockResolvedValue({ data: null, error: null });
+
+    await expect(deleteServicioWithPaymentsRpc(payload)).resolves.toBeUndefined();
+
+    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock).toHaveBeenCalledWith('delete_servicio_with_payments', payload);
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
+
+    await expect(
+      deleteServicioWithPaymentsRpc({ p_servicio_id: 'servicio-1', p_delete_payments: false })
+    ).rejects.toThrow('RPC failed');
+  });
+});
+
+describe('deleteServicioPaymentRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed RPC with the expected payload', async () => {
+    const payload = { p_pago_id: 'pago-1' };
+    rpcMock.mockResolvedValue({ data: null, error: null });
+
+    await expect(deleteServicioPaymentRpc(payload)).resolves.toBeUndefined();
+
+    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock).toHaveBeenCalledWith('delete_servicio_payment_and_empty_period', payload);
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
+
+    await expect(deleteServicioPaymentRpc({ p_pago_id: 'pago-1' })).rejects.toThrow('RPC failed');
   });
 });

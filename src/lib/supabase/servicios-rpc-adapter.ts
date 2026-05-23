@@ -1,5 +1,6 @@
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import { assertRpcStringId } from '@/lib/utils/safety';
+import type { Database } from '@/lib/supabase/database.types';
 
 import { supabase } from './client';
 
@@ -12,6 +13,20 @@ type CreateServicioWithInitialPaymentRpcClient = {
   rpc: (
     fn: 'create_servicio_with_initial_payment',
     args: CreateServicioWithInitialPaymentPayload
+  ) => Promise<RpcResult>;
+};
+
+type DeleteServicioWithPaymentsRpcClient = {
+  rpc: (
+    fn: 'delete_servicio_with_payments',
+    args: DeleteServicioWithPaymentsPayload
+  ) => Promise<RpcResult>;
+};
+
+type DeleteServicioPaymentRpcClient = {
+  rpc: (
+    fn: 'delete_servicio_payment_and_empty_period',
+    args: DeleteServicioPaymentPayload
   ) => Promise<RpcResult>;
 };
 
@@ -44,8 +59,16 @@ export type CreateServicioWithInitialPaymentPayload = {
   p_created_by?: string | null;
 };
 
+export type DeleteServicioWithPaymentsPayload =
+  Database['public']['Functions']['delete_servicio_with_payments']['Args'];
+export type DeleteServicioPaymentPayload =
+  Database['public']['Functions']['delete_servicio_payment_and_empty_period']['Args'];
+
 const servicioInitialPaymentRpcClient =
   supabase as unknown as CreateServicioWithInitialPaymentRpcClient;
+const deleteServicioWithPaymentsRpcClient =
+  supabase as unknown as DeleteServicioWithPaymentsRpcClient;
+const deleteServicioPaymentRpcClient = supabase as unknown as DeleteServicioPaymentRpcClient;
 
 export async function createServicioWithInitialPaymentRpc(
   payload: CreateServicioWithInitialPaymentPayload
@@ -57,4 +80,26 @@ export async function createServicioWithInitialPaymentRpc(
   );
   if (error) throw new Error(error.message);
   return assertRpcStringId(data, 'create_servicio_with_initial_payment');
+}
+
+export async function deleteServicioWithPaymentsRpc(
+  payload: DeleteServicioWithPaymentsPayload
+): Promise<void> {
+  assertOnlineMutation();
+  const { error } = await deleteServicioWithPaymentsRpcClient.rpc(
+    'delete_servicio_with_payments',
+    payload
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteServicioPaymentRpc(
+  payload: DeleteServicioPaymentPayload
+): Promise<void> {
+  assertOnlineMutation();
+  const { error } = await deleteServicioPaymentRpcClient.rpc(
+    'delete_servicio_payment_and_empty_period',
+    payload
+  );
+  if (error) throw new Error(error.message);
 }

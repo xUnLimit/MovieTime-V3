@@ -23,6 +23,20 @@ type CreateVentaRefundRpcClient = {
   ) => Promise<RpcResult>;
 };
 
+type DeleteVentaWithPaymentsRpcClient = {
+  rpc: (
+    fn: 'delete_venta_with_payments',
+    args: DeleteVentaWithPaymentsPayload
+  ) => Promise<RpcResult>;
+};
+
+type DeleteVentaPaymentRpcClient = {
+  rpc: (
+    fn: 'delete_venta_payment_and_empty_period',
+    args: DeleteVentaPaymentPayload
+  ) => Promise<RpcResult>;
+};
+
 export type CreateVentaWithInitialPaymentPayload = {
   p_cliente_id: string | null;
   p_servicio_id: string;
@@ -53,9 +67,15 @@ export type CreateVentaWithInitialPaymentPayload = {
 
 export type CreateVentaRefundPayload =
   Database['public']['Functions']['create_venta_refund']['Args'];
+export type DeleteVentaWithPaymentsPayload =
+  Database['public']['Functions']['delete_venta_with_payments']['Args'];
+export type DeleteVentaPaymentPayload =
+  Database['public']['Functions']['delete_venta_payment_and_empty_period']['Args'];
 
 const ventaInitialPaymentRpcClient = supabase as unknown as CreateVentaWithInitialPaymentRpcClient;
 const ventaRefundRpcClient = supabase as unknown as CreateVentaRefundRpcClient;
+const deleteVentaWithPaymentsRpcClient = supabase as unknown as DeleteVentaWithPaymentsRpcClient;
+const deleteVentaPaymentRpcClient = supabase as unknown as DeleteVentaPaymentRpcClient;
 
 export async function createVentaWithInitialPaymentRpc(
   payload: CreateVentaWithInitialPaymentPayload
@@ -74,4 +94,21 @@ export async function createVentaRefundRpc(payload: CreateVentaRefundPayload): P
   const { data, error } = await ventaRefundRpcClient.rpc('create_venta_refund', payload);
   if (error) throw new Error(error.message);
   return assertRpcStringId(data, 'create_venta_refund');
+}
+
+export async function deleteVentaWithPaymentsRpc(
+  payload: DeleteVentaWithPaymentsPayload
+): Promise<void> {
+  assertOnlineMutation();
+  const { error } = await deleteVentaWithPaymentsRpcClient.rpc('delete_venta_with_payments', payload);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteVentaPaymentRpc(payload: DeleteVentaPaymentPayload): Promise<void> {
+  assertOnlineMutation();
+  const { error } = await deleteVentaPaymentRpcClient.rpc(
+    'delete_venta_payment_and_empty_period',
+    payload
+  );
+  if (error) throw new Error(error.message);
 }

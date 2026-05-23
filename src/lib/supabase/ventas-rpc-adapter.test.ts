@@ -16,6 +16,8 @@ vi.mock('@/lib/pwa/mutation-guard', () => ({
 import {
   createVentaRefundRpc,
   createVentaWithInitialPaymentRpc,
+  deleteVentaPaymentRpc,
+  deleteVentaWithPaymentsRpc,
   type CreateVentaRefundPayload,
   type CreateVentaWithInitialPaymentPayload,
 } from './ventas-rpc-adapter';
@@ -118,5 +120,51 @@ describe('createVentaRefundRpc', () => {
     await expect(createVentaRefundRpc(refundPayload)).rejects.toThrow(
       'create_venta_refund no retorno un id valido'
     );
+  });
+});
+
+describe('deleteVentaWithPaymentsRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed RPC with the expected payload', async () => {
+    const payload = { p_venta_id: 'venta-1', p_delete_payments: true };
+    rpcMock.mockResolvedValue({ data: null, error: null });
+
+    await expect(deleteVentaWithPaymentsRpc(payload)).resolves.toBeUndefined();
+
+    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock).toHaveBeenCalledWith('delete_venta_with_payments', payload);
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
+
+    await expect(
+      deleteVentaWithPaymentsRpc({ p_venta_id: 'venta-1', p_delete_payments: false })
+    ).rejects.toThrow('RPC failed');
+  });
+});
+
+describe('deleteVentaPaymentRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed RPC with the expected payload', async () => {
+    const payload = { p_pago_id: 'pago-1' };
+    rpcMock.mockResolvedValue({ data: null, error: null });
+
+    await expect(deleteVentaPaymentRpc(payload)).resolves.toBeUndefined();
+
+    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock).toHaveBeenCalledWith('delete_venta_payment_and_empty_period', payload);
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
+
+    await expect(deleteVentaPaymentRpc({ p_pago_id: 'pago-1' })).rejects.toThrow('RPC failed');
   });
 });
