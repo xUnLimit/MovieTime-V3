@@ -1,30 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+
 import { TerceroForm } from '@/components/terceros/TerceroForm';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { MetodoPago } from '@/types';
+import { queryKeys } from '@/lib/query-keys';
 
 function CrearTerceroPageContent() {
   const router = useRouter();
-  const { fetchMetodosPagoTerceros } = useMetodosPagoStore();
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadMetodos = async () => {
-      setLoading(true);
-      const metodos = await fetchMetodosPagoTerceros();
-      setMetodosPago(metodos);
-      setLoading(false);
-    };
-    loadMetodos();
-  }, [fetchMetodosPagoTerceros]);
+  const fetchMetodosPagoTerceros = useMetodosPagoStore((state) => state.fetchMetodosPagoTerceros);
+  const { data: metodosPago = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.metodosPago.terceros(),
+    queryFn: fetchMetodosPagoTerceros,
+  });
 
   const handleSuccess = () => {
     router.push('/terceros');
