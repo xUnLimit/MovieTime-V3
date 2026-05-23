@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
@@ -9,6 +10,7 @@ import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
 import { getCurrencySymbol } from '@/lib/constants';
+import { queryKeys } from '@/lib/query-keys';
 import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import {
   deleteServicioPagoUseCase,
@@ -55,6 +57,38 @@ function getLogContext() {
   };
 }
 
+function toPerfilVenta(venta: VentaDoc): PerfilVenta & { perfilNumero?: number | null } {
+  return {
+    ventaId: venta.id || undefined,
+    clienteId: venta.clienteId || undefined,
+    perfilNumero: venta.perfilNumero ?? null,
+    clienteNombre: venta.clienteNombre || undefined,
+    clienteTelefono: venta.clienteTelefono || undefined,
+    createdAt: venta.createdAt,
+    precioFinal: venta.precioFinal ?? venta.precio ?? 0,
+    descuento: venta.descuento ?? 0,
+    fechaInicio: venta.fechaInicio ?? undefined,
+    fechaFin: venta.fechaFin ?? undefined,
+    notas: venta.notas || '',
+    servicioNombre: venta.servicioNombre,
+    servicioCorreo: venta.servicioCorreo || '',
+    moneda: venta.moneda || undefined,
+    perfilNombre: venta.perfilNombre || undefined,
+    codigo: venta.codigo || undefined,
+    cicloPago: venta.cicloPago || undefined,
+  };
+}
+
+async function fetchServicioVentasProfiles(id: string) {
+  const ventasBase = await fetchVentasByFiltersUseCase<VentaDoc>([
+    { field: 'servicioId', operator: '==', value: id },
+  ]);
+
+  return ventasBase
+    .filter((venta) => (venta.estado ?? 'activo') !== 'inactivo')
+    .map(toPerfilVenta);
+}
+
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
   const router = useRouter();
   const { deleteServicio, fetchCounts, fetchServicios, servicios, updatePerfilOcupado } = useServiciosStore();
@@ -91,6 +125,15 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   // Usar el hook para cargar pagos (con cache)
   const { pagos: pagosServicio, isLoading: pagosHistorialLoading, renovaciones, refresh: refreshPagos } = usePagosServicio(id);
   const { data: metodosPago = [] } = useMetodosPagoServicios();
+  const {
+    data: ventasServicioQueryData = [],
+    error: ventasServicioError,
+    isError: isVentasServicioError,
+  } = useQuery({
+    queryKey: queryKeys.servicios.ventas(id),
+    queryFn: () => fetchServicioVentasProfiles(id),
+    enabled: Boolean(id),
+  });
 
   // Cargar solo el servicio (1 lectura única)
   useEffect(() => {
@@ -140,46 +183,17 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   }, [id]);
 
   useEffect(() => {
-    const loadVentas = async () => {
-      if (!id) return;
-      try {
-        // Fase 1: Cargar ventas base inmediatamente (clienteNombre ya está denormalizado en VentaDoc)
-        const ventasBase = await fetchVentasByFiltersUseCase<VentaDoc>([
-          { field: 'servicioId', operator: '==', value: id },
-        ]);
+    setVentasServicio(ventasServicioQueryData);
+  }, [ventasServicioQueryData]);
 
-        const ventasActivas = ventasBase.filter((v) => (v.estado ?? 'activo') !== 'inactivo');
-
-        // Mostrar perfiles de inmediato con los datos básicos de VentaDoc
-        setVentasServicio(ventasActivas.map((venta) => ({
-          ventaId: venta.id || undefined,
-          clienteId: venta.clienteId || undefined,
-          perfilNumero: venta.perfilNumero ?? null,
-          clienteNombre: venta.clienteNombre || undefined,
-          clienteTelefono: venta.clienteTelefono || undefined,
-          createdAt: venta.createdAt,
-          precioFinal: venta.precioFinal ?? venta.precio ?? 0,
-          descuento: venta.descuento ?? 0,
-          fechaInicio: venta.fechaInicio ?? undefined,
-          fechaFin: venta.fechaFin ?? undefined,
-          notas: venta.notas || '',
-          servicioNombre: venta.servicioNombre,
-          servicioCorreo: venta.servicioCorreo || '',
-          moneda: venta.moneda || undefined,
-          perfilNombre: venta.perfilNombre || undefined,
-          codigo: venta.codigo || undefined,
-          cicloPago: venta.cicloPago || undefined,
-        })));
-
-      } catch (error) {
-        console.error('Error cargando ventas del servicio:', error);
-        toast.error('Error cargando ventas del servicio', { description: error instanceof Error ? error.message : undefined });
-        setVentasServicio([]);
-      }
-    };
-
-    loadVentas();
-  }, [id]);
+  useEffect(() => {
+    if (!isVentasServicioError) return;
+    console.error('Error cargando ventas del servicio:', ventasServicioError);
+    toast.error('Error cargando ventas del servicio', {
+      description: ventasServicioError instanceof Error ? ventasServicioError.message : undefined,
+    });
+    setVentasServicio([]);
+  }, [isVentasServicioError, ventasServicioError]);
 
   const handleDelete = () => {
     setDeletePayments(false);
