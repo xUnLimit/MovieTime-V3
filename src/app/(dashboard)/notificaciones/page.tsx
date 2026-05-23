@@ -92,8 +92,7 @@ function NotificacionesPageContent() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { data: notificaciones = [] } = useNotificaciones();
-  const { fetchNotificaciones, fetchCounts } =
-    useNotificacionesStore();
+  const fetchNotificaciones = useNotificacionesStore((state) => state.fetchNotificaciones);
   const ventasProximas = notificaciones.filter((notificacion) => notificacion.entidad === 'venta').length;
   const serviciosProximos = notificaciones.filter((notificacion) => notificacion.entidad === 'servicio').length;
   const reposoCompletados = notificaciones.filter((notificacion) => notificacion.entidad === 'reposo').length;
@@ -116,7 +115,6 @@ function NotificacionesPageContent() {
         await sincronizarNotificaciones();
         await Promise.all([
           fetchNotificaciones(true),
-          fetchCounts(),
           queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
         ]);
       } catch (error) {
@@ -126,7 +124,7 @@ function NotificacionesPageContent() {
     };
 
     init();
-  }, [fetchNotificaciones, fetchCounts, queryClient]);
+  }, [fetchNotificaciones, queryClient]);
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
