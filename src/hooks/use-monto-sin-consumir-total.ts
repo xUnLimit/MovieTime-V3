@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
-import { useDashboardStore } from '@/store/dashboardStore';
+
+import { queryKeys } from '@/lib/query-keys';
 import { currencyService } from '@/lib/services/currencyService';
+import { useDashboardStore } from '@/store/dashboardStore';
 
 /**
  * Calcula el monto sin consumir total de todas las ventas activas en USD.
@@ -12,49 +15,51 @@ import { currencyService } from '@/lib/services/currencyService';
  */
 export function useMontoSinConsumirTotal() {
   const ventasPronostico = useDashboardStore(s => s.stats?.ventasPronostico);
-  const [value, setValue] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!ventasPronostico) return;
+  const signature = useMemo(
+    () =>
+      (ventasPronostico ?? [])
+        .map((venta) =>
+          [
+            venta.id,
+            venta.fechaInicio ? new Date(venta.fechaInicio).toISOString() : '',
+            venta.fechaFin ? new Date(venta.fechaFin).toISOString() : '',
+            venta.precioFinal,
+            venta.moneda ?? 'USD',
+          ].join(':'),
+        )
+        .join('|'),
+    [ventasPronostico],
+  );
 
-    let cancelled = false;
-    setIsLoading(true);
+  const { data: value = null, isLoading, isFetching } = useQuery({
+    queryKey: queryKeys.dashboard.montoSinConsumir(signature),
+    queryFn: async () => {
+      if (!ventasPronostico) return null;
 
-    const calcular = async () => {
-      try {
-        const now = new Date();
+      const now = new Date();
+      const montos = await Promise.all(
+        ventasPronostico
+          .filter(v => v.fechaInicio && v.fechaFin && v.precioFinal > 0)
+          .map(async v => {
+            const fechaInicio = new Date(v.fechaInicio);
+            const fechaFin = new Date(v.fechaFin);
 
-        const montos = await Promise.all(
-          ventasPronostico
-            .filter(v => v.fechaInicio && v.fechaFin && v.precioFinal > 0)
-            .map(async v => {
-              const fechaInicio = new Date(v.fechaInicio);
-              const fechaFin    = new Date(v.fechaFin);
+            const totalDias = Math.max(differenceInCalendarDays(fechaFin, fechaInicio), 0);
+            const diasRestantes = Math.max(differenceInCalendarDays(fechaFin, now), 0);
+            const ratio = totalDias > 0 ? Math.min(diasRestantes / totalDias, 1) : 0;
+            const monto = Math.max(v.precioFinal * ratio, 0);
 
-              const totalDias     = Math.max(differenceInCalendarDays(fechaFin, fechaInicio), 0);
-              const diasRestantes = Math.max(differenceInCalendarDays(fechaFin, now), 0);
-              const ratio         = totalDias > 0 ? Math.min(diasRestantes / totalDias, 1) : 0;
-              const monto         = Math.max(v.precioFinal * ratio, 0);
+            if (monto === 0) return 0;
+            return currencyService.convertToUSD(monto, v.moneda ?? 'USD');
+          }),
+      );
 
-              if (monto === 0) return 0;
-              return currencyService.convertToUSD(monto, v.moneda ?? 'USD');
-            })
-        );
+      return montos.reduce((sum, m) => sum + m, 0);
+    },
+    enabled: Boolean(ventasPronostico),
+    retry: false,
+  });
 
-        const total = montos.reduce((sum, m) => sum + m, 0);
-        if (!cancelled) setValue(total);
-      } catch (error) {
-        console.error('[useMontoSinConsumirTotal] Error:', error);
-        if (!cancelled) setValue(0);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    calcular();
-    return () => { cancelled = true; };
-  }, [ventasPronostico]);
-
-  return { value, isLoading };
+  return { value, isLoading: isLoading || isFetching };
 }

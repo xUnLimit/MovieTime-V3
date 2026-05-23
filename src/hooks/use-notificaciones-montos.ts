@@ -1,10 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
+import { queryKeys } from '@/lib/query-keys';
 import { currencyService } from '@/lib/services/currencyService';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { esNotificacionServicio, esNotificacionVenta } from '@/types/notificaciones';
+
+interface NotificacionesMontosResult {
+  ventasEnRetraso: number | null;
+  serviciosPorPagar: number | null;
+}
 
 /**
  * Totales financieros de las notificaciones:
@@ -13,10 +20,6 @@ import { esNotificacionServicio, esNotificacionVenta } from '@/types/notificacio
  */
 export function useNotificacionesMontos() {
   const notificaciones = useNotificacionesStore((state) => state.notificaciones);
-  const [ventasEnRetraso, setVentasEnRetraso] = useState<number | null>(null);
-  const [serviciosPorPagar, setServiciosPorPagar] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
   const ventasVencidas = useMemo(
     () =>
       notificaciones
@@ -33,16 +36,30 @@ export function useNotificacionesMontos() {
     [notificaciones],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
+  const montosSignature = useMemo(
+    () =>
+      [
+        ...ventasVencidas.map((notificacion) =>
+          `${notificacion.id}:${notificacion.precioFinal ?? 0}:${notificacion.moneda ?? 'USD'}`,
+        ),
+        ...serviciosPendientes.map((notificacion) =>
+          `${notificacion.id}:${notificacion.costoServicio ?? 0}:${notificacion.moneda ?? 'USD'}`,
+        ),
+      ].join('|'),
+    [serviciosPendientes, ventasVencidas],
+  );
 
-    const calcular = async () => {
-      try {
+  const { data = { ventasEnRetraso: null, serviciosPorPagar: null }, isLoading, isFetching } =
+    useQuery<NotificacionesMontosResult>({
+      queryKey: queryKeys.notificaciones.montos(montosSignature),
+      queryFn: async () => {
         const [montosVentas, montosServicios] = await Promise.all([
           Promise.all(
             ventasVencidas.map((notificacion) =>
-              currencyService.convertToUSD(notificacion.precioFinal as number, notificacion.moneda ?? 'USD'),
+              currencyService.convertToUSD(
+                notificacion.precioFinal as number,
+                notificacion.moneda ?? 'USD',
+              ),
             ),
           ),
           Promise.all(
@@ -52,29 +69,17 @@ export function useNotificacionesMontos() {
           ),
         ]);
 
-        if (cancelled) return;
-        setVentasEnRetraso(montosVentas.reduce((sum, monto) => sum + monto, 0));
-        setServiciosPorPagar(montosServicios.reduce((sum, monto) => sum + monto, 0));
-      } catch (error) {
-        console.error('[useNotificacionesMontos] Error:', error);
-        if (!cancelled) {
-          setVentasEnRetraso(0);
-          setServiciosPorPagar(0);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    calcular();
-    return () => {
-      cancelled = true;
-    };
-  }, [serviciosPendientes, ventasVencidas]);
+        return {
+          ventasEnRetraso: montosVentas.reduce((sum, monto) => sum + monto, 0),
+          serviciosPorPagar: montosServicios.reduce((sum, monto) => sum + monto, 0),
+        };
+      },
+      retry: false,
+    });
 
   return {
-    ventasEnRetraso,
-    serviciosPorPagar,
-    isLoading,
+    ventasEnRetraso: data.ventasEnRetraso,
+    serviciosPorPagar: data.serviciosPorPagar,
+    isLoading: isLoading || isFetching,
   };
 }

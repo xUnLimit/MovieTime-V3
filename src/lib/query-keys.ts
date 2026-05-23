@@ -4,6 +4,8 @@ export const queryKeys = {
     home: () => [...queryKeys.dashboard.all, 'home'] as const,
     stats: () => [...queryKeys.dashboard.all, 'stats'] as const,
     churn: () => [...queryKeys.dashboard.all, 'churn'] as const,
+    montoSinConsumir: (signature: string) =>
+      [...queryKeys.dashboard.all, 'monto-sin-consumir', signature] as const,
   },
   ventas: {
     all: ['ventas'] as const,
@@ -36,5 +38,6 @@ export const queryKeys = {
     lists: () => [...queryKeys.notificaciones.all, 'list'] as const,
     byEntity: (entity: 'venta' | 'servicio' | 'reposo') =>
       [...queryKeys.notificaciones.all, 'entity', entity] as const,
+    montos: (signature: string) => [...queryKeys.notificaciones.all, 'montos', signature] as const,
   },
 };
