@@ -15,15 +15,15 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { VentaItemsCart } from "@/components/ventas/form/VentaItemsCart";
-import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSelector";
+import { VentaCreatePlanFields } from "@/components/ventas/form/create/VentaCreatePlanFields";
+import { VentaCreateServiceProfileFields } from "@/components/ventas/form/create/VentaCreateServiceProfileFields";
 import {
   handleDecimalKeyDown,
   handleIntegerKeyDown,
 } from "@/components/ventas/form/input-key-handlers";
-import {
-  SERVICIOS_DROPDOWN_VISIBLE_ROWS,
-  type VentaItem,
-  type VentaItemErrors,
+import type {
+  VentaItem,
+  VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
 import { formatearFecha } from "@/lib/utils/calculations";
 import { cn } from "@/lib/utils";
@@ -152,188 +152,41 @@ export function VentaCreateItemSection({
         </span>
       </div>
 
-      <div className={`grid grid-cols-1 gap-6 ${tiposPlanes.length > 1 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
-        <div className="space-y-2">
-          <Label>Categoria</Label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full justify-between"
-              >
-                {categoriaId
-                  ? categorias.find((categoria) => categoria.id === categoriaId)
-                      ?.nombre
-                  : "Seleccionar categoria"}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-[var(--radix-dropdown-menu-trigger-width)]"
-            >
-              {categoriasOrdenadas.map((categoria) => (
-                <DropdownMenuItem
-                  key={categoria.id}
-                  onClick={() => onCategoriaSelect(categoria.id)}
-                >
-                  {categoria.nombre}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {itemErrors.categoria ? (
-            <p className="text-sm text-red-500">{itemErrors.categoria}</p>
-          ) : null}
-        </div>
+      <VentaCreatePlanFields
+        categoriaId={categoriaId}
+        categorias={categorias}
+        categoriasOrdenadas={categoriasOrdenadas}
+        itemErrors={itemErrors}
+        onCategoriaSelect={onCategoriaSelect}
+        onPlanSelect={onPlanSelect}
+        onTipoPlanSelect={onTipoPlanSelect}
+        planId={planId}
+        planSeleccionado={planSeleccionado}
+        planesDisponibles={planesDisponibles}
+        tipoPlanId={tipoPlanId}
+        tiposPlanes={tiposPlanes}
+      />
 
-        {tiposPlanes.length > 1 ? (
-          <div className="space-y-2">
-            <Label>Tipo de plan</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  type="button"
-                  className="w-full justify-between"
-                  disabled={!categoriaId}
-                >
-                  {tipoPlanId
-                    ? tiposPlanes.find((t) => t.id === tipoPlanId)?.nombre
-                    : categoriaId
-                      ? "Seleccionar tipo"
-                      : "Primero selecciona categoria"}
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-[var(--radix-dropdown-menu-trigger-width)]"
-              >
-                {tiposPlanes.map((tipo) => (
-                  <DropdownMenuItem
-                    key={tipo.id}
-                    onClick={() => onTipoPlanSelect(tipo.id)}
-                  >
-                    {tipo.nombre}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : null}
-
-        <div className="space-y-2">
-          <Label>Plan</Label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full justify-between"
-                disabled={!categoriaId || (tiposPlanes.length > 1 && !tipoPlanId)}
-              >
-                {planId
-                  ? planSeleccionado?.nombre
-                  : tiposPlanes.length > 1 && !tipoPlanId
-                    ? "Primero selecciona tipo"
-                    : categoriaId
-                      ? "Seleccionar plan"
-                      : "Primero selecciona categoria"}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-[var(--radix-dropdown-menu-trigger-width)]"
-            >
-              {planesDisponibles.map((plan) => (
-                <DropdownMenuItem
-                  key={plan.id}
-                  onClick={() => onPlanSelect(plan)}
-                >
-                  {plan.nombre}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {itemErrors.plan ? (
-            <p className="text-sm text-red-500">{itemErrors.plan}</p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <VentaServicioSelector
-          categoriaId={categoriaId}
-          planId={planId}
-          requirePlan
-          servicioId={servicioId}
-          servicioSeleccionado={servicioSeleccionado}
-          servicios={serviciosVentana}
-          totalServicios={serviciosFiltradosTotal}
-          visibleRows={SERVICIOS_DROPDOWN_VISIBLE_ROWS}
-          loading={loadingServicios || loadingVentasRanking}
-          error={itemErrors.servicio}
-          getSlotsDisponibles={getSlotsDisponibles}
-          getDisponiblesColorClass={getDisponiblesColorClass}
-          onOpenPerfilDetalle={onOpenPerfilDetalle}
-          onScroll={onServiciosScroll}
-          onWheel={onServiciosWheel}
-          onSelectServicio={onServicioSelect}
-        />
-
-        <div className="space-y-2">
-          <Label>Perfil</Label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full justify-between"
-                disabled={!servicioId || getSlotsDisponibles(servicioId) <= 0}
-              >
-                {perfilNumero
-                  ? `Perfil ${perfilNumero}`
-                  : getSlotsDisponibles(servicioId) > 0
-                    ? "Seleccionar perfil"
-                    : "No hay perfiles disponibles"}
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-[var(--radix-dropdown-menu-trigger-width)] p-0"
-            >
-              <div className="p-1">
-                {getSlotsDisponibles(servicioId) <= 0 ? (
-                  <p className="px-2 py-3 text-xs text-muted-foreground">
-                    No hay perfiles disponibles.
-                  </p>
-                ) : perfilesDropdown.length === 0 ? (
-                  <p className="px-2 py-3 text-xs text-muted-foreground">
-                    No hay perfiles libres.
-                  </p>
-                ) : (
-                  perfilesDropdown.map((numero) => (
-                    <DropdownMenuItem
-                      key={numero}
-                      onClick={() => onPerfilSelect(numero)}
-                    >
-                      Perfil {numero}
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {itemErrors.perfil ? (
-            <p className="text-sm text-red-500">{itemErrors.perfil}</p>
-          ) : null}
-        </div>
-      </div>
-
+      <VentaCreateServiceProfileFields
+        categoriaId={categoriaId}
+        getDisponiblesColorClass={getDisponiblesColorClass}
+        getSlotsDisponibles={getSlotsDisponibles}
+        itemErrors={itemErrors}
+        loadingServicios={loadingServicios}
+        loadingVentasRanking={loadingVentasRanking}
+        onOpenPerfilDetalle={onOpenPerfilDetalle}
+        onPerfilSelect={onPerfilSelect}
+        onServicioSelect={onServicioSelect}
+        onServiciosScroll={onServiciosScroll}
+        onServiciosWheel={onServiciosWheel}
+        perfilNumero={perfilNumero}
+        perfilesDropdown={perfilesDropdown}
+        planId={planId}
+        servicioId={servicioId}
+        servicioSeleccionado={servicioSeleccionado}
+        serviciosFiltradosTotal={serviciosFiltradosTotal}
+        serviciosVentana={serviciosVentana}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="venta-create-precio">Precio</Label>
