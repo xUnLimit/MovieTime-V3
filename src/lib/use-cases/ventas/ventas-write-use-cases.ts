@@ -11,12 +11,6 @@ import {
   removeVentaWithPayments,
   updateVenta,
 } from '@/lib/supabase/ventas-repository';
-import {
-  adjustIngresosStats,
-  getDiaKeyFromDate,
-  getMesKeyFromDate,
-  upsertVentaPronostico,
-} from '@/lib/services/dashboardStatsService';
 import { sincronizarUnaVenta } from '@/lib/services/notificationSyncService';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
@@ -103,25 +97,7 @@ export async function createVentaUseCase(
     },
   });
 
-  safeAsyncSideEffect(adjustIngresosStats({
-    delta: ventaData.precioFinal ?? 0,
-    moneda: ventaData.moneda ?? 'USD',
-    mes: getMesKeyFromDate(ventaData.fechaInicio ?? new Date()),
-    dia: getDiaKeyFromDate(ventaData.fechaInicio ?? new Date()),
-    categoriaId: ventaData.categoriaId ?? '',
-    categoriaNombre: ventaData.categoriaNombre ?? '',
-  }), {
-    operation: 'adjustIngresosStats',
-    entity: 'venta',
-    entityId: venta.id,
-  });
-
   const pronostico = toVentaPronostico(venta);
-  safeAsyncSideEffect(upsertVentaPronostico(pronostico, venta.id), {
-    operation: 'upsertVentaPronostico',
-    entity: 'venta',
-    entityId: venta.id,
-  });
 
   safeAsyncSideEffect(sincronizarUnaVenta(ventaId), {
     operation: 'sincronizarUnaVenta',
@@ -204,11 +180,6 @@ export async function updateVentaUseCase(
   });
 
   const pronostico = toVentaPronostico(ventaActualizada);
-  safeAsyncSideEffect(upsertVentaPronostico(pronostico, id), {
-    operation: 'upsertVentaPronostico',
-    entity: 'venta',
-    entityId: id,
-  });
 
   return { ventaAnterior, ventaActualizada, finalUpdates, pronostico, serviceProfileDelta };
 }
@@ -236,21 +207,6 @@ export async function deleteVentaUseCase(
     ? { servicioId: options.servicioId, shouldIncrement: false }
     : null;
 
-  if (ventaEliminada?.precioFinal) {
-    safeAsyncSideEffect(adjustIngresosStats({
-      delta: -ventaEliminada.precioFinal,
-      moneda: ventaEliminada.moneda ?? 'USD',
-      mes: getMesKeyFromDate(ventaEliminada.fechaInicio ?? new Date()),
-      dia: getDiaKeyFromDate(ventaEliminada.fechaInicio ?? new Date()),
-      categoriaId: ventaEliminada.categoriaId ?? '',
-      categoriaNombre: ventaEliminada.categoriaNombre ?? '',
-    }), {
-      operation: 'adjustIngresosStats',
-      entity: 'venta',
-      entityId: id,
-    });
-  }
-
   await options.recordActivityLog?.({
     ...options.logContext,
     accion: 'eliminacion',
@@ -265,12 +221,6 @@ export async function deleteVentaUseCase(
       deletePagos: options.deletePagos ?? false,
       origen: 'deleteVentaUseCase',
     },
-  });
-
-  safeAsyncSideEffect(upsertVentaPronostico(null, id), {
-    operation: 'removeVentaPronostico',
-    entity: 'venta',
-    entityId: id,
   });
 
   return { ventaEliminada, serviceProfileDelta };

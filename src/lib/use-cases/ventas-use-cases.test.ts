@@ -345,7 +345,6 @@ describe('ventas use cases', () => {
 
     expect(ventasRepository.removeVentaWithPayments).toHaveBeenCalledWith(ventaBase.id, true);
     expect(ventasRepository.removeVenta).not.toHaveBeenCalled();
-    expect(dashboardStatsService.upsertVentaPronostico).toHaveBeenCalledWith(null, ventaBase.id);
     expect(result.serviceProfileDelta).toEqual({
       servicioId: ventaBase.servicioId,
       shouldIncrement: false,

@@ -10,7 +10,6 @@ import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { invalidateDashboardCache as invalidateDashboardCacheCommand } from '@/lib/commands/client-cache';
 import { CACHE_TTL_MS } from '@/lib/constants';
-import { adjustGastosStats, getDiaKeyFromDate, getMesKeyFromDate } from '@/lib/services/dashboardStatsService';
 
 const CACHE_TIMEOUT = CACHE_TTL_MS;
 
@@ -27,15 +26,6 @@ async function getTipoGastoActivo(tipoGastoId: string): Promise<TipoGasto> {
   if (!tipoGasto) throw new Error('Tipo de gasto no encontrado');
   if (!tipoGasto.activo) throw new Error('El tipo de gasto seleccionado está inactivo');
   return tipoGasto;
-}
-
-async function syncDashboardGasto(gasto: Pick<Gasto, 'fecha' | 'monto'>, sign: 1 | -1) {
-  await adjustGastosStats({
-    delta: gasto.monto * sign,
-    moneda: 'USD',
-    mes: getMesKeyFromDate(gasto.fecha),
-    dia: getDiaKeyFromDate(gasto.fecha),
-  });
 }
 
 function invalidateDashboardCache() {
@@ -114,8 +104,6 @@ export const useGastosStore = create<GastosState>()(
             updatedAt: new Date(),
           };
 
-          await syncDashboardGasto(newGasto, 1);
-
           set((state) => ({
             gastos: sortGastos([...state.gastos, newGasto]),
           }));
@@ -166,27 +154,9 @@ export const useGastosStore = create<GastosState>()(
             gastoActual.monto !== gastoActualizado.monto ||
             gastoActual.fecha.getTime() !== gastoActualizado.fecha.getTime();
 
-          if (requiereRecalculoDashboard) {
-            await syncDashboardGasto(gastoActual, -1);
-            try {
-              await syncDashboardGasto(gastoActualizado, 1);
-            } catch (dashboardError) {
-              await logBestEffortFailure(syncDashboardGasto(gastoActual, 1), 'rollback dashboard gasto anterior');
-              throw dashboardError;
-            }
-          }
-
-          try {
-            const { tipoGastoNombre: _tipoGastoNombre, ...writeUpdates } = finalUpdates;
-            void _tipoGastoNombre;
-            await updateGasto(id, writeUpdates);
-          } catch (persistError) {
-            if (requiereRecalculoDashboard) {
-              await logBestEffortFailure(syncDashboardGasto(gastoActualizado, -1), 'rollback dashboard gasto actualizado');
-              await logBestEffortFailure(syncDashboardGasto(gastoActual, 1), 'restore dashboard gasto anterior');
-            }
-            throw persistError;
-          }
+          const { tipoGastoNombre: _tipoGastoNombre, ...writeUpdates } = finalUpdates;
+          void _tipoGastoNombre;
+          await updateGasto(id, writeUpdates);
 
           set((state) => ({
             gastos: sortGastos(
@@ -227,13 +197,7 @@ export const useGastosStore = create<GastosState>()(
         if (!gasto) throw new Error('Gasto no encontrado');
 
         try {
-          await syncDashboardGasto(gasto, -1);
-          try {
-            await removeGasto(id);
-          } catch (persistError) {
-            await logBestEffortFailure(syncDashboardGasto(gasto, 1), 'rollback dashboard deleteGasto');
-            throw persistError;
-          }
+          await removeGasto(id);
 
           set((state) => ({
             gastos: state.gastos.filter((item) => item.id !== id),

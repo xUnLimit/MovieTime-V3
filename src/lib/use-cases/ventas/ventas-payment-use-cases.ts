@@ -10,15 +10,8 @@ import {
   updateVenta,
   updateVentaPaymentAndPeriod,
 } from '@/lib/supabase/ventas-repository';
-import {
-  adjustIngresosStats,
-  getDiaKeyFromDate,
-  getMesKeyFromDate,
-  upsertVentaPronostico,
-} from '@/lib/services/dashboardStatsService';
 import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
 import { syncTerceroMetodoPago } from '@/lib/services/terceroMetodoPagoSyncService';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import type { PagoVenta, VentaDoc } from '@/types';
 import {
   getPagoValues,
@@ -97,24 +90,6 @@ export async function renewVentaUseCase(
     moneda,
   };
 
-  safeAsyncSideEffect(upsertVentaPronostico(pronostico, venta.id), {
-    operation: 'upsertVentaPronostico',
-    entity: 'venta',
-    entityId: venta.id,
-  });
-  safeAsyncSideEffect(adjustIngresosStats({
-    delta: monto,
-    moneda,
-    mes: getMesKeyFromDate(input.fechaInicio),
-    dia: getDiaKeyFromDate(input.fechaInicio),
-    categoriaId: venta.categoriaId ?? '',
-    categoriaNombre: venta.categoriaNombre ?? '',
-  }), {
-    operation: 'adjustIngresosStats',
-    entity: 'venta',
-    entityId: venta.id,
-  });
-
   await options.recordActivityLog?.({
     ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
     accion: 'renovacion',
@@ -177,11 +152,6 @@ export async function updateVentaPagoUseCase(
 
   const ventaActualizada = await getVentaConPagoActualUseCase(venta.id);
   const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
-  safeAsyncSideEffect(upsertVentaPronostico(pronostico, venta.id), {
-    operation: 'upsertVentaPronostico',
-    entity: 'venta',
-    entityId: venta.id,
-  });
 
   return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, syncPaymentMethodFailed, pronostico };
 }
@@ -190,11 +160,6 @@ export async function deleteVentaPagoUseCase(ventaId: string, pagoId: string) {
   await removePagoVenta(pagoId);
   const ventaActualizada = await getVentaConPagoActualUseCase(ventaId);
   const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
-  safeAsyncSideEffect(upsertVentaPronostico(pronostico, ventaId), {
-    operation: 'upsertVentaPronostico',
-    entity: 'venta',
-    entityId: ventaId,
-  });
 
   return { ventaActualizada, pronostico };
 }

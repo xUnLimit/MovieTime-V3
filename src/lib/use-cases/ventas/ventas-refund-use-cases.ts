@@ -4,9 +4,7 @@ import {
   createVentaRefund,
   queryPagosVenta,
 } from '@/lib/supabase/ventas-repository';
-import { upsertVentaPronostico } from '@/lib/services/dashboardStatsService';
 import { roundToDecimals } from '@/lib/utils/calculations';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import type { PagoVenta, VentaDoc, VentaReembolsoInput, VentaReembolsoResult } from '@/types';
 import {
   getNetPaidAmount,
@@ -80,12 +78,6 @@ export async function createVentaRefundUseCase(
   const serviceProfileDelta = input.cortarServicio && venta.estado !== 'inactivo' && venta.servicioId
     ? { servicioId: venta.servicioId, shouldIncrement: false }
     : null;
-
-  safeAsyncSideEffect(upsertVentaPronostico(pronostico, venta.id), {
-    operation: 'upsertVentaPronostico',
-    entity: 'venta',
-    entityId: venta.id,
-  });
 
   await options.recordActivityLog?.({
     ...options.logContext,

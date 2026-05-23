@@ -10,12 +10,6 @@ import {
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
 import { toDateOnly, toIso } from '@/lib/supabase/dates';
-import {
-  adjustGastosStats,
-  getDiaKeyFromDate,
-  getMesKeyFromDate,
-  upsertServicioPronostico,
-} from '@/lib/services/dashboardStatsService';
 import { resyncServiciosDenormalizedData, syncServicioDependencias } from '@/lib/services/servicioSyncService';
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { currencyService } from '@/lib/services/currencyService';
@@ -75,19 +69,6 @@ export async function createServicioUseCase(
     p_pago_notas: servicioData.notas ?? '',
   });
 
-  safeAsyncSideEffect(adjustGastosStats({
-    delta: servicioData.costoServicio ?? 0,
-    moneda: moneda ?? 'USD',
-    mes: getMesKeyFromDate(servicioData.fechaInicio ?? new Date()),
-    dia: getDiaKeyFromDate(servicioData.fechaInicio ?? new Date()),
-    categoriaId: servicioData.categoriaId,
-    categoriaNombre: servicioData.categoriaNombre,
-  }), {
-    operation: 'adjustGastosStats',
-    entity: 'servicio',
-    entityId: id,
-  });
-
   const servicio = {
     ...servicioData,
     id,
@@ -99,11 +80,6 @@ export async function createServicioUseCase(
   } as Servicio;
 
   const pronostico = toServicioPronostico(servicio);
-  safeAsyncSideEffect(upsertServicioPronostico(pronostico, id), {
-    operation: 'upsertServicioPronostico',
-    entity: 'servicio',
-    entityId: id,
-  });
 
   await options.recordActivityLog?.({
     ...options.logContext,
@@ -202,13 +178,6 @@ export async function updateServicioUseCase(
     (updates.activo !== undefined && updates.activo !== servicio.activo) ||
     (updates.enReposo !== undefined && updates.enReposo !== servicio.enReposo);
   const pronostico = shouldSyncPronostico ? toServicioPronostico(servicioActualizado) : undefined;
-  if (shouldSyncPronostico) {
-    safeAsyncSideEffect(upsertServicioPronostico(pronostico ?? null, id), {
-      operation: 'upsertServicioPronostico',
-      entity: 'servicio',
-      entityId: id,
-    });
-  }
 
   const cambios = detectarCambios(
     'servicio',
@@ -257,27 +226,6 @@ export async function deleteServicioUseCase(
   } else {
     await removeServicio(id);
   }
-
-  if (servicio.costoServicio) {
-    safeAsyncSideEffect(adjustGastosStats({
-      delta: -servicio.costoServicio,
-      moneda: servicio.moneda ?? 'USD',
-      mes: getMesKeyFromDate(servicio.fechaInicio ?? new Date()),
-      dia: getDiaKeyFromDate(servicio.fechaInicio ?? new Date()),
-      categoriaId: servicio.categoriaId,
-      categoriaNombre: servicio.categoriaNombre,
-    }), {
-      operation: 'adjustGastosStats',
-      entity: 'servicio',
-      entityId: id,
-    });
-  }
-
-  safeAsyncSideEffect(upsertServicioPronostico(null, id), {
-    operation: 'removeServicioPronostico',
-    entity: 'servicio',
-    entityId: id,
-  });
 
   await options.recordActivityLog?.({
     ...options.logContext,

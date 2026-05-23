@@ -182,8 +182,6 @@ describe('createServicioUseCase', () => {
       })
     );
     expect(result.servicio.id).toBe('servicio-1');
-    expect(adjustGastosStats).toHaveBeenCalled();
-    expect(upsertServicioPronostico).toHaveBeenCalled();
     expect(sincronizarUnServicio).toHaveBeenCalledWith('servicio-1');
     expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({ accion: 'creacion' }));
   });
@@ -231,8 +229,6 @@ describe('deleteServicioUseCase', () => {
     });
 
     expect(removeServicio).toHaveBeenCalledWith('servicio-1');
-    expect(adjustGastosStats).toHaveBeenCalledWith(expect.objectContaining({ delta: -10 }));
-    expect(upsertServicioPronostico).toHaveBeenCalledWith(null, 'servicio-1');
     expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({ accion: 'eliminacion' }));
     expect(result.servicio?.id).toBe('servicio-1');
   });
@@ -246,15 +242,6 @@ describe('deleteServicioPagoUseCase', () => {
     });
 
     expect(removePagoServicio).toHaveBeenCalledWith('pago-1');
-    expect(adjustGastosStats).toHaveBeenCalledWith(
-      expect.objectContaining({
-        delta: -10,
-        moneda: 'USD',
-        categoriaId: 'categoria-1',
-        categoriaNombre: 'Netflix',
-      })
-    );
-    expect(upsertServicioPronostico).toHaveBeenCalled();
     expect(sincronizarUnServicio).toHaveBeenCalledWith('servicio-1');
   });
 });

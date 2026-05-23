@@ -7,22 +7,14 @@ import {
   updateServicio,
   updateServicioPaymentAndPeriod,
 } from '@/lib/supabase/servicios-repository';
-import {
-  adjustGastosStats,
-  getDiaKeyFromDate,
-  getMesKeyFromDate,
-  upsertServicioPronostico,
-} from '@/lib/services/dashboardStatsService';
 import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
 import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
 import { getCurrencySymbol } from '@/lib/constants';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import type { MetodoPago, PagoServicio, Servicio } from '@/types';
 import {
   getServicioTableUpdates,
   getUsdValues,
   normalizeServicioPagoInput,
-  toServicioPronostico,
   type LogContext,
   type RecordActivityLog,
   type ServicioPagoInput,
@@ -65,19 +57,6 @@ export async function renewServicioUseCase(
     renovacionAutomatica
   );
 
-  safeAsyncSideEffect(adjustGastosStats({
-    delta: input.costo,
-    moneda,
-    mes: getMesKeyFromDate(input.fechaInicio),
-    dia: getDiaKeyFromDate(input.fechaInicio),
-    categoriaId: servicio.categoriaId,
-    categoriaNombre: servicio.categoriaNombre,
-  }), {
-    operation: 'adjustGastosStats',
-    entity: 'servicio',
-    entityId: servicio.id,
-  });
-
   const pronostico = {
     id: servicio.id,
     fechaVencimiento: input.fechaVencimiento.toISOString(),
@@ -85,12 +64,6 @@ export async function renewServicioUseCase(
     costoServicio: input.costo,
     moneda,
   };
-  safeAsyncSideEffect(upsertServicioPronostico(pronostico, servicio.id), {
-    operation: 'upsertServicioPronostico',
-    entity: 'servicio',
-    entityId: servicio.id,
-  });
-
   await updateServicio(servicio.id, getServicioTableUpdates({ notas: notaPrincipal }));
 
   await options.recordActivityLog?.({
@@ -165,12 +138,6 @@ export async function updateServicioPagoUseCase(
   let servicioActualizado: Servicio | null = null;
   if (options.isLatestPayment) {
     servicioActualizado = await getServicioById<Servicio>(servicio.id);
-    const pronostico = servicioActualizado ? toServicioPronostico(servicioActualizado) : null;
-    safeAsyncSideEffect(upsertServicioPronostico(pronostico, servicio.id), {
-      operation: 'upsertServicioPronostico',
-      entity: 'servicio',
-      entityId: servicio.id,
-    });
   }
 
   return { servicioActualizado };
@@ -188,33 +155,10 @@ export async function deleteServicioPagoUseCase(
   void _remainingPayments;
   await removePagoServicio(pago.id);
 
-  safeAsyncSideEffect(adjustGastosStats({
-    delta: -(pago.monto ?? 0),
-    moneda: pago.moneda || options.fallbackMoneda || 'USD',
-    mes: getMesKeyFromDate(pago.fecha ?? new Date()),
-    dia: getDiaKeyFromDate(pago.fecha ?? new Date()),
-    categoriaId: servicio.categoriaId,
-    categoriaNombre: servicio.categoriaNombre,
-  }), {
-    operation: 'adjustGastosStats',
-    entity: 'servicio',
-    entityId: servicio.id,
-  });
-
   let servicioActualizado: Servicio | null = null;
   if (options.isLatestPayment) {
     servicioActualizado = await getServicioById<Servicio>(servicio.id);
-    const pronostico = servicioActualizado ? toServicioPronostico(servicioActualizado) : null;
-    safeAsyncSideEffect(upsertServicioPronostico(pronostico, servicio.id), {
-      operation: 'upsertServicioPronostico',
-      entity: 'servicio',
-      entityId: servicio.id,
-    });
-    safeAsyncSideEffect(sincronizarUnServicio(servicio.id), {
-      operation: 'sincronizarUnServicio',
-      entity: 'servicio',
-      entityId: servicio.id,
-    });
+    await sincronizarUnServicio(servicio.id);
   }
 
   return { servicioActualizado };
