@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
 import { invalidateDashboardCache, syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
 import { CYCLE_MONTHS } from '@/lib/constants';
+import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
@@ -27,7 +28,9 @@ import { calcularMontoSinConsumir, roundToDecimals } from '@/lib/utils/calculati
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { useServiciosStore } from '@/store/serviciosStore';
 import { useTemplatesStore } from '@/store/templatesStore';
+import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, VentaDoc, VentaPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
@@ -45,6 +48,11 @@ const getEstadoDetalle = (venta: VentaDoc | null) => {
 
   return { esCortada, estadoBadgeClass, estadoLabel };
 };
+
+function emitVentaUpdated(ventaId: string) {
+  storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
+  emitLegacyBrowserEvent('venta-updated', { persistTimestamp: false });
+}
 
 function getLogContext() {
   const user = useAuthStore.getState().user;
@@ -259,7 +267,6 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const handleDelete = async (deletePagos: boolean) => {
     if (!venta) return;
     try {
-      const { useVentasStore } = await import('@/store/ventasStore');
       await useVentasStore.getState().deleteVenta(
         venta.id,
         venta.servicioId,
@@ -309,9 +316,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
       fetchNotificaciones(true);
       setRenovarDialogOpen(false);
 
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('venta-updated'));
-      }
+      emitVentaUpdated(id);
 
       if (data.notificarWhatsApp && venta) {
         const templateRenovacion = getTemplateByTipo('renovacion');
@@ -391,7 +396,6 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
       );
 
       if (result.serviceProfileDelta) {
-        const { useServiciosStore } = await import('@/store/serviciosStore');
         await useServiciosStore
           .getState()
           .updatePerfilOcupado(result.serviceProfileDelta.servicioId, result.serviceProfileDelta.shouldIncrement);
@@ -409,9 +413,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       setReembolsoDialogOpen(false);
 
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('venta-updated'));
-      }
+      emitVentaUpdated(id);
 
       toast.success(data.cortarServicio ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
     } catch (error) {
