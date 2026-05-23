@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
@@ -26,7 +26,6 @@ import {
 import { buildServiceTransferMessage } from '@/lib/utils/credentialNotification';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useAuthStore } from '@/store/authStore';
-import { useCategoriasStore } from '@/store/categoriasStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { useTemplatesStore } from '@/store/templatesStore';
@@ -123,12 +122,11 @@ async function fetchServicioDetalleBundle(id: string): Promise<{
 
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { deleteServicio, fetchCounts, fetchServicios, servicios, updatePerfilOcupado } = useServiciosStore();
-  const { fetchCategorias } = useCategoriasStore();
   const {
     deleteNotificacionesPorServicio,
     deleteNotificacionesPorVenta,
-    fetchNotificaciones,
   } = useNotificacionesStore();
   const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
   const getTemplateByTipo = useTemplatesStore((state) => state.getTemplateByTipo);
@@ -221,8 +219,9 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
 
       // Refrescar categorías y contadores de servicios para actualizar widgets
       await Promise.all([
-        fetchCategorias(true),
         fetchCounts(true),
+        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
       ]);
 
       router.push('/servicios');
@@ -292,7 +291,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
       );
       invalidateDashboardCache({ entity: 'venta', entityId: selectedActionVenta.id });
       await deleteNotificacionesPorVenta(selectedActionVenta.id);
-      fetchNotificaciones(true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       setCutVentaDialogOpen(false);
       setSelectedActionVenta(null);
       toast.success('Venta cortada', {
@@ -378,7 +377,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         current.filter((venta) => venta.ventaId !== selectedActionVenta.id),
       );
       invalidateDashboardCache({ entity: 'venta', entityId: selectedActionVenta.id });
-      fetchNotificaciones(true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       setTransferVentaDialogOpen(false);
       setSelectedActionVenta(null);
       toast.success('Venta transferida', {
@@ -445,7 +444,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         entity: 'servicio',
         entityId: id,
       });
-      await fetchCategorias(true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all });
       await refreshPagos();
       if (eraUltimaRenovacion) {
         if (servicioActualizado) setServicio(servicioActualizado);
@@ -480,7 +479,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
 
       // Remove notification and refresh store
       await deleteNotificacionesPorServicio(id);
-      fetchNotificaciones(true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       // Refresh categorias so Servicios module reflects updated gastosTotal
       refreshCategoriasCache({
         entity: 'servicio',
