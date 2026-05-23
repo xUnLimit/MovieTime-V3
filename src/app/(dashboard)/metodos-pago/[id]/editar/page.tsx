@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -8,9 +8,8 @@ import { ArrowLeft } from 'lucide-react';
 import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
 import { isUuid } from '@/lib/utils/safety';
-import type { MetodoPago } from '@/types';
 import { toast } from 'sonner';
 
 function EditarMetodoPagoPageContent() {
@@ -19,30 +18,14 @@ function EditarMetodoPagoPageContent() {
   const from = searchParams.get('from') || '/metodos-pago';
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const [metodoPago, setMetodoPago] = useState<MetodoPago | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: metodoPago = null, isError, isLoading: loading } = useMetodoPagoDetail(id);
 
   useEffect(() => {
-    const loadMetodoPago = async () => {
-      if (!id) {
-        setLoading(false);
-        setMetodoPago(null);
-        return;
-      }
-      setLoading(true);
-      try {
-        const data = await getMetodoPagoUseCase<MetodoPago>(id);
-        setMetodoPago(data);
-      } catch (error) {
-        console.error('Error cargando método de pago:', error);
-        toast.error('Error al cargar el método de pago', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
-        setMetodoPago(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadMetodoPago();
-  }, [id]);
+    if (!isError) return;
+    toast.error('Error al cargar el método de pago', {
+      description: 'No se pudieron obtener los datos. Intenta nuevamente.',
+    });
+  }, [isError]);
 
   if (loading) {
     return (

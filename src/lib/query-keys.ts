@@ -50,8 +50,14 @@ export const queryKeys = {
   categorias: {
     all: ['categorias'] as const,
     full: () => [...queryKeys.categorias.all, 'full'] as const,
+    detail: (categoriaId: string) => [...queryKeys.categorias.all, 'detail', categoriaId] as const,
     counts: () => [...queryKeys.categorias.all, 'counts'] as const,
     ventasMontos: (signature: string) => [...queryKeys.categorias.all, 'ventas-montos', signature] as const,
+  },
+  metodosPago: {
+    all: ['metodos-pago'] as const,
+    detail: (metodoPagoId: string) => [...queryKeys.metodosPago.all, 'detail', metodoPagoId] as const,
+    terceros: () => [...queryKeys.metodosPago.all, 'terceros'] as const,
   },
   terceros: {
     all: ['terceros'] as const,

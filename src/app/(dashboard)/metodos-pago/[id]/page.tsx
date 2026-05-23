@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Copy, Edit, Eye, EyeOff, Trash2 } from 'lucide-react';
@@ -10,11 +10,10 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
 import { formatearFechaHora } from '@/lib/utils/calculations';
 import { isUuid } from '@/lib/utils/safety';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
-import { MetodoPago } from '@/types';
 
 function VerMetodoPagoPageContent() {
   const params = useParams();
@@ -22,34 +21,10 @@ function VerMetodoPagoPageContent() {
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
   const deleteMetodoPago = useMetodosPagoStore((state) => state.deleteMetodoPago);
-  const [metodo, setMetodo] = useState<MetodoPago | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: metodo = null, isLoading } = useMetodoPagoDetail(id);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showCardNumber, setShowCardNumber] = useState(false);
-
-  useEffect(() => {
-    const loadMetodoPago = async () => {
-      if (!id) {
-        setIsLoading(false);
-        setMetodo(null);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const data = await getMetodoPagoUseCase<MetodoPago>(id);
-        setMetodo(data);
-      } catch (error) {
-        console.error('Error cargando método de pago:', error);
-        setMetodo(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMetodoPago();
-  }, [id]);
 
   const handleDelete = async () => {
     if (metodo) {

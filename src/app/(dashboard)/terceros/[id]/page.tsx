@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
@@ -10,11 +10,9 @@ import { TerceroDetails } from '@/components/terceros/TerceroDetails';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
+import { useTerceroDetail } from '@/hooks/use-entity-detail';
 import { isUuid } from '@/lib/utils/safety';
 import { useTercerosStore } from '@/store/tercerosStore';
-import { Tercero } from '@/types';
-import { TERCERO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/terceroMetodoPago';
 
 function TerceroDetallesPageContent() {
   const params = useParams();
@@ -24,40 +22,7 @@ function TerceroDetallesPageContent() {
 
   const deleteTercero = useTercerosStore((state) => state.deleteTercero);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [usuario, setTercero] = useState<Tercero | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  // Fetch solo este usuario por ID (1 lectura en lugar de N)
-  useEffect(() => {
-    const load = async () => {
-      if (!id) {
-        setTercero(null);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const user = await getTerceroUseCase<Tercero>(id);
-        setTercero(user);
-      } catch (error) {
-        console.error('Error loading usuario:', error);
-        setTercero(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    load();
-
-    const handleMetodoPagoUpdated = () => {
-      load();
-    };
-
-    window.addEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, handleMetodoPagoUpdated);
-
-    return () => {
-      window.removeEventListener(TERCERO_METODO_PAGO_UPDATED_EVENT, handleMetodoPagoUpdated);
-    };
-  }, [id]);
+  const { data: usuario = null, isLoading } = useTerceroDetail(id);
 
   if (isLoading) {
     return (

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown, DollarSign, Edit, Tag, Trash2 } from 'lucide-react';
@@ -10,11 +10,11 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
+import { useCategoriaDetail } from '@/hooks/use-entity-detail';
 import { formatearFechaHora } from '@/lib/utils/calculations';
 import { isUuid } from '@/lib/utils/safety';
 import { useCategoriasStore } from '@/store/categoriasStore';
-import { Categoria, Plan } from '@/types';
+import { Plan } from '@/types';
 
 function VerCategoriaPageContent() {
   const params = useParams();
@@ -22,31 +22,9 @@ function VerCategoriaPageContent() {
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
   const deleteCategoria = useCategoriasStore((state) => state.deleteCategoria);
-  const [categoria, setCategoria] = useState<Categoria | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: categoria = null, isLoading } = useCategoriaDetail(id);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadCategoria = async () => {
-      if (!id) {
-        setCategoria(null);
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const data = await getCategoriaUseCase<Categoria>(id);
-        setCategoria(data);
-      } catch (error) {
-        console.error('Error cargando categoría:', error);
-        setCategoria(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadCategoria();
-  }, [id]);
 
   const handleDelete = async () => {
     if (categoria) {

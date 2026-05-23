@@ -1,17 +1,18 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { TerceroForm } from '@/components/terceros/TerceroForm';
-import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
+import { useTerceroDetail } from '@/hooks/use-entity-detail';
+import { queryKeys } from '@/lib/query-keys';
 import { isUuid } from '@/lib/utils/safety';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
-import type { Tercero, MetodoPago } from '@/types';
 import { toast } from 'sonner';
 
 function EditarTerceroPageContent() {
@@ -19,40 +20,31 @@ function EditarTerceroPageContent() {
   const router = useRouter();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const { fetchMetodosPagoTerceros } = useMetodosPagoStore();
-
-  const [usuario, setTercero] = useState<Tercero | null>(null);
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
-  const [loading, setLoading] = useState(true);
+  const fetchMetodosPagoTerceros = useMetodosPagoStore((state) => state.fetchMetodosPagoTerceros);
+  const {
+    data: usuario = null,
+    isError: isUsuarioError,
+    isLoading: isUsuarioLoading,
+  } = useTerceroDetail(id);
+  const {
+    data: metodosPago = [],
+    isError: isMetodosPagoError,
+    isLoading: isMetodosPagoLoading,
+  } = useQuery({
+    queryKey: queryKeys.metodosPago.terceros(),
+    queryFn: fetchMetodosPagoTerceros,
+    enabled: Boolean(id),
+  });
 
   useEffect(() => {
-    const loadData = async () => {
-      if (!id) {
-        setLoading(false);
-        setTercero(null);
-        return;
-      }
-      setLoading(true);
-      try {
-        const [usuarioData, metodosData] = await Promise.all([
-          getTerceroUseCase<Tercero>(id),
-          fetchMetodosPagoTerceros()
-        ]);
-
-        setTercero(usuarioData);
-        setMetodosPago(metodosData);
-      } catch (error) {
-        console.error('Error cargando datos:', error);
-        toast.error('Error al cargar el tercero', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
-        setTercero(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [id, fetchMetodosPagoTerceros]);
+    if (!isUsuarioError && !isMetodosPagoError) return;
+    toast.error('Error al cargar el tercero', {
+      description: 'No se pudieron obtener los datos. Intenta nuevamente.',
+    });
+  }, [isMetodosPagoError, isUsuarioError]);
 
   const tipoTercero = usuario?.tipo ?? 'cliente';
+  const loading = isUsuarioLoading || isMetodosPagoLoading;
 
   const handleSuccess = () => {
     if (!id) return;

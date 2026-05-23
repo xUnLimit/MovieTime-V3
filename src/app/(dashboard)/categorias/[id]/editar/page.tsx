@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -8,9 +8,8 @@ import { ArrowLeft } from 'lucide-react';
 import { CategoriaForm } from '@/components/categorias/CategoriaForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
+import { useCategoriaDetail } from '@/hooks/use-entity-detail';
 import { isUuid } from '@/lib/utils/safety';
-import type { Categoria } from '@/types';
 import { toast } from 'sonner';
 
 function EditarCategoriaPageContent() {
@@ -19,30 +18,14 @@ function EditarCategoriaPageContent() {
   const from = searchParams.get('from') || '/categorias';
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const [categoria, setCategoria] = useState<Categoria | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: categoria = null, isError, isLoading: loading } = useCategoriaDetail(id);
 
   useEffect(() => {
-    const loadCategoria = async () => {
-      if (!id) {
-        setLoading(false);
-        setCategoria(null);
-        return;
-      }
-      setLoading(true);
-      try {
-        const data = await getCategoriaUseCase<Categoria>(id);
-        setCategoria(data);
-      } catch (error) {
-        console.error('Error cargando categoría:', error);
-        toast.error('Error al cargar la categoría', { description: 'No se pudieron obtener los datos. Intenta nuevamente.' });
-        setCategoria(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadCategoria();
-  }, [id]);
+    if (!isError) return;
+    toast.error('Error al cargar la categoría', {
+      description: 'No se pudieron obtener los datos. Intenta nuevamente.',
+    });
+  }, [isError]);
 
   if (loading) {
     return (
