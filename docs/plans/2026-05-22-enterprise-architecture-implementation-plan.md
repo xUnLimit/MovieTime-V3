@@ -27,7 +27,7 @@ Completado hasta esta iteracion:
 - PR 5/6 slice: adapter tipado para `create_venta_with_initial_payment`.
 - PR 7 slice: tests de ventas ampliados para create, renew, refund, delete y chunking.
 - PR 8/9 slice: infraestructura React Query y StoreEventBus base.
-- Migraciones adicionales de Fase 3: hooks principales migrados a React Query, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
+- Migraciones adicionales de Fase 3: hooks principales migrados a React Query, paginas detalle/edicion de catalogos migradas a queries, reposo migrado a queries, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
 - Fase 2 ventas: `ventas-use-cases.ts` convertido en barrel; use-cases separados en `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`.
 - Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
@@ -64,6 +64,11 @@ Commits de referencia de esta iteracion:
 - `75b481c` feat: type payment update rpcs
 - `6345af7` feat: type categoria rpcs
 - `05d2730` feat: type dashboard read rpcs
+- `3b4572e` feat: query catalog detail pages
+- `7ecad97` feat: query servicio category metrics
+- `74b5151` feat: query tercero create payment methods
+- `3b951ee` feat: query reposo page data
+- `8fbe02a` feat: query servicio payment total
 
 Validacion recurrente ejecutada por PR logico:
 
