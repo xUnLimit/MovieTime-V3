@@ -3,6 +3,7 @@ import { assertRpcStringId } from '@/lib/utils/safety';
 import type { Database } from '@/lib/supabase/database.types';
 
 import { supabase } from './client';
+import { withIdempotencyKey } from './idempotency';
 
 type RpcResult = {
   data: unknown;
@@ -70,10 +71,13 @@ export type CreateVentaWithInitialPaymentPayload = {
   p_plan_nombre_snapshot: string | null | undefined;
   p_plan_tipo_nombre_snapshot: string | null | undefined;
   p_created_by?: string | null;
+  p_idempotency_key?: string | null;
 };
 
 export type CreateVentaRefundPayload =
-  Database['public']['Functions']['create_venta_refund']['Args'];
+  Database['public']['Functions']['create_venta_refund']['Args'] & {
+    p_idempotency_key?: string | null;
+  };
 export type DeleteVentaWithPaymentsPayload =
   Database['public']['Functions']['delete_venta_with_payments']['Args'];
 export type DeleteVentaPaymentPayload =
@@ -92,6 +96,7 @@ export type UpdateVentaPaymentAndPeriodPayload = {
   p_metodo_pago_id: string | null;
   p_metodo_pago_nombre_snapshot: string | null;
   p_pago_notas: string | null;
+  p_idempotency_key?: string | null;
 };
 
 const ventaInitialPaymentRpcClient = supabase as unknown as CreateVentaWithInitialPaymentRpcClient;
@@ -107,7 +112,7 @@ export async function createVentaWithInitialPaymentRpc(
   assertOnlineMutation();
   const { data, error } = await ventaInitialPaymentRpcClient.rpc(
     'create_venta_with_initial_payment',
-    payload
+    withIdempotencyKey(payload)
   );
   if (error) throw new Error(error.message);
   return assertRpcStringId(data, 'create_venta_with_initial_payment');
@@ -115,7 +120,10 @@ export async function createVentaWithInitialPaymentRpc(
 
 export async function createVentaRefundRpc(payload: CreateVentaRefundPayload): Promise<string> {
   assertOnlineMutation();
-  const { data, error } = await ventaRefundRpcClient.rpc('create_venta_refund', payload);
+  const { data, error } = await ventaRefundRpcClient.rpc(
+    'create_venta_refund',
+    withIdempotencyKey(payload)
+  );
   if (error) throw new Error(error.message);
   return assertRpcStringId(data, 'create_venta_refund');
 }

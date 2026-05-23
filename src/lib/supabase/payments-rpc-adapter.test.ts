@@ -35,6 +35,7 @@ const servicioPaymentPayload: CreateServicioPaymentPayload = {
   p_metodo_pago_nombre_snapshot: 'Yappy',
   p_fecha_pago: '2026-05-22T00:00:00.000Z',
   p_pago_notas: 'Renovacion',
+  p_idempotency_key: '00000000-0000-4000-8000-000000000201',
 };
 
 const ventaPaymentPayload: CreateVentaPaymentPayload = {
@@ -55,6 +56,7 @@ const ventaPaymentPayload: CreateVentaPaymentPayload = {
   p_plan_id: 'plan-1',
   p_plan_nombre_snapshot: 'Plan Mensual',
   p_plan_tipo_nombre_snapshot: 'Individual',
+  p_idempotency_key: '00000000-0000-4000-8000-000000000202',
 };
 
 describe('createServicioPaymentRpc', () => {

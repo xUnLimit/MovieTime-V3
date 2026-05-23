@@ -49,6 +49,7 @@ const payload: CreateVentaWithInitialPaymentPayload = {
   p_plan_id: 'plan-1',
   p_plan_nombre_snapshot: 'Plan Mensual',
   p_plan_tipo_nombre_snapshot: 'Individual',
+  p_idempotency_key: '00000000-0000-4000-8000-000000000101',
 };
 
 const refundPayload: CreateVentaRefundPayload = {
@@ -65,6 +66,7 @@ const refundPayload: CreateVentaRefundPayload = {
   p_cortar: false,
   p_motivo_corte: null,
   p_created_by: '00000000-0000-0000-0000-000000000000',
+  p_idempotency_key: '00000000-0000-4000-8000-000000000102',
 };
 
 const updatePaymentPayload: UpdateVentaPaymentAndPeriodPayload = {

@@ -1063,7 +1063,7 @@ Repositories
 - [x] Crear modulo `src/lib/payments/`.
 - [x] Crear modulo `src/lib/dashboard-read-models/`.
 - [x] Crear modulo `src/lib/notifications/`.
-- [ ] Agregar idempotencia a RPCs criticas.
+- [x] Agregar idempotencia a RPCs criticas.
 - [x] Crear `docs/adr/` con ADRs iniciales.
 - [x] ADR: dashboard read models.
 - [x] ADR: React Query vs Zustand.

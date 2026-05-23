@@ -3,6 +3,7 @@ import { assertRpcStringId } from '@/lib/utils/safety';
 import type { Database } from '@/lib/supabase/database.types';
 
 import { supabase } from './client';
+import { withIdempotencyKey } from './idempotency';
 
 type RpcResult = {
   data: unknown;
@@ -64,6 +65,7 @@ export type CreateServicioWithInitialPaymentPayload = {
   p_fecha_pago: string;
   p_pago_notas: string | null;
   p_created_by?: string | null;
+  p_idempotency_key?: string | null;
 };
 
 export type DeleteServicioWithPaymentsPayload =
@@ -99,7 +101,7 @@ export async function createServicioWithInitialPaymentRpc(
   assertOnlineMutation();
   const { data, error } = await servicioInitialPaymentRpcClient.rpc(
     'create_servicio_with_initial_payment',
-    payload
+    withIdempotencyKey(payload)
   );
   if (error) throw new Error(error.message);
   return assertRpcStringId(data, 'create_servicio_with_initial_payment');

@@ -45,8 +45,9 @@ Completado hasta esta iteracion:
 - Fase 4 notificaciones: calculo puro de prioridad/titulos extraido a `src/lib/notifications/notification-calculator.ts` con tests; el sync runtime se expone por `src/lib/notifications` para reducir dependencia directa sobre `services/notificationSyncService`.
 - Fase 4 dashboard read models: implementacion de lectura movida a `src/lib/dashboard-read-models/`; `dashboardStatsService` queda como barrel legacy.
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
-- Pendiente Fase 4: idempotencia SQL en RPCs criticas, descomposicion de formularios grandes y cobertura >=80%.
-- Cobertura/tests: suite actual en 170 tests pasando; cobertura actual 41.11% statements / 44.42% lines.
+- Fase 4 idempotencia RPC: migracion `20260523183000_rpc_idempotency_keys.sql` agrega `rpc_idempotency_keys` y overloads con `p_idempotency_key` para creacion inicial de ventas/servicios, renovaciones de pagos y refunds; los adapters cliente generan key cuando el caller no la proporciona.
+- Pendiente Fase 4: aplicar migraciones pendientes al remoto, descomposicion de formularios grandes y cobertura >=80%.
+- Cobertura/tests: suite actual en 173 tests pasando; ultima cobertura medida 41.11% statements / 44.41% lines.
 
 Commits de referencia de esta iteracion:
 

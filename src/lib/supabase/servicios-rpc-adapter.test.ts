@@ -48,6 +48,7 @@ const payload: CreateServicioWithInitialPaymentPayload = {
   p_metodo_pago_nombre_snapshot: 'Yappy',
   p_fecha_pago: '2026-05-22T00:00:00.000Z',
   p_pago_notas: 'Pago inicial',
+  p_idempotency_key: '00000000-0000-4000-8000-000000000301',
 };
 
 const updatePaymentPayload: UpdateServicioPaymentAndPeriodPayload = {
