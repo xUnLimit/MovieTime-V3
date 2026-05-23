@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { differenceInDays, format, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Activity,
@@ -38,6 +39,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { queryKeys } from "@/lib/query-keys";
 import { queryNotificaciones } from "@/lib/supabase/notifications-repository";
 import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
 import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
@@ -77,6 +79,26 @@ function calcularReposoData(servicio: Servicio): ReposoServicio {
   else if (diasRestantes <= 7) estadoReposo = "proximo_finalizar";
 
   return { ...servicio, diasRestantes, progreso, estadoReposo };
+}
+
+async function fetchReposoServicesQuery(): Promise<ReposoServicio[]> {
+  const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
+    { field: "enReposo", operator: "==", value: true },
+  ]);
+  const enriched = servicios.map(calcularReposoData);
+  return enriched.sort((a, b) => {
+    if (a.estadoReposo === "completado" && b.estadoReposo !== "completado")
+      return -1;
+    if (a.estadoReposo !== "completado" && b.estadoReposo === "completado")
+      return 1;
+    return a.diasRestantes - b.diasRestantes;
+  });
+}
+
+async function fetchServicioMetodosPagoQuery(): Promise<MetodoPago[]> {
+  return fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+    { field: "asociadoA", operator: "==", value: "servicio" },
+  ]);
 }
 
 function ServiciosReposoMetrics({ servicios }: { servicios: ReposoServicio[] }) {
@@ -122,9 +144,6 @@ function ReposoPageContent() {
   const { fetchCategorias } = useCategoriasStore();
   const { deleteNotificacion, fetchNotificaciones } = useNotificacionesStore();
 
-  const [serviciosReposo, setServiciosReposo] = useState<ReposoServicio[]>([]);
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("all");
   const [activarDialogOpen, setActivarDialogOpen] = useState(false);
@@ -142,45 +161,19 @@ function ReposoPageContent() {
   ];
   const estadoFilterLabel =
     estadoOptions.find((option) => option.value === estadoFilter)?.label ?? "Todos los estados";
-
-  const loadMetodosPago = useCallback(async () => {
-    if (metodosPago.length > 0) return;
-    try {
-      const methods = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
-        { field: "asociadoA", operator: "==", value: "servicio" },
-      ]);
-      setMetodosPago(methods);
-    } catch {
-      setMetodosPago([]);
-    }
-  }, [metodosPago.length]);
-
-  const fetchReposoServices = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
-        { field: "enReposo", operator: "==", value: true },
-      ]);
-      const enriched = servicios.map(calcularReposoData);
-      enriched.sort((a, b) => {
-        if (a.estadoReposo === "completado" && b.estadoReposo !== "completado")
-          return -1;
-        if (a.estadoReposo !== "completado" && b.estadoReposo === "completado")
-          return 1;
-        return a.diasRestantes - b.diasRestantes;
-      });
-      setServiciosReposo(enriched);
-    } catch (error) {
-      console.error("Error fetching reposo services:", error);
-      toast.error("Error al cargar servicios en reposo");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchReposoServices();
-  }, [fetchReposoServices]);
+  const {
+    data: serviciosReposo = [],
+    isLoading,
+    refetch: refetchReposoServices,
+  } = useQuery({
+    queryKey: queryKeys.servicios.reposo(),
+    queryFn: fetchReposoServicesQuery,
+  });
+  const { data: metodosPago = [] } = useQuery({
+    queryKey: queryKeys.metodosPago.servicios(),
+    queryFn: fetchServicioMetodosPagoQuery,
+    enabled: renovarDialogOpen,
+  });
 
   const filteredServicios = useMemo(() => {
     let result = serviciosReposo;
@@ -235,7 +228,7 @@ function ReposoPageContent() {
       });
       setActivarDialogOpen(false);
       setSelectedServicio(null);
-      fetchReposoServices();
+      void refetchReposoServices();
     } catch (error) {
       toast.error("Error al activar servicio", {
         description: error instanceof Error ? error.message : undefined,
@@ -286,7 +279,7 @@ function ReposoPageContent() {
       });
       setRenovarDialogOpen(false);
       setSelectedServicio(null);
-      fetchReposoServices();
+      void refetchReposoServices();
     } catch (error) {
       toast.error("Error al activar y renovar", {
         description: error instanceof Error ? error.message : undefined,
@@ -307,7 +300,7 @@ function ReposoPageContent() {
       await Promise.all([fetchCategorias(true), fetchCounts(true)]);
       setDeleteDialogOpen(false);
       setSelectedServicio(null);
-      fetchReposoServices();
+      void refetchReposoServices();
     } catch (error) {
       toast.error("Error al eliminar servicio", {
         description: error instanceof Error ? error.message : undefined,
@@ -578,7 +571,6 @@ function ReposoPageContent() {
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedServicio(servicio);
-                        loadMetodosPago();
                         setRenovarDialogOpen(true);
                       }}
                     >

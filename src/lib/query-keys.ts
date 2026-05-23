@@ -44,6 +44,7 @@ export const queryKeys = {
     all: ['servicios'] as const,
     lists: () => [...queryKeys.servicios.all, 'list'] as const,
     list: (filters: unknown) => [...queryKeys.servicios.lists(), filters] as const,
+    reposo: () => [...queryKeys.servicios.all, 'reposo'] as const,
     detail: (servicioId: string) => [...queryKeys.servicios.all, 'detail', servicioId] as const,
     pagos: (servicioId: string) => [...queryKeys.servicios.detail(servicioId), 'pagos'] as const,
     proximosPagosByCategoria: (categoriaId: string) =>
@@ -60,6 +61,7 @@ export const queryKeys = {
     all: ['metodos-pago'] as const,
     detail: (metodoPagoId: string) => [...queryKeys.metodosPago.all, 'detail', metodoPagoId] as const,
     terceros: () => [...queryKeys.metodosPago.all, 'terceros'] as const,
+    servicios: () => [...queryKeys.metodosPago.all, 'servicios'] as const,
   },
   terceros: {
     all: ['terceros'] as const,
