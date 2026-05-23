@@ -3,7 +3,6 @@
 export const PENDING_TERCERO_PAYMENT_ID = 'pendiente';
 export const PENDING_TERCERO_PAYMENT_NAME = 'Pendiente';
 export const PENDING_TERCERO_PAYMENT_CURRENCY = 'USD';
-export const TERCERO_METODO_PAGO_UPDATED_EVENT = 'tercero-metodo-pago-updated';
 
 export function isPendingTerceroPaymentMethodId(metodoPagoId?: string | null): boolean {
   return !metodoPagoId || metodoPagoId === PENDING_TERCERO_PAYMENT_ID;

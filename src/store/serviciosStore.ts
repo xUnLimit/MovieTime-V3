@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
-import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { ENTITIES, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
 import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas-use-cases';
 import {
@@ -21,9 +21,6 @@ import type { Servicio } from '@/types/servicios';
 
 function dispatchServicioDeleted(servicioId: string) {
   storeEventBus.emit({ type: 'SERVICIO_DELETED', servicioId });
-
-  if (typeof window === 'undefined') return;
-  emitLegacyBrowserEvent('servicio-deleted');
 }
 
 interface ServiciosState {

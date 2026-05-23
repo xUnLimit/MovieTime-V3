@@ -44,16 +44,3 @@ export const storeEventBus = {
     listeners.clear();
   },
 };
-
-export function emitLegacyBrowserEvent(
-  name: string,
-  options: { persistTimestamp?: boolean; timestamp?: string } = {}
-): void {
-  if (typeof window === 'undefined') return;
-
-  if (options.persistTimestamp ?? true) {
-    window.localStorage.setItem(name, options.timestamp ?? Date.now().toString());
-  }
-
-  window.dispatchEvent(new Event(name));
-}

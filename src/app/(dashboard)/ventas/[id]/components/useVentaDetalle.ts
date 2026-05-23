@@ -11,7 +11,7 @@ import { useTemplates } from '@/hooks/use-templates';
 import { queryKeys } from '@/lib/query-keys';
 import { invalidateDashboardCache, syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
 import { CYCLE_MONTHS } from '@/lib/constants';
-import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
@@ -53,7 +53,6 @@ const getEstadoDetalle = (venta: VentaDoc | null) => {
 
 function emitVentaUpdated(ventaId: string) {
   storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
-  emitLegacyBrowserEvent('venta-updated', { persistTimestamp: false });
 }
 
 function getLogContext() {

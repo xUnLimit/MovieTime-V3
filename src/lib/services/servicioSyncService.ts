@@ -1,6 +1,6 @@
 ﻿import { getServicios } from '@/lib/supabase/servicios-repository';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
-import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { sincronizarUnServicio, sincronizarUnaVenta, sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { Servicio, VentaDoc } from '@/types';
@@ -30,12 +30,6 @@ function emitServicioSyncEvents(servicioId: string | null, ventaIds: string[]) {
     storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
   });
 
-  const syncTimestamp = Date.now().toString();
-  emitLegacyBrowserEvent('servicio-updated', { timestamp: syncTimestamp });
-
-  if (ventaIds.length > 0) {
-    emitLegacyBrowserEvent('venta-updated', { timestamp: syncTimestamp });
-  }
 }
 
 /**

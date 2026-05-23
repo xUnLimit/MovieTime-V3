@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 import { countVentas, ENTITIES, getVentas, logCacheHit } from '@/lib/supabase/ventas-repository';
-import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import {
   createVentaUseCase,
   deleteVentaUseCase,
@@ -24,9 +24,6 @@ function dispatchVentaEvent(
   if (name === 'venta-created') storeEventBus.emit({ type: 'VENTA_CREATED', ventaId });
   if (name === 'venta-updated') storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
   if (name === 'venta-deleted') storeEventBus.emit({ type: 'VENTA_DELETED', ventaId });
-
-  if (typeof window === 'undefined') return;
-  emitLegacyBrowserEvent(name);
 }
 
 interface VentasState {

@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { ENTITIES, getTerceros, logCacheHit } from '@/lib/supabase/terceros-repository';
 import {
   createTerceroUseCase,
@@ -20,9 +20,6 @@ import type { Tercero } from '@/types';
 function dispatchTerceroEvent(name: 'tercero-deleted' | 'tercero-nombre-updated', terceroId: string) {
   if (name === 'tercero-deleted') storeEventBus.emit({ type: 'TERCERO_DELETED', terceroId });
   if (name === 'tercero-nombre-updated') storeEventBus.emit({ type: 'TERCERO_NOMBRE_UPDATED', terceroId });
-
-  if (typeof window === 'undefined') return;
-  emitLegacyBrowserEvent(name, { persistTimestamp: name === 'tercero-deleted' });
 }
 
 interface TercerosState {

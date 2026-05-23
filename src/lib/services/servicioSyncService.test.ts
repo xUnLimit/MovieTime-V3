@@ -48,9 +48,13 @@ describe('servicioSyncService', () => {
 
   describe('syncServicioDependencias', () => {
     it('regenera notificaciones del servicio y sus ventas asociadas', async () => {
-      const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
       queryVentasMock.mockResolvedValue([{ id: 'venta-1' }, { id: 'venta-2' }]);
 
+      const { storeEventBus } = await import('@/lib/events/store-event-bus');
+      const servicioUpdated = vi.fn();
+      const ventaUpdated = vi.fn();
+      const unsubscribeServicio = storeEventBus.on('SERVICIO_UPDATED', servicioUpdated);
+      const unsubscribeVenta = storeEventBus.on('VENTA_UPDATED', ventaUpdated);
       const { syncServicioDependencias } = await import('./servicioSyncService');
 
       await syncServicioDependencias(
@@ -81,9 +85,15 @@ describe('servicioSyncService', () => {
       expect(syncUnaVentaMock).toHaveBeenCalledWith('venta-2');
       expect(fetchNotificacionesMock).toHaveBeenCalledWith(true);
       expect(fetchCountsMock).toHaveBeenCalledTimes(1);
-      expect(dispatchEventSpy).toHaveBeenCalled();
+      expect(servicioUpdated).toHaveBeenCalledWith({
+        type: 'SERVICIO_UPDATED',
+        servicioId: 'servicio-1',
+      });
+      expect(ventaUpdated).toHaveBeenCalledWith({ type: 'VENTA_UPDATED', ventaId: 'venta-1' });
+      expect(ventaUpdated).toHaveBeenCalledWith({ type: 'VENTA_UPDATED', ventaId: 'venta-2' });
 
-      dispatchEventSpy.mockRestore();
+      unsubscribeServicio();
+      unsubscribeVenta();
     });
 
     it('no llama a sincronizarUnaVenta si el servicio no tiene ventas asociadas', async () => {

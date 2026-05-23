@@ -1,9 +1,6 @@
-import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { updateTercero } from '@/lib/supabase/terceros-repository';
-import {
-  isPendingTerceroPaymentMethodId,
-  TERCERO_METODO_PAGO_UPDATED_EVENT,
-} from '@/lib/utils/terceroMetodoPago';
+import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
 import { useTercerosStore } from '@/store/tercerosStore';
 
 interface SyncTerceroMetodoPagoInput {
@@ -38,6 +35,4 @@ export async function syncTerceroMetodoPago(input: SyncTerceroMetodoPagoInput): 
   }));
 
   storeEventBus.emit({ type: 'TERCERO_METODO_PAGO_UPDATED', terceroId });
-
-  emitLegacyBrowserEvent(TERCERO_METODO_PAGO_UPDATED_EVENT);
 }
