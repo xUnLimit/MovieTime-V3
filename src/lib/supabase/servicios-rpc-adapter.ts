@@ -30,6 +30,13 @@ type DeleteServicioPaymentRpcClient = {
   ) => Promise<RpcResult>;
 };
 
+type UpdateServicioPaymentAndPeriodRpcClient = {
+  rpc: (
+    fn: 'update_servicio_payment_and_period',
+    args: UpdateServicioPaymentAndPeriodPayload
+  ) => Promise<RpcResult>;
+};
+
 export type CreateServicioWithInitialPaymentPayload = {
   p_categoria_id: string;
   p_plan_tipo_id: string | null;
@@ -63,12 +70,28 @@ export type DeleteServicioWithPaymentsPayload =
   Database['public']['Functions']['delete_servicio_with_payments']['Args'];
 export type DeleteServicioPaymentPayload =
   Database['public']['Functions']['delete_servicio_payment_and_empty_period']['Args'];
+export type UpdateServicioPaymentAndPeriodPayload = {
+  p_pago_id: string;
+  p_fecha_inicio: string;
+  p_fecha_vencimiento: string;
+  p_ciclo_pago: 'mensual' | 'trimestral' | 'semestral' | 'anual';
+  p_costo_original: number;
+  p_moneda_original: string;
+  p_costo_usd: number;
+  p_exchange_rate: number | null;
+  p_renovacion_automatica: boolean;
+  p_metodo_pago_id: string | null;
+  p_metodo_pago_nombre_snapshot: string | null;
+  p_pago_notas: string | null;
+};
 
 const servicioInitialPaymentRpcClient =
   supabase as unknown as CreateServicioWithInitialPaymentRpcClient;
 const deleteServicioWithPaymentsRpcClient =
   supabase as unknown as DeleteServicioWithPaymentsRpcClient;
 const deleteServicioPaymentRpcClient = supabase as unknown as DeleteServicioPaymentRpcClient;
+const updateServicioPaymentAndPeriodRpcClient =
+  supabase as unknown as UpdateServicioPaymentAndPeriodRpcClient;
 
 export async function createServicioWithInitialPaymentRpc(
   payload: CreateServicioWithInitialPaymentPayload
@@ -99,6 +122,17 @@ export async function deleteServicioPaymentRpc(
   assertOnlineMutation();
   const { error } = await deleteServicioPaymentRpcClient.rpc(
     'delete_servicio_payment_and_empty_period',
+    payload
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function updateServicioPaymentAndPeriodRpc(
+  payload: UpdateServicioPaymentAndPeriodPayload
+): Promise<void> {
+  assertOnlineMutation();
+  const { error } = await updateServicioPaymentAndPeriodRpcClient.rpc(
+    'update_servicio_payment_and_period',
     payload
   );
   if (error) throw new Error(error.message);

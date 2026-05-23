@@ -37,6 +37,13 @@ type DeleteVentaPaymentRpcClient = {
   ) => Promise<RpcResult>;
 };
 
+type UpdateVentaPaymentAndPeriodRpcClient = {
+  rpc: (
+    fn: 'update_venta_payment_and_period',
+    args: UpdateVentaPaymentAndPeriodPayload
+  ) => Promise<RpcResult>;
+};
+
 export type CreateVentaWithInitialPaymentPayload = {
   p_cliente_id: string | null;
   p_servicio_id: string;
@@ -71,11 +78,28 @@ export type DeleteVentaWithPaymentsPayload =
   Database['public']['Functions']['delete_venta_with_payments']['Args'];
 export type DeleteVentaPaymentPayload =
   Database['public']['Functions']['delete_venta_payment_and_empty_period']['Args'];
+export type UpdateVentaPaymentAndPeriodPayload = {
+  p_pago_id: string;
+  p_fecha_inicio: string;
+  p_fecha_fin: string;
+  p_ciclo_pago: 'mensual' | 'trimestral' | 'semestral' | 'anual';
+  p_precio_original: number;
+  p_descuento: number;
+  p_total_original: number;
+  p_moneda_original: string;
+  p_total_usd: number;
+  p_exchange_rate: number | null;
+  p_metodo_pago_id: string | null;
+  p_metodo_pago_nombre_snapshot: string | null;
+  p_pago_notas: string | null;
+};
 
 const ventaInitialPaymentRpcClient = supabase as unknown as CreateVentaWithInitialPaymentRpcClient;
 const ventaRefundRpcClient = supabase as unknown as CreateVentaRefundRpcClient;
 const deleteVentaWithPaymentsRpcClient = supabase as unknown as DeleteVentaWithPaymentsRpcClient;
 const deleteVentaPaymentRpcClient = supabase as unknown as DeleteVentaPaymentRpcClient;
+const updateVentaPaymentAndPeriodRpcClient =
+  supabase as unknown as UpdateVentaPaymentAndPeriodRpcClient;
 
 export async function createVentaWithInitialPaymentRpc(
   payload: CreateVentaWithInitialPaymentPayload
@@ -108,6 +132,17 @@ export async function deleteVentaPaymentRpc(payload: DeleteVentaPaymentPayload):
   assertOnlineMutation();
   const { error } = await deleteVentaPaymentRpcClient.rpc(
     'delete_venta_payment_and_empty_period',
+    payload
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function updateVentaPaymentAndPeriodRpc(
+  payload: UpdateVentaPaymentAndPeriodPayload
+): Promise<void> {
+  assertOnlineMutation();
+  const { error } = await updateVentaPaymentAndPeriodRpcClient.rpc(
+    'update_venta_payment_and_period',
     payload
   );
   if (error) throw new Error(error.message);

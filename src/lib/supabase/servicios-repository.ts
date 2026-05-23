@@ -17,19 +17,11 @@ import {
   createServicioWithInitialPaymentRpc,
   deleteServicioPaymentRpc,
   deleteServicioWithPaymentsRpc,
+  updateServicioPaymentAndPeriodRpc,
   type CreateServicioWithInitialPaymentPayload,
 } from './servicios-rpc-adapter';
 
 export { logCacheHit };
-
-type RpcResult = {
-  data: unknown;
-  error: { message: string } | null;
-};
-
-const rpcClient = supabase as unknown as {
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<RpcResult>;
-};
 
 export const getServicios = <T>() => getAll<T>(ENTITIES.SERVICIOS);
 export const getServicioById = <T>(id: string) => getById<T>(ENTITIES.SERVICIOS, id);
@@ -132,7 +124,7 @@ export async function updateServicioPaymentAndPeriod(
   }
 ): Promise<void> {
   assertOnlineMutation();
-  const { error } = await rpcClient.rpc('update_servicio_payment_and_period', {
+  await updateServicioPaymentAndPeriodRpc({
     p_pago_id: pagoId,
     p_fecha_inicio: toDateOnly(payload.fechaInicio),
     p_fecha_vencimiento: toDateOnly(payload.fechaVencimiento),
@@ -146,8 +138,6 @@ export async function updateServicioPaymentAndPeriod(
     p_metodo_pago_nombre_snapshot: payload.metodoPagoNombre || null,
     p_pago_notas: payload.notas ?? null,
   });
-
-  if (error) throw new Error(error.message);
 }
 
 export { ENTITIES } from './entities';

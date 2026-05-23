@@ -18,20 +18,12 @@ import {
   createVentaWithInitialPaymentRpc,
   deleteVentaPaymentRpc,
   deleteVentaWithPaymentsRpc,
+  updateVentaPaymentAndPeriodRpc,
   type CreateVentaRefundPayload,
   type CreateVentaWithInitialPaymentPayload,
 } from './ventas-rpc-adapter';
 
 export { logCacheHit, timestampToDate };
-
-type RpcResult = {
-  data: unknown;
-  error: { message: string } | null;
-};
-
-const rpcClient = supabase as unknown as {
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<RpcResult>;
-};
 
 export const getVentas = <T>() => getAll<T>(ENTITIES.VENTAS);
 export const getVentaById = <T>(id: string) => getById<T>(ENTITIES.VENTAS, id);
@@ -148,7 +140,7 @@ export async function updateVentaPaymentAndPeriod(
   }
 ): Promise<void> {
   assertOnlineMutation();
-  const { error } = await rpcClient.rpc('update_venta_payment_and_period', {
+  await updateVentaPaymentAndPeriodRpc({
     p_pago_id: pagoId,
     p_fecha_inicio: toDateOnly(payload.fechaInicio),
     p_fecha_fin: toDateOnly(payload.fechaVencimiento),
@@ -163,8 +155,6 @@ export async function updateVentaPaymentAndPeriod(
     p_metodo_pago_nombre_snapshot: payload.metodoPagoNombre || null,
     p_pago_notas: payload.notas ?? null,
   });
-
-  if (error) throw new Error(error.message);
 
   if (payload.planId !== undefined) {
     const { data: pago, error: selectError } = await supabase

@@ -18,6 +18,8 @@ import {
   deleteServicioPaymentRpc,
   deleteServicioWithPaymentsRpc,
   type CreateServicioWithInitialPaymentPayload,
+  updateServicioPaymentAndPeriodRpc,
+  type UpdateServicioPaymentAndPeriodPayload,
 } from './servicios-rpc-adapter';
 
 const payload: CreateServicioWithInitialPaymentPayload = {
@@ -46,6 +48,21 @@ const payload: CreateServicioWithInitialPaymentPayload = {
   p_metodo_pago_nombre_snapshot: 'Yappy',
   p_fecha_pago: '2026-05-22T00:00:00.000Z',
   p_pago_notas: 'Pago inicial',
+};
+
+const updatePaymentPayload: UpdateServicioPaymentAndPeriodPayload = {
+  p_pago_id: 'pago-1',
+  p_fecha_inicio: '2026-05-22',
+  p_fecha_vencimiento: '2026-06-22',
+  p_ciclo_pago: 'mensual',
+  p_costo_original: 10,
+  p_moneda_original: 'USD',
+  p_costo_usd: 10,
+  p_exchange_rate: 1,
+  p_renovacion_automatica: false,
+  p_metodo_pago_id: 'metodo-1',
+  p_metodo_pago_nombre_snapshot: 'Yappy',
+  p_pago_notas: 'Ajuste',
 };
 
 describe('createServicioWithInitialPaymentRpc', () => {
@@ -120,5 +137,31 @@ describe('deleteServicioPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
 
     await expect(deleteServicioPaymentRpc({ p_pago_id: 'pago-1' })).rejects.toThrow('RPC failed');
+  });
+});
+
+describe('updateServicioPaymentAndPeriodRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed RPC with the expected payload', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: null });
+
+    await expect(updateServicioPaymentAndPeriodRpc(updatePaymentPayload)).resolves.toBeUndefined();
+
+    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock).toHaveBeenCalledWith(
+      'update_servicio_payment_and_period',
+      updatePaymentPayload
+    );
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
+
+    await expect(updateServicioPaymentAndPeriodRpc(updatePaymentPayload)).rejects.toThrow(
+      'RPC failed'
+    );
   });
 });

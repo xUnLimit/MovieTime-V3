@@ -18,8 +18,10 @@ import {
   createVentaWithInitialPaymentRpc,
   deleteVentaPaymentRpc,
   deleteVentaWithPaymentsRpc,
+  updateVentaPaymentAndPeriodRpc,
   type CreateVentaRefundPayload,
   type CreateVentaWithInitialPaymentPayload,
+  type UpdateVentaPaymentAndPeriodPayload,
 } from './ventas-rpc-adapter';
 
 const payload: CreateVentaWithInitialPaymentPayload = {
@@ -63,6 +65,22 @@ const refundPayload: CreateVentaRefundPayload = {
   p_cortar: false,
   p_motivo_corte: null,
   p_created_by: '00000000-0000-0000-0000-000000000000',
+};
+
+const updatePaymentPayload: UpdateVentaPaymentAndPeriodPayload = {
+  p_pago_id: 'pago-1',
+  p_fecha_inicio: '2026-05-22',
+  p_fecha_fin: '2026-06-22',
+  p_ciclo_pago: 'mensual',
+  p_precio_original: 10,
+  p_descuento: 0,
+  p_total_original: 10,
+  p_moneda_original: 'USD',
+  p_total_usd: 10,
+  p_exchange_rate: 1,
+  p_metodo_pago_id: 'metodo-1',
+  p_metodo_pago_nombre_snapshot: 'Yappy',
+  p_pago_notas: 'Ajuste',
 };
 
 describe('createVentaWithInitialPaymentRpc', () => {
@@ -166,5 +184,28 @@ describe('deleteVentaPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
 
     await expect(deleteVentaPaymentRpc({ p_pago_id: 'pago-1' })).rejects.toThrow('RPC failed');
+  });
+});
+
+describe('updateVentaPaymentAndPeriodRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed RPC with the expected payload', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: null });
+
+    await expect(updateVentaPaymentAndPeriodRpc(updatePaymentPayload)).resolves.toBeUndefined();
+
+    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
+    expect(rpcMock).toHaveBeenCalledWith('update_venta_payment_and_period', updatePaymentPayload);
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
+
+    await expect(updateVentaPaymentAndPeriodRpc(updatePaymentPayload)).rejects.toThrow(
+      'RPC failed'
+    );
   });
 });
