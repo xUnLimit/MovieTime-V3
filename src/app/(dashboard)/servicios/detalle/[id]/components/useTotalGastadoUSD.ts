@@ -1,29 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
+import { queryKeys } from '@/lib/query-keys';
 import { sumInUSD } from '@/lib/utils/calculations';
 import type { PagoServicio } from '@/types';
 
 export function useTotalGastadoUSD(pagosServicio: PagoServicio[]) {
-  const [totalGastadoUSD, setTotalGastadoUSD] = useState<number>(0);
-  const [isCalculatingTotal, setIsCalculatingTotal] = useState(false);
-
-  useEffect(() => {
-    const calculateTotal = async () => {
-      setIsCalculatingTotal(true);
-      try {
-        const total = await sumInUSD(
-          pagosServicio.map((p) => ({ monto: p.monto, moneda: p.moneda || 'USD' }))
-        );
-        setTotalGastadoUSD(total);
-      } catch (error) {
-        console.error('[ServicioDetail] Error calculating total:', error);
-        setTotalGastadoUSD(0);
-      } finally {
-        setIsCalculatingTotal(false);
-      }
-    };
-    calculateTotal();
-  }, [pagosServicio]);
+  const pagosSignature = useMemo(
+    () =>
+      pagosServicio
+        .map((pago) => `${pago.id ?? ''}:${pago.monto}:${pago.moneda ?? 'USD'}`)
+        .sort()
+        .join('|'),
+    [pagosServicio]
+  );
+  const { data: totalGastadoUSD = 0, isLoading: isCalculatingTotal } = useQuery({
+    queryKey: queryKeys.servicios.pagosTotalUsd(pagosSignature),
+    queryFn: () =>
+      sumInUSD(
+        pagosServicio.map((p) => ({ monto: p.monto, moneda: p.moneda || 'USD' }))
+      ),
+  });
 
   return { isCalculatingTotal, totalGastadoUSD };
 }

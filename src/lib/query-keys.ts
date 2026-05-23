@@ -47,6 +47,8 @@ export const queryKeys = {
     reposo: () => [...queryKeys.servicios.all, 'reposo'] as const,
     detail: (servicioId: string) => [...queryKeys.servicios.all, 'detail', servicioId] as const,
     pagos: (servicioId: string) => [...queryKeys.servicios.detail(servicioId), 'pagos'] as const,
+    pagosTotalUsd: (signature: string) =>
+      [...queryKeys.servicios.all, 'pagos-total-usd', signature] as const,
     proximosPagosByCategoria: (categoriaId: string) =>
       [...queryKeys.servicios.all, 'proximos-pagos', 'categoria', categoriaId] as const,
   },
