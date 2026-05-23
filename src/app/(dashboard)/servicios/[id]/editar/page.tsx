@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServicioForm } from '@/components/servicios/ServicioForm';
+import { useServicioDetail } from '@/hooks/use-entity-detail';
 import { isUuid } from '@/lib/utils/safety';
-import { useServiciosStore } from '@/store/serviciosStore';
 
 function EditarServicioPageContent() {
   const params = useParams();
@@ -15,18 +15,7 @@ function EditarServicioPageContent() {
   const from = searchParams.get('from') || '/servicios';
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const servicios = useServiciosStore((state) => state.servicios);
-  const fetchServicios = useServiciosStore((state) => state.fetchServicios);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchServicios();
-  }, [fetchServicios, id]);
-
-  const servicio = useMemo(() =>
-    id ? servicios.find(s => s.id === id) : undefined,
-    [servicios, id]
-  );
+  const { data: servicio, isLoading } = useServicioDetail(id);
 
   if (!id) {
     return (
@@ -65,9 +54,17 @@ function EditarServicioPageContent() {
         </div>
       </div>
 
-      {servicio && (
+      {isLoading ? (
+        <div className="bg-card border rounded-lg p-6">
+          <p className="text-sm text-muted-foreground">Cargando servicio...</p>
+        </div>
+      ) : servicio ? (
         <div className="bg-card border rounded-lg p-6">
           <ServicioForm servicio={servicio} returnTo={from} />
+        </div>
+      ) : (
+        <div className="bg-card border rounded-lg p-6">
+          <p className="text-sm text-muted-foreground">No se encontró el servicio solicitado.</p>
         </div>
       )}
     </div>

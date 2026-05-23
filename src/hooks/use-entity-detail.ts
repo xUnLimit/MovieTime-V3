@@ -4,9 +4,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { getMetodoPagoUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
 import { TERCERO_METODO_PAGO_UPDATED_EVENT } from '@/lib/utils/terceroMetodoPago';
-import type { Categoria, MetodoPago, Tercero } from '@/types';
+import type { Categoria, MetodoPago, Servicio, Tercero } from '@/types';
 
 export function useCategoriaDetail(categoriaId: string | null) {
   return useQuery({
@@ -21,6 +22,14 @@ export function useMetodoPagoDetail(metodoPagoId: string | null) {
     queryKey: queryKeys.metodosPago.detail(metodoPagoId ?? 'invalid'),
     queryFn: () => getMetodoPagoUseCase<MetodoPago>(metodoPagoId!),
     enabled: Boolean(metodoPagoId),
+  });
+}
+
+export function useServicioDetail(servicioId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.servicios.detail(servicioId ?? 'invalid'),
+    queryFn: () => getServicioUseCase<Servicio>(servicioId!),
+    enabled: Boolean(servicioId),
   });
 }
 
