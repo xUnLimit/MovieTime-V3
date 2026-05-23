@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { differenceInDays, format, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Activity,
@@ -45,7 +45,6 @@ import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-
 import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
-import { useCategoriasStore } from "@/store/categoriasStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import type { Servicio } from "@/types/servicios";
 import type { MetodoPago } from "@/types/metodos-pago";
@@ -140,8 +139,8 @@ function ServiciosReposoMetrics({ servicios }: { servicios: ReposoServicio[] }) 
 }
 
 function ReposoPageContent() {
-  const { updateServicio, deleteServicio, fetchCounts } = useServiciosStore();
-  const { fetchCategorias } = useCategoriasStore();
+  const queryClient = useQueryClient();
+  const { updateServicio, deleteServicio } = useServiciosStore();
   const { deleteNotificacion, fetchNotificaciones } = useNotificacionesStore();
 
   const [search, setSearch] = useState("");
@@ -164,7 +163,6 @@ function ReposoPageContent() {
   const {
     data: serviciosReposo = [],
     isLoading,
-    refetch: refetchReposoServices,
   } = useQuery({
     queryKey: queryKeys.servicios.reposo(),
     queryFn: fetchReposoServicesQuery,
@@ -206,6 +204,13 @@ function ReposoPageContent() {
     }
   };
 
+  const invalidateReposoDependencies = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
+    ]);
+  };
+
   const handleActivar = async () => {
     if (!selectedServicio) return;
     setIsActivating(true);
@@ -219,8 +224,7 @@ function ReposoPageContent() {
         fechaFinReposo: undefined,
       });
       await Promise.all([
-        fetchCategorias(true),
-        fetchCounts(true),
+        invalidateReposoDependencies(),
         limpiarNotificacionesReposo(selectedServicio.id),
       ]);
       toast.success("Servicio activado", {
@@ -228,7 +232,6 @@ function ReposoPageContent() {
       });
       setActivarDialogOpen(false);
       setSelectedServicio(null);
-      void refetchReposoServices();
     } catch (error) {
       toast.error("Error al activar servicio", {
         description: error instanceof Error ? error.message : undefined,
@@ -270,8 +273,7 @@ function ReposoPageContent() {
       });
 
       await Promise.all([
-        fetchCategorias(true),
-        fetchCounts(true),
+        invalidateReposoDependencies(),
         limpiarNotificacionesReposo(selectedServicio.id),
       ]);
       toast.success("Servicio activado y renovado", {
@@ -279,7 +281,6 @@ function ReposoPageContent() {
       });
       setRenovarDialogOpen(false);
       setSelectedServicio(null);
-      void refetchReposoServices();
     } catch (error) {
       toast.error("Error al activar y renovar", {
         description: error instanceof Error ? error.message : undefined,
@@ -297,10 +298,9 @@ function ReposoPageContent() {
           ? "El servicio y todos sus registros de pago han sido eliminados."
           : "El servicio fue eliminado. Los registros de pago se conservaron.",
       });
-      await Promise.all([fetchCategorias(true), fetchCounts(true)]);
+      await invalidateReposoDependencies();
       setDeleteDialogOpen(false);
       setSelectedServicio(null);
-      void refetchReposoServices();
     } catch (error) {
       toast.error("Error al eliminar servicio", {
         description: error instanceof Error ? error.message : undefined,
