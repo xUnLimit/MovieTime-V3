@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
 import { currencyService } from '@/lib/services/currencyService';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { esNotificacionServicio, esNotificacionVenta } from '@/types/notificaciones';
 
 interface NotificacionesMontosResult {
@@ -19,7 +19,7 @@ interface NotificacionesMontosResult {
  * - serviciosPorPagar: servicios dentro de la ventana de notificaciones, convertido a USD.
  */
 export function useNotificacionesMontos() {
-  const notificaciones = useNotificacionesStore((state) => state.notificaciones);
+  const { data: notificaciones = [] } = useNotificaciones();
   const ventasVencidas = useMemo(
     () =>
       notificaciones
