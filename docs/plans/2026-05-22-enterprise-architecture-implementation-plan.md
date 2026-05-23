@@ -33,6 +33,7 @@ Completado hasta esta iteracion:
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
 - Fase 2/3 eventos: bridge legacy DOM/localStorage centralizado en `store-event-bus`, imports dinamicos runtime removidos y emisiones directas de negocio reemplazadas por bus tipado + bridge legacy.
 - Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime y retiradas de `dashboardStatsService`; el dashboard queda orientado a invalidacion/refetch sobre read models live.
+- Fase 2 limpieza de capas: `notificaciones-use-cases.ts` eliminado porque era pass-through puro hacia el repositorio.
 - Cobertura: suite actual en 120 tests pasando.
 
 Commits de referencia de esta iteracion:
@@ -54,6 +55,7 @@ Commits de referencia de esta iteracion:
 - `a900086` refactor: make payment currency dependency explicit
 - `cf47006` refactor: remove dashboard no-op mutations
 - `e0fa866` refactor: drop deprecated dashboard mutation APIs
+- `d4b96f5` refactor: remove notification pass-through use case
 
 Validacion recurrente ejecutada por PR logico:
 
