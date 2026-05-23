@@ -1,5 +1,6 @@
 import { format, startOfDay } from 'date-fns';
 
+import { NotFoundError } from '@/lib/errors/domain-errors';
 import {
   countTerceros,
   createTercero,
@@ -167,7 +168,7 @@ export async function resolveTerceroForDelete(
   if (localTercero) return localTercero;
 
   const fetchedUser = await getTerceroById<Tercero>(id);
-  if (!fetchedUser) throw new Error('Tercero no encontrado');
+  if (!fetchedUser) throw new NotFoundError('Tercero no encontrado', { terceroId: id });
   return fetchedUser;
 }
 

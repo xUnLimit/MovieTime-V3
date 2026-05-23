@@ -25,13 +25,14 @@ vi.mock('@/lib/utils/activityLogHelpers', () => ({
   detectarCambios: vi.fn(() => []),
 }));
 
-import { createTercero, updateTercero } from '@/lib/supabase/terceros-repository';
+import { createTercero, getTerceroById, updateTercero } from '@/lib/supabase/terceros-repository';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
-import { createTerceroUseCase, updateTerceroUseCase } from './terceros-use-cases';
+import { createTerceroUseCase, resolveTerceroForDelete, updateTerceroUseCase } from './terceros-use-cases';
 
 describe('terceros use cases', () => {
   beforeEach(() => {
     vi.mocked(createTercero).mockReset();
+    vi.mocked(getTerceroById).mockReset();
     vi.mocked(updateTercero).mockReset();
     vi.mocked(queryVentas).mockReset();
   });
@@ -156,5 +157,15 @@ describe('terceros use cases', () => {
         metodoPagoId: null,
       })
     );
+  });
+
+  it('throws a typed not found error when resolving a missing tercero for deletion', async () => {
+    vi.mocked(getTerceroById).mockResolvedValue(null);
+
+    await expect(resolveTerceroForDelete('tercero-missing')).rejects.toMatchObject({
+      name: 'NotFoundError',
+      code: 'NOT_FOUND',
+      message: 'Tercero no encontrado',
+    });
   });
 });
