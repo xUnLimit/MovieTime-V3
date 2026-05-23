@@ -3,7 +3,9 @@ import { format } from 'date-fns';
 import { toDateOnly } from '@/lib/supabase/dates';
 import {
   getPagoVentaById,
+  queryPagosVenta,
   removePagoVenta,
+  updateLatestVentaPeriodo,
   updateVenta,
   updateVentaPaymentAndPeriod,
 } from '@/lib/supabase/ventas-repository';
@@ -27,6 +29,7 @@ import {
   type VentaPagoInput,
   type VentaPagoResult,
 } from '@/lib/use-cases/ventas/ventas-shared';
+import { updateVentaUseCase } from '@/lib/use-cases/ventas/ventas-write-use-cases';
 
 export { getVentaConPagoActualUseCase };
 
@@ -193,4 +196,90 @@ export async function deleteVentaPagoUseCase(ventaId: string, pagoId: string) {
   });
 
   return { ventaActualizada, pronostico };
+}
+
+export async function updateVentaWithLatestPagoUseCase(
+  id: string,
+  updates: Partial<VentaDoc>,
+  pagoUpdates: {
+    precio: number;
+    descuento: number;
+    monto: number;
+    metodoPagoId: string;
+    metodoPago: string;
+    moneda: string;
+    cicloPago?: VentaDoc['cicloPago'];
+    fechaInicio: Date;
+    fechaVencimiento: Date;
+    planId?: string | null;
+    planNombre?: string | null;
+    planTipoNombre?: string | null;
+  },
+  options: {
+    currentVenta?: VentaDoc;
+    logContext: LogContext;
+    recordActivityLog?: RecordActivityLog;
+  }
+) {
+  const result = await updateVentaUseCase(id, updates, options);
+  const { usd, rate } = await getUsdValues(pagoUpdates.monto, pagoUpdates.moneda);
+  const cicloPago = (pagoUpdates.cicloPago || 'mensual') as NonNullable<VentaDoc['cicloPago']>;
+
+  const pagos = await queryPagosVenta<PagoVenta>([{ field: 'ventaId', operator: '==', value: id }]);
+
+  if (pagos.length > 0) {
+    const pagoMasReciente = [...pagos].sort((a, b) => {
+      const dateA = a.fecha instanceof Date ? a.fecha : new Date(a.fecha);
+      const dateB = b.fecha instanceof Date ? b.fecha : new Date(b.fecha);
+      return dateB.getTime() - dateA.getTime();
+    })[0];
+
+    await updateVentaPaymentAndPeriod(pagoMasReciente.id, {
+      precio: pagoUpdates.precio,
+      descuento: pagoUpdates.descuento,
+      monto: pagoUpdates.monto,
+      moneda: pagoUpdates.moneda,
+      montoUsd: usd,
+      exchangeRate: rate,
+      cicloPago,
+      fechaInicio: pagoUpdates.fechaInicio,
+      fechaVencimiento: pagoUpdates.fechaVencimiento,
+      metodoPagoId: pagoUpdates.metodoPagoId,
+      metodoPagoNombre: pagoUpdates.metodoPago,
+      planId: pagoUpdates.planId,
+      planNombre: pagoUpdates.planNombre,
+      planTipoNombre: pagoUpdates.planTipoNombre,
+    });
+  } else {
+    await updateLatestVentaPeriodo(id, {
+      precio: pagoUpdates.precio,
+      descuento: pagoUpdates.descuento,
+      monto: pagoUpdates.monto,
+      moneda: pagoUpdates.moneda,
+      montoUsd: usd,
+      exchangeRate: rate,
+      cicloPago,
+      fechaInicio: pagoUpdates.fechaInicio,
+      fechaVencimiento: pagoUpdates.fechaVencimiento,
+      planId: pagoUpdates.planId,
+      planNombre: pagoUpdates.planNombre,
+      planTipoNombre: pagoUpdates.planTipoNombre,
+    });
+  }
+
+  if (updates.clienteId && updates.metodoPagoId) {
+    try {
+      await syncTerceroMetodoPago({
+        terceroId: updates.clienteId,
+        metodoPagoId: updates.metodoPagoId,
+        metodoPagoNombre: updates.metodoPagoNombre,
+        moneda: updates.moneda,
+      });
+    } catch (error) {
+      console.error('[VentasUseCases] Error syncing user payment method:', error);
+      return { ...result, syncPaymentMethodFailed: true };
+    }
+  }
+
+  return { ...result, syncPaymentMethodFailed: false };
 }
