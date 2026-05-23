@@ -50,12 +50,19 @@ export function safeAsyncSideEffect(
   context: AsyncSideEffectContext
 ): void {
   promise.catch((error) => {
-    const scope = [
-      context.operation,
-      context.entity ? `entity=${context.entity}` : null,
-      context.entityId ? `id=${context.entityId}` : null,
-    ].filter(Boolean).join(' ');
-
-    console.error(`[SideEffect] ${scope}`, error);
+    logAsyncSideEffectError(error, context);
   });
+}
+
+export function logAsyncSideEffectError(
+  error: unknown,
+  context: AsyncSideEffectContext
+): void {
+  const scope = [
+    context.operation,
+    context.entity ? `entity=${context.entity}` : null,
+    context.entityId ? `id=${context.entityId}` : null,
+  ].filter(Boolean).join(' ');
+
+  console.error(`[SideEffect] ${scope}`, error);
 }

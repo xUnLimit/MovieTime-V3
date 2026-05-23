@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 
 import { ValidationError } from '@/lib/errors/domain-errors';
 import { toDateOnly } from '@/lib/supabase/dates';
+import { logAsyncSideEffectError } from '@/lib/utils/safety';
 import {
   getPagoVentaById,
   queryPagosVenta,
@@ -77,7 +78,11 @@ export async function renewVentaUseCase(
     });
   } catch (error) {
     syncPaymentMethodFailed = true;
-    console.error('[VentasUseCases] Error syncing user payment method:', error);
+    logAsyncSideEffectError(error, {
+      operation: 'syncTerceroMetodoPago',
+      entity: 'venta',
+      entityId: venta.id,
+    });
   }
 
   const pronostico = {
@@ -147,7 +152,11 @@ export async function updateVentaPagoUseCase(
     });
   } catch (error) {
     syncPaymentMethodFailed = true;
-    console.error('[VentasUseCases] Error syncing user payment method:', error);
+    logAsyncSideEffectError(error, {
+      operation: 'syncTerceroMetodoPago',
+      entity: 'venta',
+      entityId: venta.id,
+    });
   }
 
   const ventaActualizada = await getVentaConPagoActualUseCase(venta.id);
@@ -242,7 +251,11 @@ export async function updateVentaWithLatestPagoUseCase(
         moneda: updates.moneda,
       });
     } catch (error) {
-      console.error('[VentasUseCases] Error syncing user payment method:', error);
+      logAsyncSideEffectError(error, {
+        operation: 'syncTerceroMetodoPago',
+        entity: 'venta',
+        entityId: id,
+      });
       return { ...result, syncPaymentMethodFailed: true };
     }
   }

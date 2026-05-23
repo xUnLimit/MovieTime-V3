@@ -4,6 +4,7 @@ import {
   assertRecordId,
   assertRpcStringId,
   assertUuid,
+  logAsyncSideEffectError,
   safeAsyncSideEffect,
   toMoneyNumber,
 } from './safety';
@@ -45,6 +46,22 @@ describe('safety assertions', () => {
         expect.any(Error)
       );
     });
+    spy.mockRestore();
+  });
+
+  it('logs awaited side-effect failures with the same operation context', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    logAsyncSideEffectError(new Error('boom'), {
+      operation: 'sync',
+      entity: 'venta',
+      entityId: 'venta-1',
+    });
+
+    expect(spy).toHaveBeenCalledWith(
+      '[SideEffect] sync entity=venta id=venta-1',
+      expect.any(Error)
+    );
     spy.mockRestore();
   });
 });
