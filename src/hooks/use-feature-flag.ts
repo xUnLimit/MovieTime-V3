@@ -1,0 +1,22 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+
+import { queryKeys } from "@/lib/query-keys";
+import {
+  fetchFeatureFlags,
+  type FeatureFlagMap,
+} from "@/lib/supabase/feature-flags-repository";
+
+export function useFeatureFlagsQuery() {
+  return useQuery<FeatureFlagMap>({
+    queryKey: queryKeys.featureFlags.all,
+    queryFn: fetchFeatureFlags,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useFeatureFlag(key: string, fallback = false): boolean {
+  const { data } = useFeatureFlagsQuery();
+  return data?.[key] ?? fallback;
+}

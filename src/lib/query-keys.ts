@@ -100,6 +100,9 @@ export const queryKeys = {
     all: ['tipos-gasto'] as const,
     list: () => [...queryKeys.tiposGasto.all, 'list'] as const,
   },
+  featureFlags: {
+    all: ['feature-flags'] as const,
+  },
   notificaciones: {
     all: ['notificaciones'] as const,
     lists: () => [...queryKeys.notificaciones.all, 'list'] as const,
