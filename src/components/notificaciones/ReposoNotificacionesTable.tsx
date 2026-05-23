@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Activity, Check, Search, MoreHorizontal, BellRing, BellOff } from 'lucide-react';
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import {
@@ -22,8 +23,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
+import { queryKeys } from '@/lib/query-keys';
 import type { NotificacionReposo } from '@/types/notificaciones';
 
 type ReposoRow = NotificacionReposo & { id: string };
@@ -93,7 +96,9 @@ function formatearFecha(fechaStr: string): string {
 }
 
 export function ReposoNotificacionesTable() {
-  const { notificaciones, toggleLeida } = useNotificacionesStore();
+  const queryClient = useQueryClient();
+  const { data: notificaciones = [] } = useNotificaciones();
+  const toggleLeida = useNotificacionesStore((state) => state.toggleLeida);
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('todos');
   const estadoFilterLabel =
@@ -145,6 +150,11 @@ export function ReposoNotificacionesTable() {
     data: filtered,
     initialPageSize: 10,
   });
+
+  const handleToggleLeida = async (notifId: string, leida: boolean) => {
+    await toggleLeida(notifId, leida);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+  };
 
   return (
     <Card className="min-w-0 p-4 pb-2">
@@ -240,7 +250,7 @@ export function ReposoNotificacionesTable() {
                               ? 'bg-gray-100 dark:bg-gray-500/20 hover:bg-gray-200 dark:hover:bg-gray-500/30'
                               : `${bellColors.bgColor} ${bellColors.hoverBgColor}`
                           } hover:scale-105`}
-                          onClick={() => toggleLeida(notif.id, !notif.leida)}
+                          onClick={() => void handleToggleLeida(notif.id, !notif.leida)}
                           title={notif.leida ? 'Marcar como no leída' : 'Marcar como leída'}
                         >
                           {notif.leida ? (
