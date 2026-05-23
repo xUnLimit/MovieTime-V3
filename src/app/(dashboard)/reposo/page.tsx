@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { queryKeys } from "@/lib/query-keys";
-import { queryNotificaciones } from "@/lib/supabase/notifications-repository";
+import { queryNotifications } from "@/lib/supabase/notifications-repository";
 import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
 import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
@@ -141,7 +141,7 @@ function ServiciosReposoMetrics({ servicios }: { servicios: ReposoServicio[] }) 
 function ReposoPageContent() {
   const queryClient = useQueryClient();
   const { updateServicio, deleteServicio } = useServiciosStore();
-  const { deleteNotificacion, fetchNotificaciones } = useNotificacionesStore();
+  const deleteNotificacion = useNotificacionesStore((state) => state.deleteNotificacion);
 
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("all");
@@ -191,14 +191,14 @@ function ReposoPageContent() {
 
   const limpiarNotificacionesReposo = async (servicioId: string) => {
     try {
-      const notifs = await queryNotificaciones<{ id: string }>([
+      const notifs = await queryNotifications<{ id: string }>([
         { field: "entidad", operator: "==", value: "reposo" },
         { field: "servicioId", operator: "==", value: servicioId },
       ]);
       await Promise.all(
         notifs.map((n) => deleteNotificacion(n.id)),
       );
-      fetchNotificaciones(true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
     } catch {
       // Best-effort cleanup
     }
