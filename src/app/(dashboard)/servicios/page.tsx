@@ -8,9 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CategoriasTable } from '@/components/servicios/CategoriasTable';
 import { ServiciosMetrics } from '@/components/servicios/ServiciosMetrics';
 import { ServiciosListTable } from '@/components/servicios/ServiciosListTable';
-import { useCategoriasStore } from '@/store/categoriasStore';
-import { useServiciosStore } from '@/store/serviciosStore';
-import { useDashboardStore } from '@/store/dashboardStore';
+import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
 import { FilterOption } from '@/lib/supabase/pagination';
@@ -18,10 +16,7 @@ import { Servicio } from '@/types';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
 function ServiciosPageContent() {
-  const categorias = useCategoriasStore((state) => state.categorias);
-  const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
-  const fetchServicios = useServiciosStore((state) => state.fetchServicios);
-  const fetchDashboardStats = useDashboardStore((state) => state.fetchDashboardStats);
+  const { data: categorias = [], refetch: refetchCategorias } = useCategoriasFull();
 
   const [activeTab, setActiveTab] = useState<'categorias' | 'todos' | 'activos' | 'inactivos'>('categorias');
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,24 +63,15 @@ function ServiciosPageContent() {
     includeTotalCount: true,
   });
 
-  // Cargar datos iniciales
-  useEffect(() => {
-    fetchCategorias(true);
-    fetchServicios(true);
-    fetchDashboardStats();
-  }, [fetchCategorias, fetchServicios, fetchDashboardStats]);
-
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'servicio-deleted') {
-        fetchCategorias(true);
-        fetchServicios(true);
+        void refetchCategorias();
         refresh();
       }
     };
     const handleServicioDeleted = () => {
-      fetchCategorias(true);
-      fetchServicios(true);
+      void refetchCategorias();
       refresh();
     };
     window.addEventListener('storage', handleStorageChange);
@@ -94,7 +80,7 @@ function ServiciosPageContent() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('servicio-deleted', handleServicioDeleted);
     };
-  }, [fetchCategorias, fetchServicios, refresh]);
+  }, [refetchCategorias, refresh]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as 'categorias' | 'todos' | 'activos' | 'inactivos');
