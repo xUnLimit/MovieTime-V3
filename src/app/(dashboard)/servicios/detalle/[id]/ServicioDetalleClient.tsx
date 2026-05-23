@@ -24,8 +24,8 @@ import {
   updateVentaUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
 import { buildServiceTransferMessage } from '@/lib/utils/credentialNotification';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { useTemplatesStore } from '@/store/templatesStore';
@@ -47,14 +47,6 @@ import { ServicioSummaryCards } from './components/ServicioSummaryCards';
 import type { CategoriaDetalle, MetodoPagoDetalle, PagoFormData, PerfilVenta } from './components/types';
 import { useServicioProfiles } from './components/useServicioProfiles';
 import { useTotalGastadoUSD } from './components/useTotalGastadoUSD';
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
-}
 
 function toPerfilVenta(venta: VentaDoc): PerfilVenta & { perfilNumero?: number | null } {
   return {
@@ -277,7 +269,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         },
         {
           currentVenta: selectedActionVenta,
-          logContext: getLogContext(),
+          logContext: getStoreLogContext(),
           recordActivityLog: useActivityLogStore.getState().addLog,
         },
       );
@@ -336,7 +328,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         },
         {
           currentVenta: selectedActionVenta,
-          logContext: getLogContext(),
+          logContext: getStoreLogContext(),
           recordActivityLog: useActivityLogStore.getState().addLog,
         },
       );

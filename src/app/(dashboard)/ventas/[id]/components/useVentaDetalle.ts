@@ -28,8 +28,8 @@ import {
 import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
 import { generarMensajeVenta } from '@/lib/utils/whatsapp';
 import { calcularMontoSinConsumir, roundToDecimals } from '@/lib/utils/calculations';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { useVentasStore } from '@/store/ventasStore';
@@ -53,14 +53,6 @@ const getEstadoDetalle = (venta: VentaDoc | null) => {
 
 function emitVentaUpdated(ventaId: string) {
   storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
-}
-
-function getLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
 }
 
 export function useVentaDetalle(id: string): VentaDetalleViewModel {
@@ -397,7 +389,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
           motivoCorte: data.motivoCorte,
         },
         {
-          logContext: getLogContext(),
+          logContext: getStoreLogContext(),
           recordActivityLog: useActivityLogStore.getState().addLog,
         }
       );
