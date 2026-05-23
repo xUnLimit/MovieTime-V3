@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 
 import { env } from '@/config';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { usePwaStore } from '@/store/pwaStore';
 
 const MOVIETIME_CACHE_PREFIX = 'movietime-';
@@ -33,21 +34,26 @@ export function PwaBootstrap() {
   } = usePwaStore();
 
   useEffect(() => {
-    hydrateOfflineState().catch(() => undefined);
+    safeAsyncSideEffect(hydrateOfflineState(), {
+      operation: 'hydrateOfflineState',
+      entity: 'pwa',
+    });
   }, [hydrateOfflineState]);
 
   useEffect(() => {
     if (!isSupported || typeof navigator === 'undefined') return;
 
     if (env.isDevelopment && !env.enableDevServiceWorker) {
-      unregisterDevelopmentServiceWorkers().catch((error) => {
-        console.error('Error unregistering development service worker:', error);
+      safeAsyncSideEffect(unregisterDevelopmentServiceWorkers(), {
+        operation: 'unregisterDevelopmentServiceWorkers',
+        entity: 'pwa',
       });
       return;
     }
 
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.error('Error registering service worker:', error);
+    safeAsyncSideEffect(navigator.serviceWorker.register('/sw.js'), {
+      operation: 'registerServiceWorker',
+      entity: 'pwa',
     });
   }, [isSupported]);
 

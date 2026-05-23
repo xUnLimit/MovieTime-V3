@@ -8,6 +8,7 @@ import { PwaStatusBanner } from '@/components/pwa/PwaStatusBanner';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallback';
 import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
+import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { Menu } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -30,8 +31,9 @@ export default function DashboardLayout({
   // Sincronizar notificaciones cuando el usuario está autenticado
   useEffect(() => {
     if (isHydrated && isAuthenticated) {
-      sincronizarNotificaciones().catch((error) => {
-        console.error('Error syncing notifications:', error);
+      safeAsyncSideEffect(sincronizarNotificaciones(), {
+        operation: 'sincronizarNotificaciones',
+        entity: 'notificacion',
       });
     }
   }, [isHydrated, isAuthenticated]);
