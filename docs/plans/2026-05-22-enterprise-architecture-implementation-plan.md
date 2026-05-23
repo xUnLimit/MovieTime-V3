@@ -37,7 +37,7 @@ Completado hasta esta iteracion:
 - Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos, RPCs de categorias y read RPCs de dashboard; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
 - Fase 0 side-effects: fallos esperados de sync de metodo de pago en ventas usan logging estructurado compartido sin cambiar el resultado `syncPaymentMethodFailed`.
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
-- Cobertura: suite actual en 156 tests pasando.
+- Cobertura: suite actual en 160 tests pasando.
 
 Commits de referencia de esta iteracion:
 
@@ -114,6 +114,7 @@ Commits de referencia de esta iteracion:
 - `4a650ad` refactor: replace dashboard store cache
 - `71da426` feat: add feature flag foundation
 - `94f440a` refactor: centralize venta sync side-effect logging
+- `b86a454` test: cover feature flag hook
 
 Validacion recurrente ejecutada por PR logico:
 
