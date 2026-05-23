@@ -148,6 +148,48 @@ describe('ventas use cases', () => {
     expect(ventasRepository.createVenta).not.toHaveBeenCalled();
   });
 
+  it('fetches ventas by cliente ids in chunks', async () => {
+    ventasRepository.queryVentas
+      .mockResolvedValueOnce([{ id: 'venta-1' }])
+      .mockResolvedValueOnce([{ id: 'venta-2' }]);
+
+    const { fetchVentasByClienteIdsUseCase } = await import('./ventas-use-cases');
+    const result = await fetchVentasByClienteIdsUseCase(
+      ['cliente-1', 'cliente-2', 'cliente-3'],
+      2,
+    );
+
+    expect(ventasRepository.queryVentas).toHaveBeenCalledTimes(2);
+    expect(ventasRepository.queryVentas).toHaveBeenNthCalledWith(1, [
+      { field: 'clienteId', operator: 'in', value: ['cliente-1', 'cliente-2'] },
+    ]);
+    expect(ventasRepository.queryVentas).toHaveBeenNthCalledWith(2, [
+      { field: 'clienteId', operator: 'in', value: ['cliente-3'] },
+    ]);
+    expect(result).toEqual([{ id: 'venta-1' }, { id: 'venta-2' }]);
+  });
+
+  it('fetches pagos by venta ids in chunks', async () => {
+    ventasRepository.queryPagosVenta
+      .mockResolvedValueOnce([{ id: 'pago-1' }])
+      .mockResolvedValueOnce([{ id: 'pago-2' }]);
+
+    const { fetchPagosVentaByVentaIdsUseCase } = await import('./ventas-use-cases');
+    const result = await fetchPagosVentaByVentaIdsUseCase(
+      ['venta-1', 'venta-2', 'venta-3'],
+      2,
+    );
+
+    expect(ventasRepository.queryPagosVenta).toHaveBeenCalledTimes(2);
+    expect(ventasRepository.queryPagosVenta).toHaveBeenNthCalledWith(1, [
+      { field: 'ventaId', operator: 'in', value: ['venta-1', 'venta-2'] },
+    ]);
+    expect(ventasRepository.queryPagosVenta).toHaveBeenNthCalledWith(2, [
+      { field: 'ventaId', operator: 'in', value: ['venta-3'] },
+    ]);
+    expect(result).toEqual([{ id: 'pago-1' }, { id: 'pago-2' }]);
+  });
+
   it('passes plan data when renewing a venta', async () => {
     pagosVentaService.crearPagoRenovacion.mockResolvedValueOnce('pago-renovacion');
 
