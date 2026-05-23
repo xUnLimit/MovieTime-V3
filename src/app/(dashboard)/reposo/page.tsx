@@ -38,8 +38,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { queryNotificaciones } from "@/lib/supabase/notifications-repository";
 import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
-import { fetchNotificacionesByFiltersUseCase } from "@/lib/use-cases/notificaciones-use-cases";
 import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
@@ -200,7 +200,7 @@ function ReposoPageContent() {
 
   const limpiarNotificacionesReposo = async (servicioId: string) => {
     try {
-      const notifs = await fetchNotificacionesByFiltersUseCase<{ id: string }>([
+      const notifs = await queryNotificaciones<{ id: string }>([
         { field: "entidad", operator: "==", value: "reposo" },
         { field: "servicioId", operator: "==", value: servicioId },
       ]);
