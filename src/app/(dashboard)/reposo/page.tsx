@@ -40,8 +40,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { queryKeys } from "@/lib/query-keys";
+import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
 import { queryNotifications } from "@/lib/supabase/notifications-repository";
-import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
 import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
@@ -95,7 +95,7 @@ async function fetchReposoServicesQuery(): Promise<ReposoServicio[]> {
 }
 
 async function fetchServicioMetodosPagoQuery(): Promise<MetodoPago[]> {
-  return fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+  return queryMetodosPago<MetodoPago>([
     { field: "asociadoA", operator: "==", value: "servicio" },
   ]);
 }

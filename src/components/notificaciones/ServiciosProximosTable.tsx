@@ -21,7 +21,7 @@ import {
   invalidateDashboardCache,
   refreshCategoriasCache,
 } from '@/lib/commands/client-cache';
-import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
 import {
   getServicioUseCase,
   renewServicioUseCase,
@@ -227,7 +227,7 @@ export function ServiciosProximosTable({
         getServicioUseCase<Servicio>(notif.servicioId),
         metodosPagoServicio.length > 0
           ? Promise.resolve(metodosPagoServicio)
-          : fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+          : queryMetodosPago<MetodoPago>([
               { field: 'asociadoA', operator: '==', value: 'servicio' },
             ]),
       ]);

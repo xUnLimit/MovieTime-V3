@@ -13,7 +13,7 @@ import { invalidateDashboardCache, syncVentaPronosticoLocal } from '@/lib/comman
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
-import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
 import {
@@ -242,7 +242,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     if (metodosPago.length > 0 && categoriaPlanes.length > 0) return;
     try {
       if (metodosPago.length === 0) {
-        const methods = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+        const methods = await queryMetodosPago<MetodoPago>([
           { field: 'asociadoA', operator: '==', value: 'tercero' },
         ]);
         setMetodosPago(Array.isArray(methods) ? withPendingTerceroPaymentMethod(methods) : withPendingTerceroPaymentMethod([]));

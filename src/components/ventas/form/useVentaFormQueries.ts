@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
+import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
 import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
 import {
@@ -63,7 +63,7 @@ export function useMetodosPagoTercerosOptions() {
   return useQuery({
     queryKey: queryKeys.metodosPago.tercerosOptions(),
     queryFn: async () => {
-      const metodos = await fetchMetodosPagoByFiltersUseCase<MetodoPagoTerceroOption>([
+      const metodos = await queryMetodosPago<MetodoPagoTerceroOption>([
         { field: "asociadoA", operator: "==", value: "tercero" },
       ]);
 
@@ -76,7 +76,7 @@ export function useMetodosPagoTercerosWithPending() {
   return useQuery({
     queryKey: queryKeys.metodosPago.tercerosWithPending(),
     queryFn: async () => {
-      const metodos = await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+      const metodos = await queryMetodosPago<MetodoPago>([
         { field: "asociadoA", operator: "==", value: "tercero" },
       ]);
 

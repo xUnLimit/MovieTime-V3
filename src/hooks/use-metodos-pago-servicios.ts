@@ -3,14 +3,14 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
+import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
 import type { MetodoPago } from "@/types";
 
 export function useMetodosPagoServicios() {
   return useQuery({
     queryKey: queryKeys.metodosPago.servicios(),
     queryFn: () =>
-      fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+      queryMetodosPago<MetodoPago>([
         { field: "asociadoA", operator: "==", value: "servicio" },
         { field: "activo", operator: "==", value: true },
       ]),

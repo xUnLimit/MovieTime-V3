@@ -20,7 +20,7 @@ import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
-import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
+import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
 import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
 import { FilterOption } from '@/lib/supabase/pagination';
 import {
@@ -65,7 +65,7 @@ function TercerosPageContent() {
     queryKey: queryKeys.metodosPago.tercerosWithPending(),
     queryFn: async (): Promise<MetodoPagoFilterOption[]> => {
       const metodos = withPendingTerceroPaymentMethod(
-        await fetchMetodosPagoByFiltersUseCase<MetodoPago>([
+        await queryMetodosPago<MetodoPago>([
           { field: 'asociadoA', operator: '==', value: 'tercero' },
           { field: 'activo', operator: '==', value: true },
         ]),

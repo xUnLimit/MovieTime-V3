@@ -1,9 +1,4 @@
-﻿import {
-  countMetodosPago,
-  queryMetodosPago,
-} from '@/lib/supabase/catalogos-repository';
-import type { QueryFilter } from '@/lib/supabase/entities';
-import type { MetodoPago } from '@/types';
+import { countMetodosPago } from '@/lib/supabase/catalogos-repository';
 
 export async function fetchMetodosPagoCountsUseCase() {
   const [totalMetodos, metodosTerceros, metodosServicios] = await Promise.all([
@@ -14,8 +9,3 @@ export async function fetchMetodosPagoCountsUseCase() {
 
   return { totalMetodos, metodosTerceros, metodosServicios };
 }
-
-export function fetchMetodosPagoByFiltersUseCase<T = MetodoPago>(filters: QueryFilter[] = []) {
-  return queryMetodosPago<T>(filters);
-}
-
