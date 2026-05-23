@@ -12,6 +12,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
 import { isUuid } from '@/lib/utils/safety';
 import { Servicio } from '@/types';
@@ -99,23 +100,11 @@ function ServiciosCategoriaPageContent() {
 
   // Escuchar cuando se elimina un servicio desde otra página
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'servicio-deleted') {
-        refresh();
-      }
-    };
-
-    const handleServicioDeleted = () => {
+    const unsubscribe = storeEventBus.on('SERVICIO_DELETED', () => {
       refresh();
-    };
+    });
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('servicio-deleted', handleServicioDeleted);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('servicio-deleted', handleServicioDeleted);
-    };
+    return unsubscribe;
   }, [refresh]);
 
   const handleEdit = (id: string) => {

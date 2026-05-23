@@ -11,6 +11,7 @@ import { ServiciosMetrics } from '@/components/servicios/ServiciosMetrics';
 import { ServiciosListTable } from '@/components/servicios/ServiciosListTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
 import { FilterOption } from '@/lib/supabase/pagination';
@@ -74,17 +75,8 @@ function ServiciosPageContent() {
       refresh();
     };
 
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'servicio-deleted') {
-        refreshServicios();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('servicio-deleted', refreshServicios);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('servicio-deleted', refreshServicios);
-    };
+    const unsubscribe = storeEventBus.on('SERVICIO_DELETED', refreshServicios);
+    return unsubscribe;
   }, [queryClient, refetchCategorias, refresh]);
 
   const handleTabChange = (value: string) => {

@@ -13,6 +13,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
 
 function CategoriasPageContent() {
@@ -26,19 +27,9 @@ function CategoriasPageContent() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.categorias.counts() });
     };
 
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'categoria-deleted') {
-        refreshCategorias();
-      }
-    };
+    const unsubscribe = storeEventBus.on('CATEGORIA_DELETED', refreshCategorias);
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('categoria-deleted', refreshCategorias);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('categoria-deleted', refreshCategorias);
-    };
+    return unsubscribe;
   }, [queryClient, refetchCategorias]);
 
   const handleCategoriaDeleted = async () => {
