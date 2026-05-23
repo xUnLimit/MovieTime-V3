@@ -1,9 +1,5 @@
-﻿"use client";
+"use client";
 
-
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { differenceInCalendarDays } from "date-fns";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -20,9 +16,16 @@ import {
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -31,202 +34,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { getCurrencySymbol } from "@/lib/constants";
-import { useVentasTercero } from "@/hooks/use-ventas-tercero";
-import { queryKeys } from "@/lib/query-keys";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { formatearFecha, formatearFechaHora } from "@/lib/utils/calculations";
-import { toast } from "sonner";
-import { useVentasStore } from "@/store/ventasStore";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { CambiarEstadoVentaDialog } from "./CambiarEstadoVentaDialog";
 import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
 import type { Tercero } from "@/types";
+
+import { CambiarEstadoVentaDialog } from "./CambiarEstadoVentaDialog";
+import { useTerceroDetailsController } from "./useTerceroDetailsController";
 
 interface TerceroDetailsProps {
   usuario: Tercero;
 }
 
-type TerceroServicioCredential = {
-  correo: string;
-  contrasena: string;
-  nombre: string;
-};
-
-async function fetchServiciosCredentialsByIds(
-  servicioIds: string[],
-): Promise<Record<string, TerceroServicioCredential>> {
-  const chunks: string[][] = [];
-  for (let i = 0; i < servicioIds.length; i += 10) {
-    chunks.push(servicioIds.slice(i, i + 10));
-  }
-
-  const allServicios = await Promise.all(
-    chunks.map((chunk) =>
-      fetchServiciosByFiltersUseCase<Record<string, unknown>>([
-        { field: "__name__", operator: "in", value: chunk },
-      ]),
-    ),
-  );
-
-  return allServicios.flat().reduce<Record<string, TerceroServicioCredential>>(
-    (acc, servicio) => {
-      const servicioId = servicio.id as string;
-      acc[servicioId] = {
-        correo: (servicio.correo as string) || "—",
-        contrasena: (servicio.contrasena as string) || "—",
-        nombre: (servicio.nombre as string) || "Servicio",
-      };
-      return acc;
-    },
-    {},
-  );
-}
-
 export function TerceroDetails({ usuario }: TerceroDetailsProps) {
-  const isRevendedor = usuario.tipo === "revendedor";
-  const { ventas: ventasTercero, renovacionesByServicio } = useVentasTercero(
-    usuario.id,
-  );
-  const updateVenta = useVentasStore((s) => s.updateVenta);
-  const updateServicio = useServiciosStore((s) => s.updateServicio);
-  const [estadoDialog, setEstadoDialog] = useState<{
-    open: boolean;
-    modo: "activar" | "inactivar";
-    venta: {
-      id: string;
-      servicioId: string;
-      categoriaNombre: string;
-      servicioNombre: string;
-    } | null;
-  }>({ open: false, modo: "activar", venta: null });
-
-  const handleWhatsApp = () => {
-    const phone = usuario.telefono.replace(/\D/g, "");
-    window.open(`https://web.whatsapp.com/send?phone=${phone}`, "_blank");
-  };
-
-  const handleCopy = async (value: string, label?: string) => {
-    if (!value || value === "—") return;
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success(label ? `${label} copiado` : "Copiado al portapapeles");
-    } catch (error) {
-      console.error("Error copiando:", error);
-      toast.error("No se pudo copiar");
-    }
-  };
-
-  const servicioIds = useMemo(
-    () =>
-      Array.from(new Set(ventasTercero.map((venta) => venta.servicioId).filter(Boolean))).sort(),
-    [ventasTercero],
-  );
-  const serviciosKey = servicioIds.join("|");
-  const { data: servicios = {} } = useQuery({
-    queryKey: queryKeys.servicios.byIds(serviciosKey || "empty"),
-    queryFn: () => fetchServiciosCredentialsByIds(servicioIds),
-    enabled: servicioIds.length > 0,
-  });
-
-  const getCicloPagoLabel = (ciclo?: string) => {
-    const labels: Record<string, string> = {
-      mensual: "Mensual",
-      trimestral: "Trimestral",
-      semestral: "Semestral",
-      anual: "Anual",
-    };
-    return ciclo ? labels[ciclo] || ciclo : "—";
-  };
-
-  const rows = useMemo(() => {
-    const now = new Date();
-    return ventasTercero.map((venta) => {
-      const servicio = servicios[venta.servicioId];
-
-      const totalDias =
-        venta.fechaInicio && venta.fechaFin
-          ? Math.max(
-              differenceInCalendarDays(venta.fechaFin, venta.fechaInicio),
-              0,
-            )
-          : 0;
-      const diasRestantes = venta.fechaFin
-        ? differenceInCalendarDays(venta.fechaFin, now)
-        : 0;
-      const ratioRestante =
-        totalDias > 0 ? Math.min(diasRestantes / totalDias, 1) : 0;
-      const montoSinConsumir =
-        totalDias > 0 ? Math.max(venta.precioFinal * ratioRestante, 0) : 0;
-
-      return {
-        id: venta.id,
-        categoriaNombre: venta.categoriaNombre, // <- Denormalizado
-        servicioNombre: servicio?.nombre || venta.servicioNombre,
-        servicioId: venta.servicioId,
-        correo:
-          venta.servicioCorreo !== "—"
-            ? venta.servicioCorreo
-            : servicio?.correo || "—",
-        contrasena: servicio?.contrasena || "—",
-        cicloPago: getCicloPagoLabel(venta.cicloPago),
-        fechaInicio: venta.fechaInicio,
-        fechaFin: venta.fechaFin,
-        montoSinConsumir,
-        renovaciones: renovacionesByServicio[venta.id] ?? 0,
-        diasRestantes,
-        cortadaAt: venta.cortadaAt ?? null,
-        estado: venta.estado === "inactivo" ? "Inactivo" : "Activo",
-        moneda: venta.moneda,
-        perfilNumero: venta.perfilNumero,
-      };
-    });
-  }, [ventasTercero, servicios, renovacionesByServicio]);
-
-  const handleCambiarEstado = async (alcance: "venta" | "venta_y_servicio") => {
-    const { modo, venta } = estadoDialog;
-    if (!venta) return;
-    const nuevoEstadoVenta = modo === "activar" ? "activo" : "inactivo";
-    const nuevoActivoServicio = modo === "activar";
-    try {
-      await updateVenta(venta.id, { estado: nuevoEstadoVenta });
-      if (alcance === "venta_y_servicio") {
-        await updateServicio(venta.servicioId, { activo: nuevoActivoServicio });
-      }
-      toast.success(
-        modo === "activar"
-          ? "Venta activada correctamente"
-          : "Venta inactivada correctamente",
-      );
-    } catch {
-      toast.error("Ocurrió un error al cambiar el estado");
-      throw new Error("cambio estado fallido");
-    }
-  };
-
-  const abrirDialogEstado = (
-    modo: "activar" | "inactivar",
-    row: (typeof rows)[number],
-  ) => {
-    setEstadoDialog({
-      open: true,
-      modo,
-      venta: {
-        id: row.id,
-        servicioId: row.servicioId,
-        categoriaNombre: row.categoriaNombre,
-        servicioNombre: row.servicioNombre,
-      },
-    });
-  };
-
+  const {
+    isRevendedor,
+    activeRows,
+    inactiveRows,
+    estadoDialog,
+    setEstadoDialog,
+    handleWhatsApp,
+    handleCopy,
+    abrirDialogEstado,
+    handleCambiarEstado,
+  } = useTerceroDetailsController(usuario);
   return (
     <div className="space-y-6">
       {/* Layout de dos columnas */}
@@ -334,9 +165,9 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
             Servicios Activos
-            {rows.filter(r => r.estado === "Activo").length > 0 && (
+            {activeRows.length > 0 && (
               <span className="ml-2 rounded-full bg-green-500/20 text-green-700 dark:text-green-400 px-1.5 py-0.5 text-xs font-medium">
-                {rows.filter(r => r.estado === "Activo").length}
+                {activeRows.length}
               </span>
             )}
           </TabsTrigger>
@@ -345,9 +176,9 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
             Historial de Ventas
-            {rows.filter(r => r.estado === "Inactivo").length > 0 && (
+            {inactiveRows.length > 0 && (
               <span className="ml-2 rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 text-xs font-medium">
-                {rows.filter(r => r.estado === "Inactivo").length}
+                {inactiveRows.length}
               </span>
             )}
           </TabsTrigger>
@@ -359,7 +190,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
               <h3 className="text-xl font-semibold leading-none">Servicios Activos</h3>
               <p className="text-sm text-muted-foreground">Servicios que este usuario tiene actualmente.</p>
             </div>
-            {rows.filter(r => r.estado === "Activo").length === 0 ? (
+            {activeRows.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No hay servicios activos.</p>
               </div>
@@ -381,7 +212,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.filter(r => r.estado === "Activo").map((row) => (
+                    {activeRows.map((row) => (
                       <TableRow key={row.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -497,7 +328,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
               <h3 className="text-xl font-semibold leading-none">Historial de Ventas</h3>
               <p className="text-sm text-muted-foreground">Ventas inactivas o cortadas de este usuario.</p>
             </div>
-            {rows.filter(r => r.estado === "Inactivo").length === 0 ? (
+            {inactiveRows.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No hay ventas en el historial.</p>
               </div>
@@ -516,7 +347,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.filter(r => r.estado === "Inactivo").map((row) => (
+                    {inactiveRows.map((row) => (
                       <TableRow key={row.id} className="opacity-70">
                         <TableCell>
                           <div className="flex items-center gap-2">
