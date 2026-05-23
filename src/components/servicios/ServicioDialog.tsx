@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Servicio, Categoria } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useCategoriasStore } from "@/store/categoriasStore";
 import { toast } from "sonner";
 
 const servicioSchema = z.object({
@@ -56,8 +57,8 @@ export function ServicioDialog({
   servicio,
   categorias,
 }: ServicioDialogProps) {
+  const queryClient = useQueryClient();
   const { createServicio, updateServicio } = useServiciosStore();
-  const { fetchCategorias } = useCategoriasStore();
   const {
     register,
     handleSubmit,
@@ -157,8 +158,10 @@ export function ServicioDialog({
         });
       }
 
-      // Refrescar categorías para actualizar contadores
-      await fetchCategorias(true);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
+      ]);
 
       onOpenChange(false);
     } catch (error) {

@@ -30,8 +30,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useCategoriasStore } from "@/store/categoriasStore";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -93,8 +94,8 @@ export const ServiciosCategoriaTableDetalle = memo(
     onNext,
     onPrevious,
   }: ServiciosCategoriaTableDetalleProps) {
-    const { deleteServicio, fetchCounts } = useServiciosStore();
-    const { fetchCategorias } = useCategoriasStore();
+    const queryClient = useQueryClient();
+    const { deleteServicio } = useServiciosStore();
     const pathname = usePathname();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [servicioToDelete, setServicioToDelete] = useState<Servicio | null>(
@@ -144,7 +145,10 @@ export const ServiciosCategoriaTableDetalle = memo(
             });
           }
 
-          await Promise.all([fetchCategorias(true), fetchCounts(true)]);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+            queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
+          ]);
 
           setDeleteDialogOpen(false);
           setServicioToDelete(null);

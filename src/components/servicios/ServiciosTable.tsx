@@ -9,8 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Edit, Trash2, Copy } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useServiciosStore } from "@/store/serviciosStore";
-import { useCategoriasStore } from "@/store/categoriasStore";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 
@@ -20,8 +21,8 @@ interface ServiciosTableProps {
 }
 
 export function ServiciosTable({ servicios, onEdit }: ServiciosTableProps) {
-  const { deleteServicio, fetchCounts } = useServiciosStore();
-  const { fetchCategorias } = useCategoriasStore();
+  const queryClient = useQueryClient();
+  const { deleteServicio } = useServiciosStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [servicioToDelete, setServicioToDelete] = useState<Servicio | null>(
     null,
@@ -51,10 +52,9 @@ export function ServiciosTable({ servicios, onEdit }: ServiciosTableProps) {
           });
         }
 
-        // Refrescar categorías y contadores de servicios para actualizar widgets
         await Promise.all([
-          fetchCategorias(true),
-          fetchCounts(true), // Force refresh para actualizar inmediatamente
+          queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
         ]);
       } catch (error) {
         toast.error("Error al eliminar servicio", {
