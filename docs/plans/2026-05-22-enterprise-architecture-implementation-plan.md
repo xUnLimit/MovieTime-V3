@@ -31,6 +31,8 @@ Completado hasta esta iteracion:
 - Fase 2 ventas: `ventas-use-cases.ts` convertido en barrel; use-cases separados en `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`.
 - Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
+- Fase 2/3 eventos: bridge legacy DOM/localStorage centralizado en `store-event-bus`, imports dinamicos runtime removidos y emisiones directas de negocio reemplazadas por bus tipado + bridge legacy.
+- Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime y retiradas de `dashboardStatsService`; el dashboard queda orientado a invalidacion/refetch sobre read models live.
 - Cobertura: suite actual en 120 tests pasando.
 
 Commits de referencia de esta iteracion:
@@ -45,6 +47,13 @@ Commits de referencia de esta iteracion:
 - `18c9a12` refactor: move latest venta payment update
 - `5164695` test: cover servicio write use cases
 - `c24d58d` feat: add typed domain errors to critical use cases
+- `320c072` feat: type tercero deletion errors
+- `5eed50c` refactor: centralize legacy store event bridge
+- `9121b7b` refactor: reuse legacy event bridge in services
+- `9cb1f93` refactor: remove venta detail store dynamic imports
+- `a900086` refactor: make payment currency dependency explicit
+- `cf47006` refactor: remove dashboard no-op mutations
+- `e0fa866` refactor: drop deprecated dashboard mutation APIs
 
 Validacion recurrente ejecutada por PR logico:
 
