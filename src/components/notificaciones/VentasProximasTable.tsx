@@ -52,7 +52,6 @@ export function VentasProximasTable() {
     toggleLeida,
     toggleResaltada,
     deleteNotificacionesPorVenta,
-    fetchNotificaciones,
   } = useNotificacionesStore();
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
@@ -150,10 +149,7 @@ export function VentasProximasTable() {
   };
 
   const refreshNotificationCaches = async () => {
-    await Promise.all([
-      fetchNotificaciones(true),
-      queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
-    ]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
   };
 
   const handleToggleLeida = async (notifId: string, leida: boolean) => {

@@ -59,7 +59,6 @@ export function ServiciosProximosTable({
     toggleLeida,
     toggleResaltada,
     deleteNotificacionesPorServicio,
-    fetchNotificaciones,
   } = useNotificacionesStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,10 +153,7 @@ export function ServiciosProximosTable({
   };
 
   const refreshNotificationCaches = async () => {
-    await Promise.all([
-      fetchNotificaciones(true),
-      queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
-    ]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
   };
 
   const handleToggleLeida = async (notifId: string, leida: boolean) => {
