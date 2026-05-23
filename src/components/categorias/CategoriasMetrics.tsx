@@ -1,21 +1,15 @@
 "use client";
 
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
-import { useCategoriasStore } from "@/store/categoriasStore";
+import { useCategoriasCounts } from "@/hooks/use-categorias-counts";
 import { FolderOpen, Users, Store } from "lucide-react";
 
 export const CategoriasMetrics = memo(function CategoriasMetrics() {
-  const {
-    totalCategorias,
-    categoriasClientes,
-    categoriasRevendedores,
-    fetchCounts,
-  } = useCategoriasStore();
-
-  useEffect(() => {
-    fetchCounts();
-  }, [fetchCounts]);
+  const { data: counts } = useCategoriasCounts();
+  const totalCategorias = counts?.totalCategorias ?? 0;
+  const categoriasClientes = counts?.categoriasClientes ?? 0;
+  const categoriasRevendedores = counts?.categoriasRevendedores ?? 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

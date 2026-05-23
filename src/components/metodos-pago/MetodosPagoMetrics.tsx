@@ -1,17 +1,15 @@
 "use client";
 
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
-import { useMetodosPagoStore } from "@/store/metodosPagoStore";
+import { useMetodosPagoCounts } from "@/hooks/use-metodos-pago-counts";
 import { CreditCard, Users, Package } from "lucide-react";
 
 export const MetodosPagoMetrics = memo(function MetodosPagoMetrics() {
-  const { totalMetodos, metodosTerceros, metodosServicios, fetchCounts } =
-    useMetodosPagoStore();
-
-  useEffect(() => {
-    fetchCounts();
-  }, [fetchCounts]);
+  const { data: counts } = useMetodosPagoCounts();
+  const totalMetodos = counts?.totalMetodos ?? 0;
+  const metodosTerceros = counts?.metodosTerceros ?? 0;
+  const metodosServicios = counts?.metodosServicios ?? 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

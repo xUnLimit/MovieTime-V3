@@ -10,10 +10,18 @@ import { ServiciosMetodosPagoTable } from '@/components/metodos-pago/ServiciosMe
 import { MetodosPagoMetrics } from '@/components/metodos-pago/MetodosPagoMetrics';
 import { useMetodosPago } from '@/hooks/use-metodos-pago';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { queryKeys } from '@/lib/query-keys';
+import { useQueryClient } from '@tanstack/react-query';
 
 function MetodosPagoPageContent() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('terceros');
   const { data: metodosPago = [], refetch: refetchMetodosPago } = useMetodosPago();
+
+  const handleMetodoDeleted = async () => {
+    await refetchMetodosPago();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.metodosPago.counts() });
+  };
 
   return (
     <div className="space-y-4">
@@ -54,9 +62,7 @@ function MetodosPagoPageContent() {
           <TercerosMetodosPagoTable
             metodosPago={metodosPago}
             title="Métodos de pago de Terceros"
-            onMetodoDeleted={() => {
-              void refetchMetodosPago();
-            }}
+            onMetodoDeleted={handleMetodoDeleted}
           />
         </TabsContent>
 
@@ -64,9 +70,7 @@ function MetodosPagoPageContent() {
           <ServiciosMetodosPagoTable
             metodosPago={metodosPago}
             title="Métodos de pago de Servicios"
-            onMetodoDeleted={() => {
-              void refetchMetodosPago();
-            }}
+            onMetodoDeleted={handleMetodoDeleted}
           />
         </TabsContent>
       </Tabs>

@@ -31,7 +31,7 @@ export function TercerosMetodosPagoTable({
   title = "Métodos de pago de Terceros",
   onMetodoDeleted,
 }: TercerosMetodosPagoTableProps) {
-    const { deleteMetodoPago, fetchCounts } = useMetodosPagoStore();
+  const deleteMetodoPago = useMetodosPagoStore((state) => state.deleteMetodoPago);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [metodoToDelete, setMetodoToDelete] = useState<MetodoPago | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,7 +74,6 @@ export function TercerosMetodosPagoTable({
     if (metodoToDelete) {
       try {
         await deleteMetodoPago(metodoToDelete.id);
-        await fetchCounts(); // Actualizar métricas
         await onMetodoDeleted?.();
         toast.success("Método de pago eliminado");
       } catch (error) {

@@ -1,4 +1,5 @@
 ﻿import {
+  countMetodosPago,
   getMetodoPagoById,
   getMetodosPago,
   queryMetodosPago,
@@ -12,6 +13,16 @@ export function getMetodoPagoUseCase<T = MetodoPago>(id: string) {
 
 export function fetchMetodosPagoUseCase<T = MetodoPago>() {
   return getMetodosPago<T>();
+}
+
+export async function fetchMetodosPagoCountsUseCase() {
+  const [totalMetodos, metodosTerceros, metodosServicios] = await Promise.all([
+    countMetodosPago([{ field: 'asociadoA', operator: 'in', value: ['tercero', 'servicio'] }]),
+    countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'tercero' }]),
+    countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'servicio' }]),
+  ]);
+
+  return { totalMetodos, metodosTerceros, metodosServicios };
 }
 
 export function fetchMetodosPagoByFiltersUseCase<T = MetodoPago>(filters: QueryFilter[] = []) {

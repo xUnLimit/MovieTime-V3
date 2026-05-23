@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { CategoriasMetrics } from '@/components/categorias/CategoriasMetrics';
 import { ClientesCategoriasTable } from '@/components/categorias/ClientesCategoriasTable';
@@ -12,42 +13,37 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
-import { useCategoriasStore } from '@/store/categoriasStore';
+import { queryKeys } from '@/lib/query-keys';
 
 function CategoriasPageContent() {
-  const fetchCounts = useCategoriasStore((state) => state.fetchCounts);
+  const queryClient = useQueryClient();
   const { data: categorias = [], refetch: refetchCategorias } = useCategoriasFull();
   const [activeTab, setActiveTab] = useState('todos');
 
   useEffect(() => {
-    fetchCounts();
-  }, [fetchCounts]);
+    const refreshCategorias = () => {
+      void refetchCategorias();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.categorias.counts() });
+    };
 
-  useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'categoria-deleted') {
-        void refetchCategorias();
-        fetchCounts();
+        refreshCategorias();
       }
     };
 
-    const handleCategoriaDeleted = () => {
-      void refetchCategorias();
-      fetchCounts();
-    };
-
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('categoria-deleted', handleCategoriaDeleted);
+    window.addEventListener('categoria-deleted', refreshCategorias);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('categoria-deleted', handleCategoriaDeleted);
+      window.removeEventListener('categoria-deleted', refreshCategorias);
     };
-  }, [fetchCounts, refetchCategorias]);
+  }, [queryClient, refetchCategorias]);
 
   const handleCategoriaDeleted = async () => {
     await refetchCategorias();
-    await fetchCounts();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.categorias.counts() });
   };
 
   return (

@@ -72,6 +72,7 @@ export const queryKeys = {
     all: ['metodos-pago'] as const,
     lists: () => [...queryKeys.metodosPago.all, 'list'] as const,
     list: (filters: unknown) => [...queryKeys.metodosPago.lists(), filters] as const,
+    counts: () => [...queryKeys.metodosPago.all, 'counts'] as const,
     detail: (metodoPagoId: string) => [...queryKeys.metodosPago.all, 'detail', metodoPagoId] as const,
     terceros: () => [...queryKeys.metodosPago.all, 'terceros'] as const,
     tercerosOptions: () => [...queryKeys.metodosPago.all, 'terceros-options'] as const,
