@@ -208,3 +208,8 @@ export function useTerceroDetailsController(usuario: Tercero) {
     handleCambiarEstado,
   };
 }
+
+export type TerceroDetailsController = ReturnType<
+  typeof useTerceroDetailsController
+>;
+export type TerceroDetailsRow = TerceroDetailsController["rows"][number];
