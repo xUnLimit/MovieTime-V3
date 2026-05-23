@@ -15,12 +15,12 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { invalidateVentasPorTercerosCache } from '@/hooks/use-ventas-por-terceros';
+import { useTerceros } from '@/hooks/use-terceros';
 import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { queryKeys } from '@/lib/query-keys';
 import { fetchMetodosPagoByFiltersUseCase } from '@/lib/use-cases/catalogos-use-cases';
 import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
-import { useTercerosStore } from '@/store/tercerosStore';
 import { FilterOption } from '@/lib/supabase/pagination';
 import {
   getTerceroMetodoPagoNombre,
@@ -41,11 +41,6 @@ const ALL_PAYMENT_METHODS_LABEL = 'Todos los métodos';
 function TercerosPageContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const {
-    terceros,
-    fetchTerceros,
-    isLoading: isLoadingTerceros,
-  } = useTercerosStore();
   const { data: counts } = useTercerosCounts();
   const totalClientes = counts?.totalClientes ?? 0;
   const totalRevendedores = counts?.totalRevendedores ?? 0;
@@ -55,6 +50,11 @@ function TercerosPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [metodoPagoFilter, setMetodoPagoFilter] = useState(ALL_PAYMENT_METHODS_VALUE);
   const isSearchMode = searchQuery.trim().length > 0;
+  const {
+    data: terceros = [],
+    isFetching: isLoadingTerceros,
+    refetch: refetchTerceros,
+  } = useTerceros({ enabled: isSearchMode });
 
   const {
     data: metodoPagoOptions = [
@@ -130,12 +130,6 @@ function TercerosPageContent() {
     includeTotalCount: selectedMetodoPagoFilter !== ALL_PAYMENT_METHODS_VALUE,
   });
 
-  useEffect(() => {
-    if (isSearchMode) {
-      void fetchTerceros();
-    }
-  }, [fetchTerceros, isSearchMode]);
-
   const searchResults = useMemo(
     () =>
       filterTercerosForTercerosPage({
@@ -180,12 +174,12 @@ function TercerosPageContent() {
   const handleRefresh = useCallback(() => {
     if (isSearchMode) {
       setSearchPageIndex(0);
-      void fetchTerceros(true);
+      void refetchTerceros();
       return;
     }
 
     refresh();
-  }, [fetchTerceros, isSearchMode, refresh]);
+  }, [isSearchMode, refresh, refetchTerceros]);
 
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab as TercerosTab);
@@ -213,6 +207,7 @@ function TercerosPageContent() {
 
     const handleTerceroDeleted = () => {
       refresh();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.terceros.lists() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.terceros.counts() });
     };
 

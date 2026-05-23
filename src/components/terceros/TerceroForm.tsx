@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { Tercero, MetodoPago } from "@/types";
 import { useTercerosStore } from "@/store/tercerosStore";
 import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
+import { queryKeys } from "@/lib/query-keys";
 import {
   createPendingTerceroPaymentMethod,
   getTerceroMetodoPagoNombre,
@@ -88,6 +90,7 @@ export function TerceroForm({
   onCancel,
   isPage = false,
 }: TerceroFormProps) {
+  const queryClient = useQueryClient();
   const { createTercero, updateTercero } = useTercerosStore();
   const pendienteOption = useMemo<MetodoPago>(
     () => createPendingTerceroPaymentMethod(),
@@ -276,6 +279,7 @@ export function TerceroForm({
         );
       }
 
+      await queryClient.invalidateQueries({ queryKey: queryKeys.terceros.all });
       onSuccess?.();
     } catch (error) {
       toast.error("Error al guardar tercero", {

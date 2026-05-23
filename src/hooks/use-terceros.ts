@@ -6,9 +6,10 @@ import { queryKeys } from "@/lib/query-keys";
 import { fetchTercerosUseCase } from "@/lib/use-cases/terceros-use-cases";
 import type { Tercero } from "@/types";
 
-export function useTerceros() {
+export function useTerceros(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.terceros.list("all"),
     queryFn: () => fetchTercerosUseCase<Tercero>(),
+    enabled: options.enabled ?? true,
   });
 }
