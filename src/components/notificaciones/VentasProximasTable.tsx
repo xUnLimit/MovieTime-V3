@@ -10,11 +10,14 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Card } from '@/components/ui/card';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
+import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
+import { queryKeys } from '@/lib/query-keys';
 import {
   invalidateDashboardCache,
   syncVentaPronosticoLocal,
@@ -43,8 +46,9 @@ import { VentasProximasToolbar } from './ventas-proximas/VentasProximasToolbar';
 import type { NotificacionVentaConId } from './ventas-proximas/types';
 
 export function VentasProximasTable() {
+  const queryClient = useQueryClient();
+  const { data: notificaciones = [] } = useNotificaciones();
   const {
-    notificaciones,
     toggleLeida,
     toggleResaltada,
     deleteNotificacionesPorVenta,
@@ -143,6 +147,18 @@ export function VentasProximasTable() {
       }
       return newSet;
     });
+  };
+
+  const refreshNotificationCaches = async () => {
+    await Promise.all([
+      fetchNotificaciones(true),
+      queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
+    ]);
+  };
+
+  const handleToggleLeida = async (notifId: string, leida: boolean) => {
+    await toggleLeida(notifId, leida);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
   };
 
   const handleNotificar = (notif: NotificacionVentaConId) => {
@@ -331,7 +347,7 @@ export function VentasProximasTable() {
         entityId: notifSeleccionada.ventaId,
       });
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
-      fetchNotificaciones(true);
+      await refreshNotificationCaches();
 
       void fetchVentas(true);
 
@@ -380,6 +396,7 @@ export function VentasProximasTable() {
 
     try {
       await toggleResaltada(notifSeleccionada.id, !notifSeleccionada.resaltada);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       toast.success('Notificación resaltada para seguimiento');
     } catch (error) {
       console.error('Error al resaltar:', error);
@@ -392,6 +409,7 @@ export function VentasProximasTable() {
 
     try {
       await toggleResaltada(notifSeleccionada.id, false);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       toast.success('Resaltado descartado');
     } catch (error) {
       console.error('Error al descartar resaltado:', error);
@@ -410,7 +428,7 @@ export function VentasProximasTable() {
       });
 
       await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
-      fetchNotificaciones(true);
+      await refreshNotificationCaches();
 
       invalidateDashboardCache({
         entity: 'venta',
@@ -448,7 +466,7 @@ export function VentasProximasTable() {
           <VentasProximasTableContent
             notificaciones={paginatedNotificaciones}
             visiblePasswords={visiblePasswords}
-            onToggleLeida={toggleLeida}
+            onToggleLeida={handleToggleLeida}
             onCopyToClipboard={copyToClipboard}
             onTogglePasswordVisibility={togglePasswordVisibility}
             onNotificar={handleNotificar}

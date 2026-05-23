@@ -10,10 +10,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { Card } from '@/components/ui/card';
+import { useNotificaciones } from '@/hooks/use-notificaciones';
+import { queryKeys } from '@/lib/query-keys';
 import {
   invalidateDashboardCache,
   refreshCategoriasCache,
@@ -50,8 +53,9 @@ export function ServiciosProximosTable({
   title = 'Servicios próximos a vencer',
   emptyMessage = 'No se encontraron notificaciones de servicios',
 }: ServiciosProximosTableProps = {}) {
+  const queryClient = useQueryClient();
+  const { data: notificaciones = [] } = useNotificaciones();
   const {
-    notificaciones,
     toggleLeida,
     toggleResaltada,
     deleteNotificacionesPorServicio,
@@ -149,6 +153,18 @@ export function ServiciosProximosTable({
     });
   };
 
+  const refreshNotificationCaches = async () => {
+    await Promise.all([
+      fetchNotificaciones(true),
+      queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
+    ]);
+  };
+
+  const handleToggleLeida = async (notifId: string, leida: boolean) => {
+    await toggleLeida(notifId, leida);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+  };
+
   const handleAcciones = (notif: NotificacionServicioConId) => {
     setNotifParaAcciones(notif);
     setAccionesDialogOpen(true);
@@ -166,7 +182,7 @@ export function ServiciosProximosTable({
       toast.success('Servicio inactivado', {
         description: `${notifParaAcciones.servicioNombre} ha sido marcado como inactivo.`,
       });
-      fetchNotificaciones(true);
+      await refreshNotificationCaches();
     } catch {
       toast.error('Error al inactivar servicio', {
         description: 'No se pudo inactivar el servicio. Intenta nuevamente.',
@@ -179,6 +195,7 @@ export function ServiciosProximosTable({
 
     try {
       await toggleResaltada(notifParaAcciones.id, true);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       toast.success('Notificación resaltada', {
         description: 'La notificación ha sido marcada para seguimiento.',
       });
@@ -195,6 +212,7 @@ export function ServiciosProximosTable({
 
     try {
       await toggleResaltada(notifParaAcciones.id, false);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       toast.success('Notificación desmarcada', {
         description: 'La notificación ya no está marcada para seguimiento.',
       });
@@ -262,7 +280,7 @@ export function ServiciosProximosTable({
       });
 
       await deleteNotificacionesPorServicio(servicioId);
-      fetchNotificaciones(true);
+      await refreshNotificationCaches();
       refreshCategoriasCache({
         entity: 'servicio',
         entityId: servicioId,
@@ -317,7 +335,7 @@ export function ServiciosProximosTable({
           <ServiciosProximosTableContent
             notificaciones={paginatedNotificaciones}
             visiblePasswords={visiblePasswords}
-            onToggleLeida={toggleLeida}
+            onToggleLeida={handleToggleLeida}
             onCopyToClipboard={copyToClipboard}
             onTogglePasswordVisibility={togglePasswordVisibility}
             onRenovar={handleRenovar}
