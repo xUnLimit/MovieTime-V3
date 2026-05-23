@@ -1,7 +1,7 @@
 # Enterprise Architecture Implementation Plan
 
 **Date:** 2026-05-22  
-**Status:** In progress  
+**Status:** In progress - Fases 0, 2 y 3 cerradas en implementacion  
 **Source:** `ARCHITECTURE_ROADMAP.md` v1.1
 
 ## Goal
@@ -21,6 +21,9 @@ Convertir el roadmap enterprise en una secuencia de PRs pequenos, verificables y
 
 Completado hasta esta iteracion:
 
+- Fase 0 cerrada en implementacion: tipos duplicados consolidados, `getStoreLogContext()` compartido, `realtime?: boolean` eliminado, side-effects fire-and-forget con logging, no-ops de dashboard retirados, drift RPC critico tipado, sin `catch {}` silencioso en stores/use-cases/services/commands, y validacion completa verde.
+- Fase 2 cerrada en implementacion: ventas y servicios estan en use-cases por queries/writes/payments/refunds/shared, los barrels mantienen compatibilidad, los errores criticos usan `DomainError`, no quedan use-cases >300 lineas, y los pass-throughs puros principales fueron eliminados o reducidos a operaciones con contrato propio.
+- Fase 3 cerrada en implementacion: React Query esta integrado como infraestructura de lectura, `useServerPagination` ya no usa `refreshKey`, el detalle de venta y sus dependencias de dialogo usan query cache, el bridge legacy DOM/localStorage fue retirado, y no quedan `window.dispatchEvent` ni dynamic imports runtime de stores en `src`.
 - PR 0: baseline documental y roadmap enterprise.
 - PR 1: tipos duplicados de ventas consolidados.
 - PR 2: `getStoreLogContext()` compartido en stores.
@@ -127,6 +130,7 @@ Commits de referencia de esta iteracion:
 - `444f7e0` refactor: use shared log context in detail views
 - `9f3e97a` refactor: query venta detail with react query
 - `a26784b` refactor: make tolerated catch blocks explicit
+- `b2efb9d` refactor: finish react query pagination cleanup
 
 Validacion recurrente ejecutada por PR logico:
 

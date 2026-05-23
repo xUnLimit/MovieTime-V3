@@ -1002,17 +1002,17 @@ Repositories
 
 ### Fase 0 - Quick Wins
 
-- [ ] Consolidar declaraciones duplicadas de `VentaPago` y `PagoVenta`.
-- [ ] Auditar RPCs usadas por runtime contra `database.types.ts`.
-- [ ] Regenerar tipos Supabase o crear adapters RPC tipados.
-- [ ] Eliminar casts `supabase as unknown as { rpc: ... }` en repositorios criticos.
-- [ ] Reemplazar APIs no-op de dashboard por invalidacion/refetch.
-- [ ] Marcar docs legacy de dashboard como superados por Supabase live RPCs.
-- [ ] Extraer `getLogContext()` a helper compartido.
-- [ ] Reemplazar `.catch(console.error)` fire-and-forget con `safeAsyncSideEffect`.
-- [ ] Eliminar `catch {}` silenciosos en flujos de negocio.
-- [ ] Eliminar `realtime?: boolean` de `useServerPagination` si no se implementa realtime.
-- [ ] Ejecutar `npm run lint`, `npm test -- --run`, `npm run build`.
+- [x] Consolidar declaraciones duplicadas de `VentaPago` y `PagoVenta`.
+- [x] Auditar RPCs usadas por runtime contra `database.types.ts`.
+- [x] Regenerar tipos Supabase o crear adapters RPC tipados.
+- [x] Eliminar casts `supabase as unknown as { rpc: ... }` en repositorios criticos.
+- [x] Reemplazar APIs no-op de dashboard por invalidacion/refetch.
+- [x] Marcar docs legacy de dashboard como superados por Supabase live RPCs.
+- [x] Extraer `getLogContext()` a helper compartido.
+- [x] Reemplazar `.catch(console.error)` fire-and-forget con `safeAsyncSideEffect`.
+- [x] Eliminar `catch {}` silenciosos en flujos de negocio.
+- [x] Eliminar `realtime?: boolean` de `useServerPagination` si no se implementa realtime.
+- [x] Ejecutar `npm run lint`, `npm test -- --run`, `npm run build`.
 
 ### Fase 1 - Testing
 
@@ -1032,31 +1032,31 @@ Repositories
 
 ### Fase 2 - Use-cases
 
-- [ ] Crear `src/lib/errors/domain-errors.ts`.
-- [ ] Crear `src/lib/use-cases/ventas/`.
-- [ ] Extraer query use-cases de ventas.
-- [ ] Extraer payment/refund use-cases de ventas.
-- [ ] Extraer write/archive use-cases de ventas.
-- [ ] Crear barrel de compatibilidad.
-- [ ] Repetir estructura para servicios.
-- [ ] Evaluar pass-through use-cases con deletion test.
-- [ ] Migrar errores genericos a `DomainError` en flujos criticos.
+- [x] Crear `src/lib/errors/domain-errors.ts`.
+- [x] Crear `src/lib/use-cases/ventas/`.
+- [x] Extraer query use-cases de ventas.
+- [x] Extraer payment/refund use-cases de ventas.
+- [x] Extraer write/archive use-cases de ventas.
+- [x] Crear barrel de compatibilidad.
+- [x] Repetir estructura para servicios.
+- [x] Evaluar pass-through use-cases con deletion test.
+- [x] Migrar errores genericos a `DomainError` en flujos criticos.
 
 ### Fase 3 - Data Fetching y Events
 
-- [ ] Instalar `@tanstack/react-query`.
-- [ ] Crear `queryClient`.
-- [ ] Crear `queryKeys`.
-- [ ] Integrar provider.
-- [ ] Migrar `usePagosVenta`.
-- [ ] Migrar `usePagosServicio`.
-- [ ] Migrar `useVentasPorTerceros`.
-- [ ] Migrar `useVentasTercero`.
-- [ ] Migrar hooks async restantes.
-- [ ] Crear `StoreEventBus`.
-- [ ] Migrar eventos de ventas/servicios/categorias/terceros.
-- [ ] Eliminar dynamic imports de stores.
-- [ ] Integrar invalidacion de React Query con mutaciones.
+- [x] Instalar `@tanstack/react-query`.
+- [x] Crear `queryClient`.
+- [x] Crear `queryKeys`.
+- [x] Integrar provider.
+- [x] Migrar `usePagosVenta`.
+- [x] Migrar `usePagosServicio`.
+- [x] Migrar `useVentasPorTerceros`.
+- [x] Migrar `useVentasTercero`.
+- [x] Migrar hooks async restantes.
+- [x] Crear `StoreEventBus`.
+- [x] Migrar eventos de ventas/servicios/categorias/terceros.
+- [x] Eliminar dynamic imports de stores.
+- [x] Integrar invalidacion de React Query con mutaciones.
 
 ### Fase 4 - Enterprise Consolidation
 
