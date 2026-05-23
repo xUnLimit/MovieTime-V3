@@ -271,11 +271,7 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
     try {
       // Delete all notifications for this venta
       await Promise.all(
-        notifsToDelete.map((n) =>
-          removeNotificacion(n.id).catch((error) => {
-            console.error(`[NotificacionesStore] Error deleting notif ${n.id}:`, error);
-          })
-        )
+        notifsToDelete.map((n) => removeNotificacion(n.id))
       );
     } catch (error) {
       // Rollback on error
@@ -325,11 +321,7 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
     try {
       // Delete all notifications for this servicio
       await Promise.all(
-        notifsToDelete.map((n) =>
-          removeNotificacion(n.id).catch((error) => {
-            console.error(`[NotificacionesStore] Error deleting notif ${n.id}:`, error);
-          })
-        )
+        notifsToDelete.map((n) => removeNotificacion(n.id))
       );
     } catch (error) {
       // Rollback on error
