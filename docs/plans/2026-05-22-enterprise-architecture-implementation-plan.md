@@ -1,7 +1,7 @@
 # Enterprise Architecture Implementation Plan
 
 **Date:** 2026-05-22  
-**Status:** Ready to execute  
+**Status:** In progress  
 **Source:** `ARCHITECTURE_ROADMAP.md` v1.1
 
 ## Goal
@@ -16,6 +16,41 @@ Convertir el roadmap enterprise en una secuencia de PRs pequenos, verificables y
 - Cada cambio de arquitectura que altere una regla debe actualizar o crear ADR.
 - No tocar `.env.local` ni secretos.
 - Ignorar cambios no relacionados como `.claude/settings.local.json` salvo que el usuario pida lo contrario.
+
+## Execution Progress
+
+Completado hasta esta iteracion:
+
+- PR 0: baseline documental y roadmap enterprise.
+- PR 1: tipos duplicados de ventas consolidados.
+- PR 2: `getStoreLogContext()` compartido en stores.
+- PR 5/6 slice: adapter tipado para `create_venta_with_initial_payment`.
+- PR 7 slice: tests de ventas ampliados para create, renew, refund, delete y chunking.
+- PR 8/9 slice: infraestructura React Query y StoreEventBus base.
+- Migraciones adicionales de Fase 3: hooks principales migrados a React Query, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
+- Fase 2 ventas: `ventas-use-cases.ts` convertido en barrel; use-cases separados en `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`.
+- Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
+- Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
+- Cobertura: suite actual en 120 tests pasando.
+
+Commits de referencia de esta iteracion:
+
+- `389e6dc` refactor: extract venta payment use cases
+- `e418b87` refactor: extract venta write use cases
+- `5fd7e28` refactor: extract servicio query use cases
+- `c918891` refactor: extract servicio shared helpers
+- `0f6c3a2` refactor: extract servicio payment use cases
+- `e1603f9` refactor: extract servicio write use cases
+- `545db5d` refactor: extract venta refund use case
+- `18c9a12` refactor: move latest venta payment update
+- `5164695` test: cover servicio write use cases
+- `c24d58d` feat: add typed domain errors to critical use cases
+
+Validacion recurrente ejecutada por PR logico:
+
+- `npm run lint`
+- `npm test -- --run`
+- `npm run build`
 
 ## PR 0 - Baseline de Arquitectura
 
