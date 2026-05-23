@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 
 import { getVentaById } from '@/lib/supabase/ventas-repository';
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSD } from '@/lib/payments';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import { toMoneyNumber } from '@/lib/utils/safety';
@@ -75,7 +75,7 @@ export function getVentaTableUpdates(updates: Partial<VentaDoc>): Partial<VentaD
 
 export async function getUsdValues(amount: number, moneda: string) {
   const normalizedAmount = toMoneyNumber(amount);
-  const usd = await currencyService.convertToUSD(normalizedAmount, moneda);
+  const usd = await convertToUSD(normalizedAmount, moneda);
   return {
     usd,
     rate: moneda === 'USD' || normalizedAmount === 0 || usd === 0 ? 1 : normalizedAmount / usd,

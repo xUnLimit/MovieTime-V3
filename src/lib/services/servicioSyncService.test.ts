@@ -19,7 +19,7 @@ vi.mock('@/lib/supabase/ventas-repository', () => ({
   queryVentas: queryVentasMock,
 }));
 
-vi.mock('@/lib/services/notificationSyncService', () => ({
+vi.mock('@/lib/notifications', () => ({
   sincronizarNotificacionesForzado: syncNotificacionesMock,
   sincronizarUnServicio: syncUnServicioMock,
   sincronizarUnaVenta: syncUnaVentaMock,

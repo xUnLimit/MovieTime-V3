@@ -11,10 +11,9 @@ import {
 } from '@/lib/supabase/servicios-repository';
 import { toDateOnly, toIso } from '@/lib/supabase/dates';
 import { resyncServiciosDenormalizedData, syncServicioDependencias } from '@/lib/services/servicioSyncService';
-import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
-import { currencyService } from '@/lib/services/currencyService';
+import { sincronizarUnServicio } from '@/lib/notifications';
+import { convertToUSD, sumPaymentsInUSD } from '@/lib/payments';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { sumPaymentsInUSD } from '@/lib/utils/payments';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import type { MetodoPago, Servicio } from '@/types';
 import {
@@ -218,7 +217,7 @@ export async function deleteServicioUseCase(
   ]);
   const gastosRealUSD = await sumPaymentsInUSD(
     pagosActuales,
-    (monto, moneda) => currencyService.convertToUSD(monto, moneda)
+    (monto, moneda) => convertToUSD(monto, moneda)
   );
 
   if (options.deletePayments) {

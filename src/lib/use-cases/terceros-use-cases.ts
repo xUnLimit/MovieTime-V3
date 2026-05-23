@@ -11,7 +11,7 @@ import {
 } from '@/lib/supabase/terceros-repository';
 import { ENTITIES } from '@/lib/supabase/entities';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
-import { sincronizarNotificacionesForzado } from '@/lib/services/notificationSyncService';
+import { sincronizarNotificacionesForzado } from '@/lib/notifications';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
 import type { ActivityLog, Tercero } from '@/types';

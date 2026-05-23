@@ -1,7 +1,7 @@
 # Enterprise Architecture Implementation Plan
 
 **Date:** 2026-05-22  
-**Status:** In progress - Fases 0, 2 y 3 cerradas en implementacion  
+**Status:** In progress - Fases 0, 2 y 3 cerradas; Fase 4 parcialmente implementada
 **Source:** `ARCHITECTURE_ROADMAP.md` v1.1
 
 ## Goal
@@ -40,8 +40,13 @@ Completado hasta esta iteracion:
 - Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos, RPCs de categorias y read RPCs de dashboard; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
 - Fase 0 side-effects: fallos esperados de sync de metodo de pago en ventas y cleanup de auth usan logging estructurado compartido sin cambiar el resultado del flujo principal; no quedan `catch {}` silenciosos en `src/store`, `src/lib/services`, `src/lib/use-cases` ni `src/lib/commands`.
 - Fase 0 log context: `getStoreLogContext()` ya cubre stores y vistas detalle de ventas/servicios; no quedan copias locales de `getLogContext()`.
+- Fase 4 modulos profundos: `src/lib/payments/`, `src/lib/dashboard-read-models/` y `src/lib/notifications/` creados con facades publicas; los servicios legacy de pagos/dashboard quedan como compatibilidad y las rutas/use-cases criticos empiezan a consumir los modulos nuevos.
+- Fase 4 pagos/moneda: `sumPaymentsInUSD`, `sumInUSD`, `convertToUSD`, factories de pagos de venta/servicio y formato USD quedan concentrados en `src/lib/payments/`; `calculations.ts` conserva compatibilidad pero delega la conversion/suma al modulo de pagos.
+- Fase 4 notificaciones: calculo puro de prioridad/titulos extraido a `src/lib/notifications/notification-calculator.ts` con tests; el sync runtime se expone por `src/lib/notifications` para reducir dependencia directa sobre `services/notificationSyncService`.
+- Fase 4 dashboard read models: implementacion de lectura movida a `src/lib/dashboard-read-models/`; `dashboardStatsService` queda como barrel legacy.
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
-- Cobertura: suite actual en 159 tests pasando.
+- Pendiente Fase 4: idempotencia SQL en RPCs criticas, descomposicion de formularios grandes y cobertura >=80%.
+- Cobertura/tests: suite actual en 170 tests pasando; cobertura actual 41.11% statements / 44.42% lines.
 
 Commits de referencia de esta iteracion:
 

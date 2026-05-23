@@ -7,8 +7,8 @@ import {
   updateServicio,
   updateServicioPaymentAndPeriod,
 } from '@/lib/supabase/servicios-repository';
-import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
-import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
+import { sincronizarUnServicio } from '@/lib/notifications';
+import { createRenewalServicioPayment as crearPagoRenovacion } from '@/lib/payments';
 import { getCurrencySymbol } from '@/lib/constants';
 import type { MetodoPago, PagoServicio, Servicio } from '@/types';
 import {

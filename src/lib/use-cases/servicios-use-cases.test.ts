@@ -28,23 +28,27 @@ vi.mock('@/lib/services/dashboardStatsService', () => ({
   getMesKeyFromDate: vi.fn(() => '2026-05'),
 }));
 
-vi.mock('@/lib/services/pagosServicioService', () => ({
-  crearPagoRenovacion: vi.fn(),
-}));
-
 vi.mock('@/lib/services/servicioSyncService', () => ({
   resyncServiciosDenormalizedData: vi.fn(),
   syncServicioDependencias: vi.fn(),
 }));
 
-vi.mock('@/lib/services/notificationSyncService', () => ({
+vi.mock('@/lib/notifications', () => ({
   sincronizarUnServicio: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@/lib/services/currencyService', () => ({
-  currencyService: {
-    convertToUSD: vi.fn(),
-  },
+vi.mock('@/lib/payments', () => ({
+  convertToUSD: vi.fn(),
+  createRenewalServicioPayment: vi.fn(),
+  sumPaymentsInUSD: vi.fn(async (
+    payments: Array<{ monto: number; moneda?: string | null }>,
+    converter: (monto: number, moneda: string) => Promise<number>
+  ) => {
+    const amounts = await Promise.all(
+      payments.map((payment) => converter(payment.monto, payment.moneda ?? 'USD'))
+    );
+    return amounts.reduce((sum, amount) => sum + amount, 0);
+  }),
 }));
 
 vi.mock('@/lib/utils/activityLogHelpers', () => ({
@@ -61,10 +65,10 @@ import {
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { crearPagoRenovacion } from '@/lib/services/pagosServicioService';
-import { sincronizarUnServicio } from '@/lib/services/notificationSyncService';
+import { createRenewalServicioPayment } from '@/lib/payments';
+import { sincronizarUnServicio } from '@/lib/notifications';
 import { syncServicioDependencias } from '@/lib/services/servicioSyncService';
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSD } from '@/lib/payments';
 import {
   createServicioUseCase,
   deleteServicioPagoUseCase,
@@ -120,11 +124,11 @@ beforeEach(() => {
   vi.mocked(queryPagosServicio).mockReset();
   vi.mocked(updateLatestServicioPeriodo).mockReset();
   vi.mocked(updateServicio).mockReset();
-  vi.mocked(crearPagoRenovacion).mockReset();
+  vi.mocked(createRenewalServicioPayment).mockReset();
   vi.mocked(syncServicioDependencias).mockReset();
   vi.mocked(getServicioById).mockReset();
   vi.mocked(sincronizarUnServicio).mockClear();
-  vi.mocked(currencyService.convertToUSD).mockReset();
+  vi.mocked(convertToUSD).mockReset();
 
   vi.mocked(getMetodoPagoById).mockResolvedValue({ id: 'metodo-1', nombre: 'Banco', moneda: 'USD' });
   vi.mocked(createServicioWithInitialPayment).mockResolvedValue('servicio-1');
@@ -133,9 +137,9 @@ beforeEach(() => {
   vi.mocked(queryPagosServicio).mockResolvedValue([]);
   vi.mocked(updateLatestServicioPeriodo).mockResolvedValue(undefined);
   vi.mocked(updateServicio).mockResolvedValue(undefined);
-  vi.mocked(crearPagoRenovacion).mockResolvedValue(undefined);
+  vi.mocked(createRenewalServicioPayment).mockResolvedValue(undefined);
   vi.mocked(syncServicioDependencias).mockResolvedValue(undefined);
-  vi.mocked(currencyService.convertToUSD).mockResolvedValue(10);
+  vi.mocked(convertToUSD).mockResolvedValue(10);
   vi.mocked(getServicioById).mockResolvedValue({
     ...servicio,
     fechaVencimiento: new Date('2026-05-01T00:00:00Z'),
@@ -257,7 +261,7 @@ describe('renewServicioUseCase', () => {
       numeroRenovacion: 1,
     });
 
-    expect(crearPagoRenovacion).toHaveBeenCalledWith(
+    expect(createRenewalServicioPayment).toHaveBeenCalledWith(
       'servicio-1',
       'categoria-1',
       10,

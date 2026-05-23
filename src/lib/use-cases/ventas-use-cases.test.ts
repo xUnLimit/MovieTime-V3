@@ -22,16 +22,13 @@ const dashboardStatsService = vi.hoisted(() => ({
   getMesKeyFromDate: vi.fn(() => '2026-05'),
 }));
 
-const currencyService = vi.hoisted(() => ({
+const paymentsModule = vi.hoisted(() => ({
   convertToUSD: vi.fn(),
+  createRenewalVentaPayment: vi.fn(),
 }));
 
 const notificationSyncService = vi.hoisted(() => ({
   sincronizarUnaVenta: vi.fn(),
-}));
-
-const pagosVentaService = vi.hoisted(() => ({
-  crearPagoRenovacion: vi.fn(),
 }));
 
 const ventaSyncService = vi.hoisted(() => ({
@@ -44,11 +41,8 @@ const terceroMetodoPagoSyncService = vi.hoisted(() => ({
 
 vi.mock('@/lib/supabase/ventas-repository', () => ventasRepository);
 vi.mock('@/lib/services/dashboardStatsService', () => dashboardStatsService);
-vi.mock('@/lib/services/currencyService', () => ({
-  currencyService,
-}));
-vi.mock('@/lib/services/notificationSyncService', () => notificationSyncService);
-vi.mock('@/lib/services/pagosVentaService', () => pagosVentaService);
+vi.mock('@/lib/payments', () => paymentsModule);
+vi.mock('@/lib/notifications', () => notificationSyncService);
 vi.mock('@/lib/services/ventaSyncService', () => ventaSyncService);
 vi.mock('@/lib/services/terceroMetodoPagoSyncService', () => terceroMetodoPagoSyncService);
 vi.mock('@/lib/supabase/catalogos-repository', () => ({
@@ -94,7 +88,8 @@ const ventaBase: VentaDoc = {
 describe('ventas use cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    currencyService.convertToUSD.mockImplementation(async (amount: number) => amount);
+    paymentsModule.convertToUSD.mockImplementation(async (amount: number) => amount);
+    paymentsModule.createRenewalVentaPayment.mockResolvedValue('pago-renovacion');
     notificationSyncService.sincronizarUnaVenta.mockResolvedValue(undefined);
   });
 
@@ -187,7 +182,7 @@ describe('ventas use cases', () => {
   });
 
   it('passes plan data when renewing a venta', async () => {
-    pagosVentaService.crearPagoRenovacion.mockResolvedValueOnce('pago-renovacion');
+    paymentsModule.createRenewalVentaPayment.mockResolvedValueOnce('pago-renovacion');
 
     await renewVentaUseCase(ventaBase, {
       periodoRenovacion: 'mensual',
@@ -203,7 +198,7 @@ describe('ventas use cases', () => {
       planTipoNombre: ventaBase.planTipoNombre,
     });
 
-    expect(pagosVentaService.crearPagoRenovacion).toHaveBeenCalledWith(
+    expect(paymentsModule.createRenewalVentaPayment).toHaveBeenCalledWith(
       ventaBase.id,
       ventaBase.clienteId,
       ventaBase.clienteNombre,
@@ -225,7 +220,7 @@ describe('ventas use cases', () => {
   });
 
   it('returns syncPaymentMethodFailed when renewing a venta cannot sync the tercero payment method', async () => {
-    pagosVentaService.crearPagoRenovacion.mockResolvedValueOnce('pago-renovacion');
+    paymentsModule.createRenewalVentaPayment.mockResolvedValueOnce('pago-renovacion');
     terceroMetodoPagoSyncService.syncTerceroMetodoPago.mockRejectedValueOnce(new Error('sync failed'));
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -244,7 +239,7 @@ describe('ventas use cases', () => {
     });
 
     expect(result.syncPaymentMethodFailed).toBe(true);
-    expect(pagosVentaService.crearPagoRenovacion).toHaveBeenCalled();
+    expect(paymentsModule.createRenewalVentaPayment).toHaveBeenCalled();
     expect(ventasRepository.updateVenta).toHaveBeenCalledWith(ventaBase.id, { notas: '' });
 
     consoleErrorSpy.mockRestore();
@@ -265,7 +260,7 @@ describe('ventas use cases', () => {
       fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
     })).rejects.toThrow('Una renovación debe tener un plan seleccionado.');
 
-    expect(pagosVentaService.crearPagoRenovacion).not.toHaveBeenCalled();
+    expect(paymentsModule.createRenewalVentaPayment).not.toHaveBeenCalled();
   });
 
   it('returns a profile delta when suspending a venta', async () => {

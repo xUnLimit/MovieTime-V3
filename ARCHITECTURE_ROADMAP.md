@@ -1060,9 +1060,9 @@ Repositories
 
 ### Fase 4 - Enterprise Consolidation
 
-- [ ] Crear modulo `src/lib/payments/`.
-- [ ] Crear modulo `src/lib/dashboard-read-models/`.
-- [ ] Crear modulo `src/lib/notifications/`.
+- [x] Crear modulo `src/lib/payments/`.
+- [x] Crear modulo `src/lib/dashboard-read-models/`.
+- [x] Crear modulo `src/lib/notifications/`.
 - [ ] Agregar idempotencia a RPCs criticas.
 - [x] Crear `docs/adr/` con ADRs iniciales.
 - [x] ADR: dashboard read models.
@@ -1070,7 +1070,7 @@ Repositories
 - [x] ADR: RPCs atomicas e idempotencia.
 - [x] ADR: StoreEventBus.
 - [ ] Agregar ADRs nuevos solo cuando una decision cambie contratos relevantes.
-- [ ] Implementar feature flags si se requiere rollout gradual.
+- [x] Implementar feature flags si se requiere rollout gradual.
 - [ ] Descomponer `VentasForm`.
 - [ ] Descomponer `VentasEditForm`.
 - [ ] Descomponer `ServicioForm` y paginas de detalle grandes.

@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { PwaStatusBanner } from '@/components/pwa/PwaStatusBanner';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallback';
-import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
+import { sincronizarNotificaciones } from '@/lib/notifications';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { Menu } from 'lucide-react';
 

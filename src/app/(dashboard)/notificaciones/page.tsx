@@ -21,7 +21,7 @@ import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { queryKeys } from '@/lib/query-keys';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { sincronizarNotificaciones } from '@/lib/services/notificationSyncService';
+import { sincronizarNotificaciones } from '@/lib/notifications';
 import { toast } from 'sonner';
 
 // Metrics component matching CategoriasMetrics style

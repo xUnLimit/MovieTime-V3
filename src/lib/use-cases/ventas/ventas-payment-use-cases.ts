@@ -11,7 +11,7 @@ import {
   updateVenta,
   updateVentaPaymentAndPeriod,
 } from '@/lib/supabase/ventas-repository';
-import { crearPagoRenovacion } from '@/lib/services/pagosVentaService';
+import { createRenewalVentaPayment as crearPagoRenovacion } from '@/lib/payments';
 import { syncTerceroMetodoPago } from '@/lib/services/terceroMetodoPagoSyncService';
 import type { PagoVenta, VentaDoc } from '@/types';
 import {

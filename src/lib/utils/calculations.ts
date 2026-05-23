@@ -281,7 +281,10 @@ export function deriveTopLevelFromPagos(pagos: Array<{
 // MULTI-CURRENCY CONVERSION HELPERS
 // ===========================
 
-import { currencyService } from '@/lib/services/currencyService';
+import {
+  sumInUSD as sumPaymentAmountsInUSD,
+} from '@/lib/payments/payment-calculator';
+import { convertToUSD as convertPaymentToUSD } from '@/lib/payments/currency-converter';
 
 /**
  * Sum array of monetary amounts, converting each to USD
@@ -301,17 +304,7 @@ import { currencyService } from '@/lib/services/currencyService';
 export async function sumInUSD(
   items: Array<{ monto: number; moneda?: string }>
 ): Promise<number> {
-  let totalUSD = 0;
-
-  for (const item of items) {
-    const amountUSD = await currencyService.convertToUSD(
-      item.monto,
-      item.moneda || 'USD'
-    );
-    totalUSD += amountUSD;
-  }
-
-  return totalUSD;
+  return sumPaymentAmountsInUSD(items);
 }
 
 /**
@@ -325,7 +318,7 @@ export async function convertToUSD(
   amount: number,
   fromCurrency: string = 'USD'
 ): Promise<number> {
-  return currencyService.convertToUSD(amount, fromCurrency);
+  return convertPaymentToUSD(amount, fromCurrency);
 }
 
 /**

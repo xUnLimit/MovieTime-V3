@@ -1,4 +1,4 @@
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSD } from '@/lib/payments';
 import { toMoneyNumber } from '@/lib/utils/safety';
 import type { ActivityLog, MetodoPago, Servicio } from '@/types';
 import type { ServicioPronostico } from '@/types/dashboard';
@@ -78,7 +78,7 @@ export function hasServicioPeriodoUpdates(updates: Partial<Servicio>): boolean {
 
 export async function getUsdValues(amount: number, moneda: string) {
   const normalizedAmount = toMoneyNumber(amount);
-  const usd = await currencyService.convertToUSD(normalizedAmount, moneda);
+  const usd = await convertToUSD(normalizedAmount, moneda);
   return {
     usd,
     rate: moneda === 'USD' || normalizedAmount === 0 || usd === 0 ? 1 : normalizedAmount / usd,

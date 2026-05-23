@@ -1,5 +1,5 @@
 import { toDateOnly, toIso } from './dates';
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSD } from '@/lib/payments/currency-converter';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import {
   createServicioPaymentRpc,
@@ -68,7 +68,7 @@ export async function createPagoVenta(payload: Record<string, unknown>): Promise
 }
 
 async function convertAmountToUSD(amount: number, moneda: string) {
-  const usd = await currencyService.convertToUSD(amount, moneda);
+  const usd = await convertToUSD(amount, moneda);
   return {
     usd,
     rate: moneda === 'USD' || amount === 0 || usd === 0 ? 1 : amount / usd,

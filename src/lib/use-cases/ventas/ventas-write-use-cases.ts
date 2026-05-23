@@ -11,7 +11,7 @@ import {
   removeVentaWithPayments,
   updateVenta,
 } from '@/lib/supabase/ventas-repository';
-import { sincronizarUnaVenta } from '@/lib/services/notificationSyncService';
+import { sincronizarUnaVenta } from '@/lib/notifications';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import type { MetodoPago, VentaDoc } from '@/types';

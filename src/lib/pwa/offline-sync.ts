@@ -1,6 +1,6 @@
 'use client';
 
-import { getDashboardHome } from '@/lib/services/dashboardStatsService';
+import { getDashboardHome } from '@/lib/dashboard-read-models';
 import { getCategoriasFull } from '@/lib/supabase/categorias-repository';
 import { getConfig } from '@/lib/supabase/config-repository';
 import { queryNotifications } from '@/lib/supabase/notifications-repository';

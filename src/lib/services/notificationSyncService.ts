@@ -18,6 +18,11 @@ import { createNotificacion, queryNotificaciones, removeNotificacion, updateNoti
 import { getMetodoPagoById, queryMetodosPago } from '@/lib/supabase/catalogos-repository';
 import { getServicioById, queryServicios } from '@/lib/supabase/servicios-repository';
 import { getVentaById, queryVentas } from '@/lib/supabase/ventas-repository';
+import {
+  calcularPrioridad,
+  generarTitulo,
+  prioridadSubio,
+} from '@/lib/notifications/notification-calculator';
 import type {
   Notificacion,
   NotificacionVenta,
@@ -56,51 +61,12 @@ function marcarSincronizado(): void {
   ultimaSincronizacion = new Date().toDateString();
 }
 
-/**
- * Calculate priority based on days remaining
- * Matches notification thresholds
- */
-function calcularPrioridad(diasRestantes: number): 'baja' | 'media' | 'alta' | 'critica' {
-  if (diasRestantes <= 0) return 'critica'; // Expired or due today
-  if (diasRestantes <= 3) return 'alta';
-  if (diasRestantes <= 7) return 'media';
-  return 'baja';
-}
-
-/**
- * Generate notification title based on entity and days remaining
- */
-function generarTitulo(diasRestantes: number, entidad: 'venta' | 'servicio'): string {
-  if (diasRestantes < 0) {
-    const diasVencidos = Math.abs(diasRestantes);
-    return entidad === 'venta'
-      ? `Venta vencida hace ${diasVencidos} día${diasVencidos > 1 ? 's' : ''}`
-      : `Servicio vencido hace ${diasVencidos} día${diasVencidos > 1 ? 's' : ''}`;
-  }
-
-  if (diasRestantes === 0) {
-    return entidad === 'venta' ? 'Venta vence hoy ⚠️' : 'Servicio vence hoy ⚠️';
-  }
-
-  return entidad === 'venta'
-    ? `Venta vence en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}`
-    : `Servicio vence en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}`;
-}
-
 function obtenerTerminacionTarjeta(metodoPago?: Pick<MetodoPago, 'numeroTarjeta'> | null): string {
   return metodoPago?.numeroTarjeta?.replace(/\D/g, '').slice(-4) || '';
 }
 
 function obtenerAliasMetodoPago(metodoPago?: Pick<MetodoPago, 'alias'> | null): string {
   return metodoPago?.alias?.trim() || '';
-}
-
-/**
- * Check if priority increased (notification should be unmarked as read)
- */
-function prioridadSubio(anterior: string, nueva: string): boolean {
-  const prioridades = ['baja', 'media', 'alta', 'critica'];
-  return prioridades.indexOf(nueva) > prioridades.indexOf(anterior);
 }
 
 /**
