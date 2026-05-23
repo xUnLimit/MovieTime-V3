@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { storeEventBus } from './store-event-bus';
+import { emitLegacyBrowserEvent, storeEventBus } from './store-event-bus';
 
 describe('storeEventBus', () => {
   afterEach(() => {
@@ -48,5 +48,21 @@ describe('storeEventBus', () => {
 
     expect(ventaHandler).not.toHaveBeenCalled();
     expect(dashboardHandler).not.toHaveBeenCalled();
+  });
+
+  it('bridges legacy browser events with optional timestamp persistence', () => {
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent');
+    const setItem = vi.mocked(window.localStorage.setItem);
+
+    setItem.mockClear();
+    emitLegacyBrowserEvent('venta-updated');
+    emitLegacyBrowserEvent('tercero-nombre-updated', { persistTimestamp: false });
+
+    expect(setItem).toHaveBeenCalledWith('venta-updated', expect.any(String));
+    expect(setItem).not.toHaveBeenCalledWith('tercero-nombre-updated', expect.any(String));
+    expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'venta-updated' }));
+    expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'tercero-nombre-updated' }));
+
+    dispatchEvent.mockRestore();
   });
 });

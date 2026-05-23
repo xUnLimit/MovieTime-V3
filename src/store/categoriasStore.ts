@@ -8,7 +8,7 @@ import {
   fetchCategoriasFull,
   updateCategoriaUseCase,
 } from '@/lib/use-cases/categorias-use-cases';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { emitLegacyBrowserEvent, storeEventBus } from '@/lib/events/store-event-bus';
 import { ENTITIES, logCacheHit } from '@/lib/supabase/categorias-repository';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
@@ -134,10 +134,7 @@ export const useCategoriasStore = create<CategoriasState>()(
 
           storeEventBus.emit({ type: 'CATEGORIA_DELETED', categoriaId: id });
 
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem('categoria-deleted', Date.now().toString());
-            window.dispatchEvent(new Event('categoria-deleted'));
-          }
+          emitLegacyBrowserEvent('categoria-deleted');
 
           set({ error: null });
         } catch (error) {
