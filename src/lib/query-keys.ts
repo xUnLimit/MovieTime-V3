@@ -39,12 +39,15 @@ export const queryKeys = {
     pagos: (ventaId: string) => [...queryKeys.ventas.detail(ventaId), 'pagos'] as const,
     byTercero: (terceroId: string) => [...queryKeys.ventas.all, 'tercero', terceroId] as const,
     byTerceros: (tercerosKey: string) => [...queryKeys.ventas.all, 'terceros', tercerosKey] as const,
+    activeByServicios: (serviciosKey: string, excludeVentaId?: string) =>
+      [...queryKeys.ventas.all, 'active-by-servicios', serviciosKey, excludeVentaId ?? null] as const,
   },
   servicios: {
     all: ['servicios'] as const,
     lists: () => [...queryKeys.servicios.all, 'list'] as const,
     list: (filters: unknown) => [...queryKeys.servicios.lists(), filters] as const,
     reposo: () => [...queryKeys.servicios.all, 'reposo'] as const,
+    byCategoria: (categoriaId: string) => [...queryKeys.servicios.all, 'categoria', categoriaId] as const,
     detail: (servicioId: string) => [...queryKeys.servicios.all, 'detail', servicioId] as const,
     pagos: (servicioId: string) => [...queryKeys.servicios.detail(servicioId), 'pagos'] as const,
     pagosTotalUsd: (signature: string) =>
@@ -63,6 +66,8 @@ export const queryKeys = {
     all: ['metodos-pago'] as const,
     detail: (metodoPagoId: string) => [...queryKeys.metodosPago.all, 'detail', metodoPagoId] as const,
     terceros: () => [...queryKeys.metodosPago.all, 'terceros'] as const,
+    tercerosOptions: () => [...queryKeys.metodosPago.all, 'terceros-options'] as const,
+    tercerosWithPending: () => [...queryKeys.metodosPago.all, 'terceros-with-pending'] as const,
     servicios: () => [...queryKeys.metodosPago.all, 'servicios'] as const,
   },
   terceros: {

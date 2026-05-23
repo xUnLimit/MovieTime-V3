@@ -6,8 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { updateVentaWithLatestPagoUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { ventaEditSchema, type VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
@@ -23,12 +21,15 @@ import { VentaEditDatosTab } from "@/components/ventas/form/edit/VentaEditDatosT
 import { hasVentaEditChanges } from "@/components/ventas/form/edit/ventaEditChanges";
 import { useVentaEditPlanPricing } from "@/components/ventas/form/edit/useVentaEditPlanPricing";
 import { useVentaEditProfilePendingData } from "@/components/ventas/form/edit/useVentaEditProfilePendingData";
+import {
+  useMetodosPagoTercerosWithPending,
+  useServiciosByCategoria,
+  useVentasActivasByServicio,
+} from "@/components/ventas/form/useVentaFormQueries";
 import { useCategoriasStore } from "@/store/categoriasStore";
-import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useTercerosStore } from "@/store/tercerosStore";
-import { MetodoPago, Servicio } from "@/types";
-import type { VentaDoc } from "@/types/ventas";
+import type { VentaDoc } from "@/types";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/lib/constants";
 import {
@@ -42,7 +43,6 @@ import {
   getTerceroMetodoPagoNombre,
   isPendingTerceroPaymentMethodId,
   PENDING_TERCERO_PAYMENT_ID,
-  withPendingTerceroPaymentMethod,
 } from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 
@@ -78,42 +78,21 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   const router = useRouter();
   const categorias = useCategoriasStore((state) => state.categorias);
   const fetchCategorias = useCategoriasStore((state) => state.fetchCategorias);
-  const fetchMetodosPagoTerceros = useMetodosPagoStore((state) => state.fetchMetodosPagoTerceros);
   const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
   const terceros = useTercerosStore((state) => state.terceros);
   const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
 
-  const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
-
-  // Estado local para servicios (cargados solo cuando se selecciona categoría)
-  const [serviciosCategoria, setServiciosCategoria] = useState<Servicio[]>([]);
-  const [loadingServicios, setLoadingServicios] = useState(false);
-
   const [activeTab, setActiveTab] = useState<"datos" | "preview">("datos");
   const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
-  const [perfilesOcupadosVenta, setPerfilesOcupadosVenta] = useState<
-    Record<string, Set<number>>
-  >({});
-  const [ventasActivasPorServicio, setVentasActivasPorServicio] = useState<
-    Record<string, VentaDoc[]>
-  >({});
-  const [loadingVentasRanking, setLoadingVentasRanking] = useState(false);
   const [serviciosWindowStart, setServiciosWindowStart] = useState(0);
   const [searchCliente, setSearchCliente] = useState("");
   const [tipoPlanId, setTipoPlanId] = useState("");
 
   // Efecto inicial: solo cargar datos que no dependen de selección
   useEffect(() => {
-    const loadData = async () => {
-      fetchCategorias();
-      fetchTerceros();
-
-      // Cargar solo métodos de pago de terceros
-      const metodos = await fetchMetodosPagoTerceros();
-      setMetodosPago(withPendingTerceroPaymentMethod(metodos));
-    };
-    loadData();
-  }, [fetchCategorias, fetchMetodosPagoTerceros, fetchTerceros]);
+    fetchCategorias();
+    fetchTerceros();
+  }, [fetchCategorias, fetchTerceros]);
 
   const {
     register,
@@ -185,6 +164,10 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
       [...categorias].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
     [categorias],
   );
+  const { data: metodosPago = [] } = useMetodosPagoTercerosWithPending();
+  const { data: serviciosCategoria = [], isLoading: loadingServicios } =
+    useServiciosByCategoria(categoriaIdValue);
+
   const metodosPagoOrdenados = useMemo(() => {
     const pendientes = metodosPago.filter((metodo) =>
       isPendingTerceroPaymentMethodId(metodo.id),
@@ -201,30 +184,6 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
   const metodoPagoSeleccionado = metodosPagoOrdenados.find(
     (m) => m.id === metodoPagoIdValue,
   );
-
-  // Efecto para cargar servicios cuando se selecciona una categoría
-  useEffect(() => {
-    if (!categoriaIdValue) {
-      setServiciosCategoria([]);
-      return;
-    }
-
-    const loadServiciosCategoria = async () => {
-      setLoadingServicios(true);
-      try {
-        const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
-          { field: "categoriaId", operator: "==", value: categoriaIdValue },
-        ]);
-        setServiciosCategoria(servicios);
-      } catch (error) {
-        console.error("Error cargando servicios:", error);
-        setServiciosCategoria([]);
-      } finally {
-        setLoadingServicios(false);
-      }
-    };
-    loadServiciosCategoria();
-  }, [categoriaIdValue]);
 
   const categoriaSeleccionada = useMemo(
     () => categorias.find((c) => c.id === categoriaIdValue),
@@ -291,59 +250,13 @@ export function VentasEditForm({ venta }: VentasEditFormProps) {
     return Array.from(ids);
   }, [serviciosCategoria, tipoPlanRanking, venta.servicioId]);
 
-  useEffect(() => {
-    if (servicioRankingCandidateIds.length === 0) {
-      setVentasActivasPorServicio({});
-      setPerfilesOcupadosVenta({});
-      setLoadingVentasRanking(false);
-      return;
-    }
-
-    let cancelled = false;
-    const candidateSet = new Set(servicioRankingCandidateIds);
-    setLoadingVentasRanking(true);
-
-    fetchVentasByFiltersUseCase<VentaDoc>([
-      { field: "servicioId", operator: "in", value: servicioRankingCandidateIds },
-      { field: "estado", operator: "!=", value: "inactivo" },
-    ])
-      .then((docs) => {
-        if (cancelled) return;
-        const grouped: Record<string, VentaDoc[]> = Object.fromEntries(
-          servicioRankingCandidateIds.map((id) => [id, []]),
-        );
-        docs.forEach((doc) => {
-          if (doc.id === venta.id || !candidateSet.has(doc.servicioId)) return;
-          grouped[doc.servicioId].push(doc);
-        });
-        setVentasActivasPorServicio(grouped);
-        setPerfilesOcupadosVenta(
-          Object.fromEntries(
-            Object.entries(grouped).map(([servicioId, ventas]) => [
-              servicioId,
-              new Set(
-                ventas
-                  .map((doc) => doc.perfilNumero)
-                  .filter((numero): numero is number => numero != null),
-              ),
-            ]),
-          ),
-        );
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.error("Error cargando ventas activas para ranking:", error);
-        setVentasActivasPorServicio({});
-        setPerfilesOcupadosVenta({});
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingVentasRanking(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [servicioRankingCandidateIds, venta.id]);
+  const {
+    ventasActivasPorServicio,
+    perfilesOcupadosVenta,
+    isLoading: loadingVentasRanking,
+  } = useVentasActivasByServicio(servicioRankingCandidateIds, {
+    excludeVentaId: venta.id,
+  });
 
   const serviciosOrdenados = useMemo(() => {
     const servicioOriginal = serviciosCategoria.find(

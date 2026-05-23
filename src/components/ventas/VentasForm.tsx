@@ -7,14 +7,10 @@ import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { fetchMetodosPagoByFiltersUseCase } from "@/lib/use-cases/catalogos-use-cases";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas-use-cases';
 import { ventaSchema, type VentaFormData } from "@/features/ventas/venta-form-schema";
 import {
   MESES_POR_CICLO,
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
-  type MetodoPagoTerceroOption,
   type TipoVentaItem,
   type VentaItem,
   type VentaItemErrors,
@@ -29,6 +25,11 @@ import {
   useVentaPerfilDetalle,
   type PendingVentaPerfil,
 } from "@/components/ventas/form/useVentaPerfilDetalle";
+import {
+  useMetodosPagoTercerosOptions,
+  useServiciosByCategoria,
+  useVentasActivasByServicio,
+} from "@/components/ventas/form/useVentaFormQueries";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCurrencySymbol } from "@/lib/constants";
 import {
@@ -39,9 +40,7 @@ import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import { syncTerceroMetodoPago } from "@/lib/services/terceroMetodoPagoSyncService";
 import {
   isPendingTerceroPaymentMethodId,
-  PENDING_TERCERO_PAYMENT_CURRENCY,
   PENDING_TERCERO_PAYMENT_ID,
-  PENDING_TERCERO_PAYMENT_NAME,
 } from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { rankServicios } from "@/lib/utils/servicioRanking";
@@ -51,14 +50,7 @@ import { useTemplatesStore } from "@/store/templatesStore";
 import { useTercerosStore } from "@/store/tercerosStore";
 import { useVentasStore } from "@/store/ventasStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
-import type { Plan, Servicio, VentaDoc } from "@/types";
-
-const PENDING_METODO_PAGO_OPTION: MetodoPagoTerceroOption = {
-  id: PENDING_TERCERO_PAYMENT_ID,
-  nombre: PENDING_TERCERO_PAYMENT_NAME,
-  asociadoA: "tercero",
-  moneda: PENDING_TERCERO_PAYMENT_CURRENCY,
-};
+import type { Plan, Servicio } from "@/types";
 
 export function VentasForm() {
   const router = useRouter();
@@ -73,15 +65,6 @@ export function VentasForm() {
   const templateNotificacion = useTemplatesStore((state) =>
     state.getTemplateByTipo("suscripcion"),
   );
-
-  // Estado local para métodos de pago filtrados (solo terceros)
-  const [metodosPagoTerceros, setMetodosPagoTerceros] = useState<
-    MetodoPagoTerceroOption[]
-  >([]);
-
-  // Estado local para servicios (cargados solo cuando se selecciona categoría)
-  const [serviciosCategoria, setServiciosCategoria] = useState<Servicio[]>([]);
-  const [loadingServicios, setLoadingServicios] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"datos" | "preview">("datos");
   const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
@@ -99,14 +82,9 @@ export function VentasForm() {
   const [items, setItems] = useState<VentaItem[]>([]);
   const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
   const [fechaFinOpen, setFechaFinOpen] = useState(false);
-  const [perfilesOcupadosVenta, setPerfilesOcupadosVenta] = useState<
-    Record<string, Set<number>>
-  >({});
   const [notifyCliente, setNotifyCliente] = useState(false);
   const [editedMessage, setEditedMessage] = useState("");
   const [searchCliente, setSearchCliente] = useState("");
-  const [ventasActivasPorServicio, setVentasActivasPorServicio] = useState<Record<string, VentaDoc[]>>({});
-  const [loadingVentasRanking, setLoadingVentasRanking] = useState(false);
   const [serviciosWindowStart, setServiciosWindowStart] = useState(0);
 
   const {
@@ -145,45 +123,11 @@ export function VentasForm() {
     fetchCategorias();
     fetchTerceros();
     fetchTemplates();
-
-    // Cargar métodos de pago filtrados (solo terceros)
-    const loadMetodosPagoTerceros = async () => {
-      try {
-        const metodos = await fetchMetodosPagoByFiltersUseCase<MetodoPagoTerceroOption>([
-          { field: "asociadoA", operator: "==", value: "tercero" },
-        ]);
-        setMetodosPagoTerceros([PENDING_METODO_PAGO_OPTION, ...metodos]);
-      } catch (error) {
-        console.error("Error cargando métodos de pago:", error);
-        setMetodosPagoTerceros([PENDING_METODO_PAGO_OPTION]);
-      }
-    };
-    loadMetodosPagoTerceros();
   }, [fetchCategorias, fetchTerceros, fetchTemplates]);
 
-  // Efecto para cargar servicios cuando se selecciona una categoría
-  useEffect(() => {
-    if (!categoriaId) {
-      setServiciosCategoria([]);
-      return;
-    }
-
-    const loadServiciosCategoria = async () => {
-      setLoadingServicios(true);
-      try {
-        const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
-          { field: "categoriaId", operator: "==", value: categoriaId },
-        ]);
-        setServiciosCategoria(servicios);
-      } catch (error) {
-        console.error("Error cargando servicios:", error);
-        setServiciosCategoria([]);
-      } finally {
-        setLoadingServicios(false);
-      }
-    };
-    loadServiciosCategoria();
-  }, [categoriaId]);
+  const { data: metodosPagoTerceros = [] } = useMetodosPagoTercerosOptions();
+  const { data: serviciosCategoria = [], isLoading: loadingServicios } =
+    useServiciosByCategoria(categoriaId);
 
   const categoriaSeleccionada = useMemo(
     () => categorias.find((c) => c.id === categoriaId),
@@ -222,11 +166,14 @@ export function VentasForm() {
     [categorias],
   );
   const metodosPagoOrdenados = useMemo(() => {
+    const metodosPendientes = metodosPagoTerceros.filter(
+      (metodo) => metodo.id === PENDING_TERCERO_PAYMENT_ID,
+    );
     const metodosReales = metodosPagoTerceros
       .filter((metodo) => metodo.id !== PENDING_TERCERO_PAYMENT_ID)
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
-    return [PENDING_METODO_PAGO_OPTION, ...metodosReales];
+    return [...metodosPendientes, ...metodosReales];
   }, [metodosPagoTerceros]);
   const clienteSeleccionado = tercerosOrdenados.find(
     (c) => c.id === clienteIdValue,
@@ -284,60 +231,11 @@ export function VentasForm() {
       .map((servicio) => servicio.id);
   }, [planSeleccionado, serviciosCategoria]);
 
-  useEffect(() => {
-    if (servicioRankingCandidateIds.length === 0) {
-      setVentasActivasPorServicio({});
-      setPerfilesOcupadosVenta({});
-      setLoadingVentasRanking(false);
-      return;
-    }
-
-    let cancelled = false;
-    const candidateSet = new Set(servicioRankingCandidateIds);
-    setLoadingVentasRanking(true);
-
-    fetchVentasByFiltersUseCase<VentaDoc>([
-      { field: "servicioId", operator: "in", value: servicioRankingCandidateIds },
-      { field: "estado", operator: "!=", value: "inactivo" },
-    ])
-      .then((docs) => {
-        if (cancelled) return;
-        const grouped: Record<string, VentaDoc[]> = Object.fromEntries(
-          servicioRankingCandidateIds.map((id) => [id, []]),
-        );
-        docs.forEach((doc) => {
-          if (candidateSet.has(doc.servicioId)) {
-            grouped[doc.servicioId].push(doc);
-          }
-        });
-        setVentasActivasPorServicio(grouped);
-        setPerfilesOcupadosVenta(
-          Object.fromEntries(
-            Object.entries(grouped).map(([servicioId, ventas]) => [
-              servicioId,
-              new Set(
-                ventas
-                  .map((venta) => venta.perfilNumero)
-                  .filter((numero): numero is number => numero != null),
-              ),
-            ]),
-          ),
-        );
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.error("Error cargando ventas activas para ranking:", error);
-        setVentasActivasPorServicio({});
-        setPerfilesOcupadosVenta({});
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingVentasRanking(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [servicioRankingCandidateIds]);
+  const {
+    ventasActivasPorServicio,
+    perfilesOcupadosVenta,
+    isLoading: loadingVentasRanking,
+  } = useVentasActivasByServicio(servicioRankingCandidateIds);
 
   // Filtrar servicios: solo activos con perfiles disponibles y tipo compatible con el plan
   const serviciosFiltradosPorTipo = useMemo(() => {
