@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Dialog,
   DialogContent,
@@ -12,40 +11,51 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { MetodoPago } from "@/types";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
+import { MetodoPago } from "@/types";
 import { toast } from "sonner";
-
-const metodoPagoSchema = z.object({
-  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  tipo: z.enum(["banco", "yappy", "paypal", "binance", "efectivo"]),
-  titular: z.string().min(2, "El titular es requerido"),
-  identificador: z
-    .string()
-    .min(4, "El identificador debe tener al menos 4 caracteres"),
-  tipoCuenta: z
-    .enum(["ahorro", "corriente", "telefono", "wallet", "email"])
-    .optional(),
-  banco: z.string().optional(),
-  pais: z.string(),
-  moneda: z.string(),
-});
-
-type MetodoPagoFormData = z.infer<typeof metodoPagoSchema>;
+import { MetodoPagoDialogFields } from "./MetodoPagoDialogFields";
+import {
+  metodoPagoSchema,
+  type MetodoPagoFormData,
+} from "./metodo-pago-dialog-schema";
 
 interface MetodoPagoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   metodoPago: MetodoPago | null;
+}
+
+const defaultFormValues: MetodoPagoFormData = {
+  nombre: "",
+  tipo: "banco",
+  titular: "",
+  identificador: "",
+  tipoCuenta: "ahorro",
+  banco: "",
+  pais: "Panamá",
+  moneda: "USD",
+};
+
+function toMetodoPagoFormData(metodoPago: MetodoPago | null): MetodoPagoFormData {
+  if (!metodoPago) return { ...defaultFormValues };
+
+  return {
+    nombre: metodoPago.nombre,
+    tipo: metodoPago.tipo,
+    titular: metodoPago.titular,
+    identificador: metodoPago.identificador,
+    tipoCuenta:
+      metodoPago.tipoCuenta &&
+      ["ahorro", "corriente", "wallet", "telefono", "email"].includes(
+        metodoPago.tipoCuenta,
+      )
+        ? (metodoPago.tipoCuenta as MetodoPagoFormData["tipoCuenta"])
+        : "ahorro",
+    banco: metodoPago.banco || "",
+    pais: metodoPago.pais || "Panamá",
+    moneda: metodoPago.moneda || "USD",
+  };
 }
 
 export function MetodoPagoDialog({
@@ -63,59 +73,16 @@ export function MetodoPagoDialog({
     formState: { errors, isSubmitting },
   } = useForm<MetodoPagoFormData>({
     resolver: zodResolver(metodoPagoSchema),
-    defaultValues: {
-      nombre: "",
-      tipo: "banco",
-      titular: "",
-      identificador: "",
-      tipoCuenta: "ahorro",
-      banco: "",
-      pais: "Panamá",
-      moneda: "USD",
-    },
+    defaultValues: defaultFormValues,
   });
 
   const tipoValue = watch("tipo");
   const tipoCuentaValue = watch("tipoCuenta");
 
   useEffect(() => {
-    if (metodoPago) {
-      reset({
-        nombre: metodoPago.nombre,
-        tipo: metodoPago.tipo,
-        titular: metodoPago.titular,
-        identificador: metodoPago.identificador,
-        tipoCuenta:
-          metodoPago.tipoCuenta &&
-          ["ahorro", "corriente", "wallet", "telefono", "email"].includes(
-            metodoPago.tipoCuenta,
-          )
-            ? (metodoPago.tipoCuenta as
-                | "ahorro"
-                | "corriente"
-                | "wallet"
-                | "telefono"
-                | "email")
-            : "ahorro",
-        banco: metodoPago.banco || "",
-        pais: metodoPago.pais || "Panamá",
-        moneda: metodoPago.moneda || "USD",
-      });
-    } else {
-      reset({
-        nombre: "",
-        tipo: "banco",
-        titular: "",
-        identificador: "",
-        tipoCuenta: "ahorro",
-        banco: "",
-        pais: "Panamá",
-        moneda: "USD",
-      });
-    }
+    reset(toMetodoPagoFormData(metodoPago));
   }, [metodoPago, reset]);
 
-  // Auto-set tipoCuenta based on tipo
   useEffect(() => {
     if (tipoValue === "yappy") {
       setValue("tipoCuenta", "telefono");
@@ -165,125 +132,13 @@ export function MetodoPagoDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nombre">Nombre</Label>
-              <Input
-                id="nombre"
-                {...register("nombre")}
-                placeholder="Ej: Cuenta BAC"
-              />
-              {errors.nombre && (
-                <p className="text-sm text-red-500">{errors.nombre.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tipo">Tipo</Label>
-              <Select
-                value={tipoValue}
-                onValueChange={(value) =>
-                  setValue("tipo", value as MetodoPago["tipo"])
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="banco">Banco</SelectItem>
-                  <SelectItem value="yappy">Yappy</SelectItem>
-                  <SelectItem value="paypal">PayPal</SelectItem>
-                  <SelectItem value="binance">Binance</SelectItem>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.tipo && (
-                <p className="text-sm text-red-500">{errors.tipo.message}</p>
-              )}
-            </div>
-          </div>
-
-          {tipoValue === "banco" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="banco">Banco</Label>
-                <Input
-                  id="banco"
-                  {...register("banco")}
-                  placeholder="Ej: BAC, Banistmo"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tipoCuenta">Tipo de Cuenta</Label>
-                <Select
-                  value={tipoCuentaValue}
-                  onValueChange={(value) =>
-                    setValue(
-                      "tipoCuenta",
-                      value as
-                        | "ahorro"
-                        | "corriente"
-                        | "wallet"
-                        | "telefono"
-                        | "email",
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ahorro">Ahorros</SelectItem>
-                    <SelectItem value="corriente">Corriente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          {(tipoValue === "yappy" || tipoValue === "binance") && (
-            <div className="space-y-2">
-              <Label htmlFor="pais">País</Label>
-              <Input id="pais" {...register("pais")} placeholder="Ej: Panamá" />
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="titular">Titular</Label>
-            <Input
-              id="titular"
-              {...register("titular")}
-              placeholder="Nombre completo del titular"
-            />
-            {errors.titular && (
-              <p className="text-sm text-red-500">{errors.titular.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="identificador">
-              {tipoValue === "banco" && "Número de Cuenta"}
-              {tipoValue === "yappy" && "Número de Teléfono"}
-              {tipoValue === "binance" && "Wallet Address"}
-            </Label>
-            <Input
-              id="identificador"
-              {...register("identificador")}
-              placeholder={
-                tipoValue === "banco"
-                  ? "1234567890"
-                  : tipoValue === "yappy"
-                    ? "+507 6000-0000"
-                    : "0x..."
-              }
-            />
-            {errors.identificador && (
-              <p className="text-sm text-red-500">
-                {errors.identificador.message}
-              </p>
-            )}
-          </div>
+          <MetodoPagoDialogFields
+            errors={errors}
+            register={register}
+            setValue={setValue}
+            tipoCuentaValue={tipoCuentaValue}
+            tipoValue={tipoValue}
+          />
 
           <DialogFooter>
             <Button
