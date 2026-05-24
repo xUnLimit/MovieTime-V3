@@ -120,7 +120,7 @@ Recomendacion: no eliminar inmediatamente. Primero confirmar que no hay imports 
 
 ### Medio - `dashboard_stats` duplicado con RPCs live
 
-`dashboard_stats` se define como cache regenerable, pero la app lee `get_dashboard_stats_live()` y `get_dashboard_home()`. El servicio `dashboardStatsService` ya dejo mutaciones incrementales como no-op y usa rebuild por API.
+`dashboard_stats` se define como cache regenerable, pero la app lee `get_dashboard_stats_live()` y `get_dashboard_home()` desde `src/lib/dashboard-read-models`. El antiguo `dashboardStatsService` fue eliminado para evitar mutaciones incrementales falsas.
 
 Recomendacion: decidir una sola estrategia:
 

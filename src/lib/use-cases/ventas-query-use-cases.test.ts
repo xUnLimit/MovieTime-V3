@@ -40,7 +40,7 @@ const terceroMetodoPagoSyncService = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/supabase/ventas-repository', () => ventasRepository);
-vi.mock('@/lib/services/dashboardStatsService', () => dashboardStatsService);
+vi.mock('@/lib/dashboard-read-models', () => dashboardStatsService);
 vi.mock('@/lib/payments', () => paymentsModule);
 vi.mock('@/lib/notifications', () => notificationSyncService);
 vi.mock('@/lib/services/ventaSyncService', () => ventaSyncService);

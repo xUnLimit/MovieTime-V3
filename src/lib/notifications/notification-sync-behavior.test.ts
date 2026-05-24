@@ -40,7 +40,7 @@ const servicioBase = {
   fechaVencimiento: new Date('2026-05-05T12:00:00.000Z'),
 };
 
-describe('notificationSyncService', () => {
+describe('notifications module sync', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-29T12:00:00.000Z'));
@@ -64,7 +64,7 @@ describe('notificationSyncService', () => {
     });
     queryDocumentsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
-    const { sincronizarUnServicio } = await import('./notificationSyncService');
+    const { sincronizarUnServicio } = await import('@/lib/notifications');
 
     await sincronizarUnServicio('servicio-1');
 
@@ -100,7 +100,7 @@ describe('notificationSyncService', () => {
       ])
       .mockResolvedValueOnce([]);
 
-    const { sincronizarUnServicio } = await import('./notificationSyncService');
+    const { sincronizarUnServicio } = await import('@/lib/notifications');
 
     await sincronizarUnServicio('servicio-1');
 
@@ -126,7 +126,7 @@ describe('notificationSyncService', () => {
     });
     queryDocumentsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
-    const { sincronizarUnServicio } = await import('./notificationSyncService');
+    const { sincronizarUnServicio } = await import('@/lib/notifications');
 
     await sincronizarUnServicio('servicio-1');
 

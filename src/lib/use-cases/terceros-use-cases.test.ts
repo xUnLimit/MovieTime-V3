@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/ventas-repository', () => ({
   queryVentas: vi.fn(),
 }));
 
-vi.mock('@/lib/services/dashboardStatsService', () => ({
+vi.mock('@/lib/dashboard-read-models', () => ({
   getDiaKeyFromDate: vi.fn(() => '2026-05-06'),
 }));
 

@@ -22,7 +22,7 @@
 - Keep `detalles` in activity logs for display, and use `metadata` for structured audit data.
 - If a payment changes the latest period, update payment and period atomically through RPC.
 - Critical RPCs must go through typed adapters and include idempotency keys when creating records/payments/refunds.
-- Keep legacy service barrels only for compatibility. Do not add new behavior to `dashboardStatsService` or `notificationSyncService`.
+- Do not recreate legacy service barrels. Import dashboard reads from `@/lib/dashboard-read-models` and notification sync from `@/lib/notifications`.
 
 ## Testing Rules
 

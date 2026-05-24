@@ -30,7 +30,7 @@ export interface NotificacionBase {
  *
  * Denormalized fields from VentaDoc + PagoVenta:
  * - Avoids joins when displaying VentasProximasTableV2
- * - Updated daily by notificationSyncService
+ * - Updated daily by the notifications sync module
  * - All fields needed for table display are included
  */
 export interface NotificacionVenta extends NotificacionBase {
@@ -69,7 +69,7 @@ export interface NotificacionVenta extends NotificacionBase {
  *
  * Denormalized fields from Servicio document:
  * - Avoids joins when displaying ServiciosProximosTableV2
- * - Updated daily by notificationSyncService
+ * - Updated daily by the notifications sync module
  * - All fields needed for table display are included
  */
 export interface NotificacionServicio extends NotificacionBase {

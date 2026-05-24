@@ -14,9 +14,9 @@ El drift real esta concentrado en `ventas-repository.ts`, `servicios-repository.
 
 | RPC | Runtime caller | En `database.types.ts` | Estado | Accion |
 |---|---|---:|---|---|
-| `get_dashboard_stats_live` | `dashboardStatsService.ts` | Si | Typed | Mantener llamada directa. |
-| `get_dashboard_churn_stats` | `dashboardStatsService.ts` | Si | Typed | Mantener llamada directa. |
-| `get_dashboard_home` | `dashboardStatsService.ts` | Si | Typed | Mantener llamada directa. |
+| `get_dashboard_stats_live` | `src/lib/dashboard-read-models` | Si | Typed | Mantener llamada directa. |
+| `get_dashboard_churn_stats` | `src/lib/dashboard-read-models` | Si | Typed | Mantener llamada directa. |
+| `get_dashboard_home` | `src/lib/dashboard-read-models` | Si | Typed | Mantener llamada directa. |
 | `get_categorias_full` | `categorias-repository.ts` | Si | Typed | Mantener llamada directa. |
 | `get_categorias_counts` | `categorias-repository.ts` | Si | Typed | Mantener llamada directa. |
 | `delete_categoria` | `categorias-repository.ts` | Si | Typed | Mantener llamada directa. |

@@ -26,11 +26,11 @@
 - `src/store` owns Zustand UI state and optimistic mutation state. It must not own transactional domain invariants.
 - `src/lib/use-cases` owns composed business flows. Ventas and servicios are split by queries, writes, payments/refunds and shared helpers.
 - `src/lib/payments` owns payment factories, currency conversion and payment calculations. New business code should import payment/currency behavior from this module.
-- `src/lib/notifications` owns notification calculation, cleanup, sync orchestration and push delivery helpers. Legacy service barrels re-export this module for compatibility.
+- `src/lib/notifications` owns notification calculation, cleanup, sync orchestration and push delivery helpers. Notification sync imports must target this module directly.
 - `src/lib/dashboard-read-models` and `src/lib/forecasting` own dashboard/forecast reads and sync. New dashboard code should not add client-side metric mutation APIs.
 - `src/lib/events` owns typed client business events through `StoreEventBus`.
 - `src/lib/supabase` owns Supabase clients, repositories, mappers and generated database types.
-- `src/lib/services` contains operational services and compatibility barrels. Do not add new dashboard metric mutation or notification sync interfaces here when a deep module already exists.
+- `src/lib/services` contains operational services that still have their own domain behavior. Do not add dashboard metric mutation or notification sync interfaces here when a deep module already exists.
 - `supabase/migrations` owns schema, views, RPC functions, triggers and RLS.
 - `scripts` owns maintenance and validation commands.
 

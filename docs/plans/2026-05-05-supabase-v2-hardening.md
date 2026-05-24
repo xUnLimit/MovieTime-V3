@@ -18,9 +18,9 @@ para metricas financieras, rentabilidad, graficas, pronostico y crecimiento de
 usuarios pasa a ser `public.rebuild_dashboard_financial_stats()`.
 
 La capa TypeScript ya no recalcula ingresos/gastos ni escribe arrays financieros.
-`dashboardStatsService` lee el cache y solicita el rebuild por
-`POST /api/dashboard/rebuild`, para que el RPC `SECURITY DEFINER` se ejecute solo
-desde servidor con `SUPABASE_SERVICE_ROLE_KEY`.
+Los read models de `src/lib/dashboard-read-models` leen el cache/RPCs live y el
+rebuild se solicita por `POST /api/dashboard/rebuild`, para que el RPC
+`SECURITY DEFINER` se ejecute solo desde servidor con `SUPABASE_SERVICE_ROLE_KEY`.
 
 La funcion SQL usa:
 

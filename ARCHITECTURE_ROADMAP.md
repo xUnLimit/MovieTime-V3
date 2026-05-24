@@ -12,7 +12,7 @@ El diagnostico original era correcto en direccion, pero varias cifras y algunos 
 Estado de implementacion:
 
 1. **Fase 0 cerrada**: tipos duplicados consolidados, side-effects con logging, casts RPC criticos removidos, dashboard no-op eliminado y validacion remota de seguridad en verde.
-2. **Fase 2 cerrada**: ventas y servicios estan separados en queries/writes/payments/refunds/shared con barrels de compatibilidad.
+2. **Fase 2 cerrada**: ventas y servicios estan separados en queries/writes/payments/refunds/shared; los barrels publicos de use-cases conservan imports existentes.
 3. **Fase 3 cerrada**: React Query, query keys, invalidacion centralizada y StoreEventBus estan integrados; no quedan eventos DOM/localStorage de negocio en runtime.
 4. **Fase 4 casi cerrada**: existen modulos profundos de pagos, notificaciones, dashboard read models, forecasting, feature flags e idempotencia RPC. Los formularios/componentes grandes quedaron por debajo de 300 lineas.
 5. **Pendiente principal**: cobertura/testing. La arquitectura esta implementada, pero la red de pruebas aun no llega a los umbrales enterprise.
@@ -71,7 +71,7 @@ UI: src/components, src/app
 Stores/hooks/componentes
   -> Use-cases: src/lib/use-cases
        - ventas/servicios separados por queries, writes, payments, refunds/shared
-       - barrels de compatibilidad para imports existentes
+       - barrels publicos para imports existentes
        - DomainError en flujos criticos
 
 Use-cases
@@ -138,7 +138,7 @@ El patron `detectarCambios() + metadata estructurada + detalles legibles` provee
 #### A-1: Use-cases de ventas y servicios concentraban demasiada responsabilidad
 
 **Estado:** Cerrado en implementacion  
-**Archivos actuales:** `ventas-use-cases.ts` y `servicios-use-cases.ts` son barrels de compatibilidad; la implementacion vive en `src/lib/use-cases/ventas/` y `src/lib/use-cases/servicios/`.  
+**Archivos actuales:** `ventas-use-cases.ts` y `servicios-use-cases.ts` son barrels publicos; la implementacion vive en `src/lib/use-cases/ventas/` y `src/lib/use-cases/servicios/`.  
 **Impacto anterior:** Cambios en pagos, renovaciones, reembolsos, pronostico o perfiles requerian entender muchas reglas colaterales en el mismo archivo.
 
 **Evidencia:**
@@ -275,7 +275,7 @@ La meta de Fase 1 debe ser 60% global y cobertura alta en los modulos que se van
 #### A-5: Dashboard no-op contradice la arquitectura actual de read models
 
 **Estado:** Cerrado en implementacion  
-**Archivo actual:** `src/lib/services/dashboardStatsService.ts` es un barrel legacy hacia `src/lib/dashboard-read-models`.  
+**Archivo actual:** `src/lib/services/dashboardStatsService.ts` fue eliminado. La interface actual es `src/lib/dashboard-read-models`.  
 **Impacto anterior:** El codigo llamaba `adjustIngresosStats`, `adjustGastosStats`, `upsertVentaPronostico` y `upsertServicioPronostico` como si persistieran cambios, pero eran no-ops. Eso creaba una interface falsa.
 
 **Evidencia:**
@@ -528,7 +528,7 @@ Los stores se suscriben a eventos. Los use-cases o stores emiten eventos despues
 #### C-2: Documentacion legacy de dashboard entra en conflicto con Supabase actual
 
 **Estado:** Mitigado  
-**Archivos afectados:** `docs/plans/2026-02-13-dashboard-implementation-design.md`, `docs/plans/2026-02-22-dashboard-metrics-optimization-design.md`, `dashboardStatsService.ts`  
+**Archivos afectados:** `docs/plans/2026-02-13-dashboard-implementation-design.md`, `docs/plans/2026-02-22-dashboard-metrics-optimization-design.md`, `src/lib/dashboard-read-models/`  
 **Impacto anterior:** Documentos antiguos describian Firebase/incremental cache y ajustes por delta, mientras la app actual lee dashboard live desde RPCs Supabase.
 
 **Regla vigente:**
@@ -863,7 +863,7 @@ La ejecucion concreta de estas fases esta desglosada en PRs pequenos en `docs/pl
 3. Extraer payment/refund use-cases.
 4. Extraer write/archive use-cases.
 5. Extraer helpers de side-effects.
-6. Mantener barrels de compatibilidad.
+6. Mantener barrels publicos solo donde preservan APIs vigentes; no reintroducir barrels legacy para servicios eliminados.
 7. Introducir errores de dominio en flujos criticos.
 
 **Criterio de exito:**

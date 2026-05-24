@@ -35,21 +35,21 @@ Completado hasta esta iteracion:
 - Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
 - Fase 2/3 eventos: imports dinamicos runtime removidos, emisiones directas de negocio reemplazadas por bus tipado, paginas/hooks principales de ventas/terceros/categorias/servicios consumen eventos tipados, y bridge legacy DOM/localStorage retirado del runtime.
-- Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime y retiradas de `dashboardStatsService`; el dashboard queda orientado a invalidacion/refetch sobre read models live.
+- Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime; el dashboard queda orientado a invalidacion/refetch sobre read models live en `src/lib/dashboard-read-models`.
 - Fase 2 limpieza de capas: `notificaciones-use-cases.ts` y `templates-use-cases.ts` eliminados porque eran pass-through puros hacia repositorios; `catalogos-use-cases.ts` reducido al conteo agregado de metodos de pago y sin query pass-through.
 - Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos, RPCs de categorias y read RPCs de dashboard; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
 - Fase 0 side-effects: fallos esperados de sync de metodo de pago en ventas y cleanup de auth usan logging estructurado compartido sin cambiar el resultado del flujo principal; no quedan `catch {}` silenciosos en `src/store`, `src/lib/services`, `src/lib/use-cases` ni `src/lib/commands`.
 - Fase 0 log context: `getStoreLogContext()` ya cubre stores y vistas detalle de ventas/servicios; no quedan copias locales de `getLogContext()`.
 - Fase 4 modulos profundos: `src/lib/payments/`, `src/lib/dashboard-read-models/` y `src/lib/notifications/` creados con facades publicas; los servicios legacy de pagos/dashboard quedan como compatibilidad y las rutas/use-cases criticos empiezan a consumir los modulos nuevos.
 - Fase 4 pagos/moneda: `sumPaymentsInUSD`, `sumInUSD`, `convertToUSD`, factories de pagos de venta/servicio y formato USD quedan concentrados en `src/lib/payments/`; `calculations.ts` conserva compatibilidad pero delega la conversion/suma al modulo de pagos.
-- Fase 4 notificaciones: calculo puro de prioridad/titulos extraido a `src/lib/notifications/notification-calculator.ts` con tests; el sync runtime se expone por `src/lib/notifications` para reducir dependencia directa sobre `services/notificationSyncService`.
-- Fase 4 dashboard read models: implementacion de lectura movida a `src/lib/dashboard-read-models/`; `dashboardStatsService` queda como barrel legacy.
+- Fase 4 notificaciones: calculo puro de prioridad/titulos extraido a `src/lib/notifications/notification-calculator.ts` con tests; el sync runtime se expone solo por `src/lib/notifications`.
+- Fase 4 dashboard read models: implementacion de lectura movida a `src/lib/dashboard-read-models/`; el barrel legacy `dashboardStatsService` fue eliminado.
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
 - Fase 4 idempotencia RPC: migracion `20260523183000_rpc_idempotency_keys.sql` agrega `rpc_idempotency_keys` y overloads con `p_idempotency_key` para creacion inicial de ventas/servicios, renovaciones de pagos y refunds; los adapters cliente generan key cuando el caller no la proporciona.
 - Fase 4 formularios/componentes grandes: `VentasForm`, `VentasEditForm`, `ServicioForm`, `ServicioDetalleClient` y `TerceroDetails` quedaron por debajo de 300 lineas con controllers/secciones dedicadas; `VentasForm`, `VentasEditForm`, `ServicioForm` y `TerceroDetails` tienen tests de composicion.
 - Fase 4 tamanos: no quedan archivos en `src` por encima de 300 lineas, excluyendo tipos generados.
 - Fase 4 migraciones remotas: aplicada y verificada la migracion de hardening `20260524131500_lock_idempotent_rpc_permissions.sql`; `migrate:validate` queda en `passed` con `securityFailures: {}`.
-- Fase 4 legacy audit: `dashboardStatsService` y `notificationSyncService` quedan marcados como barrels de compatibilidad; nuevos imports deben ir a `@/lib/dashboard-read-models` y `@/lib/notifications`.
+- Fase 4 legacy audit: `dashboardStatsService` y `notificationSyncService` fueron eliminados; imports runtime y tests apuntan a `@/lib/dashboard-read-models` y `@/lib/notifications`.
 - Pendiente fuera del alcance arquitectural: cobertura >=80%, flujos E2E/integracion y RPC tests con Supabase local.
 - Cobertura/tests: suite actual en 241 tests pasando; ultima cobertura medida 44.62% statements / 48.03% lines.
 
@@ -267,7 +267,7 @@ Validacion recurrente ejecutada por PR logico:
 
 **Files:**
 
-- `src/lib/services/dashboardStatsService.ts`
+- `src/lib/dashboard-read-models/`
 - `src/lib/commands/client-cache.ts`
 - use-cases que llaman `adjust*`/`upsert*`
 - docs legacy de dashboard, si se marca cabecera.
