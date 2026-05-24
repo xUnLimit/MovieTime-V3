@@ -11,6 +11,12 @@ import { useVentaEditPlanPricing } from "@/components/ventas/form/edit/useVentaE
 import { useVentaEditProfilePendingData } from "@/components/ventas/form/edit/useVentaEditProfilePendingData";
 import { hasVentaEditChanges } from "@/components/ventas/form/edit/ventaEditChanges";
 import {
+  buildVentaEditPayload,
+  filterTercerosBySearch,
+  sortPaymentMethods,
+  sortTercerosByNewest,
+} from "@/components/ventas/form/edit/venta-edit-controller-helpers";
+import {
   useMetodosPagoTercerosWithPending,
   useServiciosByCategoria,
   useVentasActivasByServicio,
@@ -22,14 +28,11 @@ import { useTerceros } from "@/hooks/use-terceros";
 import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { getCurrencySymbol } from "@/lib/constants";
 import { updateVentaWithLatestPagoUseCase } from "@/lib/use-cases/ventas-use-cases";
-import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import { calculateDiscountedAmount, roundToDecimals } from "@/lib/utils/calculations";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { rankServicios } from "@/lib/utils/servicioRanking";
 import {
   getTerceroMetodoPagoMoneda,
-  getTerceroMetodoPagoNombre,
-  isPendingTerceroPaymentMethodId,
   PENDING_TERCERO_PAYMENT_ID,
 } from "@/lib/utils/terceroMetodoPago";
 import { useServiciosStore } from "@/store/serviciosStore";
@@ -114,28 +117,14 @@ export function useVentasEditFormController(venta: VentaEditData) {
   const estadoValue = watch("estado");
   const notasValue = watch("notas");
 
-  const tercerosOrdenados = useMemo(() => {
-    return [...terceros].sort((a, b) => {
-      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bDate - aDate;
-    });
-  }, [terceros]);
-  const tercerosFiltrados = useMemo(() => {
-    if (!searchCliente) return tercerosOrdenados;
-    const search = normalizeSearchText(searchCliente);
-    const phoneQuery = normalizePhoneSearch(searchCliente);
-    return tercerosOrdenados.filter((usuario) => {
-      const nombreCompleto = normalizeSearchText(
-        `${usuario.nombre} ${usuario.apellido || ""}`,
-      );
-      const telefono = normalizePhoneSearch(usuario.telefono);
-      return (
-        nombreCompleto.includes(search) ||
-        (phoneQuery.length > 0 && telefono.includes(phoneQuery))
-      );
-    });
-  }, [tercerosOrdenados, searchCliente]);
+  const tercerosOrdenados = useMemo(
+    () => sortTercerosByNewest(terceros),
+    [terceros],
+  );
+  const tercerosFiltrados = useMemo(
+    () => filterTercerosBySearch(tercerosOrdenados, searchCliente),
+    [tercerosOrdenados, searchCliente],
+  );
   const categoriasOrdenadas = useMemo(
     () =>
       [...categorias].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
@@ -145,16 +134,10 @@ export function useVentasEditFormController(venta: VentaEditData) {
   const { data: serviciosCategoria = [], isLoading: loadingServicios } =
     useServiciosByCategoria(categoriaIdValue);
 
-  const metodosPagoOrdenados = useMemo(() => {
-    const pendientes = metodosPago.filter((metodo) =>
-      isPendingTerceroPaymentMethodId(metodo.id),
-    );
-    const restantes = metodosPago
-      .filter((metodo) => !isPendingTerceroPaymentMethodId(metodo.id))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-
-    return [...pendientes, ...restantes];
-  }, [metodosPago]);
+  const metodosPagoOrdenados = useMemo(
+    () => sortPaymentMethods(metodosPago),
+    [metodosPago],
+  );
   const clienteSeleccionado = tercerosOrdenados.find(
     (usuario) => usuario.id === clienteIdValue,
   );
@@ -583,73 +566,22 @@ export function useVentasEditFormController(venta: VentaEditData) {
     try {
       const servicio = serviciosCategoria.find((s) => s.id === data.servicioId);
       const categoria = categorias.find((c) => c.id === data.categoriaId);
-      const plan = categoria?.planes?.find((p) => p.id === data.planId);
+      const { pagoUpdates, plan, ventaUpdates } = buildVentaEditPayload({
+        categoria,
+        clienteSeleccionado,
+        data,
+        metodoPagoSeleccionado,
+        servicio,
+        venta,
+      });
       if (!plan) {
         setError("planId", { type: "manual", message: "Seleccione un plan vÃ¡lido" });
         return;
       }
-      const planTipoNombre = categoria?.tiposPlanes?.find(
-        (tipo) => tipo.id === plan?.tipoPlan,
-      )?.nombre;
-      const precio = roundToDecimals(Number(data.precio) || 0);
-      const descuento = roundToDecimals(Number(data.descuento) || 0);
-      const precioFinalValue = calculateDiscountedAmount(precio, descuento);
-      const metodoPagoNombre = getTerceroMetodoPagoNombre(
-        data.metodoPagoId,
-        metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
-      );
-      const monedaMetodoPago = getTerceroMetodoPagoMoneda(
-        data.metodoPagoId,
-        metodoPagoSeleccionado?.moneda || venta.moneda,
-      );
-
-      const ventaUpdates: Partial<VentaDoc> = {
-        clienteId: data.clienteId,
-        clienteNombre: clienteSeleccionado
-          ? `${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}`
-          : venta.clienteNombre,
-        clienteTelefono: clienteSeleccionado?.telefono || "", // For WhatsApp notifications
-        categoriaId: data.categoriaId,
-        servicioId: data.servicioId,
-        servicioNombre: servicio?.nombre || venta.servicioNombre,
-        servicioCorreo: servicio?.correo || venta.servicioCorreo,
-        perfilNumero: Number(data.perfilNumero) || null,
-        perfilNombre: data.perfilNombre?.trim() || "",
-        codigo: data.codigo || "",
-        estado: data.estado || "activo",
-        notas: data.notas || "",
-        // ? DENORMALIZED FIELDS (for notifications sync)
-        fechaInicio: data.fechaInicio,
-        fechaFin: data.fechaFin,
-        cicloPago: plan?.cicloPago || venta.cicloPago,
-        metodoPagoId: data.metodoPagoId,
-        metodoPagoNombre,
-        moneda: monedaMetodoPago,
-        precio,
-        descuento,
-        precioFinal: precioFinalValue,
-        planId: plan?.id,
-        planNombre: plan?.nombre,
-        planTipoNombre,
-      };
-
       const { syncPaymentMethodFailed } = await updateVentaWithLatestPagoUseCase(
         venta.id,
         ventaUpdates,
-        {
-          precio,
-          descuento,
-          monto: precioFinalValue,
-          metodoPagoId: data.metodoPagoId,
-          metodoPago: metodoPagoNombre,
-          moneda: monedaMetodoPago,
-          cicloPago: plan?.cicloPago || venta.cicloPago,
-          fechaInicio: data.fechaInicio,
-          fechaVencimiento: data.fechaFin,
-          planId: plan?.id,
-          planNombre: plan?.nombre,
-          planTipoNombre,
-        },
+        pagoUpdates,
         {
           currentVenta: venta as VentaDoc,
           logContext: { usuarioId: 'sistema', usuarioEmail: 'sistema' },
