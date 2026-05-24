@@ -48,7 +48,8 @@ Completado hasta esta iteracion:
 - Fase 4 idempotencia RPC: migracion `20260523183000_rpc_idempotency_keys.sql` agrega `rpc_idempotency_keys` y overloads con `p_idempotency_key` para creacion inicial de ventas/servicios, renovaciones de pagos y refunds; los adapters cliente generan key cuando el caller no la proporciona.
 - Fase 4 formularios/componentes grandes: `VentasForm`, `VentasEditForm`, `ServicioForm`, `ServicioDetalleClient` y `TerceroDetails` quedaron por debajo de 300 lineas con controllers/secciones dedicadas; `VentasForm`, `VentasEditForm`, `ServicioForm` y `TerceroDetails` tienen tests de composicion.
 - Fase 4 tamanos: no quedan archivos en `src` por encima de 300 lineas, excluyendo tipos generados.
-- Pendiente Fase 4: aplicar migraciones pendientes al remoto y cobertura >=80%.
+- Fase 4 migraciones remotas: aplicada y verificada la migracion de hardening `20260524131500_lock_idempotent_rpc_permissions.sql`; `migrate:validate` queda en `passed` con `securityFailures: {}`.
+- Pendiente Fase 4: cobertura >=80%.
 - Cobertura/tests: suite actual en 241 tests pasando; ultima cobertura medida 44.62% statements / 48.03% lines.
 
 Commits de referencia de esta iteracion:
