@@ -6,10 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
 import { useMetodosPagoStore } from "@/store/metodosPagoStore";
 import { useRouter } from "next/navigation";
-import { queryKeys } from "@/lib/query-keys";
 import { MetodoPago } from "@/types";
 import { AdditionalInfoSection } from "./form/AdditionalInfoSection";
 import { BasicInfoSection } from "./form/BasicInfoSection";
@@ -23,6 +21,7 @@ import {
   metodoPagoSchemaComplete,
   type MetodoPagoFormData,
 } from "./form/schema";
+import { useMetodoPagoFormSubmit } from "./form/useMetodoPagoFormSubmit";
 
 interface MetodoPagoFormProps {
   mode: MetodoPagoFormMode;
@@ -238,86 +237,16 @@ export function MetodoPagoForm({
     setActiveTab("basica");
   };
 
-  const onSubmit = async (data: MetodoPagoFormData) => {
-    try {
-      if (mode === "create") {
-        const metodoPagoData: Omit<
-          MetodoPago,
-          "id" | "createdAt" | "updatedAt"
-        > = {
-          nombre: data.nombre,
-          pais: data.pais,
-          moneda: data.moneda,
-          titular: data.titular,
-          activo: true,
-          asociadoA: data.asociadoA,
-          tipo: "banco",
-          identificador: data.identificador || data.email || "",
-        };
-        if (data.alias) metodoPagoData.alias = data.alias;
-        if (data.notas) metodoPagoData.notas = data.notas;
-        if (data.asociadoA === "tercero" && data.tipoCuenta) {
-          metodoPagoData.identificador = data.identificador || "";
-          metodoPagoData.tipoCuenta = data.tipoCuenta;
-        } else if (data.asociadoA === "servicio") {
-          if (data.email) metodoPagoData.email = data.email;
-          if (data.contrasena) metodoPagoData.contrasena = data.contrasena;
-          if (data.numeroTarjeta)
-            metodoPagoData.numeroTarjeta = data.numeroTarjeta;
-          if (data.fechaExpiracion)
-            metodoPagoData.fechaExpiracion = data.fechaExpiracion;
-        }
-        await createMetodoPago(metodoPagoData);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.metodosPago.all });
-        toast.success("Método de pago creado", {
-          description:
-            "El nuevo método de pago ha sido registrado correctamente.",
-        });
-      } else if (metodoPago) {
-        if (!hasChanges) {
-          toast.info("No hay cambios para guardar");
-          return;
-        }
-
-        const updates: Partial<MetodoPago> = {
-          nombre: data.nombre,
-          pais: data.pais,
-          moneda: data.moneda,
-          titular: data.titular,
-          asociadoA: data.asociadoA,
-          alias: data.alias || "",
-          notas: data.notas || "",
-        };
-        if (data.asociadoA === "tercero") {
-          updates.tipoCuenta = data.tipoCuenta;
-          updates.identificador = data.identificador || "";
-        } else if (data.asociadoA === "servicio") {
-          updates.identificador = data.email || "";
-          updates.email = data.email || "";
-          updates.contrasena = data.contrasena || "";
-          updates.numeroTarjeta = data.numeroTarjeta || "";
-          updates.fechaExpiracion = data.fechaExpiracion || "";
-        }
-        await updateMetodoPago(metodoPago.id, updates);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.metodosPago.all });
-        toast.success("Método de pago actualizado", {
-          description:
-            "Los datos del método de pago han sido guardados correctamente.",
-        });
-      }
-      router.push(returnTo);
-    } catch (error) {
-      const message =
-        mode === "create"
-          ? "Error al crear el método de pago"
-          : "Error al actualizar el método de pago";
-      toast.error(message, {
-        description: error instanceof Error ? error.message : undefined,
-      });
-      console.error(error);
-    }
-  };
-
+  const onSubmit = useMetodoPagoFormSubmit({
+    createMetodoPago,
+    hasChanges,
+    metodoPago,
+    mode,
+    queryClient,
+    returnTo,
+    routerPush: router.push,
+    updateMetodoPago,
+  });
   const onCancel = () => {
     router.push(returnTo);
   };
