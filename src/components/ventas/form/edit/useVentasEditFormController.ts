@@ -12,6 +12,11 @@ import { useVentaEditProfilePendingData } from "@/components/ventas/form/edit/us
 import { hasVentaEditChanges } from "@/components/ventas/form/edit/ventaEditChanges";
 import {
   buildVentaEditPayload,
+  getDisponiblesColorClass,
+  getPerfilesDropdownForEdit,
+  getServicioRankingCandidateIds,
+  getServiciosOrdenadosForEdit,
+  getSlotsDisponiblesForEdit,
   filterTercerosBySearch,
   sortPaymentMethods,
   sortTercerosByNewest,
@@ -29,8 +34,6 @@ import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { getCurrencySymbol } from "@/lib/constants";
 import { updateVentaWithLatestPagoUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { calculateDiscountedAmount, roundToDecimals } from "@/lib/utils/calculations";
-import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
-import { rankServicios } from "@/lib/utils/servicioRanking";
 import {
   getTerceroMetodoPagoMoneda,
   PENDING_TERCERO_PAYMENT_ID,
@@ -197,17 +200,11 @@ export function useVentasEditFormController(venta: VentaEditData) {
     null;
 
   const servicioRankingCandidateIds = useMemo(() => {
-    const ids = new Set<string>();
-    serviciosCategoria.forEach((servicio) => {
-      if (servicio.id === venta.servicioId) {
-        ids.add(servicio.id);
-        return;
-      }
-      if (!servicio.activo || servicio.enReposo) return;
-      if (tipoPlanRanking && servicio.tipo !== tipoPlanRanking) return;
-      ids.add(servicio.id);
+    return getServicioRankingCandidateIds({
+      servicios: serviciosCategoria,
+      tipoPlanRanking,
+      ventaServicioId: venta.servicioId,
     });
-    return Array.from(ids);
   }, [serviciosCategoria, tipoPlanRanking, venta.servicioId]);
 
   const {
@@ -218,54 +215,29 @@ export function useVentasEditFormController(venta: VentaEditData) {
     excludeVentaId: venta.id,
   });
 
-  const serviciosOrdenados = useMemo(() => {
-    const servicioOriginal = serviciosCategoria.find(
-      (servicio) => servicio.id === venta.servicioId,
-    );
-    const serviciosParaCambio = serviciosCategoria
-      .filter((servicio) => {
-        if (servicio.id === venta.servicioId) return false;
-        if (!servicio.activo || servicio.enReposo) return false;
-        if (tipoPlanRanking && servicio.tipo !== tipoPlanRanking) return false;
-        const ocupados =
-          perfilesOcupadosVenta[servicio.id]?.size ??
-          servicio.perfilesOcupados ??
-          0;
-        const disponibles =
-          (servicio.perfilesDisponibles || 0) - ocupados;
-        return disponibles > 0;
-      })
-      .sort((a, b) => {
-        const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bDate - aDate;
-      });
-
-    const rankeados = rankServicios(
-      serviciosParaCambio,
-      ventasActivasPorServicio,
-      {
-        planCicloPago:
-          planParaRanking?.cicloPago ?? venta.cicloPago ?? "mensual",
-        fechaInicio: fechaInicioValue ?? venta.fechaInicio,
+  const serviciosOrdenados = useMemo(
+    () =>
+      getServiciosOrdenadosForEdit({
         fechaFin: fechaFinValue ?? venta.fechaFin,
-      },
-    );
-
-    return servicioOriginal ? [...rankeados, servicioOriginal] : rankeados;
-  }, [
-    fechaFinValue,
-    fechaInicioValue,
-    perfilesOcupadosVenta,
-    planParaRanking,
-    serviciosCategoria,
-    tipoPlanRanking,
-    venta.cicloPago,
-    venta.fechaFin,
-    venta.fechaInicio,
-    venta.servicioId,
-    ventasActivasPorServicio,
-  ]);
+        fechaInicio: fechaInicioValue ?? venta.fechaInicio,
+        perfilesOcupadosVenta,
+        planCicloPago: planParaRanking?.cicloPago ?? venta.cicloPago ?? "mensual",
+        servicios: serviciosCategoria,
+        tipoPlanRanking,
+        venta,
+        ventasActivasPorServicio,
+      }),
+    [
+      fechaFinValue,
+      fechaInicioValue,
+      perfilesOcupadosVenta,
+      planParaRanking,
+      serviciosCategoria,
+      tipoPlanRanking,
+      venta,
+      ventasActivasPorServicio,
+    ],
+  );
 
   const maxServiciosWindowStart = useMemo(
     () =>
@@ -329,76 +301,27 @@ export function useVentasEditFormController(venta: VentaEditData) {
 
   const getSlotsDisponibles = useCallback(
     (servicioId: string) => {
-      const servicio = serviciosCategoria.find(
-        (item) => item.id === servicioId,
-      );
-      if (!servicio) return 0;
-      const ocupadosReales = perfilesOcupadosVenta[servicioId];
-      if (ocupadosReales !== undefined) {
-        return Math.max(
-          (servicio.perfilesDisponibles || 0) - ocupadosReales.size,
-          0,
-        );
-      }
-      const ocupadosActual = servicio.perfilesOcupados || 0;
-      return Math.max((servicio.perfilesDisponibles || 0) - ocupadosActual, 0);
+      return getSlotsDisponiblesForEdit({
+        perfilesOcupadosVenta,
+        servicioId,
+        servicios: serviciosCategoria,
+      });
     },
     [serviciosCategoria, perfilesOcupadosVenta],
   );
 
-  const perfilesDropdown = useMemo(() => {
-    if (!servicioIdValue) return [];
-
-    const totalPerfiles = servicioSeleccionado?.perfilesDisponibles || 0;
-    if (totalPerfiles <= 0) return [];
-
-    const ocupadosEnVentas =
-      perfilesOcupadosVenta[servicioIdValue] ?? new Set<number>();
-    const isDisponible = (numero: number) => !ocupadosEnVentas.has(numero);
-
-    if (totalPerfiles <= PROFILE_PAGE_SIZE) {
-      const disponibles: number[] = [];
-      for (let numero = 1; numero <= totalPerfiles; numero++) {
-        if (!isDisponible(numero)) continue;
-        disponibles.push(numero);
-      }
-      return disponibles;
-    }
-
-    const bloqueTamano = 5;
-    const totalBloques = Math.ceil(totalPerfiles / bloqueTamano);
-
-    for (let bloque = 0; bloque < totalBloques; bloque++) {
-      const inicio = bloque * bloqueTamano + 1;
-      const fin = Math.min(inicio + bloqueTamano - 1, totalPerfiles);
-      const disponiblesBloque: number[] = [];
-
-      for (let numero = inicio; numero <= fin; numero++) {
-        if (!isDisponible(numero)) continue;
-        disponiblesBloque.push(numero);
-      }
-
-      if (disponiblesBloque.length > 0) {
-        return disponiblesBloque;
-      }
-    }
-
-    return [];
-  }, [
-    perfilesOcupadosVenta,
-    servicioIdValue,
-    servicioSeleccionado?.perfilesDisponibles,
-  ]);
-
-  const getDisponiblesColorClass = useCallback(
-    (disponibles: number, total: number) => {
-      if (total <= 0) return "text-muted-foreground";
-      const ratio = disponibles / total;
-      if (ratio <= 0.25) return "text-[#ff1744]";
-      if (ratio <= 0.5) return "text-[#ffea00]";
-      return "text-[#00ff85]";
-    },
-    [],
+  const perfilesDropdown = useMemo(
+    () =>
+      getPerfilesDropdownForEdit({
+        perfilesOcupadosVenta,
+        servicioId: servicioIdValue,
+        servicioSeleccionado,
+      }),
+    [
+      perfilesOcupadosVenta,
+      servicioIdValue,
+      servicioSeleccionado,
+    ],
   );
 
   const scrollServiciosDropdown = useCallback(
