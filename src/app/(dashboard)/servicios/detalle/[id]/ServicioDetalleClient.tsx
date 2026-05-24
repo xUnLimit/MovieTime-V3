@@ -28,6 +28,7 @@ import {
 } from './components/ServicioSaleActionsDialogs';
 import { ServicioSummaryCards } from './components/ServicioSummaryCards';
 import type { CategoriaDetalle, MetodoPagoDetalle, PerfilVenta } from './components/types';
+import { useServicioDeleteAction } from './components/useServicioDeleteAction';
 import { useServicioPaymentActions } from './components/useServicioPaymentActions';
 import { useServicioProfiles } from './components/useServicioProfiles';
 import { useServicioSaleActions } from './components/useServicioSaleActions';
@@ -57,8 +58,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const [categoria, setCategoria] = useState<CategoriaDetalle | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPagoDetalle | null>(null);
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletePayments, setDeletePayments] = useState(false);
   const [ventasServicio, setVentasServicio] = useState<Array<PerfilVenta & { perfilNumero?: number | null }>>([]);
 
   const {
@@ -81,6 +80,21 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     getTemplateByTipo,
     queryClient,
     setVentasServicio,
+  });
+
+  const {
+    deleteDialogOpen,
+    deletePayments,
+    handleConfirmDelete,
+    handleDelete,
+    handleDeleteDialogOpenChange,
+    setDeletePayments,
+  } = useServicioDeleteAction({
+    id,
+    deleteServicio,
+    fetchCounts,
+    queryClient,
+    onDeleted: () => router.push('/servicios'),
   });
 
   // Usar el hook para cargar pagos (con cache)
@@ -135,32 +149,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     setVentasServicio([]);
   }, [isVentasServicioError, ventasServicioError]);
 
-  const handleDelete = () => {
-    setDeletePayments(false);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    try {
-      await deleteServicio(id, deletePayments);
-      if (deletePayments) {
-        toast.success('Servicio eliminado', { description: 'El servicio y todos sus registros de pago han sido eliminados.' });
-      } else {
-        toast.success('Servicio eliminado', { description: 'El servicio fue eliminado. Los registros de pago se conservaron.' });
-      }
-
-      // Refrescar categorías y contadores de servicios para actualizar widgets
-      await Promise.all([
-        fetchCounts(true),
-        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
-      ]);
-
-      router.push('/servicios');
-    } catch (error) {
-      toast.error('Error al eliminar servicio', { description: error instanceof Error ? error.message : undefined });
-    }
-  };
 
 
   const currencySymbol = getCurrencySymbol(metodoPago?.moneda);
@@ -226,11 +214,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   }
 
   const returnToServicios = getReturnToServicios({ from, servicio });
-
-  const handleDeleteDialogOpenChange = (open: boolean) => {
-    setDeleteDialogOpen(open);
-    if (!open) setDeletePayments(false);
-  };
 
   const handleDeleteRenovacionDialogOpenChange = (open: boolean) => {
     setDeleteRenovacionDialogOpen(open);
