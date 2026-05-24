@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { addDays, addMonths } from "date-fns";
+import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -31,7 +31,9 @@ import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio, VentaDoc } from "@/types";
 
 import {
+  buildServicioFormPayload,
   getBillingCycleMonths,
+  getPerfilCapacityError,
   getSimboloMoneda,
 } from "./servicio-form-helpers";
 
@@ -369,46 +371,24 @@ export function useServicioFormController({
         return;
       }
 
-      const servicioData = {
-        nombre: data.nombre,
-        categoriaId: data.categoriaId,
-        categoriaNombre: categoria?.nombre || "",
-        correo: data.correo,
-        contrasena: data.contrasena,
-        tipo: data.tipoPlan,
-        tipoNombre: tipoPlanSeleccionado.nombre,
-        costoServicio: Number(data.costoServicio),
-        perfilesDisponibles: Number(data.perfilesDisponibles),
-        metodoPagoId: data.metodoPagoId,
-        metodoPagoNombre: metodoPagoSeleccionado?.nombre,
-        moneda: metodoPagoSeleccionado?.moneda,
-        cicloPago: data.cicloPago,
-        fechaInicio: data.fechaInicio,
-        fechaVencimiento: data.fechaVencimiento,
-        notas: data.notas,
-        activo: data.estado === "activo",
-        enReposo: data.estado === "reposo",
-        diasReposo:
-          data.estado === "reposo" ? Number(data.diasReposo || 28) : undefined,
-        fechaInicioReposo:
-          data.estado === "reposo" ? data.fechaInicio : undefined,
-        fechaFinReposo:
-          data.estado === "reposo"
-            ? addDays(data.fechaInicio, Number(data.diasReposo || 28))
-            : undefined,
-        renovacionAutomatica: data.renovacionAutomatica,
-        createdBy: "admin",
-        gastosTotal: servicio?.gastosTotal ?? 0,
-      };
+      const servicioData = buildServicioFormPayload({
+        categoria,
+        data,
+        metodoPago: metodoPagoSeleccionado,
+        servicio,
+        tipoPlan: tipoPlanSeleccionado,
+      });
 
       if (servicio?.id) {
         const perfilesNuevos = Number(data.perfilesDisponibles);
-        if (data.estado === "activo" && perfilesNuevos < perfilesOcupadosReal) {
-          const n = perfilesOcupadosReal;
+        const capacityError = getPerfilCapacityError({
+          estado: data.estado,
+          perfilesDisponibles: perfilesNuevos,
+          perfilesOcupados: perfilesOcupadosReal,
+        });
+        if (capacityError) {
           setError("perfilesDisponibles", {
-            message: `No se puede reducir por debajo de los ${n} perfil${
-              n !== 1 ? "es" : ""
-            } actualmente ocupado${n !== 1 ? "s" : ""}`,
+            message: capacityError,
           });
           return;
         }
