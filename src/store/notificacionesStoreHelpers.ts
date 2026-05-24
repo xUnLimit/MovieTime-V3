@@ -1,4 +1,7 @@
-import { queryNotifications } from "@/lib/supabase/notifications-repository";
+import {
+  countNotificaciones,
+  queryNotifications,
+} from "@/lib/supabase/notifications-repository";
 import {
   getServicioNotifications,
   getVentaNotifications,
@@ -29,4 +32,31 @@ export async function getServicioNotificationsToDelete(
         { field: "entidad", operator: "==", value: "servicio" },
         { field: "servicioId", operator: "==", value: servicioId },
       ]);
+}
+
+export async function fetchNotificationCounts() {
+  const [totalNotificaciones, ventasProximas, serviciosProximas, reposoCompletados] =
+    await Promise.all([
+      countNotificaciones(),
+      countNotificaciones([{ field: "entidad", operator: "==", value: "venta" }]),
+      countNotificaciones([{ field: "entidad", operator: "==", value: "servicio" }]),
+      countNotificaciones([{ field: "entidad", operator: "==", value: "reposo" }]),
+    ]);
+
+  return {
+    reposoCompletados,
+    serviciosProximos: serviciosProximas,
+    totalNotificaciones,
+    ventasProximas,
+  };
+}
+
+export function updateNotificationFlag(
+  notificaciones: NotificacionConId[],
+  notifId: string,
+  patch: Partial<Pick<NotificacionConId, "leida" | "resaltada">>,
+) {
+  return notificaciones.map((notificacion) =>
+    notificacion.id === notifId ? { ...notificacion, ...patch } : notificacion,
+  );
 }

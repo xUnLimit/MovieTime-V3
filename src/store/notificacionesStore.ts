@@ -18,7 +18,6 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
 import {
-  countNotificaciones,
   queryNotificaciones,
   removeNotificacion,
   updateNotificacion,
@@ -35,8 +34,10 @@ import {
 } from '@/lib/notifications/notification-store-state';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
 import {
+  fetchNotificationCounts,
   getServicioNotificationsToDelete,
   getVentaNotificationsToDelete,
+  updateNotificationFlag,
 } from './notificacionesStoreHelpers';
 
 interface NotificacionesState {
@@ -123,24 +124,9 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
     }
   },
 
-  /**
-   * Fetch count metrics using getCount() — free on Spark plan, 0 document reads
-   */
   fetchCounts: async () => {
     try {
-      const [totalNotificaciones, ventasProximas, serviciosProximas, reposoCompletados] = await Promise.all([
-        countNotificaciones(),
-        countNotificaciones([{ field: 'entidad', operator: '==', value: 'venta' }]),
-        countNotificaciones([{ field: 'entidad', operator: '==', value: 'servicio' }]),
-        countNotificaciones([{ field: 'entidad', operator: '==', value: 'reposo' }]),
-      ]);
-
-      set({
-        totalNotificaciones,
-        ventasProximas,
-        serviciosProximos: serviciosProximas,
-        reposoCompletados,
-      });
+      set(await fetchNotificationCounts());
 
     } catch (error) {
       console.error('[NotificacionesStore] Error fetching counts:', error);
@@ -153,16 +139,11 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
     }
   },
 
-  /**
-   * Mark notification as read/unread
-   */
   toggleLeida: async (notifId: string, leida: boolean) => {
     const state = get();
 
     // Optimistic update
-    const updatedNotifs = state.notificaciones.map((n) =>
-      n.id === notifId ? { ...n, leida } : n
-    );
+    const updatedNotifs = updateNotificationFlag(state.notificaciones, notifId, { leida });
     set({ notificaciones: updatedNotifs });
 
     try {
@@ -178,16 +159,11 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
     }
   },
 
-  /**
-   * Mark notification as highlighted/starred
-   */
   toggleResaltada: async (notifId: string, resaltada: boolean) => {
     const state = get();
 
     // Optimistic update
-    const updatedNotifs = state.notificaciones.map((n) =>
-      n.id === notifId ? { ...n, resaltada } : n
-    );
+    const updatedNotifs = updateNotificationFlag(state.notificaciones, notifId, { resaltada });
     set({ notificaciones: updatedNotifs });
 
     try {
