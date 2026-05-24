@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
 import { invalidateDashboardCache } from '@/lib/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
-import { storeEventBus } from '@/lib/events/store-event-bus';
 import {
   createVentaRefundUseCase,
   deleteVentaPagoUseCase,
@@ -22,6 +21,7 @@ import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
+import { emitVentaUpdated } from './venta-detalle-events';
 import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
 
 type UseVentaDetalleActionsParams = {
@@ -37,10 +37,6 @@ type UseVentaDetalleActionsParams = {
   setVentaData: (nextVenta: VentaDoc | null) => void;
   venta: VentaDoc | null;
 };
-
-function emitVentaUpdated(ventaId: string) {
-  storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
-}
 
 export function useVentaDetalleActions({
   deleteNotificacionesPorVenta,
