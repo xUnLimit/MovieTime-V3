@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { differenceInDays, format, startOfDay } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -40,76 +40,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { queryKeys } from "@/lib/query-keys";
-import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
 import { queryNotifications } from "@/lib/supabase/notifications-repository";
-import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios-use-cases';
 import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import type { Servicio } from "@/types/servicios";
-import type { MetodoPago } from "@/types/metodos-pago";
 import { toast } from "sonner";
-
-interface ReposoServicio extends Servicio {
-  diasRestantes: number;
-  progreso: number;
-  estadoReposo: "en_proceso" | "proximo_finalizar" | "completado";
-}
-
-function calcularReposoData(servicio: Servicio): ReposoServicio {
-  const hoy = startOfDay(new Date());
-  const fechaFin = servicio.fechaFinReposo
-    ? startOfDay(new Date(servicio.fechaFinReposo))
-    : hoy;
-  const fechaInicio = servicio.fechaInicioReposo
-    ? startOfDay(new Date(servicio.fechaInicioReposo))
-    : hoy;
-  const diasRestantes = differenceInDays(fechaFin, hoy);
-  const diasTotales =
-    servicio.diasReposo || differenceInDays(fechaFin, fechaInicio) || 1;
-  const diasTranscurridos = diasTotales - diasRestantes;
-  const progreso = Math.min(
-    100,
-    Math.max(0, (diasTranscurridos / diasTotales) * 100),
-  );
-
-  let estadoReposo: ReposoServicio["estadoReposo"] = "en_proceso";
-  if (diasRestantes <= 0) estadoReposo = "completado";
-  else if (diasRestantes <= 7) estadoReposo = "proximo_finalizar";
-
-  return { ...servicio, diasRestantes, progreso, estadoReposo };
-}
-
-async function fetchReposoServicesQuery(): Promise<ReposoServicio[]> {
-  const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
-    { field: "enReposo", operator: "==", value: true },
-  ]);
-  const enriched = servicios.map(calcularReposoData);
-  return enriched.sort((a, b) => {
-    if (a.estadoReposo === "completado" && b.estadoReposo !== "completado")
-      return -1;
-    if (a.estadoReposo !== "completado" && b.estadoReposo === "completado")
-      return 1;
-    return a.diasRestantes - b.diasRestantes;
-  });
-}
-
-async function fetchServicioMetodosPagoQuery(): Promise<MetodoPago[]> {
-  return queryMetodosPago<MetodoPago>([
-    { field: "asociadoA", operator: "==", value: "servicio" },
-  ]);
-}
+import {
+  fetchReposoServicesQuery,
+  fetchServicioMetodosPagoQuery,
+  filterReposoServicios,
+  getReposoMetrics,
+  type ReposoServicio,
+} from "./reposo-helpers";
 
 function ServiciosReposoMetrics({ servicios }: { servicios: ReposoServicio[] }) {
-  const enProceso = servicios.filter(
-    (s) => s.estadoReposo === "en_proceso",
-  ).length;
-  const proximosFinalizar = servicios.filter(
-    (s) => s.estadoReposo === "proximo_finalizar",
-  ).length;
-  const completados = servicios.filter(
-    (s) => s.estadoReposo === "completado",
-  ).length;
+  const { completados, enProceso, proximosFinalizar } =
+    getReposoMetrics(servicios);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -173,21 +120,15 @@ function ReposoPageContent() {
     enabled: renovarDialogOpen,
   });
 
-  const filteredServicios = useMemo(() => {
-    let result = serviciosReposo;
-    if (estadoFilter !== "all") {
-      result = result.filter((s) => s.estadoReposo === estadoFilter);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.nombre.toLowerCase().includes(q) ||
-          s.correo.toLowerCase().includes(q),
-      );
-    }
-    return result;
-  }, [serviciosReposo, search, estadoFilter]);
+  const filteredServicios = useMemo(
+    () =>
+      filterReposoServicios({
+        estadoFilter,
+        search,
+        servicios: serviciosReposo,
+      }),
+    [serviciosReposo, search, estadoFilter],
+  );
 
   const limpiarNotificacionesReposo = async (servicioId: string) => {
     try {
