@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Notification Synchronization Service
  *
  * Purpose: Keep notifications collection in sync with ventas and servicios expirations
@@ -13,16 +13,21 @@
  * Run migration first: npm run migrate:venta-fechas
  */
 
-import { addDays, differenceInDays, startOfDay } from 'date-fns';
-import { createNotificacion, queryNotificaciones, removeNotificacion, updateNotificacion } from '@/lib/supabase/notifications-repository';
-import { getMetodoPagoById, queryMetodosPago } from '@/lib/supabase/catalogos-repository';
+import { addDays, startOfDay } from 'date-fns';
+import { queryNotificaciones, removeNotificacion } from '@/lib/supabase/notifications-repository';
+import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
 import { getServicioById, queryServicios } from '@/lib/supabase/servicios-repository';
 import { getVentaById, queryVentas } from '@/lib/supabase/ventas-repository';
+import { limpiarNotificacionesHuerfanas } from '@/lib/notifications/notification-cleanup';
 import {
-  calcularPrioridad,
-  generarTitulo,
-  prioridadSubio,
-} from '@/lib/notifications/notification-calculator';
+  procesarNotificacionReposo,
+} from '@/lib/notifications/reposo-notification-sync';
+import {
+  procesarNotificacionServicio,
+} from '@/lib/notifications/servicio-notification-sync';
+import {
+  procesarNotificacionVenta,
+} from '@/lib/notifications/venta-notification-sync';
 import type {
   Notificacion,
   NotificacionVenta,
@@ -61,282 +66,6 @@ function marcarSincronizado(): void {
   ultimaSincronizacion = new Date().toDateString();
 }
 
-function obtenerTerminacionTarjeta(metodoPago?: Pick<MetodoPago, 'numeroTarjeta'> | null): string {
-  return metodoPago?.numeroTarjeta?.replace(/\D/g, '').slice(-4) || '';
-}
-
-function obtenerAliasMetodoPago(metodoPago?: Pick<MetodoPago, 'alias'> | null): string {
-  return metodoPago?.alias?.trim() || '';
-}
-
-/**
- * Process a single venta and create/update notification
- *
- * @param venta - VentaDoc with denormalized fechaFin
- * @param notifExistente - Pre-fetched existing notification if any
- */
-async function procesarNotificacionVenta(
-  venta: VentaDoc,
-  notifExistente?: NotificacionVenta & { id: string },
-  forzarActualizacion = false,
-  metodosPagoById?: Map<string, MetodoPago>
-): Promise<void> {
-  // Validate required denormalized field (fechaFin es el único crítico para calcular diasRestantes)
-  if (!venta.fechaFin) {
-    console.warn(
-      `[NotificationSync] Venta ${venta.id} missing fechaFin. Skipping.`
-    );
-    return;
-  }
-
-  const diasRestantes = differenceInDays(startOfDay(new Date(venta.fechaFin)), startOfDay(new Date()));
-  const nuevaPrioridad = calcularPrioridad(diasRestantes);
-  const metodoPago = venta.metodoPagoId ? metodosPagoById?.get(venta.metodoPagoId) : undefined;
-
-  // Prepare denormalized data
-  const datosNotificacion: Omit<NotificacionVenta, 'id' | 'createdAt'> = {
-    entidad: 'venta',
-    tipo: 'sistema',
-    prioridad: nuevaPrioridad,
-    titulo: generarTitulo(diasRestantes, 'venta'),
-    diasRestantes,
-    leida: false,
-    resaltada: false,
-
-    // References
-    ventaId: venta.id,
-    clienteId: venta.clienteId || '',
-    servicioId: venta.servicioId,
-    categoriaId: venta.categoriaId,
-
-    // Denormalized from VentaDoc
-    clienteNombre: venta.clienteNombre,
-    clienteTelefono: venta.clienteTelefono,  // For WhatsApp notifications
-    servicioNombre: venta.servicioNombre,
-    servicioCorreo: venta.servicioCorreo,  // For WhatsApp messages
-    servicioContrasena: venta.servicioContrasena,  // For WhatsApp messages
-    categoriaNombre: venta.categoriaNombre || '',
-    perfilNombre: venta.perfilNombre,
-    codigo: venta.codigo,  // For WhatsApp messages
-    estado: venta.estado || 'activo',
-
-    // Denormalized from PagoVenta (denormalized en VentaDoc)
-    cicloPago: venta.cicloPago,
-    fechaInicio: venta.fechaInicio,
-    fechaFin: venta.fechaFin,
-    precioFinal: venta.precioFinal, // Final price after discount
-    metodoPagoId: venta.metodoPagoId, // For renewals
-    metodoPagoNombre: venta.metodoPagoNombre || metodoPago?.nombre,
-    moneda: venta.moneda, // Currency
-
-    updatedAt: new Date(),
-  };
-
-  if (notifExistente) {
-    // Update existing notification
-    // Update if diasRestantes changed, or if forced refresh
-    if (forzarActualizacion || notifExistente.diasRestantes !== diasRestantes) {
-      const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
-
-      await updateNotificacion(notifExistente.id, {
-        ...datosNotificacion,
-        leida: aumentoPrioridad ? false : notifExistente.leida, // Mark as unread if priority increased
-        resaltada: notifExistente.resaltada, // Always preserve highlighted state
-      });
-    }
-  } else {
-    // Create new notification
-    await createNotificacion(datosNotificacion as Record<string, unknown>);
-  }
-}
-
-/**
- * Process a single servicio and create/update notification
- *
- * @param servicio - Servicio document
- * @param notifExistente - Pre-fetched existing notification if any
- */
-async function procesarNotificacionServicio(
-  servicio: Servicio,
-  notifExistente?: NotificacionServicio & { id: string },
-  forzarActualizacion = false,
-  metodosPagoById?: Map<string, MetodoPago>
-): Promise<void> {
-  if (!servicio.fechaVencimiento) {
-    console.warn(
-      `[NotificationSync] Servicio ${servicio.id} missing fechaVencimiento. Skipping.`
-    );
-    return;
-  }
-
-  const diasRestantes = differenceInDays(startOfDay(new Date(servicio.fechaVencimiento)), startOfDay(new Date()));
-  const nuevaPrioridad = calcularPrioridad(diasRestantes);
-  const metodoPago = servicio.metodoPagoId
-    ? metodosPagoById?.get(servicio.metodoPagoId) ?? await getMetodoPagoById<MetodoPago>(servicio.metodoPagoId)
-    : null;
-  const metodoPagoAlias = obtenerAliasMetodoPago(metodoPago);
-  const metodoPagoTarjetaTerminacion = obtenerTerminacionTarjeta(metodoPago);
-  const renovacionAutomatica = servicio.renovacionAutomatica === true;
-
-  // Prepare denormalized data
-  const datosNotificacion: Omit<NotificacionServicio, 'id' | 'createdAt'> = {
-    entidad: 'servicio',
-    tipo: 'sistema',
-    prioridad: nuevaPrioridad,
-    titulo: generarTitulo(diasRestantes, 'servicio'),
-    diasRestantes,
-    leida: false,
-    resaltada: false,
-
-    // References
-    servicioId: servicio.id,
-    categoriaId: servicio.categoriaId,
-
-    // Denormalized from Servicio
-    servicioNombre: servicio.nombre,
-    categoriaNombre: servicio.categoriaNombre || '',
-    tipoServicio: servicio.tipo,
-    correo: servicio.correo,
-    contrasena: servicio.contrasena,
-    metodoPagoNombre: servicio.metodoPagoNombre || '',
-    metodoPagoAlias,
-    metodoPagoTarjetaTerminacion,
-    moneda: servicio.moneda || 'USD',
-    costoServicio: servicio.costoServicio,
-    cicloPago: servicio.cicloPago || 'mensual',
-    fechaVencimiento: servicio.fechaVencimiento,
-    renovacionAutomatica,
-
-    updatedAt: new Date(),
-  };
-
-  if (notifExistente) {
-    // Update existing
-    // Update if status or denormalized display data changed, or if forced refresh
-    const debeActualizar =
-      forzarActualizacion ||
-      notifExistente.diasRestantes !== diasRestantes ||
-      notifExistente.metodoPagoNombre !== datosNotificacion.metodoPagoNombre ||
-      (notifExistente.metodoPagoAlias || '') !== metodoPagoAlias ||
-      (notifExistente.metodoPagoTarjetaTerminacion || '') !== metodoPagoTarjetaTerminacion ||
-      (notifExistente.renovacionAutomatica ?? false) !== renovacionAutomatica;
-
-    if (debeActualizar) {
-      const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
-
-      await updateNotificacion(notifExistente.id, {
-        ...datosNotificacion,
-        leida: aumentoPrioridad ? false : notifExistente.leida,
-        resaltada: notifExistente.resaltada, // Always preserve highlighted state
-      });
-    }
-  } else {
-    // Create new
-    await createNotificacion(datosNotificacion as Record<string, unknown>);
-  }
-}
-
-/**
- * Process a reposo service and create/update completion notification
- * Only creates notification when fechaFinReposo <= today (reposo completed)
- */
-async function procesarNotificacionReposo(
-  servicio: Servicio,
-  notifExistente?: NotificacionReposo & { id: string },
-  forzarActualizacion = false
-): Promise<void> {
-  if (!servicio.fechaFinReposo) return;
-
-  const diasRestantes = differenceInDays(startOfDay(new Date(servicio.fechaFinReposo)), startOfDay(new Date()));
-
-  // Only notify when reposo is completed or about to complete (within 7 days)
-  if (diasRestantes > 7) return;
-
-  const nuevaPrioridad = diasRestantes <= 0 ? 'critica' : diasRestantes <= 3 ? 'alta' : 'media';
-  const titulo = diasRestantes <= 0
-    ? `Reposo completado — ${servicio.nombre}`
-    : `Reposo finaliza en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''} — ${servicio.nombre}`;
-
-  const datosNotificacion: Omit<NotificacionReposo, 'id' | 'createdAt'> = {
-    entidad: 'reposo',
-    tipo: 'sistema',
-    prioridad: nuevaPrioridad,
-    titulo,
-    diasRestantes,
-    leida: false,
-    resaltada: false,
-    servicioId: servicio.id,
-    categoriaId: servicio.categoriaId,
-    servicioNombre: servicio.nombre,
-    categoriaNombre: servicio.categoriaNombre || '',
-    correo: servicio.correo,
-    fechaInicio: servicio.fechaInicio,
-    fechaFin: servicio.fechaVencimiento,
-    diasReposo: servicio.diasReposo || 28,
-    fechaInicioReposo: servicio.fechaInicioReposo!,
-    fechaFinReposo: servicio.fechaFinReposo,
-    updatedAt: new Date(),
-  };
-
-  if (notifExistente) {
-    const debeActualizar =
-      forzarActualizacion ||
-      notifExistente.diasRestantes !== diasRestantes ||
-      notifExistente.titulo !== titulo;
-
-    if (debeActualizar) {
-      const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
-      await updateNotificacion(notifExistente.id, {
-        ...datosNotificacion,
-        leida: aumentoPrioridad ? false : notifExistente.leida,
-        resaltada: notifExistente.resaltada,
-      });
-    }
-  } else {
-    await createNotificacion(datosNotificacion as Record<string, unknown>);
-  }
-}
-
-/**
- * Remove notifications whose venta/servicio no longer exists or is no longer active
- * This handles the case where a venta/servicio was deleted outside of the notification flow
- */
-async function limpiarNotificacionesHuerfanas(
-  ventasActivas: VentaDoc[],
-  serviciosActivos: Servicio[],
-  serviciosReposo: Servicio[],
-  notifExistentesVenta: (NotificacionVenta & { id: string })[],
-  notifExistentesServicio: (NotificacionServicio & { id: string })[],
-  notifExistentesReposo: (NotificacionReposo & { id: string })[]
-): Promise<void> {
-  try {
-    const ventaIdsActivos = new Set(ventasActivas.map(v => v.id));
-    const servicioIdsActivos = new Set(serviciosActivos.map(s => s.id));
-    const reposoIdsActivos = new Set(serviciosReposo.map(s => s.id));
-
-    const huerfanas: (Notificacion & { id: string })[] = [
-      ...notifExistentesVenta.filter(n => !ventaIdsActivos.has(n.ventaId)),
-      ...notifExistentesServicio.filter(n => !servicioIdsActivos.has(n.servicioId)),
-      ...notifExistentesReposo.filter(n => !reposoIdsActivos.has(n.servicioId)),
-    ];
-
-    if (huerfanas.length > 0) {
-      // Use parallel deletion
-      await Promise.all(huerfanas.map(notif => removeNotificacion(notif.id)));
-    }
-  } catch (error) {
-    // Cleanup is best-effort, don't fail the sync
-    console.warn('[NotificationSync] Error cleaning up orphan notifications:', error);
-  }
-}
-
-/**
- * Main synchronization function
- * Call this once per page load (e.g., in dashboard layout useEffect)
- * Uses localStorage cache to prevent multiple syncs per day
- *
- * Performance: ~1-2 seconds with bulk reads and parallel writes.
- */
 export async function sincronizarNotificaciones(forzarActualizacion = false): Promise<void> {
   // Check if already synced today (skip check when forcing)
   if (!forzarActualizacion && !debesSincronizar()) {
