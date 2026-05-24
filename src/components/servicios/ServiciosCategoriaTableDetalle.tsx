@@ -1,30 +1,21 @@
 "use client";
 
 import { memo, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Edit, Eye, MoreHorizontal, Repeat, Search, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataTable } from "@/components/shared/DataTable";
-import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
 import { PaginationFooter } from "@/components/shared/PaginationFooter";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { queryKeys } from "@/lib/query-keys";
 import { useServiciosStore } from "@/store/serviciosStore";
 import type { Servicio } from "@/types";
+import { ServiciosCategoriaTableDetalleActions } from "./ServiciosCategoriaTableDetalleActions";
+import { ServiciosCategoriaTableDetalleToolbar } from "./ServiciosCategoriaTableDetalleToolbar";
 
 import {
   serviciosCategoriaColumnsForDataTable,
@@ -54,20 +45,6 @@ interface ServiciosCategoriaTableDetalleProps {
   onNext: () => void;
   onPrevious: () => void;
 }
-
-const cicloOptions = [
-  { value: "todos", label: "Todos los ciclos" },
-  { value: "mensual", label: "Mensual" },
-  { value: "trimestral", label: "Trimestral" },
-  { value: "semestral", label: "Semestral" },
-  { value: "anual", label: "Anual" },
-];
-
-const perfilOptions = [
-  { value: "todos", label: "Todos los perfiles" },
-  { value: "con_disponibles", label: "Con perfiles disponibles" },
-  { value: "sin_disponibles", label: "Sin perfiles disponibles" },
-];
 
 export const ServiciosCategoriaTableDetalle = memo(
   function ServiciosCategoriaTableDetalle({
@@ -99,13 +76,6 @@ export const ServiciosCategoriaTableDetalle = memo(
       null,
     );
     const [deletePayments, setDeletePayments] = useState(false);
-
-    const cicloLabel =
-      cicloOptions.find((option) => option.value === cicloFilter)?.label ??
-      "Todos los ciclos";
-    const perfilLabel =
-      perfilOptions.find((option) => option.value === perfilFilter)?.label ??
-      "Todos los perfiles";
 
     const serviciosOrdenables = useMemo(
       () =>
@@ -157,65 +127,14 @@ export const ServiciosCategoriaTableDetalle = memo(
       <>
         <Card className="min-w-0 p-3 pb-2 sm:p-4 sm:pb-2">
           <h3 className="text-lg font-semibold sm:text-xl">{title}</h3>
-          <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_200px_200px] sm:items-center sm:gap-4">
-            <div className="relative min-w-0">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre o email..."
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-9"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between gap-2 font-normal"
-                >
-                  <FilterTriggerContent icon={Repeat} label={cicloLabel} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-                {cicloOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onSelect={() => onCicloChange(option.value)}
-                    className="dashboard-toolbar-menu-item"
-                  >
-                    <span className="dashboard-toolbar-menu-item-label">
-                      {option.label}
-                    </span>
-                    {cicloFilter === option.value && <Check className="h-4 w-4" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between gap-2 font-normal"
-                >
-                  <FilterTriggerContent icon={UserRound} label={perfilLabel} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-                {perfilOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onSelect={() => onPerfilChange(option.value)}
-                    className="dashboard-toolbar-menu-item"
-                  >
-                    <span className="dashboard-toolbar-menu-item-label">
-                      {option.label}
-                    </span>
-                    {perfilFilter === option.value && <Check className="h-4 w-4" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <ServiciosCategoriaTableDetalleToolbar
+            cicloFilter={cicloFilter}
+            onCicloChange={onCicloChange}
+            onPerfilChange={onPerfilChange}
+            onSearchChange={onSearchChange}
+            perfilFilter={perfilFilter}
+            searchTerm={searchTerm}
+          />
 
           <div>
             <DataTable
@@ -229,42 +148,12 @@ export const ServiciosCategoriaTableDetalle = memo(
               actions={(item) => {
                 const servicio = item as unknown as Servicio;
                 return (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {onView && (
-                        <DropdownMenuItem asChild>
-                          <Link
-                            prefetch={false}
-                            href={`/servicios/detalle/${servicio.id}?from=${encodeURIComponent(pathname)}`}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Ver detalles
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem asChild>
-                        <Link
-                          prefetch={false}
-                          href={`/servicios/${servicio.id}/editar?from=${encodeURIComponent(pathname)}`}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(servicio)}
-                        className="text-red-500 focus:text-red-500"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ServiciosCategoriaTableDetalleActions
+                    onDelete={handleDelete}
+                    onView={onView}
+                    pathname={pathname}
+                    servicio={servicio}
+                  />
                 );
               }}
             />
