@@ -5,6 +5,9 @@ import type { Servicio, Tercero, VentaDoc } from "@/types";
 import {
   buildTransferVentaForMessage,
   buildTransferWhatsAppToast,
+  getCicloPagoLabel,
+  getReturnToServicios,
+  sortPagosServicioByNewest,
   toPerfilVenta,
 } from "./servicio-detalle-helpers";
 
@@ -87,5 +90,29 @@ describe("servicio-detalle-helpers", () => {
     });
     expect(toast.message).toContain("Netflix Nuevo");
     expect(toast.description).toContain("Ana Perez");
+  });
+
+  it("sorts payments and resolves display helpers", () => {
+    expect(getCicloPagoLabel("trimestral")).toBe("Trimestral");
+    expect(getCicloPagoLabel("custom")).toBe("custom");
+    expect(
+      getReturnToServicios({
+        from: "/servicios/cat-2",
+        servicio: { categoriaId: "cat-1" } as Servicio,
+      }),
+    ).toBe("/servicios/cat-2");
+    expect(
+      getReturnToServicios({
+        from: "/ventas",
+        servicio: { categoriaId: "cat-1" } as Servicio,
+      }),
+    ).toBe("/servicios/cat-1");
+
+    const pagos = sortPagosServicioByNewest([
+      { id: "old", fecha: new Date("2026-01-01T00:00:00.000Z") },
+      { id: "new", fecha: new Date("2026-03-01T00:00:00.000Z") },
+    ] as Parameters<typeof sortPagosServicioByNewest>[0]);
+
+    expect(pagos.map((pago) => pago.id)).toEqual(["new", "old"]);
   });
 });

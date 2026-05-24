@@ -3,7 +3,7 @@ import { getServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
 import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { buildServiceTransferMessage } from "@/lib/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
-import type { MetodoPago, Servicio, Tercero, VentaDoc } from "@/types";
+import type { MetodoPago, PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";
 
 import type {
   CategoriaDetalle,
@@ -133,4 +133,32 @@ export function buildTransferWhatsAppToast({
       ? `${selectedActionVenta.clienteNombre} recibira las credenciales de ${targetServicio.nombre}.`
       : `${selectedActionVenta.clienteNombre} no tiene telefono registrado. Puedes copiar el mensaje.`,
   };
+}
+
+export function getCicloPagoLabel(ciclo: string) {
+  const labels: Record<string, string> = {
+    mensual: "Mensual",
+    trimestral: "Trimestral",
+    semestral: "Semestral",
+    anual: "Anual",
+  };
+  return labels[ciclo] || ciclo;
+}
+
+export function sortPagosServicioByNewest(pagos: PagoServicio[]) {
+  return [...pagos].sort(
+    (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
+  );
+}
+
+export function getReturnToServicios({
+  from,
+  servicio,
+}: {
+  from: string | null;
+  servicio: Pick<Servicio, "categoriaId"> | null;
+}) {
+  if (from && from.startsWith("/servicios/")) return from;
+  if (servicio?.categoriaId) return `/servicios/${servicio.categoriaId}`;
+  return "/servicios";
 }

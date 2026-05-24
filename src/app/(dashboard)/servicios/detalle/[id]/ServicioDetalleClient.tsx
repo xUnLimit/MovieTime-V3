@@ -48,6 +48,9 @@ import {
   buildTransferWhatsAppToast,
   fetchServicioDetalleBundle,
   fetchServicioVentasProfiles,
+  getCicloPagoLabel,
+  getReturnToServicios,
+  sortPagosServicioByNewest,
 } from './servicio-detalle-helpers';
 
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
@@ -415,22 +418,13 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     }
   };
 
-  const getCicloPagoLabel = (ciclo: string) => {
-    const labels: Record<string, string> = {
-      mensual: 'Mensual',
-      trimestral: 'Trimestral',
-      semestral: 'Semestral',
-      anual: 'Anual',
-    };
-    return labels[ciclo] || ciclo;
-  };
-
   const currencySymbol = getCurrencySymbol(metodoPago?.moneda);
   const { isCalculatingTotal, totalGastadoUSD } = useTotalGastadoUSD(pagosServicio);
 
-  const pagosOrdenados = useMemo(() => {
-    return [...pagosServicio].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-  }, [pagosServicio]);
+  const pagosOrdenados = useMemo(
+    () => sortPagosServicioByNewest(pagosServicio),
+    [pagosServicio],
+  );
 
   const {
     expandedProfileNumber,
@@ -455,11 +449,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     return <ServicioNotFoundState />;
   }
 
-  const returnToServicios = (() => {
-    if (from && from.startsWith('/servicios/')) return from;
-    if (servicio?.categoriaId) return `/servicios/${servicio.categoriaId}`;
-    return '/servicios';
-  })();
+  const returnToServicios = getReturnToServicios({ from, servicio });
 
   const handleDeleteDialogOpenChange = (open: boolean) => {
     setDeleteDialogOpen(open);
