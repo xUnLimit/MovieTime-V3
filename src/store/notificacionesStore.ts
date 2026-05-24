@@ -25,12 +25,22 @@ import {
   updateNotificacion,
 } from '@/lib/supabase/notifications-repository';
 import { CACHE_TTL_MS } from '@/lib/constants';
+import {
+  getNotificationListState,
+  getServicioNotifications,
+  getTypedReposoNotifications,
+  getTypedServicioNotifications,
+  getTypedVentaNotifications,
+  getVentaNotifications,
+  removeServicioNotifications,
+  removeVentaNotifications,
+  type NotificacionConId,
+} from '@/lib/notifications/notification-store-state';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
-import { esNotificacionVenta, esNotificacionServicio, esNotificacionReposo } from '@/types/notificaciones';
 
 interface NotificacionesState {
   // State
-  notificaciones: (Notificacion & { id: string })[];
+  notificaciones: NotificacionConId[];
   isLoading: boolean;
   error: string | null;
   lastFetch: number | null;
@@ -92,22 +102,10 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
     set({ isLoading: true, error: null });
 
     try {
-      const notificaciones = (await queryNotificaciones([])) as (
-        Notificacion & { id: string }
-      )[];
-
-      // Calculate counts from fetched data
-      const totalNotificaciones = notificaciones.length;
-      const ventasProximas = notificaciones.filter(esNotificacionVenta).length;
-      const serviciosProximos = notificaciones.filter(esNotificacionServicio).length;
-      const reposoCompletados = notificaciones.filter(esNotificacionReposo).length;
+      const notificaciones = (await queryNotificaciones([])) as NotificacionConId[];
 
       set({
-        notificaciones,
-        totalNotificaciones,
-        ventasProximas,
-        serviciosProximos,
-        reposoCompletados,
+        ...getNotificationListState(notificaciones),
         isLoading: false,
         error: null,
         lastFetch: Date.now(),
@@ -213,31 +211,13 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
     // Optimistic update
     const updatedNotifs = state.notificaciones.filter((n) => n.id !== notifId);
 
-    // Update counts
-    const totalNotificaciones = updatedNotifs.length;
-    const ventasProximas = updatedNotifs.filter(esNotificacionVenta).length;
-    const serviciosProximos = updatedNotifs.filter(esNotificacionServicio).length;
-    const reposoCompletados = updatedNotifs.filter(esNotificacionReposo).length;
-
-    set({
-      notificaciones: updatedNotifs,
-      totalNotificaciones,
-      ventasProximas,
-      serviciosProximos,
-      reposoCompletados,
-    });
+    set(getNotificationListState(updatedNotifs));
 
     try {
       await removeNotificacion(notifId);
     } catch (error) {
       // Rollback on error
-      set({
-        notificaciones: state.notificaciones,
-        totalNotificaciones: state.totalNotificaciones,
-        ventasProximas: state.ventasProximas,
-        serviciosProximos: state.serviciosProximos,
-        reposoCompletados: state.reposoCompletados,
-      });
+      set(getNotificationListState(state.notificaciones));
       console.error('[NotificacionesStore] Error deleting notification:', error);
       throw error;
     }
@@ -250,34 +230,24 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
   deleteNotificacionesPorVenta: async (ventaId: string) => {
     const state = get();
 
-    const localNotifsToDelete = state.notificaciones.filter(
-      (n) => esNotificacionVenta(n) && n.ventaId === ventaId
+    const localNotifsToDelete = getVentaNotifications(
+      state.notificaciones,
+      ventaId,
     );
     const notifsToDelete = localNotifsToDelete.length > 0
       ? localNotifsToDelete
-      : await queryNotifications<(Notificacion & { id: string })>([
+      : await queryNotifications<NotificacionConId>([
           { field: 'entidad', operator: '==', value: 'venta' },
           { field: 'ventaId', operator: '==', value: ventaId },
         ]);
 
     // Optimistic update
-    const updatedNotifs = state.notificaciones.filter(
-      (n) => !(esNotificacionVenta(n) && n.ventaId === ventaId)
+    const updatedNotifs = removeVentaNotifications(
+      state.notificaciones,
+      ventaId,
     );
 
-    // Update counts
-    const totalNotificaciones = updatedNotifs.length;
-    const ventasProximas = updatedNotifs.filter(esNotificacionVenta).length;
-    const serviciosProximos = updatedNotifs.filter(esNotificacionServicio).length;
-    const reposoCompletados = updatedNotifs.filter(esNotificacionReposo).length;
-
-    set({
-      notificaciones: updatedNotifs,
-      totalNotificaciones,
-      ventasProximas,
-      serviciosProximos,
-      reposoCompletados,
-    });
+    set(getNotificationListState(updatedNotifs));
 
     try {
       // Delete all notifications for this venta
@@ -286,13 +256,7 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
       );
     } catch (error) {
       // Rollback on error
-      set({
-        notificaciones: state.notificaciones,
-        totalNotificaciones: state.totalNotificaciones,
-        ventasProximas: state.ventasProximas,
-        serviciosProximos: state.serviciosProximos,
-        reposoCompletados: state.reposoCompletados,
-      });
+      set(getNotificationListState(state.notificaciones));
       console.error('[NotificacionesStore] Error deleting venta notifications:', error);
       throw error;
     }
@@ -305,34 +269,24 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
   deleteNotificacionesPorServicio: async (servicioId: string) => {
     const state = get();
 
-    const localNotifsToDelete = state.notificaciones.filter(
-      (n) => esNotificacionServicio(n) && n.servicioId === servicioId
+    const localNotifsToDelete = getServicioNotifications(
+      state.notificaciones,
+      servicioId,
     );
     const notifsToDelete = localNotifsToDelete.length > 0
       ? localNotifsToDelete
-      : await queryNotifications<(Notificacion & { id: string })>([
+      : await queryNotifications<NotificacionConId>([
           { field: 'entidad', operator: '==', value: 'servicio' },
           { field: 'servicioId', operator: '==', value: servicioId },
         ]);
 
     // Optimistic update
-    const updatedNotifs = state.notificaciones.filter(
-      (n) => !(esNotificacionServicio(n) && n.servicioId === servicioId)
+    const updatedNotifs = removeServicioNotifications(
+      state.notificaciones,
+      servicioId,
     );
 
-    // Update counts
-    const totalNotificaciones = updatedNotifs.length;
-    const ventasProximas = updatedNotifs.filter(esNotificacionVenta).length;
-    const serviciosProximos = updatedNotifs.filter(esNotificacionServicio).length;
-    const reposoCompletados = updatedNotifs.filter(esNotificacionReposo).length;
-
-    set({
-      notificaciones: updatedNotifs,
-      totalNotificaciones,
-      ventasProximas,
-      serviciosProximos,
-      reposoCompletados,
-    });
+    set(getNotificationListState(updatedNotifs));
 
     try {
       // Delete all notifications for this servicio
@@ -341,13 +295,7 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
       );
     } catch (error) {
       // Rollback on error
-      set({
-        notificaciones: state.notificaciones,
-        totalNotificaciones: state.totalNotificaciones,
-        ventasProximas: state.ventasProximas,
-        serviciosProximos: state.serviciosProximos,
-        reposoCompletados: state.reposoCompletados,
-      });
+      set(getNotificationListState(state.notificaciones));
       console.error('[NotificacionesStore] Error deleting servicio notifications:', error);
       throw error;
     }
@@ -359,24 +307,18 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
    * Get all venta notifications with type safety
    */
   getVentasNotificaciones: () => {
-    return get().notificaciones.filter(esNotificacionVenta) as (NotificacionVenta & {
-      id: string;
-    })[];
+    return getTypedVentaNotifications(get().notificaciones);
   },
 
   /**
    * Get all servicio notifications with type safety
    */
   getServiciosNotificaciones: () => {
-    return get().notificaciones.filter(esNotificacionServicio) as (NotificacionServicio & {
-      id: string;
-    })[];
+    return getTypedServicioNotifications(get().notificaciones);
   },
 
   getReposoNotificaciones: () => {
-    return get().notificaciones.filter(esNotificacionReposo) as (NotificacionReposo & {
-      id: string;
-    })[];
+    return getTypedReposoNotifications(get().notificaciones);
   },
 
   /**
