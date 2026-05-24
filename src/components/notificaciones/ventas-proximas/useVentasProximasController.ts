@@ -10,14 +10,7 @@ import { useTemplates } from '@/hooks/use-templates';
 import {
   invalidateDashboardCache,
 } from '@/lib/commands/client-cache';
-import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { queryKeys } from '@/lib/query-keys';
-import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
-import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
-import { renewVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
-import { useActivityLogStore } from '@/store/activityLogStore';
 import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useVentasStore } from '@/store/ventasStore';
@@ -28,12 +21,15 @@ import {
   getPaginasNotificacionesVenta,
   getVentasNotificacionesFiltradas,
 } from './filters';
-import { toVentaDocFromNotification } from './helpers';
 import type { NotificacionVentaConId } from './types';
 import {
   notifyVentaCancellation,
   notifyVentaExpiration,
 } from './venta-notification-messaging';
+import {
+  confirmVentaRenewal,
+  loadVentaRenewalOptions,
+} from './venta-renewal-actions';
 
 export function useVentasProximasController() {
   const queryClient = useQueryClient();
@@ -192,116 +188,38 @@ export function useVentasProximasController() {
     setCategoriaPlanes([]);
     setServicioTipoSeleccionado(undefined);
     try {
-      const [metodos] = await Promise.all([
-        fetchMetodosPagoTerceros(),
-        (async () => {
-          if (notif.categoriaId) {
-            const categoriaDoc = await getCategoriaUseCase<
-              Record<string, unknown>
-            >(notif.categoriaId);
-            if (categoriaDoc && Array.isArray(categoriaDoc.planes)) {
-              setCategoriaPlanes(categoriaDoc.planes as Plan[]);
-            }
-          }
-        })(),
-        (async () => {
-          if (notif.servicioId) {
-            const servicioDoc = await getServicioUseCase<
-              Record<string, unknown>
-            >(notif.servicioId);
-            if (servicioDoc && typeof servicioDoc.tipo === 'string') {
-              setServicioTipoSeleccionado(servicioDoc.tipo);
-            }
-          }
-        })(),
-      ]);
-      setMetodosPagoTerceros(withPendingTerceroPaymentMethod(metodos));
+      const renewalOptions = await loadVentaRenewalOptions({
+        fetchMetodosPagoTerceros,
+        notif,
+      });
+      setCategoriaPlanes(renewalOptions.categoriaPlanes);
+      setServicioTipoSeleccionado(renewalOptions.servicioTipoSeleccionado);
+      setMetodosPagoTerceros(renewalOptions.metodosPagoTerceros);
       setRenovarDialogOpen(true);
     } finally {
       setIsLoadingRenovar(false);
     }
   };
-
   const handleConfirmRenovacion = async (
     data: EnrichedPagoDialogFormData,
   ) => {
     if (!notifSeleccionada) return;
 
     try {
-      const { metodosPago } = useMetodosPagoStore.getState();
-      const metodoPagoSeleccionado = metodosPago.find(
-        (m) => m.id === data.metodoPagoId,
-      );
-      const renovacion = await renewVentaUseCase(
-        toVentaDocFromNotification(notifSeleccionada),
-        {
-          ...data,
-          metodoPagoNombre:
-            metodoPagoSeleccionado?.nombre || data.metodoPagoNombre || '',
-          moneda:
-            data.moneda ||
-            metodoPagoSeleccionado?.moneda ||
-            notifSeleccionada.moneda ||
-            'USD',
-        },
-        {
-          logContext: getStoreLogContext(),
-          recordActivityLog: useActivityLogStore.getState().addLog,
-        },
-      );
-
-      if (renovacion.syncPaymentMethodFailed) {
-        toast.warning('Venta renovada con advertencia', {
-          description:
-            'La renovación se guardó, pero no se pudo actualizar el método de pago en terceros.',
-        });
-      }
-
-      void renovacion.pronostico;
-      syncVentaForecastReadModels(notifSeleccionada.ventaId);
-      invalidateDashboardCache({
-        entity: 'venta',
-        entityId: notifSeleccionada.ventaId,
+      await confirmVentaRenewal({
+        data,
+        deleteNotificacionesPorVenta,
+        fetchVentas,
+        notif: notifSeleccionada,
+        refreshNotificationCaches,
       });
-      await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
-      await refreshNotificationCaches();
-
-      void fetchVentas(true);
       setRenovarDialogOpen(false);
-
-      if (data.notificarWhatsApp && data.mensajeWhatsApp) {
-        const phone = notifSeleccionada.clienteTelefono
-          ? notifSeleccionada.clienteTelefono.replace(/[^\d+]/g, '')
-          : '';
-        const mensajeAEnviar = data.mensajeWhatsApp;
-        toast.success('Venta renovada exitosamente', {
-          duration: Infinity,
-          action: {
-            label: 'Enviar WhatsApp',
-            onClick: () => {
-              const base = phone
-                ? `https://web.whatsapp.com/send?phone=${phone}&text=`
-                : `https://web.whatsapp.com/send?text=`;
-              window.open(
-                base + encodeURIComponent(mensajeAEnviar),
-                '_blank',
-                'noopener,noreferrer',
-              );
-            },
-          },
-          actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
-        });
-      } else {
-        toast.success('Venta renovada exitosamente');
-      }
-
       setNotifSeleccionada(null);
     } catch (error) {
       console.error('Error renovando venta:', error);
       toast.error('Error al renovar la venta');
     }
   };
-
   const handleAcciones = (notif: NotificacionVentaConId) => {
     setNotifSeleccionada(notif);
     setAccionesDialogOpen(true);
