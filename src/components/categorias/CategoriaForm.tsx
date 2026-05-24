@@ -1,41 +1,28 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { KeyboardEvent, MouseEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCategoriasStore } from "@/store/categoriasStore";
-import type { Categoria, Plan, TipoPlanConfig } from "@/types";
+import type { Categoria } from "@/types";
 
 import { CategoriaBasicInfoSection } from "./form/CategoriaBasicInfoSection";
 import { CategoriaPlansSection } from "./form/CategoriaPlansSection";
 import {
   categoriaSchema,
-  getCreatePlanesValidationError,
   hasCategoriaChanges,
   type CategoriaFormData,
 } from "./form/categoria-form-helpers";
+import { useCategoriaFormSubmit } from "./form/useCategoriaFormSubmit";
+import { useCategoriaPlansState } from "./form/useCategoriaPlansState";
 
 interface CategoriaFormProps {
   mode: "create" | "edit";
   categoria?: Categoria;
   returnTo?: string;
-}
-
-function createUuid() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
-    const value = Math.floor(Math.random() * 16);
-    const nibble = char === "x" ? value : (value & 0x3) | 0x8;
-    return nibble.toString(16);
-  });
 }
 
 export function CategoriaForm({
@@ -49,36 +36,37 @@ export function CategoriaForm({
   const [isGeneralTabComplete, setIsGeneralTabComplete] = useState(
     mode === "edit",
   );
-
-  const [tiposPlanes, setTiposPlanes] = useState<TipoPlanConfig[]>(() => {
-    if (mode !== "edit" || !categoria) return [];
-    return categoria.tiposPlanes || [];
-  });
-  const [tipoSeleccionadoId, setTipoSeleccionadoId] = useState<string | null>(
-    () => {
-      if (mode !== "edit" || !categoria) return null;
-      return categoria.tiposPlanes?.[0]?.id || null;
-    },
-  );
-  const [nuevoTipoNombre, setNuevoTipoNombre] = useState("");
-  const [showNuevoTipoInput, setShowNuevoTipoInput] = useState(false);
-  const [tipoNombreError, setTipoNombreError] = useState("");
-  const [editandoTipoId, setEditandoTipoId] = useState<string | null>(null);
-  const [editTipoNombre, setEditTipoNombre] = useState("");
-  const [editTipoError, setEditTipoError] = useState("");
-  const [planes, setPlanes] = useState<Plan[]>(
-    mode === "edit" && categoria ? categoria.planes || [] : [],
-  );
-  const [planesError, setPlanesError] = useState<string>("");
-
-  useEffect(() => {
-    if (tiposPlanes.length > 0 && !tipoSeleccionadoId) {
-      setTipoSeleccionadoId(tiposPlanes[0].id);
-    }
-    if (tiposPlanes.length === 0) {
-      setTipoSeleccionadoId(null);
-    }
-  }, [tiposPlanes, tipoSeleccionadoId]);
+  const categoriaPlans = useCategoriaPlansState({ categoria, mode });
+  const {
+    editTipoError,
+    editTipoNombre,
+    editandoTipoId,
+    nuevoTipoNombre,
+    planes,
+    planesDeTipoActual,
+    planesError,
+    showNuevoTipoInput,
+    tipoActual,
+    tipoNombreError,
+    tipoSeleccionadoId,
+    tiposPlanes,
+    agregarPlan,
+    actualizarPlan,
+    eliminarPlan,
+    handleAgregarTipo,
+    handleCancelarEdicion,
+    handleCancelarNuevoTipo,
+    handleEliminarTipo,
+    handleGuardarEdicion,
+    handleIniciarEdicion,
+    setEditTipoError,
+    setEditTipoNombre,
+    setNuevoTipoNombre,
+    setPlanesError,
+    setShowNuevoTipoInput,
+    setTipoNombreError,
+    setTipoSeleccionadoId,
+  } = categoriaPlans;
 
   const {
     register,
@@ -151,189 +139,18 @@ export function CategoriaForm({
     }
   }, [tipoCategoriaValue, errors.tipoCategoria, clearErrors]);
 
-  const handleAgregarTipo = () => {
-    const trimmed = nuevoTipoNombre.trim();
-    if (!trimmed) {
-      setTipoNombreError("El nombre no puede estar vacío");
-      return;
-    }
-    if (
-      tiposPlanes.some((t) => t.nombre.toLowerCase() === trimmed.toLowerCase())
-    ) {
-      setTipoNombreError("Ya existe un tipo con ese nombre");
-      return;
-    }
-
-    const nuevoTipo: TipoPlanConfig = {
-      id: createUuid(),
-      nombre: trimmed,
-    };
-    setTiposPlanes((prev) => [...prev, nuevoTipo]);
-    setTipoSeleccionadoId(nuevoTipo.id);
-    setNuevoTipoNombre("");
-    setTipoNombreError("");
-    setShowNuevoTipoInput(false);
-    setPlanesError("");
-  };
-
-  const handleCancelarNuevoTipo = () => {
-    setShowNuevoTipoInput(false);
-    setNuevoTipoNombre("");
-    setTipoNombreError("");
-  };
-
-  const handleEliminarTipo = (tipoId: string) => {
-    const remaining = tiposPlanes.filter((t) => t.id !== tipoId);
-    setTiposPlanes(remaining);
-    setPlanes((prev) => prev.filter((p) => p.tipoPlan !== tipoId));
-    if (tipoSeleccionadoId === tipoId) {
-      setTipoSeleccionadoId(remaining.length > 0 ? remaining[0].id : null);
-    }
-  };
-
-  const handleIniciarEdicion = (
-    tipo: TipoPlanConfig,
-    e: MouseEvent<HTMLButtonElement>,
-  ) => {
-    e.stopPropagation();
-    setEditandoTipoId(tipo.id);
-    setEditTipoNombre(tipo.nombre);
-    setEditTipoError("");
-  };
-
-  const handleGuardarEdicion = (
-    e?: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e) e.stopPropagation();
-    const trimmed = editTipoNombre.trim();
-    if (!trimmed) {
-      setEditTipoError("El nombre no puede estar vacío");
-      return;
-    }
-    if (
-      tiposPlanes.some(
-        (t) =>
-          t.id !== editandoTipoId &&
-          t.nombre.toLowerCase() === trimmed.toLowerCase(),
-      )
-    ) {
-      setEditTipoError("Ya existe un tipo con ese nombre");
-      return;
-    }
-
-    setTiposPlanes((prev) =>
-      prev.map((t) =>
-        t.id === editandoTipoId ? { ...t, nombre: trimmed } : t,
-      ),
-    );
-    setEditandoTipoId(null);
-  };
-
-  const handleCancelarEdicion = (
-    e?: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e) e.stopPropagation();
-    setEditandoTipoId(null);
-  };
-
-  const agregarPlan = (tipoPlanId: string) => {
-    const nuevoPlan: Plan = {
-      id: createUuid(),
-      nombre: "",
-      precio: 0,
-      cicloPago: "mensual",
-      tipoPlan: tipoPlanId,
-    };
-    setPlanes((prev) => [...prev, nuevoPlan]);
-    setPlanesError("");
-  };
-
-  const eliminarPlan = (id: string) => {
-    setPlanes((prev) => prev.filter((plan) => plan.id !== id));
-  };
-
-  const actualizarPlan = (
-    id: string,
-    campo: keyof Plan,
-    valor: string | number,
-  ) => {
-    setPlanes((prev) =>
-      prev.map((plan) => (plan.id === id ? { ...plan, [campo]: valor } : plan)),
-    );
-  };
-
-  const planesDeTipoActual = useMemo(
-    () =>
-      tipoSeleccionadoId
-        ? planes.filter((p) => p.tipoPlan === tipoSeleccionadoId)
-        : [],
-    [planes, tipoSeleccionadoId],
-  );
-
-  const tipoActual = tiposPlanes.find((t) => t.id === tipoSeleccionadoId);
-
-  const onSubmit = async (data: CategoriaFormData) => {
-    if (mode === "create") {
-      const planesValidationError = getCreatePlanesValidationError(
-        tiposPlanes,
-        planes,
-      );
-      if (planesValidationError) {
-        setPlanesError(planesValidationError);
-        setActiveTab("planes");
-        return;
-      }
-    }
-
-    try {
-      setPlanesError("");
-      if (mode === "create") {
-        await createCategoria({
-          nombre: data.nombre,
-          tipo: data.tipo,
-          tipoCategoria: data.tipoCategoria,
-          notas: data.notas || "",
-          tiposPlanes: tiposPlanes,
-          planes: planes,
-          activo: true,
-          totalServicios: 0,
-          serviciosActivos: 0,
-          perfilesDisponiblesTotal: 0,
-          ventasTotales: 0,
-          ingresosTotales: 0,
-          gastosTotal: 0,
-        });
-        toast.success("Categoría creada", {
-          description: "La nueva categoría ha sido registrada correctamente.",
-        });
-      } else if (categoria) {
-        await updateCategoria(categoria.id, {
-          nombre: data.nombre,
-          tipo: data.tipo,
-          tipoCategoria: data.tipoCategoria,
-          tiposPlanes: tiposPlanes,
-          planes: planes,
-          notas: data.notas,
-          activo: categoria.activo,
-        });
-        toast.success("Categoría actualizada", {
-          description:
-            "Los cambios en la categoría han sido guardados correctamente.",
-        });
-      }
-      router.push(returnTo);
-    } catch (error) {
-      const message =
-        mode === "create"
-          ? "Error al crear la categoría"
-          : "Error al actualizar la categoría";
-      toast.error(message, {
-        description: error instanceof Error ? error.message : undefined,
-      });
-      console.error(error);
-    }
-  };
-
+  const onSubmit = useCategoriaFormSubmit({
+    categoria,
+    createCategoria,
+    mode,
+    planes,
+    returnTo,
+    router,
+    setActiveTab,
+    setPlanesError,
+    tiposPlanes,
+    updateCategoria,
+  });
   const onCancel = () => router.push(returnTo);
 
   const handleTabChange = async (value: string) => {
