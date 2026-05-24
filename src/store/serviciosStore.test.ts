@@ -24,8 +24,8 @@ vi.mock('@/lib/use-cases/servicios-use-cases', () => ({
   updateServicioUseCase: vi.fn(),
 }));
 
-vi.mock('@/lib/commands/client-cache', () => ({
-  syncServicioPronosticoLocal: vi.fn(),
+vi.mock('@/lib/forecasting', () => ({
+  syncServicioForecastReadModels: vi.fn(),
 }));
 
 vi.mock('@/store/activityLogStore', () => ({

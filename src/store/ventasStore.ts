@@ -8,7 +8,7 @@ import {
   deleteVentaUseCase,
   updateVentaUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
-import { syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
+import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
@@ -105,7 +105,8 @@ export const useVentasStore = create<VentasState>()(
             error: null,
           }));
 
-          syncVentaPronosticoLocal(venta.id, pronostico);
+          void pronostico;
+          syncVentaForecastReadModels(venta.id);
           dispatchVentaEvent('venta-created', venta.id);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear venta';
@@ -139,7 +140,8 @@ export const useVentasStore = create<VentasState>()(
             error: null,
           }));
 
-          syncVentaPronosticoLocal(id, pronostico);
+          void pronostico;
+          syncVentaForecastReadModels(id);
           dispatchVentaEvent('venta-updated', id);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar venta';
@@ -184,7 +186,7 @@ export const useVentasStore = create<VentasState>()(
             }
           );
 
-          syncVentaPronosticoLocal(id, null);
+          syncVentaForecastReadModels(id);
           dispatchVentaEvent('venta-deleted', id);
           set({ error: null });
         } catch (error) {

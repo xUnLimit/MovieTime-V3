@@ -9,8 +9,8 @@ import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
 import {
   invalidateDashboardCache,
-  syncVentaPronosticoLocal,
 } from '@/lib/commands/client-cache';
+import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { queryKeys } from '@/lib/query-keys';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
 import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
@@ -257,10 +257,8 @@ export function useVentasProximasController() {
         });
       }
 
-      syncVentaPronosticoLocal(
-        notifSeleccionada.ventaId,
-        renovacion.pronostico,
-      );
+      void renovacion.pronostico;
+      syncVentaForecastReadModels(notifSeleccionada.ventaId);
       invalidateDashboardCache({
         entity: 'venta',
         entityId: notifSeleccionada.ventaId,

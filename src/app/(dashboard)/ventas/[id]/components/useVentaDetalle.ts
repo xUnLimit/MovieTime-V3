@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
 import { useTemplates } from '@/hooks/use-templates';
 import { queryKeys } from '@/lib/query-keys';
-import { invalidateDashboardCache, syncVentaPronosticoLocal } from '@/lib/commands/client-cache';
+import { invalidateDashboardCache } from '@/lib/commands/client-cache';
+import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
@@ -345,7 +346,8 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
       }
 
       const ventaPronosticoData = renovacion.pronostico;
-      syncVentaPronosticoLocal(id, ventaPronosticoData);
+      void ventaPronosticoData;
+      syncVentaForecastReadModels(id);
       invalidateDashboardCache({ entity: 'venta', entityId: id });
 
       if (id) {
@@ -446,7 +448,8 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
       if (result.ventaActualizada) setVentaData(result.ventaActualizada);
       refreshPagos();
-      syncVentaPronosticoLocal(id, result.pronostico);
+      void result.pronostico;
+      syncVentaForecastReadModels(id);
       invalidateDashboardCache({ entity: 'venta', entityId: id });
 
       if (data.cortarServicio) {

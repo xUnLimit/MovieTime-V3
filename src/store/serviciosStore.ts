@@ -11,7 +11,7 @@ import {
   resyncServicioReferenciasUseCase,
   updateServicioUseCase,
 } from '@/lib/use-cases/servicios-use-cases';
-import { syncServicioPronosticoLocal } from '@/lib/commands/client-cache';
+import { syncServicioForecastReadModels } from '@/lib/forecasting';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
@@ -111,7 +111,8 @@ export const useServiciosStore = create<ServiciosState>()(
             servicios: [...state.servicios, servicio],
             error: null,
           }));
-          syncServicioPronosticoLocal(servicio.id, pronostico);
+          void pronostico;
+          syncServicioForecastReadModels(servicio.id);
           storeEventBus.emit({ type: 'SERVICIO_CREATED', servicioId: servicio.id });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear servicio';
@@ -137,7 +138,8 @@ export const useServiciosStore = create<ServiciosState>()(
             error: null,
           }));
 
-          syncServicioPronosticoLocal(id, pronostico);
+          void pronostico;
+          syncServicioForecastReadModels(id);
           storeEventBus.emit({ type: 'SERVICIO_UPDATED', servicioId: id });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar servicio';
@@ -171,7 +173,7 @@ export const useServiciosStore = create<ServiciosState>()(
             }
           );
 
-          syncServicioPronosticoLocal(id, null);
+          syncServicioForecastReadModels(id);
           dispatchServicioDeleted(id);
           set({ error: null });
         } catch (error) {

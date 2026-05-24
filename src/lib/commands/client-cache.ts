@@ -27,30 +27,3 @@ export function refreshCategoriasCache(context: CacheContext = {}) {
     entityId: context.entityId,
   });
 }
-
-export function syncVentaPronosticoLocal(ventaId: string, pronostico?: unknown) {
-  void pronostico;
-
-  safeAsyncSideEffect(Promise.resolve().then(() => {
-    return getActiveQueryClient()?.invalidateQueries({ queryKey: queryKeys.dashboard.all });
-  }), {
-    operation: 'syncVentaPronosticoLocal',
-    entity: 'venta',
-    entityId: ventaId,
-  });
-}
-
-export function syncServicioPronosticoLocal(
-  servicioId: string,
-  pronostico: unknown
-) {
-  if (pronostico === undefined) return;
-
-  safeAsyncSideEffect(Promise.resolve().then(() => {
-    return getActiveQueryClient()?.invalidateQueries({ queryKey: queryKeys.dashboard.all });
-  }), {
-    operation: 'syncServicioPronosticoLocal',
-    entity: 'servicio',
-    entityId: servicioId,
-  });
-}
