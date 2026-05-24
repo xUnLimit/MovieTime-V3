@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,79 +18,16 @@ import type { LabelProps } from 'recharts';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
-
-const COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#6366f1', // indigo
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#f59e0b', // amber
-  '#14b8a6', // teal
-];
-const NEGATIVE_COLOR = '#dc2626';
-const MIN_NEGATIVE_AXIS_RATIO = 0.05;
-const MIN_NEGATIVE_AXIS_RATIO_MOBILE = 0.12;
-const VALUE_LABEL_GAP = 8;
-const COMPACT_CHART_QUERY = '(max-width: 640px)';
-
-type Vista = 'ganancia' | 'margen';
-
-const VISTAS: Array<{
-  id: Vista;
-  title: string;
-  description: string;
-  tooltipLabel: string;
-}> = [
-  {
-    id: 'ganancia',
-    title: 'Ganancia Neta por Categoría',
-    description: 'Ganancia neta generada por cada categoría de servicio.',
-    tooltipLabel: 'Ganancia neta',
-  },
-  {
-    id: 'margen',
-    title: 'Rentabilidad por Categoría',
-    description: 'Margen porcentual de ganancia sobre los ingresos de cada categoría.',
-    tooltipLabel: 'Rentabilidad',
-  },
-];
-
-function subscribeToCompactChart(callback: () => void) {
-  if (typeof window === 'undefined') {
-    return () => undefined;
-  }
-
-  const mediaQuery = window.matchMedia(COMPACT_CHART_QUERY);
-  mediaQuery.addEventListener('change', callback);
-
-  return () => mediaQuery.removeEventListener('change', callback);
-}
-
-function getIsCompactChart() {
-  return typeof window !== 'undefined' && window.matchMedia(COMPACT_CHART_QUERY).matches;
-}
-
-function useIsCompactChart() {
-  return useSyncExternalStore(subscribeToCompactChart, getIsCompactChart, () => false);
-}
-
-function getValueDomain(data: Array<{ valor: number }>, minNegativeAxisRatio: number): [number, number] {
-  const maxPositive = Math.max(0, ...data.map((entry) => entry.valor));
-  const minNegative = Math.min(0, ...data.map((entry) => entry.valor));
-
-  if (minNegative >= 0) {
-    return [0, maxPositive];
-  }
-
-  if (maxPositive <= 0) {
-    return [minNegative, 0];
-  }
-
-  const visibleNegativeRange = Math.max(Math.abs(minNegative), maxPositive * minNegativeAxisRatio);
-
-  return [-visibleNegativeRange, maxPositive];
-}
+import {
+  getValueDomain,
+  MIN_NEGATIVE_AXIS_RATIO,
+  MIN_NEGATIVE_AXIS_RATIO_MOBILE,
+  NEGATIVE_REVENUE_COLOR,
+  REVENUE_CATEGORY_COLORS,
+  REVENUE_CATEGORY_VIEWS,
+  useIsCompactChart,
+  VALUE_LABEL_GAP,
+} from './revenue-by-category-helpers';
 
 export function RevenueByCategory() {
   const { data: dashboardHome, isLoading } = useDashboardHome();
@@ -103,8 +40,8 @@ export function RevenueByCategory() {
   const [animacionDireccion, setAnimacionDireccion] = useState<1 | -1>(1);
   const animationTimerRef = useRef<number | null>(null);
 
-  const vista = VISTAS[vistaIndex];
-  const totalVistas = VISTAS.length;
+  const vista = REVENUE_CATEGORY_VIEWS[vistaIndex];
+  const totalVistas = REVENUE_CATEGORY_VIEWS.length;
   const puedeIrAtras = vistaIndex > 0;
   const puedeIrAdelante = vistaIndex < totalVistas - 1;
 
@@ -244,7 +181,7 @@ export function RevenueByCategory() {
       <text
         x={labelX}
         y={labelY}
-        fill={isNegative ? NEGATIVE_COLOR : labelColor}
+        fill={isNegative ? NEGATIVE_REVENUE_COLOR : labelColor}
         stroke={tooltipBg}
         strokeWidth={3}
         paintOrder="stroke"
@@ -364,7 +301,7 @@ export function RevenueByCategory() {
                   {data.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={entry.valor < 0 ? NEGATIVE_COLOR : COLORS[index % COLORS.length]}
+                      fill={entry.valor < 0 ? NEGATIVE_REVENUE_COLOR : REVENUE_CATEGORY_COLORS[index % REVENUE_CATEGORY_COLORS.length]}
                     />
                   ))}
                   <LabelList dataKey="valor" content={renderValueLabel} />
