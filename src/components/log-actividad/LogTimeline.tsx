@@ -1,25 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Loader2 } from 'lucide-react';
 
 import { CambiosModal } from '@/components/log-actividad/CambiosModal';
+import { LogDeleteConfirmDialog } from '@/components/log-actividad/LogDeleteConfirmDialog';
 import { LogFilters } from '@/components/log-actividad/LogFilters';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { countActivityLogsUseCase } from '@/lib/use-cases/activity-log-use-cases';
-import { createLogTimelineColumns } from './log-timeline-columns';
 import type { ActivityLog } from '@/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { createLogTimelineColumns } from './log-timeline-columns';
 
 interface LogTimelineProps {
   logs: ActivityLog[];
@@ -33,7 +24,6 @@ interface LogTimelineProps {
   setEntidadFilter: (value: string) => void;
   usuarioFilter: string;
   setTerceroFilter: (value: string) => void;
-  // Paginación
   hasMore: boolean;
   hasPrevious: boolean;
   page: number;
@@ -43,7 +33,6 @@ interface LogTimelineProps {
   onRefresh: () => void;
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
-  // Delete handlers
   canDeleteLogs?: boolean;
   onDeleteSelected: (ids: string[]) => Promise<void>;
   onDeleteByDays: (days: number) => Promise<void>;
@@ -78,8 +67,6 @@ export function LogTimeline({
   const [selectedLogs, setSelectedLogs] = useState<Set<string>>(new Set());
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
   const [cambiosModalOpen, setCambiosModalOpen] = useState(false);
-
-  // Modal de confirmación para limpiar por días
   const [confirmDays, setConfirmDays] = useState<number | null>(null);
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [confirmCount, setConfirmCount] = useState<number | null>(null);
@@ -250,7 +237,6 @@ export function LogTimeline({
         )}
       </div>
 
-      {/* Modal de cambios */}
       {selectedLog && (
         <CambiosModal
           open={cambiosModalOpen}
@@ -261,61 +247,16 @@ export function LogTimeline({
         />
       )}
 
-      {/* Modal de confirmación para limpiar logs */}
-      <Dialog open={isDeleteConfirmOpen} onOpenChange={(open) => { if (!open && !isDeleting) handleCloseDeleteConfirm(); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              {confirmDeleteAll ? '¿Estás seguro de eliminar todos los logs?' : '¿Estás seguro de limpiar los logs?'}
-            </DialogTitle>
-            <DialogDescription className="pt-1">
-              {confirmDeleteAll ? (
-                <>
-                  Esta acción eliminará permanentemente todo el log de actividad.
-                </>
-              ) : (
-                <>
-                  Esta acción eliminará permanentemente todos los registros con más de{' '}
-                  <span className="font-semibold text-foreground">{confirmDays} días</span> de antigüedad.
-                </>
-              )}
-              {isLoadingCount ? (
-                <span className="flex items-center gap-1.5 mt-2 text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Calculando registros...
-                </span>
-              ) : confirmCount !== null ? (
-                <span className="block mt-2">
-                  Se eliminarán{' '}
-                  <span className="font-semibold text-red-500">{confirmCount} {confirmCount === 1 ? 'registro' : 'registros'}</span>.{' '}
-                  Esta acción no se puede deshacer.
-                </span>
-              ) : null}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={handleCloseDeleteConfirm}
-              disabled={isDeleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={isLoadingCount || isDeleting || confirmCount === 0}
-            >
-              {isDeleting ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Eliminando...</>
-              ) : (
-                confirmDeleteAll ? 'Sí, eliminar todos' : 'Sí, limpiar logs'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LogDeleteConfirmDialog
+        confirmCount={confirmCount}
+        confirmDays={confirmDays}
+        confirmDeleteAll={confirmDeleteAll}
+        isDeleting={isDeleting}
+        isLoadingCount={isLoadingCount}
+        onClose={handleCloseDeleteConfirm}
+        onConfirm={handleConfirmDelete}
+        open={isDeleteConfirmOpen}
+      />
     </Card>
   );
 }
