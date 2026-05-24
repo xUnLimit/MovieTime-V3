@@ -46,10 +46,10 @@ Completado hasta esta iteracion:
 - Fase 4 dashboard read models: implementacion de lectura movida a `src/lib/dashboard-read-models/`; `dashboardStatsService` queda como barrel legacy.
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
 - Fase 4 idempotencia RPC: migracion `20260523183000_rpc_idempotency_keys.sql` agrega `rpc_idempotency_keys` y overloads con `p_idempotency_key` para creacion inicial de ventas/servicios, renovaciones de pagos y refunds; los adapters cliente generan key cuando el caller no la proporciona.
-- Fase 4 formularios/componentes grandes: `VentasForm`, `VentasEditForm`, `ServicioForm`, `ServicioDetalleClient` y `TerceroDetails` quedaron por debajo de 300 lineas con controllers/secciones dedicadas; `VentasForm`, `VentasEditForm` y `ServicioForm` tienen tests de composicion.
+- Fase 4 formularios/componentes grandes: `VentasForm`, `VentasEditForm`, `ServicioForm`, `ServicioDetalleClient` y `TerceroDetails` quedaron por debajo de 300 lineas con controllers/secciones dedicadas; `VentasForm`, `VentasEditForm`, `ServicioForm` y `TerceroDetails` tienen tests de composicion.
 - Fase 4 tamanos: no quedan archivos en `src` por encima de 300 lineas, excluyendo tipos generados.
 - Pendiente Fase 4: aplicar migraciones pendientes al remoto y cobertura >=80%.
-- Cobertura/tests: suite actual en 239 tests pasando; ultima cobertura medida 41.90% statements / 45.33% lines.
+- Cobertura/tests: suite actual en 241 tests pasando; ultima cobertura medida 41.90% statements / 45.33% lines.
 
 Commits de referencia de esta iteracion:
 

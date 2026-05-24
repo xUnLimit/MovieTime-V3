@@ -1074,7 +1074,7 @@ Repositories
 - [x] Descomponer `VentasForm`.
 - [x] Descomponer `VentasEditForm`.
 - [x] Descomponer `ServicioForm` y paginas de detalle grandes.
-- [x] Agregar tests de composicion para `VentasForm`, `VentasEditForm` y `ServicioForm`.
+- [x] Agregar tests de composicion para `VentasForm`, `VentasEditForm`, `ServicioForm` y `TerceroDetails`.
 - [ ] Cobertura >=80%.
 
 ---
