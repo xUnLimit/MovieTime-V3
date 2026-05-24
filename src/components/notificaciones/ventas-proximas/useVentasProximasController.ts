@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -17,10 +17,6 @@ import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, TemplateMensaje } from '@/types';
 import type { Plan } from '@/types/categorias';
 
-import {
-  getPaginasNotificacionesVenta,
-  getVentasNotificacionesFiltradas,
-} from './filters';
 import type { NotificacionVentaConId } from './types';
 import {
   notifyVentaCancellation,
@@ -30,6 +26,7 @@ import {
   confirmVentaRenewal,
   loadVentaRenewalOptions,
 } from './venta-renewal-actions';
+import { useVentasProximasPagination } from './useVentasProximasPagination';
 
 export function useVentasProximasController() {
   const queryClient = useQueryClient();
@@ -47,10 +44,20 @@ export function useVentasProximasController() {
   );
   const { fetchMetodosPagoTerceros } = useMetodosPagoStore();
   const { updateVenta, fetchVentas } = useVentasStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [estadoFilter, setEstadoFilter] = useState<string>('todos');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const {
+    estadoFilter,
+    handleEstadoFilterChange,
+    handleItemsPerPageChange,
+    handleNextPage,
+    handlePreviousPage,
+    handleSearchChange,
+    itemsPerPage,
+    paginatedNotificaciones,
+    safeCurrentPage,
+    searchQuery,
+    totalPages,
+    ventasNotificaciones,
+  } = useVentasProximasPagination(notificaciones);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(
     new Set(),
   );
@@ -66,48 +73,6 @@ export function useVentasProximasController() {
   const [servicioTipoSeleccionado, setServicioTipoSeleccionado] = useState<
     string | undefined
   >();
-
-  const ventasNotificaciones = useMemo(
-    () =>
-      getVentasNotificacionesFiltradas(
-        notificaciones,
-        searchQuery,
-        estadoFilter,
-      ),
-    [notificaciones, searchQuery, estadoFilter],
-  );
-
-  const notificationPages = useMemo(
-    () => getPaginasNotificacionesVenta(ventasNotificaciones, itemsPerPage),
-    [ventasNotificaciones, itemsPerPage],
-  );
-  const totalPages = Math.max(1, notificationPages.length);
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedNotificaciones =
-    notificationPages[safeCurrentPage - 1] ?? [];
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
-
-  const handleEstadoFilterChange = (value: string) => {
-    setEstadoFilter(value);
-    setCurrentPage(1);
-  };
-
-  const handlePreviousPage = () => {
-    setCurrentPage((prev) => Math.max(1, prev - 1));
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-  };
-
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1);
-  };
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
