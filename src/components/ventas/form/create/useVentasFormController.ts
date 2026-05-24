@@ -16,6 +16,7 @@ import {
   type VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
 import {
+  buildVentaItem,
   buildVentaCreateInput,
   filterTercerosBySearch,
   getDisponiblesColorClass,
@@ -388,37 +389,22 @@ export function useVentasFormController() {
     }
     setItemErrors({});
     if (!plan || !categoria || !tipoItem) return;
-    const planTipoNombre = categoria.tiposPlanes?.find(
-      (tipoPlan) => tipoPlan.id === plan.tipoPlan,
-    )?.nombre;
-    const itemId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const newItem: VentaItem = {
-      id: `${servicioId}-${plan.id}-${Date.now()}`,
-      itemId,
-      tipo: tipoItem,
-      planId: plan.id,
-      planNombre: plan.nombre,
-      planTipoNombre,
-      categoriaId: categoria.id,
-      categoriaNombre: categoria.nombre, // <- Denormalizar nombre
-      servicioId,
-      servicioNombre: servicioSeleccionado?.nombre || plan.nombre,
-      servicioCorreo: servicioSeleccionado?.correo,
-      servicioContrasena: servicioSeleccionado?.contrasena,
-      cicloPago: plan.cicloPago,
-      fechaInicio: fechaInicioValue ? new Date(fechaInicioValue) : undefined,
-      fechaFin: fechaFinValue ? new Date(fechaFinValue) : undefined,
-      perfilNumero: perfilNumero ? Number(perfilNumero) : undefined,
-      perfilNombre: perfilNombre?.trim() || undefined,
-      precio: precioBase,
-      descuento: descuentoNumero,
-      precioFinal: precioFinalNumero,
+    const newItem = buildVentaItem({
+      categoria,
       codigo: codigo ? codigo : undefined,
+      descuento: descuentoNumero,
+      fechaFin: fechaFinValue ? new Date(fechaFinValue) : undefined,
+      fechaInicio: fechaInicioValue ? new Date(fechaInicioValue) : undefined,
       notas: notasItem?.trim() ? notasItem.trim() : undefined,
-    };
+      perfilNombre,
+      perfilNumero: perfilNumero ? Number(perfilNumero) : undefined,
+      plan,
+      precio: precioBase,
+      precioFinal: precioFinalNumero,
+      servicioId,
+      servicioSeleccionado,
+      tipo: tipoItem,
+    });
 
     setItems((prev) => [...prev, newItem]);
     setCategoriaId("");

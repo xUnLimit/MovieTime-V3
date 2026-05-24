@@ -1,11 +1,12 @@
 import {
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
+  type TipoVentaItem,
   type VentaItem,
 } from "@/features/ventas/ventas-form-shared";
 import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
-import type { Servicio, Tercero, VentaDoc } from "@/types";
+import type { Categoria, Plan, Servicio, Tercero, VentaDoc } from "@/types";
 
 export function sortTercerosByNewest(terceros: Tercero[]): Tercero[] {
   return [...terceros].sort((a, b) => {
@@ -165,6 +166,67 @@ function createClientId() {
   }
 
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function buildVentaItem({
+  categoria,
+  codigo,
+  descuento,
+  fechaFin,
+  fechaInicio,
+  notas,
+  perfilNombre,
+  perfilNumero,
+  plan,
+  precio,
+  precioFinal,
+  servicioId,
+  servicioSeleccionado,
+  tipo,
+}: {
+  categoria: Categoria;
+  codigo?: string;
+  descuento: number;
+  fechaFin?: Date;
+  fechaInicio?: Date;
+  notas?: string;
+  perfilNombre?: string;
+  perfilNumero?: number;
+  plan: Plan;
+  precio: number;
+  precioFinal: number;
+  servicioId: string;
+  servicioSeleccionado?: Servicio;
+  tipo: TipoVentaItem;
+}): VentaItem {
+  const planTipoNombre = categoria.tiposPlanes?.find(
+    (tipoPlan) => tipoPlan.id === plan.tipoPlan,
+  )?.nombre;
+
+  return {
+    id: `${servicioId}-${plan.id}-${Date.now()}`,
+    itemId: createClientId(),
+    tipo,
+    planId: plan.id,
+    planNombre: plan.nombre,
+    planTipoNombre,
+    categoriaId: categoria.id,
+    categoriaNombre: categoria.nombre,
+    servicioId,
+    servicioNombre: servicioSeleccionado?.nombre || plan.nombre,
+    servicioCorreo: servicioSeleccionado?.correo,
+    servicioContrasena: servicioSeleccionado?.contrasena,
+    cicloPago: plan.cicloPago,
+    fechaInicio,
+    fechaFin,
+    perfilNumero,
+    perfilNombre: perfilNombre?.trim() || undefined,
+    precio,
+    descuento,
+    precioFinal,
+    codigo,
+    notas,
+  };
 }
 
 export function buildVentaCreateInput({
