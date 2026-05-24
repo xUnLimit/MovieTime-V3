@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ChevronDown, DollarSign, Edit, Tag, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Tag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -15,6 +15,8 @@ import { formatearFechaHora } from '@/lib/utils/calculations';
 import { isUuid } from '@/lib/utils/safety';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { Plan } from '@/types';
+import { CategoriaDetailPlanCard } from './CategoriaDetailPlanCard';
+import { getTipoCategoriaLabel, getTipoLabel } from './categoria-detail-helpers';
 
 function VerCategoriaPageContent() {
   const params = useParams();
@@ -37,34 +39,6 @@ function VerCategoriaPageContent() {
       }
     }
   };
-
-  const getTipoLabel = (tipo: string) => {
-    switch (tipo) {
-      case 'cliente': return 'Cliente';
-      case 'revendedor': return 'Revendedor';
-      default: return tipo;
-    }
-  };
-
-  const getTipoCategoriaLabel = (tipo: string) => {
-    switch (tipo) {
-      case 'plataforma_streaming': return 'Plataforma De Streaming';
-      case 'otros': return 'Otros';
-      default: return tipo;
-    }
-  };
-
-  const getCicloPagoLabel = (ciclo: string) => {
-    switch (ciclo) {
-      case 'mensual': return { label: 'Mensual', short: 'mes' };
-      case 'trimestral': return { label: 'Trimestral', short: 'trimestre' };
-      case 'semestral': return { label: 'Semestral', short: 'semestre' };
-      case 'anual': return { label: 'Anual', short: 'año' };
-      default: return { label: ciclo, short: ciclo };
-    }
-  };
-
-
 
   if (isLoading) {
     return (
@@ -109,48 +83,6 @@ function VerCategoriaPageContent() {
     planes.filter(p => p.tipoPlan === tipoPlanId);
 
   const gruposPlanes = tiposPlanes.filter(t => getPlanesPorTipo(t.id).length > 0);
-
-  const PlanCard = ({ plan, tipoPlanNombre, accentColor }: { plan: Plan; tipoPlanNombre: string; accentColor: string }) => {
-    const isOpen = expandedPlan === plan.id;
-    return (
-      <div
-        className={`rounded-lg border overflow-hidden cursor-pointer ${accentColor}`}
-        onClick={() => setExpandedPlan(isOpen ? null : plan.id)}
-      >
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <DollarSign className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">{plan.nombre || 'Plan sin nombre'}</p>
-          </div>
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
-        </div>
-
-        {isOpen && (
-          <div className="px-4 pb-3 pt-0 border-t mt-0">
-            <div className="pt-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Tipo de plan</span>
-                <span className="text-xs font-medium text-primary">{tipoPlanNombre}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Ciclo de pago</span>
-                <span className="text-xs font-medium">{getCicloPagoLabel(plan.cicloPago).label}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Precio</span>
-                <span className="text-xs font-bold">
-                  ${plan.precio.toFixed(2)}
-                  <span className="font-normal text-muted-foreground">/{getCicloPagoLabel(plan.cicloPago).short}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-5">
@@ -267,7 +199,14 @@ function VerCategoriaPageContent() {
                   </div>
                   <div className="px-4 pb-4 space-y-2">
                     {planesDelTipo.map(plan => (
-                      <PlanCard key={plan.id} plan={plan} tipoPlanNombre={tipo.nombre} accentColor="border-border" />
+                      <CategoriaDetailPlanCard
+                        key={plan.id}
+                        accentColor="border-border"
+                        expandedPlan={expandedPlan}
+                        onToggle={(planId) => setExpandedPlan(expandedPlan === planId ? null : planId)}
+                        plan={plan}
+                        tipoPlanNombre={tipo.nombre}
+                      />
                     ))}
                   </div>
                 </div>
