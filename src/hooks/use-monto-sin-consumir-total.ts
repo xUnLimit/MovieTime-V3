@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 
 import { queryKeys } from '@/lib/query-keys';
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSD } from '@/lib/payments/currency-converter';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 /**
@@ -52,7 +52,7 @@ export function useMontoSinConsumirTotal() {
             const monto = Math.max(v.precioFinal * ratio, 0);
 
             if (monto === 0) return 0;
-            return currencyService.convertToUSD(monto, v.moneda ?? 'USD');
+            return convertToUSD(monto, v.moneda ?? 'USD');
           }),
       );
 

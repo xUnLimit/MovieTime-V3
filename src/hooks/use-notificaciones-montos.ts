@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSD } from '@/lib/payments/currency-converter';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { esNotificacionServicio, esNotificacionVenta } from '@/types/notificaciones';
 
@@ -56,7 +56,7 @@ export function useNotificacionesMontos() {
         const [montosVentas, montosServicios] = await Promise.all([
           Promise.all(
             ventasVencidas.map((notificacion) =>
-              currencyService.convertToUSD(
+              convertToUSD(
                 notificacion.precioFinal as number,
                 notificacion.moneda ?? 'USD',
               ),
@@ -64,7 +64,7 @@ export function useNotificacionesMontos() {
           ),
           Promise.all(
             serviciosPendientes.map((notificacion) =>
-              currencyService.convertToUSD(notificacion.costoServicio, notificacion.moneda ?? 'USD'),
+              convertToUSD(notificacion.costoServicio, notificacion.moneda ?? 'USD'),
             ),
           ),
         ]);

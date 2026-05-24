@@ -1,5 +1,7 @@
 import { VentaDoc, PagoVenta } from '@/types';
-import { calcularMontoSinConsumir, sumInUSD, convertToUSD } from '@/lib/utils/calculations';
+import { calcularMontoSinConsumir } from '@/lib/utils/calculations';
+import { convertToUSD } from '@/lib/payments/currency-converter';
+import { sumInUSD } from '@/lib/payments/payment-calculator';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export interface VentasMetrics {

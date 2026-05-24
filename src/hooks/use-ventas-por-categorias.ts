@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 
 import { queryKeys } from '@/lib/query-keys';
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSD } from '@/lib/payments/currency-converter';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 export interface VentasCategoriaStats {
@@ -63,7 +63,7 @@ export function useVentasPorCategorias(categoriaIds: string[], { enabled = true 
           const monto = Math.max(venta.precioFinal * ratio, 0);
           if (monto === 0) return;
 
-          const montoUSD = await currencyService.convertToUSD(monto, venta.moneda ?? 'USD');
+          const montoUSD = await convertToUSD(monto, venta.moneda ?? 'USD');
           if (!result[venta.categoriaId]) result[venta.categoriaId] = { montoSinConsumir: 0 };
           result[venta.categoriaId].montoSinConsumir += montoUSD;
         }),

@@ -17,7 +17,6 @@ export * from './text';
 export * from './perfiles';
 
 // Re-export payment utilities
-export * from './payments';
 
 // Re-export WhatsApp utilities
 export * from './whatsapp';

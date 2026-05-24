@@ -7,7 +7,7 @@ import { es } from 'date-fns/locale';
 
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { queryKeys } from '@/lib/query-keys';
-import { currencyService } from '@/lib/services/currencyService';
+import { convertToUSDSync, ensureRatesLoaded } from '@/lib/payments/currency-converter';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 import type { PronosticoMensual, ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 
@@ -87,7 +87,7 @@ export function usePronosticoFinanciero(
         return [];
       }
 
-      await currencyService.ensureRatesLoaded();
+      await ensureRatesLoaded();
 
       const hoy = new Date();
       const inicioMesActual = startOfMonth(hoy);
@@ -114,11 +114,11 @@ export function usePronosticoFinanciero(
         });
 
         const ingresos = ventasDelMes.reduce(
-          (sum, v) => sum + currencyService.convertToUSDSync(v.precioFinal || 0, v.moneda || 'USD'),
+          (sum, v) => sum + convertToUSDSync(v.precioFinal || 0, v.moneda || 'USD'),
           0
         );
         const gastos = serviciosDelMes.reduce(
-          (sum, s) => sum + currencyService.convertToUSDSync(s.costoServicio || 0, s.moneda || 'USD'),
+          (sum, s) => sum + convertToUSDSync(s.costoServicio || 0, s.moneda || 'USD'),
           0
         );
 
