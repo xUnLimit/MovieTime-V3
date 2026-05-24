@@ -11,19 +11,15 @@ import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
 import { getCurrencySymbol } from '@/lib/constants';
 import { queryKeys } from '@/lib/query-keys';
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import {
   deleteServicioPagoUseCase,
-  getServicioUseCase,
   renewServicioUseCase,
   updateServicioPagoUseCase,
 } from '@/lib/use-cases/servicios-use-cases';
 import {
-  fetchVentasByFiltersUseCase,
   getVentaUseCase,
   updateVentaUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
-import { buildServiceTransferMessage } from '@/lib/utils/credentialNotification';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
@@ -31,7 +27,7 @@ import { useServiciosStore } from '@/store/serviciosStore';
 import { useTemplatesStore } from '@/store/templatesStore';
 import { useTercerosStore } from '@/store/tercerosStore';
 import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
-import type { MetodoPago, PagoServicio, Servicio, VentaDoc } from '@/types';
+import type { PagoServicio, Servicio, VentaDoc } from '@/types';
 
 import { ServicioDetalleDialogs } from './components/ServicioDetalleDialogs';
 import { ServicioDetalleHeader } from './components/ServicioDetalleHeader';
@@ -47,70 +43,12 @@ import { ServicioSummaryCards } from './components/ServicioSummaryCards';
 import type { CategoriaDetalle, MetodoPagoDetalle, PagoFormData, PerfilVenta } from './components/types';
 import { useServicioProfiles } from './components/useServicioProfiles';
 import { useTotalGastadoUSD } from './components/useTotalGastadoUSD';
-
-function toPerfilVenta(venta: VentaDoc): PerfilVenta & { perfilNumero?: number | null } {
-  return {
-    ventaId: venta.id || undefined,
-    clienteId: venta.clienteId || undefined,
-    perfilNumero: venta.perfilNumero ?? null,
-    clienteNombre: venta.clienteNombre || undefined,
-    clienteTelefono: venta.clienteTelefono || undefined,
-    createdAt: venta.createdAt,
-    precioFinal: venta.precioFinal ?? venta.precio ?? 0,
-    descuento: venta.descuento ?? 0,
-    fechaInicio: venta.fechaInicio ?? undefined,
-    fechaFin: venta.fechaFin ?? undefined,
-    notas: venta.notas || '',
-    servicioNombre: venta.servicioNombre,
-    servicioCorreo: venta.servicioCorreo || '',
-    moneda: venta.moneda || undefined,
-    perfilNombre: venta.perfilNombre || undefined,
-    codigo: venta.codigo || undefined,
-    cicloPago: venta.cicloPago || undefined,
-  };
-}
-
-async function fetchServicioVentasProfiles(id: string) {
-  const ventasBase = await fetchVentasByFiltersUseCase<VentaDoc>([
-    { field: 'servicioId', operator: '==', value: id },
-  ]);
-
-  return ventasBase
-    .filter((venta) => (venta.estado ?? 'activo') !== 'inactivo')
-    .map(toPerfilVenta);
-}
-
-async function fetchServicioDetalleBundle(id: string): Promise<{
-  categoria: CategoriaDetalle;
-  metodoPago: MetodoPagoDetalle | null;
-  servicio: Servicio;
-}> {
-  const servicio = await getServicioUseCase<Servicio>(id);
-  if (!servicio) {
-    throw new Error('Servicio no encontrado');
-  }
-
-  const metodoPagoReal = servicio.metodoPagoId
-    ? await getMetodoPagoById<MetodoPago>(servicio.metodoPagoId).catch(() => null)
-    : null;
-
-  return {
-    servicio,
-    categoria: {
-      id: servicio.categoriaId,
-      nombre: servicio.categoriaNombre,
-    },
-    metodoPago: servicio.metodoPagoId
-      ? {
-          id: servicio.metodoPagoId,
-          nombre: metodoPagoReal?.nombre || servicio.metodoPagoNombre || '',
-          moneda: metodoPagoReal?.moneda || servicio.moneda || 'USD',
-          alias: metodoPagoReal?.alias,
-          numeroTarjeta: metodoPagoReal?.numeroTarjeta,
-        }
-      : null,
-  };
-}
+import {
+  buildTransferVentaForMessage,
+  buildTransferWhatsAppToast,
+  fetchServicioDetalleBundle,
+  fetchServicioVentasProfiles,
+} from './servicio-detalle-helpers';
 
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
   const router = useRouter();
@@ -308,15 +246,13 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     if (!selectedActionVenta?.id) return;
     setIsSaleActionSubmitting(true);
     try {
-      const updatedVentaForMessage: VentaDoc = {
-        ...selectedActionVenta,
-        servicioId: targetServicio.id,
-        servicioNombre: targetServicio.nombre,
-        servicioCorreo: targetServicio.correo,
-        perfilNumero,
-        perfilNombre,
+      const updatedVentaForMessage = buildTransferVentaForMessage({
         codigo,
-      };
+        perfilNombre,
+        perfilNumero,
+        selectedActionVenta,
+        targetServicio,
+      });
 
       await updateVentaUseCase(
         selectedActionVenta.id,
@@ -345,23 +281,16 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
         const tercero = selectedActionVenta.clienteId
           ? useTercerosStore.getState().terceros.find((item) => item.id === selectedActionVenta.clienteId)
           : undefined;
-        const phone = (selectedActionVenta.clienteTelefono || tercero?.telefono || '').replace(/[^\d+]/g, '');
         const template = getTemplateByTipo('transferencia_servicio');
-        const message = buildServiceTransferMessage(
-          template?.contenido,
-          updatedVentaForMessage,
-          targetServicio,
-        );
 
         enqueueWhatsAppMessages([
-          {
-            phone,
-            message,
-            title: phone ? 'Transferencia lista para enviar' : 'Transferencia sin telefono',
-            description: phone
-              ? `${selectedActionVenta.clienteNombre} recibira las credenciales de ${targetServicio.nombre}.`
-              : `${selectedActionVenta.clienteNombre} no tiene telefono registrado. Puedes copiar el mensaje.`,
-          },
+          buildTransferWhatsAppToast({
+            selectedActionVenta,
+            targetServicio,
+            templateContenido: template?.contenido,
+            tercero,
+            updatedVentaForMessage,
+          }),
         ]);
       }
 
