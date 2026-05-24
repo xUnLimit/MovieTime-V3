@@ -20,6 +20,8 @@ import {
   filterTercerosBySearch,
   sortPaymentMethods,
   sortTercerosByNewest,
+  validateVentaEditDatosStep,
+  type VentaEditDatosStepField,
 } from "@/components/ventas/form/edit/venta-edit-controller-helpers";
 import {
   useMetodosPagoTercerosWithPending,
@@ -417,62 +419,25 @@ export function useVentasEditFormController(venta: VentaEditData) {
   );
 
   const handleNext = async () => {
-    let isValid = true;
-    if (!clienteIdValue) {
-      setError("clienteId", {
-        type: "manual",
-        message: "Seleccione un cliente",
+    const stepErrors = validateVentaEditDatosStep({
+      categoriaId: categoriaIdValue,
+      clienteId: clienteIdValue,
+      fechaFin: fechaFinValue,
+      fechaInicio: fechaInicioValue,
+      metodoPagoId: metodoPagoIdValue,
+      perfilNumero: perfilNumeroValue,
+      planId: planIdValue,
+      servicioId: servicioIdValue,
+    });
+    if (Object.keys(stepErrors).length > 0) {
+      Object.entries(stepErrors).forEach(([field, message]) => {
+        setError(field as VentaEditDatosStepField, {
+          type: "manual",
+          message,
+        });
       });
-      isValid = false;
+      return;
     }
-    if (!metodoPagoIdValue) {
-      setError("metodoPagoId", {
-        type: "manual",
-        message: "Seleccione un mÃ©todo de pago",
-      });
-      isValid = false;
-    }
-    if (!categoriaIdValue) {
-      setError("categoriaId", {
-        type: "manual",
-        message: "Seleccione una categorÃ­a",
-      });
-      isValid = false;
-    }
-    if (!servicioIdValue) {
-      setError("servicioId", {
-        type: "manual",
-        message: "Seleccione un servicio",
-      });
-      isValid = false;
-    }
-    if (!planIdValue) {
-      setError("planId", { type: "manual", message: "Seleccione un plan" });
-      isValid = false;
-    }
-    if (!perfilNumeroValue) {
-      setError("perfilNumero", {
-        type: "manual",
-        message: "Seleccione un perfil",
-      });
-      isValid = false;
-    }
-    if (!fechaInicioValue) {
-      setError("fechaInicio", {
-        type: "manual",
-        message: "Seleccione fecha de inicio",
-      });
-      isValid = false;
-    }
-    if (!fechaFinValue) {
-      setError("fechaFin", {
-        type: "manual",
-        message: "Seleccione fecha de fin",
-      });
-      isValid = false;
-    }
-    if (!isValid) return;
-
     setIsDatosTabComplete(true);
     setActiveTab("preview");
   };
