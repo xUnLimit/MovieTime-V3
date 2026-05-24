@@ -8,7 +8,7 @@ import type { Tercero, VentaDoc } from '@/types';
 import {
   buildVentaCreateBatchInputs,
   getServicioIdsConPerfil,
-} from './venta-create-controller-helpers';
+} from './venta-create-submit-helpers';
 
 type CreateVentaInput = Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'>;
 type MetodoPagoResumen = {
