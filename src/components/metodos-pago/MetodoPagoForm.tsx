@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { FieldErrors } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,11 +16,11 @@ import {
   hasMetodoPagoFormChanges,
   type MetodoPagoFormMode,
 } from "./form/helpers";
-import { PAISES_MONEDAS } from "./form/options";
 import {
   metodoPagoSchemaComplete,
   type MetodoPagoFormData,
 } from "./form/schema";
+import { useMetodoPagoFormEffects } from "./form/useMetodoPagoFormEffects";
 import { useMetodoPagoFormSubmit } from "./form/useMetodoPagoFormSubmit";
 
 interface MetodoPagoFormProps {
@@ -52,7 +52,6 @@ export function MetodoPagoForm({
   const [isBasicaTabComplete, setIsBasicaTabComplete] = useState(
     mode === "edit",
   );
-  const didSkipInitialPaisSyncRef = useRef(false);
 
   const {
     register,
@@ -117,101 +116,24 @@ export function MetodoPagoForm({
     ],
   );
 
-  useEffect(() => {
-    if (nombreValue && nombreValue.length >= 2 && errors.nombre) {
-      clearErrors("nombre");
-    }
-  }, [nombreValue, errors.nombre, clearErrors]);
-
-  useEffect(() => {
-    if (asociadoAValue && errors.asociadoA) {
-      clearErrors("asociadoA");
-    }
-  }, [asociadoAValue, errors.asociadoA, clearErrors]);
-
-  useEffect(() => {
-    if (paisValue && paisValue.length >= 2 && errors.pais) {
-      clearErrors("pais");
-    }
-  }, [paisValue, errors.pais, clearErrors]);
-
-  useEffect(() => {
-    if (monedaValue && monedaValue.length >= 2 && errors.moneda) {
-      clearErrors("moneda");
-    }
-  }, [monedaValue, errors.moneda, clearErrors]);
-
-  useEffect(() => {
-    if (titularValue && titularValue.length >= 2 && errors.titular) {
-      clearErrors("titular");
-    }
-  }, [titularValue, errors.titular, clearErrors]);
-
-  useEffect(() => {
-    if (tipoCuentaValue && errors.tipoCuenta) {
-      clearErrors("tipoCuenta");
-    }
-  }, [tipoCuentaValue, errors.tipoCuenta, clearErrors]);
-
-  useEffect(() => {
-    if (
-      identificadorValue &&
-      identificadorValue.length >= 2 &&
-      errors.identificador
-    ) {
-      clearErrors("identificador");
-    }
-  }, [identificadorValue, errors.identificador, clearErrors]);
-
-  useEffect(() => {
-    if (emailValue && errors.email) {
-      clearErrors("email");
-    }
-  }, [emailValue, errors.email, clearErrors]);
-
-  useEffect(() => {
-    if (contrasenaValue && contrasenaValue.length >= 6 && errors.contrasena) {
-      clearErrors("contrasena");
-    }
-  }, [contrasenaValue, errors.contrasena, clearErrors]);
-
-  useEffect(() => {
-    if (
-      numeroTarjetaValue &&
-      numeroTarjetaValue.replace(/\s/g, "").length >= 16 &&
-      errors.numeroTarjeta
-    ) {
-      clearErrors("numeroTarjeta");
-    }
-  }, [numeroTarjetaValue, errors.numeroTarjeta, clearErrors]);
-
-  useEffect(() => {
-    if (
-      fechaExpiracionValue &&
-      /^(0[1-9]|1[0-2])\/\d{2}$/.test(fechaExpiracionValue) &&
-      errors.fechaExpiracion
-    ) {
-      clearErrors("fechaExpiracion");
-    }
-  }, [fechaExpiracionValue, errors.fechaExpiracion, clearErrors]);
-
-  useEffect(() => {
-    if (paisValue) {
-      if (
-        mode === "edit" &&
-        metodoPago &&
-        !didSkipInitialPaisSyncRef.current
-      ) {
-        didSkipInitialPaisSyncRef.current = true;
-        return;
-      }
-
-      const paisMoneda = PAISES_MONEDAS.find((pm) => pm.pais === paisValue);
-      if (paisMoneda) {
-        setValue("moneda", paisMoneda.moneda);
-      }
-    }
-  }, [mode, metodoPago, paisValue, setValue]);
+  useMetodoPagoFormEffects({
+    asociadoAValue,
+    clearErrors,
+    contrasenaValue,
+    emailValue,
+    errors,
+    fechaExpiracionValue,
+    identificadorValue,
+    metodoPago,
+    mode,
+    monedaValue,
+    nombreValue,
+    numeroTarjetaValue,
+    paisValue,
+    setValue,
+    tipoCuentaValue,
+    titularValue,
+  });
 
   const handleTabChange = async (value: string) => {
     if (value === "adicional" && !isBasicaTabComplete) {
