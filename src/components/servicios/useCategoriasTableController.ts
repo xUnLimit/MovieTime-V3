@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import { useVentasPorCategorias } from "@/hooks/use-ventas-por-categorias";
 import { useClientPagination } from "@/hooks/useClientPagination";
-import { useServiciosStore } from "@/store/serviciosStore";
 import type { Categoria } from "@/types";
 
 export interface CategoriaRow {
@@ -41,8 +40,6 @@ export function useCategoriasTableController(categorias: Categoria[]) {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(
     null,
   );
-  const { servicios } = useServiciosStore();
-
   const categoriaIds = useMemo(
     () => categorias.filter((c) => c.activo).map((c) => c.id),
     [categorias],
@@ -50,50 +47,13 @@ export function useCategoriasTableController(categorias: Categoria[]) {
   const { stats: ventasPorCategoria, isLoading: isLoadingVentas } =
     useVentasPorCategorias(categoriaIds);
 
-  const countersByCategoria = useMemo(() => {
-    const counters = new Map<
-      string,
-      {
-        totalServicios: number;
-        serviciosActivos: number;
-        perfilesDisponibles: number;
-      }
-    >();
-
-    for (const servicio of servicios) {
-      if (servicio.enReposo) continue;
-
-      const current = counters.get(servicio.categoriaId) ?? {
-        totalServicios: 0,
-        serviciosActivos: 0,
-        perfilesDisponibles: 0,
-      };
-
-      current.totalServicios += 1;
-      if (servicio.activo) {
-        current.serviciosActivos += 1;
-        const libres = Math.max(
-          (servicio.perfilesDisponibles || 0) -
-            (servicio.perfilesOcupados || 0),
-          0,
-        );
-        current.perfilesDisponibles += libres;
-      }
-
-      counters.set(servicio.categoriaId, current);
-    }
-
-    return counters;
-  }, [servicios]);
-
   const rows = useMemo(() => {
     const categoriaData: CategoriaRow[] = categorias
       .filter((cat) => cat.activo)
       .map((categoria) => {
-        const counters = countersByCategoria.get(categoria.id);
-        const totalServicios = counters?.totalServicios ?? 0;
-        const serviciosActivos = counters?.serviciosActivos ?? 0;
-        const perfilesDisponibles = counters?.perfilesDisponibles ?? 0;
+        const totalServicios = categoria.totalServicios ?? 0;
+        const serviciosActivos = categoria.serviciosActivos ?? 0;
+        const perfilesDisponibles = categoria.perfilesDisponiblesTotal ?? 0;
 
         const gastosTotal = categoria.gastosTotal ?? 0;
         const ingresoTotal = categoria.ingresosTotales ?? 0;
@@ -116,7 +76,7 @@ export function useCategoriasTableController(categorias: Categoria[]) {
       });
 
     return categoriaData;
-  }, [categorias, countersByCategoria, ventasPorCategoria]);
+  }, [categorias, ventasPorCategoria]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
