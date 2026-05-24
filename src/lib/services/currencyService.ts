@@ -1,40 +1,12 @@
 import { supabase } from '@/lib/supabase/client';
-
-// ===========================
-// TYPES & INTERFACES
-// ===========================
-
-export interface CachedRates {
-  rates: Record<string, number>; // Key format: "USD_TRY", "USD_ARS", etc.
-  lastUpdated: Date;
-  source: string;
-  apiVersion: string;
-}
-
-export interface ExchangeRateAPIResponse {
-  result: string;
-  documentation: string;
-  terms_of_use: string;
-  time_last_update_unix: number;
-  time_last_update_utc: string;
-  time_next_update_unix: number;
-  time_next_update_utc: string;
-  base_code: string;
-  rates: Record<string, number>; // Note: open.er-api.com uses 'rates', not 'conversion_rates'
-}
-
-// ===========================
-// CONSTANTS
-// ===========================
-
-const CACHE_TTL_HOURS = 24;
-const API_BASE_URL = 'https://open.er-api.com/v6'; // Public endpoint, no API key required
-const FALLBACK_RATES: CachedRates = {
-  rates: { USD_USD: 1 },
-  lastUpdated: new Date(0),
-  source: 'fallback',
-  apiVersion: 'v6',
-};
+import {
+  API_BASE_URL,
+  FALLBACK_RATES,
+  isCurrencyCacheValid,
+  normalizeUsdRates,
+  type CachedRates,
+  type ExchangeRateAPIResponse,
+} from './currency-rates';
 
 // ===========================
 // CURRENCY SERVICE CLASS
@@ -122,14 +94,14 @@ class CurrencyService {
    */
   private async getRates(): Promise<CachedRates | null> {
     // Check memory cache first
-    if (this.memoryCache && this.isCacheValid(this.memoryCache.lastUpdated)) {
+    if (this.memoryCache && isCurrencyCacheValid(this.memoryCache.lastUpdated)) {
       return this.memoryCache;
     }
 
     // Check Supabase cache
     const supabaseCache = await this.getCachedRates();
 
-    if (supabaseCache && this.isCacheValid(supabaseCache.lastUpdated)) {
+    if (supabaseCache && isCurrencyCacheValid(supabaseCache.lastUpdated)) {
       this.memoryCache = supabaseCache;
       return supabaseCache;
     }
@@ -173,14 +145,8 @@ class CurrencyService {
         throw new Error('API response missing rates');
       }
 
-      // Convert API response to our cache format
-      const rates: Record<string, number> = {};
-      Object.entries(data.rates).forEach(([currency, rate]) => {
-        rates[`USD_${currency}`] = rate;
-      });
-
       const cachedRates: CachedRates = {
-        rates,
+        rates: normalizeUsdRates(data),
         lastUpdated: new Date(),
         source: 'open.er-api.com',
         apiVersion: 'v6'
@@ -259,23 +225,6 @@ class CurrencyService {
       console.warn('[CurrencyService] Error saving rates to Supabase:', error);
       throw error;
     }
-  }
-
-  /**
-   * Check if cache is still valid (within TTL)
-   */
-  private isCacheValid(lastUpdated: Date): boolean {
-    const ageMs = Date.now() - lastUpdated.getTime();
-    const ageHours = ageMs / (1000 * 60 * 60);
-    return ageHours < CACHE_TTL_HOURS;
-  }
-
-  /**
-   * Get cache age in hours
-   */
-  private getCacheAgeHours(lastUpdated: Date): number {
-    const ageMs = Date.now() - lastUpdated.getTime();
-    return ageMs / (1000 * 60 * 60);
   }
 
   /**
