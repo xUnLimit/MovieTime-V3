@@ -1,3 +1,7 @@
+import type { VentaDoc } from '@/types';
+
+import type { NotificacionVentaConId } from './types';
+
 export const ESTADO_FILTER_OPTIONS = [
   { value: 'todos', label: 'Todos los estados' },
   { value: 'proximas', label: 'Próximas a vencer' },
@@ -90,4 +94,28 @@ export function formatearFecha(fecha: Date): string {
   const anio = fecha.getFullYear();
 
   return `${dia} de ${mes} del ${anio}`;
+}
+
+export function toVentaDocFromNotification(
+  notif: NotificacionVentaConId,
+): VentaDoc {
+  return {
+    id: notif.ventaId,
+    clienteId: notif.clienteId,
+    clienteNombre: notif.clienteNombre,
+    categoriaId: notif.categoriaId || '',
+    categoriaNombre: notif.categoriaNombre,
+    servicioId: notif.servicioId,
+    servicioNombre: notif.servicioNombre,
+    servicioCorreo: notif.servicioCorreo,
+    servicioContrasena: notif.servicioContrasena,
+    clienteTelefono: notif.clienteTelefono,
+    perfilNombre: notif.perfilNombre,
+    codigo: notif.codigo,
+    notas: notif.notas,
+    metodoPagoId: notif.metodoPagoId,
+    moneda: notif.moneda,
+    precioFinal: notif.precioFinal,
+    estado: 'activo',
+  } as VentaDoc;
 }
