@@ -17,10 +17,11 @@ import {
 } from "@/features/ventas/ventas-form-shared";
 import {
   buildVentaItem,
-  buildVentaCreateInput,
+  buildVentaCreateBatchInputs,
   filterTercerosBySearch,
   getDisponiblesColorClass,
   getPerfilesDropdown,
+  getServicioIdsConPerfil,
   getPerfilesUsados,
   getServiciosDropdownWindow,
   getSlotsDisponiblesForServicio,
@@ -495,31 +496,22 @@ export function useVentasFormController() {
     const metodoPagoNombre = metodoPagoSeleccionado?.nombre || "Sin metodo";
     const moneda = metodoPagoSeleccionado?.moneda || "USD";
     const estadoVenta = watch("estado");
-    const ventaId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : String(Date.now());
 
     try {
       setSaving(true);
-      const writes = items.map((item) =>
-        createVenta(
-          buildVentaCreateInput({
-            clienteId: clienteIdValue,
-            clienteNombre,
-            clienteTelefono: clienteSeleccionado?.telefono || "",
-            estadoVenta: estadoVenta === "inactivo" ? "inactivo" : "activo",
-            fechaFinValue,
-            fechaInicioValue,
-            item,
-            metodoPagoId: metodoPagoIdValue,
-            metodoPagoNombre,
-            moneda,
-            totalFinal,
-            ventaId,
-          }),
-        ),
-      );
+      const writes = buildVentaCreateBatchInputs({
+        clienteId: clienteIdValue,
+        clienteNombre,
+        clienteTelefono: clienteSeleccionado?.telefono || "",
+        estadoVenta: estadoVenta === "inactivo" ? "inactivo" : "activo",
+        fechaFinValue,
+        fechaInicioValue,
+        items,
+        metodoPagoId: metodoPagoIdValue,
+        metodoPagoNombre,
+        moneda,
+        totalFinal,
+      }).map((input) => createVenta(input));
       await Promise.all(writes);
 
       try {
@@ -541,13 +533,7 @@ export function useVentasFormController() {
       }
 
       if (estadoVenta !== "inactivo") {
-        const servicioIdsConPerfil = Array.from(
-          new Set(
-            items
-              .filter((item) => item.perfilNumero)
-              .map((item) => item.servicioId),
-          ),
-        );
+        const servicioIdsConPerfil = getServicioIdsConPerfil(items);
         await Promise.all(
           servicioIdsConPerfil.map((servicioId) =>
             updatePerfilOcupado(servicioId, true),

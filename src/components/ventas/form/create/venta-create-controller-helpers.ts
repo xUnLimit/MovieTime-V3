@@ -383,3 +383,58 @@ export function buildVentaCreateInput({
     totalVenta: totalFinal,
   };
 }
+
+export function buildVentaCreateBatchInputs({
+  clienteId,
+  clienteNombre,
+  clienteTelefono,
+  estadoVenta,
+  fechaFinValue,
+  fechaInicioValue,
+  items,
+  metodoPagoId,
+  metodoPagoNombre,
+  moneda,
+  totalFinal,
+}: {
+  clienteId: string;
+  clienteNombre: string;
+  clienteTelefono: string;
+  estadoVenta: "activo" | "inactivo";
+  fechaFinValue: Date;
+  fechaInicioValue: Date;
+  items: VentaItem[];
+  metodoPagoId: string;
+  metodoPagoNombre: string;
+  moneda: string;
+  totalFinal: number;
+}): CreateVentaWriteInput[] {
+  const ventaId = createClientId();
+
+  return items.map((item) =>
+    buildVentaCreateInput({
+      clienteId,
+      clienteNombre,
+      clienteTelefono,
+      estadoVenta,
+      fechaFinValue,
+      fechaInicioValue,
+      item,
+      metodoPagoId,
+      metodoPagoNombre,
+      moneda,
+      totalFinal,
+      ventaId,
+    }),
+  );
+}
+
+export function getServicioIdsConPerfil(items: VentaItem[]) {
+  return Array.from(
+    new Set(
+      items
+        .filter((item) => item.perfilNumero)
+        .map((item) => item.servicioId),
+    ),
+  );
+}
