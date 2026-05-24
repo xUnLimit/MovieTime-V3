@@ -29,6 +29,7 @@ import { useServiciosStore } from "@/store/serviciosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio, VentaDoc } from "@/types";
 
+import { useServicioFormStepNavigation } from "./useServicioFormStepNavigation";
 import {
   buildCredentialUpdateWhatsAppMessages,
   buildServicioFormPayload,
@@ -65,8 +66,6 @@ export function useServicioFormController({
     (state) => state.enqueueMany,
   );
   const { data: metodosPago = [] } = useMetodosPagoServicios();
-  const [activeTab, setActiveTab] = useState("datos");
-  const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
   const [manualFechaVencimiento, setManualFechaVencimiento] = useState(false);
   const [openFechaInicio, setOpenFechaInicio] = useState(false);
   const [openFechaVencimiento, setOpenFechaVencimiento] = useState(false);
@@ -146,6 +145,14 @@ export function useServicioFormController({
   const fechaInicioValue = watch("fechaInicio");
   const fechaVencimientoValue = watch("fechaVencimiento");
   const estadoValue = watch("estado");
+
+  const {
+    activeTab,
+    handleNext,
+    handlePrevious,
+    handleTabChange,
+    isDatosTabComplete,
+  } = useServicioFormStepNavigation({ trigger });
   const renovacionAutomaticaValue = watch("renovacionAutomatica");
   const diasReposoValue = watch("diasReposo");
   const notasValue = watch("notas");
@@ -301,55 +308,6 @@ export function useServicioFormController({
     setManualFechaVencimiento(true);
   };
 
-  const handleTabChange = async (value: string) => {
-    if (value === "perfil" && !isDatosTabComplete) {
-      const isValid = await trigger([
-        "nombre",
-        "categoriaId",
-        "tipoPlan",
-        "correo",
-        "contrasena",
-        "metodoPagoId",
-        "costoServicio",
-        "perfilesDisponibles",
-        "cicloPago",
-        "fechaInicio",
-        "fechaVencimiento",
-        "estado",
-      ]);
-      if (isValid) {
-        setIsDatosTabComplete(true);
-        setActiveTab(value);
-      }
-    } else {
-      setActiveTab(value);
-    }
-  };
-
-  const handleNext = async () => {
-    const isValid = await trigger([
-      "nombre",
-      "categoriaId",
-      "tipoPlan",
-      "correo",
-      "contrasena",
-      "metodoPagoId",
-      "costoServicio",
-      "perfilesDisponibles",
-      "cicloPago",
-      "fechaInicio",
-      "fechaVencimiento",
-      "estado",
-    ]);
-    if (isValid) {
-      setIsDatosTabComplete(true);
-      setActiveTab("perfil");
-    }
-  };
-
-  const handlePrevious = () => {
-    setActiveTab("datos");
-  };
 
   const onSubmit = async (data: ServicioFormData) => {
     try {
