@@ -3,109 +3,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useEffect, useMemo, useRef } from 'react';
+import { ChevronLeft, Moon, Sun } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  Users,
-  Tv2,
-  ShoppingCart,
-  Bell,
-  Folder,
-  Wallet,
-  MessageSquare,
-  FileText,
-  Moon,
-  Pause,
-  DollarSign,
-  Sun,
-  ChevronLeft
-} from 'lucide-react';
 import { useTheme } from '@/components/layout/ThemeProvider';
 import { useSidebarState } from '@/hooks/use-sidebar';
 import { useAuthStore } from '@/store/authStore';
 import { UserMenu } from './UserMenu';
-import React, { useEffect, useRef, useMemo } from 'react';
-
-type NavItem = { name: string; href: string; icon: React.ComponentType<{ className?: string }>; badge?: string };
-type NavSection = { label?: string; items: NavItem[] };
-
-const navigationSections: NavSection[] = [
-  {
-    label: 'Inicio',
-    items: [
-      {
-        name: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutDashboard
-      }
-    ]
-  },
-  {
-    label: 'Operación',
-    items: [
-      {
-        name: 'Terceros',
-        href: '/terceros',
-        icon: Users
-      },
-      {
-        name: 'Ventas',
-        href: '/ventas',
-        icon: ShoppingCart
-      },
-      {
-        name: 'Servicios',
-        href: '/servicios',
-        icon: Tv2
-      },
-      {
-        name: 'Gastos',
-        href: '/gastos',
-        icon: DollarSign
-      },
-    ]
-  },
-  {
-    label: 'Seguimiento',
-    items: [
-      {
-        name: 'Notificaciones',
-        href: '/notificaciones',
-        icon: Bell
-      },
-      {
-        name: 'Servicios en Reposo',
-        href: '/reposo',
-        icon: Pause
-      },
-      {
-        name: 'Log de Actividad',
-        href: '/log-actividad',
-        icon: FileText
-      }
-    ]
-  },
-  {
-    label: 'Configuración',
-    items: [
-      {
-        name: 'Categorías',
-        href: '/categorias',
-        icon: Folder
-      },
-      {
-        name: 'Métodos de Pago',
-        href: '/metodos-pago',
-        icon: Wallet
-      },
-      {
-        name: 'Plantillas de Mensajes',
-        href: '/editor-mensajes',
-        icon: MessageSquare
-      }
-    ]
-  }
-];
+import { getSidebarNavigationSections } from './sidebar-navigation';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -121,31 +27,9 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
   const { isOpen, toggle } = useSidebarState();
   const themeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Filter sections based on user role
   const filteredSections = useMemo(() => {
-    return navigationSections.map(section => {
-      if (!user) return section;
-
-      const items = section.items.filter(item => {
-        // Admin-only paths
-        const adminOnlyPaths = [
-          '/gastos',
-          '/editor-mensajes',
-          '/categorias',
-          '/metodos-pago',
-          '/log-actividad'
-        ];
-        
-        if (adminOnlyPaths.includes(item.href)) {
-          return user.role === 'admin';
-        }
-        
-        return true;
-      });
-
-      return { ...section, items };
-    }).filter(section => section.items.length > 0);
-  }, [user]);
+    return getSidebarNavigationSections(user?.role);
+  }, [user?.role]);
 
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : !isOpen;
   const setCollapsed = onCollapse || (() => toggle());
