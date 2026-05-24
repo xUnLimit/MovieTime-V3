@@ -15,7 +15,6 @@ import {
   renewVentaUseCase,
   updateVentaPagoUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
-import { generarMensajeVenta } from '@/lib/utils/whatsapp';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useServiciosStore } from '@/store/serviciosStore';
@@ -23,6 +22,7 @@ import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
+import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
 
 type UseVentaDetalleActionsParams = {
   deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
@@ -131,45 +131,13 @@ export function useVentaDetalleActions({
       emitVentaUpdated(id);
 
       if (data.notificarWhatsApp && venta) {
-        const templateRenovacion = getTemplateByTipo('renovacion');
-        if (templateRenovacion) {
-          try {
-            const clienteSoloNombre = venta.clienteNombre.split(' ')[0];
-            const mensaje = generarMensajeVenta(templateRenovacion.contenido, {
-              clienteNombre: venta.clienteNombre,
-              clienteSoloNombre,
-              servicioNombre: venta.servicioNombre,
-              categoriaNombre: venta.categoriaNombre || '',
-              perfilNombre: venta.perfilNombre || '',
-              correo: venta.servicioCorreo || '',
-              contrasena: venta.servicioContrasena || servicioContrasena || '',
-              codigo: venta.codigo || '',
-              fechaVencimiento: data.fechaVencimiento,
-              monto: renovacion.monto,
-            });
-            const phone = venta.clienteTelefono
-              ? venta.clienteTelefono.replace(/[^\d+]/g, '')
-              : '';
-            toast.success('Venta renovada exitosamente', {
-              duration: Infinity,
-              action: {
-                label: 'Enviar WhatsApp',
-                onClick: () => {
-                  const base = phone
-                    ? `https://web.whatsapp.com/send?phone=${phone}&text=`
-                    : 'https://web.whatsapp.com/send?text=';
-                  window.open(base + encodeURIComponent(mensaje), '_blank', 'noopener,noreferrer');
-                },
-              },
-              actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
-            });
-          } catch (error) {
-            void error;
-            toast.success('Venta renovada exitosamente');
-          }
-        } else {
-          toast.success('Venta renovada exitosamente');
-        }
+        showVentaRenovadaWhatsAppToast({
+          data,
+          monto: renovacion.monto,
+          servicioContrasena,
+          templateRenovacion: getTemplateByTipo('renovacion'),
+          venta,
+        });
       } else {
         toast.success('Venta renovada exitosamente');
       }
