@@ -4,6 +4,7 @@ import {
   type VentaItem,
   type VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
+import type { VentaFormData } from "@/features/ventas/venta-form-schema";
 import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
@@ -160,6 +161,31 @@ export function getServiciosDropdownWindow(
 }
 
 export type CreateVentaWriteInput = Omit<VentaDoc, "id" | "createdAt" | "updatedAt">;
+
+export type VentaCreateDatosStepField =
+  | "clienteId"
+  | "metodoPagoId"
+  | "fechaInicio"
+  | "fechaFin";
+
+export function validateVentaCreateDatosStep({
+  clienteId,
+  fechaFin,
+  fechaInicio,
+  metodoPagoId,
+}: Pick<
+  VentaFormData,
+  VentaCreateDatosStepField
+>): Partial<Record<VentaCreateDatosStepField, string>> {
+  const errors: Partial<Record<VentaCreateDatosStepField, string>> = {};
+
+  if (!clienteId) errors.clienteId = "Seleccione un cliente";
+  if (!metodoPagoId) errors.metodoPagoId = "Seleccione un metodo de pago";
+  if (!fechaInicio) errors.fechaInicio = "Seleccione fecha de inicio";
+  if (!fechaFin) errors.fechaFin = "Seleccione fecha de fin";
+
+  return errors;
+}
 
 function createClientId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {

@@ -28,6 +28,8 @@ import {
   sortServiciosByNewest,
   sortTercerosByNewest,
   validateVentaItemSelection,
+  validateVentaCreateDatosStep,
+  type VentaCreateDatosStepField,
 } from "@/components/ventas/form/create/venta-create-controller-helpers";
 import { useVentaCreatePreviewMessage } from "@/components/ventas/form/create/useVentaCreatePreviewMessage";
 import {
@@ -440,36 +442,23 @@ export function useVentasFormController() {
   };
 
   const handleNext = async () => {
-    let isValid = true;
-    if (!clienteIdValue) {
-      setError("clienteId", {
-        type: "manual",
-        message: "Seleccione un cliente",
+    const stepErrors = validateVentaCreateDatosStep({
+      clienteId: clienteIdValue,
+      fechaFin: fechaFinValue,
+      fechaInicio: fechaInicioValue,
+      metodoPagoId: metodoPagoIdValue,
+    });
+
+    if (Object.keys(stepErrors).length > 0) {
+      Object.entries(stepErrors).forEach(([field, message]) => {
+        setError(field as VentaCreateDatosStepField, {
+          type: "manual",
+          message,
+        });
       });
-      isValid = false;
+      return;
     }
-    if (!metodoPagoIdValue) {
-      setError("metodoPagoId", {
-        type: "manual",
-        message: "Seleccione un metodo de pago",
-      });
-      isValid = false;
-    }
-    if (!fechaInicioValue) {
-      setError("fechaInicio", {
-        type: "manual",
-        message: "Seleccione fecha de inicio",
-      });
-      isValid = false;
-    }
-    if (!fechaFinValue) {
-      setError("fechaFin", {
-        type: "manual",
-        message: "Seleccione fecha de fin",
-      });
-      isValid = false;
-    }
-    if (!isValid) return;
+
     if (items.length === 0) {
       toast.error("Sin servicios", {
         description: "Agrega al menos un servicio antes de continuar.",
