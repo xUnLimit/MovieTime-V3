@@ -13,15 +13,13 @@ import {
   getTerceroMetodoPagoMoneda,
   getTerceroMetodoPagoNombre,
   isPendingTerceroPaymentMethodId,
-  PENDING_TERCERO_PAYMENT_ID,
   withPendingTerceroPaymentMethod,
 } from "@/lib/utils/terceroMetodoPago";
-import { generarMensajeVenta } from "@/lib/utils/whatsapp";
 import type { TemplateMensaje } from "@/types";
 
 import { pagoDialogSchema, type PagoDialogFormData } from "./schema";
 import type { PagoDialogProps } from "./types";
-import { getPagoDialogCopy } from "./helpers";
+import { buildVentaPreviewMessage, getCicloPagoMonths, getDefaultCosto, getDefaultMetodoPagoId, getPagoDialogCopy, getPagoDialogPresentation, getPagoDialogResetValues, hasServicioPagoChanges } from "./helpers";
 
 export function usePagoDialogController(props: PagoDialogProps) {
   const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
@@ -45,13 +43,6 @@ export function usePagoDialogController(props: PagoDialogProps) {
   );
   const isVentaRenew = isVenta && props.mode === 'renew';
 
-  const defaultMetodoPagoId = isVenta
-    ? (isVentaRenew ? '' : venta?.metodoPagoId || PENDING_TERCERO_PAYMENT_ID)
-    : (isEdit && pago ? pago.metodoPagoId || '' : servicio?.metodoPagoId || '');
-  const defaultCosto = venta
-    ? (props.mode === 'renew' ? roundToDecimals(venta.precioFinal || 0) : 0)
-    : (props.mode === 'renew' ? roundToDecimals(servicio?.costoServicio || 0) : 0);
-
   const {
     register,
     handleSubmit,
@@ -64,8 +55,8 @@ export function usePagoDialogController(props: PagoDialogProps) {
     resolver: zodResolver(pagoDialogSchema),
     defaultValues: {
       periodoRenovacion: '',
-      metodoPagoId: defaultMetodoPagoId,
-      costo: defaultCosto,
+      metodoPagoId: getDefaultMetodoPagoId(props),
+      costo: getDefaultCosto(props),
       descuento: 0,
       fechaInicio: new Date(),
       fechaVencimiento: new Date(),
@@ -139,74 +130,8 @@ export function usePagoDialogController(props: PagoDialogProps) {
   useEffect(() => {
     if (!props.open) return;
 
-    if (props.context === 'venta') {
-      if (isEdit) {
-        if (props.pago) {
-          reset({
-            periodoRenovacion: props.pago.cicloPago || '',
-            metodoPagoId: (props.pago.metodoPagoId as string) || venta?.metodoPagoId || PENDING_TERCERO_PAYMENT_ID,
-            costo: roundToDecimals(props.pago.precio ?? 0),
-            descuento: (props.pago.descuento as number) ?? 0,
-            fechaInicio: props.pago.fechaInicio ? new Date(props.pago.fechaInicio) : new Date(),
-            fechaVencimiento: props.pago.fechaVencimiento ? new Date(props.pago.fechaVencimiento) : new Date(),
-            notas: props.pago.notas ?? '',
-            renovacionAutomatica: false,
-          });
-          return;
-        }
-        reset({
-          periodoRenovacion: '',
-          metodoPagoId: venta?.metodoPagoId || PENDING_TERCERO_PAYMENT_ID,
-          costo: 0,
-          descuento: 0,
-          fechaInicio: new Date(),
-          fechaVencimiento: new Date(),
-          notas: '',
-          renovacionAutomatica: false,
-        });
-        return;
-      }
-
-      const fechaVencimientoActual = venta?.fechaFin ? new Date(venta.fechaFin) : new Date();
-      reset({
-        periodoRenovacion: '',
-        metodoPagoId: '',
-        costo: roundToDecimals(venta?.precioFinal || 0),
-        descuento: 0,
-        fechaInicio: fechaVencimientoActual,
-        fechaVencimiento: fechaVencimientoActual,
-        notas: venta?.notas ?? '',
-        renovacionAutomatica: false,
-      });
-      return;
-    }
-
-    if (isEdit) {
-      if (!props.pago || !servicio) return;
-      reset({
-        periodoRenovacion: props.pago.cicloPago || servicio.cicloPago || '',
-        metodoPagoId: props.pago.metodoPagoId || '',
-        costo: roundToDecimals(props.pago.monto),
-        fechaInicio: new Date(props.pago.fechaInicio),
-        fechaVencimiento: new Date(props.pago.fechaVencimiento),
-        notas: props.pago.notas ?? servicio?.notas ?? '',
-        renovacionAutomatica: servicio.renovacionAutomatica ?? false,
-      });
-      return;
-    }
-
-    const fechaVencimientoActual = servicio?.fechaVencimiento
-      ? new Date(servicio.fechaVencimiento)
-      : new Date();
-    reset({
-      periodoRenovacion: '',
-      metodoPagoId: servicio?.metodoPagoId || '',
-      costo: roundToDecimals(servicio?.costoServicio || 0),
-      fechaInicio: fechaVencimientoActual,
-      fechaVencimiento: fechaVencimientoActual,
-      notas: servicio?.notas ?? '',
-      renovacionAutomatica: servicio?.renovacionAutomatica ?? false,
-    });
+    const resetValues = getPagoDialogResetValues(props);
+    if (resetValues) reset(resetValues);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     props.open,
@@ -219,44 +144,30 @@ export function usePagoDialogController(props: PagoDialogProps) {
 
   useEffect(() => {
     if (fechaInicioValue && periodoValue && periodoValue !== '') {
-      const meses =
-        periodoValue === 'mensual' ? 1 :
-        periodoValue === 'trimestral' ? 3 :
-        periodoValue === 'semestral' ? 6 : 12;
-      const nuevaFechaVencimiento = addMonths(fechaInicioValue, meses);
+      const nuevaFechaVencimiento = addMonths(fechaInicioValue, getCicloPagoMonths(periodoValue));
       setValue('fechaVencimiento', nuevaFechaVencimiento);
     }
   }, [periodoValue, fechaInicioValue, setValue]);
 
-  // Generar vista previa del mensaje cuando notificarWhatsApp está activo
   useEffect(() => {
-    if (!isVenta || !notificarWhatsAppValue || isEdit) {
-      setPreviewMessage('');
-      return;
-    }
-
-    const template = getTemplateByTipo('renovacion');
-    if (!template) {
-      setPreviewMessage('Template de renovación no encontrado');
-      return;
-    }
-
-    const precioFinal = calculateDiscountedAmount(Number(costoValue) || 0, Number(descuentoValue) || 0);
-
     try {
-      const mensaje = generarMensajeVenta(template.contenido, {
-        clienteNombre: props.clienteNombre || 'Cliente',
+      setPreviewMessage(buildVentaPreviewMessage({
+        isVenta,
+        isEdit,
+        notificarWhatsAppValue,
+        template: getTemplateByTipo('renovacion'),
+        costoValue,
+        descuentoValue,
+        fechaVencimientoValue,
+        clienteNombre: props.clienteNombre,
         clienteSoloNombre: props.clienteSoloNombre,
-        servicioNombre: props.servicioNombre || 'Servicio',
-        categoriaNombre: props.categoriaNombre || 'Categoría',
-        perfilNombre: props.perfilNombre || '',
-        correo: props.correo || '',
-        contrasena: props.contrasena || '',
-        codigo: props.codigo || '',
-        fechaVencimiento: fechaVencimientoValue || new Date(),
-        monto: precioFinal,
-      });
-      setPreviewMessage(mensaje);
+        servicioNombre: props.servicioNombre,
+        categoriaNombre: props.categoriaNombre,
+        perfilNombre: props.perfilNombre,
+        correo: props.correo,
+        contrasena: props.contrasena,
+        codigo: props.codigo,
+      }));
     } catch (error) {
       console.error('Error generando mensaje:', error);
       setPreviewMessage('Error generando mensaje de vista previa');
@@ -281,17 +192,15 @@ export function usePagoDialogController(props: PagoDialogProps) {
 
   const hasChanges = useMemo(() => {
     if (props.context !== 'servicio' || props.mode !== 'edit') return true;
-    if (!props.pago || !servicio) return false;
-    const inicioPago = new Date(props.pago.fechaInicio).getTime();
-    const vencimientoPago = new Date(props.pago.fechaVencimiento).getTime();
-    return (
-      periodoValue !== (props.pago.cicloPago || '') ||
-      metodoPagoIdValue !== (props.pago.metodoPagoId || '') ||
-      costoValue !== roundToDecimals(props.pago.monto) ||
-      fechaInicioValue?.getTime() !== inicioPago ||
-      fechaVencimientoValue?.getTime() !== vencimientoPago ||
-      (notasValue ?? '') !== (props.pago.notas ?? '')
-    );
+    return hasServicioPagoChanges({
+      pago: props.pago,
+      periodoValue,
+      metodoPagoIdValue,
+      costoValue,
+      fechaInicioValue,
+      fechaVencimientoValue,
+      notasValue,
+    });
   }, [
     costoValue,
     fechaInicioValue,
@@ -302,7 +211,6 @@ export function usePagoDialogController(props: PagoDialogProps) {
     metodoPagoIdValue,
     periodoValue,
     props.pago,
-    servicio,
   ]);
 
   const onSubmit = async (data: PagoDialogFormData) => {
@@ -343,13 +251,7 @@ export function usePagoDialogController(props: PagoDialogProps) {
     ventaClienteNombre: venta?.clienteNombre,
   });
   const submitDisabled = isSubmitting || (!isVenta && isEdit && !hasChanges);
-  const dialogContentClassName = isVenta
-    ? 'sm:max-w-[600px]'
-    : 'sm:max-w-[760px]';
-  const notasLabel = isEdit ? 'Nota del pago' : 'Nota principal';
-  const notasPlaceholder = isEdit
-    ? 'Edita la nota historica de este pago...'
-    : 'Edita la nota principal que se conservara para futuras renovaciones...';
+  const { dialogContentClassName, notasLabel, notasPlaceholder } = getPagoDialogPresentation(isVenta, isEdit);
   return {
     shouldRender,
     isVenta,
