@@ -49,7 +49,7 @@ Completado hasta esta iteracion:
 - Fase 4 formularios/componentes grandes: `VentasForm`, `VentasEditForm`, `ServicioForm`, `ServicioDetalleClient` y `TerceroDetails` quedaron por debajo de 300 lineas con controllers/secciones dedicadas; `VentasForm`, `VentasEditForm`, `ServicioForm` y `TerceroDetails` tienen tests de composicion.
 - Fase 4 tamanos: no quedan archivos en `src` por encima de 300 lineas, excluyendo tipos generados.
 - Pendiente Fase 4: aplicar migraciones pendientes al remoto y cobertura >=80%.
-- Cobertura/tests: suite actual en 241 tests pasando; ultima cobertura medida 41.90% statements / 45.33% lines.
+- Cobertura/tests: suite actual en 241 tests pasando; ultima cobertura medida 44.62% statements / 48.03% lines.
 
 Commits de referencia de esta iteracion:
 
