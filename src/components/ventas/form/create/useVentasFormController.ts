@@ -12,6 +12,7 @@ import {
   getDisponiblesColorClass,
 } from "@/components/ventas/form/create/venta-create-controller-helpers";
 import { useVentaCreateItemActions } from "@/components/ventas/form/create/useVentaCreateItemActions";
+import { useVentaCreateComputedState } from "@/components/ventas/form/create/useVentaCreateComputedState";
 import { useVentaCreateOptionsState } from "@/components/ventas/form/create/useVentaCreateOptionsState";
 import { useVentaCreatePreviewMessage } from "@/components/ventas/form/create/useVentaCreatePreviewMessage";
 import { useVentaCreateSelectionHandlers } from "@/components/ventas/form/create/useVentaCreateSelectionHandlers";
@@ -19,21 +20,12 @@ import { useVentaCreateServicioRankingState } from "@/components/ventas/form/cre
 import { useVentaCreateStepNavigation } from "@/components/ventas/form/create/useVentaCreateStepNavigation";
 import { useVentaCreateSubmit } from "@/components/ventas/form/create/useVentaCreateSubmit";
 import {
-  useVentaPerfilDetalle,
-  type PendingVentaPerfil,
-} from "@/components/ventas/form/useVentaPerfilDetalle";
-import {
   useMetodosPagoTercerosOptions,
   useServiciosByCategoria,
 } from "@/components/ventas/form/useVentaFormQueries";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useTemplates } from "@/hooks/use-templates";
 import { useTerceros } from "@/hooks/use-terceros";
-import { getCurrencySymbol } from "@/lib/constants";
-import {
-  calculateDiscountedAmount,
-  roundToDecimals,
-} from "@/lib/utils/calculations";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useVentasStore } from "@/store/ventasStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
@@ -169,22 +161,21 @@ export function useVentasFormController() {
   });
 
 
-  const clientePendienteNombre = useMemo(() => {
-    if (!clienteSeleccionado) return "Cliente pendiente";
-    return `${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido || ""}`.trim();
-  }, [clienteSeleccionado]);
-
-  const perfilesPendientesDetalle = useMemo<PendingVentaPerfil[]>(() => {
-    return items
-      .filter((item) => item.perfilNumero)
-      .map((item) => ({
-        servicioId: item.servicioId,
-        perfilNumero: item.perfilNumero as number,
-        clienteNombre: clientePendienteNombre,
-        perfilNombre:
-          item.perfilNombre?.trim() || `Perfil ${item.perfilNumero}`,
-      }));
-  }, [items, clientePendienteNombre]);
+  const {
+    descuentoNumero,
+    perfilDetalle,
+    precioBase,
+    precioFinalNumero,
+    simboloMoneda,
+    subtotal,
+    totalFinal,
+  } = useVentaCreateComputedState({
+    clienteSeleccionado,
+    descuento,
+    items,
+    metodoPagoSeleccionado,
+    precio,
+  });
 
   const {
     perfilDetalleOpen,
@@ -196,24 +187,7 @@ export function useVentasFormController() {
     errorPerfilesDetalle,
     setErrorPerfilesDetalle,
     handleOpenPerfilDetalle,
-  } = useVentaPerfilDetalle(perfilesPendientesDetalle);
-
-  const simboloMoneda = getCurrencySymbol(metodoPagoSeleccionado?.moneda);
-  const precioBase = roundToDecimals(Number(precio) || 0);
-  const descuentoNumero = roundToDecimals(Number(descuento) || 0);
-  const precioFinalNumero = calculateDiscountedAmount(
-    precioBase,
-    descuentoNumero,
-  );
-
-  const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.precio, 0),
-    [items],
-  );
-  const totalFinal = useMemo(
-    () => items.reduce((sum, item) => sum + item.precioFinal, 0),
-    [items],
-  );
+  } = perfilDetalle;
   useVentaCreatePreviewMessage({
     categorias,
     categoriaSeleccionada,
