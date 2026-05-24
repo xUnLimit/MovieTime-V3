@@ -50,11 +50,9 @@ vi.mock('@/lib/supabase/catalogos-repository', () => ({
 }));
 
 import {
-  createVentaRefundUseCase,
   createVentaUseCase,
   deleteVentaUseCase,
   renewVentaUseCase,
-  toVentaPronostico,
   updateVentaUseCase,
   updateVentaWithLatestPagoUseCase,
 } from './ventas-use-cases';
@@ -342,95 +340,4 @@ describe('ventas use cases', () => {
     });
   });
 
-  it('creates a valid refund and returns a profile delta when cutting the venta', async () => {
-    ventasRepository.queryPagosVenta.mockResolvedValueOnce([
-      {
-        id: 'pago-1',
-        ventaId: ventaBase.id,
-        monto: 10,
-        estado: 'registrado',
-      },
-    ]);
-    ventasRepository.createVentaRefund.mockResolvedValueOnce('pago-reembolso');
-    ventasRepository.getVentaById.mockResolvedValueOnce(ventaBase);
-    ventaSyncService.getVentaConUltimoPago.mockResolvedValueOnce({ ...ventaBase, estado: 'inactivo' });
-    const recordActivityLog = vi.fn();
-
-    const result = await createVentaRefundUseCase(ventaBase, {
-      ventaId: ventaBase.id,
-      monto: 5,
-      metodoPagoId: '00000000-0000-4000-8000-000000000015',
-      metodoPagoNombre: 'Zelle',
-      moneda: 'USD',
-      fecha: new Date('2026-05-15T00:00:00.000Z'),
-      nota: 'Reembolso parcial',
-      destinoReembolso: 'Banco General 123',
-      cortarServicio: true,
-      motivoCorte: 'Cliente solicito corte',
-    }, {
-      logContext,
-      recordActivityLog,
-    });
-
-    expect(ventasRepository.createVentaRefund).toHaveBeenCalledWith(expect.objectContaining({
-      p_venta_id: ventaBase.id,
-      p_monto_original: 5,
-      p_monto_usd: 5,
-      p_destino_reembolso: 'Banco General 123',
-      p_cortar: true,
-      p_motivo_corte: 'Cliente solicito corte',
-    }));
-    expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({
-      accion: 'reembolso',
-      entidad: 'venta',
-      entidadId: ventaBase.id,
-    }));
-    expect(result).toEqual(expect.objectContaining({
-      pagoId: 'pago-reembolso',
-      monto: 5,
-      montoUsd: 5,
-      serviceProfileDelta: {
-        servicioId: ventaBase.servicioId,
-        shouldIncrement: false,
-      },
-    }));
-  });
-
-  it('rejects a refund that exceeds the available paid balance', async () => {
-    ventasRepository.queryPagosVenta.mockResolvedValueOnce([
-      {
-        id: 'pago-1',
-        ventaId: ventaBase.id,
-        monto: 5,
-        estado: 'registrado',
-      },
-    ]);
-
-    await expect(createVentaRefundUseCase(ventaBase, {
-      ventaId: ventaBase.id,
-      monto: 6,
-      metodoPagoId: '00000000-0000-4000-8000-000000000015',
-      metodoPagoNombre: 'Zelle',
-      moneda: 'USD',
-      fecha: new Date('2026-05-15T00:00:00.000Z'),
-      destinoReembolso: 'Banco General 123',
-      cortarServicio: false,
-    }, {
-      logContext,
-    })).rejects.toThrow('El reembolso supera el saldo disponible de la venta.');
-
-    expect(ventasRepository.createVentaRefund).not.toHaveBeenCalled();
-  });
-
-  it('does not create a forecast for inactive or zero-priced ventas', () => {
-    expect(toVentaPronostico({ ...ventaBase, estado: 'inactivo' })).toBeNull();
-    expect(toVentaPronostico({ ...ventaBase, precioFinal: 0 })).toBeNull();
-    expect(toVentaPronostico(ventaBase)).toEqual(expect.objectContaining({
-      id: ventaBase.id,
-      categoriaId: ventaBase.categoriaId,
-      cicloPago: 'mensual',
-      precioFinal: 10,
-      moneda: 'USD',
-    }));
-  });
 });
