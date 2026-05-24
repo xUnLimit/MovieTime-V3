@@ -1,21 +1,18 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { getCurrencySymbol } from '@/lib/constants';
-import { queryKeys } from '@/lib/query-keys';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { useTemplatesStore } from '@/store/templatesStore';
 import { useTercerosStore } from '@/store/tercerosStore';
 import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
-import type { Servicio } from '@/types';
 
 import { ServicioDetalleDialogs } from './components/ServicioDetalleDialogs';
 import { ServicioDetalleHeader } from './components/ServicioDetalleHeader';
@@ -27,15 +24,13 @@ import {
   TransferVentaDialog,
 } from './components/ServicioSaleActionsDialogs';
 import { ServicioSummaryCards } from './components/ServicioSummaryCards';
-import type { CategoriaDetalle, MetodoPagoDetalle, PerfilVenta } from './components/types';
 import { useServicioDeleteAction } from './components/useServicioDeleteAction';
+import { useServicioDetalleData } from './components/useServicioDetalleData';
 import { useServicioPaymentActions } from './components/useServicioPaymentActions';
 import { useServicioProfiles } from './components/useServicioProfiles';
 import { useServicioSaleActions } from './components/useServicioSaleActions';
 import { useTotalGastadoUSD } from './components/useTotalGastadoUSD';
 import {
-  fetchServicioDetalleBundle,
-  fetchServicioVentasProfiles,
   getCicloPagoLabel,
   getReturnToServicios,
   sortPagosServicioByNewest,
@@ -53,12 +48,15 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
   const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
 
-  // Estados locales para los datos específicos de esta página
-  const [servicio, setServicio] = useState<Servicio | null>(null);
-  const [categoria, setCategoria] = useState<CategoriaDetalle | null>(null);
-  const [metodoPago, setMetodoPago] = useState<MetodoPagoDetalle | null>(null);
-
-  const [ventasServicio, setVentasServicio] = useState<Array<PerfilVenta & { perfilNumero?: number | null }>>([]);
+  const {
+    categoria,
+    isLoadingData,
+    metodoPago,
+    servicio,
+    setServicio,
+    setVentasServicio,
+    ventasServicio,
+  } = useServicioDetalleData(id);
 
   const {
     cutVentaDialogOpen,
@@ -97,59 +95,8 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     onDeleted: () => router.push('/servicios'),
   });
 
-  // Usar el hook para cargar pagos (con cache)
   const { pagos: pagosServicio, isLoading: pagosHistorialLoading, renovaciones, refresh: refreshPagos } = usePagosServicio(id);
   const { data: metodosPago = [] } = useMetodosPagoServicios();
-  const {
-    data: servicioDetalleBundle,
-    error: servicioDetalleError,
-    isError: isServicioDetalleError,
-    isLoading: isLoadingData,
-  } = useQuery({
-    queryKey: queryKeys.servicios.detailBundle(id),
-    queryFn: () => fetchServicioDetalleBundle(id),
-    enabled: Boolean(id),
-  });
-  const {
-    data: ventasServicioQueryData = [],
-    error: ventasServicioError,
-    isError: isVentasServicioError,
-  } = useQuery({
-    queryKey: queryKeys.servicios.ventas(id),
-    queryFn: () => fetchServicioVentasProfiles(id),
-    enabled: Boolean(id),
-  });
-
-  useEffect(() => {
-    if (!servicioDetalleBundle) return;
-    setServicio(servicioDetalleBundle.servicio);
-    setCategoria(servicioDetalleBundle.categoria);
-    setMetodoPago(servicioDetalleBundle.metodoPago);
-  }, [servicioDetalleBundle]);
-
-  useEffect(() => {
-    if (!isServicioDetalleError) return;
-    console.error('Error cargando datos del servicio:', servicioDetalleError);
-    toast.error('Error al cargar el servicio', {
-      description: 'Ocurrió un problema al obtener los datos. Intenta nuevamente.',
-    });
-    setServicio(null);
-  }, [isServicioDetalleError, servicioDetalleError]);
-
-  useEffect(() => {
-    setVentasServicio(ventasServicioQueryData);
-  }, [ventasServicioQueryData]);
-
-  useEffect(() => {
-    if (!isVentasServicioError) return;
-    console.error('Error cargando ventas del servicio:', ventasServicioError);
-    toast.error('Error cargando ventas del servicio', {
-      description: ventasServicioError instanceof Error ? ventasServicioError.message : undefined,
-    });
-    setVentasServicio([]);
-  }, [isVentasServicioError, ventasServicioError]);
-
-
 
   const currencySymbol = getCurrencySymbol(metodoPago?.moneda);
   const { isCalculatingTotal, totalGastadoUSD } = useTotalGastadoUSD(pagosServicio);
