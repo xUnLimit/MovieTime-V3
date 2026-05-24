@@ -20,23 +20,24 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import {
   countNotificaciones,
   queryNotificaciones,
-  queryNotifications,
   removeNotificacion,
   updateNotificacion,
 } from '@/lib/supabase/notifications-repository';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import {
   getNotificationListState,
-  getServicioNotifications,
   getTypedReposoNotifications,
   getTypedServicioNotifications,
   getTypedVentaNotifications,
-  getVentaNotifications,
   removeServicioNotifications,
   removeVentaNotifications,
   type NotificacionConId,
 } from '@/lib/notifications/notification-store-state';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
+import {
+  getServicioNotificationsToDelete,
+  getVentaNotificationsToDelete,
+} from './notificacionesStoreHelpers';
 
 interface NotificacionesState {
   // State
@@ -230,16 +231,10 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
   deleteNotificacionesPorVenta: async (ventaId: string) => {
     const state = get();
 
-    const localNotifsToDelete = getVentaNotifications(
+    const notifsToDelete = await getVentaNotificationsToDelete(
       state.notificaciones,
       ventaId,
     );
-    const notifsToDelete = localNotifsToDelete.length > 0
-      ? localNotifsToDelete
-      : await queryNotifications<NotificacionConId>([
-          { field: 'entidad', operator: '==', value: 'venta' },
-          { field: 'ventaId', operator: '==', value: ventaId },
-        ]);
 
     // Optimistic update
     const updatedNotifs = removeVentaNotifications(
@@ -269,16 +264,10 @@ export const useNotificacionesStore = create<NotificacionesState>()(subscribeWit
   deleteNotificacionesPorServicio: async (servicioId: string) => {
     const state = get();
 
-    const localNotifsToDelete = getServicioNotifications(
+    const notifsToDelete = await getServicioNotificationsToDelete(
       state.notificaciones,
       servicioId,
     );
-    const notifsToDelete = localNotifsToDelete.length > 0
-      ? localNotifsToDelete
-      : await queryNotifications<NotificacionConId>([
-          { field: 'entidad', operator: '==', value: 'servicio' },
-          { field: 'servicioId', operator: '==', value: servicioId },
-        ]);
 
     // Optimistic update
     const updatedNotifs = removeServicioNotifications(
