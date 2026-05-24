@@ -1,8 +1,8 @@
 # Enterprise Architecture Implementation Plan
 
 **Date:** 2026-05-22  
-**Status:** In progress - Fases 0, 2 y 3 cerradas; Fase 4 parcialmente implementada
-**Source:** `ARCHITECTURE_ROADMAP.md` v1.1
+**Status:** In progress - arquitectura de Fases 0, 2, 3 y 4 cerrada; pendiente testing/cobertura
+**Source:** `ARCHITECTURE_ROADMAP.md` v1.2
 
 ## Goal
 
@@ -49,7 +49,8 @@ Completado hasta esta iteracion:
 - Fase 4 formularios/componentes grandes: `VentasForm`, `VentasEditForm`, `ServicioForm`, `ServicioDetalleClient` y `TerceroDetails` quedaron por debajo de 300 lineas con controllers/secciones dedicadas; `VentasForm`, `VentasEditForm`, `ServicioForm` y `TerceroDetails` tienen tests de composicion.
 - Fase 4 tamanos: no quedan archivos en `src` por encima de 300 lineas, excluyendo tipos generados.
 - Fase 4 migraciones remotas: aplicada y verificada la migracion de hardening `20260524131500_lock_idempotent_rpc_permissions.sql`; `migrate:validate` queda en `passed` con `securityFailures: {}`.
-- Pendiente Fase 4: cobertura >=80%.
+- Fase 4 legacy audit: `dashboardStatsService` y `notificationSyncService` quedan marcados como barrels de compatibilidad; nuevos imports deben ir a `@/lib/dashboard-read-models` y `@/lib/notifications`.
+- Pendiente fuera del alcance arquitectural: cobertura >=80%, flujos E2E/integracion y RPC tests con Supabase local.
 - Cobertura/tests: suite actual en 241 tests pasando; ultima cobertura medida 44.62% statements / 48.03% lines.
 
 Commits de referencia de esta iteracion:

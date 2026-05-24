@@ -1,5 +1,5 @@
 # MovieTime PTY - Hoja de Ruta hacia Arquitectura Enterprise
-# Version 1.1 - Mayo 2026
+# Version 1.2 - Mayo 2026
 
 ---
 
@@ -7,18 +7,17 @@
 
 MovieTime PTY es un sistema de gestion de suscripciones de streaming para el mercado panameno. El proyecto ya tiene una base tecnica madura: Supabase/Postgres es la fuente de verdad, las operaciones criticas usan RPCs atomicas, existe trazabilidad mediante activity log, hay separacion de responsabilidades por carpetas, y `CONTEXT.md` documenta reglas importantes del dominio.
 
-El diagnostico original era correcto en direccion, pero varias cifras y algunos hallazgos estaban desactualizados. Esta version corrige el estado real del repositorio al 22 de mayo de 2026 y ajusta la ruta enterprise para no contradecir decisiones ya tomadas, especialmente la decision de que metricas derivadas deben venir de SQL views/RPCs/triggers o servicios dedicados, no de APIs falsas de mutacion en el cliente.
+El diagnostico original era correcto en direccion, pero varias cifras y algunos hallazgos quedaron superados por la implementacion. Esta version corrige el estado real del repositorio al 24 de mayo de 2026 y separa lo ya cerrado de lo que aun falta. Las decisiones principales ya aplicadas son: metricas derivadas desde SQL/RPC/read models, React Query para lecturas remotas, StoreEventBus para eventos de negocio, adapters RPC tipados e idempotencia en operaciones criticas.
 
-Las principales categorias de deuda tecnica son:
+Estado de implementacion:
 
-1. **Use-cases de alta concentracion**: `ventas-use-cases.ts` y `servicios-use-cases.ts` siguen siendo los modulos de mayor riesgo en negocio. No son solo "largos"; concentran pagos, pronostico, logging, sincronizacion de terceros, actualizacion de perfiles y side-effects.
-2. **Data fetching sin infraestructura unificada**: existen 13 hooks custom, pero el problema real esta en 9 hooks que usan `useState + useEffect` para carga asincrona. No hay deduplicacion de requests, invalidacion centralizada ni background refetch.
-3. **Cobertura insuficiente para refactor enterprise**: hay 36 archivos de test y 105 tests, pero la cobertura real es 36.32% statements / 39.63% lines. Ya existen tests React y Testing Library esta configurado; faltan tests de formularios criticos, flujos completos y RPCs.
-4. **Comunicacion entre modulos fragmentada**: stores, hooks y servicios combinan `dynamic import`, `window.dispatchEvent`, `localStorage.setItem`, acoplamiento directo entre stores y helpers de cache.
-5. **Interfaces criticas sin type safety completa**: varios repositorios llaman RPCs mediante casts `supabase as unknown as { rpc: ... }` porque los tipos generados no reflejan todas las funciones usadas por la app.
-6. **Modulos poco profundos o duplicados**: pagos, notificaciones, pronostico financiero, conversion de moneda y pass-through use-cases tienen interfaces que no concentran suficiente comportamiento.
+1. **Fase 0 cerrada**: tipos duplicados consolidados, side-effects con logging, casts RPC criticos removidos, dashboard no-op eliminado y validacion remota de seguridad en verde.
+2. **Fase 2 cerrada**: ventas y servicios estan separados en queries/writes/payments/refunds/shared con barrels de compatibilidad.
+3. **Fase 3 cerrada**: React Query, query keys, invalidacion centralizada y StoreEventBus estan integrados; no quedan eventos DOM/localStorage de negocio en runtime.
+4. **Fase 4 casi cerrada**: existen modulos profundos de pagos, notificaciones, dashboard read models, forecasting, feature flags e idempotencia RPC. Los formularios/componentes grandes quedaron por debajo de 300 lineas.
+5. **Pendiente principal**: cobertura/testing. La arquitectura esta implementada, pero la red de pruebas aun no llega a los umbrales enterprise.
 
-Este documento propone una ruta en cinco fases: primero corregir falsos silenciosos y type drift; luego ampliar cobertura; despues descomponer use-cases; finalmente introducir React Query, event bus, modulos profundos e idempotencia.
+Este documento queda como vision y registro de estado. El plan operativo vivo esta en `docs/plans/2026-05-22-enterprise-architecture-implementation-plan.md`.
 
 Para iniciar implementacion, usar este roadmap como vision y el plan operativo en `docs/plans/2026-05-22-enterprise-architecture-implementation-plan.md` como secuencia de PRs. Las decisiones base quedan registradas en `docs/adr/`.
 
@@ -30,66 +29,64 @@ Metricas verificadas localmente sobre el repositorio:
 
 | Metrica | Valor actual | Contexto |
 |---|---:|---|
-| Archivos TS/TSX | 397 | En `src` y `tests`, excluyendo `src/lib/supabase/database.types.ts` |
-| Lineas TS/TSX estimadas | 53,815 | Excluyendo generated types |
+| Archivos TS/TSX | 615 | En `src` y `tests`, excluyendo `src/lib/supabase/database.types.ts` |
+| Lineas TS/TSX estimadas | 69,074 | Excluyendo generated types |
 | `database.types.ts` | 3,581 lineas | Tipos generados de Supabase |
-| Stores Zustand | 16 | Archivos de store reales, excluyendo tests |
-| Use-case files | 7 | `ventas-use-cases.ts`: 742 lineas; `servicios-use-cases.ts`: 551 lineas |
+| Stores Zustand | 15 | Archivos `*Store.ts` reales, excluyendo tests |
+| Use-case files | 14 | Mayor archivo productivo: `ventas-payment-use-cases.ts` 264 lineas |
 | Servicios de negocio | 11 | En `src/lib/services/`, excluyendo tests |
 | Repositorios | 12 | Archivos `*-repository.ts`; la capa Supabase tambien tiene infraestructura (`record-core`, `read-models`, `pagination`, `write-utils`) |
-| Hooks custom | 13 | 9 usan `useState/useEffect` para carga asincrona |
-| Archivos de test | 36 | 105 tests pasando en la ultima medicion |
-| Cobertura real | 36.32% statements / 39.63% lines | `npm run test:coverage -- --run` |
-| Migraciones SQL | 78 | En `supabase/migrations` |
-| Componentes React | 145 `.tsx` | En `src/components` |
-| Archivos >400 lineas | 23 | Excluyendo `database.types.ts` |
-| Archivos mas grandes | `VentasForm.tsx` 1026L; `VentasEditForm.tsx` 864L; `ventas-use-cases.ts` 742L; `reposo/page.tsx` 644L; `ServicioForm.tsx` 624L; `servicios-use-cases.ts` 551L | Valores por conteo local |
+| Hooks custom | 31 | Los hooks de lectura remota usan React Query; los `useEffect` restantes son suscripciones/eventos, no fetching manual principal |
+| Archivos de test | 65 | 241 tests pasando |
+| Cobertura real | 44.62% statements / 48.03% lines | `npm run test:coverage` |
+| Migraciones SQL | 81 | En `supabase/migrations`; remoto validado con `migrate:validate` |
+| Componentes React | 192 `.tsx` | En `src/components` |
+| Archivos >400 lineas | 0 | Excluyendo `database.types.ts` |
+| Archivos mas grandes | `ventas-use-cases.test.ts` 300L; `ServicioTransferVentaDialog.tsx` 299L; `venta-create-controller-helpers.ts` 299L; `useTerceroFormController.ts` 298L | Valores por conteo local |
 
-Nota: el documento anterior reportaba 25-30% de cobertura y cero tests React. Eso ya no describe el repo actual. La brecha real no es ausencia total de testing, sino falta de cobertura en flujos de negocio, formularios principales, repositorios/RPCs y contratos de integracion.
+Nota: las cifras anteriores de 36 test files, 105 tests, 36.32% coverage y formularios de 1000+ lineas ya no describen el repositorio actual.
 
 ---
 
 ## MAPA DE ARQUITECTURA ACTUAL
 
-El diseno pretendido sigue siendo `UI -> Store/Query Hook -> Use-Case -> Service -> Repository -> DB`, pero el grafo real tiene accesos directos desde UI/hooks hacia use-cases, services y helpers de Supabase. Esta diferencia importa porque las interfaces publicas que deben estabilizarse no son solo las de stores.
+El flujo objetivo ya esta implementado como monolito modular: `UI -> React Query/Store -> Use-Case/Command -> Domain Module/Repository -> DB`. Zustand queda para estado UI/cache de mutaciones; React Query queda para lecturas remotas; Postgres/RPC sigue siendo fuente de verdad transaccional.
 
 ```text
 UI: src/components, src/app
-  - 145 componentes React
-  - Formularios grandes: VentasForm 1026L, VentasEditForm 864L
-  - Algunos componentes llaman use-cases/services directamente
+  - 192 componentes React en src/components
+  - Formularios principales por debajo de 300L
+  - Tests de composicion para VentasForm, VentasEditForm, ServicioForm y TerceroDetails
 
   -> Zustand stores: src/store
-       - 16 stores
-       - cache TTL y optimistic writes
-       - getLogContext duplicado
-       - dynamic imports entre stores
+       - 15 stores
+       - UI/cache state y optimistic writes
+       - getStoreLogContext compartido
+       - sin dynamic imports runtime entre stores
 
   -> Hooks: src/hooks
-       - 13 hooks custom
-       - 9 con fetching manual
-       - algunos importan services/helpers Supabase
+       - lecturas remotas con React Query/queryKeys
+       - invalidacion centralizada y suscripciones tipadas
 
 Stores/hooks/componentes
   -> Use-cases: src/lib/use-cases
-       - 7 files
-       - ventas 742L, servicios 551L
-       - pass-through: catalogos, notificaciones
-       - mezcla safeAsyncSideEffect con .catch(console.error)
+       - ventas/servicios separados por queries, writes, payments, refunds/shared
+       - barrels de compatibilidad para imports existentes
+       - DomainError en flujos criticos
 
 Use-cases
-  -> Services: src/lib/services
-       - 11 files
-       - dashboardStatsService tiene APIs no-op
-       - currencyService es fuente real de conversion
-       - notificationSyncService concentra 525L
+  -> Domain modules / services
+       - payments: facade de pagos, moneda y factories
+       - notifications: calculo, cleanup, sync y push helpers
+       - dashboard-read-models / forecasting: read models y pronostico
+       - services legacy quedan como adapters de compatibilidad cuando aplica
 
 Services/use-cases/hooks
   -> Repositories / Supabase adapters: src/lib/supabase
        - 12 repository files + infraestructura comun
        - offline read support
        - assertOnlineMutation en escrituras
-       - riesgo: RPCs criticas llamadas con casts unknown
+       - RPCs criticas con adapters tipados
 
 Repositories
   -> Supabase / Postgres
@@ -97,6 +94,7 @@ Repositories
        - RLS
        - views/read models
        - dashboard live via get_dashboard_stats_live/get_dashboard_home
+       - idempotencia en RPCs criticas de creacion/pagos/refunds
 ```
 
 ---
@@ -137,11 +135,11 @@ El patron `detectarCambios() + metadata estructurada + detalles legibles` provee
 
 ---
 
-#### A-1: Use-cases de ventas y servicios concentran demasiada responsabilidad
+#### A-1: Use-cases de ventas y servicios concentraban demasiada responsabilidad
 
-**Severidad:** Critica  
-**Archivos afectados:** `src/lib/use-cases/ventas-use-cases.ts` (742 lineas, 18 funciones exportadas), `src/lib/use-cases/servicios-use-cases.ts` (551 lineas, 11 funciones exportadas)  
-**Impacto:** Cambios en pagos, renovaciones, reembolsos, pronostico o perfiles requieren entender muchas reglas colaterales en el mismo archivo.
+**Estado:** Cerrado en implementacion  
+**Archivos actuales:** `ventas-use-cases.ts` y `servicios-use-cases.ts` son barrels de compatibilidad; la implementacion vive en `src/lib/use-cases/ventas/` y `src/lib/use-cases/servicios/`.  
+**Impacto anterior:** Cambios en pagos, renovaciones, reembolsos, pronostico o perfiles requerian entender muchas reglas colaterales en el mismo archivo.
 
 **Evidencia:**
 
@@ -158,35 +156,34 @@ El patron `detectarCambios() + metadata estructurada + detalles legibles` provee
 
 El problema no es solo cantidad de lineas. La interface del modulo obliga al mantenedor a conocer demasiadas invariantes: que side-effects son criticos, cuales son best-effort, cuando se actualiza perfil, cuando se corta venta y como se registra el log.
 
-**Solucion propuesta:**
+**Solucion implementada:**
 
 Crear modulos de use-cases por capacidad y mantener un barrel de compatibilidad:
 
 ```text
 src/lib/use-cases/ventas/
-  queries.ts          (get/fetch/count)
-  writes.ts           (create/update/delete venta)
-  payments.ts         (renew/update/delete payment/refund)
-  side-effects.ts     (sync metodo pago, notificaciones, cache)
-  index.ts            (exports publicos)
+  ventas-query-use-cases.ts
+  ventas-write-use-cases.ts
+  ventas-payment-use-cases.ts
+  ventas-refund-use-cases.ts
+  ventas-shared.ts
 
 src/lib/use-cases/servicios/
-  queries.ts
-  writes.ts
-  payments.ts
-  side-effects.ts
-  index.ts
+  servicios-query-use-cases.ts
+  servicios-write-use-cases.ts
+  servicios-payment-use-cases.ts
+  servicios-shared.ts
 ```
 
-La interface publica debe seguir siendo estable mientras se migran imports. El objetivo no es mover lineas por estetica; es crear locality: cambios de pagos viven en el modulo de pagos, cambios de escritura de venta viven en writes, y side-effects tienen politica explicita.
+La interface publica se mantuvo estable mediante barrels. El objetivo no fue mover lineas por estetica; fue crear locality: cambios de pagos viven en el modulo de pagos, cambios de escritura viven en writes, y side-effects tienen politica explicita.
 
 ---
 
 #### A-2: RPC type drift en repositorios criticos
 
-**Severidad:** Critica  
-**Archivos afectados:** `src/lib/supabase/ventas-repository.ts`, `src/lib/supabase/servicios-repository.ts`, `src/lib/supabase/payments-repository.ts`, `src/lib/supabase/database.types.ts`  
-**Impacto:** Las operaciones mas criticas pierden type safety justo donde mas se necesita: pagos, ventas iniciales, renovaciones, deletes atomicos y reembolsos.
+**Estado:** Cerrado en implementacion  
+**Archivos afectados:** `src/lib/supabase/ventas-rpc-adapter.ts`, `servicios-rpc-adapter.ts`, `payments-rpc-adapter.ts`, `dashboard-rpc-adapter.ts`  
+**Impacto anterior:** Las operaciones mas criticas perdian type safety justo donde mas se necesita: pagos, ventas iniciales, renovaciones, deletes atomicos y reembolsos.
 
 **Evidencia:**
 
@@ -200,24 +197,24 @@ const rpcClient = supabase as unknown as {
 
 Esto permite llamar RPCs que no aparecen en `database.types.ts` o cuyo payload no esta expresado como contrato TypeScript. Si cambia una firma de Postgres, TypeScript no lo detecta.
 
-**Solucion propuesta:**
+**Solucion implementada:**
 
-- Regenerar `database.types.ts` despues de reconciliar migraciones y confirmar que todas las RPCs usadas por runtime aparecen en `Functions`.
-- Crear un adapter tipado de RPCs criticas con payloads explicitamente nombrados si Supabase generated types no cubre alguna firma.
-- Agregar una validacion de CI que falle si `supabase.rpc('...')` usa una funcion no presente en los tipos generados o en la allowlist tipada.
-- Mantener `assertRpcStringId` y helpers de validacion, pero no usarlos como sustituto de firmas tipadas.
+- Adapters tipados para RPCs criticas.
+- Helpers de idempotencia para RPCs que crean registros/pagos/refunds.
+- Hardening remoto aplicado para que overloads idempotentes no sean ejecutables por `anon`.
+- `migrate:validate` en remoto pasa con `securityFailures: {}`.
 
 ---
 
 #### A-3: Data fetching asincrono sin infraestructura unificada
 
-**Severidad:** Critica  
-**Archivos afectados:** `src/hooks/`  
-**Impacto:** Requests duplicados, invalidacion manual, refetch no centralizado y estado de loading/error repetido.
+**Estado:** Cerrado en implementacion  
+**Archivos afectados:** `src/hooks/`, `src/lib/query-keys.ts`, `src/lib/query-client.ts`  
+**Impacto anterior:** Requests duplicados, invalidacion manual, refetch no centralizado y estado de loading/error repetido.
 
 **Estado real:**
 
-Hay 13 hooks custom. De esos, 9 usan `useState/useEffect` para carga asincrona. No todos los hooks son data fetching; `useClientPagination`, `use-sidebar`, `useVentasMetrics` y algunos wrappers derivados no deben contarse como problema principal.
+Las lecturas remotas principales usan React Query. Los `useEffect` restantes en hooks son suscripciones al `StoreEventBus` o efectos UI, no fetching remoto manual principal.
 
 **Ejemplos afectados:**
 
@@ -231,7 +228,7 @@ Hay 13 hooks custom. De esos, 9 usan `useState/useEffect` para carga asincrona. 
 - `use-monto-sin-consumir-total.ts`
 - `use-ventas-por-categorias.ts`
 
-**Solucion propuesta:**
+**Solucion implementada:**
 
 Adoptar TanStack Query v5 para lecturas servidor/cacheadas:
 
@@ -243,24 +240,23 @@ const { data: pagos = [], isLoading } = useQuery({
 });
 ```
 
-Zustand debe conservar estado UI, modales, filtros locales y escrituras optimistas donde aporten valor. React Query debe asumir lecturas remotas, deduplicacion, invalidacion, retry y background refetch.
+Zustand conserva estado UI, modales, filtros locales y escrituras optimistas donde aportan valor. React Query asume lecturas remotas, deduplicacion, invalidacion, retry y background refetch.
 
 ---
 
 #### A-4: Cobertura insuficiente para refactor enterprise
 
 **Severidad:** Critica  
-**Estado real:** 36 test files, 105 tests, cobertura 36.32% statements / 39.63% lines  
-**Impacto:** La cobertura existe, pero no protege todavia los flujos de mayor riesgo.
+**Estado real:** 65 test files, 241 tests, cobertura 44.62% statements / 48.03% lines  
+**Impacto:** La cobertura existe y mejoro, pero no protege todavia todos los flujos de mayor riesgo.
 
 **Brechas reales:**
 
-- Hay `.test.tsx` y Testing Library esta configurado, pero no hay tests de `VentasForm`, `VentasEditForm`, `ServicioForm` ni `TerceroDetails`.
+- Hay `.test.tsx` y Testing Library esta configurado. `VentasForm`, `VentasEditForm`, `ServicioForm` y `TerceroDetails` ya tienen tests de composicion.
 - No hay tests de flujo completo `crear venta -> renovar -> reembolsar`.
 - No hay tests de integracion de RPCs criticas con Supabase local.
-- `lib/supabase` tiene cobertura muy baja (15.17% statements en la ultima medicion).
-- `dashboardStatsService.ts` aparece con 0% porque mezcla RPC live con APIs no-op.
-- Use-cases principales tienen cobertura parcial; `ventas-use-cases.ts` ronda 47% statements y 37% branches.
+- `lib/supabase`, stores y algunos servicios legacy siguen con cobertura baja.
+- Faltan tests de flujo completo y RPCs locales.
 
 **Solucion propuesta:**
 
@@ -278,9 +274,9 @@ La meta de Fase 1 debe ser 60% global y cobertura alta en los modulos que se van
 
 #### A-5: Dashboard no-op contradice la arquitectura actual de read models
 
-**Severidad:** Critica  
-**Archivo afectado:** `src/lib/services/dashboardStatsService.ts`  
-**Impacto:** El codigo llama `adjustIngresosStats`, `adjustGastosStats`, `upsertVentaPronostico` y `upsertServicioPronostico` como si persistieran cambios, pero son no-ops. Eso crea una interface falsa.
+**Estado:** Cerrado en implementacion  
+**Archivo actual:** `src/lib/services/dashboardStatsService.ts` es un barrel legacy hacia `src/lib/dashboard-read-models`.  
+**Impacto anterior:** El codigo llamaba `adjustIngresosStats`, `adjustGastosStats`, `upsertVentaPronostico` y `upsertServicioPronostico` como si persistieran cambios, pero eran no-ops. Eso creaba una interface falsa.
 
 **Evidencia:**
 
@@ -317,9 +313,9 @@ La correccion enterprise es:
 
 #### B-1: Pass-through use-cases con poca profundidad
 
-**Severidad:** Alta  
-**Archivos afectados:** `src/lib/use-cases/notificaciones-use-cases.ts`, `src/lib/use-cases/catalogos-use-cases.ts`, parcialmente `activity-log-use-cases.ts`  
-**Impacto:** Aumentan la navegacion sin agregar invariantes, validacion, errores de dominio ni comportamiento.
+**Estado:** Cerrado en lo principal  
+**Archivos afectados:** `notificaciones-use-cases.ts` y `templates-use-cases.ts` fueron eliminados; `catalogos-use-cases.ts` quedo reducido a un contrato propio.  
+**Impacto anterior:** Aumentaban la navegacion sin agregar invariantes, validacion, errores de dominio ni comportamiento.
 
 **Evidencia:**
 
@@ -331,7 +327,7 @@ export function fetchNotificacionesByFiltersUseCase<T = Notificacion>(
 }
 ```
 
-**Solucion propuesta:**
+**Solucion implementada / regla vigente:**
 
 Aplicar deletion test:
 
@@ -344,9 +340,9 @@ Aplicar deletion test:
 
 #### B-2: Side-effects asincronos con manejo inconsistente
 
-**Severidad:** Alta  
-**Archivos afectados:** use-cases y stores  
-**Impacto:** Algunos errores quedan con contexto estructurado y otros solo llegan a `console.error` o se silencian.
+**Estado:** Cerrado en flujos de negocio principales  
+**Archivos afectados:** use-cases, stores, services y commands  
+**Impacto anterior:** Algunos errores quedaban con contexto estructurado y otros solo llegaban a `console.error` o se silenciaban.
 
 **Evidencia:**
 
@@ -357,7 +353,7 @@ En `ventas-use-cases.ts` y `servicios-use-cases.ts` conviven:
 - `try/catch` para efectos best-effort
 - `catch {}` silencioso en cleanup de notificaciones desde stores
 
-**Solucion propuesta:**
+**Solucion implementada / regla vigente:**
 
 - Definir politica de side-effects: critico, compensable o best-effort.
 - Usar `safeAsyncSideEffect` para todo fire-and-forget best-effort.
@@ -368,8 +364,8 @@ En `ventas-use-cases.ts` y `servicios-use-cases.ts` conviven:
 
 #### B-3: Conversion de moneda dispersa
 
-**Severidad:** Alta  
-**Impacto:** La fuente real es `currencyService`, pero hay wrappers y helpers con responsabilidades mezcladas.
+**Estado:** Cerrado con facade de compatibilidad  
+**Impacto anterior:** La fuente real era `currencyService`, pero habia wrappers y helpers con responsabilidades mezcladas.
 
 **Evidencia:**
 
@@ -385,7 +381,7 @@ payments.sumPaymentsInUSD(payments, convertToUSD)
   -> callback externo hacia currencyService
 ```
 
-**Solucion propuesta:**
+**Solucion implementada / regla vigente:**
 
 Crear un modulo profundo de pagos/moneda con una interface unica para:
 
@@ -394,21 +390,21 @@ Crear un modulo profundo de pagos/moneda con una interface unica para:
 - suma de pagos en USD;
 - snapshots de moneda/tasa.
 
-`currencyService.convertToUSD()` puede seguir siendo el adapter concreto, pero los callers de negocio no deben elegir entre tres wrappers.
+`currencyService` sigue como adapter concreto detras de `@/lib/payments`. Los callers nuevos de negocio deben importar pagos/moneda desde `@/lib/payments`.
 
 ---
 
 #### B-4: Declaration merging accidental en tipos de ventas
 
-**Severidad:** Alta  
+**Estado:** Cerrado  
 **Archivo:** `src/types/ventas.ts`  
-**Impacto:** TypeScript une interfaces con el mismo nombre. El resultado compila, pero oculta duplicacion accidental y dificulta razonar sobre el contrato.
+**Impacto anterior:** TypeScript unia interfaces con el mismo nombre. El resultado compilaba, pero ocultaba duplicacion accidental y dificultaba razonar sobre el contrato.
 
 **Evidencia:**
 
 El archivo declara `VentaPago` dos veces y `PagoVenta` dos veces. Eso no debe ser un mecanismo intencional para modelar pagos.
 
-**Solucion propuesta:**
+**Solucion implementada:**
 
 - Consolidar `VentaPago` en una sola interface.
 - Consolidar `PagoVenta` en una sola interface.
@@ -419,9 +415,9 @@ El archivo declara `VentaPago` dos veces y `PagoVenta` dos veces. Eso no debe se
 
 #### B-5: Estado derivado duplicado en stores
 
-**Severidad:** Alta  
+**Estado:** Mitigado  
 **Archivo principal:** `src/store/serviciosStore.ts`  
-**Impacto:** `totalCategoriasActivas` vive en un store de servicios, aunque conceptualmente pertenece a categorias/dashboard/read model.
+**Impacto anterior:** `totalCategoriasActivas` vivia en un store de servicios, aunque conceptualmente pertenece a categorias/dashboard/read model.
 
 **Evidencia:**
 
@@ -431,7 +427,7 @@ serviciosActivos: number;
 totalCategoriasActivas: number;
 ```
 
-**Solucion propuesta:**
+**Regla vigente:**
 
 Definir ownership:
 
@@ -445,9 +441,9 @@ El componente que necesite varias metricas debe componer selectors/hooks, no dup
 
 #### B-6: Cascadas de notificaciones fuera de transaccion
 
-**Severidad:** Alta  
+**Estado:** Mitigado  
 **Archivos afectados:** `serviciosStore.ts`, `ventasStore.ts`, RPCs de delete/archive  
-**Impacto:** El delete/archive principal puede completarse y el cleanup de notificaciones fallar silenciosamente.
+**Impacto anterior:** El delete/archive principal podia completarse y el cleanup de notificaciones fallar silenciosamente.
 
 **Evidencia:**
 
@@ -460,7 +456,7 @@ try {
 }
 ```
 
-**Solucion propuesta:**
+**Regla vigente:**
 
 Primero decidir la regla de negocio:
 
@@ -501,8 +497,8 @@ Lo que debe eliminarse es el acceso ad hoc. Cada ruta debe tener una interface c
 
 #### C-1: Sin Event Bus centralizado para cambios de negocio
 
-**Severidad:** Media  
-**Impacto:** Los eventos de negocio se comunican mediante dynamic imports, DOM events, localStorage y acoplamiento directo.
+**Estado:** Cerrado  
+**Impacto anterior:** Los eventos de negocio se comunicaban mediante dynamic imports, DOM events, localStorage y acoplamiento directo.
 
 **Estado real:**
 
@@ -513,7 +509,7 @@ Hay multiples usos de:
 - dynamic imports de stores desde otros stores
 - `client-cache.ts` importando stores de forma dinamica
 
-**Solucion propuesta:**
+**Solucion implementada:**
 
 Crear `StoreEventBus` tipado:
 
@@ -531,11 +527,11 @@ Los stores se suscriben a eventos. Los use-cases o stores emiten eventos despues
 
 #### C-2: Documentacion legacy de dashboard entra en conflicto con Supabase actual
 
-**Severidad:** Media  
+**Estado:** Mitigado  
 **Archivos afectados:** `docs/plans/2026-02-13-dashboard-implementation-design.md`, `docs/plans/2026-02-22-dashboard-metrics-optimization-design.md`, `dashboardStatsService.ts`  
-**Impacto:** Documentos antiguos describen Firebase/incremental cache y ajustes por delta, mientras la app actual lee dashboard live desde RPCs Supabase.
+**Impacto anterior:** Documentos antiguos describian Firebase/incremental cache y ajustes por delta, mientras la app actual lee dashboard live desde RPCs Supabase.
 
-**Solucion propuesta:**
+**Regla vigente:**
 
 - Marcar esos documentos como legacy o superados por Supabase live RPCs.
 - Crear ADR o nota de arquitectura: "Dashboard read models se calculan en Postgres; el cliente solo invalida/refetchea".
@@ -545,9 +541,9 @@ Los stores se suscriben a eventos. Los use-cases o stores emiten eventos despues
 
 #### C-3: Sin ADRs para decisiones enterprise
 
-**Severidad:** Media  
-**Estado actual:** `docs/adr/` ya existe con cinco ADRs iniciales; falta convertirlo en parte obligatoria del proceso de cambio.  
-**Impacto:** Si los ADRs no se mantienen, las decisiones importantes volveran a quedar repartidas entre planes antiguos, `CONTEXT.md`, migraciones y convenciones tacitas.
+**Estado:** Cerrado con ADRs iniciales  
+**Estado actual:** `docs/adr/` existe con ADRs iniciales; falta mantenerlo como parte obligatoria del proceso de cambio.  
+**Impacto restante:** Si los ADRs no se mantienen, las decisiones importantes volveran a quedar repartidas entre planes antiguos, `CONTEXT.md`, migraciones y convenciones tacitas.
 
 **Solucion propuesta:**
 
@@ -563,11 +559,11 @@ Usar los ADRs existentes como baseline y exigir nuevos ADRs cuando una decision 
 
 #### C-4: Componentes y paginas gigantes
 
-**Severidad:** Media  
-**Archivos:** `VentasForm.tsx` (1026L), `VentasEditForm.tsx` (864L), `reposo/page.tsx` (644L), `ServicioForm.tsx` (624L), `ServicioDetalleClient.tsx` (600L), `TerceroDetails.tsx` (592L)  
-**Impacto:** Los formularios principales mezclan presentacion, validacion, data loading, calculos, side-effects y submit.
+**Estado:** Cerrado para los principales  
+**Archivos actuales:** no quedan archivos `src` por encima de 300 lineas, excluyendo generated types.  
+**Impacto anterior:** Los formularios principales mezclaban presentacion, validacion, data loading, calculos, side-effects y submit.
 
-**Solucion propuesta:**
+**Solucion implementada / regla vigente:**
 
 Extraer por secciones funcionales y hooks especificos:
 
@@ -587,11 +583,11 @@ La meta debe ser testabilidad por interface, no solo bajar lineas. Un form shell
 
 #### C-5: `getLogContext()` duplicado
 
-**Severidad:** Media  
-**Estado real:** duplicado en 7 stores (`categorias`, `gastos`, `metodosPago`, `servicios`, `templates`, `terceros`, `ventas`)  
-**Impacto:** Cambios en fallback de usuario o metadata de log deben repetirse.
+**Estado:** Cerrado  
+**Estado anterior:** duplicado en 7 stores (`categorias`, `gastos`, `metodosPago`, `servicios`, `templates`, `terceros`, `ventas`)  
+**Impacto anterior:** Cambios en fallback de usuario o metadata de log debian repetirse.
 
-**Solucion propuesta:**
+**Solucion implementada:**
 
 Crear helper compartido:
 
@@ -609,10 +605,10 @@ export function getStoreLogContext() {
 
 #### C-6: Sin errores de dominio tipados
 
-**Severidad:** Media  
-**Impacto:** La UI recibe `Error` generico y no puede distinguir validacion, conflicto, no encontrado, saldo insuficiente o problema transitorio.
+**Estado:** Cerrado en flujos criticos  
+**Impacto anterior:** La UI recibia `Error` generico y no podia distinguir validacion, conflicto, no encontrado, saldo insuficiente o problema transitorio.
 
-**Solucion propuesta:**
+**Solucion implementada / regla vigente:**
 
 Crear `src/lib/errors/domain-errors.ts`:
 
@@ -646,13 +642,13 @@ Los use-cases criticos deben lanzar errores de dominio. Los stores traducen esos
 
 `gastosStore` tiene rollback mas completo que ventas/servicios. Las acciones optimistas deben seguir un patron uniforme: capturar estado previo, aplicar cambio, ejecutar comando, confirmar o revertir con error tipado.
 
-#### D-2: Sin feature flags
+#### D-2: Feature flags
 
-No hay mecanismo para activar cambios de arquitectura gradualmente. Una solucion ligera es una tabla `feature_flags` o un read model de configuracion consumido por `configStore`/React Query.
+**Estado:** Cerrado. Existe tabla `feature_flags`, repositorio de lectura y hook `useFeatureFlag()` basado en React Query.
 
 #### D-3: Parametro realtime declarado pero no implementado
 
-`useServerPagination` acepta `realtime?: boolean`, pero no lo usa. Debe eliminarse hasta implementar realtime real.
+**Estado:** Cerrado. `useServerPagination` ya no expone `realtime?: boolean` sin implementacion.
 
 #### D-4: Reglas lint insuficientes para promesas flotantes
 
@@ -983,18 +979,18 @@ Repositories
 
 | Criterio | Actual | Objetivo Fase 0 | Objetivo Fase 2 | Objetivo Final |
 |---|---:|---:|---:|---:|
-| Cobertura statements | 36.32% | >=36% | >=60% | >=80% |
-| Cobertura lines | 39.63% | >=39% | >=60% | >=80% |
-| Use-case mas grande | 742L | 742L | <=300L | <=300L |
-| Componente/pagina mas grande | 1026L | 1026L | 1026L | <=300L en formularios principales |
-| Hooks async manuales | 9 | 9 | 9 | 0 |
-| Eventos DOM/localStorage de negocio | ~10 | Reducidos | <=3 | 0 |
-| Dynamic imports de stores/modulos de cache | 10+ | Reducidos | <=3 | 0 |
-| Duplicaciones de `getLogContext` | 7 | 1 | 1 | 1 |
-| Archivos >400L | 23 | <=22 | <=12 | <=5 con justificacion |
-| Repositorios con RPC casts unknown | 3 | 0 | 0 | 0 |
+| Cobertura statements | 44.62% | >=36% | >=60% | >=80% |
+| Cobertura lines | 48.03% | >=39% | >=60% | >=80% |
+| Use-case productivo mas grande | 264L | 742L | <=300L | <=300L |
+| Componente/pagina mas grande | 299L | 1026L | 1026L | <=300L en formularios principales |
+| Hooks async manuales de fetching remoto | 0 principales | 9 | 9 | 0 |
+| Eventos DOM/localStorage de negocio | 0 runtime | Reducidos | <=3 | 0 |
+| Dynamic imports de stores/modulos de cache | 0 runtime | Reducidos | <=3 | 0 |
+| Duplicaciones de `getLogContext` | 0 locales / 1 helper | 1 | 1 | 1 |
+| Archivos >400L | 0 | <=22 | <=12 | <=5 con justificacion |
+| Repositorios con RPC casts unknown criticos | 0 | 0 | 0 | 0 |
 | ADRs de arquitectura | 5 iniciales | 5 | >=5 | >=8 si aparecen nuevas decisiones |
-| RPCs criticas con idempotencia | 0 | 0 | 0 | >=4 |
+| RPCs criticas con idempotencia | >=5 | 0 | 0 | >=4 |
 
 ---
 
@@ -1017,15 +1013,16 @@ Repositories
 ### Fase 1 - Testing
 
 - [ ] Threshold de cobertura inicial en Vitest.
-- [ ] Tests de `createVentaUseCase`.
-- [ ] Tests de `renewVentaUseCase`.
-- [ ] Tests de `createVentaRefundUseCase`.
-- [ ] Tests de `deleteVentaUseCase`.
-- [ ] Tests equivalentes para servicios.
-- [ ] Tests de payloads RPC en repositorios.
-- [ ] Tests de `VentasForm` render/validacion/submit.
-- [ ] Tests de `VentasEditForm`.
-- [ ] Tests de `ServicioForm`.
+- [x] Tests de `createVentaUseCase`.
+- [x] Tests de `renewVentaUseCase`.
+- [x] Tests de `createVentaRefundUseCase`.
+- [x] Tests de `deleteVentaUseCase`.
+- [x] Tests equivalentes para servicios principales.
+- [x] Tests de payloads RPC en adapters/repositorios criticos.
+- [x] Tests de composicion de `VentasForm`.
+- [x] Tests de composicion de `VentasEditForm`.
+- [x] Tests de composicion de `ServicioForm`.
+- [x] Tests de composicion de `TerceroDetails`.
 - [ ] Flujo crear venta -> renovar -> reembolsar con mocks.
 - [ ] Tests de RPCs criticas con Supabase local.
 - [ ] Cobertura >=60%.

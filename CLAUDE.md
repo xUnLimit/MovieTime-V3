@@ -2,11 +2,17 @@
 
 ## Architecture
 
-- UI reads through `queries`/hooks/stores and writes through use-cases or commands.
+- UI reads remote/server data through React Query hooks and writes through use-cases or commands.
 - Repositories are thin Supabase adapters. They must not contain business decisions.
-- Use-cases own business orchestration, activity logs, dashboard side effects, and cache sync results.
-- Stores are UI/cache state only. Do not add transactional rules to Zustand stores.
+- Use-cases own business orchestration, activity logs, side-effects policy, and cache invalidation/sync results.
+- Stores are UI/cache state only. Do not add transactional rules or cross-store business orchestration to Zustand stores.
 - SQL/RPC is the source of truth for atomic payment, period, and rollback invariants.
+- Read models for dashboard/forecasting come from SQL/RPC modules, not client-side mutation no-ops.
+- New payment/currency code imports from `@/lib/payments`.
+- New notification code imports from `@/lib/notifications`.
+- New dashboard code imports from `@/lib/dashboard-read-models`.
+- Communication between business modules uses `StoreEventBus`; do not add `window.dispatchEvent`/`localStorage` business events.
+- Keep production modules under 300 lines unless there is an explicit documented exception.
 
 ## Safety Rules
 
@@ -15,6 +21,8 @@
 - Do not use `.catch(() => {})`. Use `safeAsyncSideEffect` or an explicit `try/catch` with context.
 - Keep `detalles` in activity logs for display, and use `metadata` for structured audit data.
 - If a payment changes the latest period, update payment and period atomically through RPC.
+- Critical RPCs must go through typed adapters and include idempotency keys when creating records/payments/refunds.
+- Keep legacy service barrels only for compatibility. Do not add new behavior to `dashboardStatsService` or `notificationSyncService`.
 
 ## Testing Rules
 
