@@ -1,0 +1,338 @@
+'use client';
+
+import { useState } from 'react';
+import type { QueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { queryKeys } from '@/lib/query-keys';
+import { invalidateDashboardCache } from '@/lib/commands/client-cache';
+import { syncVentaForecastReadModels } from '@/lib/forecasting';
+import { storeEventBus } from '@/lib/events/store-event-bus';
+import {
+  createVentaRefundUseCase,
+  deleteVentaPagoUseCase,
+  getVentaConPagoActualUseCase,
+  renewVentaUseCase,
+  updateVentaPagoUseCase,
+} from '@/lib/use-cases/ventas-use-cases';
+import { generarMensajeVenta } from '@/lib/utils/whatsapp';
+import { getStoreLogContext } from '@/lib/utils/storeHelpers';
+import { useActivityLogStore } from '@/store/activityLogStore';
+import { useServiciosStore } from '@/store/serviciosStore';
+import { useVentasStore } from '@/store/ventasStore';
+import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
+
+import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
+
+type UseVentaDetalleActionsParams = {
+  deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
+  ensureDialogDependencies: () => Promise<void>;
+  getTemplateByTipo: (tipo: TemplateMensaje['tipo']) => TemplateMensaje | undefined;
+  id: string;
+  metodosPago: MetodoPago[];
+  onDeleted: () => void;
+  queryClient: QueryClient;
+  refreshPagos: () => Promise<unknown> | unknown;
+  servicioContrasena: string;
+  setVentaData: (nextVenta: VentaDoc | null) => void;
+  venta: VentaDoc | null;
+};
+
+function emitVentaUpdated(ventaId: string) {
+  storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
+}
+
+export function useVentaDetalleActions({
+  deleteNotificacionesPorVenta,
+  ensureDialogDependencies,
+  getTemplateByTipo,
+  id,
+  metodosPago,
+  onDeleted,
+  queryClient,
+  refreshPagos,
+  servicioContrasena,
+  setVentaData,
+  venta,
+}: UseVentaDetalleActionsParams) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
+  const [reembolsoDialogOpen, setReembolsoDialogOpen] = useState(false);
+  const [editarPagoDialogOpen, setEditarPagoDialogOpen] = useState(false);
+  const [deletePagoDialogOpen, setDeletePagoDialogOpen] = useState(false);
+  const [pagoToEdit, setPagoToEdit] = useState<VentaPago | null>(null);
+  const [pagoToDelete, setPagoToDelete] = useState<VentaPago | null>(null);
+
+  const handleOpenRenovar = async () => {
+    await ensureDialogDependencies();
+    setRenovarDialogOpen(true);
+  };
+
+  const handleOpenReembolso = async () => {
+    await ensureDialogDependencies();
+    setReembolsoDialogOpen(true);
+  };
+
+  const handleDelete = async (deletePagos: boolean) => {
+    if (!venta) return;
+    try {
+      await useVentasStore
+        .getState()
+        .deleteVenta(venta.id, venta.servicioId, venta.perfilNumero ?? undefined, deletePagos);
+
+      if (deletePagos) {
+        toast.success('Venta eliminada', {
+          description: 'La venta y todos sus registros de pago han sido eliminados.',
+        });
+      } else {
+        toast.success('Venta eliminada', {
+          description: 'La venta fue eliminada. Los registros de pago se conservaron.',
+        });
+      }
+      onDeleted();
+    } catch (error) {
+      console.error('Error eliminando venta:', error);
+      toast.error('Error eliminando venta', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+
+  const handleConfirmRenovacion = async (data: VentaPagoFormData) => {
+    if (!venta) return;
+    try {
+      const metodoPagoSeleccionado = metodosPago.find((metodo) => metodo.id === data.metodoPagoId);
+      const renovacion = await renewVentaUseCase(venta, {
+        ...data,
+        metodoPagoNombre: metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
+        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
+      });
+
+      if (renovacion.syncPaymentMethodFailed) {
+        toast.warning('Venta renovada con advertencia', {
+          description:
+            'La renovacion se guardo, pero no se pudo actualizar el metodo de pago en terceros.',
+        });
+      }
+
+      void renovacion.pronostico;
+      syncVentaForecastReadModels(id);
+      invalidateDashboardCache({ entity: 'venta', entityId: id });
+
+      if (id) {
+        const ventaActualizada = await getVentaConPagoActualUseCase(id);
+        if (ventaActualizada) setVentaData(ventaActualizada);
+      }
+
+      refreshPagos();
+      await deleteNotificacionesPorVenta(id);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+      setRenovarDialogOpen(false);
+      emitVentaUpdated(id);
+
+      if (data.notificarWhatsApp && venta) {
+        const templateRenovacion = getTemplateByTipo('renovacion');
+        if (templateRenovacion) {
+          try {
+            const clienteSoloNombre = venta.clienteNombre.split(' ')[0];
+            const mensaje = generarMensajeVenta(templateRenovacion.contenido, {
+              clienteNombre: venta.clienteNombre,
+              clienteSoloNombre,
+              servicioNombre: venta.servicioNombre,
+              categoriaNombre: venta.categoriaNombre || '',
+              perfilNombre: venta.perfilNombre || '',
+              correo: venta.servicioCorreo || '',
+              contrasena: venta.servicioContrasena || servicioContrasena || '',
+              codigo: venta.codigo || '',
+              fechaVencimiento: data.fechaVencimiento,
+              monto: renovacion.monto,
+            });
+            const phone = venta.clienteTelefono
+              ? venta.clienteTelefono.replace(/[^\d+]/g, '')
+              : '';
+            toast.success('Venta renovada exitosamente', {
+              duration: Infinity,
+              action: {
+                label: 'Enviar WhatsApp',
+                onClick: () => {
+                  const base = phone
+                    ? `https://web.whatsapp.com/send?phone=${phone}&text=`
+                    : 'https://web.whatsapp.com/send?text=';
+                  window.open(base + encodeURIComponent(mensaje), '_blank', 'noopener,noreferrer');
+                },
+              },
+              actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
+            });
+          } catch (error) {
+            void error;
+            toast.success('Venta renovada exitosamente');
+          }
+        } else {
+          toast.success('Venta renovada exitosamente');
+        }
+      } else {
+        toast.success('Venta renovada exitosamente');
+      }
+    } catch (error) {
+      console.error('Error renovando venta:', error);
+      toast.error('Error al renovar venta');
+    }
+  };
+
+  const handleEditarPago = async (pago: VentaPago) => {
+    await ensureDialogDependencies();
+    setPagoToEdit(pago);
+    setEditarPagoDialogOpen(true);
+  };
+
+  const handleConfirmReembolso = async (data: VentaReembolsoFormData) => {
+    if (!venta) return;
+    try {
+      const result = await createVentaRefundUseCase(
+        venta,
+        {
+          ventaId: venta.id,
+          monto: data.monto,
+          metodoPagoId: data.metodoPagoId,
+          metodoPagoNombre: data.metodoPagoNombre,
+          destinoReembolso: data.destinoReembolso,
+          moneda: data.moneda,
+          fecha: data.fecha,
+          nota: data.nota,
+          cortarServicio: data.cortarServicio,
+          motivoCorte: data.motivoCorte,
+        },
+        {
+          logContext: getStoreLogContext(),
+          recordActivityLog: useActivityLogStore.getState().addLog,
+        },
+      );
+
+      if (result.serviceProfileDelta) {
+        await useServiciosStore
+          .getState()
+          .updatePerfilOcupado(
+            result.serviceProfileDelta.servicioId,
+            result.serviceProfileDelta.shouldIncrement,
+          );
+      }
+
+      if (result.ventaActualizada) setVentaData(result.ventaActualizada);
+      refreshPagos();
+      void result.pronostico;
+      syncVentaForecastReadModels(id);
+      invalidateDashboardCache({ entity: 'venta', entityId: id });
+
+      if (data.cortarServicio) {
+        await deleteNotificacionesPorVenta(id);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+      }
+
+      setReembolsoDialogOpen(false);
+      emitVentaUpdated(id);
+
+      toast.success(data.cortarServicio ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
+    } catch (error) {
+      console.error('Error registrando reembolso:', error);
+      toast.error('Error al registrar reembolso', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  };
+
+  const handleDeletePago = (pago: VentaPago) => {
+    setPagoToDelete(pago);
+    setDeletePagoDialogOpen(true);
+  };
+
+  const handleConfirmEditarPago = async (data: VentaPagoFormData) => {
+    if (!venta || !pagoToEdit || !pagoToEdit.id) {
+      console.error('[EditarPago] Missing data:', {
+        venta: !!venta,
+        pagoToEdit: !!pagoToEdit,
+        id: pagoToEdit?.id,
+      });
+      return;
+    }
+
+    try {
+      const metodoPagoSeleccionado = metodosPago.find((metodo) => metodo.id === data.metodoPagoId);
+      const updateResult = await updateVentaPagoUseCase(venta, pagoToEdit.id, {
+        ...data,
+        metodoPagoNombre:
+          data.metodoPagoNombre || metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
+        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
+      });
+
+      if (updateResult.syncPaymentMethodFailed) {
+        toast.warning('Pago actualizado con advertencia', {
+          description:
+            'El pago se actualizo, pero no se pudo reflejar el metodo de pago en terceros.',
+        });
+      }
+
+      setEditarPagoDialogOpen(false);
+      setPagoToEdit(null);
+
+      if (id) {
+        const ventaActualizada = await getVentaConPagoActualUseCase(id);
+        if (ventaActualizada) setVentaData(ventaActualizada);
+      }
+
+      refreshPagos();
+      toast.success('Pago actualizado exitosamente');
+    } catch (error) {
+      console.error('[EditarPago] Error actualizando pago:', error);
+      toast.error('Error al actualizar pago');
+    }
+  };
+
+  const handleConfirmDeletePago = async () => {
+    if (!venta || !pagoToDelete || !pagoToDelete.id) {
+      console.error('[DeletePago] Missing data:', {
+        venta: !!venta,
+        pagoToDelete: !!pagoToDelete,
+        id: pagoToDelete?.id,
+      });
+      return;
+    }
+
+    try {
+      const { ventaActualizada } = await deleteVentaPagoUseCase(id, pagoToDelete.id);
+
+      setDeletePagoDialogOpen(false);
+      setPagoToDelete(null);
+
+      if (ventaActualizada) setVentaData(ventaActualizada);
+
+      refreshPagos();
+      toast.success('Pago eliminado exitosamente');
+    } catch (error) {
+      console.error('[DeletePago] Error eliminando pago:', error);
+      toast.error('Error al eliminar pago');
+    }
+  };
+
+  return {
+    deleteDialogOpen,
+    deletePagoDialogOpen,
+    editarPagoDialogOpen,
+    handleConfirmDeletePago,
+    handleConfirmEditarPago,
+    handleConfirmRenovacion,
+    handleConfirmReembolso,
+    handleDelete,
+    handleDeletePago,
+    handleEditarPago,
+    handleOpenRenovar,
+    handleOpenReembolso,
+    pagoToEdit,
+    renovarDialogOpen,
+    reembolsoDialogOpen,
+    setDeleteDialogOpen,
+    setDeletePagoDialogOpen,
+    setEditarPagoDialogOpen,
+    setRenovarDialogOpen,
+    setReembolsoDialogOpen,
+  };
+}
