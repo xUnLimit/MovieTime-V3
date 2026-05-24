@@ -16,6 +16,7 @@ import {
   type VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
 import {
+  buildVentaCreateInput,
   filterTercerosBySearch,
   getDisponiblesColorClass,
   getPerfilesDropdown,
@@ -539,55 +540,22 @@ export function useVentasFormController() {
     try {
       setSaving(true);
       const writes = items.map((item) =>
-        createVenta({
-          clienteId: clienteIdValue,
-          clienteNombre,
-          clienteTelefono: clienteSeleccionado?.telefono || "", // For WhatsApp notifications
-          metodoPagoId: metodoPagoIdValue,
-          metodoPagoNombre,
-          moneda,
-          fechaInicio: item.fechaInicio ?? fechaInicioValue,
-          fechaFin: item.fechaFin ?? fechaFinValue,
-          codigo: item.codigo || "",
-          perfilNombre: item.perfilNombre || "",
-          estado: estadoVenta || "activo",
-          notas: item.notas || "",
-          categoriaId: item.categoriaId,
-          categoriaNombre: item.categoriaNombre, // <- Guardar nombre denormalizado
-          servicioId: item.servicioId,
-          servicioNombre: item.servicioNombre,
-          servicioCorreo: item.servicioCorreo ?? "",
-          servicioContrasena: item.servicioContrasena ?? "",
-          cicloPago: item.cicloPago || "mensual",
-          perfilNumero: item.perfilNumero ?? null,
-          planId: item.planId,
-          planNombre: item.planNombre,
-          planTipoNombre: item.planTipoNombre,
-          precio: item.precio,
-          descuento: item.descuento,
-          precioFinal: item.precioFinal,
-          pagos: [
-            {
-              id: crypto.randomUUID(),
-              fecha: new Date(),
-              descripcion: "Pago inicial",
-              precio: item.precio,
-              descuento: item.descuento,
-              total: item.precioFinal,
-              metodoPagoId: metodoPagoIdValue,
-              metodoPagoNombre,
-              moneda,
-              isPagoInicial: true,
-              cicloPago: item.cicloPago ?? undefined,
-              fechaInicio: item.fechaInicio ?? fechaInicioValue,
-              fechaVencimiento: item.fechaFin ?? fechaFinValue,
-              notas: item.notas ?? "",
-            },
-          ],
-          itemId: item.itemId,
-          ventaId,
-          totalVenta: totalFinal,
-        }),
+        createVenta(
+          buildVentaCreateInput({
+            clienteId: clienteIdValue,
+            clienteNombre,
+            clienteTelefono: clienteSeleccionado?.telefono || "",
+            estadoVenta: estadoVenta === "inactivo" ? "inactivo" : "activo",
+            fechaFinValue,
+            fechaInicioValue,
+            item,
+            metodoPagoId: metodoPagoIdValue,
+            metodoPagoNombre,
+            moneda,
+            totalFinal,
+            ventaId,
+          }),
+        ),
       );
       await Promise.all(writes);
 

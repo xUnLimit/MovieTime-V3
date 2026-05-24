@@ -5,7 +5,7 @@ import {
 import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
-import type { Servicio, Tercero } from "@/types";
+import type { Servicio, Tercero, VentaDoc } from "@/types";
 
 export function sortTercerosByNewest(terceros: Tercero[]): Tercero[] {
   return [...terceros].sort((a, b) => {
@@ -155,4 +155,95 @@ export function getServiciosDropdownWindow(
     start,
     start + SERVICIOS_DROPDOWN_VISIBLE_ROWS,
   );
+}
+
+export type CreateVentaWriteInput = Omit<VentaDoc, "id" | "createdAt" | "updatedAt">;
+
+function createClientId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function buildVentaCreateInput({
+  clienteId,
+  clienteNombre,
+  clienteTelefono,
+  estadoVenta,
+  fechaFinValue,
+  fechaInicioValue,
+  item,
+  metodoPagoId,
+  metodoPagoNombre,
+  moneda,
+  totalFinal,
+  ventaId,
+}: {
+  clienteId: string;
+  clienteNombre: string;
+  clienteTelefono: string;
+  estadoVenta: "activo" | "inactivo";
+  fechaFinValue: Date;
+  fechaInicioValue: Date;
+  item: VentaItem;
+  metodoPagoId: string;
+  metodoPagoNombre: string;
+  moneda: string;
+  totalFinal: number;
+  ventaId: string;
+}): CreateVentaWriteInput {
+  const fechaInicio = item.fechaInicio ?? fechaInicioValue;
+  const fechaFin = item.fechaFin ?? fechaFinValue;
+
+  return {
+    clienteId,
+    clienteNombre,
+    clienteTelefono,
+    metodoPagoId,
+    metodoPagoNombre,
+    moneda,
+    fechaInicio,
+    fechaFin,
+    codigo: item.codigo || "",
+    perfilNombre: item.perfilNombre || "",
+    estado: estadoVenta || "activo",
+    notas: item.notas || "",
+    categoriaId: item.categoriaId,
+    categoriaNombre: item.categoriaNombre,
+    servicioId: item.servicioId,
+    servicioNombre: item.servicioNombre,
+    servicioCorreo: item.servicioCorreo ?? "",
+    servicioContrasena: item.servicioContrasena ?? "",
+    cicloPago: item.cicloPago || "mensual",
+    perfilNumero: item.perfilNumero ?? null,
+    planId: item.planId,
+    planNombre: item.planNombre,
+    planTipoNombre: item.planTipoNombre,
+    precio: item.precio,
+    descuento: item.descuento,
+    precioFinal: item.precioFinal,
+    pagos: [
+      {
+        id: createClientId(),
+        fecha: new Date(),
+        descripcion: "Pago inicial",
+        precio: item.precio,
+        descuento: item.descuento,
+        total: item.precioFinal,
+        metodoPagoId,
+        metodoPagoNombre,
+        moneda,
+        isPagoInicial: true,
+        cicloPago: item.cicloPago ?? undefined,
+        fechaInicio,
+        fechaVencimiento: fechaFin,
+        notas: item.notas ?? "",
+      },
+    ],
+    itemId: item.itemId,
+    ventaId,
+    totalVenta: totalFinal,
+  };
 }
