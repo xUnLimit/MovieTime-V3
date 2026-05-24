@@ -37,7 +37,7 @@ vi.mock('@/lib/services/dashboardStatsService', () => ({
   getDiaKeyFromDate: vi.fn(() => '2026-04-09'),
 }));
 
-vi.mock('@/lib/services/notificationSyncService', () => ({
+vi.mock('@/lib/notifications', () => ({
   sincronizarNotificacionesForzado: sincronizarNotificacionesForzadoMock,
 }));
 
