@@ -39,3 +39,39 @@ export function getPrecioPorCiclo(
 
   return match?.precio ?? null;
 }
+
+interface PagoDialogCopyArgs {
+  isEdit: boolean;
+  isVenta: boolean;
+  pagoDescripcion?: string;
+  servicioNombre?: string;
+  ventaClienteNombre?: string;
+}
+
+export function getPagoDialogCopy({
+  isEdit,
+  isVenta,
+  pagoDescripcion,
+  servicioNombre,
+  ventaClienteNombre,
+}: PagoDialogCopyArgs) {
+  if (isVenta) {
+    return {
+      title: isEdit
+        ? 'Editar Pago'
+        : `Renovar Venta: ${ventaClienteNombre || ''}`,
+      description: isEdit
+        ? 'Actualiza la informaciÃ³n del pago seleccionado.'
+        : 'Registre un nuevo pago para esta venta para extender su fecha de vencimiento.',
+    };
+  }
+
+  return {
+    title: isEdit
+      ? `Editar pago del servicio: ${servicioNombre || ''}`
+      : `Renovar Servicio: ${servicioNombre || ''}`,
+    description: isEdit
+      ? `Corrija los datos del Ãºltimo pago registrado (${pagoDescripcion ?? 'Pago'}) si se ingresÃ³ algo incorrecto.`
+      : 'Registre un nuevo pago para este servicio para extender su fecha de vencimiento.',
+  };
+}

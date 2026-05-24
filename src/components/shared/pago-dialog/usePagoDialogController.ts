@@ -17,10 +17,11 @@ import {
   withPendingTerceroPaymentMethod,
 } from "@/lib/utils/terceroMetodoPago";
 import { generarMensajeVenta } from "@/lib/utils/whatsapp";
-import type { PagoServicio, TemplateMensaje } from "@/types";
+import type { TemplateMensaje } from "@/types";
 
 import { pagoDialogSchema, type PagoDialogFormData } from "./schema";
 import type { PagoDialogProps } from "./types";
+import { getPagoDialogCopy } from "./helpers";
 
 export function usePagoDialogController(props: PagoDialogProps) {
   const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
@@ -334,17 +335,13 @@ export function usePagoDialogController(props: PagoDialogProps) {
 
   const shouldRender = !(!isVenta && isEdit && !pago);
 
-  const title = isVenta
-    ? (isEdit ? 'Editar Pago' : `Renovar Venta: ${venta?.clienteNombre || ''}`)
-    : (isEdit ? `Editar pago del servicio: ${servicio?.nombre || ''}` : `Renovar Servicio: ${servicio?.nombre || ''}`);
-  const description = isVenta
-    ? (isEdit
-        ? 'Actualiza la información del pago seleccionado.'
-        : 'Registre un nuevo pago para esta venta para extender su fecha de vencimiento.')
-    : (isEdit
-        ? `Corrija los datos del último pago registrado (${(pago as PagoServicio | null)?.descripcion ?? 'Pago'}) si se ingresó algo incorrecto.`
-        : 'Registre un nuevo pago para este servicio para extender su fecha de vencimiento.');
-
+  const { title, description } = getPagoDialogCopy({
+    isEdit,
+    isVenta,
+    pagoDescripcion: pago?.descripcion,
+    servicioNombre: servicio?.nombre,
+    ventaClienteNombre: venta?.clienteNombre,
+  });
   const submitDisabled = isSubmitting || (!isVenta && isEdit && !hasChanges);
   const dialogContentClassName = isVenta
     ? 'sm:max-w-[600px]'
