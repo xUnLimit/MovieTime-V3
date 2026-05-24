@@ -15,6 +15,17 @@ import {
   type VentaItem,
   type VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
+import {
+  filterTercerosBySearch,
+  getDisponiblesColorClass,
+  getPerfilesDropdown,
+  getPerfilesUsados,
+  getServiciosDropdownWindow,
+  getSlotsDisponiblesForServicio,
+  sortPaymentMethods,
+  sortServiciosByNewest,
+  sortTercerosByNewest,
+} from "@/components/ventas/form/create/venta-create-controller-helpers";
 import { useVentaCreatePreviewMessage } from "@/components/ventas/form/create/useVentaCreatePreviewMessage";
 import {
   useVentaPerfilDetalle,
@@ -33,10 +44,7 @@ import {
   calculateDiscountedAmount,
   roundToDecimals,
 } from "@/lib/utils/calculations";
-import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
 import { syncTerceroMetodoPago } from "@/lib/services/terceroMetodoPagoSyncService";
-import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
-import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
 import { rankServicios } from "@/lib/utils/servicioRanking";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useVentasStore } from "@/store/ventasStore";
@@ -120,47 +128,22 @@ export function useVentasFormController() {
     [categorias, categoriaId],
   );
 
-  // Terceros (clientes + revendedores) ordenados por fecha de creación (más reciente primero)
-  const tercerosOrdenados = useMemo(() => {
-    return [...terceros].sort((a, b) => {
-      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bDate - aDate; // Más reciente primero
-    });
-  }, [terceros]);
+  const tercerosOrdenados = useMemo(() => sortTercerosByNewest(terceros), [terceros]);
 
-  // Terceros filtrados por búsqueda
-  const tercerosFiltrados = useMemo(() => {
-    if (!searchCliente) return tercerosOrdenados;
-    const search = normalizeSearchText(searchCliente);
-    const phoneQuery = normalizePhoneSearch(searchCliente);
-    return tercerosOrdenados.filter((u) => {
-      const nombreCompleto = normalizeSearchText(
-        `${u.nombre} ${u.apellido || ""}`,
-      );
-      const telefono = normalizePhoneSearch(u.telefono);
-      return (
-        nombreCompleto.includes(search) ||
-        (phoneQuery.length > 0 && telefono.includes(phoneQuery))
-      );
-    });
-  }, [tercerosOrdenados, searchCliente]);
+  const tercerosFiltrados = useMemo(
+    () => filterTercerosBySearch(tercerosOrdenados, searchCliente),
+    [tercerosOrdenados, searchCliente],
+  );
 
   const categoriasOrdenadas = useMemo(
     () =>
       [...categorias].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
     [categorias],
   );
-  const metodosPagoOrdenados = useMemo(() => {
-    const metodosPendientes = metodosPagoTerceros.filter(
-      (metodo) => metodo.id === PENDING_TERCERO_PAYMENT_ID,
-    );
-    const metodosReales = metodosPagoTerceros
-      .filter((metodo) => metodo.id !== PENDING_TERCERO_PAYMENT_ID)
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-
-    return [...metodosPendientes, ...metodosReales];
-  }, [metodosPagoTerceros]);
+  const metodosPagoOrdenados = useMemo(
+    () => sortPaymentMethods(metodosPagoTerceros),
+    [metodosPagoTerceros],
+  );
   const clienteSeleccionado = tercerosOrdenados.find(
     (c) => c.id === clienteIdValue,
   );
@@ -187,23 +170,12 @@ export function useVentasFormController() {
     return "perfil";
   }, [planSeleccionado]);
 
-  // Ordenar servicios por fecha de creación (más recientes primero)
-  const serviciosOrdenados = useMemo(() => {
-    return [...serviciosCategoria].sort((a, b) => {
-      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bDate - aDate; // Más reciente primero
-    });
-  }, [serviciosCategoria]);
+  const serviciosOrdenados = useMemo(
+    () => sortServiciosByNewest(serviciosCategoria),
+    [serviciosCategoria],
+  );
 
-  const perfilesUsados = useMemo(() => {
-    return items.reduce<Record<string, Set<number>>>((acc, item) => {
-      if (!item.perfilNumero) return acc;
-      if (!acc[item.servicioId]) acc[item.servicioId] = new Set<number>();
-      acc[item.servicioId].add(item.perfilNumero);
-      return acc;
-    }, {});
-  }, [items]);
+  const perfilesUsados = useMemo(() => getPerfilesUsados(items), [items]);
 
   const servicioRankingCandidateIds = useMemo(() => {
     if (!planSeleccionado) return [];
@@ -265,11 +237,7 @@ export function useVentasFormController() {
   );
 
   const serviciosVentana = useMemo(
-    () =>
-      serviciosRankeados.slice(
-        serviciosWindowStart,
-        serviciosWindowStart + SERVICIOS_DROPDOWN_VISIBLE_ROWS,
-      ),
+    () => getServiciosDropdownWindow(serviciosRankeados, serviciosWindowStart),
     [serviciosRankeados, serviciosWindowStart],
   );
 
@@ -283,78 +251,28 @@ export function useVentasFormController() {
 
   const getSlotsDisponibles = (servicioIdValue: string) => {
     const servicio = serviciosCategoria.find((s) => s.id === servicioIdValue);
-    if (!servicio) return 0;
-    const ocupadosEnVenta = perfilesUsados[servicioIdValue]?.size || 0;
-    const ocupadosReales = perfilesOcupadosVenta[servicioIdValue];
-    if (ocupadosReales !== undefined) {
-      return Math.max(
-        (servicio.perfilesDisponibles || 0) -
-          ocupadosReales.size -
-          ocupadosEnVenta,
-        0,
-      );
-    }
-    const ocupadosActual = servicio.perfilesOcupados || 0;
-    return Math.max(
-      (servicio.perfilesDisponibles || 0) - ocupadosActual - ocupadosEnVenta,
-      0,
-    );
+    return getSlotsDisponiblesForServicio({
+      perfilesOcupadosVenta,
+      perfilesUsados,
+      servicio,
+    });
   };
 
-  const perfilesDropdown = useMemo(() => {
-    if (!servicioId) return [];
-
-    const totalPerfiles = servicioSeleccionado?.perfilesDisponibles || 0;
-    if (totalPerfiles <= 0) return [];
-
-    const ocupados = perfilesUsados[servicioId] ?? new Set<number>();
-    const ocupadosEnVentas =
-      perfilesOcupadosVenta[servicioId] ?? new Set<number>();
-    const isDisponible = (numero: number) =>
-      !ocupados.has(numero) && !ocupadosEnVentas.has(numero);
-
-    if (totalPerfiles <= PROFILE_PAGE_SIZE) {
-      const disponibles: number[] = [];
-      for (let numero = 1; numero <= totalPerfiles; numero++) {
-        if (!isDisponible(numero)) continue;
-        disponibles.push(numero);
-      }
-      return disponibles;
-    }
-
-    const bloqueTamano = 5;
-    const totalBloques = Math.ceil(totalPerfiles / bloqueTamano);
-
-    for (let bloque = 0; bloque < totalBloques; bloque++) {
-      const inicio = bloque * bloqueTamano + 1;
-      const fin = Math.min(inicio + bloqueTamano - 1, totalPerfiles);
-      const disponiblesBloque: number[] = [];
-
-      for (let numero = inicio; numero <= fin; numero++) {
-        if (!isDisponible(numero)) continue;
-        disponiblesBloque.push(numero);
-      }
-
-      if (disponiblesBloque.length > 0) {
-        return disponiblesBloque;
-      }
-    }
-
-    return [];
-  }, [
-    perfilesOcupadosVenta,
-    perfilesUsados,
-    servicioId,
-    servicioSeleccionado?.perfilesDisponibles,
-  ]);
-
-  const getDisponiblesColorClass = (disponibles: number, total: number) => {
-    if (total <= 0) return "text-muted-foreground";
-    const ratio = disponibles / total;
-    if (ratio <= 0.25) return "text-[#ff1744]";
-    if (ratio <= 0.5) return "text-[#ffea00]";
-    return "text-[#00ff85]";
-  };
+  const perfilesDropdown = useMemo(
+    () =>
+      getPerfilesDropdown({
+        perfilesOcupadosVenta,
+        perfilesUsados,
+        servicioId,
+        servicioSeleccionado,
+      }),
+    [
+      perfilesOcupadosVenta,
+      perfilesUsados,
+      servicioId,
+      servicioSeleccionado,
+    ],
+  );
 
   const scrollServiciosDropdown = useCallback(
     (direction: "up" | "down") => {
