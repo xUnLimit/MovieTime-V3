@@ -4,17 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  LabelList,
-} from 'recharts';
-import type { LabelProps } from 'recharts';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
@@ -22,12 +11,10 @@ import {
   getValueDomain,
   MIN_NEGATIVE_AXIS_RATIO,
   MIN_NEGATIVE_AXIS_RATIO_MOBILE,
-  NEGATIVE_REVENUE_COLOR,
-  REVENUE_CATEGORY_COLORS,
   REVENUE_CATEGORY_VIEWS,
   useIsCompactChart,
-  VALUE_LABEL_GAP,
 } from './revenue-by-category-helpers';
+import { RevenueByCategoryChart } from './RevenueByCategoryChart';
 
 export function RevenueByCategory() {
   const { data: dashboardHome, isLoading } = useDashboardHome();
@@ -44,12 +31,6 @@ export function RevenueByCategory() {
   const totalVistas = REVENUE_CATEGORY_VIEWS.length;
   const puedeIrAtras = vistaIndex > 0;
   const puedeIrAdelante = vistaIndex < totalVistas - 1;
-
-  const axisColor = 'var(--muted-foreground)';
-  const labelColor = 'var(--foreground)';
-  const tooltipBg = 'var(--background)';
-  const tooltipBorder = 'var(--border)';
-  const tooltipText = 'var(--foreground)';
 
   const { data, hasData } = useMemo(() => {
     const cutoff = `${selectedYear}-01`;
@@ -157,43 +138,6 @@ export function RevenueByCategory() {
           : '-translate-x-3 opacity-0'
         : 'translate-x-0 opacity-100';
 
-  const formatValue = (value: number) =>
-    vista.id === 'ganancia' ? `$${value.toLocaleString()}` : `${value.toFixed(1)}%`;
-
-  const renderValueLabel = (props: LabelProps) => {
-    const xNum = Number(props.x);
-    const yNum = Number(props.y);
-    const widthNum = Number(props.width);
-    const heightNum = Number(props.height);
-    const numericValue = typeof props.value === 'number' ? props.value : Number(props.value ?? 0);
-    if (!Number.isFinite(xNum) || !Number.isFinite(yNum) || !Number.isFinite(widthNum) || !Number.isFinite(heightNum)) {
-      return '';
-    }
-    const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
-    const isNegative = safeValue < 0;
-
-    const barEnd = Math.max(xNum, xNum + widthNum);
-    const barStart = Math.min(xNum, xNum + widthNum);
-    const labelX = isNegative ? barStart - VALUE_LABEL_GAP : barEnd + VALUE_LABEL_GAP;
-    const labelY = yNum + heightNum / 2 + 4;
-
-    return (
-      <text
-        x={labelX}
-        y={labelY}
-        fill={isNegative ? NEGATIVE_REVENUE_COLOR : labelColor}
-        stroke={tooltipBg}
-        strokeWidth={3}
-        paintOrder="stroke"
-        fontSize={valueLabelFontSize}
-        fontWeight={700}
-        textAnchor={isNegative ? 'end' : 'start'}
-      >
-        {formatValue(safeValue)}
-      </text>
-    );
-  };
-
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
@@ -239,76 +183,19 @@ export function RevenueByCategory() {
             <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
           </div>
         ) : (
-          <div className={`w-full h-full transition-all duration-200 ease-out will-change-transform ${animationClass}`}>
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart data={data} layout="vertical" margin={chartMargin}>
-                <XAxis
-                  type="number"
-                  domain={valueDomain}
-                  allowDecimals={vista.id === 'margen'}
-                  tickCount={xAxisTickCount}
-                  stroke={axisColor}
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) =>
-                    vista.id === 'ganancia'
-                      ? `$${Math.round(Number(value))}`
-                      : `${Math.round(Number(value))}%`
-                  }
-                  tick={{ fill: axisColor }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="categoria"
-                  stroke={labelColor}
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={0}
-                  width={yAxisWidth}
-                  tickMargin={yAxisTickMargin}
-                  tick={{ fill: labelColor }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: tooltipBg,
-                    border: `1px solid ${tooltipBorder}`,
-                    borderRadius: '6px',
-                    color: tooltipText,
-                  }}
-                  labelStyle={{ color: tooltipText }}
-                  itemStyle={{ color: tooltipText }}
-                  wrapperStyle={{ maxWidth: isCompactChart ? 180 : undefined }}
-                  formatter={(value: number | undefined) => {
-                    const v = value ?? 0;
-                    const formatted =
-                      vista.id === 'ganancia'
-                        ? `$${v.toFixed(2)} USD`
-                        : `${v.toFixed(1)}%`;
-                    return [formatted, vista.tooltipLabel];
-                  }}
-                  cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
-                />
-                <Bar
-                  dataKey="valor"
-                  radius={[0, 12, 12, 0]}
-                  isAnimationActive
-                  animationDuration={900}
-                  animationEasing="ease-out"
-                  barSize={20}
-                >
-                  {data.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.valor < 0 ? NEGATIVE_REVENUE_COLOR : REVENUE_CATEGORY_COLORS[index % REVENUE_CATEGORY_COLORS.length]}
-                    />
-                  ))}
-                  <LabelList dataKey="valor" content={renderValueLabel} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <RevenueByCategoryChart
+            animationClass={animationClass}
+            chartHeight={chartHeight}
+            chartMargin={chartMargin}
+            data={data}
+            isCompactChart={isCompactChart}
+            valueDomain={valueDomain}
+            valueLabelFontSize={valueLabelFontSize}
+            vista={vista}
+            xAxisTickCount={xAxisTickCount}
+            yAxisTickMargin={yAxisTickMargin}
+            yAxisWidth={yAxisWidth}
+          />
         )}
       </CardContent>
     </Card>
