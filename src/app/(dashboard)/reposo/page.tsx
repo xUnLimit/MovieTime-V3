@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -11,22 +9,14 @@ import {
   Check,
   CheckCircle2,
   Clock,
-  Eye,
-  MoreHorizontal,
-  Power,
-  RefreshCw,
   Search,
-  Trash2,
 } from "lucide-react";
 
 import { MetricCard } from "@/components/shared/MetricCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,7 +28,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { queryKeys } from "@/lib/query-keys";
 import { queryNotifications } from "@/lib/supabase/notifications-repository";
 import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
@@ -46,6 +35,7 @@ import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import type { Servicio } from "@/types/servicios";
 import { toast } from "sonner";
+import { ReposoTable } from "./ReposoTable";
 import {
   fetchReposoServicesQuery,
   fetchServicioMetodosPagoQuery,
@@ -249,176 +239,6 @@ function ReposoPageContent() {
     }
   };
 
-  const columns: Column<ReposoServicio>[] = useMemo(
-    () => [
-      {
-        key: "nombre",
-        header: "Nombre",
-        sortable: true,
-        render: (item) => <div className="font-medium">{item.nombre}</div>,
-      },
-      {
-        key: "correo",
-        header: "Email",
-        sortable: true,
-        render: (item) => <span className="text-sm">{item.correo}</span>,
-      },
-      {
-        key: "fechaInicioReposo",
-        header: "Fecha Inicio",
-        sortable: true,
-        align: "center",
-        render: (item) => (
-          <span className="text-sm text-white">
-            {item.fechaInicioReposo
-              ? format(
-                  new Date(item.fechaInicioReposo),
-                  "dd 'de' MMMM 'del' yyyy",
-                  { locale: es },
-                )
-              : "—"}
-          </span>
-        ),
-      },
-      {
-        key: "fechaVencimiento",
-        header: "Fecha Fin",
-        sortable: true,
-        align: "center",
-        render: (item) => (
-          <span className="text-sm text-white">
-            {item.fechaVencimiento
-              ? format(
-                  new Date(item.fechaVencimiento),
-                  "dd 'de' MMMM 'del' yyyy",
-                  { locale: es },
-                )
-              : "—"}
-          </span>
-        ),
-      },
-      {
-        key: "fechaFinReposo",
-        header: "Fecha Fin Reposo",
-        sortable: true,
-        align: "center",
-        render: (item) => (
-          <span className="text-sm text-white">
-            {item.fechaFinReposo
-              ? format(
-                  new Date(item.fechaFinReposo),
-                  "dd 'de' MMMM 'del' yyyy",
-                  { locale: es },
-                )
-              : "-"}
-          </span>
-        ),
-      },
-      {
-        key: "diasRestantes",
-        header: "Días Restantes",
-        sortable: true,
-        align: "center",
-        render: (item) => {
-          switch (item.estadoReposo) {
-            case "completado":
-              return (
-                <Badge
-                  variant="outline"
-                  className="border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 font-semibold"
-                >
-                  {item.diasRestantes <= 0
-                    ? "Listo"
-                    : `${item.diasRestantes} día${item.diasRestantes !== 1 ? "s" : ""}`}
-                </Badge>
-              );
-            case "proximo_finalizar":
-              return (
-                <Badge
-                  variant="outline"
-                  className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-semibold"
-                >
-                  {item.diasRestantes} día{item.diasRestantes !== 1 ? "s" : ""}
-                </Badge>
-              );
-            default:
-              return (
-                <Badge
-                  variant="outline"
-                  className="border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold"
-                >
-                  {item.diasRestantes} días
-                </Badge>
-              );
-          }
-        },
-      },
-      {
-        key: "progreso",
-        header: "Progreso",
-        sortable: true,
-        align: "center",
-        render: (item) => {
-          const barColor =
-            item.estadoReposo === "completado"
-              ? "[&>div]:bg-green-500"
-              : item.estadoReposo === "proximo_finalizar"
-                ? "[&>div]:bg-yellow-500"
-                : "[&>div]:bg-blue-500";
-          return (
-            <div className="flex items-center gap-2 min-w-[130px]">
-              <Progress
-                value={item.progreso}
-                className={`h-2 flex-1 ${barColor}`}
-              />
-              <span className="text-xs text-muted-foreground w-8 text-right tabular-nums">
-                {Math.round(item.progreso)}%
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        key: "estadoReposo",
-        header: "Estado",
-        sortable: true,
-        align: "center",
-        render: (item) => {
-          switch (item.estadoReposo) {
-            case "en_proceso":
-              return (
-                <Badge
-                  variant="outline"
-                  className="border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                >
-                  En proceso
-                </Badge>
-              );
-            case "proximo_finalizar":
-              return (
-                <Badge
-                  variant="outline"
-                  className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-                >
-                  Por finalizar
-                </Badge>
-              );
-            case "completado":
-              return (
-                <Badge
-                  variant="outline"
-                  className="border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                >
-                  Completado
-                </Badge>
-              );
-          }
-        },
-      },
-    ],
-    [],
-  );
-
   return (
     <div className="space-y-4">
       {/* Page Header */}
@@ -473,67 +293,23 @@ function ReposoPageContent() {
           </DropdownMenu>
         </div>
 
-        {isLoading ? (
-          <div className="py-12 flex justify-center">
-            <LoadingSpinner />
-          </div>
-        ) : (
-          <DataTable
-            data={filteredServicios as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            emptyMessage="No hay servicios en reposo"
-            pagination
-            itemsPerPageOptions={[10, 25, 50]}
-            actions={(item) => {
-              const servicio = item as unknown as ReposoServicio;
-              return (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link prefetch={false} href={`/servicios/detalle/${servicio.id}`}>
-                        <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
-                        Ver detalles
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedServicio(servicio);
-                        setActivarDialogOpen(true);
-                      }}
-                    >
-                      <Power className="h-4 w-4 mr-2 text-green-600" />
-                      Activar Servicio
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedServicio(servicio);
-                        setRenovarDialogOpen(true);
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2 text-blue-600" />
-                      Activar y Renovar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedServicio(servicio);
-                        setDeletePayments(false);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2 text-red-600" />
-                      Eliminar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            }}
-          />
-        )}
+        <ReposoTable
+          isLoading={isLoading}
+          servicios={filteredServicios}
+          onActivate={(servicio) => {
+            setSelectedServicio(servicio);
+            setActivarDialogOpen(true);
+          }}
+          onRenew={(servicio) => {
+            setSelectedServicio(servicio);
+            setRenovarDialogOpen(true);
+          }}
+          onDelete={(servicio) => {
+            setSelectedServicio(servicio);
+            setDeletePayments(false);
+            setDeleteDialogOpen(true);
+          }}
+        />
       </Card>
 
       {/* Activar Confirm Dialog */}
