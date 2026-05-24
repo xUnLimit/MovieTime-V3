@@ -22,16 +22,19 @@ import {
   LabelList,
 } from 'recharts';
 import type { LabelProps } from 'recharts';
-import { subMonths, format, eachDayOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
-import type { TercerosMes, TercerosDia } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
+import {
+  buildBalanceData,
+  buildChurnData,
+  buildTercerosGrowthData,
+  type CrecimientoPeriod,
+} from './crecimiento-terceros-helpers';
 
-const PERIOD_OPTIONS = [
+const PERIOD_OPTIONS: Array<{ value: CrecimientoPeriod; label: string }> = [
   { value: 'actual', label: 'Mes actual' },
   { value: '3meses', label: 'Últimos 3 meses' },
   { value: '6meses', label: 'Últimos 6 meses' },
@@ -45,7 +48,7 @@ const VISTAS = [
 ] as const;
 
 export function CrecimientoTerceros() {
-  const [selectedPeriod, setSelectedPeriod] = useState('actual');
+  const [selectedPeriod, setSelectedPeriod] = useState<CrecimientoPeriod>('actual');
   const [vistaIndex, setVistaIndex] = useState(0);
   const [animacionFase, setAnimacionFase] = useState<'idle' | 'exit' | 'enter'>('idle');
   const [animacionDireccion, setAnimacionDireccion] = useState<1 | -1>(1);
@@ -67,79 +70,21 @@ export function CrecimientoTerceros() {
   const tooltipText = 'var(--foreground)';
 
   const data = useMemo(() => {
-    const tercerosPorMes: TercerosMes[] = stats?.tercerosPorMes ?? [];
-    const tercerosPorDia: TercerosDia[] = stats?.tercerosPorDia ?? [];
-    const currentDate = new Date();
-
-    if (selectedPeriod === 'actual') {
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
-      const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-      const today = new Date();
-      const diaMap = new Map(tercerosPorDia.map(d => [d.dia, d]));
-
-      return days.map((day) => {
-        if (day > today) {
-          return { dia: day.getDate().toString(), fullDate: format(day, 'd MMM yyyy', { locale: es }), clientes: 0, revendedores: 0 };
-        }
-        const diaKey = format(day, 'yyyy-MM-dd');
-        const entry = diaMap.get(diaKey);
-        return {
-          dia: day.getDate().toString(),
-          fullDate: format(day, 'd MMM yyyy', { locale: es }),
-          clientes: entry?.clientes ?? 0,
-          revendedores: entry?.revendedores ?? 0,
-        };
-      });
-    }
-
-    const monthsBack = selectedPeriod === '3meses' ? 3 : selectedPeriod === '6meses' ? 6 : 12;
-    const startDate = subMonths(currentDate, monthsBack - 1);
-    const months = eachMonthOfInterval({ start: startOfMonth(startDate), end: currentDate });
-    const mesMap = new Map(tercerosPorMes.map(m => [m.mes, m]));
-
-    return months.map((month) => {
-      const mesKey = format(month, 'yyyy-MM');
-      const entry = mesMap.get(mesKey);
-
-      return {
-        dia: format(month, 'MMM', { locale: es }),
-        fullDate: format(month, 'MMMM yyyy', { locale: es }),
-        clientes: entry?.clientes ?? 0,
-        revendedores: entry?.revendedores ?? 0,
-      };
+    return buildTercerosGrowthData({
+      selectedPeriod,
+      tercerosPorDia: stats?.tercerosPorDia ?? [],
+      tercerosPorMes: stats?.tercerosPorMes ?? [],
     });
   }, [selectedPeriod, stats]);
 
   const churnData = useMemo(() => {
-    const porMes = stats?.churnStats?.porMes ?? [];
-
-    return porMes.map((entry) => {
-      const monthDate = new Date(`${entry.mes}-01T00:00:00`);
-      return {
-        mes: format(monthDate, 'MMM', { locale: es }),
-        fullDate: format(monthDate, 'MMMM yyyy', { locale: es }),
-        perdidos: entry.perdidos,
-        activosInicio: entry.activosInicio,
-        churnPct: entry.churnPct,
-      };
-    });
+    return buildChurnData(stats?.churnStats?.porMes ?? []);
   }, [stats]);
 
   const balanceData = useMemo(() => {
-    const tercerosPorMes = stats?.tercerosPorMes ?? [];
-    const altasPorMes = new Map(
-      tercerosPorMes.map((entry) => [entry.mes, (entry.clientes ?? 0) + (entry.revendedores ?? 0)])
-    );
-
-    return (stats?.churnStats?.porMes ?? []).map((entry) => {
-      const monthDate = new Date(`${entry.mes}-01T00:00:00`);
-      return {
-        mes: format(monthDate, 'MMM', { locale: es }),
-        fullDate: format(monthDate, 'MMMM yyyy', { locale: es }),
-        ganados: altasPorMes.get(entry.mes) ?? 0,
-        perdidos: entry.perdidos,
-      };
+    return buildBalanceData({
+      tercerosPorMes: stats?.tercerosPorMes ?? [],
+      churnPorMes: stats?.churnStats?.porMes ?? [],
     });
   }, [stats]);
 
