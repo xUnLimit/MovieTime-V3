@@ -21,7 +21,6 @@ import {
   fetchVentasByFiltersUseCase,
 } from "@/lib/use-cases/ventas-use-cases";
 import {
-  buildCredentialUpdateMessage,
   changedCredentialsCount,
   hasCredentialChanges,
 } from "@/lib/utils/credentialNotification";
@@ -31,6 +30,7 @@ import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio, VentaDoc } from "@/types";
 
 import {
+  buildCredentialUpdateWhatsAppMessages,
   buildServicioFormPayload,
   getBillingCycleMonths,
   getPerfilCapacityError,
@@ -432,9 +432,6 @@ export function useServicioFormController({
           ]);
 
           if (ventasActivas.length > 0) {
-            const tercerosById = new Map(
-              terceros.map((tercero) => [tercero.id, tercero]),
-            );
             const servicioActualizado = {
               ...servicio,
               nombre: data.nombre,
@@ -442,34 +439,12 @@ export function useServicioFormController({
               correo: data.correo,
               contrasena: data.contrasena,
             };
-            const messages = ventasActivas.map((venta) => {
-              const tercero = venta.clienteId
-                ? tercerosById.get(venta.clienteId)
-                : undefined;
-              const phone = (
-                venta.clienteTelefono ||
-                tercero?.telefono ||
-                ""
-              ).replace(/[^\d+]/g, "");
-              const message = buildCredentialUpdateMessage(
-                credentialTemplate?.contenido,
-                venta,
-                servicioActualizado,
-                credentialChanges,
-              );
-
-              return {
-                id: venta.id,
-                clienteNombre: venta.clienteNombre,
-                phone,
-                message,
-                title: phone
-                  ? "Credenciales listas para enviar"
-                  : "Credenciales sin telefono",
-                description: phone
-                  ? `${venta.clienteNombre} recibira los nuevos datos de ${servicioActualizado.nombre}.`
-                  : `${venta.clienteNombre} no tiene telefono registrado. Puedes copiar el mensaje.`,
-              };
+            const messages = buildCredentialUpdateWhatsAppMessages({
+              changes: credentialChanges,
+              servicio: servicioActualizado,
+              template: credentialTemplate?.contenido,
+              terceros,
+              ventas: ventasActivas,
             });
 
             enqueueWhatsAppMessages(messages);

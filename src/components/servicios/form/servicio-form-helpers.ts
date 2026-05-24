@@ -2,7 +2,13 @@ import { addDays } from "date-fns";
 
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import {
+  buildCredentialUpdateMessage,
+  type CredentialChangeFlags,
+} from "@/lib/utils/credentialNotification";
+import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { Categoria, MetodoPago, Servicio, TipoPlanConfig } from "@/types";
+import type { Tercero, VentaDoc } from "@/types";
 
 const CONTROL_KEYS = new Set([
   "Backspace",
@@ -24,6 +30,11 @@ type NumericKeyEvent = {
     value: string;
   };
   preventDefault: () => void;
+};
+
+type CredentialWhatsAppMessage = Omit<PendingWhatsAppToast, "id"> & {
+  id: string;
+  clienteNombre: string;
 };
 
 export function getBillingCycleMonths(
@@ -138,6 +149,56 @@ export function buildServicioFormPayload({
     createdBy: "admin",
     gastosTotal: servicio?.gastosTotal ?? 0,
   };
+}
+
+export function buildCredentialUpdateWhatsAppMessages({
+  changes,
+  servicio,
+  template,
+  terceros,
+  ventas,
+}: {
+  changes: CredentialChangeFlags;
+  servicio: Pick<
+    Servicio,
+    "categoriaNombre" | "contrasena" | "correo" | "nombre"
+  >;
+  template?: string;
+  terceros: Tercero[];
+  ventas: VentaDoc[];
+}): CredentialWhatsAppMessage[] {
+  const tercerosById = new Map(
+    terceros.map((tercero) => [tercero.id, tercero]),
+  );
+
+  return ventas.map((venta) => {
+    const tercero = venta.clienteId
+      ? tercerosById.get(venta.clienteId)
+      : undefined;
+    const phone = (venta.clienteTelefono || tercero?.telefono || "").replace(
+      /[^\d+]/g,
+      "",
+    );
+    const message = buildCredentialUpdateMessage(
+      template,
+      venta,
+      servicio,
+      changes,
+    );
+
+    return {
+      id: venta.id,
+      clienteNombre: venta.clienteNombre,
+      phone,
+      message,
+      title: phone
+        ? "Credenciales listas para enviar"
+        : "Credenciales sin telefono",
+      description: phone
+        ? `${venta.clienteNombre} recibira los nuevos datos de ${servicio.nombre}.`
+        : `${venta.clienteNombre} no tiene telefono registrado. Puedes copiar el mensaje.`,
+    };
+  });
 }
 
 export function handleDecimalInputKeyDown(event: NumericKeyEvent) {
