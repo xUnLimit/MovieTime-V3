@@ -4,14 +4,14 @@ import { useCallback, useEffect, useMemo, useState, type WheelEvent } from "reac
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 import { useVentaPerfilDetalle } from "@/components/ventas/form/useVentaPerfilDetalle";
 import { useVentaEditPlanPricing } from "@/components/ventas/form/edit/useVentaEditPlanPricing";
 import { useVentaEditProfilePendingData } from "@/components/ventas/form/edit/useVentaEditProfilePendingData";
+import { useVentaEditStepNavigation } from "@/components/ventas/form/edit/useVentaEditStepNavigation";
+import { useVentaEditSubmit } from "@/components/ventas/form/edit/useVentaEditSubmit";
 import { hasVentaEditChanges } from "@/components/ventas/form/edit/ventaEditChanges";
 import {
-  buildVentaEditPayload,
   getDisponiblesColorClass,
   getPerfilesDropdownForEdit,
   getServicioRankingCandidateIds,
@@ -20,8 +20,6 @@ import {
   filterTercerosBySearch,
   sortPaymentMethods,
   sortTercerosByNewest,
-  validateVentaEditDatosStep,
-  type VentaEditDatosStepField,
 } from "@/components/ventas/form/edit/venta-edit-controller-helpers";
 import {
   useMetodosPagoTercerosWithPending,
@@ -32,16 +30,13 @@ import { ventaEditSchema, type VentaEditFormData } from "@/features/ventas/venta
 import { SERVICIOS_DROPDOWN_VISIBLE_ROWS } from "@/features/ventas/ventas-form-shared";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useTerceros } from "@/hooks/use-terceros";
-import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { getCurrencySymbol } from "@/lib/constants";
-import { updateVentaWithLatestPagoUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { calculateDiscountedAmount, roundToDecimals } from "@/lib/utils/calculations";
 import {
   getTerceroMetodoPagoMoneda,
   PENDING_TERCERO_PAYMENT_ID,
 } from "@/lib/utils/terceroMetodoPago";
 import { useServiciosStore } from "@/store/serviciosStore";
-import type { VentaDoc } from "@/types";
 
 export interface VentaEditData {
   id: string;
@@ -73,8 +68,6 @@ export function useVentasEditFormController(venta: VentaEditData) {
   const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
   const { data: terceros = [] } = useTerceros();
 
-  const [activeTab, setActiveTab] = useState<"datos" | "preview">("datos");
-  const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
   const [serviciosWindowStart, setServiciosWindowStart] = useState(0);
   const [searchCliente, setSearchCliente] = useState("");
   const [tipoPlanId, setTipoPlanId] = useState("");
@@ -121,6 +114,24 @@ export function useVentasEditFormController(venta: VentaEditData) {
   const codigoValue = watch("codigo");
   const estadoValue = watch("estado");
   const notasValue = watch("notas");
+
+  const {
+    activeTab,
+    handleNext,
+    handleTabChange,
+    isDatosTabComplete,
+    setActiveTab,
+  } = useVentaEditStepNavigation({
+    categoriaId: categoriaIdValue,
+    clienteId: clienteIdValue,
+    fechaFin: fechaFinValue,
+    fechaInicio: fechaInicioValue,
+    metodoPagoId: metodoPagoIdValue,
+    perfilNumero: perfilNumeroValue,
+    planId: planIdValue,
+    servicioId: servicioIdValue,
+    setError,
+  });
 
   const tercerosOrdenados = useMemo(
     () => sortTercerosByNewest(terceros),
@@ -418,108 +429,17 @@ export function useVentasEditFormController(venta: VentaEditData) {
     ],
   );
 
-  const handleNext = async () => {
-    const stepErrors = validateVentaEditDatosStep({
-      categoriaId: categoriaIdValue,
-      clienteId: clienteIdValue,
-      fechaFin: fechaFinValue,
-      fechaInicio: fechaInicioValue,
-      metodoPagoId: metodoPagoIdValue,
-      perfilNumero: perfilNumeroValue,
-      planId: planIdValue,
-      servicioId: servicioIdValue,
-    });
-    if (Object.keys(stepErrors).length > 0) {
-      Object.entries(stepErrors).forEach(([field, message]) => {
-        setError(field as VentaEditDatosStepField, {
-          type: "manual",
-          message,
-        });
-      });
-      return;
-    }
-    setIsDatosTabComplete(true);
-    setActiveTab("preview");
-  };
+  const { onSubmit } = useVentaEditSubmit({
+    categorias,
+    clienteSeleccionado,
+    metodoPagoSeleccionado,
+    onSaved: () => router.push(`/ventas/${venta.id}`),
+    serviciosCategoria,
+    setError,
+    updatePerfilOcupado,
+    venta,
+  });
 
-  const handleTabChange = async (value: string) => {
-    if (value === "preview" && !isDatosTabComplete) {
-      await handleNext();
-      return;
-    }
-    setActiveTab(value as typeof activeTab);
-  };
-
-  const onSubmit = async (data: VentaEditFormData) => {
-    try {
-      const servicio = serviciosCategoria.find((s) => s.id === data.servicioId);
-      const categoria = categorias.find((c) => c.id === data.categoriaId);
-      const { pagoUpdates, plan, ventaUpdates } = buildVentaEditPayload({
-        categoria,
-        clienteSeleccionado,
-        data,
-        metodoPagoSeleccionado,
-        servicio,
-        venta,
-      });
-      if (!plan) {
-        setError("planId", { type: "manual", message: "Seleccione un plan vÃ¡lido" });
-        return;
-      }
-      const { syncPaymentMethodFailed } = await updateVentaWithLatestPagoUseCase(
-        venta.id,
-        ventaUpdates,
-        pagoUpdates,
-        {
-          currentVenta: venta as VentaDoc,
-          logContext: { usuarioId: 'sistema', usuarioEmail: 'sistema' },
-        }
-      );
-
-      if (syncPaymentMethodFailed) {
-        toast.warning("Venta actualizada con advertencia", {
-          description:
-            "La venta se guardÃ³, pero no se pudo actualizar el mÃ©todo de pago en terceros.",
-        });
-      }
-
-      const prevPerfil = venta.perfilNumero ?? null;
-      const nextPerfil = Number(data.perfilNumero) || null;
-      const prevServicioId = venta.servicioId;
-      const nextServicioId = data.servicioId;
-      const prevActivo =
-        (venta.estado ?? "activo") !== "inactivo" && !!prevPerfil;
-      const nextActivo =
-        (data.estado ?? "activo") !== "inactivo" && !!nextPerfil;
-
-      if (prevActivo && !nextActivo) {
-        await updatePerfilOcupado(prevServicioId, false);
-      } else if (!prevActivo && nextActivo) {
-        await updatePerfilOcupado(nextServicioId, true);
-      } else if (
-        prevActivo &&
-        nextActivo &&
-        prevServicioId !== nextServicioId
-      ) {
-        await Promise.all([
-          updatePerfilOcupado(prevServicioId, false),
-          updatePerfilOcupado(nextServicioId, true),
-        ]);
-      }
-
-      invalidateDashboardCache({ entity: "venta", entityId: venta.id });
-
-      toast.success("Venta actualizada", {
-        description: "Los datos de la venta han sido guardados correctamente.",
-      });
-      router.push(`/ventas/${venta.id}`);
-    } catch (error) {
-      console.error("Error actualizando venta:", error);
-      toast.error("Error al actualizar la venta", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-    }
-  };
 
 
   return {
