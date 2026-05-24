@@ -5,24 +5,15 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { useTemplates } from "@/hooks/use-templates";
 import { useTerceros } from "@/hooks/use-terceros";
-import { queryKeys } from "@/lib/query-keys";
-import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
-import {
-  buildCredentialUpdateMessage,
-  changedCredentialsCount,
-  hasCredentialChanges,
-} from "@/lib/utils/credentialNotification";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
-import type { Servicio, VentaDoc } from "@/types";
+import type { Servicio } from "@/types";
 
 import { ServicioEditActions } from "./edit-form/ServicioEditActions";
 import { ServicioEditDatosSection } from "./edit-form/ServicioEditDatosSection";
@@ -43,6 +34,7 @@ import {
   useAutoFechaVencimiento,
   usePerfilesOcupadosReal,
 } from "./edit-form/useServicioEditFormEffects";
+import { useServicioEditSubmit } from "./edit-form/useServicioEditSubmit";
 
 interface ServicioEditFormProps {
   servicio: Servicio;
@@ -157,175 +149,22 @@ export function ServicioEditForm({
     values: formValues,
   });
 
-  const onSubmit = async (data: ServicioEditFormData) => {
-    try {
-      const credentialChanges = hasCredentialChanges(servicio, data);
-      const categoria = categorias.find((c) => c.id === data.categoriaId);
-      const metodoPagoSeleccionado = metodosPago.find(
-        (m) => m.id === data.metodoPagoId,
-      );
-      const tipoPlanSeleccionado = categoria?.tiposPlanes?.find(
-        (tipo) => tipo.id === data.tipoPlan,
-      );
-
-      if (!tipoPlanSeleccionado) {
-        setError("tipoPlan", {
-          message: "Seleccione un tipo de plan configurado para la categoría",
-        });
-        return;
-      }
-
-      const perfilesNuevos = Number(data.perfilesDisponibles);
-      if (data.estado === "activo" && perfilesNuevos < perfilesOcupadosReal) {
-        const n = perfilesOcupadosReal;
-        setError("perfilesDisponibles", {
-          message: `No se puede reducir por debajo de los ${n} perfil${
-            n !== 1 ? "es" : ""
-          } actualmente ocupado${n !== 1 ? "s" : ""}`,
-        });
-        return;
-      }
-
-      await updateServicio(servicio.id, {
-        nombre: data.nombre,
-        categoriaId: data.categoriaId,
-        categoriaNombre: categoria?.nombre || "",
-        correo: data.correo,
-        contrasena: data.contrasena,
-        tipo: data.tipoPlan,
-        tipoNombre: tipoPlanSeleccionado.nombre,
-        costoServicio: Number(data.costoServicio),
-        perfilesDisponibles: Number(data.perfilesDisponibles),
-        metodoPagoId: data.metodoPagoId,
-        metodoPagoNombre: metodoPagoSeleccionado?.nombre,
-        moneda: metodoPagoSeleccionado?.moneda,
-        cicloPago: data.cicloPago,
-        fechaInicio: data.fechaInicio,
-        fechaVencimiento: data.fechaVencimiento,
-        notas: data.notas,
-        activo: data.estado === "activo",
-      });
-
-      if (servicio.perfilesOcupados !== perfilesOcupadosReal) {
-        await updateServicio(servicio.id, {
-          perfilesOcupados: perfilesOcupadosReal,
-        });
-      }
-
-      if (ultimoPago && ultimoPago.id) {
-        await updateServicioPagoUseCase(
-          servicio,
-          ultimoPago,
-          {
-            fechaInicio: data.fechaInicio,
-            fechaVencimiento: data.fechaVencimiento,
-            costo: Number(data.costoServicio),
-            metodoPagoId: data.metodoPagoId,
-            metodoPagoNombre: metodoPagoSeleccionado?.nombre,
-            moneda: metodoPagoSeleccionado?.moneda,
-            periodoRenovacion: data.cicloPago,
-          },
-          {
-            metodoPago: metodoPagoSeleccionado,
-            isLatestPayment: false,
-          },
-        );
-      }
-
-      toast.success("Servicio actualizado", {
-        description: "Los datos del servicio han sido guardados correctamente.",
-        duration: 3000,
-      });
-
-      refreshPagos();
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
-      ]);
-
-      if (changedCredentialsCount(credentialChanges) > 0) {
-        try {
-          const ventasActivas = await fetchVentasByFiltersUseCase<VentaDoc>([
-            { field: "servicioId", operator: "==", value: servicio.id },
-            { field: "estado", operator: "!=", value: "inactivo" },
-          ]);
-
-          if (ventasActivas.length > 0) {
-            const tercerosById = new Map(
-              terceros.map((tercero) => [tercero.id, tercero]),
-            );
-            const servicioActualizado = {
-              ...servicio,
-              nombre: data.nombre,
-              categoriaNombre: categoria?.nombre || servicio.categoriaNombre,
-              correo: data.correo,
-              contrasena: data.contrasena,
-            };
-
-            const messages = ventasActivas.map((venta) => {
-                const tercero = venta.clienteId
-                  ? tercerosById.get(venta.clienteId)
-                  : undefined;
-                const phone = (
-                  venta.clienteTelefono ||
-                  tercero?.telefono ||
-                  ""
-                ).replace(/[^\d+]/g, "");
-                const message = buildCredentialUpdateMessage(
-                  credentialTemplate?.contenido,
-                  venta,
-                  servicioActualizado,
-                  credentialChanges,
-                );
-
-                return {
-                  id: venta.id,
-                  clienteNombre: venta.clienteNombre,
-                  phone,
-                  message,
-                  title: phone
-                    ? "Credenciales listas para enviar"
-                    : "Credenciales sin telefono",
-                  description: phone
-                    ? `${venta.clienteNombre} recibira los nuevos datos de ${servicioActualizado.nombre}.`
-                    : `${venta.clienteNombre} no tiene telefono registrado. Puedes copiar el mensaje.`,
-                };
-              });
-
-            enqueueWhatsAppMessages(messages);
-
-            toast.info("Notificaciones preparadas", {
-              description: `${ventasActivas.length} cliente${
-                ventasActivas.length !== 1 ? "s" : ""
-              } pendiente${ventasActivas.length !== 1 ? "s" : ""} por WhatsApp.`,
-              duration: 3000,
-            });
-          } else {
-            toast.info("Credenciales actualizadas", {
-              description:
-                "No hay ventas activas para este servicio, por eso no se prepararon mensajes.",
-              duration: 3000,
-            });
-          }
-        } catch (notificationError) {
-          toast.warning("Servicio guardado sin preparar WhatsApp", {
-            description:
-              notificationError instanceof Error
-                ? notificationError.message
-                : undefined,
-          });
-        }
-      }
-
-      router.push(returnTo);
-    } catch (error) {
-      toast.error("Error al actualizar el servicio", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-      console.error(error);
-    }
-  };
-
+  const onSubmit = useServicioEditSubmit({
+    categorias,
+    credentialTemplate,
+    enqueueWhatsAppMessages,
+    metodosPago,
+    perfilesOcupadosReal,
+    queryClient,
+    refreshPagos,
+    returnTo,
+    routerPush: router.push,
+    servicio,
+    setError,
+    terceros,
+    ultimoPago,
+    updateServicio,
+  });
   const onCancel = () => {
     router.push(returnTo);
   };
