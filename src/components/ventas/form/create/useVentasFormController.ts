@@ -1,38 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type WheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type WheelEvent } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 import { ventaSchema, type VentaFormData } from "@/features/ventas/venta-form-schema";
 import {
-  MESES_POR_CICLO,
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
   type TipoVentaItem,
   type VentaItem,
   type VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
 import {
-  buildVentaItem,
-  buildVentaCreateBatchInputs,
   filterTercerosBySearch,
   getDisponiblesColorClass,
   getPerfilesDropdown,
-  getServicioIdsConPerfil,
   getPerfilesUsados,
   getServiciosDropdownWindow,
   getSlotsDisponiblesForServicio,
   sortPaymentMethods,
   sortServiciosByNewest,
   sortTercerosByNewest,
-  validateVentaItemSelection,
-  validateVentaCreateDatosStep,
-  type VentaCreateDatosStepField,
 } from "@/components/ventas/form/create/venta-create-controller-helpers";
+import { useVentaCreateItemActions } from "@/components/ventas/form/create/useVentaCreateItemActions";
 import { useVentaCreatePreviewMessage } from "@/components/ventas/form/create/useVentaCreatePreviewMessage";
+import { useVentaCreateSelectionHandlers } from "@/components/ventas/form/create/useVentaCreateSelectionHandlers";
+import { useVentaCreateStepNavigation } from "@/components/ventas/form/create/useVentaCreateStepNavigation";
+import { useVentaCreateSubmit } from "@/components/ventas/form/create/useVentaCreateSubmit";
 import {
   useVentaPerfilDetalle,
   type PendingVentaPerfil,
@@ -50,12 +46,10 @@ import {
   calculateDiscountedAmount,
   roundToDecimals,
 } from "@/lib/utils/calculations";
-import { syncTerceroMetodoPago } from "@/lib/services/terceroMetodoPagoSyncService";
 import { rankServicios } from "@/lib/utils/servicioRanking";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useVentasStore } from "@/store/ventasStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
-import type { Plan, Servicio } from "@/types";
 
 export function useVentasFormController() {
   const router = useRouter();
@@ -73,8 +67,6 @@ export function useVentasFormController() {
     [templates],
   );
 
-  const [activeTab, setActiveTab] = useState<"datos" | "preview">("datos");
-  const [isDatosTabComplete, setIsDatosTabComplete] = useState(false);
   const [categoriaId, setCategoriaId] = useState("");
   const [tipoPlanId, setTipoPlanId] = useState("");
   const [servicioId, setServicioId] = useState("");
@@ -85,7 +77,6 @@ export function useVentasFormController() {
   const [perfilNombre, setPerfilNombre] = useState("");
   const [notasItem, setNotasItem] = useState("");
   const [itemErrors, setItemErrors] = useState<VentaItemErrors>({});
-  const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<VentaItem[]>([]);
   const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
   const [fechaFinOpen, setFechaFinOpen] = useState(false);
@@ -124,6 +115,21 @@ export function useVentasFormController() {
       setNotifyCliente(false);
     }
   }, [estadoValue, notifyCliente]);
+
+  const {
+    activeTab,
+    handleNext,
+    handleTabChange,
+    isDatosTabComplete,
+    setActiveTab,
+  } = useVentaCreateStepNavigation({
+    clienteId: clienteIdValue,
+    fechaFin: fechaFinValue,
+    fechaInicio: fechaInicioValue,
+    items,
+    metodoPagoId: metodoPagoIdValue,
+    setError,
+  });
 
   const { data: metodosPagoTerceros = [] } = useMetodosPagoTercerosOptions();
   const { data: serviciosCategoria = [], isLoading: loadingServicios } =
@@ -360,304 +366,86 @@ export function useVentasFormController() {
     totalFinal,
   });
 
-  const handleAddItem = () => {
-    const categoria = categorias.find((c) => c.id === categoriaId);
-    const plan = planesDisponibles.find((p) => p.id === planId);
-    const codigo = codigoValue?.trim();
-    const errors = validateVentaItemSelection({
+  const { handleGuardarVenta, saving } = useVentaCreateSubmit({
+    clienteId: clienteIdValue,
+    clienteSeleccionado,
+    createVenta,
+    editedMessage,
+    estadoVenta: estadoValue,
+    fechaFin: fechaFinValue,
+    fechaInicio: fechaInicioValue,
+    items,
+    metodoPagoId: metodoPagoIdValue,
+    metodoPagoSeleccionado,
+    notifyCliente,
+    onSaved: () => router.push("/ventas"),
+    setPendingWhatsApp,
+    totalFinal,
+    updatePerfilOcupado,
+  });
+
+  const { handleAddItem, handleEditItem, handleRemoveItem } =
+    useVentaCreateItemActions({
       categoriaId,
+      categorias,
+      codigo: codigoValue,
+      descuentoNumero,
+      fechaFin: fechaFinValue,
+      fechaInicio: fechaInicioValue,
+      getSlotsDisponibles,
+      notasItem,
+      perfilNombre,
       perfilNumero,
       perfilesOcupadosVenta,
       perfilesUsados,
-      plan,
+      planId,
+      planesDisponibles,
       precio,
-      servicioId,
-      slotsDisponibles: getSlotsDisponibles(servicioId),
-    });
-    if (Object.keys(errors).length > 0) {
-      setItemErrors(errors);
-      return;
-    }
-    setItemErrors({});
-    if (!plan || !categoria || !tipoItem) return;
-    const newItem = buildVentaItem({
-      categoria,
-      codigo: codigo ? codigo : undefined,
-      descuento: descuentoNumero,
-      fechaFin: fechaFinValue ? new Date(fechaFinValue) : undefined,
-      fechaInicio: fechaInicioValue ? new Date(fechaInicioValue) : undefined,
-      notas: notasItem?.trim() ? notasItem.trim() : undefined,
-      perfilNombre,
-      perfilNumero: perfilNumero ? Number(perfilNumero) : undefined,
-      plan,
-      precio: precioBase,
-      precioFinal: precioFinalNumero,
+      precioBase,
+      precioFinalNumero,
       servicioId,
       servicioSeleccionado,
-      tipo: tipoItem,
+      setCategoriaId,
+      setDescuento,
+      setItemErrors,
+      setItems,
+      setNotasItem,
+      setPerfilNombre,
+      setPerfilNumero,
+      setPlanId,
+      setPrecio,
+      setServicioId,
+      setTipoPlanId,
+      setValue,
+      tipoItem,
     });
 
-    setItems((prev) => [...prev, newItem]);
-    setCategoriaId("");
-    setTipoPlanId("");
-    setServicioId("");
-    setPlanId("");
-    setPrecio("");
-    setDescuento("");
-    setPerfilNumero("");
-    setPerfilNombre("");
-    setValue("codigo", "");
-    setNotasItem("");
-    setItemErrors({});
-  };
+  const {
+    handlePrecioChange,
+    handleSelectCategoria,
+    handleSelectFechaFin,
+    handleSelectFechaInicio,
+    handleSelectPerfil,
+    handleSelectPlan,
+    handleSelectServicio,
+    handleSelectTipoPlan,
+  } = useVentaCreateSelectionHandlers({
+    clearErrors,
+    fechaInicio: fechaInicioValue,
+    planSeleccionado,
+    setCategoriaId,
+    setDescuento,
+    setItemErrors,
+    setNotasItem,
+    setPerfilNombre,
+    setPerfilNumero,
+    setPlanId,
+    setPrecio,
+    setServicioId,
+    setTipoPlanId,
+    setValue,
+  });
 
-  const handleRemoveItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleEditItem = (item: VentaItem) => {
-    handleRemoveItem(item.id);
-
-    const itemCategoria = categorias.find(
-      (categoria) => categoria.id === item.categoriaId,
-    );
-    const itemPlan = itemCategoria?.planes?.find(
-      (plan) => plan.id === item.planId,
-    );
-
-    setCategoriaId(item.categoriaId);
-    setTipoPlanId(itemPlan?.tipoPlan ?? "");
-    setServicioId(item.servicioId);
-    setPlanId(item.planId);
-    setPrecio(item.precio.toString());
-    setDescuento(item.descuento.toString());
-
-    if (item.perfilNumero) setPerfilNumero(item.perfilNumero.toString());
-    if (item.perfilNombre) setPerfilNombre(item.perfilNombre);
-    setValue("codigo", item.codigo || "");
-    setNotasItem(item.notas || "");
-    if (item.fechaInicio) setValue("fechaInicio", item.fechaInicio);
-    if (item.fechaFin) setValue("fechaFin", item.fechaFin);
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleNext = async () => {
-    const stepErrors = validateVentaCreateDatosStep({
-      clienteId: clienteIdValue,
-      fechaFin: fechaFinValue,
-      fechaInicio: fechaInicioValue,
-      metodoPagoId: metodoPagoIdValue,
-    });
-
-    if (Object.keys(stepErrors).length > 0) {
-      Object.entries(stepErrors).forEach(([field, message]) => {
-        setError(field as VentaCreateDatosStepField, {
-          type: "manual",
-          message,
-        });
-      });
-      return;
-    }
-
-    if (items.length === 0) {
-      toast.error("Sin servicios", {
-        description: "Agrega al menos un servicio antes de continuar.",
-      });
-      return;
-    }
-    setIsDatosTabComplete(true);
-    setActiveTab("preview");
-  };
-
-  const handleGuardarVenta = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (items.length === 0) {
-      toast.error("Sin servicios", {
-        description: "Agrega al menos un servicio antes de guardar la venta.",
-      });
-      return;
-    }
-    if (
-      !clienteIdValue ||
-      !metodoPagoIdValue ||
-      !fechaInicioValue ||
-      !fechaFinValue
-    ) {
-      toast.error("Datos incompletos", {
-        description:
-          "Completa todos los campos requeridos para guardar la venta.",
-      });
-      return;
-    }
-    const clienteNombre = clienteSeleccionado
-      ? `${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}`
-      : "Sin cliente";
-    const metodoPagoNombre = metodoPagoSeleccionado?.nombre || "Sin metodo";
-    const moneda = metodoPagoSeleccionado?.moneda || "USD";
-    const estadoVenta = watch("estado");
-
-    try {
-      setSaving(true);
-      const writes = buildVentaCreateBatchInputs({
-        clienteId: clienteIdValue,
-        clienteNombre,
-        clienteTelefono: clienteSeleccionado?.telefono || "",
-        estadoVenta: estadoVenta === "inactivo" ? "inactivo" : "activo",
-        fechaFinValue,
-        fechaInicioValue,
-        items,
-        metodoPagoId: metodoPagoIdValue,
-        metodoPagoNombre,
-        moneda,
-        totalFinal,
-      }).map((input) => createVenta(input));
-      await Promise.all(writes);
-
-      try {
-        await syncTerceroMetodoPago({
-          terceroId: clienteIdValue,
-          metodoPagoId: metodoPagoIdValue,
-          metodoPagoNombre,
-          moneda,
-        });
-      } catch (syncError) {
-        console.error(
-          "Error sincronizando método de pago del tercero:",
-          syncError,
-        );
-        toast.warning("Venta guardada con advertencia", {
-          description:
-            "La venta se creó, pero no se pudo actualizar el método de pago en terceros.",
-        });
-      }
-
-      if (estadoVenta !== "inactivo") {
-        const servicioIdsConPerfil = getServicioIdsConPerfil(items);
-        await Promise.all(
-          servicioIdsConPerfil.map((servicioId) =>
-            updatePerfilOcupado(servicioId, true),
-          ),
-        );
-      }
-      if (notifyCliente && estadoVenta !== "inactivo" && editedMessage) {
-        const phoneRaw = clienteSeleccionado?.telefono || "";
-        const phone = phoneRaw.replace(/[^\d+]/g, "");
-        setPendingWhatsApp({
-          phone,
-          message: editedMessage,
-          title: "Venta registrada",
-          description: "La venta ha sido guardada correctamente en el sistema.",
-        });
-      } else {
-        toast.success("Venta registrada", {
-          description: "La venta ha sido guardada correctamente en el sistema.",
-        });
-      }
-      router.push("/ventas");
-    } catch (error) {
-      console.error("Error guardando venta:", error);
-      toast.error("Error al guardar la venta", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleTabChange = async (value: string) => {
-    if (value === "preview" && !isDatosTabComplete) {
-      await handleNext();
-      return;
-    }
-    setActiveTab(value as typeof activeTab);
-  };
-
-  const handleSelectCategoria = (nextCategoriaId: string) => {
-    setCategoriaId(nextCategoriaId);
-    setTipoPlanId("");
-    setServicioId("");
-    setPlanId("");
-    setPrecio("");
-    setDescuento("");
-    setPerfilNumero("");
-    setPerfilNombre("");
-    setNotasItem("");
-    setItemErrors((prev) => ({
-      ...prev,
-      categoria: undefined,
-    }));
-  };
-
-  const handleSelectTipoPlan = (id: string) => {
-    setTipoPlanId(id);
-    setPlanId("");
-    setServicioId("");
-    setPerfilNumero("");
-    setPerfilNombre("");
-    setPrecio("");
-    setItemErrors((prev) => ({ ...prev, plan: undefined, servicio: undefined, perfil: undefined }));
-  };
-
-  const handleSelectServicio = (servicio: Servicio) => {
-    setServicioId(servicio.id);
-    setPerfilNumero("");
-    setPerfilNombre("");
-    setItemErrors((prev) => ({
-      ...prev,
-      servicio: undefined,
-      perfil: undefined,
-    }));
-  };
-
-  const handleSelectPlan = (plan: Plan) => {
-    setPlanId(plan.id);
-    setServicioId("");
-    setPerfilNumero("");
-    setPerfilNombre("");
-    setPrecio(plan.precio.toFixed(2));
-    setItemErrors((prev) => ({
-      ...prev,
-      plan: undefined,
-      precio: undefined,
-      servicio: undefined,
-      perfil: undefined,
-    }));
-    if (fechaInicioValue) {
-      const meses = MESES_POR_CICLO[plan.cicloPago] ?? 1;
-      setValue("fechaFin", addMonths(new Date(fechaInicioValue), meses));
-    }
-  };
-
-  const handleSelectPerfil = (numero: number) => {
-    setPerfilNumero(String(numero));
-    setItemErrors((prev) => ({
-      ...prev,
-      perfil: undefined,
-    }));
-  };
-
-  const handlePrecioChange = (value: string) => {
-    setPrecio(value);
-    setItemErrors((prev) => ({
-      ...prev,
-      precio: undefined,
-    }));
-  };
-
-  const handleSelectFechaInicio = (date?: Date) => {
-    setValue("fechaInicio", date || new Date());
-    clearErrors("fechaInicio");
-    if (planSeleccionado && date) {
-      const meses = MESES_POR_CICLO[planSeleccionado.cicloPago] ?? 1;
-      setValue("fechaFin", addMonths(date, meses));
-    }
-  };
-
-  const handleSelectFechaFin = (date?: Date) => {
-    setValue("fechaFin", date || new Date());
-    clearErrors("fechaFin");
-  };
 
 
   return {
