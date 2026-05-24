@@ -10,9 +10,9 @@ import {
 import {
   buildExecutivePushSummaryPayload,
   filterExecutivePushActiveBlocks,
-  getExecutivePushBlockMeta,
 } from '@/lib/pwa/push-helpers';
 import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
+import { buildExecutivePushSummaryBlocks } from './executive-push-summary-blocks';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 type ExecutivePushResult = {
@@ -102,8 +102,6 @@ async function finishExecutivePushRun(client: ServiceClient, runId: string | und
 
 async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushSummaryBlock[]> {
   const settings = await getExecutivePushSettings(client);
-  const orderedBlocks = settings.blockOrder.length > 0 ? settings.blockOrder : settings.selectedBlocks;
-  const selectedSet = new Set(settings.selectedBlocks);
 
   // Count notifications the user hasn't dismissed (leida=false — the "active
   // bell" icon in the table) AND that are due today or already overdue
@@ -135,57 +133,12 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
   const servicioNotifications = servicioNotificationsResult.data ?? [];
   const reposoNotifications = reposoNotificationsResult.data ?? [];
 
-  const distinctClientes = new Set(
-    ventaNotifications
-      .map((item) => item.cliente_id)
-      .filter((value): value is string => typeof value === 'string' && value.length > 0)
-  );
-
-  // Sum service costs grouped by currency. NGN/EGP/etc. stay in their own bucket;
-  // we don't FX-convert because the executive needs to know each fund's exposure.
-  const montoPorMoneda = servicioNotifications.reduce<Record<string, number>>((acc, item) => {
-    const costo = Number(item.costo_servicio_snapshot ?? 0);
-    if (!Number.isFinite(costo) || costo === 0) return acc;
-    const moneda = (typeof item.moneda_snapshot === 'string' && item.moneda_snapshot.length > 0)
-      ? item.moneda_snapshot.toUpperCase()
-      : 'USD';
-    acc[moneda] = (acc[moneda] ?? 0) + costo;
-    return acc;
-  }, {});
-
-  const builders: Record<ExecutivePushBlock, () => ExecutivePushSummaryBlock> = {
-    clientes_por_notificar: () => ({
-      key: 'clientes_por_notificar',
-      label: getExecutivePushBlockMeta('clientes_por_notificar')?.label ?? 'Clientes a notificar',
-      count: distinctClientes.size,
-      destination: '/notificaciones',
-      tab: 'ventas',
-    }),
-    servicios_por_pagar: () => ({
-      key: 'servicios_por_pagar',
-      label: getExecutivePushBlockMeta('servicios_por_pagar')?.label ?? 'Servicios por pagar',
-      count: servicioNotifications.length,
-      destination: '/notificaciones',
-      tab: 'servicios',
-    }),
-    reposo_terminado: () => ({
-      key: 'reposo_terminado',
-      label: getExecutivePushBlockMeta('reposo_terminado')?.label ?? 'Servicios en reposo finalizados',
-      count: reposoNotifications.length,
-      destination: '/notificaciones',
-      tab: 'reposo',
-    }),
-    monto_a_fondear: () => ({
-      key: 'monto_a_fondear',
-      label: getExecutivePushBlockMeta('monto_a_fondear')?.label ?? 'Monto a pagar',
-      amounts: montoPorMoneda,
-      destination: '/dashboard',
-    }),
-  };
-
-  return orderedBlocks
-    .filter((block): block is ExecutivePushBlock => selectedSet.has(block) && block in builders)
-    .map((block) => builders[block]());
+  return buildExecutivePushSummaryBlocks({
+    reposoCount: reposoNotifications.length,
+    servicioNotifications,
+    settings,
+    ventaNotifications,
+  });
 }
 
 export async function getExecutivePushSummaryForEndpoint(endpoint: string): Promise<ExecutivePushSummaryPayload & { destinationWithQuery: string }> {
