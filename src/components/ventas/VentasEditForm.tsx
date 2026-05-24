@@ -5,10 +5,8 @@ import { VentaEditPreview } from "@/components/ventas/form/VentaEditPreview";
 import { VentaFormActions } from "@/components/ventas/form/VentaFormActions";
 import { VentaPerfilDetalleDialog } from "@/components/ventas/form/VentaPerfilDetalleDialog";
 import { VentaEditDatosTab } from "@/components/ventas/form/edit/VentaEditDatosTab";
-import {
-  useVentasEditFormController,
-  type VentaEditData,
-} from "@/components/ventas/form/edit/useVentasEditFormController";
+import type { VentaEditData } from "@/components/ventas/form/edit/types";
+import { useVentasEditFormController } from "@/components/ventas/form/edit/useVentasEditFormController";
 import { getCicloPagoLabel } from "@/features/ventas/ventas-form-shared";
 import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
 

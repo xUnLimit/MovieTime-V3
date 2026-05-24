@@ -4,7 +4,7 @@ import { invalidateDashboardCache } from '@/lib/commands/client-cache';
 import { updateVentaWithLatestPagoUseCase } from '@/lib/use-cases/ventas-use-cases';
 import type { Categoria, MetodoPago, Servicio, Tercero, VentaDoc } from '@/types';
 
-import type { VentaEditData } from './useVentasEditFormController';
+import type { VentaEditData } from './types';
 import {
   buildVentaEditPayload,
 } from './venta-edit-controller-helpers';
