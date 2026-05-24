@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,17 +14,19 @@ import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { useTemplates } from "@/hooks/use-templates";
 import { useTerceros } from "@/hooks/use-terceros";
 import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas-use-cases";
-import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio } from "@/types";
 
+import {
+  useServicioFormBillingDates,
+} from "./useServicioFormBillingDates";
+import {
+  useServicioFormDerivedState,
+  useServicioFormHasChanges,
+} from "./useServicioFormComputedState";
 import { useServicioFormStepNavigation } from "./useServicioFormStepNavigation";
 import { useServicioFormSubmit } from "./useServicioFormSubmit";
-import {
-  getBillingCycleMonths,
-  getSimboloMoneda,
-} from "./servicio-form-helpers";
 
 interface UseServicioFormControllerParams {
   servicio?: Servicio;
@@ -54,13 +56,8 @@ export function useServicioFormController({
     (state) => state.enqueueMany,
   );
   const { data: metodosPago = [] } = useMetodosPagoServicios();
-  const [manualFechaVencimiento, setManualFechaVencimiento] = useState(false);
   const [openFechaInicio, setOpenFechaInicio] = useState(false);
   const [openFechaVencimiento, setOpenFechaVencimiento] = useState(false);
-  const prevCicloPagoRef = useRef(servicio?.cicloPago ?? "mensual");
-  const prevFechaInicioRef = useRef<Date | null>(
-    servicio?.fechaInicio ? new Date(servicio.fechaInicio) : null,
-  );
 
   const isEditMode = !!servicio?.id;
 
@@ -71,12 +68,6 @@ export function useServicioFormController({
 
   const [perfilesOcupadosReal, setPerfilesOcupadosReal] = useState<number>(
     servicio?.perfilesOcupados || 0,
-  );
-
-  const [cicloInicializado, setCicloInicializado] = useState(false);
-  const [lastCicloId, setLastCicloId] = useState<string | null>(null);
-  const [lastFechaInicioTime, setLastFechaInicioTime] = useState<number | null>(
-    null,
   );
 
   useEffect(() => {
@@ -145,48 +136,24 @@ export function useServicioFormController({
   const diasReposoValue = watch("diasReposo");
   const notasValue = watch("notas");
 
-  const hasChanges = useMemo(() => {
-    if (!servicio?.id) return true;
-
-    return (
-      nombreValue !== servicio.nombre ||
-      correoValue !== servicio.correo ||
-      contrasenaValue !== servicio.contrasena ||
-      categoriaIdValue !== servicio.categoriaId ||
-      tipoPlanValue !== servicio.tipo ||
-      metodoPagoIdValue !== (servicio.metodoPagoId || "") ||
-      Number(costoServicioValue) !== Number(servicio.costoServicio ?? 0) ||
-      String(perfilesDisponiblesValue) !==
-        String(servicio.perfilesDisponibles || 1) ||
-      cicloPagoValue !== (servicio.cicloPago || "mensual") ||
-      estadoValue !==
-        (servicio.enReposo
-          ? "reposo"
-          : servicio.activo
-            ? "activo"
-            : "inactivo") ||
-      renovacionAutomaticaValue !== (servicio.renovacionAutomatica ?? false) ||
-      notasValue !== (servicio.notas || "") ||
-      fechaInicioValue?.getTime() !== servicio.fechaInicio?.getTime() ||
-      fechaVencimientoValue?.getTime() !== servicio.fechaVencimiento?.getTime()
-    );
-  }, [
+  const hasChanges = useServicioFormHasChanges({
+    categoriaId: categoriaIdValue,
+    cicloPago: cicloPagoValue,
+    contrasena: contrasenaValue,
+    correo: correoValue,
+    costoServicio: costoServicioValue,
+    estado: estadoValue,
+    fechaInicio: fechaInicioValue,
+    fechaVencimiento: fechaVencimientoValue,
+    metodoPagoId: metodoPagoIdValue,
+    nombre: nombreValue,
+    notas: notasValue ?? "",
+    perfilesDisponibles: perfilesDisponiblesValue,
+    renovacionAutomatica: renovacionAutomaticaValue,
     servicio,
-    nombreValue,
-    correoValue,
-    contrasenaValue,
-    categoriaIdValue,
-    tipoPlanValue,
-    metodoPagoIdValue,
-    costoServicioValue,
-    perfilesDisponiblesValue,
-    cicloPagoValue,
-    estadoValue,
-    renovacionAutomaticaValue,
-    notasValue,
-    fechaInicioValue,
-    fechaVencimientoValue,
-  ]);
+    tipoPlan: tipoPlanValue,
+  });
+
 
   useEffect(() => {
     if (servicio?.id) {
@@ -202,99 +169,31 @@ export function useServicioFormController({
         String(servicio.perfilesDisponibles || 1),
       );
       setValue("cicloPago", servicio.cicloPago || "mensual");
-      prevCicloPagoRef.current = servicio.cicloPago || "mensual";
       if (servicio.fechaInicio) {
         setValue("fechaInicio", new Date(servicio.fechaInicio));
       }
       if (servicio.fechaVencimiento) {
         setValue("fechaVencimiento", new Date(servicio.fechaVencimiento));
       }
-      setLastCicloId(servicio.cicloPago || "mensual");
-      setLastFechaInicioTime(
-        servicio.fechaInicio ? new Date(servicio.fechaInicio).getTime() : null,
-      );
-      setCicloInicializado(true);
       setValue(
         "estado",
         servicio.enReposo ? "reposo" : servicio.activo ? "activo" : "inactivo",
       );
       setValue("renovacionAutomatica", servicio.renovacionAutomatica ?? false);
       setValue("notas", servicio.notas || "");
-      setManualFechaVencimiento(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicio?.id, setValue]);
 
-  useEffect(() => {
-    if (!fechaInicioValue) return;
-
-    if (isEditMode) {
-      if (!cicloInicializado) return;
-      const cicloChanged =
-        lastCicloId !== null && lastCicloId !== cicloPagoValue;
-      const fechaInicioChanged =
-        lastFechaInicioTime !== null &&
-        lastFechaInicioTime !== fechaInicioValue.getTime();
-      if (cicloChanged || fechaInicioChanged) {
-        setValue(
-          "fechaVencimiento",
-          addMonths(
-            new Date(fechaInicioValue),
-            getBillingCycleMonths(cicloPagoValue),
-          ),
-        );
-      }
-      if (cicloChanged) setLastCicloId(cicloPagoValue);
-      if (fechaInicioChanged) {
-        setLastFechaInicioTime(fechaInicioValue.getTime());
-      }
-    } else {
-      const cicloChanged = prevCicloPagoRef.current !== cicloPagoValue;
-      const fechaInicioChanged =
-        prevFechaInicioRef.current?.getTime() !== fechaInicioValue.getTime();
-      if (cicloChanged) {
-        prevCicloPagoRef.current = cicloPagoValue;
-        setManualFechaVencimiento(false);
-      }
-      if (fechaInicioChanged) {
-        prevFechaInicioRef.current = fechaInicioValue;
-        setManualFechaVencimiento(false);
-      }
-      if (cicloChanged || fechaInicioChanged || !manualFechaVencimiento) {
-        setValue(
-          "fechaVencimiento",
-          addMonths(fechaInicioValue, getBillingCycleMonths(cicloPagoValue)),
-        );
-      }
-    }
-  }, [
-    cicloPagoValue,
-    fechaInicioValue,
-    manualFechaVencimiento,
-    setValue,
-    isEditMode,
-    cicloInicializado,
-    lastCicloId,
-    lastFechaInicioTime,
-  ]);
-
-  const handleCicloPagoChange = (ciclo: ServicioFormData["cicloPago"]) => {
-    setValue("cicloPago", ciclo);
-    prevCicloPagoRef.current = ciclo;
-    setManualFechaVencimiento(false);
-    const fechaInicio = getValues("fechaInicio");
-    if (fechaInicio) {
-      setValue(
-        "fechaVencimiento",
-        addMonths(fechaInicio, getBillingCycleMonths(ciclo)),
-      );
-    }
-  };
-
-  const handleFechaVencimientoSelect = (date: Date) => {
-    setValue("fechaVencimiento", date);
-    setManualFechaVencimiento(true);
-  };
+  const { handleCicloPagoChange, handleFechaVencimientoSelect } =
+    useServicioFormBillingDates({
+      cicloPago: cicloPagoValue,
+      fechaInicio: fechaInicioValue,
+      getValues,
+      isEditMode,
+      servicio,
+      setValue,
+    });
 
 
   const { onSubmit } = useServicioFormSubmit({
@@ -319,47 +218,19 @@ export function useServicioFormController({
     router.push(returnTo);
   };
 
-  const categoriaSeleccionada = useMemo(
-    () => categorias.find((c) => c.id === categoriaIdValue),
-    [categorias, categoriaIdValue],
-  );
-
-  const categoriaNombre =
-    categoriaSeleccionada?.nombre ?? "Seleccionar categorÃ­a";
-
-  const tiposPlanesDinamicos = useMemo(() => {
-    return categoriaSeleccionada?.tiposPlanes || [];
-  }, [categoriaSeleccionada]);
-
-  const metodoPagoSeleccionado = metodoPagoIdValue
-    ? metodosPago.find((m) => m.id === metodoPagoIdValue)
-    : null;
-
-  const metodoPagoDisplayName = getServicioMetodoPagoNombre(
-    metodoPagoSeleccionado,
-  );
-
-  const simboloMoneda = metodoPagoSeleccionado
-    ? getSimboloMoneda(
-        metodoPagoSeleccionado.moneda,
-        metodoPagoSeleccionado.pais,
-      )
-    : "$";
-
-  const categoriasActivas = useMemo(
-    () =>
-      categorias
-        .filter((c) => c.activo)
-        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
-    [categorias],
-  );
-  const metodosPagoActivos = useMemo(
-    () =>
-      metodosPago
-        .filter((m) => m.activo && m.asociadoA === "servicio")
-        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
-    [metodosPago],
-  );
+  const {
+    categoriaNombre,
+    categoriasActivas,
+    metodoPagoDisplayName,
+    metodosPagoActivos,
+    simboloMoneda,
+    tiposPlanesDinamicos,
+  } = useServicioFormDerivedState({
+    categoriaId: categoriaIdValue,
+    categorias,
+    metodoPagoId: metodoPagoIdValue,
+    metodosPago,
+  });
 
 
   return {
