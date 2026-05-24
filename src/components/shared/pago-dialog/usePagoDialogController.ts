@@ -20,15 +20,12 @@ import type { TemplateMensaje } from "@/types";
 import { pagoDialogSchema, type PagoDialogFormData } from "./schema";
 import type { PagoDialogProps } from "./types";
 import { buildVentaPreviewMessage, getCicloPagoMonths, getDefaultCosto, getDefaultMetodoPagoId, getPagoDialogCopy, getPagoDialogPresentation, getPagoDialogResetValues, hasServicioPagoChanges } from "./helpers";
+import { usePagoDialogNumberInputs } from "./usePagoDialogNumberInputs";
 
 export function usePagoDialogController(props: PagoDialogProps) {
   const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
   const [fechaVencimientoOpen, setFechaVencimientoOpen] = useState(false);
   const [previewMessage, setPreviewMessage] = useState('');
-  const [isCostoFocused, setIsCostoFocused] = useState(false);
-  const [isDescuentoFocused, setIsDescuentoFocused] = useState(false);
-  const [costoInput, setCostoInput] = useState('');
-  const [descuentoInput, setDescuentoInput] = useState('');
   const isVenta = props.context === 'venta';
   const isEdit = props.mode === 'edit';
   const venta = props.context === 'venta' ? props.venta : null;
@@ -75,19 +72,16 @@ export function usePagoDialogController(props: PagoDialogProps) {
   const fechaVencimientoValue = watch('fechaVencimiento');
   const notasValue = watch('notas');
   const renovacionAutomaticaValue = watch('renovacionAutomatica');
-
-  // Sincronizar inputs locales con valores del formulario cuando cambian externamente (ej: dropdown de ciclo)
-  useEffect(() => {
-    if (!isCostoFocused) {
-      setCostoInput(costoValue !== undefined ? costoValue.toString() : '');
-    }
-  }, [costoValue, isCostoFocused]);
-
-  useEffect(() => {
-    if (!isDescuentoFocused) {
-      setDescuentoInput(descuentoValue !== undefined ? descuentoValue.toString() : '');
-    }
-  }, [descuentoValue, isDescuentoFocused]);
+  const {
+    costoInput,
+    descuentoInput,
+    isCostoFocused,
+    isDescuentoFocused,
+    setCostoInput,
+    setDescuentoInput,
+    setIsCostoFocused,
+    setIsDescuentoFocused,
+  } = usePagoDialogNumberInputs();
 
   const metodosFiltrados = useMemo(() => {
     const metodosBase = metodosPago.filter((m) =>
