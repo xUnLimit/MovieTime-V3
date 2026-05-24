@@ -1,10 +1,12 @@
-import { createECDH } from 'node:crypto';
-
-import webPush from 'web-push';
-
 import { env } from '@/config';
 import { createServiceRoleClient } from '@/lib/server/supabase-server';
 import type { ExecutivePushBlock, ExecutivePushSummaryBlock, ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
+import {
+  sendExecutivePushPing,
+  shouldDisablePushSubscription,
+  toPushDeliveryFailure,
+  type PushDeliveryFailure,
+} from '@/lib/notifications/push-delivery';
 import {
   buildExecutivePushSummaryPayload,
   filterExecutivePushActiveBlocks,
@@ -13,77 +15,16 @@ import {
 import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from '@/lib/pwa/push-schedule';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
-type PushFailure = {
-  endpointOrigin: string;
-  statusCode?: number;
-  body?: string;
-  message: string;
-};
 type ExecutivePushResult = {
   sent: number;
   disabled: number;
   failed: number;
-  failures?: PushFailure[];
+  failures?: PushDeliveryFailure[];
   skipped?: string;
   pushDate?: string;
 };
 
-const PUSH_PAYLOAD = JSON.stringify({ kind: 'executive_daily_summary' });
-const PUSH_REQUEST_TIMEOUT_MS = 15_000;
 const PUSH_DELIVERY_CONCURRENCY = 5;
-
-function base64UrlEncode(value: Buffer) {
-  return value.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function base64UrlDecode(value: string) {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
-  return Buffer.from(`${normalized}${padding}`, 'base64');
-}
-
-function assertValidVapidConfig(publicKey: string, privateKey: string) {
-  const ecdh = createECDH('prime256v1');
-  ecdh.setPrivateKey(base64UrlDecode(privateKey));
-  const derivedPublicKey = base64UrlEncode(ecdh.getPublicKey(undefined, 'uncompressed'));
-  if (derivedPublicKey !== publicKey) {
-    throw new Error('Invalid VAPID configuration: NEXT_PUBLIC_VAPID_PUBLIC_KEY does not match VAPID_PRIVATE_KEY.');
-  }
-
-  const validSubject = env.vapidSubject.startsWith('mailto:') || env.vapidSubject.startsWith('https://');
-  if (!validSubject) {
-    throw new Error('Invalid VAPID configuration: VAPID_SUBJECT must start with mailto: or https://.');
-  }
-}
-
-function configureVapid() {
-  const publicKey = env.vapidPublicKey;
-  const privateKey = process.env.VAPID_PRIVATE_KEY || '';
-
-  if (!publicKey || !privateKey) {
-    throw new Error('Missing VAPID keys. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.');
-  }
-
-  assertValidVapidConfig(publicKey, privateKey);
-  webPush.setVapidDetails(env.vapidSubject, publicKey, privateKey);
-}
-
-function isWebPushError(error: unknown): error is Error & { statusCode?: number; body?: string } {
-  return error instanceof Error;
-}
-
-function shouldDisableSubscription(statusCode: number | undefined) {
-  return statusCode === 403 || statusCode === 404 || statusCode === 410;
-}
-
-function getEndpointOrigin(endpoint: string) {
-  try {
-    return new URL(endpoint).origin;
-  } catch (error) {
-    void error;
-    return 'unknown';
-  }
-}
 
 function buildDestinationWithQuery(payload: ExecutivePushSummaryPayload) {
   const url = new URL(payload.destination, env.appUrl);
@@ -273,25 +214,6 @@ export async function getExecutivePushSummaryForEndpoint(endpoint: string): Prom
   };
 }
 
-async function sendSubscriptionPing(subscription: Pick<PushSubscriptionRecord, 'endpoint' | 'p256dh' | 'auth'>) {
-  configureVapid();
-  await webPush.sendNotification(
-    {
-      endpoint: subscription.endpoint,
-      keys: {
-        p256dh: subscription.p256dh,
-        auth: subscription.auth,
-      },
-    },
-    PUSH_PAYLOAD,
-    {
-      TTL: 60,
-      urgency: 'normal',
-      timeout: PUSH_REQUEST_TIMEOUT_MS,
-    }
-  );
-}
-
 export async function sendExecutivePushDailySummary(options?: { force?: boolean; runId?: string }): Promise<ExecutivePushResult> {
   const force = options?.force === true;
   const runId = options?.runId;
@@ -327,35 +249,27 @@ export async function sendExecutivePushDailySummary(options?: { force?: boolean;
 
     let sent = 0;
     let disabled = 0;
-    const failures: PushFailure[] = [];
+    const failures: PushDeliveryFailure[] = [];
 
     for (let index = 0; index < subscriptions.length; index += PUSH_DELIVERY_CONCURRENCY) {
       const batch = subscriptions.slice(index, index + PUSH_DELIVERY_CONCURRENCY);
       await Promise.all(
         batch.map(async (subscription) => {
           try {
-            await sendSubscriptionPing(subscription);
+            await sendExecutivePushPing(subscription);
             sent += 1;
           } catch (error) {
-            const statusCode = isWebPushError(error) ? error.statusCode : undefined;
-            const body = isWebPushError(error) ? error.body : undefined;
-            const message = error instanceof Error ? error.message : 'Unknown push delivery error.';
-            const endpointOrigin = getEndpointOrigin(subscription.endpoint);
-            failures.push({
-              endpointOrigin,
-              statusCode,
-              body,
-              message,
-            });
+            const failure = toPushDeliveryFailure(subscription, error);
+            failures.push(failure);
 
             console.error('Error sending executive push ping:', {
-              endpointOrigin,
-              statusCode,
-              body,
-              message,
+              endpointOrigin: failure.endpointOrigin,
+              statusCode: failure.statusCode,
+              body: failure.body,
+              message: failure.message,
             });
 
-            if (shouldDisableSubscription(statusCode)) {
+            if (shouldDisablePushSubscription(failure.statusCode)) {
               disabled += 1;
               await client.from('push_subscriptions').update({ enabled: false }).eq('id', subscription.id);
             }
