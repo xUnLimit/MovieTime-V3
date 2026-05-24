@@ -1,46 +1,105 @@
 import { describe, expect, it } from 'vitest';
 
-import { getPaginasNotificacionesVenta } from './filters';
-import type { NotificacionVentaConId } from './types';
+import type { NotificacionServicio, NotificacionVenta } from '@/types/notificaciones';
 
-function makeNotification(
+import {
+  getPaginasNotificacionesVenta,
+  getVentasNotificacionesFiltradas,
+} from './filters';
+import type { NotificacionConId } from './types';
+
+const base = {
+  tipo: 'sistema',
+  prioridad: 'media',
+  titulo: 'Aviso',
+  leida: false,
+  diasRestantes: 1,
+  createdAt: new Date('2026-05-01T00:00:00.000Z'),
+} as const;
+
+function venta(
   id: string,
-  overrides: Partial<NotificacionVentaConId> = {}
-): NotificacionVentaConId {
+  overrides: Partial<NotificacionVenta> = {},
+): NotificacionVenta & { id: string } {
   return {
+    ...base,
     id,
-    tipo: 'sistema',
-    prioridad: 'media',
-    titulo: `Notificacion ${id}`,
-    leida: false,
-    resaltada: false,
-    diasRestantes: 1,
-    createdAt: new Date('2026-05-21T00:00:00.000Z'),
     entidad: 'venta',
-    ventaId: `venta-${id}`,
+    ventaId: id,
     clienteId: `cliente-${id}`,
     servicioId: `servicio-${id}`,
     clienteNombre: `Cliente ${id}`,
     servicioNombre: 'Netflix',
     categoriaNombre: 'Streaming',
     estado: 'activo',
-    fechaFin: new Date('2026-05-22T00:00:00.000Z'),
+    resaltada: false,
+    fechaFin: new Date('2026-05-30T00:00:00.000Z'),
     ...overrides,
   };
 }
 
-describe('getPaginasNotificacionesVenta', () => {
-  it('fills each page up to the requested size before starting the next page', () => {
-    const notifications = [
-      ...Array.from({ length: 9 }, (_, index) =>
-        makeNotification(`a-${index}`)
-      ),
-      makeNotification('b-0', { clienteId: 'cliente-b' }),
-      makeNotification('b-1', { clienteId: 'cliente-b' }),
+function servicio(id: string): NotificacionServicio & { id: string } {
+  return {
+    ...base,
+    id,
+    entidad: 'servicio',
+    resaltada: false,
+    servicioId: id,
+    categoriaId: `categoria-${id}`,
+    servicioNombre: 'Disney',
+    categoriaNombre: 'Streaming',
+    tipoServicio: 'premium',
+    correo: 'service@example.com',
+    contrasena: 'secret',
+    metodoPagoNombre: 'Banco',
+    moneda: 'USD',
+    costoServicio: 10,
+    cicloPago: 'mensual',
+    fechaVencimiento: new Date('2026-05-30T00:00:00.000Z'),
+    renovacionAutomatica: true,
+  };
+}
+
+describe('ventas proximas filters', () => {
+  it('filters only venta notifications and sorts highlighted, days, date, name and id', () => {
+    const notificaciones: NotificacionConId[] = [
+      venta('b', { clienteNombre: 'Zeta', diasRestantes: 2 }),
+      servicio('servicio-1'),
+      venta('c', { clienteNombre: 'Ana', diasRestantes: 1, fechaFin: new Date('2026-05-20T00:00:00.000Z') }),
+      venta('d', { clienteNombre: 'Ana', diasRestantes: 1, fechaFin: new Date('2026-05-20T00:00:00.000Z') }),
+      venta('a', { clienteNombre: 'Resaltada', diasRestantes: 10, resaltada: true }),
     ];
 
-    const pages = getPaginasNotificacionesVenta(notifications, 10);
+    expect(getVentasNotificacionesFiltradas(notificaciones, '', 'todos').map((n) => n.id)).toEqual([
+      'a',
+      'c',
+      'd',
+      'b',
+    ]);
+  });
 
-    expect(pages.map((page) => page.length)).toEqual([10, 1]);
+  it('filters by search query and status buckets', () => {
+    const notificaciones: NotificacionConId[] = [
+      venta('proxima', { clienteNombre: 'Maria Gomez', diasRestantes: 3 }),
+      venta('dia', { categoriaNombre: 'Canva Pro', diasRestantes: 0 }),
+      venta('vencida', { clienteNombre: 'Pedro', diasRestantes: -2 }),
+    ];
+
+    expect(getVentasNotificacionesFiltradas(notificaciones, 'canva', 'todos').map((n) => n.id)).toEqual(['dia']);
+    expect(getVentasNotificacionesFiltradas(notificaciones, '', 'proximas').map((n) => n.id)).toEqual(['proxima']);
+    expect(getVentasNotificacionesFiltradas(notificaciones, '', 'dia_pago').map((n) => n.id)).toEqual(['dia']);
+    expect(getVentasNotificacionesFiltradas(notificaciones, '', 'vencidas').map((n) => n.id)).toEqual(['vencida']);
+  });
+
+  it('paginates venta notifications preserving order', () => {
+    const pages = getPaginasNotificacionesVenta(
+      [venta('1'), venta('2'), venta('3')],
+      2,
+    );
+
+    expect(pages.map((page) => page.map((n) => n.id))).toEqual([
+      ['1', '2'],
+      ['3'],
+    ]);
   });
 });

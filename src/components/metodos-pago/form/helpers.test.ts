@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { MetodoPago } from '@/types';
 import {
+  capitalizeFirstChar,
+  formatCardNumber,
+  formatExpirationDate,
   getMetodoPagoDefaultValues,
   hasMetodoPagoFormChanges,
+  isAllowedCardNumberKey,
 } from './helpers';
 import type { MetodoPagoFormData } from './schema';
 
@@ -72,5 +76,53 @@ describe('metodo pago form helpers', () => {
     expect(defaults.alias).toBe('Principal');
     expect(defaults.moneda).toBe('USD');
     expect(hasMetodoPagoFormChanges('edit', metodoPago, valuesFromDefaults(defaults))).toBe(false);
+  });
+
+  it('detects changes for create mode, base fields and associated-specific fields', () => {
+    const terceroMetodoPago: MetodoPago = {
+      ...baseMetodoPago,
+      asociadoA: 'tercero',
+      tipoCuenta: 'ahorro',
+    };
+    const terceroValues = valuesFromDefaults(getMetodoPagoDefaultValues('edit', terceroMetodoPago));
+
+    expect(hasMetodoPagoFormChanges('create', undefined, terceroValues)).toBe(true);
+    expect(hasMetodoPagoFormChanges('edit', terceroMetodoPago, {
+      ...terceroValues,
+      alias: 'Otro alias',
+    })).toBe(true);
+    expect(hasMetodoPagoFormChanges('edit', terceroMetodoPago, {
+      ...terceroValues,
+      tipoCuenta: 'corriente',
+    })).toBe(true);
+
+    const servicioMetodoPago: MetodoPago = {
+      ...baseMetodoPago,
+      asociadoA: 'servicio',
+      email: 'servicio@example.com',
+      contrasena: 'secret123',
+    };
+    const servicioValues = valuesFromDefaults(getMetodoPagoDefaultValues('edit', servicioMetodoPago));
+
+    expect(hasMetodoPagoFormChanges('edit', servicioMetodoPago, {
+      ...servicioValues,
+      contrasena: 'otra-clave',
+    })).toBe(true);
+  });
+
+  it('formats card and expiration inputs', () => {
+    expect(formatCardNumber('4111-1111-1111-1111-999')).toBe('4111 1111 1111 1111 999');
+    expect(formatExpirationDate('1230', '')).toBe('12/30');
+    expect(formatExpirationDate('12', '1')).toBe('12/');
+    expect(formatExpirationDate('1', '12/')).toBe('1');
+    expect(formatExpirationDate('', '1')).toBe('');
+  });
+
+  it('checks card key input and capitalizes text', () => {
+    expect(isAllowedCardNumberKey('1')).toBe(true);
+    expect(isAllowedCardNumberKey('Backspace')).toBe(true);
+    expect(isAllowedCardNumberKey('x')).toBe(false);
+    expect(capitalizeFirstChar('panama')).toBe('Panama');
+    expect(capitalizeFirstChar('')).toBe('');
   });
 });
