@@ -10,7 +10,6 @@ import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import {
   createVentaRefundUseCase,
   deleteVentaPagoUseCase,
-  getVentaConPagoActualUseCase,
   renewVentaUseCase,
   updateVentaPagoUseCase,
 } from '@/lib/use-cases/ventas-use-cases';
@@ -22,6 +21,7 @@ import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
 import { emitVentaUpdated } from './venta-detalle-events';
+import { refreshVentaDetalleData } from './venta-detalle-refresh';
 import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
 
 type UseVentaDetalleActionsParams = {
@@ -115,10 +115,7 @@ export function useVentaDetalleActions({
       syncVentaForecastReadModels(id);
       invalidateDashboardCache({ entity: 'venta', entityId: id });
 
-      if (id) {
-        const ventaActualizada = await getVentaConPagoActualUseCase(id);
-        if (ventaActualizada) setVentaData(ventaActualizada);
-      }
+      await refreshVentaDetalleData(id, setVentaData);
 
       refreshPagos();
       await deleteNotificacionesPorVenta(id);
@@ -238,10 +235,7 @@ export function useVentaDetalleActions({
       setEditarPagoDialogOpen(false);
       setPagoToEdit(null);
 
-      if (id) {
-        const ventaActualizada = await getVentaConPagoActualUseCase(id);
-        if (ventaActualizada) setVentaData(ventaActualizada);
-      }
+      await refreshVentaDetalleData(id, setVentaData);
 
       refreshPagos();
       toast.success('Pago actualizado exitosamente');
