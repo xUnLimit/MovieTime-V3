@@ -1071,9 +1071,10 @@ Repositories
 - [x] ADR: StoreEventBus.
 - [ ] Agregar ADRs nuevos solo cuando una decision cambie contratos relevantes.
 - [x] Implementar feature flags si se requiere rollout gradual.
-- [ ] Descomponer `VentasForm`.
-- [ ] Descomponer `VentasEditForm`.
-- [ ] Descomponer `ServicioForm` y paginas de detalle grandes.
+- [x] Descomponer `VentasForm`.
+- [x] Descomponer `VentasEditForm`.
+- [x] Descomponer `ServicioForm` y paginas de detalle grandes.
+- [x] Agregar tests de composicion para `VentasForm` y `VentasEditForm`.
 - [ ] Cobertura >=80%.
 
 ---
