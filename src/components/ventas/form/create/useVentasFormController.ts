@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -11,40 +10,20 @@ import type { VentaItem, VentaItemErrors } from "@/features/ventas/ventas-form-s
 import {
   getDisponiblesColorClass,
 } from "@/components/ventas/form/create/venta-create-controller-helpers";
-import { useVentaCreateItemActions } from "@/components/ventas/form/create/useVentaCreateItemActions";
-import { useVentaCreateComputedState } from "@/components/ventas/form/create/useVentaCreateComputedState";
 import { useVentaCreateOptionsState } from "@/components/ventas/form/create/useVentaCreateOptionsState";
-import { useVentaCreatePreviewMessage } from "@/components/ventas/form/create/useVentaCreatePreviewMessage";
-import { useVentaCreateSelectionHandlers } from "@/components/ventas/form/create/useVentaCreateSelectionHandlers";
 import { useVentaCreateServicioRankingState } from "@/components/ventas/form/create/useVentaCreateServicioRankingState";
 import { useVentaCreateStepNavigation } from "@/components/ventas/form/create/useVentaCreateStepNavigation";
-import { useVentaCreateSubmit } from "@/components/ventas/form/create/useVentaCreateSubmit";
+import { useVentaCreateWorkflow } from "@/components/ventas/form/create/useVentaCreateWorkflow";
 import {
   useMetodosPagoTercerosOptions,
   useServiciosByCategoria,
 } from "@/components/ventas/form/useVentaFormQueries";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
-import { useTemplates } from "@/hooks/use-templates";
 import { useTerceros } from "@/hooks/use-terceros";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useVentasStore } from "@/store/ventasStore";
-import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 
 export function useVentasFormController() {
-  const router = useRouter();
   const { data: categorias = [] } = useCategoriasFull();
-  const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
   const { data: terceros = [] } = useTerceros();
-  const createVenta = useVentasStore((state) => state.createVenta);
-  const setPendingWhatsApp = useWhatsAppToastStore((state) => state.setPending);
-  const { data: templates = [] } = useTemplates();
-  const templateNotificacion = useMemo(
-    () =>
-      templates.find(
-        (template) => template.tipo === "suscripcion" && template.activo,
-      ),
-    [templates],
-  );
 
   const [categoriaId, setCategoriaId] = useState("");
   const [tipoPlanId, setTipoPlanId] = useState("");
@@ -161,118 +140,41 @@ export function useVentasFormController() {
   });
 
 
-  const {
-    descuentoNumero,
-    perfilDetalle,
-    precioBase,
-    precioFinalNumero,
-    simboloMoneda,
-    subtotal,
-    totalFinal,
-  } = useVentaCreateComputedState({
-    clienteSeleccionado,
-    descuento,
-    items,
-    metodoPagoSeleccionado,
-    precio,
-  });
-
-  const {
-    perfilDetalleOpen,
-    setPerfilDetalleOpen,
-    servicioDetalle,
-    perfilesDetalleVisual,
-    resumenPerfilesDetalle,
-    loadingPerfilesDetalle,
-    errorPerfilesDetalle,
-    setErrorPerfilesDetalle,
-    handleOpenPerfilDetalle,
-  } = perfilDetalle;
-  useVentaCreatePreviewMessage({
+  const workflow = useVentaCreateWorkflow({
+    categoriaId,
     categorias,
     categoriaSeleccionada,
-    clienteSeleccionado,
-    codigo: codigoValue?.trim(),
-    fechaFin: fechaFinValue,
-    items,
-    onMessageChange: setEditedMessage,
-    precioFinal: precioFinalNumero,
-    servicioSeleccionado,
-    serviciosCategoria,
-    templateContenido: templateNotificacion?.contenido,
-    totalFinal,
-  });
-
-  const { handleGuardarVenta, saving } = useVentaCreateSubmit({
+    clearErrors,
     clienteId: clienteIdValue,
     clienteSeleccionado,
-    createVenta,
+    codigo: codigoValue,
+    descuento,
     editedMessage,
     estadoVenta: estadoValue,
     fechaFin: fechaFinValue,
     fechaInicio: fechaInicioValue,
+    getSlotsDisponibles,
     items,
     metodoPagoId: metodoPagoIdValue,
     metodoPagoSeleccionado,
+    notasItem,
     notifyCliente,
-    onSaved: () => router.push("/ventas"),
-    setPendingWhatsApp,
-    totalFinal,
-    updatePerfilOcupado,
-  });
-
-  const { handleAddItem, handleEditItem, handleRemoveItem } =
-    useVentaCreateItemActions({
-      categoriaId,
-      categorias,
-      codigo: codigoValue,
-      descuentoNumero,
-      fechaFin: fechaFinValue,
-      fechaInicio: fechaInicioValue,
-      getSlotsDisponibles,
-      notasItem,
-      perfilNombre,
-      perfilNumero,
-      perfilesOcupadosVenta,
-      perfilesUsados,
-      planId,
-      planesDisponibles,
-      precio,
-      precioBase,
-      precioFinalNumero,
-      servicioId,
-      servicioSeleccionado,
-      setCategoriaId,
-      setDescuento,
-      setItemErrors,
-      setItems,
-      setNotasItem,
-      setPerfilNombre,
-      setPerfilNumero,
-      setPlanId,
-      setPrecio,
-      setServicioId,
-      setTipoPlanId,
-      setValue,
-      tipoItem,
-    });
-
-  const {
-    handlePrecioChange,
-    handleSelectCategoria,
-    handleSelectFechaFin,
-    handleSelectFechaInicio,
-    handleSelectPerfil,
-    handleSelectPlan,
-    handleSelectServicio,
-    handleSelectTipoPlan,
-  } = useVentaCreateSelectionHandlers({
-    clearErrors,
-    fechaInicio: fechaInicioValue,
+    perfilNombre,
+    perfilNumero,
+    perfilesOcupadosVenta,
+    perfilesUsados,
+    planId,
+    planesDisponibles,
     planSeleccionado,
+    precio,
+    servicioId,
+    servicioSeleccionado,
+    serviciosCategoria,
     setCategoriaId,
     setDescuento,
+    setEditedMessage,
     setItemErrors,
+    setItems,
     setNotasItem,
     setPerfilNombre,
     setPerfilNumero,
@@ -281,19 +183,19 @@ export function useVentasFormController() {
     setServicioId,
     setTipoPlanId,
     setValue,
+    tipoItem,
   });
-
 
 
   return {
     activeTab,
     setActiveTab,
     isDatosTabComplete,
-    router,
     register,
     setValue,
     clearErrors,
     errors,
+    ...workflow,
     categoriaId,
     categorias,
     categoriasOrdenadas,
@@ -322,14 +224,10 @@ export function useVentasFormController() {
     planSeleccionado,
     planesDisponibles,
     precio,
-    precioFinalNumero,
     servicioId,
     servicioSeleccionado,
     serviciosRankeados,
     serviciosVentana,
-    simboloMoneda,
-    subtotal,
-    totalFinal,
     clienteSeleccionado,
     tercerosFiltrados,
     searchCliente,
@@ -341,31 +239,9 @@ export function useVentasFormController() {
     setNotifyCliente,
     editedMessage,
     setEditedMessage,
-    saving,
-    perfilDetalleOpen,
-    setPerfilDetalleOpen,
-    servicioDetalle,
-    perfilesDetalleVisual,
-    resumenPerfilesDetalle,
-    loadingPerfilesDetalle,
-    errorPerfilesDetalle,
-    setErrorPerfilesDetalle,
     getDisponiblesColorClass,
     getSlotsDisponibles,
-    handleAddItem,
-    handleEditItem,
-    handleGuardarVenta,
     handleNext,
-    handleOpenPerfilDetalle,
-    handlePrecioChange,
-    handleRemoveItem,
-    handleSelectCategoria,
-    handleSelectFechaFin,
-    handleSelectFechaInicio,
-    handleSelectPerfil,
-    handleSelectPlan,
-    handleSelectServicio,
-    handleSelectTipoPlan,
     handleServiciosDropdownWheel,
     handleTabChange,
     scrollServiciosDropdown,
