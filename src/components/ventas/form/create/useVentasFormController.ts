@@ -27,6 +27,7 @@ import {
   sortPaymentMethods,
   sortServiciosByNewest,
   sortTercerosByNewest,
+  validateVentaItemSelection,
 } from "@/components/ventas/form/create/venta-create-controller-helpers";
 import { useVentaCreatePreviewMessage } from "@/components/ventas/form/create/useVentaCreatePreviewMessage";
 import {
@@ -360,29 +361,16 @@ export function useVentasFormController() {
     const categoria = categorias.find((c) => c.id === categoriaId);
     const plan = planesDisponibles.find((p) => p.id === planId);
     const codigo = codigoValue?.trim();
-    const errors: VentaItemErrors = {};
-    if (!categoriaId) {
-      errors.categoria = "Seleccione una categoria";
-    }
-    if (!servicioId) {
-      errors.servicio = "Seleccione un servicio";
-    }
-    if (!plan) {
-      errors.plan = "Seleccione un plan";
-    }
-    if (!precio || Number(precio) <= 0) {
-      errors.precio = "Ingrese un precio valido";
-    }
-    const slotsDisponibles = getSlotsDisponibles(servicioId);
-    if (!perfilNumero) {
-      errors.perfil = "Seleccione el numero de perfil";
-    } else if (slotsDisponibles <= 0) {
-      errors.perfil = "No hay perfiles disponibles";
-    } else if (perfilesUsados[servicioId]?.has(Number(perfilNumero))) {
-      errors.perfil = "Ese perfil ya fue agregado";
-    } else if (perfilesOcupadosVenta[servicioId]?.has(Number(perfilNumero))) {
-      errors.perfil = "Ese perfil ya esta ocupado";
-    }
+    const errors = validateVentaItemSelection({
+      categoriaId,
+      perfilNumero,
+      perfilesOcupadosVenta,
+      perfilesUsados,
+      plan,
+      precio,
+      servicioId,
+      slotsDisponibles: getSlotsDisponibles(servicioId),
+    });
     if (Object.keys(errors).length > 0) {
       setItemErrors(errors);
       return;

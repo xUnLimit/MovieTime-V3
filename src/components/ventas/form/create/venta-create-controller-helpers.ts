@@ -2,6 +2,7 @@ import {
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
   type TipoVentaItem,
   type VentaItem,
+  type VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
 import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
@@ -227,6 +228,53 @@ export function buildVentaItem({
     codigo,
     notas,
   };
+}
+
+export function validateVentaItemSelection({
+  categoriaId,
+  perfilNumero,
+  perfilesOcupadosVenta,
+  perfilesUsados,
+  plan,
+  precio,
+  servicioId,
+  slotsDisponibles,
+}: {
+  categoriaId: string;
+  perfilNumero: string;
+  perfilesOcupadosVenta: Record<string, Set<number>>;
+  perfilesUsados: Record<string, Set<number>>;
+  plan?: Plan;
+  precio: string;
+  servicioId: string;
+  slotsDisponibles: number;
+}): VentaItemErrors {
+  const errors: VentaItemErrors = {};
+
+  if (!categoriaId) {
+    errors.categoria = "Seleccione una categoria";
+  }
+  if (!servicioId) {
+    errors.servicio = "Seleccione un servicio";
+  }
+  if (!plan) {
+    errors.plan = "Seleccione un plan";
+  }
+  if (!precio || Number(precio) <= 0) {
+    errors.precio = "Ingrese un precio valido";
+  }
+
+  if (!perfilNumero) {
+    errors.perfil = "Seleccione el numero de perfil";
+  } else if (slotsDisponibles <= 0) {
+    errors.perfil = "No hay perfiles disponibles";
+  } else if (perfilesUsados[servicioId]?.has(Number(perfilNumero))) {
+    errors.perfil = "Ese perfil ya fue agregado";
+  } else if (perfilesOcupadosVenta[servicioId]?.has(Number(perfilNumero))) {
+    errors.perfil = "Ese perfil ya esta ocupado";
+  }
+
+  return errors;
 }
 
 export function buildVentaCreateInput({
