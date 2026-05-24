@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 
 import { servicioSchema, type ServicioFormData } from "@/features/servicios/servicio-form-schema";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
@@ -14,27 +13,16 @@ import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { useTemplates } from "@/hooks/use-templates";
 import { useTerceros } from "@/hooks/use-terceros";
-import { queryKeys } from "@/lib/query-keys";
-import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
-import {
-  countVentasActivasByServicioUseCase,
-  fetchVentasByFiltersUseCase,
-} from "@/lib/use-cases/ventas-use-cases";
-import {
-  changedCredentialsCount,
-  hasCredentialChanges,
-} from "@/lib/utils/credentialNotification";
+import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas-use-cases";
 import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
-import type { Servicio, VentaDoc } from "@/types";
+import type { Servicio } from "@/types";
 
 import { useServicioFormStepNavigation } from "./useServicioFormStepNavigation";
+import { useServicioFormSubmit } from "./useServicioFormSubmit";
 import {
-  buildCredentialUpdateWhatsAppMessages,
-  buildServicioFormPayload,
   getBillingCycleMonths,
-  getPerfilCapacityError,
   getSimboloMoneda,
 } from "./servicio-form-helpers";
 
@@ -309,142 +297,23 @@ export function useServicioFormController({
   };
 
 
-  const onSubmit = async (data: ServicioFormData) => {
-    try {
-      const credentialChanges = servicio?.id
-        ? hasCredentialChanges(servicio, data)
-        : { correo: false, contrasena: false };
-      const categoria = categorias.find((c) => c.id === data.categoriaId);
-      const metodoPagoSeleccionado = metodosPago.find(
-        (m) => m.id === data.metodoPagoId,
-      );
-      const tipoPlanSeleccionado = categoria?.tiposPlanes?.find(
-        (tipo) => tipo.id === data.tipoPlan,
-      );
+  const { onSubmit } = useServicioFormSubmit({
+    categorias,
+    createServicio,
+    credentialTemplateContent: credentialTemplate?.contenido,
+    enqueueWhatsAppMessages,
+    metodosPago,
+    onSaved: () => router.push(returnTo),
+    perfilesOcupadosReal,
+    queryClient,
+    refreshPagos,
+    servicio,
+    setError,
+    terceros,
+    ultimoPago,
+    updateServicio,
+  });
 
-      if (!tipoPlanSeleccionado) {
-        setError("tipoPlan", {
-          message: "Seleccione un tipo de plan configurado para la categorÃ­a",
-        });
-        return;
-      }
-
-      const servicioData = buildServicioFormPayload({
-        categoria,
-        data,
-        metodoPago: metodoPagoSeleccionado,
-        servicio,
-        tipoPlan: tipoPlanSeleccionado,
-      });
-
-      if (servicio?.id) {
-        const perfilesNuevos = Number(data.perfilesDisponibles);
-        const capacityError = getPerfilCapacityError({
-          estado: data.estado,
-          perfilesDisponibles: perfilesNuevos,
-          perfilesOcupados: perfilesOcupadosReal,
-        });
-        if (capacityError) {
-          setError("perfilesDisponibles", {
-            message: capacityError,
-          });
-          return;
-        }
-
-        await updateServicio(servicio.id, {
-          ...servicio,
-          ...servicioData,
-        });
-
-        if (ultimoPago && ultimoPago.id) {
-          await updateServicioPagoUseCase(
-            servicio,
-            ultimoPago,
-            {
-              fechaInicio: data.fechaInicio,
-              fechaVencimiento: data.fechaVencimiento,
-              costo: Number(data.costoServicio),
-              metodoPagoId: data.metodoPagoId,
-              metodoPagoNombre: metodoPagoSeleccionado?.nombre,
-              moneda: metodoPagoSeleccionado?.moneda,
-              periodoRenovacion: data.cicloPago,
-            },
-            {
-              metodoPago: metodoPagoSeleccionado,
-              isLatestPayment: false,
-            },
-          );
-        }
-
-        toast.success("Servicio actualizado", {
-          description:
-            "Los datos del servicio han sido guardados correctamente.",
-          duration: 3000,
-        });
-        refreshPagos();
-
-        if (changedCredentialsCount(credentialChanges) > 0) {
-          const ventasActivas = await fetchVentasByFiltersUseCase<VentaDoc>([
-            { field: "servicioId", operator: "==", value: servicio.id },
-            { field: "estado", operator: "!=", value: "inactivo" },
-          ]);
-
-          if (ventasActivas.length > 0) {
-            const servicioActualizado = {
-              ...servicio,
-              nombre: data.nombre,
-              categoriaNombre: categoria?.nombre || servicio.categoriaNombre,
-              correo: data.correo,
-              contrasena: data.contrasena,
-            };
-            const messages = buildCredentialUpdateWhatsAppMessages({
-              changes: credentialChanges,
-              servicio: servicioActualizado,
-              template: credentialTemplate?.contenido,
-              terceros,
-              ventas: ventasActivas,
-            });
-
-            enqueueWhatsAppMessages(messages);
-            toast.info("Notificaciones preparadas", {
-              description: `${ventasActivas.length} cliente${
-                ventasActivas.length !== 1 ? "s" : ""
-              } pendiente${ventasActivas.length !== 1 ? "s" : ""} por WhatsApp.`,
-              duration: 3000,
-            });
-          } else {
-            toast.info("Credenciales actualizadas", {
-              description:
-                "No hay ventas activas para este servicio, por eso no se prepararon mensajes.",
-              duration: 3000,
-            });
-          }
-        }
-      } else {
-        await createServicio(servicioData);
-        toast.success("Servicio creado", {
-          description:
-            "El nuevo servicio ha sido registrado correctamente en el sistema.",
-          duration: 3000,
-        });
-      }
-
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
-      ]);
-
-      router.push(returnTo);
-    } catch (error) {
-      toast.error(
-        servicio?.id
-          ? "Error al actualizar el servicio"
-          : "Error al crear el servicio",
-        { description: error instanceof Error ? error.message : undefined },
-      );
-      console.error(error);
-    }
-  };
 
   const onCancel = () => {
     router.push(returnTo);
