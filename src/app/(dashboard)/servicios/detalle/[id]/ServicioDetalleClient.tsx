@@ -8,20 +8,14 @@ import { toast } from 'sonner';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
-import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
 import { getCurrencySymbol } from '@/lib/constants';
 import { queryKeys } from '@/lib/query-keys';
-import {
-  deleteServicioPagoUseCase,
-  renewServicioUseCase,
-  updateServicioPagoUseCase,
-} from '@/lib/use-cases/servicios-use-cases';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { useTemplatesStore } from '@/store/templatesStore';
 import { useTercerosStore } from '@/store/tercerosStore';
 import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
-import type { PagoServicio, Servicio } from '@/types';
+import type { Servicio } from '@/types';
 
 import { ServicioDetalleDialogs } from './components/ServicioDetalleDialogs';
 import { ServicioDetalleHeader } from './components/ServicioDetalleHeader';
@@ -33,7 +27,8 @@ import {
   TransferVentaDialog,
 } from './components/ServicioSaleActionsDialogs';
 import { ServicioSummaryCards } from './components/ServicioSummaryCards';
-import type { CategoriaDetalle, MetodoPagoDetalle, PagoFormData, PerfilVenta } from './components/types';
+import type { CategoriaDetalle, MetodoPagoDetalle, PerfilVenta } from './components/types';
+import { useServicioPaymentActions } from './components/useServicioPaymentActions';
 import { useServicioProfiles } from './components/useServicioProfiles';
 import { useServicioSaleActions } from './components/useServicioSaleActions';
 import { useTotalGastadoUSD } from './components/useTotalGastadoUSD';
@@ -64,11 +59,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePayments, setDeletePayments] = useState(false);
-  const [deleteRenovacionDialogOpen, setDeleteRenovacionDialogOpen] = useState(false);
-  const [pagoToDelete, setPagoToDelete] = useState<PagoServicio | null>(null);
-  const [editarPagoDialogOpen, setEditarPagoDialogOpen] = useState(false);
-  const [pagoToEdit, setPagoToEdit] = useState<PagoServicio | null>(null);
-  const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [ventasServicio, setVentasServicio] = useState<Array<PerfilVenta & { perfilNumero?: number | null }>>([]);
 
   const {
@@ -172,109 +162,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     }
   };
 
-  const handleRenovar = () => {
-    setRenovarDialogOpen(true);
-  };
-
-  const handleDeleteRenovacion = (pago: PagoServicio) => {
-    setPagoToDelete(pago);
-    setDeleteRenovacionDialogOpen(true);
-  };
-
-  const handleEditarPago = (pago: PagoServicio) => {
-    setPagoToEdit(pago);
-    setEditarPagoDialogOpen(true);
-  };
-
-  const handleConfirmEditarPago = async (data: PagoFormData) => {
-    if (!pagoToEdit || !servicio) return;
-    try {
-      const metodoPagoSeleccionado = metodosPago.find((m) => m.id === data.metodoPagoId);
-      const esUltimoPago = pagosOrdenados[0]?.id === pagoToEdit.id;
-      const { servicioActualizado } = await updateServicioPagoUseCase(servicio, pagoToEdit, data, {
-        metodoPago: metodoPagoSeleccionado,
-        isLatestPayment: esUltimoPago,
-      });
-
-      if (servicioActualizado) setServicio(servicioActualizado);
-
-      refreshPagos();
-      toast.success('Pago actualizado', { description: 'Los datos del pago han sido actualizados correctamente.' });
-      setPagoToEdit(null);
-      setEditarPagoDialogOpen(false);
-    } catch (error) {
-      console.error('Error al actualizar pago:', error);
-      toast.error('Error al actualizar pago', { description: error instanceof Error ? error.message : undefined });
-    }
-  };
-
-  const handleConfirmDeleteRenovacion = async () => {
-    if (!pagoToDelete || !servicio) return;
-    const eraUltimaRenovacion = pagosOrdenados[0]?.id === pagoToDelete.id;
-
-    try {
-      const pagosActualizados = pagosServicio.filter(p => p.id !== pagoToDelete.id);
-      const { servicioActualizado } = await deleteServicioPagoUseCase(servicio, pagoToDelete, pagosActualizados, {
-        isLatestPayment: eraUltimaRenovacion,
-        fallbackMoneda: metodoPago?.moneda,
-      });
-      invalidateDashboardCache({
-        entity: 'servicio',
-        entityId: id,
-      });
-      refreshCategoriasCache({
-        entity: 'servicio',
-        entityId: id,
-      });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all });
-      await refreshPagos();
-      if (eraUltimaRenovacion) {
-        if (servicioActualizado) setServicio(servicioActualizado);
-      }
-      toast.success('Renovación eliminada', { description: 'El registro de pago ha sido eliminado del historial.' });
-      setPagoToDelete(null);
-      setDeleteRenovacionDialogOpen(false);
-    } catch (error) {
-      console.error('Error al eliminar renovación:', error);
-      toast.error('Error al eliminar renovación', { description: error instanceof Error ? error.message : undefined });
-    }
-  };
-
-  const handleConfirmRenovacion = async (data: PagoFormData) => {
-    if (!servicio) return;
-    try {
-      const metodoPagoSeleccionado = metodosPago.find((m) => m.id === data.metodoPagoId);
-      const { servicioActualizado } = await renewServicioUseCase(servicio, data, {
-        numeroRenovacion: renovaciones + 1,
-        metodoPago: metodoPagoSeleccionado,
-      });
-
-      // Invalidate dashboard cache so it re-fetches on next visit
-      invalidateDashboardCache({
-        entity: 'servicio',
-        entityId: id,
-      });
-
-      setServicio(servicioActualizado);
-
-      refreshPagos();
-
-      // Remove notification and refresh store
-      await deleteNotificacionesPorServicio(id);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
-      // Refresh categorias so Servicios module reflects updated gastosTotal
-      refreshCategoriasCache({
-        entity: 'servicio',
-        entityId: id,
-      });
-
-      toast.success('Renovación registrada', { description: 'El nuevo período de pago se ha registrado correctamente.' });
-      setRenovarDialogOpen(false);
-    } catch (error) {
-      console.error('Error al registrar la renovación:', error);
-      toast.error('Error al registrar la renovación', { description: error instanceof Error ? error.message : undefined });
-    }
-  };
 
   const currencySymbol = getCurrencySymbol(metodoPago?.moneda);
   const { isCalculatingTotal, totalGastadoUSD } = useTotalGastadoUSD(pagosServicio);
@@ -283,6 +170,37 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     () => sortPagosServicioByNewest(pagosServicio),
     [pagosServicio],
   );
+
+  const {
+    deleteRenovacionDialogOpen,
+    editarPagoDialogOpen,
+    handleConfirmDeleteRenovacion,
+    handleConfirmEditarPago,
+    handleConfirmRenovacion,
+    handleDeleteRenovacion,
+    handleEditarPago,
+    handleRenovar,
+    pagoToDelete,
+    pagoToEdit,
+    renovarDialogOpen,
+    setDeleteRenovacionDialogOpen,
+    setEditarPagoDialogOpen,
+    setPagoToDelete,
+    setPagoToEdit,
+    setRenovarDialogOpen,
+  } = useServicioPaymentActions({
+    deleteNotificacionesPorServicio,
+    id,
+    metodoPago,
+    metodosPago,
+    pagosOrdenados,
+    pagosServicio,
+    queryClient,
+    refreshPagos,
+    renovaciones,
+    servicio,
+    setServicio,
+  });
 
   const {
     expandedProfileNumber,
