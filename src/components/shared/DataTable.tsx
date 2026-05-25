@@ -40,6 +40,10 @@ export interface DataTableProps<T> {
   tableClassName?: string;
 }
 
+export function defineDataTableColumns<T extends object>(columns: Column<T>[]): Column<T>[] {
+  return columns;
+}
+
 type SortDirection = 'asc' | 'desc' | null;
 type SortableValue = string | number | boolean | Date | null | undefined;
 

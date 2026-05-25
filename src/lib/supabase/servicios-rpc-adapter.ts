@@ -59,7 +59,6 @@ export type CreateServicioWithInitialPaymentPayload = {
   p_metodo_pago_nombre_snapshot: string | null;
   p_fecha_pago: string;
   p_pago_notas: string | null;
-  p_created_by?: string | null;
   p_idempotency_key?: string | null;
 };
 

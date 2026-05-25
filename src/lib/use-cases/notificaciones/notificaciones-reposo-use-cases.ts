@@ -3,10 +3,13 @@ import { toast } from 'sonner';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
+import {
+  activateReposoServicioStoreWorkflow,
+  deleteNotificationStoreItem,
+  deleteReposoServicioStoreWorkflow,
+} from '@/lib/store-reactions/notificaciones-workflow-reactions';
 import { queryNotificationIdsRead } from '@/lib/supabase/domain-read-adapters';
 import { renewServicioUseCase } from '@/lib/use-cases/servicios/servicios-payment-use-cases';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useServiciosStore } from '@/store/serviciosStore';
 import type { Servicio } from '@/types/servicios';
 
 type ReposoServicioBase = Servicio & {
@@ -24,9 +27,7 @@ export async function clearReposoNotificationsUseCase(
       { field: 'entidad', operator: '==', value: 'reposo' },
       { field: 'servicioId', operator: '==', value: servicioId },
     ]);
-    await Promise.all(
-      notifs.map((n) => useNotificacionesStore.getState().deleteNotificacion(n.id)),
-    );
+    await Promise.all(notifs.map((n) => deleteNotificationStoreItem(n.id)));
     await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
   } catch {
     // Best-effort cleanup
@@ -47,7 +48,7 @@ export async function activateReposoServicioUseCase({
   queryClient: QueryClient;
   servicio: ReposoServicioBase;
 }) {
-  await useServiciosStore.getState().updateServicio(servicio.id, {
+  await activateReposoServicioStoreWorkflow(servicio.id, {
     ...servicio,
     activo: true,
     enReposo: false,
@@ -75,7 +76,7 @@ export async function activateAndRenewReposoServicioUseCase({
 }) {
   const notaPrincipal = pagoData.notas?.trim() ?? '';
 
-  await useServiciosStore.getState().updateServicio(servicio.id, {
+  await activateReposoServicioStoreWorkflow(servicio.id, {
     ...servicio,
     activo: true,
     enReposo: false,
@@ -117,7 +118,7 @@ export async function deleteReposoServicioUseCase({
   queryClient: QueryClient;
   servicio: ReposoServicioBase;
 }) {
-  await useServiciosStore.getState().deleteServicio(servicio.id, deletePayments);
+  await deleteReposoServicioStoreWorkflow(servicio.id, deletePayments);
   await clearReposoNotificationsUseCase(queryClient, servicio.id);
   toast.success('Servicio eliminado', {
     description: deletePayments

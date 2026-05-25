@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pagosRepository = vi.hoisted(() => ({
-  createPagoServicio: vi.fn(),
-  createPagoVenta: vi.fn(),
   queryPagosServicio: vi.fn(),
   queryPagosVenta: vi.fn(),
 }));
+const paymentsRepository = vi.hoisted(() => ({
+  createPagoServicio: vi.fn(),
+  createPagoVenta: vi.fn(),
+}));
 
 vi.mock('@/lib/supabase/pagos-repository', () => pagosRepository);
+vi.mock('@/lib/supabase/payments-repository', () => paymentsRepository);
 
 import {
   countServicioRenewals,
@@ -25,8 +28,8 @@ import {
 describe('payment-factory', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    pagosRepository.createPagoVenta.mockResolvedValue('pago-venta-1');
-    pagosRepository.createPagoServicio.mockResolvedValue('pago-servicio-1');
+    paymentsRepository.createPagoVenta.mockResolvedValue('pago-venta-1');
+    paymentsRepository.createPagoServicio.mockResolvedValue('pago-servicio-1');
     pagosRepository.queryPagosVenta.mockResolvedValue([]);
     pagosRepository.queryPagosServicio.mockResolvedValue([]);
   });
@@ -65,13 +68,13 @@ describe('payment-factory', () => {
       'Perfil'
     );
 
-    expect(pagosRepository.createPagoVenta).toHaveBeenNthCalledWith(1, expect.objectContaining({
+    expect(paymentsRepository.createPagoVenta).toHaveBeenNthCalledWith(1, expect.objectContaining({
       ventaId: 'venta-1',
       isPagoInicial: true,
       monto: 10,
       notas: 'Inicial',
     }));
-    expect(pagosRepository.createPagoVenta).toHaveBeenNthCalledWith(2, expect.objectContaining({
+    expect(paymentsRepository.createPagoVenta).toHaveBeenNthCalledWith(2, expect.objectContaining({
       ventaId: 'venta-1',
       isPagoInicial: false,
       precio: 15,
@@ -107,12 +110,12 @@ describe('payment-factory', () => {
       'Renovacion'
     );
 
-    expect(pagosRepository.createPagoServicio).toHaveBeenNthCalledWith(1, expect.objectContaining({
+    expect(paymentsRepository.createPagoServicio).toHaveBeenNthCalledWith(1, expect.objectContaining({
       servicioId: 'servicio-1',
       descripcion: 'Pago inicial',
       isPagoInicial: true,
     }));
-    expect(pagosRepository.createPagoServicio).toHaveBeenNthCalledWith(2, expect.objectContaining({
+    expect(paymentsRepository.createPagoServicio).toHaveBeenNthCalledWith(2, expect.objectContaining({
       servicioId: 'servicio-1',
       descripcion: 'Renovación #2',
       isPagoInicial: false,

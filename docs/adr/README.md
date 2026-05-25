@@ -15,3 +15,4 @@ ADRs iniciales para la ruta enterprise:
 - [0003 - RPCs criticas con adapters tipados e idempotencia](0003-typed-rpc-adapters-and-idempotency.md)
 - [0004 - Eventos cliente tipados en lugar de DOM/localStorage](0004-typed-client-events.md)
 - [0005 - Arquitectura modular monolitica con modulos profundos](0005-modular-monolith-deep-modules.md)
+- [0006 - Modelo RLS single-tenant administrativo](0006-single-tenant-admin-rls-model.md)

@@ -1,6 +1,4 @@
 import { toast } from 'sonner';
-
-import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   invalidateDashboardCache,
@@ -17,13 +15,32 @@ import {
 import { renewServicioUseCase } from '@/lib/use-cases/servicios/servicios-payment-use-cases';
 import { renewVentaUseCase } from '@/lib/use-cases/ventas/ventas-payment-use-cases';
 import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import {
+  deleteServicioNotificationsStoreWorkflow,
+  deleteVentaNotificationsStoreWorkflow,
+  getCurrentMetodosPagoStoreSnapshot,
+  refreshVentasStoreCache,
+} from '@/lib/store-reactions/notificaciones-workflow-reactions';
 import type { MetodoPago, NotificacionServicio, NotificacionVenta, Servicio, VentaDoc } from '@/types';
 import type { Plan } from '@/types/categorias';
 
 type NotificacionVentaConId = NotificacionVenta & { id: string };
 type NotificacionServicioConId = NotificacionServicio & { id: string };
+
+export type NotificationRenewalInput = {
+  metodoPagoId: string;
+  metodoPagoNombre?: string;
+  moneda?: string;
+  periodoRenovacion?: string;
+  costo?: number;
+  fechaInicio?: Date;
+  fechaVencimiento?: Date;
+  planId?: string;
+  planNombre?: string;
+  planTipoNombre?: string;
+  notificarWhatsApp?: boolean;
+  mensajeWhatsApp?: string;
+};
 
 type RefreshNotificationCaches = () => Promise<void>;
 
@@ -62,11 +79,11 @@ export async function confirmVentaRenewalFromNotificationUseCase({
   notif,
   refreshNotificationCaches,
 }: {
-  data: EnrichedPagoDialogFormData;
+  data: NotificationRenewalInput;
   notif: NotificacionVentaConId;
   refreshNotificationCaches: RefreshNotificationCaches;
 }): Promise<NotificationRenewalOutcome> {
-  const { metodosPago } = useMetodosPagoStore.getState();
+  const metodosPago = getCurrentMetodosPagoStoreSnapshot();
   const metodoPagoSeleccionado = metodosPago.find(
     (m) => m.id === data.metodoPagoId,
   );
@@ -74,6 +91,13 @@ export async function confirmVentaRenewalFromNotificationUseCase({
     toVentaDocFromNotification(notif),
     {
       ...data,
+      periodoRenovacion: data.periodoRenovacion ?? notif.cicloPago ?? 'mensual',
+      costo: data.costo ?? notif.precioFinal ?? 0,
+      fechaInicio: data.fechaInicio ?? notif.fechaInicio ?? new Date(),
+      fechaVencimiento: data.fechaVencimiento ?? notif.fechaFin,
+      planId: data.planId,
+      planNombre: data.planNombre,
+      planTipoNombre: data.planTipoNombre,
       metodoPagoNombre:
         metodoPagoSeleccionado?.nombre || data.metodoPagoNombre || '',
       moneda: data.moneda || metodoPagoSeleccionado?.moneda || notif.moneda || 'USD',
@@ -96,12 +120,10 @@ export async function confirmVentaRenewalFromNotificationUseCase({
     entity: 'venta',
     entityId: notif.ventaId,
   });
-  await useNotificacionesStore.getState().deleteNotificacionesPorVenta(notif.ventaId);
+  await deleteVentaNotificationsStoreWorkflow(notif.ventaId);
   await refreshNotificationCaches();
 
-  void import('@/store/ventasStore').then(({ useVentasStore }) =>
-    useVentasStore.getState().fetchVentas(true),
-  );
+  refreshVentasStoreCache();
   showRenewalSuccessToast(notif, data);
 
   return {
@@ -144,7 +166,7 @@ export async function confirmServicioRenewalFromNotificationUseCase({
   refreshNotificationCaches,
   servicio,
 }: {
-  data: EnrichedPagoDialogFormData;
+  data: NotificationRenewalInput;
   metodosPagoServicio: MetodoPago[];
   refreshNotificationCaches: RefreshNotificationCaches;
   servicio: Servicio;
@@ -152,14 +174,22 @@ export async function confirmServicioRenewalFromNotificationUseCase({
   const metodoPagoSeleccionado = metodosPagoServicio.find(
     (metodo) => metodo.id === data.metodoPagoId,
   );
-  await renewServicioUseCase(servicio, data, {
+  await renewServicioUseCase(servicio, {
+    ...data,
+    periodoRenovacion: data.periodoRenovacion ?? servicio.cicloPago ?? 'mensual',
+    costo: data.costo ?? servicio.costoServicio ?? 0,
+    fechaInicio: data.fechaInicio ?? servicio.fechaInicio ?? new Date(),
+    fechaVencimiento: data.fechaVencimiento ?? servicio.fechaVencimiento ?? new Date(),
+    metodoPagoNombre: data.metodoPagoNombre ?? servicio.metodoPagoNombre,
+    moneda: data.moneda ?? servicio.moneda,
+  }, {
     metodoPago: metodoPagoSeleccionado,
     ...getActivityLogOptions(),
     logPrefix: 'Servicio renovado desde notificaciones',
   });
 
   invalidateDashboardCache({ entity: 'servicio', entityId: servicio.id });
-  await useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicio.id);
+  await deleteServicioNotificationsStoreWorkflow(servicio.id);
   await refreshNotificationCaches();
   refreshCategoriasCache({ entity: 'servicio', entityId: servicio.id });
 
@@ -194,7 +224,7 @@ function toVentaDocFromNotification(notif: NotificacionVentaConId): VentaDoc {
 
 function showRenewalSuccessToast(
   notif: NotificacionVentaConId,
-  data: EnrichedPagoDialogFormData,
+  data: NotificationRenewalInput,
 ) {
   if (data.notificarWhatsApp && data.mensajeWhatsApp) {
     const phone = notif.clienteTelefono

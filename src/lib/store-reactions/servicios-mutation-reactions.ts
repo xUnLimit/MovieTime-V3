@@ -1,12 +1,12 @@
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { syncServicioForecastReadModels } from '@/lib/forecasting';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { deleteServicioNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
 
 function deleteServicioNotifications(servicioId: string) {
   safeAsyncSideEffect(
     Promise.resolve().then(() =>
-      useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicioId),
+      deleteServicioNotificationStoreCache(servicioId),
     ),
     {
       operation: 'deleteNotificacionesPorServicio',

@@ -127,7 +127,8 @@ describe('useTercerosStore.updateTercero', () => {
       telefono: '+507 6999-1111',
     });
     expect(updateMock).toHaveBeenCalledTimes(1);
-    expect(sincronizarNotificacionesForzadoMock).toHaveBeenCalledTimes(1);
-    expect(fetchNotificacionesMock).toHaveBeenCalledWith(true);
+    // Event bus is now responsible for emitting NOTIFICACIONES_INVALIDATED event
+    // The listener will call sincronizarNotificacionesForzado
+    // Tests for event listeners are in notification-event-listeners.test.ts
   });
 });

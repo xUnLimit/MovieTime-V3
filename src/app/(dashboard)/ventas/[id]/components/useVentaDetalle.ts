@@ -18,17 +18,17 @@ import {
   type VentaDetalleQueryData,
 } from '@/lib/use-cases/ventas/venta-detail-use-cases';
 import { calcularMontoSinConsumir, roundToDecimals } from '@/lib/utils/calculations';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { TemplateMensaje, VentaDoc } from '@/types';
 
 import type { VentaDetalleViewModel } from './types';
 import { useVentaDetalleActions } from './useVentaDetalleActions';
+import { useVentaDetalleStoreDependencies } from './venta-detalle-store-dependencies';
 
 export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const deleteNotificacionesPorVenta = useNotificacionesStore((state) => state.deleteNotificacionesPorVenta);
+  const { deleteNotificacionesPorVenta } = useVentaDetalleStoreDependencies();
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
     (tipo: TemplateMensaje['tipo']) =>

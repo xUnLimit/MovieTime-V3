@@ -26,6 +26,30 @@ describe('/api/push/pending', () => {
     expect(summaryMock).not.toHaveBeenCalled();
   });
 
+  it('forbids non-admin authenticated users', async () => {
+    authMock.mockRejectedValueOnce(new Error('Forbidden'));
+
+    const response = await POST(new Request('https://example.com/api/push/pending', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
+    }));
+
+    expect(response.status).toBe(403);
+    expect(summaryMock).not.toHaveBeenCalled();
+  });
+
+  it('requires an endpoint before resolving a summary', async () => {
+    authMock.mockResolvedValueOnce({ user: { id: 'user-1' } });
+
+    const response = await POST(new Request('https://example.com/api/push/pending', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }));
+
+    expect(response.status).toBe(400);
+    expect(summaryMock).not.toHaveBeenCalled();
+  });
+
   it('resolves summaries by endpoint and authenticated user id', async () => {
     authMock.mockResolvedValueOnce({ user: { id: 'user-1' } });
     summaryMock.mockResolvedValueOnce({

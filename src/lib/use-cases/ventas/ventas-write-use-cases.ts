@@ -11,9 +11,8 @@ import {
   removeVentaWithPayments,
   updateVenta,
 } from '@/lib/supabase/ventas-repository';
-import { sincronizarUnaVenta } from '@/lib/notifications';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import type { MetodoPago, VentaDoc } from '@/types';
 import {
   getUsdValues,
@@ -99,11 +98,7 @@ export async function createVentaUseCase(
 
   const pronostico = toVentaPronostico(venta);
 
-  safeAsyncSideEffect(sincronizarUnaVenta(ventaId), {
-    operation: 'sincronizarUnaVenta',
-    entity: 'venta',
-    entityId: ventaId,
-  });
+  storeEventBus.emit({ type: 'VENTA_CREATED', ventaId });
 
   return { venta, pronostico };
 }
@@ -181,6 +176,8 @@ export async function updateVentaUseCase(
 
   const pronostico = toVentaPronostico(ventaActualizada);
 
+  storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId: id });
+
   return { ventaAnterior, ventaActualizada, finalUpdates, pronostico, serviceProfileDelta };
 }
 
@@ -222,6 +219,8 @@ export async function deleteVentaUseCase(
       origen: 'deleteVentaUseCase',
     },
   });
+
+  storeEventBus.emit({ type: 'VENTA_DELETED', ventaId: id });
 
   return { ventaEliminada, serviceProfileDelta };
 }

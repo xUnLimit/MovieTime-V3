@@ -14,10 +14,9 @@ import {
   resyncServiciosDenormalizedData,
   syncServicioDependencias,
 } from '@/lib/use-cases/servicios/servicio-dependencies-use-cases';
-import { sincronizarUnServicio } from '@/lib/notifications';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { convertToUSD, sumPaymentsInUSD } from '@/lib/payments';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import type { MetodoPago, Servicio } from '@/types';
 import {
   getServicioTableUpdates,
@@ -101,11 +100,7 @@ export async function createServicioUseCase(
     },
   });
 
-  safeAsyncSideEffect(sincronizarUnServicio(id), {
-    operation: 'sincronizarUnServicio',
-    entity: 'servicio',
-    entityId: id,
-  });
+  storeEventBus.emit({ type: 'SERVICIO_CREATED', servicioId: id });
 
   return { servicio, pronostico };
 }
@@ -201,6 +196,8 @@ export async function updateServicioUseCase(
     },
   });
 
+  storeEventBus.emit({ type: 'SERVICIO_UPDATED', servicioId: id });
+
   return { servicioAnterior: servicio, servicioActualizado, finalUpdates, pronostico };
 }
 
@@ -243,6 +240,8 @@ export async function deleteServicioUseCase(
       origen: 'deleteServicioUseCase',
     },
   });
+
+  storeEventBus.emit({ type: 'SERVICIO_DELETED', servicioId: id });
 
   return { servicio };
 }

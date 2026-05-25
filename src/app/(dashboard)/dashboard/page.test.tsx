@@ -34,6 +34,10 @@ vi.mock('@/lib/supabase/notifications-repository', () => ({
   queryNotifications: queryNotificationsMock,
 }));
 
+vi.mock('@/lib/supabase/domain-read-adapters', () => ({
+  queryNotificationsRead: queryNotificationsMock,
+}));
+
 vi.mock('@/components/ui/card', () => ({
   Card: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   CardContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,

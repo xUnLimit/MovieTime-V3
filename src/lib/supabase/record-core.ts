@@ -10,7 +10,12 @@ import {
 import { readField, normalizeFilterValue } from './filters';
 import { mapReadRow, enrichCategorias, enrichTerceros } from './read-models';
 import { createNotification, queryNotifications, updateNotification } from './notifications-repository';
-import { createPagoServicio, createPagoVenta } from './payments-repository';
+import {
+  createPagoServicio,
+  createPagoVenta,
+  type CreatePagoServicioInput,
+  type CreatePagoVentaInput,
+} from './payments-repository';
 import { insertRawRow, normalizeWritePayload } from './write-utils';
 import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
 import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
@@ -122,10 +127,10 @@ export async function create<T extends Record<string, unknown>>(
     return createNotification(payload as Record<string, unknown>);
   }
   if (collectionName === ENTITIES.PAGOS_SERVICIO) {
-    return createPagoServicio(payload as Record<string, unknown>);
+    return createPagoServicio(payload as unknown as CreatePagoServicioInput);
   }
   if (collectionName === ENTITIES.PAGOS_VENTA) {
-    return createPagoVenta(payload as Record<string, unknown>);
+    return createPagoVenta(payload as unknown as CreatePagoVentaInput);
   }
 
   return createRaw(collectionName, normalizeWritePayload(collectionName, payload as Record<string, unknown>, 'insert'));

@@ -8,7 +8,46 @@ import {
 
 type CicloPago = 'mensual' | 'trimestral' | 'semestral' | 'anual';
 
-export async function createPagoServicio(payload: Record<string, unknown>): Promise<string> {
+export type CreatePagoServicioInput = {
+  servicioId: string;
+  categoriaId?: string | null;
+  fecha?: Date | string | null;
+  descripcion?: string | null;
+  cicloPago?: CicloPago | null;
+  fechaInicio?: Date | string | null;
+  fechaVencimiento?: Date | string | null;
+  monto: number;
+  metodoPagoId?: string | null;
+  metodoPagoNombre?: string | null;
+  moneda?: string | null;
+  renovacionAutomatica?: boolean | null;
+  isPagoInicial?: boolean | null;
+  notas?: string | null;
+};
+
+export type CreatePagoVentaInput = {
+  ventaId: string;
+  clienteId?: string | null;
+  clienteNombre?: string | null;
+  categoriaId?: string | null;
+  fecha?: Date | string | null;
+  monto: number;
+  precio?: number | null;
+  descuento?: number | null;
+  metodoPagoId?: string | null;
+  metodoPago?: string | null;
+  moneda?: string | null;
+  notas?: string | null;
+  isPagoInicial?: boolean | null;
+  cicloPago?: CicloPago | null;
+  fechaInicio?: Date | string | null;
+  fechaVencimiento?: Date | string | null;
+  planId?: string | null;
+  planNombre?: string | null;
+  planTipoNombre?: string | null;
+};
+
+export async function createPagoServicio(payload: CreatePagoServicioInput): Promise<string> {
   assertOnlineMutation();
   const servicioId = String(payload.servicioId ?? '');
   if (!servicioId) throw new Error('servicioId es requerido para pagos_servicio');
@@ -35,7 +74,7 @@ export async function createPagoServicio(payload: Record<string, unknown>): Prom
   });
 }
 
-export async function createPagoVenta(payload: Record<string, unknown>): Promise<string> {
+export async function createPagoVenta(payload: CreatePagoVentaInput): Promise<string> {
   assertOnlineMutation();
   const ventaId = String(payload.ventaId ?? '');
   if (!ventaId) throw new Error('ventaId es requerido para pagos_venta');

@@ -11,7 +11,6 @@ import {
   getUsdValues,
   getVentaConPagoActualUseCase,
   nullableMetodoPagoId,
-  nullableUuid,
   toVentaPronostico,
   type LogContext,
   type RecordActivityLog,
@@ -70,7 +69,6 @@ export async function createVentaRefundUseCase(
     p_nota: notaReembolso || null,
     p_cortar: input.cortarServicio,
     p_motivo_corte: motivoCorte || null,
-    p_created_by: nullableUuid(options.logContext.usuarioId),
   });
 
   const ventaActualizada = await getVentaConPagoActualUseCase(venta.id);

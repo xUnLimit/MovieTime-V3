@@ -7,6 +7,7 @@ export type StoreEvent =
   | { type: 'SERVICIO_DELETED'; servicioId: string }
   | { type: 'SERVICIO_ARCHIVED'; servicioId: string }
   | { type: 'SERVICIOS_INVALIDATED' }
+  | { type: 'CATEGORIAS_INVALIDATED' }
   | { type: 'CATEGORIA_DELETED'; categoriaId: string }
   | { type: 'TERCERO_DELETED'; terceroId: string }
   | { type: 'TERCERO_NOMBRE_UPDATED'; terceroId: string }

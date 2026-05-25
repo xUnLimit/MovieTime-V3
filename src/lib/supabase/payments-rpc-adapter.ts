@@ -27,7 +27,6 @@ export type CreateServicioPaymentPayload = {
   p_metodo_pago_nombre_snapshot: string | null;
   p_fecha_pago: string;
   p_pago_notas: string | null;
-  p_created_by?: string | null;
   p_idempotency_key?: string | null;
 };
 
@@ -49,7 +48,6 @@ export type CreateVentaPaymentPayload = {
   p_plan_id: string | null;
   p_plan_nombre_snapshot: string | null;
   p_plan_tipo_nombre_snapshot: string | null;
-  p_created_by?: string | null;
   p_idempotency_key?: string | null;
 };
 

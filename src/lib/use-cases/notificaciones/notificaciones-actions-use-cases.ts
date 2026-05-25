@@ -1,9 +1,11 @@
 import { toast } from 'sonner';
 
 import { invalidateDashboardCache } from '@/lib/commands/client-cache';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useServiciosStore } from '@/store/serviciosStore';
-import { useVentasStore } from '@/store/ventasStore';
+import {
+  cutVentaFromNotificationStoreWorkflow,
+  inactivateServicioFromNotificationStoreWorkflow,
+  refreshVentasStoreCache,
+} from '@/lib/store-reactions/notificaciones-workflow-reactions';
 
 type RefreshNotificationCaches = () => Promise<void>;
 
@@ -22,13 +24,7 @@ export async function cutVentaFromNotificationUseCase({
   refreshNotificationCaches: RefreshNotificationCaches;
   ventaId: string;
 }): Promise<NotificationActionOutcome> {
-  await useVentasStore.getState().updateVenta(ventaId, {
-    estado: 'inactivo',
-    cortadaAt: new Date(),
-    motivoCorte,
-  });
-
-  await useNotificacionesStore.getState().deleteNotificacionesPorVenta(ventaId);
+  await cutVentaFromNotificationStoreWorkflow(ventaId, motivoCorte);
   await refreshNotificationCaches();
 
   invalidateDashboardCache({
@@ -37,7 +33,7 @@ export async function cutVentaFromNotificationUseCase({
   });
 
   toast.success('Venta cortada exitosamente');
-  void useVentasStore.getState().fetchVentas(true);
+  refreshVentasStoreCache();
 
   return {
     completed: true,
@@ -55,8 +51,7 @@ export async function inactivateServicioFromNotificationUseCase({
   servicioId: string;
   servicioNombre: string;
 }): Promise<NotificationActionOutcome> {
-  await useServiciosStore.getState().updateServicio(servicioId, { activo: false });
-  await useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicioId);
+  await inactivateServicioFromNotificationStoreWorkflow(servicioId);
   toast.success('Servicio inactivado', {
     description: `${servicioNombre} ha sido marcado como inactivo.`,
   });

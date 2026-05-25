@@ -49,4 +49,13 @@ describe('storeEventBus', () => {
     expect(ventaHandler).not.toHaveBeenCalled();
     expect(dashboardHandler).not.toHaveBeenCalled();
   });
+
+  it('emits categoria invalidation events without payload requirements', () => {
+    const handler = vi.fn();
+
+    storeEventBus.on('CATEGORIAS_INVALIDATED', handler);
+    storeEventBus.emit({ type: 'CATEGORIAS_INVALIDATED' });
+
+    expect(handler).toHaveBeenCalledWith({ type: 'CATEGORIAS_INVALIDATED' });
+  });
 });

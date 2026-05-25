@@ -1,4 +1,5 @@
-import { createPagoServicio, createPagoVenta, queryPagosServicio, queryPagosVenta } from '@/lib/supabase/pagos-repository';
+import { queryPagosServicio, queryPagosVenta } from '@/lib/supabase/pagos-repository';
+import { createPagoServicio, createPagoVenta } from '@/lib/supabase/payments-repository';
 import type { PagoServicio, PagoVenta } from '@/types';
 
 type CicloPago = 'mensual' | 'trimestral' | 'semestral' | 'anual';

@@ -8,11 +8,6 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { getCurrencySymbol } from '@/lib/constants';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useServiciosStore } from '@/store/serviciosStore';
-import { useTemplatesStore } from '@/store/templatesStore';
-import { useTercerosStore } from '@/store/tercerosStore';
-import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
 
 import { ServicioDetalleDialogs } from './components/ServicioDetalleDialogs';
 import { ServicioDetalleHeader } from './components/ServicioDetalleHeader';
@@ -30,6 +25,7 @@ import { useServicioPaymentActions } from './components/useServicioPaymentAction
 import { useServicioProfiles } from './components/useServicioProfiles';
 import { useServicioSaleActions } from './components/useServicioSaleActions';
 import { useTotalGastadoUSD } from './components/useTotalGastadoUSD';
+import { useServicioDetalleStoreDependencies } from './components/servicio-detalle-store-dependencies';
 import {
   getCicloPagoLabel,
   getReturnToServicios,
@@ -39,14 +35,17 @@ import {
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { deleteServicio, fetchCounts, fetchServicios, servicios } = useServiciosStore();
-  const deleteNotificacionesPorServicio = useNotificacionesStore(
-    (state) => state.deleteNotificacionesPorServicio,
-  );
-  const fetchTemplates = useTemplatesStore((state) => state.fetchTemplates);
-  const getTemplateByTipo = useTemplatesStore((state) => state.getTemplateByTipo);
-  const fetchTerceros = useTercerosStore((state) => state.fetchTerceros);
-  const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
+  const {
+    deleteNotificacionesPorServicio,
+    deleteServicio,
+    enqueueWhatsAppMessages,
+    fetchCounts,
+    fetchServicios,
+    fetchTemplates,
+    fetchTerceros,
+    getTemplateByTipo,
+    servicios,
+  } = useServicioDetalleStoreDependencies();
 
   const {
     categoria,

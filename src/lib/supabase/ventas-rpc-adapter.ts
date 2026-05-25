@@ -65,12 +65,11 @@ export type CreateVentaWithInitialPaymentPayload = {
   p_plan_id: string | null | undefined;
   p_plan_nombre_snapshot: string | null | undefined;
   p_plan_tipo_nombre_snapshot: string | null | undefined;
-  p_created_by?: string | null;
   p_idempotency_key?: string | null;
 };
 
 export type CreateVentaRefundPayload =
-  Database['public']['Functions']['create_venta_refund']['Args'] & {
+  Omit<Database['public']['Functions']['create_venta_refund']['Args'], 'p_created_by'> & {
     p_idempotency_key?: string | null;
   };
 export type DeleteVentaWithPaymentsPayload =

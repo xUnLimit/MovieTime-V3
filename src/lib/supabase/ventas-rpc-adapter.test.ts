@@ -65,7 +65,6 @@ const refundPayload: CreateVentaRefundPayload = {
   p_nota: 'Reembolso',
   p_cortar: false,
   p_motivo_corte: null,
-  p_created_by: '00000000-0000-0000-0000-000000000000',
   p_idempotency_key: '00000000-0000-4000-8000-000000000102',
 };
 

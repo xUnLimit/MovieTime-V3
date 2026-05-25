@@ -25,6 +25,9 @@ const dashboardStatsService = vi.hoisted(() => ({
 const paymentsModule = vi.hoisted(() => ({
   convertToUSD: vi.fn(),
   createRenewalVentaPayment: vi.fn(),
+  financialPayments: {
+    registerRenewalVentaPayment: vi.fn(),
+  },
 }));
 
 const notificationSyncService = vi.hoisted(() => ({
@@ -90,6 +93,7 @@ describe('ventas use cases', () => {
     vi.clearAllMocks();
     paymentsModule.convertToUSD.mockImplementation(async (amount: number) => amount);
     paymentsModule.createRenewalVentaPayment.mockResolvedValue('pago-renovacion');
+    paymentsModule.financialPayments.registerRenewalVentaPayment.mockResolvedValue('pago-renovacion');
     notificationSyncService.sincronizarUnaVenta.mockResolvedValue(undefined);
   });
 
@@ -140,7 +144,7 @@ describe('ventas use cases', () => {
   });
 
   it('passes plan data when renewing a venta', async () => {
-    paymentsModule.createRenewalVentaPayment.mockResolvedValueOnce('pago-renovacion');
+    paymentsModule.financialPayments.registerRenewalVentaPayment.mockResolvedValueOnce('pago-renovacion');
 
     await renewVentaUseCase(ventaBase, {
       periodoRenovacion: 'mensual',
@@ -156,29 +160,29 @@ describe('ventas use cases', () => {
       planTipoNombre: ventaBase.planTipoNombre,
     });
 
-    expect(paymentsModule.createRenewalVentaPayment).toHaveBeenCalledWith(
-      ventaBase.id,
-      ventaBase.clienteId,
-      ventaBase.clienteNombre,
-      ventaBase.categoriaId,
-      12,
-      'Zelle',
-      '00000000-0000-4000-8000-000000000015',
-      'USD',
-      'mensual',
-      '',
-      new Date('2026-06-01T00:00:00.000Z'),
-      new Date('2026-07-01T00:00:00.000Z'),
-      12,
-      0,
-      ventaBase.planId,
-      ventaBase.planNombre,
-      ventaBase.planTipoNombre
-    );
+    expect(paymentsModule.financialPayments.registerRenewalVentaPayment).toHaveBeenCalledWith(expect.objectContaining({
+      ventaId: ventaBase.id,
+      clienteId: ventaBase.clienteId,
+      clienteNombre: ventaBase.clienteNombre,
+      categoriaId: ventaBase.categoriaId,
+      total: 12,
+      metodoPagoNombre: 'Zelle',
+      metodoPagoId: '00000000-0000-4000-8000-000000000015',
+      moneda: 'USD',
+      cicloPago: 'mensual',
+      notas: '',
+      fechaInicio: new Date('2026-06-01T00:00:00.000Z'),
+      fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
+      precio: 12,
+      descuento: 0,
+      planId: ventaBase.planId,
+      planNombre: ventaBase.planNombre,
+      planTipoNombre: ventaBase.planTipoNombre,
+    }));
   });
 
   it('returns syncPaymentMethodFailed when renewing a venta cannot sync the tercero payment method', async () => {
-    paymentsModule.createRenewalVentaPayment.mockResolvedValueOnce('pago-renovacion');
+    paymentsModule.financialPayments.registerRenewalVentaPayment.mockResolvedValueOnce('pago-renovacion');
     terceroMetodoPagoUseCases.syncTerceroMetodoPagoUseCase.mockRejectedValueOnce(new Error('sync failed'));
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -197,7 +201,7 @@ describe('ventas use cases', () => {
     });
 
     expect(result.syncPaymentMethodFailed).toBe(true);
-    expect(paymentsModule.createRenewalVentaPayment).toHaveBeenCalled();
+    expect(paymentsModule.financialPayments.registerRenewalVentaPayment).toHaveBeenCalled();
     expect(ventasRepository.updateVenta).toHaveBeenCalledWith(ventaBase.id, { notas: '' });
 
     consoleErrorSpy.mockRestore();
@@ -218,7 +222,7 @@ describe('ventas use cases', () => {
       fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
     })).rejects.toThrow('Una renovación debe tener un plan seleccionado.');
 
-    expect(paymentsModule.createRenewalVentaPayment).not.toHaveBeenCalled();
+    expect(paymentsModule.financialPayments.registerRenewalVentaPayment).not.toHaveBeenCalled();
   });
 
   it('returns a profile delta when suspending a venta', async () => {

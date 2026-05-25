@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { getOfflineCopyStatus, prepareOfflineCopy } from '@/lib/pwa/offline-copy';
+import { offlineCopy } from '@/lib/pwa/offline-facade';
 import type { OfflineSyncProgress, OfflineSyncStatus } from '@/lib/pwa/offline-types';
 
 interface PwaState {
@@ -49,7 +49,7 @@ export const usePwaStore = create<PwaState>()(
       setInstalled: (isInstalled) => set({ isInstalled }),
       setNotificationPermission: (notificationPermission) => set({ notificationPermission }),
       hydrateOfflineState: async () => {
-        const meta = await getOfflineCopyStatus();
+        const meta = await offlineCopy.status();
         set({
           lastSyncAt: meta?.syncedAt ? new Date(meta.syncedAt) : null,
           isOfflineReady: meta.isReady,
@@ -68,7 +68,7 @@ export const usePwaStore = create<PwaState>()(
           error: null,
         });
         try {
-          const snapshot = await prepareOfflineCopy((syncProgress) => {
+          const snapshot = await offlineCopy.prepare((syncProgress) => {
             set({ syncProgress });
           });
           set({

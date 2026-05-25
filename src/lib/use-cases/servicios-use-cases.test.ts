@@ -40,6 +40,9 @@ vi.mock('@/lib/notifications', () => ({
 vi.mock('@/lib/payments', () => ({
   convertToUSD: vi.fn(),
   createRenewalServicioPayment: vi.fn(),
+  financialPayments: {
+    registerRenewalServicioPayment: vi.fn(),
+  },
   sumPaymentsInUSD: vi.fn(async (
     payments: Array<{ monto: number; moneda?: string | null }>,
     converter: (monto: number, moneda: string) => Promise<number>
@@ -65,7 +68,7 @@ import {
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { createRenewalServicioPayment } from '@/lib/payments';
+import { createRenewalServicioPayment, financialPayments } from '@/lib/payments';
 import { sincronizarUnServicio } from '@/lib/notifications';
 import { syncServicioDependencias } from '@/lib/use-cases/servicios/servicio-dependencies-use-cases';
 import { convertToUSD } from '@/lib/payments';
@@ -127,6 +130,7 @@ beforeEach(() => {
   vi.mocked(updateLatestServicioPeriodo).mockReset();
   vi.mocked(updateServicio).mockReset();
   vi.mocked(createRenewalServicioPayment).mockReset();
+  vi.mocked(financialPayments.registerRenewalServicioPayment).mockReset();
   vi.mocked(syncServicioDependencias).mockReset();
   vi.mocked(getServicioById).mockReset();
   vi.mocked(sincronizarUnServicio).mockClear();
@@ -140,6 +144,7 @@ beforeEach(() => {
   vi.mocked(updateLatestServicioPeriodo).mockResolvedValue(undefined);
   vi.mocked(updateServicio).mockResolvedValue(undefined);
   vi.mocked(createRenewalServicioPayment).mockResolvedValue(undefined);
+  vi.mocked(financialPayments.registerRenewalServicioPayment).mockResolvedValue(undefined);
   vi.mocked(syncServicioDependencias).mockResolvedValue(undefined);
   vi.mocked(convertToUSD).mockResolvedValue(10);
   vi.mocked(getServicioById).mockResolvedValue({
@@ -183,8 +188,9 @@ describe('createServicioUseCase', () => {
       })
     );
     expect(result.servicio.id).toBe('servicio-1');
-    expect(sincronizarUnServicio).toHaveBeenCalledWith('servicio-1');
     expect(recordActivityLog).toHaveBeenCalledWith(expect.objectContaining({ accion: 'creacion' }));
+    // Event bus is now responsible for triggering notification sync
+    // Tests for event listeners are in notification-event-listeners.test.ts
   });
 });
 
@@ -263,20 +269,20 @@ describe('renewServicioUseCase', () => {
       numeroRenovacion: 1,
     });
 
-    expect(createRenewalServicioPayment).toHaveBeenCalledWith(
-      'servicio-1',
-      'categoria-1',
-      10,
-      'metodo-1',
-      'Banco',
-      'USD',
-      'mensual',
-      new Date('2026-06-01T00:00:00Z'),
-      new Date('2026-07-01T00:00:00Z'),
-      1,
-      'Renovado',
-      true
-    );
+    expect(financialPayments.registerRenewalServicioPayment).toHaveBeenCalledWith(expect.objectContaining({
+      servicioId: 'servicio-1',
+      categoriaId: 'categoria-1',
+      monto: 10,
+      metodoPagoId: 'metodo-1',
+      metodoPagoNombre: 'Banco',
+      moneda: 'USD',
+      cicloPago: 'mensual',
+      fechaInicio: new Date('2026-06-01T00:00:00Z'),
+      fechaVencimiento: new Date('2026-07-01T00:00:00Z'),
+      numeroRenovacion: 1,
+      notas: 'Renovado',
+      renovacionAutomatica: true,
+    }));
     expect(result.servicioActualizado.renovacionAutomatica).toBe(true);
   });
 });

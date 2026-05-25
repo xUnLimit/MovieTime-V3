@@ -2,7 +2,6 @@
 import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { sincronizarNotificacionesForzado, sincronizarUnServicio, sincronizarUnaVenta } from '@/lib/notifications';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { Servicio, VentaDoc } from '@/types';
 
 type ServicioDenormalizedSnapshot = Pick<
@@ -91,11 +90,6 @@ export async function applyServicioDependencySyncReactions(
         outcome.ventaIds.map((id) => sincronizarUnaVenta(id))
       );
     }
-
-    await Promise.all([
-      useNotificacionesStore.getState().fetchNotificaciones(true),
-      useNotificacionesStore.getState().fetchCounts(),
-    ]);
   }
 
   if (options.emitEvents ?? true) {
@@ -117,10 +111,6 @@ export async function resyncServiciosDenormalizedData(preFetchedData?: {
   void preFetchedData?.ventas;
 
   await sincronizarNotificacionesForzado();
-  await Promise.all([
-    useNotificacionesStore.getState().fetchNotificaciones(true),
-    useNotificacionesStore.getState().fetchCounts(),
-  ]);
 
   emitServicioSyncEvents(null, []);
 

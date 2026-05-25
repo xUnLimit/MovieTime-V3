@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { sendExecutivePushDailySummary } from '@/lib/executive-push/executive-push-delivery';
+import { sendForcedExecutivePush } from '@/lib/executive-push/executive-push-api';
 import { requireAuthenticatedAdmin } from '@/lib/server/request-auth';
 
 export const runtime = 'nodejs';
@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   try {
     await requireAuthenticatedAdmin(request);
-    const result = await sendExecutivePushDailySummary({ force: true });
+    const result = await sendForcedExecutivePush();
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unauthorized';

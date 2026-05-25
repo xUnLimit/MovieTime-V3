@@ -1,8 +1,8 @@
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useCategoriasStore } from '@/store/categoriasStore';
 import { getActiveQueryClient } from '@/lib/query-client-registry';
 import { queryKeys } from '@/lib/query-keys';
 import { storeEventBus } from '@/lib/events/store-event-bus';
+import { refreshCategoriasStoreCache } from '@/lib/store-reactions/categorias-cache-reactions';
 
 type CacheContext = {
   entity?: string;
@@ -21,8 +21,10 @@ export function invalidateDashboardCache(context: CacheContext = {}) {
 }
 
 export function refreshCategoriasCache(context: CacheContext = {}) {
+  storeEventBus.emit({ type: 'CATEGORIAS_INVALIDATED' });
   safeAsyncSideEffect(Promise.resolve().then(() => {
-    useCategoriasStore.getState().fetchCategorias(true);
+    void getActiveQueryClient()?.invalidateQueries({ queryKey: queryKeys.categorias.all });
+    return refreshCategoriasStoreCache();
   }), {
     operation: 'refreshCategorias',
     entity: context.entity,

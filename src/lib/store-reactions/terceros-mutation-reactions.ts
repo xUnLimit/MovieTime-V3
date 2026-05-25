@@ -1,5 +1,5 @@
 import { storeEventBus } from '@/lib/events/store-event-bus';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { refreshNotificationListCache } from '@/lib/store-reactions/notification-cache-reactions';
 
 export async function afterTerceroUpdated({
   terceroId,
@@ -11,7 +11,7 @@ export async function afterTerceroUpdated({
   shouldDispatchTerceroNombreUpdated: boolean;
 }) {
   if (shouldRefreshNotificaciones) {
-    await useNotificacionesStore.getState().fetchNotificaciones(true);
+    await refreshNotificationListCache();
   }
 
   if (shouldDispatchTerceroNombreUpdated) {

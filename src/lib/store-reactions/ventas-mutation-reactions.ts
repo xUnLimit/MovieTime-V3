@@ -1,7 +1,7 @@
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
+import { deleteVentaNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 
 type ServiceProfileDelta = {
@@ -20,7 +20,7 @@ async function applyServiceProfileDelta(delta: ServiceProfileDelta) {
 function deleteVentaNotifications(ventaId: string) {
   safeAsyncSideEffect(
     Promise.resolve().then(() =>
-      useNotificacionesStore.getState().deleteNotificacionesPorVenta(ventaId),
+      deleteVentaNotificationStoreCache(ventaId),
     ),
     {
       operation: 'deleteNotificacionesPorVenta',

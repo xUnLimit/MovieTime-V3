@@ -5,8 +5,7 @@ const getServiciosMock = vi.fn();
 const syncNotificacionesMock = vi.fn();
 const syncUnServicioMock = vi.fn();
 const syncUnaVentaMock = vi.fn();
-const fetchNotificacionesMock = vi.fn();
-const fetchCountsMock = vi.fn();
+const refreshNotificationStoreCacheMock = vi.fn();
 
 vi.mock('@/lib/supabase/servicios-repository', () => ({
   getServicios: getServiciosMock,
@@ -25,13 +24,8 @@ vi.mock('@/lib/notifications', () => ({
   sincronizarUnaVenta: syncUnaVentaMock,
 }));
 
-vi.mock('@/store/notificacionesStore', () => ({
-  useNotificacionesStore: {
-    getState: () => ({
-      fetchNotificaciones: fetchNotificacionesMock,
-      fetchCounts: fetchCountsMock,
-    }),
-  },
+vi.mock('@/lib/store-reactions/notification-cache-reactions', () => ({
+  refreshNotificationStoreCache: refreshNotificationStoreCacheMock,
 }));
 
 describe('servicio-dependencies-use-cases', () => {
@@ -42,8 +36,7 @@ describe('servicio-dependencies-use-cases', () => {
     syncNotificacionesMock.mockResolvedValue(undefined);
     syncUnServicioMock.mockResolvedValue(undefined);
     syncUnaVentaMock.mockResolvedValue(undefined);
-    fetchNotificacionesMock.mockResolvedValue(undefined);
-    fetchCountsMock.mockResolvedValue(undefined);
+    refreshNotificationStoreCacheMock.mockResolvedValue(undefined);
   });
 
   describe('syncServicioDependencias', () => {
@@ -83,8 +76,6 @@ describe('servicio-dependencies-use-cases', () => {
       expect(syncUnaVentaMock).toHaveBeenCalledTimes(2);
       expect(syncUnaVentaMock).toHaveBeenCalledWith('venta-1');
       expect(syncUnaVentaMock).toHaveBeenCalledWith('venta-2');
-      expect(fetchNotificacionesMock).toHaveBeenCalledWith(true);
-      expect(fetchCountsMock).toHaveBeenCalledTimes(1);
       expect(servicioUpdated).toHaveBeenCalledWith({
         type: 'SERVICIO_UPDATED',
         servicioId: 'servicio-1',
@@ -122,8 +113,6 @@ describe('servicio-dependencies-use-cases', () => {
       const result = await resyncServiciosDenormalizedData();
 
       expect(syncNotificacionesMock).toHaveBeenCalledTimes(1);
-      expect(fetchNotificacionesMock).toHaveBeenCalledWith(true);
-      expect(fetchCountsMock).toHaveBeenCalledTimes(1);
       // V2: sale display fields come from views — no writes to ventas
       expect(result).toEqual({ serviciosRevisados: 2, ventasActualizadas: 0 });
     });

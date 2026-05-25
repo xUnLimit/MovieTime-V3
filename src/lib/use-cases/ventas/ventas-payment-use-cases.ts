@@ -11,7 +11,7 @@ import {
   updateVenta,
   updateVentaPaymentAndPeriod,
 } from '@/lib/supabase/ventas-repository';
-import { createRenewalVentaPayment as crearPagoRenovacion } from '@/lib/payments';
+import { financialPayments } from '@/lib/payments';
 import { syncTerceroMetodoPagoUseCase } from '@/lib/use-cases/terceros/tercero-metodo-pago-use-cases';
 import type { PagoVenta, VentaDoc } from '@/types';
 import {
@@ -46,25 +46,25 @@ export async function renewVentaUseCase(
     throw new ValidationError('Una renovación debe tener un plan seleccionado.');
   }
 
-  await crearPagoRenovacion(
-    venta.id,
-    venta.clienteId || '',
-    venta.clienteNombre,
-    venta.categoriaId || '',
-    monto,
+  await financialPayments.registerRenewalVentaPayment({
+    ventaId: venta.id,
+    clienteId: venta.clienteId || '',
+    clienteNombre: venta.clienteNombre,
+    categoriaId: venta.categoriaId || '',
+    total: monto,
     metodoPagoNombre,
-    input.metodoPagoId,
+    metodoPagoId: input.metodoPagoId,
     moneda,
-    input.periodoRenovacion as VentaDoc['cicloPago'],
-    notaPrincipal,
-    input.fechaInicio,
-    input.fechaVencimiento,
-    costo,
-    descuentoNumero,
+    cicloPago: input.periodoRenovacion as VentaDoc['cicloPago'],
+    notas: notaPrincipal,
+    fechaInicio: input.fechaInicio,
+    fechaVencimiento: input.fechaVencimiento,
+    precio: costo,
+    descuento: descuentoNumero,
     planId,
     planNombre,
-    planTipoNombre
-  );
+    planTipoNombre,
+  });
 
   await updateVenta(venta.id, { notas: notaPrincipal });
 

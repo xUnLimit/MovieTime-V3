@@ -11,7 +11,7 @@ import {
 } from '@/lib/supabase/terceros-repository';
 import { ENTITIES } from '@/lib/supabase/entities';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
-import { sincronizarNotificacionesForzado } from '@/lib/notifications';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
 import type { ActivityLog, Tercero } from '@/types';
@@ -121,8 +121,8 @@ export async function updateTerceroUseCase(
     ]);
 
     if (ventasDelCliente.length > 0) {
-      await sincronizarNotificacionesForzado();
       shouldRefreshNotificaciones = true;
+      storeEventBus.emit({ type: 'NOTIFICACIONES_INVALIDATED', entity: 'venta' });
     }
   }
 
@@ -180,4 +180,5 @@ export async function deleteTerceroUseCase(
     detalles: `Tercero eliminado: "${deletedUser.nombre}"`,
   });
 
+  storeEventBus.emit({ type: 'TERCERO_DELETED', terceroId: id });
 }

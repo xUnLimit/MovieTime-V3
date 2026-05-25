@@ -8,7 +8,7 @@ import {
   updateServicioPaymentAndPeriod,
 } from '@/lib/supabase/servicios-repository';
 import { sincronizarUnServicio } from '@/lib/notifications';
-import { createRenewalServicioPayment as crearPagoRenovacion } from '@/lib/payments';
+import { financialPayments } from '@/lib/payments';
 import { getCurrencySymbol } from '@/lib/constants';
 import type { MetodoPago, PagoServicio, Servicio } from '@/types';
 import {
@@ -42,20 +42,20 @@ export async function renewServicioUseCase(
     await queryPagosServicio<PagoServicio>([{ field: 'servicioId', operator: '==', value: servicio.id }])
   ).filter((pago) => !pago.isPagoInicial && pago.descripcion !== 'Pago inicial').length + 1;
 
-  await crearPagoRenovacion(
-    servicio.id,
-    servicio.categoriaId || '',
-    input.costo,
-    input.metodoPagoId,
+  await financialPayments.registerRenewalServicioPayment({
+    servicioId: servicio.id,
+    categoriaId: servicio.categoriaId || '',
+    monto: input.costo,
+    metodoPagoId: input.metodoPagoId,
     metodoPagoNombre,
     moneda,
     cicloPago,
-    input.fechaInicio,
-    input.fechaVencimiento,
+    fechaInicio: input.fechaInicio,
+    fechaVencimiento: input.fechaVencimiento,
     numeroRenovacion,
-    notaPrincipal,
-    renovacionAutomatica
-  );
+    notas: notaPrincipal,
+    renovacionAutomatica,
+  });
 
   const pronostico = {
     id: servicio.id,
