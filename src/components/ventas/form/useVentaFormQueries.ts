@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
 import { queryMetodosPagoTercerosRead } from "@/lib/supabase/domain-read-adapters";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
+import { queryServicios } from "@/lib/supabase/servicios-repository";
+import { queryVentas } from "@/lib/supabase/ventas-repository";
 import {
   PENDING_TERCERO_PAYMENT_CURRENCY,
   PENDING_TERCERO_PAYMENT_ID,
@@ -91,7 +91,7 @@ export function useServiciosByCategoria(categoriaId: string) {
   return useQuery({
     queryKey: queryKeys.servicios.byCategoria(categoriaId || "invalid"),
     queryFn: () =>
-      fetchServiciosByFiltersUseCase<Servicio>([
+      queryServicios<Servicio>([
         { field: "categoriaId", operator: "==", value: categoriaId },
       ]),
     enabled: Boolean(categoriaId),
@@ -114,7 +114,7 @@ export function useVentasActivasByServicio(
         return buildVentasActivasByServicio([], [], options.excludeVentaId);
       }
 
-      const ventas = await fetchVentasByFiltersUseCase<VentaDoc>([
+      const ventas = await queryVentas<VentaDoc>([
         { field: "servicioId", operator: "in", value: servicioIds },
         { field: "estado", operator: "!=", value: "inactivo" },
       ]);

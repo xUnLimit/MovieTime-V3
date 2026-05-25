@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
-import { fetchPagosVentaByVentaUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import { queryPagosVenta } from '@/lib/supabase/ventas-repository';
 import type { PagoVenta } from '@/types';
 
 /**
@@ -19,7 +19,9 @@ export function usePagosVenta(ventaId: string) {
       if (!ventaId) return [];
 
       try {
-        const docs = await fetchPagosVentaByVentaUseCase<PagoVenta>(ventaId);
+        const docs = await queryPagosVenta<PagoVenta>([
+          { field: 'ventaId', operator: '==', value: ventaId },
+        ]);
 
         return [...docs].sort((a, b) => {
           const dateA = a.fecha instanceof Date ? a.fecha : new Date(a.fecha);

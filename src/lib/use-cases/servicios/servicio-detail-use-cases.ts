@@ -1,5 +1,5 @@
 import { getMetodoPagoRead, getServicioRead } from '@/lib/supabase/domain-read-adapters';
-import { fetchVentasByFiltersUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import { queryVentas } from '@/lib/supabase/ventas-repository';
 import type { MetodoPago, Servicio, VentaDoc } from '@/types';
 
 export interface PerfilVentaDetalle {
@@ -48,7 +48,7 @@ function toPerfilVenta(venta: VentaDoc): PerfilVentaDetalle {
 }
 
 export async function fetchServicioVentasProfilesUseCase(id: string) {
-  const ventasBase = await fetchVentasByFiltersUseCase<VentaDoc>([
+  const ventasBase = await queryVentas<VentaDoc>([
     { field: 'servicioId', operator: '==', value: id },
   ]);
 

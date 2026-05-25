@@ -6,7 +6,7 @@ import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { queryKeys } from "@/lib/query-keys";
 import { getActivityLogOptions } from "@/lib/activity/activity-log-writer";
 import { getVentaDetalleRead } from "@/lib/supabase/domain-read-adapters";
-import { getVentaUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
+import { getVentaById } from "@/lib/supabase/ventas-repository";
 import { updateVentaUseCase } from "@/lib/use-cases/ventas/ventas-write-use-cases";
 import {
   deleteVentaSaleNotificationsWorkflow,
@@ -50,7 +50,7 @@ export function useServicioSaleActions({
   const [transferVentaDialogOpen, setTransferVentaDialogOpen] = useState(false);
 
   const loadVentaForAction = async (ventaId: string) => {
-    const venta = await getVentaDetalleRead(ventaId) ?? await getVentaUseCase<VentaDoc>(ventaId);
+    const venta = await getVentaDetalleRead(ventaId) ?? await getVentaById<VentaDoc>(ventaId);
     if (!venta) throw new Error("Venta no encontrada");
     setSelectedActionVenta(venta);
     return venta;

@@ -2,7 +2,7 @@ import {
   getMetodoPagoRead,
   getServicioRead,
 } from "@/lib/supabase/domain-read-adapters";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
+import { queryVentas } from "@/lib/supabase/ventas-repository";
 import { buildServiceTransferMessage } from "@/lib/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";
@@ -38,7 +38,7 @@ export function toPerfilVenta(
 }
 
 export async function fetchServicioVentasProfiles(id: string) {
-  const ventasBase = await fetchVentasByFiltersUseCase<VentaDoc>([
+  const ventasBase = await queryVentas<VentaDoc>([
     { field: "servicioId", operator: "==", value: id },
   ]);
 

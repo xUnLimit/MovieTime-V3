@@ -1,25 +1,12 @@
 import { countCategorias } from '@/lib/supabase/categorias-repository';
-import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
+import { ENTITIES } from '@/lib/supabase/entities';
 import {
   countServicios,
-  getServicioById,
   queryServicios,
 } from '@/lib/supabase/servicios-repository';
 import type { Servicio } from '@/types';
 
 export const SERVICIOS_COLLECTION = ENTITIES.SERVICIOS;
-
-export function getServicioUseCase<T = Servicio>(id: string) {
-  return getServicioById<T>(id);
-}
-
-export function fetchServiciosByFiltersUseCase<T = Servicio>(filters: QueryFilter[] = []) {
-  return queryServicios<T>(filters);
-}
-
-export function fetchServiciosByCategoriaUseCase<T = Servicio>(categoriaId: string) {
-  return queryServicios<T>([{ field: 'categoriaId', operator: '==', value: categoriaId }]);
-}
 
 export async function fetchServiciosCountsUseCase() {
   const [totalServiciosRaw, serviciosEnReposo, serviciosActivosRaw, serviciosEnReposoDocs, totalCategoriasActivas] =

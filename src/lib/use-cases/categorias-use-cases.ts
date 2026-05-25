@@ -4,7 +4,6 @@ import {
   deleteCategoriaRecord,
   getCategoriasCounts,
   getCategoriasFull,
-  getCategoriaById,
   updateCategoriaRecord,
   upsertCategoriaPlanes,
 } from '@/lib/supabase/categorias-repository';
@@ -14,12 +13,7 @@ import type { ActivityLog, Categoria } from '@/types';
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
 type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
 
-export const fetchCategoriasFull = getCategoriasFull;
-export const fetchCategoriasCounts = getCategoriasCounts;
-
-export function getCategoriaUseCase<T = Categoria>(id: string) {
-  return getCategoriaById<T>(id);
-}
+export { getCategoriasFull as fetchCategoriasFull, getCategoriasCounts as fetchCategoriasCounts } from '@/lib/supabase/categorias-repository';
 
 export async function createCategoriaUseCase(
   categoriaData: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>,

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
 import { queryKeys } from "@/lib/query-keys";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios/servicios-payment-use-cases";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
+import { queryVentas } from "@/lib/supabase/ventas-repository";
 import {
   changedCredentialsCount,
   hasCredentialChanges,
@@ -136,7 +136,7 @@ export function useServicioFormSubmit({
         refreshPagos();
 
         if (changedCredentialsCount(credentialChanges) > 0) {
-          const ventasActivas = await fetchVentasByFiltersUseCase<VentaDoc>([
+          const ventasActivas = await queryVentas<VentaDoc>([
             { field: "servicioId", operator: "==", value: servicio.id },
             { field: "estado", operator: "!=", value: "inactivo" },
           ]);

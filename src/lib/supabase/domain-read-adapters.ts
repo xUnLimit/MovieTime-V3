@@ -1,11 +1,11 @@
 import { queryMetodosPago, getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { queryNotifications } from '@/lib/supabase/notifications-repository';
-import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
+import { getCategoriaById } from '@/lib/supabase/categorias-repository';
 import {
-  fetchServiciosByFiltersUseCase,
-  getServicioUseCase,
-} from '@/lib/use-cases/servicios/servicios-query-use-cases';
-import { getVentaUseCase, timestampToDate } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+  queryServicios,
+  getServicioById,
+} from '@/lib/supabase/servicios-repository';
+import { getVentaById, timestampToDate } from '@/lib/supabase/ventas-repository';
 import type { QueryFilter } from '@/lib/supabase/entities';
 import type { Categoria, MetodoPago, Notificacion, Servicio, VentaDoc } from '@/types';
 import type { Plan } from '@/types/categorias';
@@ -49,7 +49,7 @@ export function queryMetodosPagoTercerosRead(options: { soloActivos?: boolean } 
 }
 
 export function getCategoriaRead(id: string) {
-  return getCategoriaUseCase<Categoria>(id);
+  return getCategoriaById<Categoria>(id);
 }
 
 export async function getCategoriaPlanesRead(id: string): Promise<Plan[]> {
@@ -58,11 +58,11 @@ export async function getCategoriaPlanesRead(id: string): Promise<Plan[]> {
 }
 
 export function getServicioRead(id: string) {
-  return getServicioUseCase<Servicio>(id);
+  return getServicioById<Servicio>(id);
 }
 
 export function fetchServiciosByIdsRead(ids: string[]) {
-  return fetchServiciosByFiltersUseCase<Servicio>([
+  return queryServicios<Servicio>([
     { field: '__name__', operator: 'in', value: ids },
   ]);
 }
@@ -78,7 +78,7 @@ export async function getServicioContrasenaRead(id: string): Promise<string> {
 }
 
 export async function getVentaDetalleRead(id: string): Promise<VentaDoc | null> {
-  const doc = await getVentaUseCase<Record<string, unknown>>(id);
+  const doc = await getVentaById<Record<string, unknown>>(id);
   if (!doc) return null;
 
   return {

@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { subscribeToVentasTerceroReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
-import { fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import { queryVentas } from '@/lib/supabase/ventas-repository';
 import { useVentasStore } from '@/store/ventasStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
@@ -65,9 +65,9 @@ function mapVentaTercero(venta: VentaDoc): VentaTerceroDoc {
 }
 
 async function fetchVentasTercero(usuarioId: string): Promise<VentasTerceroQueryData> {
-  const ventasConDatos = await fetchVentasByClienteUseCase<VentaDoc & { renovaciones?: number }>(
-    usuarioId,
-  );
+  const ventasConDatos = await queryVentas<VentaDoc & { renovaciones?: number }>([
+    { field: 'clienteId', operator: '==', value: usuarioId },
+  ]);
 
   return {
     ventas: ventasConDatos.map(mapVentaTercero),

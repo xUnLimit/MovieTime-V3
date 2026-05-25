@@ -6,7 +6,7 @@ import { Calendar, Monitor } from "lucide-react";
 
 import { MetricCard } from "@/components/shared/MetricCard";
 import { queryKeys } from "@/lib/query-keys";
-import { fetchServiciosByFiltersUseCase } from '@/lib/use-cases/servicios/servicios-query-use-cases';
+import { queryServicios } from "@/lib/supabase/servicios-repository";
 import { Categoria, Servicio } from "@/types";
 
 interface ServiciosCategoriaMetricsProps {
@@ -24,7 +24,7 @@ export const ServiciosCategoriaMetrics = memo(
         const en7Dias = new Date();
         en7Dias.setDate(en7Dias.getDate() + 7);
 
-        const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
+        const servicios = await queryServicios<Servicio>([
           { field: "categoriaId", operator: "==", value: categoriaId },
           { field: "fechaVencimiento", operator: "<=", value: en7Dias },
         ]);

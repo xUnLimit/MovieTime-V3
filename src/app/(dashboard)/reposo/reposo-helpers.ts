@@ -1,7 +1,7 @@
 import { differenceInDays, startOfDay } from "date-fns";
 
 import { queryMetodosPagoServiciosRead } from "@/lib/supabase/domain-read-adapters";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { queryServicios } from "@/lib/supabase/servicios-repository";
 import type { MetodoPago } from "@/types/metodos-pago";
 import type { Servicio } from "@/types/servicios";
 
@@ -48,7 +48,7 @@ export function sortReposoServicios(servicios: ReposoServicio[]) {
 }
 
 export async function fetchReposoServicesQuery(): Promise<ReposoServicio[]> {
-  const servicios = await fetchServiciosByFiltersUseCase<Servicio>([
+  const servicios = await queryServicios<Servicio>([
     { field: "enReposo", operator: "==", value: true },
   ]);
   return sortReposoServicios(servicios.map(calcularReposoData));

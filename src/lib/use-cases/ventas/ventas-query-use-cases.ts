@@ -1,23 +1,13 @@
-import { timestampToDate } from '@/lib/supabase/dates';
-import { ENTITIES, type QueryFilter } from '@/lib/supabase/entities';
+import { ENTITIES } from '@/lib/supabase/entities';
 import {
   countVentas,
-  getVentaById,
-  queryPagosVenta,
   queryVentas,
+  queryPagosVenta,
 } from '@/lib/supabase/ventas-repository';
 import type { PagoVenta, VentaDoc } from '@/types';
 
 export const VENTAS_COLLECTION = ENTITIES.VENTAS;
-export { timestampToDate };
-
-export function getVentaUseCase<T = VentaDoc>(id: string) {
-  return getVentaById<T>(id);
-}
-
-export function fetchVentasByFiltersUseCase<T = VentaDoc>(filters: QueryFilter[] = []) {
-  return queryVentas<T>(filters);
-}
+export { timestampToDate } from '@/lib/supabase/dates';
 
 export async function fetchVentasCountsUseCase() {
   const [totalVentas, ventasActivas, ventasInactivas] = await Promise.all([
@@ -27,10 +17,6 @@ export async function fetchVentasCountsUseCase() {
   ]);
 
   return { totalVentas, ventasActivas, ventasInactivas };
-}
-
-export function fetchVentasByClienteUseCase<T = VentaDoc>(clienteId: string) {
-  return queryVentas<T>([{ field: 'clienteId', operator: '==', value: clienteId }]);
 }
 
 export async function fetchVentasByClienteIdsUseCase<T = VentaDoc>(
@@ -50,19 +36,11 @@ export async function fetchVentasByClienteIdsUseCase<T = VentaDoc>(
   return results.flat();
 }
 
-export function fetchVentasByServicioUseCase<T = VentaDoc>(servicioId: string) {
-  return queryVentas<T>([{ field: 'servicioId', operator: '==', value: servicioId }]);
-}
-
 export function countVentasActivasByServicioUseCase(servicioId: string) {
   return countVentas([
     { field: 'servicioId', operator: '==', value: servicioId },
     { field: 'estado', operator: '!=', value: 'inactivo' },
   ]);
-}
-
-export function fetchPagosVentaByVentaUseCase<T = PagoVenta>(ventaId: string) {
-  return queryPagosVenta<T>([{ field: 'ventaId', operator: '==', value: ventaId }]);
 }
 
 export async function fetchPagosVentaByVentaIdsUseCase<T = PagoVenta>(
