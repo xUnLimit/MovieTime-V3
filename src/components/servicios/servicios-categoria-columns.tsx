@@ -66,7 +66,7 @@ function getEstadoBadge(dias: number): { className: string; text: string } {
   };
 }
 
-export const serviciosCategoriaColumns: Column<ServicioCategoriaRow>[] = [
+const serviciosCategoriaColumns: Column<ServicioCategoriaRow>[] = [
   {
     key: "nombre",
     header: "Nombre",

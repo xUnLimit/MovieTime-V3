@@ -1,7 +1,7 @@
 import type { Servicio } from "@/types";
 import type { ServicioRow } from "./servicios-list-table-types";
 
-export function getCicloPagoLabel(ciclo?: string) {
+function getCicloPagoLabel(ciclo?: string) {
   const labels: Record<string, string> = {
     mensual: "Mensual",
     trimestral: "Trimestral",

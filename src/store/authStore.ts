@@ -78,7 +78,7 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
 
           try {
-            // Clear legacy client auth state before Supabase writes a fresh session.
+            // Clear stale client auth state before Supabase writes a fresh session.
             clearAllAuthStorage();
             clearDashboardToastSessionState();
             if (rememberMe) {

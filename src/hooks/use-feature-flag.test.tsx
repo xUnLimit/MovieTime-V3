@@ -11,7 +11,7 @@ vi.mock('@/lib/supabase/feature-flags-repository', () => ({
   fetchFeatureFlags: featureFlagMocks.fetchFeatureFlags,
 }));
 
-import { useFeatureFlag, useFeatureFlagsQuery } from './use-feature-flag';
+import { useFeatureFlag } from './use-feature-flag';
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -58,15 +58,4 @@ describe('useFeatureFlag', () => {
     expect(result.current).toBe(true);
   });
 
-  it('exposes the full feature flag query for loading and error states', async () => {
-    featureFlagMocks.fetchFeatureFlags.mockResolvedValue({ beta_flow: false });
-
-    const { result } = renderHook(() => useFeatureFlagsQuery(), {
-      wrapper: createWrapper(),
-    });
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual({ beta_flow: false });
-    });
-  });
 });

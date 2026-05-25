@@ -10,6 +10,7 @@ import { CategoriasTable } from '@/components/servicios/CategoriasTable';
 import { ServiciosMetrics } from '@/components/servicios/ServiciosMetrics';
 import { ServiciosListTable } from '@/components/servicios/ServiciosListTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
+import { useFeatureFlag } from '@/hooks/use-feature-flag';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
@@ -21,6 +22,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 function ServiciosPageContent() {
   const queryClient = useQueryClient();
   const { data: categorias = [], refetch: refetchCategorias } = useCategoriasFull();
+  const showServiciosMetrics = useFeatureFlag('servicios_metrics', true);
 
   const [activeTab, setActiveTab] = useState<'categorias' | 'todos' | 'activos' | 'inactivos'>('categorias');
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,7 +106,7 @@ function ServiciosPageContent() {
         </div>
       </div>
 
-      <ServiciosMetrics />
+      {showServiciosMetrics && <ServiciosMetrics />}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <div className="tabs-scroll-shell -mx-1 px-1">

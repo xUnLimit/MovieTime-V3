@@ -345,7 +345,7 @@ Preparado para integración con servicios como Sentry:
 ```typescript
 // En ModuleErrorBoundary.tsx
 componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-  // TODO: Integrar con Sentry
+  // Optional: integrate with Sentry.
   // Sentry.captureException(error, { contexts: { module: moduleName } });
 }
 ```

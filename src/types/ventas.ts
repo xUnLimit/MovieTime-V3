@@ -114,11 +114,6 @@ export interface VentaDoc {
   descuento?: number;
   precioFinal?: number;
   totalVenta?: number;
-  /** 
-   * @deprecated DO NOT USE. Payments are now stored in the `pagosVenta` collection.
-   * Use the `usePagosVenta` hook or payments module to fetch payments for a sale.
-   */
-  pagos?: VentaPago[];
 
   createdAt?: Date;
   updatedAt?: Date;

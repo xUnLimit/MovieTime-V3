@@ -4,7 +4,6 @@ Centralized configuration files for the application.
 
 ## Files
 
-- **`constants.ts`** - Re-exports from `@/lib/constants` for backward compatibility
 - **`env.ts`** - Environment variables and configuration
 - **`site.ts`** - Site metadata and general configuration
 - **`index.ts`** - Barrel export for all config files
@@ -39,6 +38,6 @@ SUPABASE_SERVICE_ROLE_KEY=...
 
 ## Adding New Configuration
 
-1. Add constants to appropriate file in this directory
+1. Add runtime constants to `src/lib/constants` or app config to this directory
 2. Export from `index.ts`
 3. Update TypeScript types as needed

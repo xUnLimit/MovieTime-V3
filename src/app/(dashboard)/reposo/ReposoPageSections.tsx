@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { ReposoTable } from "./ReposoTable";
 import { getReposoMetrics, type ReposoServicio } from "./reposo-helpers";
 
-export const ESTADO_REPOSO_OPTIONS = [
+const ESTADO_REPOSO_OPTIONS = [
   { value: "all", label: "Todos los estados" },
   { value: "en_proceso", label: "En proceso" },
   { value: "proximo_finalizar", label: "Por finalizar" },

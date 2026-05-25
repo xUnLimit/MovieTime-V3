@@ -28,7 +28,7 @@ export interface VentaRow extends Record<string, unknown> {
   original: VentaDoc;
 }
 
-export const getCicloPagoLabel = (ciclo?: string) => {
+const getCicloPagoLabel = (ciclo?: string) => {
   const labels: Record<string, string> = {
     mensual: "Mensual",
     trimestral: "Trimestral",

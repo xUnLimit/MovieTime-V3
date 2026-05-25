@@ -7,7 +7,7 @@
 - Use-cases own business orchestration, activity logs, side-effects policy, and cache invalidation/sync results.
 - Stores are UI/cache state only. Do not add transactional rules or cross-store business orchestration to Zustand stores.
 - SQL/RPC is the source of truth for atomic payment, period, and rollback invariants.
-- Read models for dashboard/forecasting come from SQL/RPC modules, not client-side mutation no-ops.
+- Read models for dashboard/forecasting come from SQL/RPC modules, not client-side metric mutation helpers.
 - New payment/currency code imports from `@/lib/payments`.
 - New notification code imports from `@/lib/notifications`.
 - New dashboard code imports from `@/lib/dashboard-read-models`.
@@ -22,7 +22,7 @@
 - Keep `detalles` in activity logs for display, and use `metadata` for structured audit data.
 - If a payment changes the latest period, update payment and period atomically through RPC.
 - Critical RPCs must go through typed adapters and include idempotency keys when creating records/payments/refunds.
-- Do not recreate legacy service barrels. Import dashboard reads from `@/lib/dashboard-read-models` and notification sync from `@/lib/notifications`.
+- Do not recreate retired service aggregators. Import dashboard reads from `@/lib/dashboard-read-models` and notification sync from `@/lib/notifications`.
 
 ## Testing Rules
 

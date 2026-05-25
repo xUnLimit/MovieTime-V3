@@ -8,7 +8,7 @@ import {
   type FeatureFlagMap,
 } from "@/lib/supabase/feature-flags-repository";
 
-export function useFeatureFlagsQuery() {
+function useFeatureFlagsQuery() {
   return useQuery<FeatureFlagMap>({
     queryKey: queryKeys.featureFlags.all,
     queryFn: fetchFeatureFlags,

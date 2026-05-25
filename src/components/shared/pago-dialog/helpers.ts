@@ -6,7 +6,7 @@ import { generarMensajeVenta } from '@/lib/utils/whatsapp';
 import type { PagoDialogFormData } from './schema';
 import type { PagoDialogProps } from './types';
 
-export const CICLOS_PAGO: Plan['cicloPago'][] = ['mensual', 'trimestral', 'semestral', 'anual'];
+const CICLOS_PAGO: Plan['cicloPago'][] = ['mensual', 'trimestral', 'semestral', 'anual'];
 
 export const DECIMAL_INPUT_PATTERN = /^\d*\.?\d*$/;
 

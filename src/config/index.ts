@@ -1,9 +1,8 @@
 /**
  * Config Barrel Export
  *
- * Centralized export point for all configuration files.
+ * Centralized export point for application configuration.
  */
 
-export * from './constants';
 export * from './env';
 export * from './site';

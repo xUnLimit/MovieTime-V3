@@ -6,7 +6,7 @@ Fecha: 2026-05-05
 
 Endurecer la migracion normalizada despues de alcanzar paridad visual con el
 sistema anterior.
-V2 reduce deuda de compatibilidad, evita dobles fuentes de verdad y deja reglas RLS
+V2 reduce dobles fuentes de verdad y deja reglas RLS
 mas explicitas antes del cutover.
 
 ## Decisiones aplicadas
@@ -91,8 +91,8 @@ desde el ultimo pago registrado.
 
 ### Runtime legado
 
-Se elimino el runtime legacy y la aplicacion queda operando solo con Supabase.
-Los scripts de migracion/auditoria legacy tambien fueron retirados despues del
+Se elimino el runtime anterior y la aplicacion queda operando solo con Supabase.
+Los scripts de migracion/auditoria tambien fueron retirados despues del
 cutover.
 
 ### Sync services
@@ -113,7 +113,7 @@ modulos explicitos: `entities.ts`, `record-core.ts`, `read-models.ts`,
 `notifications-repository.ts`, `payments-repository.ts`, `write-utils.ts`,
 `filters.ts` y `dates.ts`.
 
-## Data fixes legacy
+## Data fixes de migracion
 
 Existen migrations con reparaciones por IDs concretos porque fueron necesarias para
 igualar datos historicos del sistema anterior:

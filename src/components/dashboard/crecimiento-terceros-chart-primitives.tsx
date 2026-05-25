@@ -1,7 +1,7 @@
 import { Legend, Tooltip, XAxis, YAxis } from "recharts";
 import type { LabelProps } from "recharts";
 
-export const axisColor = "var(--muted-foreground)";
+const axisColor = "var(--muted-foreground)";
 export const gridColor = "var(--border)";
 const tooltipBg = "var(--background)";
 const tooltipBorder = "var(--border)";
