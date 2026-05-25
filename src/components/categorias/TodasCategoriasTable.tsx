@@ -188,12 +188,12 @@ export function TodasCategoriasTable({
         </div>
 
         <DataTable
-          data={filteredCategorias as unknown as Record<string, unknown>[]}
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
+          data={filteredCategorias}
+          columns={columns}
           pagination={true}
           itemsPerPageOptions={[10, 25, 50, 100]}
           actions={(item) => {
-            const categoria = item as unknown as Categoria;
+            const categoria = item;
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

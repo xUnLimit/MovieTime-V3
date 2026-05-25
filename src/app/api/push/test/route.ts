@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { sendExecutivePushDailySummary } from '@/lib/services/executivePushService';
+import { sendExecutivePushDailySummary } from '@/lib/executive-push/executive-push-delivery';
 import { requireAuthenticatedAdmin } from '@/lib/server/request-auth';
 
 export const runtime = 'nodejs';

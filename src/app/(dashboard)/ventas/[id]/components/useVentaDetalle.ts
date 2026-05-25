@@ -9,11 +9,6 @@ import { toast } from 'sonner';
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
 import { useTemplates } from '@/hooks/use-templates';
 import { queryKeys } from '@/lib/query-keys';
-import { calcularMontoSinConsumir, roundToDecimals } from '@/lib/utils/calculations';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
-import type { TemplateMensaje, VentaDoc } from '@/types';
-
-import type { VentaDetalleViewModel } from './types';
 import {
   buildVentaPaymentRows,
   fetchCategoriaPlanesQuery,
@@ -21,7 +16,12 @@ import {
   fetchVentaDetalleQuery,
   getEstadoDetalle,
   type VentaDetalleQueryData,
-} from './venta-detalle-data';
+} from '@/lib/use-cases/ventas/venta-detail-use-cases';
+import { calcularMontoSinConsumir, roundToDecimals } from '@/lib/utils/calculations';
+import { useNotificacionesStore } from '@/store/notificacionesStore';
+import type { TemplateMensaje, VentaDoc } from '@/types';
+
+import type { VentaDetalleViewModel } from './types';
 import { useVentaDetalleActions } from './useVentaDetalleActions';
 
 export function useVentaDetalle(id: string): VentaDetalleViewModel {

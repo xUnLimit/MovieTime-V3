@@ -1,7 +1,6 @@
+import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activity-log-writer';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useActivityLogStore } from '@/store/activityLogStore';
 import type { TemplateMensaje } from '@/types';
 
 function recordTemplateActivityLog({
@@ -18,8 +17,8 @@ function recordTemplateActivityLog({
   cambios?: ReturnType<typeof detectarCambios>;
 }) {
   safeAsyncSideEffect(
-    useActivityLogStore.getState().addLog({
-      ...getStoreLogContext(),
+    recordActivityLog({
+      ...getActivityLogContext(),
       accion,
       entidad: 'template',
       entidadId: templateId,

@@ -12,8 +12,8 @@ import { mapReadRow, enrichCategorias, enrichTerceros } from './read-models';
 import { createNotification, queryNotifications, updateNotification } from './notifications-repository';
 import { createPagoServicio, createPagoVenta } from './payments-repository';
 import { insertRawRow, normalizeWritePayload } from './write-utils';
-import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
-import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
+import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
 
 export { ENTITIES };
 export type { CollectionName, QueryFilter };

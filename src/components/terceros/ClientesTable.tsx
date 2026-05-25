@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { DataTable, Column } from "@/components/shared/DataTable";
+import { DataTable } from "@/components/shared/DataTable";
 import {
   PaginationFooter,
   PaginationFooterProps,
@@ -112,12 +112,12 @@ export function ClientesTable({
 
         <div>
           <DataTable
-            data={clientes as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
+            data={clientes}
+            columns={columns}
             loading={isLoading}
             pagination={false}
             actions={(item) => {
-              const cliente = item as unknown as Tercero;
+              const cliente = item;
               return (
                 <ClientesTableActions
                   cliente={cliente}

@@ -1,4 +1,4 @@
-﻿import {
+import {
   getAll,
   getById,
   queryDocuments,
@@ -11,8 +11,8 @@ import { supabase } from './client';
 import { ENTITIES, type QueryFilter } from './entities';
 import type { Json } from './database.types';
 import type { Categoria, Plan, TipoPlanConfig } from '@/types';
-import { readOfflineCollection, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
-import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import { readOfflineCollection, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
+import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
 import {
   deleteCategoriaRpc,
   getCategoriasCountsRpc,

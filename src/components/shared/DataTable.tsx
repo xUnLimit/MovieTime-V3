@@ -41,6 +41,7 @@ export interface DataTableProps<T> {
 }
 
 type SortDirection = 'asc' | 'desc' | null;
+type SortableValue = string | number | boolean | Date | null | undefined;
 
 function getDefaultMinTableWidth(columnCount: number, hasActions: boolean) {
   const effectiveColumns = columnCount + (hasActions ? 1 : 0);
@@ -48,7 +49,22 @@ function getDefaultMinTableWidth(columnCount: number, hasActions: boolean) {
 }
 
 // Memoized TableRow component for better performance
-const MemoizedTableRow = memo(function MemoizedTableRow<T extends Record<string, unknown>>({
+function getCellValue<T extends object>(item: T, key: string): unknown {
+  return (item as Record<string, unknown>)[key];
+}
+
+function getRowKey<T extends object>(item: T, fallback: number) {
+  const id = getCellValue(item, 'id');
+  return typeof id === 'string' || typeof id === 'number' ? id : fallback;
+}
+
+function toSortableValue(value: unknown): SortableValue {
+  return value instanceof Date || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+    ? value
+    : null;
+}
+
+function DataTableRow<T extends object>({
   item,
   columns,
   actions,
@@ -70,7 +86,7 @@ const MemoizedTableRow = memo(function MemoizedTableRow<T extends Record<string,
           key={column.key}
           className={`${colIndex === 0 ? 'pl-6' : ''} ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : ''}`}
         >
-          {column.render ? column.render(item) : (item[column.key] as React.ReactNode)}
+          {column.render ? column.render(item) : (getCellValue(item, column.key) as React.ReactNode)}
         </TableCell>
       ))}
       {actions && (
@@ -80,9 +96,11 @@ const MemoizedTableRow = memo(function MemoizedTableRow<T extends Record<string,
       )}
     </TableRow>
   );
-});
+}
 
-function DataTableComponent<T extends Record<string, unknown>>({
+const MemoizedTableRow = memo(DataTableRow) as typeof DataTableRow;
+
+function DataTableComponent<T extends object>({
   data,
   columns,
   loading = false,
@@ -102,10 +120,12 @@ function DataTableComponent<T extends Record<string, unknown>>({
     if (!sortKey || !sortDirection) return data;
 
     return [...data].sort((a, b) => {
-      const aValue = a[sortKey] as string | number | boolean;
-      const bValue = b[sortKey] as string | number | boolean;
+      const aValue = toSortableValue(getCellValue(a, sortKey));
+      const bValue = toSortableValue(getCellValue(b, sortKey));
 
       if (aValue === bValue) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
 
       const comparison = aValue < bValue ? -1 : 1;
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -221,11 +241,11 @@ function DataTableComponent<T extends Record<string, unknown>>({
             {displayData.length > 0 ? (
               displayData.map((item, index) => (
                 <MemoizedTableRow
-                  key={(item.id as string) || index}
+                  key={getRowKey(item, index)}
                   item={item}
-                  columns={columns as Column<Record<string, unknown>>[]}
-                  actions={actions as ((item: Record<string, unknown>) => React.ReactNode) | undefined}
-                  onRowClick={onRowClick as ((item: Record<string, unknown>) => void) | undefined}
+                  columns={columns}
+                  actions={actions}
+                  onRowClick={onRowClick}
                   index={index}
                 />
               ))

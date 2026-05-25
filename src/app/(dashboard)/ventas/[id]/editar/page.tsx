@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
 import { queryKeys } from '@/lib/query-keys';
 import { getVentaDetalleRead } from '@/lib/supabase/domain-read-adapters';
-import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
+import { getVentaConUltimoPagoUseCase } from '@/lib/use-cases/ventas/venta-current-payment-use-cases';
 import { isUuid } from '@/lib/utils/safety';
 import { toast } from 'sonner';
 
@@ -19,7 +19,7 @@ async function fetchVentaEditData(id: string): Promise<VentaEditData | null> {
   const venta = await getVentaDetalleRead(id);
   if (!venta) return null;
 
-  const ventaConDatos = await getVentaConUltimoPago(venta);
+  const ventaConDatos = await getVentaConUltimoPagoUseCase(venta);
 
   return {
     ...ventaConDatos,

@@ -1,4 +1,4 @@
-﻿import {
+import {
   getAll,
   getById,
   queryDocuments,
@@ -12,7 +12,7 @@ import { supabase } from './client';
 import { timestampToDate, toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
 import { assertRecordId } from '@/lib/utils/safety';
-import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
 import {
   createVentaRefundRpc,
   createVentaWithInitialPaymentRpc,

@@ -239,13 +239,4 @@ const serviciosCategoriaColumns: Column<ServicioCategoriaRow>[] = [
   },
 ];
 
-export type ServicioCategoriaTableRecord = Record<string, unknown>;
-
-export const serviciosCategoriaColumnsForDataTable =
-  serviciosCategoriaColumns as unknown as Column<ServicioCategoriaTableRecord>[];
-
-export function toServicioCategoriaTableRecord(
-  row: ServicioCategoriaRow,
-): ServicioCategoriaTableRecord {
-  return row as unknown as ServicioCategoriaTableRecord;
-}
+export const serviciosCategoriaColumnsForDataTable = serviciosCategoriaColumns;

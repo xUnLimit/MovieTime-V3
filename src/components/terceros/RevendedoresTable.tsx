@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { DataTable, Column } from "@/components/shared/DataTable";
+import { DataTable } from "@/components/shared/DataTable";
 import {
   PaginationFooter,
   PaginationFooterProps,
@@ -117,12 +117,12 @@ export function RevendedoresTable({
 
         <div>
           <DataTable
-            data={revendedores as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
+            data={revendedores}
+            columns={columns}
             loading={isLoading}
             pagination={false}
             actions={(item) => {
-              const revendedor = item as unknown as Tercero;
+              const revendedor = item;
               return (
                 <RevendedoresTableActions
                   onDelete={handleDelete}

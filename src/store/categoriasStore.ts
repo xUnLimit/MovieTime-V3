@@ -10,8 +10,7 @@ import {
 } from '@/lib/use-cases/categorias-use-cases';
 import { afterCategoriaDeleted } from '@/lib/store-reactions/catalogos-mutation-reactions';
 import { ENTITIES, logCacheHit } from '@/lib/supabase/categorias-repository';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { useActivityLogStore } from '@/store/activityLogStore';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Categoria } from '@/types';
 
@@ -80,10 +79,7 @@ export const useCategoriasStore = create<CategoriasState>()(
 
       createCategoria: async (categoriaData) => {
         try {
-          const newCategoria = await createCategoriaUseCase(categoriaData, {
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
-          });
+          const newCategoria = await createCategoriaUseCase(categoriaData, getActivityLogOptions());
 
           set((state) => ({
             categorias: [...state.categorias, newCategoria],
@@ -102,8 +98,7 @@ export const useCategoriasStore = create<CategoriasState>()(
           const oldCategoria = get().categorias.find((categoria) => categoria.id === id);
           const updatedCategoria = await updateCategoriaUseCase(id, updates, {
             oldCategoria,
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
+            ...getActivityLogOptions(),
           });
 
           set((state) => ({
@@ -128,8 +123,7 @@ export const useCategoriasStore = create<CategoriasState>()(
         try {
           await deleteCategoriaUseCase(id, {
             categoria: categoriaEliminada,
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
+            ...getActivityLogOptions(),
           });
 
           await afterCategoriaDeleted(id);

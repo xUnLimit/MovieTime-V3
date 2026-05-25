@@ -10,6 +10,12 @@ import {
   triggerExecutivePushTest,
   unregisterPushSubscription,
 } from "@/lib/pwa/push-client";
+import {
+  getExecutivePushBlocksUpdate,
+  getExecutivePushScheduleUpdate,
+  getExecutivePushToggleUpdate,
+  isExecutivePushScheduleUnchanged,
+} from "@/lib/executive-push/executive-push-settings";
 import { safeAsyncSideEffect } from "@/lib/utils/safety";
 import { useAuthStore } from "@/store/authStore";
 import { useConfigStore } from "@/store/configStore";
@@ -123,11 +129,7 @@ export function useConfiguracionDialogController({
   const handleExecutivePushToggle = async (enabled: boolean) => {
     if (!executivePush) return;
     try {
-      await updateExecutivePush({
-        ...executivePush,
-        enabled,
-        updatedBy: user?.id,
-      });
+      await updateExecutivePush(getExecutivePushToggleUpdate(executivePush, enabled, user?.id));
       toast.success('Configuracion de push ejecutiva actualizada.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la configuracion.');
@@ -148,24 +150,19 @@ export function useConfiguracionDialogController({
       toast.error('Selecciona un intervalo valido.');
       return;
     }
-    if (
-      windowStart === executivePush.windowStart &&
-      windowEnd === executivePush.windowEnd &&
-      nextIntervalHours === executivePush.intervalHours
-    ) {
+    if (isExecutivePushScheduleUnchanged({ executivePush, intervalHours: nextIntervalHours, windowEnd, windowStart })) {
       return;
     }
 
     setIsSavingExecutiveSchedule(true);
     try {
-      await updateExecutivePush({
-        ...executivePush,
-        sendTime: windowStart,
-        windowStart,
-        windowEnd,
+      await updateExecutivePush(getExecutivePushScheduleUpdate({
+        executivePush,
         intervalHours: nextIntervalHours,
         updatedBy: user?.id,
-      });
+        windowEnd,
+        windowStart,
+      }));
       toast.success('Programacion de recordatorios actualizada.');
     } catch (error) {
       setDraftIntervalHours(executivePush.intervalHours);
@@ -204,22 +201,13 @@ export function useConfiguracionDialogController({
 
   const handleBlockToggle = async (blockKey: string, checked: boolean) => {
     if (!executivePush) return;
-    const selectedBlocks = checked
-      ? Array.from(new Set([...executivePush.selectedBlocks, blockKey as never]))
-      : executivePush.selectedBlocks.filter((block) => block !== blockKey);
-
-    const blockOrder = executivePush.blockOrder.filter((block) => selectedBlocks.includes(block));
-    if (checked && !blockOrder.includes(blockKey as never)) {
-      blockOrder.push(blockKey as never);
-    }
-
     try {
-      await updateExecutivePush({
-        ...executivePush,
-        selectedBlocks: selectedBlocks as typeof executivePush.selectedBlocks,
-        blockOrder,
+      await updateExecutivePush(getExecutivePushBlocksUpdate({
+        blockKey,
+        checked,
+        executivePush,
         updatedBy: user?.id,
-      });
+      }));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo actualizar los bloques.');
     }

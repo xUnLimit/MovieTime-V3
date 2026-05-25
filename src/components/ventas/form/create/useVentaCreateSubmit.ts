@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 
 import type { VentaItem } from '@/features/ventas/ventas-form-shared';
-import { syncTerceroMetodoPago } from '@/lib/services/terceroMetodoPagoSyncService';
+import { syncTerceroMetodoPagoUseCase } from '@/lib/use-cases/terceros/tercero-metodo-pago-use-cases';
 import type { Tercero, VentaDoc } from '@/types';
 
 import {
@@ -98,7 +98,7 @@ export function useVentaCreateSubmit({
       await Promise.all(writes);
 
       try {
-        await syncTerceroMetodoPago({
+        await syncTerceroMetodoPagoUseCase({
           terceroId: clienteId,
           metodoPagoId,
           metodoPagoNombre,

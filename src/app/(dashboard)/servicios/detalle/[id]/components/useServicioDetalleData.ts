@@ -3,13 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { queryKeys } from '@/lib/query-keys';
+import {
+  fetchServicioDetalleBundleUseCase,
+  fetchServicioVentasProfilesUseCase,
+} from '@/lib/use-cases/servicios/servicio-detail-use-cases';
 import type { Servicio } from '@/types';
 
 import type { CategoriaDetalle, MetodoPagoDetalle, PerfilVenta } from './types';
-import {
-  fetchServicioDetalleBundle,
-  fetchServicioVentasProfiles,
-} from '../servicio-detalle-helpers';
 
 type ServicioDetalleData = {
   categoria: CategoriaDetalle | null;
@@ -36,7 +36,7 @@ export function useServicioDetalleData(id: string): ServicioDetalleData {
     isLoading: isLoadingData,
   } = useQuery({
     queryKey: queryKeys.servicios.detailBundle(id),
-    queryFn: () => fetchServicioDetalleBundle(id),
+    queryFn: () => fetchServicioDetalleBundleUseCase(id),
     enabled: Boolean(id),
   });
   const {
@@ -45,7 +45,7 @@ export function useServicioDetalleData(id: string): ServicioDetalleData {
     isError: isVentasServicioError,
   } = useQuery({
     queryKey: queryKeys.servicios.ventas(id),
-    queryFn: () => fetchServicioVentasProfiles(id),
+    queryFn: () => fetchServicioVentasProfilesUseCase(id),
     enabled: Boolean(id),
   });
 

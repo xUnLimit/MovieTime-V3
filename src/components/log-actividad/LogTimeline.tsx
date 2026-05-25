@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { CambiosModal } from '@/components/log-actividad/CambiosModal';
 import { LogDeleteConfirmDialog } from '@/components/log-actividad/LogDeleteConfirmDialog';
 import { LogFilters } from '@/components/log-actividad/LogFilters';
-import { DataTable, type Column } from '@/components/shared/DataTable';
+import { DataTable } from '@/components/shared/DataTable';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { Card } from '@/components/ui/card';
 import { countActivityLogsUseCase } from '@/lib/use-cases/activity-log-use-cases';
@@ -215,8 +215,8 @@ export function LogTimeline({
         ) : (
           <>
             <DataTable
-              data={logs as unknown as Record<string, unknown>[]}
-              columns={columns as unknown as Column<Record<string, unknown>>[]}
+              data={logs}
+              columns={columns}
               pagination={false}
               fixedLayout
               containerClassName="table-scroll-shell"

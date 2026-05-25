@@ -12,7 +12,7 @@ import {
   updateVentaPaymentAndPeriod,
 } from '@/lib/supabase/ventas-repository';
 import { createRenewalVentaPayment as crearPagoRenovacion } from '@/lib/payments';
-import { syncTerceroMetodoPago } from '@/lib/services/terceroMetodoPagoSyncService';
+import { syncTerceroMetodoPagoUseCase } from '@/lib/use-cases/terceros/tercero-metodo-pago-use-cases';
 import type { PagoVenta, VentaDoc } from '@/types';
 import {
   getPagoValues,
@@ -70,7 +70,7 @@ export async function renewVentaUseCase(
 
   let syncPaymentMethodFailed = false;
   try {
-    await syncTerceroMetodoPago({
+    await syncTerceroMetodoPagoUseCase({
       terceroId: venta.clienteId,
       metodoPagoId: input.metodoPagoId,
       metodoPagoNombre,
@@ -144,7 +144,7 @@ export async function updateVentaPagoUseCase(
 
   let syncPaymentMethodFailed = false;
   try {
-    await syncTerceroMetodoPago({
+    await syncTerceroMetodoPagoUseCase({
       terceroId: venta.clienteId,
       metodoPagoId: input.metodoPagoId,
       metodoPagoNombre,
@@ -244,7 +244,7 @@ export async function updateVentaWithLatestPagoUseCase(
 
   if (updates.clienteId && updates.metodoPagoId) {
     try {
-      await syncTerceroMetodoPago({
+      await syncTerceroMetodoPagoUseCase({
         terceroId: updates.clienteId,
         metodoPagoId: updates.metodoPagoId,
         metodoPagoNombre: updates.metodoPagoNombre,

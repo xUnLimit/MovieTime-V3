@@ -1,8 +1,8 @@
-﻿import { supabase } from './client';
+import { supabase } from './client';
 import { ENTITIES, type CollectionName } from './entities';
 import { readField, normalizeFilterValue } from './filters';
 import type { Database } from './database.types';
-import { getOfflinePaginated, shouldUseOfflineRead, readOfflineCollection } from '@/lib/pwa/offline-read';
+import { getOfflinePaginated, shouldUseOfflineRead, readOfflineCollection } from '@/lib/pwa/offline-copy';
 import { mapPaginatedRow, reviveDates, toCamelCaseObject } from './pagination-mappers';
 
 export interface FilterOption {

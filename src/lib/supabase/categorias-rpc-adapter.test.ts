@@ -9,7 +9,7 @@ vi.mock('./client', () => ({
   },
 }));
 
-vi.mock('@/lib/pwa/mutation-guard', () => ({
+vi.mock('@/lib/pwa/offline-copy', () => ({
   assertOnlineMutation: assertOnlineMutationMock,
 }));
 
@@ -83,3 +83,4 @@ describe('deleteCategoriaRpc', () => {
     await expect(deleteCategoriaRpc('categoria-1')).rejects.toThrow('RPC failed');
   });
 });
+

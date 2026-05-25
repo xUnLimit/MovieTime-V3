@@ -221,12 +221,12 @@ export function TercerosMetodosPagoTable({
           </div>
         ) : (
           <DataTable
-            data={filteredMetodos as unknown as Record<string, unknown>[]}
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
+            data={filteredMetodos}
+            columns={columns}
             pagination={true}
             itemsPerPageOptions={[10, 25, 50, 100]}
             actions={(item) => {
-              const metodo = item as unknown as MetodoPago;
+              const metodo = item;
               return (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

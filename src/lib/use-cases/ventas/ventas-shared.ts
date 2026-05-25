@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 
 import { getVentaById } from '@/lib/supabase/ventas-repository';
 import { convertToUSD } from '@/lib/payments';
-import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
+import { getVentaConUltimoPagoUseCase } from '@/lib/use-cases/ventas/venta-current-payment-use-cases';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import { toMoneyNumber } from '@/lib/utils/safety';
 import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
@@ -157,5 +157,5 @@ export function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
 export async function getVentaConPagoActualUseCase(id: string): Promise<VentaDoc | null> {
   const doc = await getVentaById<Record<string, unknown>>(id);
   if (!doc) return null;
-  return getVentaConUltimoPago(ventaBaseFromRecord(doc));
+  return getVentaConUltimoPagoUseCase(ventaBaseFromRecord(doc));
 }

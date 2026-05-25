@@ -1,4 +1,4 @@
-import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
 import { assertRpcStringId } from '@/lib/utils/safety';
 import type { Database } from '@/lib/supabase/database.types';
 

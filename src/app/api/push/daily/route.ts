@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { env } from '@/config';
-import { sendExecutivePushDailySummary } from '@/lib/services/executivePushService';
+import { sendExecutivePushDailySummary } from '@/lib/executive-push/executive-push-delivery';
 
 export const runtime = 'nodejs';
 

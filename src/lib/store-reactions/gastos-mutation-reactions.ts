@@ -1,10 +1,9 @@
 import { format } from 'date-fns';
 
 import { invalidateDashboardCache } from '@/lib/commands/client-cache';
+import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activity-log-writer';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useActivityLogStore } from '@/store/activityLogStore';
 import type { Gasto } from '@/types';
 
 function recordGastoActivityLog({
@@ -21,8 +20,8 @@ function recordGastoActivityLog({
   cambios?: ReturnType<typeof detectarCambios>;
 }) {
   safeAsyncSideEffect(
-    useActivityLogStore.getState().addLog({
-      ...getStoreLogContext(),
+    recordActivityLog({
+      ...getActivityLogContext(),
       accion,
       entidad: 'gasto',
       entidadId: gastoId,

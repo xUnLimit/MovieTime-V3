@@ -1,4 +1,4 @@
-import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
+import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
 import type { Json } from '@/lib/supabase/database.types';
 
 import { typedRpcClient } from './rpc-client';

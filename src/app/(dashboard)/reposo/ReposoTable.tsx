@@ -207,13 +207,13 @@ export function ReposoTable({
 
   return (
     <DataTable
-      data={servicios as unknown as Record<string, unknown>[]}
-      columns={columns as unknown as Column<Record<string, unknown>>[]}
+      data={servicios}
+      columns={columns}
       emptyMessage="No hay servicios en reposo"
       pagination
       itemsPerPageOptions={[10, 25, 50]}
       actions={(item) => {
-        const servicio = item as unknown as ReposoServicio;
+        const servicio = item;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

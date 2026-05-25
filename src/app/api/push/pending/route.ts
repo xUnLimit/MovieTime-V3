@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getExecutivePushSummaryForEndpoint } from '@/lib/services/executivePushService';
+import { getExecutivePushSummaryForEndpoint } from '@/lib/executive-push/executive-push-delivery';
 
 export async function POST(request: Request) {
   try {

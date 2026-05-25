@@ -134,13 +134,13 @@ export function TiposGastoTable({
       </div>
 
       <DataTable
-        data={filteredTipos as unknown as Record<string, unknown>[]}
-        columns={columns as unknown as Column<Record<string, unknown>>[]}
+        data={filteredTipos}
+        columns={columns}
         emptyMessage="No hay tipos de gasto registrados"
         pagination
         itemsPerPageOptions={[10, 25, 50]}
         actions={(item) => {
-          const tipoGasto = item as unknown as TipoGasto;
+          const tipoGasto = item;
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

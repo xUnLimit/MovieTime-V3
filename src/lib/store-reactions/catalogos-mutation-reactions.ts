@@ -1,9 +1,8 @@
 import { storeEventBus } from '@/lib/events/store-event-bus';
-import { syncMetodoPagoDependencias } from '@/lib/services/metodoPagoSyncService';
+import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activity-log-writer';
+import { syncMetodoPagoDependenciasUseCase } from '@/lib/use-cases/metodos-pago/metodo-pago-dependency-use-cases';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useActivityLogStore } from '@/store/activityLogStore';
 import { useGastosStore } from '@/store/gastosStore';
 import type { MetodoPago, TipoGasto } from '@/types';
 
@@ -25,8 +24,8 @@ function recordMetodoPagoActivityLog({
   cambios?: ReturnType<typeof detectarCambios>;
 }) {
   safeAsyncSideEffect(
-    useActivityLogStore.getState().addLog({
-      ...getStoreLogContext(),
+    recordActivityLog({
+      ...getActivityLogContext(),
       accion,
       entidad: 'metodo_pago',
       entidadId: metodoId,
@@ -60,7 +59,7 @@ export async function afterMetodoPagoUpdated({
   const cambioMoneda = oldMetodo && updates.moneda !== undefined && oldMetodo.moneda !== updates.moneda;
 
   if ((cambioNombre || cambioMoneda) && oldMetodo) {
-    await syncMetodoPagoDependencias({
+    await syncMetodoPagoDependenciasUseCase({
       id: metodoId,
       nombre: updates.nombre,
       moneda: updates.moneda,

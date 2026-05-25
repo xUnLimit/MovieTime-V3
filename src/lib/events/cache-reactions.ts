@@ -70,6 +70,14 @@ export function invalidateVentasPorTercerosCache() {
   ventasPorTercerosInvalidationListeners.forEach((listener) => listener());
 }
 
+export function emitVentaUpdated(ventaId: string) {
+  storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
+}
+
+export function emitTerceroMetodoPagoUpdated(terceroId: string) {
+  storeEventBus.emit({ type: 'TERCERO_METODO_PAGO_UPDATED', terceroId });
+}
+
 export function subscribeToServicioListReactions(
   queryClient: QueryClient,
   refresh: RefreshHandler,

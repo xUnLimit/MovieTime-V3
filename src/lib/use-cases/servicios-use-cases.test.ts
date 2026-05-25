@@ -28,7 +28,7 @@ vi.mock('@/lib/dashboard-read-models', () => ({
   getMesKeyFromDate: vi.fn(() => '2026-05'),
 }));
 
-vi.mock('@/lib/services/servicioSyncService', () => ({
+vi.mock('@/lib/use-cases/servicios/servicio-dependencies-use-cases', () => ({
   resyncServiciosDenormalizedData: vi.fn(),
   syncServicioDependencias: vi.fn(),
 }));
@@ -67,7 +67,7 @@ import {
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { createRenewalServicioPayment } from '@/lib/payments';
 import { sincronizarUnServicio } from '@/lib/notifications';
-import { syncServicioDependencias } from '@/lib/services/servicioSyncService';
+import { syncServicioDependencias } from '@/lib/use-cases/servicios/servicio-dependencies-use-cases';
 import { convertToUSD } from '@/lib/payments';
 import {
   createServicioUseCase,
@@ -280,3 +280,4 @@ describe('renewServicioUseCase', () => {
     expect(result.servicioActualizado.renovacionAutomatica).toBe(true);
   });
 });
+

@@ -3,8 +3,8 @@ import { toCamelCase } from './mappers';
 import { reviveDates, toNullableDateOnly } from './dates';
 import { snakeField } from './filters';
 import { ENTITIES, type PublicViewName, type QueryBuilder, type QueryFilter } from './entities';
-import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
-import { readOfflineCollection, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
+import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
+import { readOfflineCollection, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
 import {
   getById as coreGetById,
   queryDocuments as coreQueryDocuments,

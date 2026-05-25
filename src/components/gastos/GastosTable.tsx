@@ -211,13 +211,13 @@ export function GastosTable({
         </div>
 
         <DataTable
-          data={filteredGastos as unknown as Record<string, unknown>[]}
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
+          data={filteredGastos}
+          columns={columns}
           emptyMessage="No hay gastos registrados"
           pagination
           itemsPerPageOptions={[10, 25, 50]}
           actions={(item) => {
-            const gasto = item as unknown as GastoDisplay;
+            const gasto = item;
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

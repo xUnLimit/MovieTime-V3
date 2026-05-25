@@ -20,7 +20,6 @@ import { ServiciosCategoriaTableDetalleToolbar } from "./ServiciosCategoriaTable
 import {
   serviciosCategoriaColumnsForDataTable,
   toServicioCategoriaRow,
-  toServicioCategoriaTableRecord,
 } from "./servicios-categoria-columns";
 
 interface ServiciosCategoriaTableDetalleProps {
@@ -78,10 +77,7 @@ export const ServiciosCategoriaTableDetalle = memo(
     const [deletePayments, setDeletePayments] = useState(false);
 
     const serviciosOrdenables = useMemo(
-      () =>
-        servicios
-          .map(toServicioCategoriaRow)
-          .map(toServicioCategoriaTableRecord),
+      () => servicios.map(toServicioCategoriaRow),
       [servicios],
     );
 
@@ -146,7 +142,7 @@ export const ServiciosCategoriaTableDetalle = memo(
               containerClassName="table-scroll-shell"
               tableClassName="table-scroll-content min-w-[1180px]"
               actions={(item) => {
-                const servicio = item as unknown as Servicio;
+                const servicio = item;
                 return (
                   <ServiciosCategoriaTableDetalleActions
                     onDelete={handleDelete}

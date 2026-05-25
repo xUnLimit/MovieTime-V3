@@ -2,6 +2,7 @@ import type { LogContext as ServicioLogContext, RecordActivityLog as ServicioRec
 import type { LogContext as VentaLogContext, RecordActivityLog as VentaRecordActivityLog } from '@/lib/use-cases/ventas/ventas-shared';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
+import type { ActivityLog } from '@/types';
 
 type ActivityLogOptions = {
   logContext: ServicioLogContext & VentaLogContext;
@@ -13,4 +14,12 @@ export function getActivityLogOptions(): ActivityLogOptions {
     logContext: getStoreLogContext(),
     recordActivityLog: useActivityLogStore.getState().addLog,
   };
+}
+
+export function recordActivityLog(log: Omit<ActivityLog, 'id' | 'timestamp'>) {
+  return useActivityLogStore.getState().addLog(log);
+}
+
+export function getActivityLogContext() {
+  return getStoreLogContext();
 }

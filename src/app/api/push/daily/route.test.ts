@@ -8,7 +8,7 @@ vi.mock('@/config', () => ({
   },
 }));
 
-vi.mock('@/lib/services/executivePushService', () => ({
+vi.mock('@/lib/executive-push/executive-push-delivery', () => ({
   sendExecutivePushDailySummary,
 }));
 
@@ -64,3 +64,4 @@ describe('/api/push/daily', () => {
     });
   });
 });
+

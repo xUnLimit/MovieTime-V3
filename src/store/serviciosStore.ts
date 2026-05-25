@@ -15,8 +15,7 @@ import {
   afterServicioDeleted,
   afterServicioUpdated,
 } from '@/lib/store-reactions/servicios-mutation-reactions';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { useActivityLogStore } from '@/store/activityLogStore';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Servicio } from '@/types/servicios';
 
@@ -99,10 +98,7 @@ export const useServiciosStore = create<ServiciosState>()(
 
       createServicio: async (servicioData) => {
         try {
-          const { servicio, pronostico } = await createServicioUseCase(servicioData, {
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
-          });
+          const { servicio, pronostico } = await createServicioUseCase(servicioData, getActivityLogOptions());
 
           set((state) => ({
             servicios: [...state.servicios, servicio],
@@ -120,10 +116,7 @@ export const useServiciosStore = create<ServiciosState>()(
 
       updateServicio: async (id, updates) => {
         try {
-          const { servicioActualizado, pronostico } = await updateServicioUseCase(id, updates, {
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
-          });
+          const { servicioActualizado, pronostico } = await updateServicioUseCase(id, updates, getActivityLogOptions());
 
           set((state) => ({
             servicios: state.servicios.map((servicio) =>
@@ -153,8 +146,7 @@ export const useServiciosStore = create<ServiciosState>()(
         try {
           await deleteServicioUseCase(id, {
             deletePayments,
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
+            ...getActivityLogOptions(),
           });
 
           await afterServicioDeleted(id);

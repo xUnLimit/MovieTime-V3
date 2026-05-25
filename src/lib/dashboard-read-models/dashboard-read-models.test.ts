@@ -11,7 +11,7 @@ const dashboardRpc = vi.hoisted(() => ({
   getDashboardStatsLiveRpc: vi.fn(),
 }));
 
-vi.mock('@/lib/pwa/offline-read', () => offlineRead);
+vi.mock('@/lib/pwa/offline-copy', () => offlineRead);
 vi.mock('@/lib/supabase/dashboard-rpc-adapter', () => dashboardRpc);
 
 import {
@@ -177,3 +177,4 @@ describe('dashboard-read-models', () => {
     });
   });
 });
+

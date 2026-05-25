@@ -10,7 +10,10 @@ import {
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
 import { toDateOnly, toIso } from '@/lib/supabase/dates';
-import { resyncServiciosDenormalizedData, syncServicioDependencias } from '@/lib/services/servicioSyncService';
+import {
+  resyncServiciosDenormalizedData,
+  syncServicioDependencias,
+} from '@/lib/use-cases/servicios/servicio-dependencies-use-cases';
 import { sincronizarUnServicio } from '@/lib/notifications';
 import { convertToUSD, sumPaymentsInUSD } from '@/lib/payments';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';

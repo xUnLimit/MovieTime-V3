@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import type { Json } from '@/lib/supabase/database.types';
-import { getOfflineDashboardHome, shouldUseOfflineRead } from '@/lib/pwa/offline-read';
+import { getOfflineDashboardHome, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
 import {
   getDashboardChurnStatsRpc,
   getDashboardHomeRpc,

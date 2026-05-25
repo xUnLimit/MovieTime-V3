@@ -21,7 +21,7 @@ import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
-import { emitVentaUpdated } from './venta-detalle-events';
+import { emitVentaUpdated } from '@/lib/events/cache-reactions';
 import { refreshVentaDetalleData } from './venta-detalle-refresh';
 import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
 

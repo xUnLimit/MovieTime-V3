@@ -12,8 +12,7 @@ import {
   afterVentaDeleted,
   afterVentaUpdated,
 } from '@/lib/store-reactions/ventas-mutation-reactions';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { useActivityLogStore } from '@/store/activityLogStore';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
@@ -86,10 +85,7 @@ export const useVentasStore = create<VentasState>()(
 
       createVenta: async (ventaData) => {
         try {
-          const { venta, pronostico } = await createVentaUseCase(ventaData, {
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
-          });
+          const { venta, pronostico } = await createVentaUseCase(ventaData, getActivityLogOptions());
 
           set((state) => ({
             ventas: [...state.ventas, venta],
@@ -111,8 +107,7 @@ export const useVentasStore = create<VentasState>()(
           const currentVenta = get().ventas.find((venta) => venta.id === id);
           const { ventaActualizada, pronostico, serviceProfileDelta } = await updateVentaUseCase(id, updates, {
             currentVenta,
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
+            ...getActivityLogOptions(),
           });
 
           set((state) => ({
@@ -148,8 +143,7 @@ export const useVentasStore = create<VentasState>()(
             servicioId,
             perfilNumero,
             deletePagos,
-            logContext: getStoreLogContext(),
-            recordActivityLog: useActivityLogStore.getState().addLog,
+            ...getActivityLogOptions(),
           });
 
           await afterVentaDeleted(id, serviceProfileDelta);
