@@ -52,7 +52,7 @@ vi.mock('@/lib/supabase/catalogos-repository', () => ({
 import {
   fetchPagosVentaByVentaIdsUseCase,
   fetchVentasByClienteIdsUseCase,
-} from './ventas-use-cases';
+} from './ventas/ventas-query-use-cases';
 
 describe('ventas query use cases', () => {
   beforeEach(() => {

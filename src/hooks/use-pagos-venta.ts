@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
-import { fetchPagosVentaByVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { fetchPagosVentaByVentaUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import type { PagoVenta } from '@/types';
 
 /**

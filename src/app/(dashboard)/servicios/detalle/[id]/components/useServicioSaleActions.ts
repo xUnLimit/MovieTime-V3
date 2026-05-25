@@ -4,10 +4,8 @@ import { toast } from "sonner";
 
 import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { queryKeys } from "@/lib/query-keys";
-import {
-  getVentaUseCase,
-  updateVentaUseCase,
-} from "@/lib/use-cases/ventas-use-cases";
+import { getVentaUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
+import { updateVentaUseCase } from "@/lib/use-cases/ventas/ventas-write-use-cases";
 import { getStoreLogContext } from "@/lib/utils/storeHelpers";
 import { useActivityLogStore } from "@/store/activityLogStore";
 import { useNotificacionesStore } from "@/store/notificacionesStore";

@@ -16,7 +16,7 @@ import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
-import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas-use-cases';
+import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
 import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';

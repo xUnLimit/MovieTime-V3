@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
-import { convertToUSD } from '@/lib/payments/currency-converter';
+import { convertToUSD } from '@/lib/payments';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { esNotificacionServicio, esNotificacionVenta } from '@/types/notificaciones';
 

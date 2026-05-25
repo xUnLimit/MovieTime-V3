@@ -8,7 +8,7 @@ import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { queryKeys } from "@/lib/query-keys";
 import { queryNotifications } from "@/lib/supabase/notifications-repository";
-import { renewServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
+import { renewServicioUseCase } from "@/lib/use-cases/servicios/servicios-payment-use-cases";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import type { Servicio } from "@/types/servicios";

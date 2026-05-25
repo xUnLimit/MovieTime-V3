@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 
 import { queryKeys } from '@/lib/query-keys';
-import { convertToUSD } from '@/lib/payments/currency-converter';
+import { convertToUSD } from '@/lib/payments';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
 export interface VentasCategoriaStats {

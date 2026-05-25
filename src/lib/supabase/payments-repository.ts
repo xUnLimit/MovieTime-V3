@@ -1,5 +1,5 @@
 import { toDateOnly, toIso } from './dates';
-import { convertToUSD } from '@/lib/payments/currency-converter';
+import { convertToUSD } from '@/lib/payments';
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import {
   createServicioPaymentRpc,

@@ -6,7 +6,7 @@ import { differenceInCalendarDays } from 'date-fns';
 
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
-import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 

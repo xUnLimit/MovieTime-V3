@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
 import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
+import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import {
   PENDING_TERCERO_PAYMENT_CURRENCY,
   PENDING_TERCERO_PAYMENT_ID,

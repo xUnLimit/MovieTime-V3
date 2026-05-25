@@ -1,7 +1,7 @@
 # Enterprise Architecture Implementation Plan
 
 **Date:** 2026-05-22  
-**Status:** In progress - arquitectura de Fases 0, 2, 3 y 4 cerrada; pendiente testing/cobertura
+**Status:** Arquitectura de Fases 0, 2, 3 y 4 cerrada; testing/cobertura enterprise diferido
 **Source:** `ARCHITECTURE_ROADMAP.md` v1.2
 
 ## Goal
@@ -10,7 +10,7 @@ Convertir el roadmap enterprise en una secuencia de PRs pequenos, verificables y
 
 ## Execution Rules
 
-- No iniciar descomposicion grande de `ventas-use-cases.ts` o `servicios-use-cases.ts` sin tests del flujo afectado.
+- No iniciar descomposicion grande de modulos de ventas/servicios sin tests del flujo afectado.
 - Cada PR debe pasar `npm run lint`, `npm test -- --run`, `npm run build`.
 - Para cambios de Supabase/schema, tambien ejecutar `npm run migrate:validate`.
 - Cada cambio de arquitectura que altere una regla debe actualizar o crear ADR.
@@ -22,7 +22,7 @@ Convertir el roadmap enterprise en una secuencia de PRs pequenos, verificables y
 Completado hasta esta iteracion:
 
 - Fase 0 cerrada en implementacion: tipos duplicados consolidados, `getStoreLogContext()` compartido, `realtime?: boolean` eliminado, side-effects fire-and-forget con logging, no-ops de dashboard retirados, drift RPC critico tipado, sin `catch {}` silencioso en stores/use-cases/services/commands, y validacion completa verde.
-- Fase 2 cerrada en implementacion: ventas y servicios estan en use-cases por queries/writes/payments/refunds/shared, los barrels mantienen compatibilidad, los errores criticos usan `DomainError`, no quedan use-cases >300 lineas, y los pass-throughs puros principales fueron eliminados o reducidos a operaciones con contrato propio.
+- Fase 2 cerrada en implementacion: ventas y servicios estan en use-cases por queries/writes/payments/refunds/shared, los barrels legacy fueron eliminados, los errores criticos usan `DomainError`, no quedan use-cases >300 lineas, y los pass-throughs puros principales fueron eliminados o reducidos a operaciones con contrato propio.
 - Fase 3 cerrada en implementacion: React Query esta integrado como infraestructura de lectura, `useServerPagination` ya no usa `refreshKey`, el detalle de venta y sus dependencias de dialogo usan query cache, el bridge legacy DOM/localStorage fue retirado, y no quedan `window.dispatchEvent` ni dynamic imports runtime de stores en `src`.
 - PR 0: baseline documental y roadmap enterprise.
 - PR 1: tipos duplicados de ventas consolidados.
@@ -31,8 +31,8 @@ Completado hasta esta iteracion:
 - PR 7 slice: tests de ventas ampliados para create, renew, refund, delete y chunking.
 - PR 8/9 slice: infraestructura React Query y StoreEventBus base.
 - Migraciones adicionales de Fase 3: hooks principales migrados a React Query, paginas detalle/edicion de catalogos migradas a queries, reposo migrado a queries, dependencias de formularios de ventas y servicios migradas a queries, detalle de perfiles migrado a query, ranking de transferencia de ventas en servicio migrado a query, credenciales de servicios en tercero migradas a query, filtros de pago de terceros migrados a query, totales USD de pagos de ventas/servicios migrados a queries, detalle de servicio y ventas por servicio migrados a query, metodos de pago/categorias/editor de mensajes/gastos migrados a query, categorias compartidas usadas por paginas de ventas y servicios, metrics counts de catalogos/ventas/servicios/terceros migrados a query, busqueda de terceros migrada a query, dashboard financial stats y dashboard home migrados a query, templates de notificaciones/detalle de venta migrados a query, lectura principal de detalle de venta migrada a query, lecturas principales de notificaciones y reposo migradas a query, invalidacion de templates/metodos/servicios/categorias/notificaciones centralizada en React Query, eventos tipados emitidos junto a eventos legacy, imports dinamicos de stores reemplazados por dependencias explicitas.
-- Fase 2 ventas: `ventas-use-cases.ts` convertido en barrel; use-cases separados en `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`.
-- Fase 2 servicios: `servicios-use-cases.ts` convertido en barrel; use-cases separados en `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`.
+- Fase 2 ventas: callers migrados a `ventas-query-use-cases.ts`, `ventas-payment-use-cases.ts`, `ventas-refund-use-cases.ts`, `ventas-write-use-cases.ts` y `ventas-shared.ts`; el barrel legacy fue eliminado.
+- Fase 2 servicios: callers migrados a `servicios-query-use-cases.ts`, `servicios-payment-use-cases.ts`, `servicios-write-use-cases.ts` y `servicios-shared.ts`; el barrel legacy fue eliminado.
 - Fase 2 errores: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError` e `InsufficientFundsError` agregados y usados en flujos criticos de ventas/servicios.
 - Fase 2/3 eventos: imports dinamicos runtime removidos, emisiones directas de negocio reemplazadas por bus tipado, paginas/hooks principales de ventas/terceros/categorias/servicios consumen eventos tipados, y bridge legacy DOM/localStorage retirado del runtime.
 - Fase 0/4 dashboard: mutaciones no-op `adjust*`/`upsert*Pronostico` eliminadas del runtime; el dashboard queda orientado a invalidacion/refetch sobre read models live en `src/lib/dashboard-read-models`.
@@ -40,8 +40,8 @@ Completado hasta esta iteracion:
 - Fase 0/4 RPC type drift: adapters tipados agregados para creacion inicial de servicios, refund de ventas, pagos de renovacion, borrados/updates atomicos de pagos, RPCs de categorias y read RPCs de dashboard; ventas/servicios/pagos ya no tienen `rpcClient` generico local.
 - Fase 0 side-effects: fallos esperados de sync de metodo de pago en ventas y cleanup de auth usan logging estructurado compartido sin cambiar el resultado del flujo principal; no quedan `catch {}` silenciosos en `src/store`, `src/lib/services`, `src/lib/use-cases` ni `src/lib/commands`.
 - Fase 0 log context: `getStoreLogContext()` ya cubre stores y vistas detalle de ventas/servicios; no quedan copias locales de `getLogContext()`.
-- Fase 4 modulos profundos: `src/lib/payments/`, `src/lib/dashboard-read-models/` y `src/lib/notifications/` creados con facades publicas; los servicios legacy de pagos/dashboard quedan como compatibilidad y las rutas/use-cases criticos empiezan a consumir los modulos nuevos.
-- Fase 4 pagos/moneda: `sumPaymentsInUSD`, `sumInUSD`, `convertToUSD`, factories de pagos de venta/servicio y formato USD quedan concentrados en `src/lib/payments/`; `calculations.ts` conserva compatibilidad pero delega la conversion/suma al modulo de pagos.
+- Fase 4 modulos profundos: `src/lib/payments/`, `src/lib/dashboard-read-models/` y `src/lib/notifications/` creados con facades publicas; dashboard/notificaciones legacy fueron eliminados y los callers de pagos usan la fachada `@/lib/payments`.
+- Fase 4 pagos/moneda: `sumPaymentsInUSD`, `sumInUSD`, `convertToUSD`, factories de pagos de venta/servicio y formato USD quedan concentrados en `src/lib/payments/`; `currencyService` permanece solo como adapter interno detras de la fachada.
 - Fase 4 notificaciones: calculo puro de prioridad/titulos extraido a `src/lib/notifications/notification-calculator.ts` con tests; el sync runtime se expone solo por `src/lib/notifications`.
 - Fase 4 dashboard read models: implementacion de lectura movida a `src/lib/dashboard-read-models/`; el barrel legacy `dashboardStatsService` fue eliminado.
 - Fase 4 feature flags: tabla `feature_flags` con RLS de lectura, repositorio de lectura y hook `useFeatureFlag()` basados en React Query.
@@ -235,8 +235,8 @@ Validacion recurrente ejecutada por PR logico:
 
 **Files:**
 
-- `src/lib/use-cases/ventas-use-cases.ts`
-- `src/lib/use-cases/servicios-use-cases.ts`
+- `src/lib/use-cases/ventas/`
+- `src/lib/use-cases/servicios/`
 - `src/lib/use-cases/terceros-use-cases.ts`
 - `src/store/serviciosStore.ts`
 - `src/store/ventasStore.ts`
@@ -348,7 +348,7 @@ Validacion recurrente ejecutada por PR logico:
 
 ## PR 7 - Test Slice: Venta Create/Renew/Refund
 
-**Purpose:** Crear red de seguridad antes de descomponer `ventas-use-cases.ts`.
+**Purpose:** Crear red de seguridad antes de descomponer los use-cases de ventas.
 
 **Files:**
 
@@ -431,7 +431,7 @@ Validacion recurrente ejecutada por PR logico:
 
 ### Gate A - Ready for Use-case Decomposition
 
-Required before splitting `ventas-use-cases.ts`:
+Required before splitting critical venta flows:
 
 - PRs 1, 3, 6 and 7 merged.
 - Tests for ventas create/renew/refund/delete pass.

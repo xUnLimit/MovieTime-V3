@@ -1,7 +1,7 @@
 import { differenceInDays, startOfDay } from "date-fns";
 
 import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
+import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import type { MetodoPago } from "@/types/metodos-pago";
 import type { Servicio } from "@/types/servicios";
 

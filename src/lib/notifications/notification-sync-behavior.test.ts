@@ -16,6 +16,7 @@ vi.mock('@/lib/supabase/notifications-repository', () => ({
 
 vi.mock('@/lib/supabase/servicios-repository', () => ({
   getServicioById: getByIdMock,
+  removePagoServicio: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/catalogos-repository', () => ({

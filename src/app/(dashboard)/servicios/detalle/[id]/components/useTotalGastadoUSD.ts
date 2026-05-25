@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
-import { sumInUSD } from '@/lib/payments/payment-calculator';
+import { sumInUSD } from '@/lib/payments';
 import type { PagoServicio } from '@/types';
 
 export function useTotalGastadoUSD(pagosServicio: PagoServicio[]) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { getVentaConPagoActualUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { getVentaConPagoActualUseCase } from '@/lib/use-cases/ventas/ventas-shared';
 import type { VentaDoc } from '@/types';
 
 export async function refreshVentaDetalleData(

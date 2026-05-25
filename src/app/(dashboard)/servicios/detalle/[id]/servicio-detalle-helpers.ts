@@ -1,6 +1,6 @@
 import { getMetodoPagoById } from "@/lib/supabase/catalogos-repository";
-import { getServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
+import { getServicioUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import { buildServiceTransferMessage } from "@/lib/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { MetodoPago, PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";

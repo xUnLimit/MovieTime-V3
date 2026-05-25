@@ -5,7 +5,7 @@ import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
 import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
-import { getServicioUseCase } from '@/lib/use-cases/servicios-use-cases';
+import { getServicioUseCase } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
 import type { Categoria, MetodoPago, Servicio, Tercero } from '@/types';
 

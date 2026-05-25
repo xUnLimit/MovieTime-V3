@@ -7,7 +7,7 @@ import {
   createVentaUseCase,
   deleteVentaUseCase,
   updateVentaUseCase,
-} from '@/lib/use-cases/ventas-use-cases';
+} from '@/lib/use-cases/ventas/ventas-write-use-cases';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';

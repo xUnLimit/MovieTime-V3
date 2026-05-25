@@ -10,7 +10,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
 import { queryKeys } from '@/lib/query-keys';
-import { getVentaUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { getVentaUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { isUuid } from '@/lib/utils/safety';
 import type { VentaDoc } from '@/types';

@@ -13,7 +13,7 @@ import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
-import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
+import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { FilterOption } from '@/lib/supabase/pagination';
 import { Servicio } from '@/types';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';

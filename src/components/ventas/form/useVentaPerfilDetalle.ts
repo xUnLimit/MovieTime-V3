@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
+import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import type {
   PerfilDetalleOcupado,
   PerfilDetalleVisual,

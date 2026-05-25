@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { queryKeys } from '@/lib/query-keys';
-import { fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';

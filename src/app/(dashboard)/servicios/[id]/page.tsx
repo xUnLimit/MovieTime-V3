@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { storeEventBus } from '@/lib/events/store-event-bus';
-import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios-use-cases';
+import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { isUuid } from '@/lib/utils/safety';
 import { Servicio } from '@/types';
 import type { FilterOption } from '@/lib/supabase/pagination';

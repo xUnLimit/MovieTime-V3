@@ -8,7 +8,7 @@ import {
   calculateFinancialForecast,
   type MesPronostico,
 } from '@/lib/forecasting';
-import { convertToUSDSync, ensureRatesLoaded } from '@/lib/payments/currency-converter';
+import { convertToUSDSync, ensureRatesLoaded } from '@/lib/payments';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 import type { ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 

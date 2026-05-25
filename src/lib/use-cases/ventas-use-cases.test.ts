@@ -52,10 +52,12 @@ vi.mock('@/lib/supabase/catalogos-repository', () => ({
 import {
   createVentaUseCase,
   deleteVentaUseCase,
-  renewVentaUseCase,
   updateVentaUseCase,
+} from './ventas/ventas-write-use-cases';
+import {
+  renewVentaUseCase,
   updateVentaWithLatestPagoUseCase,
-} from './ventas-use-cases';
+} from './ventas/ventas-payment-use-cases';
 import type { VentaDoc } from '@/types';
 
 const logContext = {

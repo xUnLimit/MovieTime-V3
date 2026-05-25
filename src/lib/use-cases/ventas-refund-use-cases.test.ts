@@ -49,10 +49,8 @@ vi.mock('@/lib/supabase/catalogos-repository', () => ({
   getMetodoPagoById: vi.fn(),
 }));
 
-import {
-  createVentaRefundUseCase,
-  toVentaPronostico,
-} from './ventas-use-cases';
+import { createVentaRefundUseCase } from './ventas/ventas-refund-use-cases';
+import { toVentaPronostico } from './ventas/ventas-shared';
 import type { VentaDoc } from '@/types';
 
 const logContext = {

@@ -6,8 +6,8 @@ import {
 } from "@/lib/commands/client-cache";
 import { syncVentaForecastReadModels } from "@/lib/forecasting";
 import { getCategoriaUseCase } from "@/lib/use-cases/categorias-use-cases";
-import { getServicioUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { renewVentaUseCase } from "@/lib/use-cases/ventas-use-cases";
+import { getServicioUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { renewVentaUseCase } from "@/lib/use-cases/ventas/ventas-payment-use-cases";
 import { getStoreLogContext } from "@/lib/utils/storeHelpers";
 import { withPendingTerceroPaymentMethod } from "@/lib/utils/terceroMetodoPago";
 import { useActivityLogStore } from "@/store/activityLogStore";

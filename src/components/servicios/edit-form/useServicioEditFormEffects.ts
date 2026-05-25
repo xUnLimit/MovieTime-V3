@@ -7,7 +7,7 @@ import type {
 } from "react-hook-form";
 
 import { CYCLE_MONTHS } from "@/lib/constants";
-import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas-use-cases";
+import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import type { Servicio } from "@/types";
 
 import type { ServicioEditFormData } from "./schema";

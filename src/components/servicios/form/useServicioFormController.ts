@@ -13,7 +13,7 @@ import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { useTemplates } from "@/hooks/use-templates";
 import { useTerceros } from "@/hooks/use-terceros";
-import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas-use-cases";
+import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio } from "@/types";

@@ -6,8 +6,8 @@ import { toast } from "sonner";
 
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
 import { queryKeys } from "@/lib/query-keys";
-import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios-use-cases";
-import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas-use-cases";
+import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios/servicios-payment-use-cases";
+import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import {
   changedCredentialsCount,
   hasCredentialChanges,

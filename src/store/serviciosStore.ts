@@ -3,14 +3,14 @@ import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { ENTITIES, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
-import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas-use-cases';
+import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import {
   createServicioUseCase,
   deleteServicioUseCase,
-  fetchServiciosCountsUseCase,
   resyncServicioReferenciasUseCase,
   updateServicioUseCase,
-} from '@/lib/use-cases/servicios-use-cases';
+} from '@/lib/use-cases/servicios/servicios-write-use-cases';
+import { fetchServiciosCountsUseCase } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { syncServicioForecastReadModels } from '@/lib/forecasting';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';

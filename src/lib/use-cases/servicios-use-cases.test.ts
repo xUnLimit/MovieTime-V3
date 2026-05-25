@@ -71,11 +71,13 @@ import { syncServicioDependencias } from '@/lib/services/servicioSyncService';
 import { convertToUSD } from '@/lib/payments';
 import {
   createServicioUseCase,
-  deleteServicioPagoUseCase,
   deleteServicioUseCase,
-  renewServicioUseCase,
   updateServicioUseCase,
-} from './servicios-use-cases';
+} from './servicios/servicios-write-use-cases';
+import {
+  deleteServicioPagoUseCase,
+  renewServicioUseCase,
+} from './servicios/servicios-payment-use-cases';
 
 const servicio: Servicio = {
   id: 'servicio-1',

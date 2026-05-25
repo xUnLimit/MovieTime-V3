@@ -11,9 +11,9 @@ import {
 import { queryKeys } from '@/lib/query-keys';
 import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
 import {
-  getServicioUseCase,
   renewServicioUseCase,
-} from '@/lib/use-cases/servicios-use-cases';
+} from '@/lib/use-cases/servicios/servicios-payment-use-cases';
+import { getServicioUseCase } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useNotificacionesStore } from '@/store/notificacionesStore';

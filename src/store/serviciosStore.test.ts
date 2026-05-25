@@ -10,18 +10,22 @@ vi.mock('@/lib/supabase/servicios-repository', () => ({
   ENTITIES: { SERVICIOS: 'servicios' },
   getServicios: getServiciosMock,
   logCacheHit: logCacheHitMock,
+  removePagoServicio: vi.fn(),
 }));
 
-vi.mock('@/lib/use-cases/ventas-use-cases', () => ({
+vi.mock('@/lib/use-cases/ventas/ventas-query-use-cases', () => ({
   countVentasActivasByServicioUseCase: countVentasActivasByServicioUseCaseMock,
 }));
 
-vi.mock('@/lib/use-cases/servicios-use-cases', () => ({
+vi.mock('@/lib/use-cases/servicios/servicios-write-use-cases', () => ({
   createServicioUseCase: vi.fn(),
   deleteServicioUseCase: vi.fn(),
-  fetchServiciosCountsUseCase: vi.fn(),
   resyncServicioReferenciasUseCase: vi.fn(),
   updateServicioUseCase: vi.fn(),
+}));
+
+vi.mock('@/lib/use-cases/servicios/servicios-query-use-cases', () => ({
+  fetchServiciosCountsUseCase: vi.fn(),
 }));
 
 vi.mock('@/lib/forecasting', () => ({

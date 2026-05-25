@@ -9,10 +9,12 @@ import { invalidateDashboardCache } from '@/lib/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import {
   createVentaRefundUseCase,
+} from '@/lib/use-cases/ventas/ventas-refund-use-cases';
+import {
   deleteVentaPagoUseCase,
   renewVentaUseCase,
   updateVentaPagoUseCase,
-} from '@/lib/use-cases/ventas-use-cases';
+} from '@/lib/use-cases/ventas/ventas-payment-use-cases';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import { useServiciosStore } from '@/store/serviciosStore';

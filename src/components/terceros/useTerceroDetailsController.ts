@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { useVentasTercero } from "@/hooks/use-ventas-tercero";
 import { queryKeys } from "@/lib/query-keys";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios-use-cases";
+import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useVentasStore } from "@/store/ventasStore";
 import type { Tercero } from "@/types";

@@ -11,7 +11,7 @@ import {
   deleteServicioPagoUseCase,
   renewServicioUseCase,
   updateServicioPagoUseCase,
-} from "@/lib/use-cases/servicios-use-cases";
+} from "@/lib/use-cases/servicios/servicios-payment-use-cases";
 import type { MetodoPago, PagoServicio, Servicio } from "@/types";
 
 import type { MetodoPagoDetalle, PagoFormData } from "./types";

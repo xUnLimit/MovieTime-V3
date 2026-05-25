@@ -12,9 +12,9 @@ El diagnostico original era correcto en direccion, pero varias cifras y algunos 
 Estado de implementacion:
 
 1. **Fase 0 cerrada**: tipos duplicados consolidados, side-effects con logging, casts RPC criticos removidos, dashboard no-op eliminado y validacion remota de seguridad en verde.
-2. **Fase 2 cerrada**: ventas y servicios estan separados en queries/writes/payments/refunds/shared; los barrels publicos de use-cases conservan imports existentes.
+2. **Fase 2 cerrada**: ventas y servicios estan separados en queries/writes/payments/refunds/shared; los barrels legacy de use-cases fueron eliminados.
 3. **Fase 3 cerrada**: React Query, query keys, invalidacion centralizada y StoreEventBus estan integrados; no quedan eventos DOM/localStorage de negocio en runtime.
-4. **Fase 4 casi cerrada**: existen modulos profundos de pagos, notificaciones, dashboard read models, forecasting, feature flags e idempotencia RPC. Los formularios/componentes grandes quedaron por debajo de 300 lineas.
+4. **Fase 4 cerrada en arquitectura**: existen modulos profundos de pagos, notificaciones, dashboard read models, forecasting, feature flags e idempotencia RPC. Los formularios/componentes grandes quedaron por debajo de 300 lineas y los imports legacy fueron eliminados.
 5. **Pendiente principal**: cobertura/testing. La arquitectura esta implementada, pero la red de pruebas aun no llega a los umbrales enterprise.
 
 Este documento queda como vision y registro de estado. El plan operativo vivo esta en `docs/plans/2026-05-22-enterprise-architecture-implementation-plan.md`.
@@ -71,7 +71,7 @@ UI: src/components, src/app
 Stores/hooks/componentes
   -> Use-cases: src/lib/use-cases
        - ventas/servicios separados por queries, writes, payments, refunds/shared
-       - barrels publicos para imports existentes
+       - imports directos al modulo especifico segun responsabilidad
        - DomainError en flujos criticos
 
 Use-cases
@@ -79,7 +79,7 @@ Use-cases
        - payments: facade de pagos, moneda y factories
        - notifications: calculo, cleanup, sync y push helpers
        - dashboard-read-models / forecasting: read models y pronostico
-       - services legacy quedan como adapters de compatibilidad cuando aplica
+       - adapters concretos quedan detras de modulos profundos
 
 Services/use-cases/hooks
   -> Repositories / Supabase adapters: src/lib/supabase
@@ -138,7 +138,7 @@ El patron `detectarCambios() + metadata estructurada + detalles legibles` provee
 #### A-1: Use-cases de ventas y servicios concentraban demasiada responsabilidad
 
 **Estado:** Cerrado en implementacion  
-**Archivos actuales:** `ventas-use-cases.ts` y `servicios-use-cases.ts` son barrels publicos; la implementacion vive en `src/lib/use-cases/ventas/` y `src/lib/use-cases/servicios/`.  
+**Archivos actuales:** `ventas-use-cases.ts` y `servicios-use-cases.ts` fueron eliminados. La implementacion vive en `src/lib/use-cases/ventas/` y `src/lib/use-cases/servicios/`, y los callers importan desde el modulo especifico.  
 **Impacto anterior:** Cambios en pagos, renovaciones, reembolsos, pronostico o perfiles requerian entender muchas reglas colaterales en el mismo archivo.
 
 **Evidencia:**
@@ -158,7 +158,7 @@ El problema no es solo cantidad de lineas. La interface del modulo obliga al man
 
 **Solucion implementada:**
 
-Crear modulos de use-cases por capacidad y mantener un barrel de compatibilidad:
+Crear modulos de use-cases por capacidad y eliminar el barrel una vez migrados los callers:
 
 ```text
 src/lib/use-cases/ventas/
@@ -175,7 +175,7 @@ src/lib/use-cases/servicios/
   servicios-shared.ts
 ```
 
-La interface publica se mantuvo estable mediante barrels. El objetivo no fue mover lineas por estetica; fue crear locality: cambios de pagos viven en el modulo de pagos, cambios de escritura viven en writes, y side-effects tienen politica explicita.
+El objetivo no fue mover lineas por estetica; fue crear locality: cambios de pagos viven en el modulo de pagos, cambios de escritura viven en writes, y side-effects tienen politica explicita. Los imports apuntan al modulo responsable para que el contrato sea visible.
 
 ---
 
@@ -346,7 +346,7 @@ Aplicar deletion test:
 
 **Evidencia:**
 
-En `ventas-use-cases.ts` y `servicios-use-cases.ts` conviven:
+Antes de la descomposicion, en los use-cases monoliticos de ventas y servicios convivian:
 
 - `safeAsyncSideEffect(...)`
 - `.catch((err) => console.error(...))`
@@ -374,7 +374,7 @@ metricsService.calculateVentasMetrics()
   -> calculations.sumInUSD(...)
     -> currencyService.convertToUSD(...)
 
-servicios-use-cases.ts
+servicios payment use-cases
   -> currencyService.convertToUSD(...) directo
 
 payments.sumPaymentsInUSD(payments, convertToUSD)
@@ -390,7 +390,7 @@ Crear un modulo profundo de pagos/moneda con una interface unica para:
 - suma de pagos en USD;
 - snapshots de moneda/tasa.
 
-`currencyService` sigue como adapter concreto detras de `@/lib/payments`. Los callers nuevos de negocio deben importar pagos/moneda desde `@/lib/payments`.
+`currencyService` sigue como adapter concreto detras de `@/lib/payments`. Los callers de negocio importan pagos/moneda desde `@/lib/payments`, no desde submodulos internos ni desde `services`.
 
 ---
 
@@ -863,7 +863,7 @@ La ejecucion concreta de estas fases esta desglosada en PRs pequenos en `docs/pl
 3. Extraer payment/refund use-cases.
 4. Extraer write/archive use-cases.
 5. Extraer helpers de side-effects.
-6. Mantener barrels publicos solo donde preservan APIs vigentes; no reintroducir barrels legacy para servicios eliminados.
+6. No reintroducir barrels legacy para rutas ya migradas; usar facades solo cuando sean el contrato vigente del modulo.
 7. Introducir errores de dominio en flujos criticos.
 
 **Criterio de exito:**
@@ -1034,7 +1034,7 @@ Repositories
 - [x] Extraer query use-cases de ventas.
 - [x] Extraer payment/refund use-cases de ventas.
 - [x] Extraer write/archive use-cases de ventas.
-- [x] Crear barrel de compatibilidad.
+- [x] Migrar callers al modulo especifico y eliminar barrels legacy.
 - [x] Repetir estructura para servicios.
 - [x] Evaluar pass-through use-cases con deletion test.
 - [x] Migrar errores genericos a `DomainError` en flujos criticos.
@@ -1066,7 +1066,7 @@ Repositories
 - [x] ADR: React Query vs Zustand.
 - [x] ADR: RPCs atomicas e idempotencia.
 - [x] ADR: StoreEventBus.
-- [ ] Agregar ADRs nuevos solo cuando una decision cambie contratos relevantes.
+- [x] No se requiere ADR adicional: las decisiones nuevas quedan cubiertas por los ADRs existentes.
 - [x] Implementar feature flags si se requiere rollout gradual.
 - [x] Descomponer `VentasForm`.
 - [x] Descomponer `VentasEditForm`.
@@ -1123,8 +1123,8 @@ La restriccion fuerte es que Fase 2 no debe iniciar sobre ventas/servicios sin t
 ### Principios de migracion segura
 
 1. Refactor con tests primero en el flujo afectado.
-2. Mantener barrels para compatibilidad temporal.
-3. Migrar imports por feature, no en big-bang.
+2. Evitar barrels legacy despues de migrar callers.
+3. Migrar imports por feature o por corte verificable, manteniendo build verde.
 4. Cada PR de arquitectura debe mantener o subir cobertura.
 5. Cualquier nuevo modulo debe tener interface pequena, tests por contrato y ownership claro.
 6. Cualquier decision que cambie una regla del roadmap debe registrarse como ADR.
