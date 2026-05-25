@@ -2,13 +2,8 @@ import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import { assertRpcStringId } from '@/lib/utils/safety';
 import type { Database } from '@/lib/supabase/database.types';
 
-import { supabase } from './client';
 import { withIdempotencyKey } from './idempotency';
-
-type RpcResult = {
-  data: unknown;
-  error: { message: string } | null;
-};
+import { typedRpcClient, type RpcResult } from './rpc-client';
 
 type CreateServicioWithInitialPaymentRpcClient = {
   rpc: (
@@ -88,12 +83,12 @@ export type UpdateServicioPaymentAndPeriodPayload = {
 };
 
 const servicioInitialPaymentRpcClient =
-  supabase as unknown as CreateServicioWithInitialPaymentRpcClient;
+  typedRpcClient<CreateServicioWithInitialPaymentRpcClient>();
 const deleteServicioWithPaymentsRpcClient =
-  supabase as unknown as DeleteServicioWithPaymentsRpcClient;
-const deleteServicioPaymentRpcClient = supabase as unknown as DeleteServicioPaymentRpcClient;
+  typedRpcClient<DeleteServicioWithPaymentsRpcClient>();
+const deleteServicioPaymentRpcClient = typedRpcClient<DeleteServicioPaymentRpcClient>();
 const updateServicioPaymentAndPeriodRpcClient =
-  supabase as unknown as UpdateServicioPaymentAndPeriodRpcClient;
+  typedRpcClient<UpdateServicioPaymentAndPeriodRpcClient>();
 
 export async function createServicioWithInitialPaymentRpc(
   payload: CreateServicioWithInitialPaymentPayload

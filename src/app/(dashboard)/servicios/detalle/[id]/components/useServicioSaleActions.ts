@@ -4,10 +4,10 @@ import { toast } from "sonner";
 
 import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { queryKeys } from "@/lib/query-keys";
+import { getActivityLogOptions } from "@/lib/activity/activity-log-writer";
+import { getVentaDetalleRead } from "@/lib/supabase/domain-read-adapters";
 import { getVentaUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import { updateVentaUseCase } from "@/lib/use-cases/ventas/ventas-write-use-cases";
-import { getStoreLogContext } from "@/lib/utils/storeHelpers";
-import { useActivityLogStore } from "@/store/activityLogStore";
 import { useNotificacionesStore } from "@/store/notificacionesStore";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useTercerosStore } from "@/store/tercerosStore";
@@ -53,7 +53,7 @@ export function useServicioSaleActions({
   const [transferVentaDialogOpen, setTransferVentaDialogOpen] = useState(false);
 
   const loadVentaForAction = async (ventaId: string) => {
-    const venta = await getVentaUseCase<VentaDoc>(ventaId);
+    const venta = await getVentaDetalleRead(ventaId) ?? await getVentaUseCase<VentaDoc>(ventaId);
     if (!venta) throw new Error("Venta no encontrada");
     setSelectedActionVenta(venta);
     return venta;
@@ -95,8 +95,7 @@ export function useServicioSaleActions({
         },
         {
           currentVenta: selectedActionVenta,
-          logContext: getStoreLogContext(),
-          recordActivityLog: useActivityLogStore.getState().addLog,
+          ...getActivityLogOptions(),
         },
       );
 
@@ -155,8 +154,7 @@ export function useServicioSaleActions({
         },
         {
           currentVenta: selectedActionVenta,
-          logContext: getStoreLogContext(),
-          recordActivityLog: useActivityLogStore.getState().addLog,
+          ...getActivityLogOptions(),
         },
       );
 

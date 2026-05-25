@@ -1,9 +1,11 @@
-import { getMetodoPagoById } from "@/lib/supabase/catalogos-repository";
-import { getServicioUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import {
+  getMetodoPagoRead,
+  getServicioRead,
+} from "@/lib/supabase/domain-read-adapters";
 import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import { buildServiceTransferMessage } from "@/lib/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
-import type { MetodoPago, PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";
+import type { PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";
 
 import type {
   CategoriaDetalle,
@@ -50,13 +52,13 @@ export async function fetchServicioDetalleBundle(id: string): Promise<{
   metodoPago: MetodoPagoDetalle | null;
   servicio: Servicio;
 }> {
-  const servicio = await getServicioUseCase<Servicio>(id);
+  const servicio = await getServicioRead(id);
   if (!servicio) {
     throw new Error("Servicio no encontrado");
   }
 
   const metodoPagoReal = servicio.metodoPagoId
-    ? await getMetodoPagoById<MetodoPago>(servicio.metodoPagoId).catch(() => null)
+    ? await getMetodoPagoRead(servicio.metodoPagoId).catch(() => null)
     : null;
 
   return {

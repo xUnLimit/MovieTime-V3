@@ -1,13 +1,8 @@
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import { assertRpcStringId } from '@/lib/utils/safety';
 
-import { supabase } from './client';
 import { withIdempotencyKey } from './idempotency';
-
-type RpcResult = {
-  data: unknown;
-  error: { message: string } | null;
-};
+import { typedRpcClient, type RpcResult } from './rpc-client';
 
 type CreateServicioPaymentRpcClient = {
   rpc: (fn: 'create_servicio_payment', args: CreateServicioPaymentPayload) => Promise<RpcResult>;
@@ -58,8 +53,8 @@ export type CreateVentaPaymentPayload = {
   p_idempotency_key?: string | null;
 };
 
-const servicioPaymentRpcClient = supabase as unknown as CreateServicioPaymentRpcClient;
-const ventaPaymentRpcClient = supabase as unknown as CreateVentaPaymentRpcClient;
+const servicioPaymentRpcClient = typedRpcClient<CreateServicioPaymentRpcClient>();
+const ventaPaymentRpcClient = typedRpcClient<CreateVentaPaymentRpcClient>();
 
 export async function createServicioPaymentRpc(
   payload: CreateServicioPaymentPayload

@@ -3,17 +3,12 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
-import type { MetodoPago } from "@/types";
+import { queryMetodosPagoTercerosRead } from "@/lib/supabase/domain-read-adapters";
 
 export function useMetodosPagoTerceros(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.metodosPago.terceros(),
-    queryFn: () =>
-      queryMetodosPago<MetodoPago>([
-        { field: "asociadoA", operator: "==", value: "tercero" },
-        { field: "activo", operator: "==", value: true },
-      ]),
+    queryFn: () => queryMetodosPagoTercerosRead({ soloActivos: true }),
     enabled: options.enabled,
   });
 }

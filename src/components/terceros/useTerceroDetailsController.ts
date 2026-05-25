@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { useVentasTercero } from "@/hooks/use-ventas-tercero";
 import { queryKeys } from "@/lib/query-keys";
-import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { fetchServiciosByIdsRead } from "@/lib/supabase/domain-read-adapters";
 import { useServiciosStore } from "@/store/serviciosStore";
 import { useVentasStore } from "@/store/ventasStore";
 import type { Tercero } from "@/types";
@@ -27,17 +27,12 @@ async function fetchServiciosCredentialsByIds(
   }
 
   const allServicios = await Promise.all(
-    chunks.map((chunk) =>
-      fetchServiciosByFiltersUseCase<Record<string, unknown>>([
-        { field: "__name__", operator: "in", value: chunk },
-      ]),
-    ),
+    chunks.map((chunk) => fetchServiciosByIdsRead(chunk)),
   );
 
   return allServicios.flat().reduce<Record<string, TerceroServicioCredential>>(
     (acc, servicio) => {
-      const servicioId = servicio.id as string;
-      acc[servicioId] = {
+      acc[servicio.id] = {
         correo: (servicio.correo as string) || "—",
         contrasena: (servicio.contrasena as string) || "—",
         nombre: (servicio.nombre as string) || "Servicio",

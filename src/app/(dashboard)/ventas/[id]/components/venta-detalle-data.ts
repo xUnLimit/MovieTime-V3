@@ -1,9 +1,11 @@
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
-import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
-import { getCategoriaUseCase } from '@/lib/use-cases/categorias-use-cases';
-import { getServicioUseCase } from '@/lib/use-cases/servicios/servicios-query-use-cases';
-import { getVentaUseCase, timestampToDate } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import {
+  getCategoriaPlanesRead,
+  getServicioContrasenaRead,
+  getVentaDetalleRead,
+  queryMetodosPagoTercerosRead,
+} from '@/lib/supabase/domain-read-adapters';
 import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
 import type { MetodoPago, PagoVenta, VentaDoc, VentaPago } from '@/types';
 import type { Plan } from '@/types/categorias';
@@ -26,49 +28,18 @@ export function getEstadoDetalle(venta: VentaDoc | null) {
   return { esCortada, estadoBadgeClass, estadoLabel };
 }
 
-function toVentaDetalleBase(doc: Record<string, unknown>): VentaDoc {
-  return {
-    id: doc.id as string,
-    clienteId: (doc.clienteId as string) || '',
-    clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-    categoriaId: (doc.categoriaId as string) || '',
-    categoriaNombre: (doc.categoriaNombre as string) || undefined,
-    servicioId: (doc.servicioId as string) || '',
-    servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-    servicioCorreo: (doc.servicioCorreo as string) || '',
-    clienteTelefono: (doc.clienteTelefono as string) || undefined,
-    perfilNumero: (doc.perfilNumero as number | null | undefined) ?? null,
-    perfilNombre: (doc.perfilNombre as string) || '',
-    codigo: (doc.codigo as string) || '',
-    notas: (doc.notas as string) || '',
-    estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
-    cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
-    motivoCorte: (doc.motivoCorte as string | null | undefined) ?? null,
-    createdAt: doc.createdAt ? timestampToDate(doc.createdAt) : undefined,
-    fechaInicio: (doc.fechaInicio as Date) || new Date(),
-    fechaFin: (doc.fechaFin as Date) || new Date(),
-    cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
-    planId: (doc.planId as string) || undefined,
-    planNombre: (doc.planNombre as string) || undefined,
-    planTipoNombre: (doc.planTipoNombre as string) || undefined,
-  };
-}
-
 export async function fetchVentaDetalleQuery(id: string): Promise<VentaDetalleQueryData> {
   if (!id) return { venta: null, servicioContrasena: '' };
 
-  const doc = await getVentaUseCase<Record<string, unknown>>(id);
-  if (!doc) return { venta: null, servicioContrasena: '' };
+  const venta = await getVentaDetalleRead(id);
+  if (!venta) return { venta: null, servicioContrasena: '' };
 
-  const ventaConDatos = await getVentaConUltimoPago(toVentaDetalleBase(doc));
+  const ventaConDatos = await getVentaConUltimoPago(venta);
   let servicioContrasena = '';
 
   if (ventaConDatos.servicioId) {
     try {
-      const servicioDoc = await getServicioUseCase<Record<string, unknown>>(ventaConDatos.servicioId);
-      if (servicioDoc?.contrasena) {
-        servicioContrasena = servicioDoc.contrasena as string;
-      }
+      servicioContrasena = await getServicioContrasenaRead(ventaConDatos.servicioId);
     } catch (error) {
       console.error('Error cargando contrasena del servicio:', error);
     }
@@ -78,18 +49,13 @@ export async function fetchVentaDetalleQuery(id: string): Promise<VentaDetalleQu
 }
 
 export async function fetchMetodosPagoTercerosWithPendingQuery(): Promise<MetodoPago[]> {
-  const methods = await queryMetodosPago<MetodoPago>([
-    { field: 'asociadoA', operator: '==', value: 'tercero' },
-  ]);
+  const methods = await queryMetodosPagoTercerosRead();
 
   return withPendingTerceroPaymentMethod(Array.isArray(methods) ? methods : []);
 }
 
 export async function fetchCategoriaPlanesQuery(categoriaId: string): Promise<Plan[]> {
-  const categoriaDoc = await getCategoriaUseCase<Record<string, unknown>>(categoriaId);
-  return categoriaDoc && Array.isArray(categoriaDoc.planes)
-    ? (categoriaDoc.planes as Plan[])
-    : [];
+  return getCategoriaPlanesRead(categoriaId);
 }
 
 export function buildVentaPaymentRows({

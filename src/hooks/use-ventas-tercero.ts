@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { subscribeToVentasTerceroReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
 import { fetchVentasByClienteUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
@@ -100,23 +100,7 @@ export function useVentasTercero(usuarioId: string) {
   useEffect(() => {
     if (!queryEnabled) return;
 
-    const invalidate = () => {
-      void queryClient.invalidateQueries({ queryKey });
-    };
-
-    const unsubscribeVentaCreated = storeEventBus.on('VENTA_CREATED', invalidate);
-    const unsubscribeVentaUpdated = storeEventBus.on('VENTA_UPDATED', invalidate);
-    const unsubscribeVentaDeleted = storeEventBus.on('VENTA_DELETED', invalidate);
-    const unsubscribeServicioUpdated = storeEventBus.on('SERVICIO_UPDATED', invalidate);
-    const unsubscribeServiciosInvalidated = storeEventBus.on('SERVICIOS_INVALIDATED', invalidate);
-
-    return () => {
-      unsubscribeVentaCreated();
-      unsubscribeVentaUpdated();
-      unsubscribeVentaDeleted();
-      unsubscribeServicioUpdated();
-      unsubscribeServiciosInvalidated();
-    };
+    return subscribeToVentasTerceroReactions(queryClient, queryKey);
   }, [queryClient, queryEnabled, queryKey]);
 
   const deleteVenta = useCallback(async (ventaId: string, servicioId?: string, perfilNumero?: number | null) => {

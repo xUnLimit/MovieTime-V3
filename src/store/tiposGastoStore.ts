@@ -11,8 +11,7 @@ import {
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useGastosStore } from '@/store/gastosStore';
+import { afterTipoGastoUpdated } from '@/lib/store-reactions/catalogos-mutation-reactions';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { TipoGasto } from '@/types';
 
@@ -143,22 +142,7 @@ export const useTiposGastoStore = create<TiposGastoState>()(
 
         await updateTipoGasto(id, finalUpdates);
 
-        if (finalUpdates.nombre && finalUpdates.nombre !== tipoActual.nombre) {
-          safeAsyncSideEffect(Promise.resolve()
-            .then(() => {
-              useGastosStore.setState((state) => ({
-                gastos: state.gastos.map((gasto) =>
-                  gasto.tipoGastoId === id
-                    ? { ...gasto, tipoGastoNombre: finalUpdates.nombre!, updatedAt: new Date() }
-                    : gasto
-                ),
-              }));
-            }), {
-              operation: 'syncTipoGastoNombreLocal',
-              entity: 'tipo_gasto',
-              entityId: id,
-            });
-        }
+        await afterTipoGastoUpdated(id, tipoActual, finalUpdates);
 
         set((state) => {
           const tiposGasto = state.tiposGasto.map((tipo) =>

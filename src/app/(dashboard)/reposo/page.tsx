@@ -7,11 +7,11 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { queryKeys } from "@/lib/query-keys";
-import { queryNotifications } from "@/lib/supabase/notifications-repository";
-import { renewServicioUseCase } from "@/lib/use-cases/servicios/servicios-payment-use-cases";
-import { useNotificacionesStore } from "@/store/notificacionesStore";
-import { useServiciosStore } from "@/store/serviciosStore";
-import type { Servicio } from "@/types/servicios";
+import {
+  activateAndRenewReposoServicioUseCase,
+  activateReposoServicioUseCase,
+  deleteReposoServicioUseCase,
+} from "@/lib/use-cases/notificaciones/notificaciones-reposo-use-cases";
 import { toast } from "sonner";
 import {
   fetchReposoServicesQuery,
@@ -29,8 +29,6 @@ import {
 
 function ReposoPageContent() {
   const queryClient = useQueryClient();
-  const { updateServicio, deleteServicio } = useServiciosStore();
-  const deleteNotificacion = useNotificacionesStore((state) => state.deleteNotificacion);
 
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("all");
@@ -65,46 +63,13 @@ function ReposoPageContent() {
     [serviciosReposo, search, estadoFilter],
   );
 
-  const limpiarNotificacionesReposo = async (servicioId: string) => {
-    try {
-      const notifs = await queryNotifications<{ id: string }>([
-        { field: "entidad", operator: "==", value: "reposo" },
-        { field: "servicioId", operator: "==", value: servicioId },
-      ]);
-      await Promise.all(
-        notifs.map((n) => deleteNotificacion(n.id)),
-      );
-      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
-    } catch {
-      // Best-effort cleanup
-    }
-  };
-
-  const invalidateReposoDependencies = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
-    ]);
-  };
-
   const handleActivar = async () => {
     if (!selectedServicio) return;
     setIsActivating(true);
     try {
-      await updateServicio(selectedServicio.id, {
-        ...selectedServicio,
-        activo: true,
-        enReposo: false,
-        diasReposo: undefined,
-        fechaInicioReposo: undefined,
-        fechaFinReposo: undefined,
-      });
-      await Promise.all([
-        invalidateReposoDependencies(),
-        limpiarNotificacionesReposo(selectedServicio.id),
-      ]);
-      toast.success("Servicio activado", {
-        description: `${selectedServicio.nombre} ha sido activado exitosamente.`,
+      await activateReposoServicioUseCase({
+        queryClient,
+        servicio: selectedServicio,
       });
       setActivarDialogOpen(false);
       setSelectedServicio(null);
@@ -122,38 +87,10 @@ function ReposoPageContent() {
   ) => {
     if (!selectedServicio) return;
     try {
-      const notaPrincipal = pagoData.notas?.trim() ?? '';
-
-      await updateServicio(selectedServicio.id, {
-        ...selectedServicio,
-        activo: true,
-        enReposo: false,
-        diasReposo: undefined,
-        fechaInicioReposo: undefined,
-        fechaFinReposo: undefined,
-        cicloPago: pagoData.periodoRenovacion as Servicio["cicloPago"],
-        fechaInicio: pagoData.fechaInicio,
-        fechaVencimiento: pagoData.fechaVencimiento,
-        metodoPagoId: pagoData.metodoPagoId,
-        metodoPagoNombre: pagoData.metodoPagoNombre,
-        moneda: pagoData.moneda,
-        costoServicio: pagoData.costo,
-        notas: notaPrincipal,
-      });
-
-      await renewServicioUseCase(selectedServicio, {
-        ...pagoData,
-        notas: notaPrincipal,
-      }, {
-        numeroRenovacion: (selectedServicio.renovaciones ?? 0) + 1,
-      });
-
-      await Promise.all([
-        invalidateReposoDependencies(),
-        limpiarNotificacionesReposo(selectedServicio.id),
-      ]);
-      toast.success("Servicio activado y renovado", {
-        description: `${selectedServicio.nombre} ha sido activado y renovado.`,
+      await activateAndRenewReposoServicioUseCase({
+        pagoData,
+        queryClient,
+        servicio: selectedServicio,
       });
       setRenovarDialogOpen(false);
       setSelectedServicio(null);
@@ -167,14 +104,11 @@ function ReposoPageContent() {
   const handleConfirmDelete = async () => {
     if (!selectedServicio) return;
     try {
-      await deleteServicio(selectedServicio.id, deletePayments);
-      await limpiarNotificacionesReposo(selectedServicio.id);
-      toast.success("Servicio eliminado", {
-        description: deletePayments
-          ? "El servicio y todos sus registros de pago han sido eliminados."
-          : "El servicio fue eliminado. Los registros de pago se conservaron.",
+      await deleteReposoServicioUseCase({
+        deletePayments,
+        queryClient,
+        servicio: selectedServicio,
       });
-      await invalidateReposoDependencies();
       setDeleteDialogOpen(false);
       setSelectedServicio(null);
     } catch (error) {

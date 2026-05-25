@@ -13,7 +13,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { subscribeToCategoriaListReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
 
 function CategoriasPageContent() {
@@ -22,14 +22,7 @@ function CategoriasPageContent() {
   const [activeTab, setActiveTab] = useState('todos');
 
   useEffect(() => {
-    const refreshCategorias = () => {
-      void refetchCategorias();
-      void queryClient.invalidateQueries({ queryKey: queryKeys.categorias.counts() });
-    };
-
-    const unsubscribe = storeEventBus.on('CATEGORIA_DELETED', refreshCategorias);
-
-    return unsubscribe;
+    return subscribeToCategoriaListReactions(queryClient, refetchCategorias);
   }, [queryClient, refetchCategorias]);
 
   const handleCategoriaDeleted = async () => {

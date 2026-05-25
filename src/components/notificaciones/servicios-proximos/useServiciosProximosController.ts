@@ -4,20 +4,13 @@ import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
-import {
-  invalidateDashboardCache,
-  refreshCategoriasCache,
-} from '@/lib/commands/client-cache';
 import { queryKeys } from '@/lib/query-keys';
-import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
+import { inactivateServicioFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
 import {
-  renewServicioUseCase,
-} from '@/lib/use-cases/servicios/servicios-payment-use-cases';
-import { getServicioUseCase } from '@/lib/use-cases/servicios/servicios-query-use-cases';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { useActivityLogStore } from '@/store/activityLogStore';
+  confirmServicioRenewalFromNotificationUseCase,
+  loadServicioRenewalOptionsUseCase,
+} from '@/lib/use-cases/notificaciones/notificaciones-renewal-use-cases';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useServiciosStore } from '@/store/serviciosStore';
 import type { MetodoPago, Servicio } from '@/types';
 import {
   getPaginasNotificacionesServicio,
@@ -35,7 +28,6 @@ export function useServiciosProximosController({
   const {
     toggleLeida,
     toggleResaltada,
-    deleteNotificacionesPorServicio,
   } = useNotificacionesStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -127,12 +119,11 @@ export function useServiciosProximosController({
     if (!notifParaAcciones) return;
 
     try {
-      await useServiciosStore.getState().updateServicio(notifParaAcciones.servicioId, { activo: false });
-      await deleteNotificacionesPorServicio(notifParaAcciones.servicioId);
-      toast.success('Servicio inactivado', {
-        description: `${notifParaAcciones.servicioNombre} ha sido marcado como inactivo.`,
+      await inactivateServicioFromNotificationUseCase({
+        refreshNotificationCaches,
+        servicioId: notifParaAcciones.servicioId,
+        servicioNombre: notifParaAcciones.servicioNombre,
       });
-      await refreshNotificationCaches();
     } catch {
       toast.error('Error al inactivar servicio', {
         description: 'No se pudo inactivar el servicio. Intenta nuevamente.',
@@ -175,29 +166,18 @@ export function useServiciosProximosController({
   const handleRenovar = async (notif: NotificacionServicioConId) => {
     setIsLoadingRenovar(true);
     try {
-      const [servicioData, metodos] = await Promise.all([
-        getServicioUseCase<Servicio>(notif.servicioId),
-        metodosPagoServicio.length > 0
-          ? Promise.resolve(metodosPagoServicio)
-          : queryMetodosPago<MetodoPago>([
-              { field: 'asociadoA', operator: '==', value: 'servicio' },
-            ]),
-      ]);
+      const renewalOptions = await loadServicioRenewalOptionsUseCase(
+        notif,
+        metodosPagoServicio,
+      );
 
-      if (!servicioData) {
-        toast.error('Servicio no encontrado', {
-          description: 'No se pudo cargar el servicio para renovar.',
-        });
-        return;
-      }
-
-      setServicioParaRenovar(servicioData);
-      setMetodosPagoServicio(metodos);
+      setServicioParaRenovar(renewalOptions.servicio);
+      setMetodosPagoServicio(renewalOptions.metodosPagoServicio);
       setNotifParaRenovar(notif);
       setRenovarDialogOpen(true);
-    } catch {
+    } catch (error) {
       toast.error('Error al cargar datos', {
-        description: 'No se pudieron cargar los datos del servicio.',
+        description: error instanceof Error ? error.message : 'No se pudieron cargar los datos del servicio.',
       });
     } finally {
       setIsLoadingRenovar(false);
@@ -207,21 +187,13 @@ export function useServiciosProximosController({
   const handleConfirmRenovacion = async (data: EnrichedPagoDialogFormData) => {
     if (!servicioParaRenovar || !notifParaRenovar) return;
 
-    const servicioId = servicioParaRenovar.id;
-
     try {
-      const metodoPagoSeleccionado = metodosPagoServicio.find((metodo) => metodo.id === data.metodoPagoId);
-      await renewServicioUseCase(servicioParaRenovar, data, {
-        metodoPago: metodoPagoSeleccionado,
-        logContext: getStoreLogContext(),
-        recordActivityLog: useActivityLogStore.getState().addLog,
-        logPrefix: 'Servicio renovado desde notificaciones',
+      await confirmServicioRenewalFromNotificationUseCase({
+        data,
+        metodosPagoServicio,
+        refreshNotificationCaches,
+        servicio: servicioParaRenovar,
       });
-
-      invalidateDashboardCache({ entity: 'servicio', entityId: servicioId });
-      await deleteNotificacionesPorServicio(servicioId);
-      await refreshNotificationCaches();
-      refreshCategoriasCache({ entity: 'servicio', entityId: servicioId });
 
       toast.success('Renovación registrada', {
         description: 'El nuevo período de pago se ha registrado correctamente.',

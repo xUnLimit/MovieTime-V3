@@ -7,13 +7,9 @@ import { toast } from 'sonner';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
-import {
-  invalidateDashboardCache,
-} from '@/lib/commands/client-cache';
 import { queryKeys } from '@/lib/query-keys';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
+import { cutVentaFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, TemplateMensaje } from '@/types';
 import type { Plan } from '@/types/categorias';
 
@@ -34,7 +30,6 @@ export function useVentasProximasController() {
   const {
     toggleLeida,
     toggleResaltada,
-    deleteNotificacionesPorVenta,
   } = useNotificacionesStore();
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
@@ -42,8 +37,6 @@ export function useVentasProximasController() {
       templates.find((template) => template.tipo === tipo && template.activo),
     [templates],
   );
-  const { fetchMetodosPagoTerceros } = useMetodosPagoStore();
-  const { updateVenta, fetchVentas } = useVentasStore();
   const {
     estadoFilter,
     handleEstadoFilterChange,
@@ -153,10 +146,7 @@ export function useVentasProximasController() {
     setCategoriaPlanes([]);
     setServicioTipoSeleccionado(undefined);
     try {
-      const renewalOptions = await loadVentaRenewalOptions({
-        fetchMetodosPagoTerceros,
-        notif,
-      });
+      const renewalOptions = await loadVentaRenewalOptions(notif);
       setCategoriaPlanes(renewalOptions.categoriaPlanes);
       setServicioTipoSeleccionado(renewalOptions.servicioTipoSeleccionado);
       setMetodosPagoTerceros(renewalOptions.metodosPagoTerceros);
@@ -173,8 +163,6 @@ export function useVentasProximasController() {
     try {
       await confirmVentaRenewal({
         data,
-        deleteNotificacionesPorVenta,
-        fetchVentas,
         notif: notifSeleccionada,
         refreshNotificationCaches,
       });
@@ -220,22 +208,11 @@ export function useVentasProximasController() {
     if (!notifSeleccionada) return;
 
     try {
-      await updateVenta(notifSeleccionada.ventaId, {
-        estado: 'inactivo',
-        cortadaAt: new Date(),
+      await cutVentaFromNotificationUseCase({
         motivoCorte,
+        refreshNotificationCaches,
+        ventaId: notifSeleccionada.ventaId,
       });
-
-      await deleteNotificacionesPorVenta(notifSeleccionada.ventaId);
-      await refreshNotificationCaches();
-
-      invalidateDashboardCache({
-        entity: 'venta',
-        entityId: notifSeleccionada.ventaId,
-      });
-
-      toast.success('Venta cortada exitosamente');
-      void fetchVentas(true);
     } catch (error) {
       console.error('Error cortando venta:', error);
       toast.error('Error al cortar la venta');

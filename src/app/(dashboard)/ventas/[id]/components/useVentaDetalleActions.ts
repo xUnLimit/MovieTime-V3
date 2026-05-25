@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
 import { invalidateDashboardCache } from '@/lib/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   createVentaRefundUseCase,
 } from '@/lib/use-cases/ventas/ventas-refund-use-cases';
@@ -15,8 +16,6 @@ import {
   renewVentaUseCase,
   updateVentaPagoUseCase,
 } from '@/lib/use-cases/ventas/ventas-payment-use-cases';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { useActivityLogStore } from '@/store/activityLogStore';
 import { useServiciosStore } from '@/store/serviciosStore';
 import { useVentasStore } from '@/store/ventasStore';
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
@@ -104,7 +103,7 @@ export function useVentaDetalleActions({
         ...data,
         metodoPagoNombre: metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
         moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
-      });
+      }, getActivityLogOptions());
 
       if (renovacion.syncPaymentMethodFailed) {
         toast.warning('Venta renovada con advertencia', {
@@ -165,10 +164,7 @@ export function useVentaDetalleActions({
           cortarServicio: data.cortarServicio,
           motivoCorte: data.motivoCorte,
         },
-        {
-          logContext: getStoreLogContext(),
-          recordActivityLog: useActivityLogStore.getState().addLog,
-        },
+        getActivityLogOptions(),
       );
 
       if (result.serviceProfileDelta) {

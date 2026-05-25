@@ -1,14 +1,13 @@
 ﻿import { createGasto, ENTITIES, getGastoById, getGastos, getTipoGastoById, logCacheHit, removeGasto, updateGasto } from '@/lib/supabase/catalogos-repository';
-import { format } from 'date-fns';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { Gasto, TipoGasto } from '@/types';
 
-import { useActivityLogStore } from '@/store/activityLogStore';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { invalidateDashboardCache as invalidateDashboardCacheCommand } from '@/lib/commands/client-cache';
+import {
+  afterGastoCreated,
+  afterGastoDeleted,
+  afterGastoUpdated,
+} from '@/lib/store-reactions/gastos-mutation-reactions';
 import { CACHE_TTL_MS } from '@/lib/constants';
 
 const CACHE_TIMEOUT = CACHE_TTL_MS;
@@ -26,10 +25,6 @@ async function getTipoGastoActivo(tipoGastoId: string): Promise<TipoGasto> {
   if (!tipoGasto) throw new Error('Tipo de gasto no encontrado');
   if (!tipoGasto.activo) throw new Error('El tipo de gasto seleccionado está inactivo');
   return tipoGasto;
-}
-
-function invalidateDashboardCache() {
-  invalidateDashboardCacheCommand({ entity: 'gasto' });
 }
 
 async function logBestEffortFailure(promise: Promise<unknown>, operation: string) {
@@ -108,16 +103,7 @@ export const useGastosStore = create<GastosState>()(
             gastos: sortGastos([...state.gastos, newGasto]),
           }));
 
-          invalidateDashboardCache();
-
-          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getStoreLogContext(),
-            accion: 'creacion',
-            entidad: 'gasto',
-            entidadId: gastoId,
-            entidadNombre: tipoGasto.nombre,
-            detalles: `Gasto registrado: ${tipoGasto.nombre} - $${newGasto.monto.toFixed(2)} USD (${format(newGasto.fecha, 'dd/MM/yyyy')})`,
-          }), { operation: 'addActivityLog', entity: 'gasto', entityId: gastoId });
+          await afterGastoCreated(newGasto);
         } catch (error) {
           if (gastoId) {
             await logBestEffortFailure(removeGasto(gastoId), 'rollback removeGasto');
@@ -166,24 +152,12 @@ export const useGastosStore = create<GastosState>()(
             ),
           }));
 
-          if (requiereRecalculoDashboard) {
-            invalidateDashboardCache();
-          }
-
-          const cambios = detectarCambios(
-            'gasto',
-            gastoActual as unknown as Record<string, unknown>,
-            gastoActualizado as unknown as Record<string, unknown>
-          );
-          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getStoreLogContext(),
-            accion: 'actualizacion',
-            entidad: 'gasto',
-            entidadId: id,
-            entidadNombre: gastoActualizado.tipoGastoNombre,
-            detalles: `Gasto actualizado: ${gastoActualizado.tipoGastoNombre}`,
-            cambios: cambios.length > 0 ? cambios : undefined,
-          }), { operation: 'addActivityLog', entity: 'gasto', entityId: id });
+          await afterGastoUpdated({
+            gastoId: id,
+            gastoAnterior: gastoActual,
+            gastoActualizado,
+            shouldInvalidateDashboard: requiereRecalculoDashboard,
+          });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar gasto';
           set({ error: errorMessage });
@@ -203,16 +177,7 @@ export const useGastosStore = create<GastosState>()(
             gastos: state.gastos.filter((item) => item.id !== id),
           }));
 
-          invalidateDashboardCache();
-
-          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getStoreLogContext(),
-            accion: 'eliminacion',
-            entidad: 'gasto',
-            entidadId: id,
-            entidadNombre: gasto.tipoGastoNombre,
-            detalles: `Gasto eliminado: ${gasto.tipoGastoNombre} - $${gasto.monto.toFixed(2)} USD`,
-          }), { operation: 'addActivityLog', entity: 'gasto', entityId: id });
+          await afterGastoDeleted(gasto);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar gasto';
           set({ error: errorMessage });

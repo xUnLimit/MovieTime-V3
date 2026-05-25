@@ -4,7 +4,10 @@ import { useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import {
+  invalidateVentasPorTercerosCache as invalidateVentasPorTercerosCacheReaction,
+  subscribeToVentasPorTercerosReactions,
+} from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
 import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { CACHE_TTL_MS } from '@/lib/constants';
@@ -20,14 +23,12 @@ export interface VentasTerceroStats {
   montoSinConsumir: number;
 }
 
-const invalidationListeners = new Set<() => void>();
-
 /**
  * Invalida las queries activas de ventas por terceros.
  * Se mantiene como interfaz pública para callers existentes durante la migración a React Query.
  */
 export function invalidateVentasPorTercerosCache() {
-  invalidationListeners.forEach((listener) => listener());
+  invalidateVentasPorTercerosCacheReaction();
 }
 
 async function calculateVentasPorTerceros(
@@ -94,18 +95,7 @@ export function useVentasPorTerceros(clienteIds: string[], { enabled = true } = 
       void queryClient.invalidateQueries({ queryKey });
     };
 
-    invalidationListeners.add(invalidate);
-
-    const unsubscribeCreated = storeEventBus.on('VENTA_CREATED', invalidate);
-    const unsubscribeUpdated = storeEventBus.on('VENTA_UPDATED', invalidate);
-    const unsubscribeDeleted = storeEventBus.on('VENTA_DELETED', invalidate);
-
-    return () => {
-      invalidationListeners.delete(invalidate);
-      unsubscribeCreated();
-      unsubscribeUpdated();
-      unsubscribeDeleted();
-    };
+    return subscribeToVentasPorTercerosReactions(invalidate);
   }, [queryClient, queryEnabled, queryKey]);
 
   return { stats, isLoading: isLoading || isFetching };

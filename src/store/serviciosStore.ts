@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
-import { storeEventBus } from '@/lib/events/store-event-bus';
 import { ENTITIES, getServicios, logCacheHit } from '@/lib/supabase/servicios-repository';
 import { countVentasActivasByServicioUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import {
@@ -11,17 +10,15 @@ import {
   updateServicioUseCase,
 } from '@/lib/use-cases/servicios/servicios-write-use-cases';
 import { fetchServiciosCountsUseCase } from '@/lib/use-cases/servicios/servicios-query-use-cases';
-import { syncServicioForecastReadModels } from '@/lib/forecasting';
+import {
+  afterServicioCreated,
+  afterServicioDeleted,
+  afterServicioUpdated,
+} from '@/lib/store-reactions/servicios-mutation-reactions';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { Servicio } from '@/types/servicios';
-
-function dispatchServicioDeleted(servicioId: string) {
-  storeEventBus.emit({ type: 'SERVICIO_DELETED', servicioId });
-}
 
 interface ServiciosState {
   servicios: Servicio[];
@@ -112,8 +109,7 @@ export const useServiciosStore = create<ServiciosState>()(
             error: null,
           }));
           void pronostico;
-          syncServicioForecastReadModels(servicio.id);
-          storeEventBus.emit({ type: 'SERVICIO_CREATED', servicioId: servicio.id });
+          await afterServicioCreated(servicio.id);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear servicio';
           set({ error: errorMessage });
@@ -139,8 +135,7 @@ export const useServiciosStore = create<ServiciosState>()(
           }));
 
           void pronostico;
-          syncServicioForecastReadModels(id);
-          storeEventBus.emit({ type: 'SERVICIO_UPDATED', servicioId: id });
+          await afterServicioUpdated(id);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar servicio';
           set({ error: errorMessage });
@@ -162,19 +157,7 @@ export const useServiciosStore = create<ServiciosState>()(
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          safeAsyncSideEffect(
-            Promise.resolve().then(() =>
-              useNotificacionesStore.getState().deleteNotificacionesPorServicio(id)
-            ),
-            {
-              operation: 'deleteNotificacionesPorServicio',
-              entity: 'servicio',
-              entityId: id,
-            }
-          );
-
-          syncServicioForecastReadModels(id);
-          dispatchServicioDeleted(id);
+          await afterServicioDeleted(id);
           set({ error: null });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar servicio';

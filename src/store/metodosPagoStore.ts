@@ -2,12 +2,18 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { useActivityLogStore } from '@/store/activityLogStore';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { syncMetodoPagoDependencias } from '@/lib/services/metodoPagoSyncService';
-import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
+void queryMetodosPago;
+
+import {
+  afterMetodoPagoCreated,
+  afterMetodoPagoDeleted,
+  afterMetodoPagoUpdated,
+} from '@/lib/store-reactions/catalogos-mutation-reactions';
 import { CACHE_TTL_MS } from '@/lib/constants';
+import {
+  queryMetodosPagoServiciosRead,
+  queryMetodosPagoTercerosRead,
+} from '@/lib/supabase/domain-read-adapters';
 import type { MetodoPago } from '@/types';
 
 interface MetodosPagoState {
@@ -71,10 +77,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
       fetchMetodosPagoTerceros: async () => {
         try {
-          const metodos = await queryMetodosPago<MetodoPago>([
-            { field: 'asociadoA', operator: '==', value: 'tercero' },
-            { field: 'activo', operator: '==', value: true }
-          ]);
+          const metodos = await queryMetodosPagoTercerosRead({ soloActivos: true });
           return metodos;
         } catch (error) {
           console.error('Error fetching metodos pago terceros:', error);
@@ -84,10 +87,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
 
       fetchMetodosPagoServicios: async () => {
         try {
-          const metodos = await queryMetodosPago<MetodoPago>([
-            { field: 'asociadoA', operator: '==', value: 'servicio' },
-            { field: 'activo', operator: '==', value: true }
-          ]);
+          const metodos = await queryMetodosPagoServiciosRead({ soloActivos: true });
           return metodos;
         } catch (error) {
           console.error('Error fetching metodos pago servicios:', error);
@@ -124,15 +124,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             metodosPago: [...state.metodosPago, newMetodo]
           }));
 
-          // Registrar en log de actividad
-          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getStoreLogContext(),
-            accion: 'creacion',
-            entidad: 'metodo_pago',
-            entidadId: id,
-            entidadNombre: metodoData.nombre,
-            detalles: `Método de pago creado: "${metodoData.nombre}"`,
-          }), { operation: 'addActivityLog', entity: 'metodo_pago', entityId: id });
+          await afterMetodoPagoCreated(newMetodo);
         } catch (error) {
           console.error('Error creating metodo pago:', error);
           throw error;
@@ -143,27 +135,9 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
         try {
           const oldMetodo = get().metodosPago.find(m => m.id === id);
           const cambioAsociado = oldMetodo && updates.asociadoA && oldMetodo.asociadoA !== updates.asociadoA;
-          const cambioNombre = oldMetodo && updates.nombre !== undefined && oldMetodo.nombre !== updates.nombre;
-          const cambioMoneda = oldMetodo && updates.moneda !== undefined && oldMetodo.moneda !== updates.moneda;
 
           await updateMetodoPago(id, updates);
-
-          // Si cambió el nombre o la moneda, sincronizar en cascada todas las entidades que usan este método
-          if ((cambioNombre || cambioMoneda) && oldMetodo) {
-            await syncMetodoPagoDependencias({
-              id,
-              nombre: updates.nombre,
-              moneda: updates.moneda,
-              nombreAnterior: oldMetodo.nombre,
-              monedaAnterior: oldMetodo.moneda,
-            });
-          }
-
-          // Detectar cambios para el log
-          const cambios = oldMetodo ? detectarCambios('metodo_pago', oldMetodo, {
-            ...oldMetodo,
-            ...updates
-          }) : [];
+          await afterMetodoPagoUpdated({ metodoId: id, oldMetodo, updates });
 
           set((state) => {
             const updatedMetodos = state.metodosPago.map((metodo) =>
@@ -193,16 +167,6 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             };
           });
 
-          // Registrar en log de actividad con cambios
-          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getStoreLogContext(),
-            accion: 'actualizacion',
-            entidad: 'metodo_pago',
-            entidadId: id,
-            entidadNombre: oldMetodo?.nombre ?? id,
-            detalles: `Método de pago actualizado: "${oldMetodo?.nombre}"`,
-            cambios: cambios.length > 0 ? cambios : undefined,
-          }), { operation: 'addActivityLog', entity: 'metodo_pago', entityId: id });
         } catch (error) {
           console.error('Error updating metodo pago:', error);
           throw error;
@@ -240,15 +204,7 @@ export const useMetodosPagoStore = create<MetodosPagoState>()(
             metodosPago: state.metodosPago.filter((metodo) => metodo.id !== id)
           }));
 
-          // Registrar en log de actividad
-          safeAsyncSideEffect(useActivityLogStore.getState().addLog({
-            ...getStoreLogContext(),
-            accion: 'eliminacion',
-            entidad: 'metodo_pago',
-            entidadId: id,
-            entidadNombre: metodoEliminado?.nombre ?? id,
-            detalles: `Método de pago eliminado: "${metodoEliminado?.nombre}"`,
-          }), { operation: 'addActivityLog', entity: 'metodo_pago', entityId: id });
+          await afterMetodoPagoDeleted(id, metodoEliminado);
         } catch (error) {
           console.error('Error deleting metodo pago:', error);
           throw error;

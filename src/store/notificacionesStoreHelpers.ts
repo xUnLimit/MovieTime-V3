@@ -1,7 +1,5 @@
-import {
-  countNotificaciones,
-  queryNotifications,
-} from "@/lib/supabase/notifications-repository";
+import { countNotificaciones } from "@/lib/supabase/notifications-repository";
+import { queryNotificationsRead } from "@/lib/supabase/domain-read-adapters";
 import {
   getServicioNotifications,
   getVentaNotifications,
@@ -15,7 +13,7 @@ export async function getVentaNotificationsToDelete(
   const localNotifsToDelete = getVentaNotifications(notificaciones, ventaId);
   return localNotifsToDelete.length > 0
     ? localNotifsToDelete
-    : queryNotifications<NotificacionConId>([
+    : queryNotificationsRead([
         { field: "entidad", operator: "==", value: "venta" },
         { field: "ventaId", operator: "==", value: ventaId },
       ]);
@@ -28,7 +26,7 @@ export async function getServicioNotificationsToDelete(
   const localNotifsToDelete = getServicioNotifications(notificaciones, servicioId);
   return localNotifsToDelete.length > 0
     ? localNotifsToDelete
-    : queryNotifications<NotificacionConId>([
+    : queryNotificationsRead([
         { field: "entidad", operator: "==", value: "servicio" },
         { field: "servicioId", operator: "==", value: servicioId },
       ]);

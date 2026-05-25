@@ -2,6 +2,7 @@ import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useCategoriasStore } from '@/store/categoriasStore';
 import { getActiveQueryClient } from '@/lib/query-client-registry';
 import { queryKeys } from '@/lib/query-keys';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 
 type CacheContext = {
   entity?: string;
@@ -9,6 +10,7 @@ type CacheContext = {
 };
 
 export function invalidateDashboardCache(context: CacheContext = {}) {
+  storeEventBus.emit({ type: 'DASHBOARD_INVALIDATED' });
   safeAsyncSideEffect(Promise.resolve().then(() => {
     return getActiveQueryClient()?.invalidateQueries({ queryKey: queryKeys.dashboard.all });
   }), {

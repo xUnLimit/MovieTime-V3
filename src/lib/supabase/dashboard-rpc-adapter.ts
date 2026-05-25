@@ -1,6 +1,6 @@
 import type { Json } from '@/lib/supabase/database.types';
 
-import { supabase } from './client';
+import { typedRpcClient } from './rpc-client';
 
 type RpcError = { message: string } | null;
 
@@ -37,8 +37,8 @@ type DashboardJsonRpcClient = {
   ) => Promise<RpcResult<Json>>;
 };
 
-const dashboardStatsRpcClient = supabase as unknown as DashboardStatsRpcClient;
-const dashboardJsonRpcClient = supabase as unknown as DashboardJsonRpcClient;
+const dashboardStatsRpcClient = typedRpcClient<DashboardStatsRpcClient>();
+const dashboardJsonRpcClient = typedRpcClient<DashboardJsonRpcClient>();
 
 export async function getDashboardStatsLiveRpc(): Promise<DashboardStatsRpcRow | null> {
   const { data, error } = await dashboardStatsRpcClient

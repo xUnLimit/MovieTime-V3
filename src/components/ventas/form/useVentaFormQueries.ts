@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
+import { queryMetodosPagoTercerosRead } from "@/lib/supabase/domain-read-adapters";
 import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import { fetchVentasByFiltersUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import {
@@ -14,7 +14,7 @@ import {
   withPendingTerceroPaymentMethod,
 } from "@/lib/utils/terceroMetodoPago";
 import type { MetodoPagoTerceroOption } from "@/features/ventas/ventas-form-shared";
-import type { MetodoPago, Servicio, VentaDoc } from "@/types";
+import type { Servicio, VentaDoc } from "@/types";
 
 const PENDING_METODO_PAGO_TERCERO_OPTION: MetodoPagoTerceroOption = {
   id: PENDING_TERCERO_PAYMENT_ID,
@@ -63,11 +63,15 @@ export function useMetodosPagoTercerosOptions() {
   return useQuery({
     queryKey: queryKeys.metodosPago.tercerosOptions(),
     queryFn: async () => {
-      const metodos = await queryMetodosPago<MetodoPagoTerceroOption>([
-        { field: "asociadoA", operator: "==", value: "tercero" },
-      ]);
+      const metodos = await queryMetodosPagoTercerosRead();
+      const options = metodos.map((metodo): MetodoPagoTerceroOption => ({
+        id: metodo.id,
+        nombre: metodo.nombre,
+        asociadoA: metodo.asociadoA ?? "tercero",
+        moneda: metodo.moneda,
+      }));
 
-      return [PENDING_METODO_PAGO_TERCERO_OPTION, ...metodos];
+      return [PENDING_METODO_PAGO_TERCERO_OPTION, ...options];
     },
   });
 }
@@ -76,9 +80,7 @@ export function useMetodosPagoTercerosWithPending() {
   return useQuery({
     queryKey: queryKeys.metodosPago.tercerosWithPending(),
     queryFn: async () => {
-      const metodos = await queryMetodosPago<MetodoPago>([
-        { field: "asociadoA", operator: "==", value: "tercero" },
-      ]);
+      const metodos = await queryMetodosPagoTercerosRead();
 
       return withPendingTerceroPaymentMethod(metodos);
     },

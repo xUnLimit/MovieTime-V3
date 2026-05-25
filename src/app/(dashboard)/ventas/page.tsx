@@ -14,7 +14,7 @@ import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { subscribeToVentaListReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
 import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { useVentasStore } from '@/store/ventasStore';
@@ -72,15 +72,6 @@ function VentasPageContent() {
     includeTotalCount: true,
   });
 
-  // Recargar ventas si se actualizó el nombre de un cliente desde el módulo de terceros
-  useEffect(() => {
-    const unsubscribe = storeEventBus.on('TERCERO_NOMBRE_UPDATED', () => {
-      refresh();
-    });
-
-    return unsubscribe;
-  }, [refresh]);
-
   const tituloTab = useMemo(() => {
     switch (activeTab) {
       case 'activas':
@@ -117,22 +108,8 @@ function VentasPageContent() {
     }
   };
 
-  // Escuchar eventos de cambios en ventas desde otros módulos
   useEffect(() => {
-    const handleVentaChange = () => {
-      refresh();
-      void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
-    };
-
-    const unsubscribeCreated = storeEventBus.on('VENTA_CREATED', handleVentaChange);
-    const unsubscribeUpdated = storeEventBus.on('VENTA_UPDATED', handleVentaChange);
-    const unsubscribeDeleted = storeEventBus.on('VENTA_DELETED', handleVentaChange);
-
-    return () => {
-      unsubscribeCreated();
-      unsubscribeUpdated();
-      unsubscribeDeleted();
-    };
+    return subscribeToVentaListReactions(queryClient, refresh);
   }, [queryClient, refresh]);
 
   return (

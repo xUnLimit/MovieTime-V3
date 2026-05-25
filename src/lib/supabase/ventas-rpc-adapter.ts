@@ -2,13 +2,8 @@ import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import { assertRpcStringId } from '@/lib/utils/safety';
 import type { Database } from '@/lib/supabase/database.types';
 
-import { supabase } from './client';
 import { withIdempotencyKey } from './idempotency';
-
-type RpcResult = {
-  data: unknown;
-  error: { message: string } | null;
-};
+import { typedRpcClient, type RpcResult } from './rpc-client';
 
 type CreateVentaWithInitialPaymentRpcClient = {
   rpc: (
@@ -99,12 +94,12 @@ export type UpdateVentaPaymentAndPeriodPayload = {
   p_idempotency_key?: string | null;
 };
 
-const ventaInitialPaymentRpcClient = supabase as unknown as CreateVentaWithInitialPaymentRpcClient;
-const ventaRefundRpcClient = supabase as unknown as CreateVentaRefundRpcClient;
-const deleteVentaWithPaymentsRpcClient = supabase as unknown as DeleteVentaWithPaymentsRpcClient;
-const deleteVentaPaymentRpcClient = supabase as unknown as DeleteVentaPaymentRpcClient;
+const ventaInitialPaymentRpcClient = typedRpcClient<CreateVentaWithInitialPaymentRpcClient>();
+const ventaRefundRpcClient = typedRpcClient<CreateVentaRefundRpcClient>();
+const deleteVentaWithPaymentsRpcClient = typedRpcClient<DeleteVentaWithPaymentsRpcClient>();
+const deleteVentaPaymentRpcClient = typedRpcClient<DeleteVentaPaymentRpcClient>();
 const updateVentaPaymentAndPeriodRpcClient =
-  supabase as unknown as UpdateVentaPaymentAndPeriodRpcClient;
+  typedRpcClient<UpdateVentaPaymentAndPeriodRpcClient>();
 
 export async function createVentaWithInitialPaymentRpc(
   payload: CreateVentaWithInitialPaymentPayload

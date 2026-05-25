@@ -12,7 +12,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { subscribeToServicioCategoryListReactions } from '@/lib/events/cache-reactions';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { isUuid } from '@/lib/utils/safety';
 import { Servicio } from '@/types';
@@ -98,13 +98,8 @@ function ServiciosCategoriaPageContent() {
 
   const categoria = categoriaId ? categorias.find(c => c.id === categoriaId) : undefined;
 
-  // Escuchar cuando se elimina un servicio desde otra página
   useEffect(() => {
-    const unsubscribe = storeEventBus.on('SERVICIO_DELETED', () => {
-      refresh();
-    });
-
-    return unsubscribe;
+    return subscribeToServicioCategoryListReactions(refresh);
   }, [refresh]);
 
   const handleEdit = (id: string) => {

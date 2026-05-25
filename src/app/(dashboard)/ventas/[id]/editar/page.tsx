@@ -10,35 +10,16 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
 import { queryKeys } from '@/lib/query-keys';
-import { getVentaUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import { getVentaDetalleRead } from '@/lib/supabase/domain-read-adapters';
 import { getVentaConUltimoPago } from '@/lib/services/ventaSyncService';
 import { isUuid } from '@/lib/utils/safety';
-import type { VentaDoc } from '@/types';
 import { toast } from 'sonner';
 
 async function fetchVentaEditData(id: string): Promise<VentaEditData | null> {
-  const doc = await getVentaUseCase<Record<string, unknown>>(id);
-  if (!doc) return null;
+  const venta = await getVentaDetalleRead(id);
+  if (!venta) return null;
 
-  const ventaBase: VentaDoc = {
-    id: doc.id as string,
-    clienteId: (doc.clienteId as string) || '',
-    clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-    categoriaId: (doc.categoriaId as string) || '',
-    servicioId: (doc.servicioId as string) || '',
-    servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-    servicioCorreo: (doc.servicioCorreo as string) || '',
-    perfilNumero: (doc.perfilNumero as number | null | undefined) ?? null,
-    perfilNombre: (doc.perfilNombre as string) || '',
-    codigo: (doc.codigo as string) || '',
-    estado: (doc.estado as 'activo' | 'inactivo') || 'activo',
-    notas: (doc.notas as string) || '',
-    fechaInicio: (doc.fechaInicio as Date) || new Date(),
-    fechaFin: (doc.fechaFin as Date) || new Date(),
-    cicloPago: (doc.cicloPago as 'mensual' | 'trimestral' | 'semestral' | 'anual') || 'mensual',
-  };
-
-  const ventaConDatos = await getVentaConUltimoPago(ventaBase);
+  const ventaConDatos = await getVentaConUltimoPago(venta);
 
   return {
     ...ventaConDatos,

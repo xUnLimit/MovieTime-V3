@@ -1,7 +1,7 @@
 import { assertOnlineMutation } from '@/lib/pwa/mutation-guard';
 import type { Json } from '@/lib/supabase/database.types';
 
-import { supabase } from './client';
+import { typedRpcClient } from './rpc-client';
 
 type RpcResult<T> = {
   data: T | null;
@@ -23,9 +23,9 @@ type DeleteCategoriaRpcClient = {
   ) => Promise<RpcResult<undefined>>;
 };
 
-const categoriasRpcClient = supabase as unknown as CategoriasRpcClient;
-const categoriasCountsRpcClient = supabase as unknown as CategoriasCountsRpcClient;
-const deleteCategoriaRpcClient = supabase as unknown as DeleteCategoriaRpcClient;
+const categoriasRpcClient = typedRpcClient<CategoriasRpcClient>();
+const categoriasCountsRpcClient = typedRpcClient<CategoriasCountsRpcClient>();
+const deleteCategoriaRpcClient = typedRpcClient<DeleteCategoriaRpcClient>();
 
 export async function getCategoriasFullRpc(): Promise<Json | null> {
   const { data, error } = await categoriasRpcClient.rpc('get_categorias_full');

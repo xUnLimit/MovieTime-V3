@@ -2,29 +2,20 @@ import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 import { countVentas, ENTITIES, getVentas, logCacheHit } from '@/lib/supabase/ventas-repository';
-import { storeEventBus } from '@/lib/events/store-event-bus';
 import {
   createVentaUseCase,
   deleteVentaUseCase,
   updateVentaUseCase,
 } from '@/lib/use-cases/ventas/ventas-write-use-cases';
-import { syncVentaForecastReadModels } from '@/lib/forecasting';
+import {
+  afterVentaCreated,
+  afterVentaDeleted,
+  afterVentaUpdated,
+} from '@/lib/store-reactions/ventas-mutation-reactions';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { useActivityLogStore } from '@/store/activityLogStore';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useServiciosStore } from '@/store/serviciosStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
-
-function dispatchVentaEvent(
-  name: 'venta-created' | 'venta-updated' | 'venta-deleted',
-  ventaId: string
-) {
-  if (name === 'venta-created') storeEventBus.emit({ type: 'VENTA_CREATED', ventaId });
-  if (name === 'venta-updated') storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
-  if (name === 'venta-deleted') storeEventBus.emit({ type: 'VENTA_DELETED', ventaId });
-}
 
 interface VentasState {
   ventas: VentaDoc[];
@@ -106,8 +97,7 @@ export const useVentasStore = create<VentasState>()(
           }));
 
           void pronostico;
-          syncVentaForecastReadModels(venta.id);
-          dispatchVentaEvent('venta-created', venta.id);
+          await afterVentaCreated(venta.id);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al crear venta';
           set({ error: errorMessage });
@@ -125,12 +115,6 @@ export const useVentasStore = create<VentasState>()(
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          if (serviceProfileDelta) {
-            await useServiciosStore
-              .getState()
-              .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
-          }
-
           set((state) => ({
             ventas: state.ventas.map((venta) =>
               venta.id === id ? ventaActualizada : venta
@@ -141,8 +125,7 @@ export const useVentasStore = create<VentasState>()(
           }));
 
           void pronostico;
-          syncVentaForecastReadModels(id);
-          dispatchVentaEvent('venta-updated', id);
+          await afterVentaUpdated(id, serviceProfileDelta);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al actualizar venta';
           set({ error: errorMessage });
@@ -169,25 +152,7 @@ export const useVentasStore = create<VentasState>()(
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          if (serviceProfileDelta) {
-            await useServiciosStore
-              .getState()
-              .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
-          }
-
-          safeAsyncSideEffect(
-            Promise.resolve().then(() =>
-              useNotificacionesStore.getState().deleteNotificacionesPorVenta(id)
-            ),
-            {
-              operation: 'deleteNotificacionesPorVenta',
-              entity: 'venta',
-              entityId: id,
-            }
-          );
-
-          syncVentaForecastReadModels(id);
-          dispatchVentaEvent('venta-deleted', id);
+          await afterVentaDeleted(id, serviceProfileDelta);
           set({ error: null });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Error al eliminar venta';

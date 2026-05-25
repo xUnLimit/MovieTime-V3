@@ -8,7 +8,7 @@ import {
   fetchCategoriasFull,
   updateCategoriaUseCase,
 } from '@/lib/use-cases/categorias-use-cases';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { afterCategoriaDeleted } from '@/lib/store-reactions/catalogos-mutation-reactions';
 import { ENTITIES, logCacheHit } from '@/lib/supabase/categorias-repository';
 import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
@@ -132,7 +132,7 @@ export const useCategoriasStore = create<CategoriasState>()(
             recordActivityLog: useActivityLogStore.getState().addLog,
           });
 
-          storeEventBus.emit({ type: 'CATEGORIA_DELETED', categoriaId: id });
+          await afterCategoriaDeleted(id);
 
           set({ error: null });
         } catch (error) {

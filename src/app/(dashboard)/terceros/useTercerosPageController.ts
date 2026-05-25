@@ -5,13 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { filterTercerosForTercerosPage, type TercerosTab } from '@/components/terceros/terceros-search';
-import { invalidateVentasPorTercerosCache } from '@/hooks/use-ventas-por-terceros';
 import { useTerceros } from '@/hooks/use-terceros';
 import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { subscribeToTercerosPageReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
-import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
+import { queryMetodosPagoTercerosRead } from '@/lib/supabase/domain-read-adapters';
 import { FilterOption } from '@/lib/supabase/pagination';
 import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
 import {
@@ -19,7 +18,7 @@ import {
   isPendingTerceroPaymentMethodId,
   withPendingTerceroPaymentMethod,
 } from '@/lib/utils/terceroMetodoPago';
-import type { MetodoPago, Tercero } from '@/types';
+import type { Tercero } from '@/types';
 
 interface MetodoPagoFilterOption {
   value: string;
@@ -155,34 +154,11 @@ export function useTercerosPageController() {
   }, []);
 
   useEffect(() => {
-    const handleVentaDeleted = () => {
-      invalidateVentasPorTercerosCache();
-      refresh();
-    };
-
-    const handleTerceroDeleted = () => {
-      refresh();
-      void queryClient.invalidateQueries({ queryKey: queryKeys.terceros.lists() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.terceros.counts() });
-    };
-
-    const handleTerceroMetodoPagoUpdated = () => {
-      refresh();
-      void refetchMetodoPagoOptions();
-    };
-
-    const unsubscribeVentaDeleted = storeEventBus.on('VENTA_DELETED', handleVentaDeleted);
-    const unsubscribeTerceroDeleted = storeEventBus.on('TERCERO_DELETED', handleTerceroDeleted);
-    const unsubscribeMetodoPagoUpdated = storeEventBus.on(
-      'TERCERO_METODO_PAGO_UPDATED',
-      handleTerceroMetodoPagoUpdated,
-    );
-
-    return () => {
-      unsubscribeVentaDeleted();
-      unsubscribeTerceroDeleted();
-      unsubscribeMetodoPagoUpdated();
-    };
+    return subscribeToTercerosPageReactions({
+      queryClient,
+      refresh,
+      refetchMetodoPagoOptions,
+    });
   }, [queryClient, refetchMetodoPagoOptions, refresh]);
 
   const handleEdit = (usuario: Tercero) => {
@@ -214,10 +190,7 @@ export type TercerosPageController = ReturnType<typeof useTercerosPageController
 
 async function buildMetodoPagoOptions(): Promise<MetodoPagoFilterOption[]> {
   const metodos = withPendingTerceroPaymentMethod(
-    await queryMetodosPago<MetodoPago>([
-      { field: 'asociadoA', operator: '==', value: 'tercero' },
-      { field: 'activo', operator: '==', value: true },
-    ]),
+    await queryMetodosPagoTercerosRead({ soloActivos: true }),
   );
 
   const seen = new Set<string>();

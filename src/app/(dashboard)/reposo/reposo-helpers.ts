@@ -1,6 +1,6 @@
 import { differenceInDays, startOfDay } from "date-fns";
 
-import { queryMetodosPago } from "@/lib/supabase/catalogos-repository";
+import { queryMetodosPagoServiciosRead } from "@/lib/supabase/domain-read-adapters";
 import { fetchServiciosByFiltersUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import type { MetodoPago } from "@/types/metodos-pago";
 import type { Servicio } from "@/types/servicios";
@@ -55,9 +55,7 @@ export async function fetchReposoServicesQuery(): Promise<ReposoServicio[]> {
 }
 
 export async function fetchServicioMetodosPagoQuery(): Promise<MetodoPago[]> {
-  return queryMetodosPago<MetodoPago>([
-    { field: "asociadoA", operator: "==", value: "servicio" },
-  ]);
+  return queryMetodosPagoServiciosRead();
 }
 
 export function getReposoMetrics(servicios: ReposoServicio[]) {

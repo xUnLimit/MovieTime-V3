@@ -12,8 +12,7 @@ import { ServiciosListTable } from '@/components/servicios/ServiciosListTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { storeEventBus } from '@/lib/events/store-event-bus';
-import { queryKeys } from '@/lib/query-keys';
+import { subscribeToServicioListReactions } from '@/lib/events/cache-reactions';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { FilterOption } from '@/lib/supabase/pagination';
 import { Servicio } from '@/types';
@@ -21,7 +20,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 
 function ServiciosPageContent() {
   const queryClient = useQueryClient();
-  const { data: categorias = [], refetch: refetchCategorias } = useCategoriasFull();
+  const { data: categorias = [] } = useCategoriasFull();
   const showServiciosMetrics = useFeatureFlag('servicios_metrics', true);
 
   const [activeTab, setActiveTab] = useState<'categorias' | 'todos' | 'activos' | 'inactivos'>('categorias');
@@ -70,16 +69,8 @@ function ServiciosPageContent() {
   });
 
   useEffect(() => {
-    const refreshServicios = () => {
-      void refetchCategorias();
-      void queryClient.invalidateQueries({ queryKey: queryKeys.servicios.counts() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
-      refresh();
-    };
-
-    const unsubscribe = storeEventBus.on('SERVICIO_DELETED', refreshServicios);
-    return unsubscribe;
-  }, [queryClient, refetchCategorias, refresh]);
+    return subscribeToServicioListReactions(queryClient, refresh);
+  }, [queryClient, refresh]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as 'categorias' | 'todos' | 'activos' | 'inactivos');
