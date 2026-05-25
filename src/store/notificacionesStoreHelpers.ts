@@ -4,7 +4,7 @@ import {
   getServicioNotifications,
   getVentaNotifications,
   type NotificacionConId,
-} from "@/lib/notifications/notification-store-state";
+} from "@/lib/notifications/notification-helpers";
 
 export async function getVentaNotificationsToDelete(
   notificaciones: NotificacionConId[],

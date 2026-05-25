@@ -13,7 +13,7 @@ import {
   removeServicioNotifications,
   removeVentaNotifications,
   type NotificacionConId,
-} from './notification-store-state';
+} from './notification-helpers';
 
 const base = {
   tipo: 'sistema',

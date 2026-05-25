@@ -1,5 +1,5 @@
 import { emitTerceroMetodoPagoUpdated } from '@/lib/events/cache-reactions';
-import { updateTerceroMetodoPagoLocalState } from '@/lib/store-reactions/terceros-local-state-reactions';
+import { useTercerosStore } from '@/store/tercerosStore';
 import { updateTercero } from '@/lib/supabase/terceros-repository';
 import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
 
@@ -22,6 +22,14 @@ export async function syncTerceroMetodoPagoUseCase(input: SyncTerceroMetodoPagoI
   const storeMetodoPagoId = persistedMetodoPagoId ?? '';
 
   await updateTercero(terceroId, { metodoPagoId: persistedMetodoPagoId } as never);
-  updateTerceroMetodoPagoLocalState(terceroId, storeMetodoPagoId);
+  useTercerosStore.setState((state) => ({
+    terceros: state.terceros.map((tercero) =>
+      tercero.id === terceroId ? { ...tercero, metodoPagoId: storeMetodoPagoId, updatedAt: new Date() } : tercero,
+    ),
+    selectedTercero:
+      state.selectedTercero?.id === terceroId
+        ? { ...state.selectedTercero, metodoPagoId: storeMetodoPagoId, updatedAt: new Date() }
+        : state.selectedTercero,
+  }));
   emitTerceroMetodoPagoUpdated(terceroId);
 }

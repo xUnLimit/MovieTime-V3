@@ -31,7 +31,7 @@ import {
   removeServicioNotifications,
   removeVentaNotifications,
   type NotificacionConId,
-} from '@/lib/notifications/notification-store-state';
+} from '@/lib/notifications/notification-helpers';
 import type { Notificacion, NotificacionVenta, NotificacionServicio, NotificacionReposo } from '@/types/notificaciones';
 import {
   fetchNotificationCounts,

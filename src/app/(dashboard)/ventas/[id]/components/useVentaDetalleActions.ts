@@ -8,10 +8,8 @@ import { queryKeys } from '@/lib/query-keys';
 import { invalidateDashboardCache } from '@/lib/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import {
-  deleteVentaDetailStoreWorkflow,
-  updateServicioPerfilOcupadoWorkflow,
-} from '@/lib/store-reactions/venta-detail-workflow-reactions';
+import { useServiciosStore } from '@/store/serviciosStore';
+import { useVentasStore } from '@/store/ventasStore';
 import {
   createVentaRefundUseCase,
 } from '@/lib/use-cases/ventas/ventas-refund-use-cases';
@@ -75,12 +73,9 @@ export function useVentaDetalleActions({
   const handleDelete = async (deletePagos: boolean) => {
     if (!venta) return;
     try {
-      await deleteVentaDetailStoreWorkflow({
-        ventaId: venta.id,
-        servicioId: venta.servicioId,
-        perfilNumero: venta.perfilNumero,
-        deletePagos,
-      });
+      await useVentasStore
+        .getState()
+        .deleteVenta(venta.id, venta.servicioId, venta.perfilNumero, deletePagos);
 
       if (deletePagos) {
         toast.success('Venta eliminada', {
@@ -173,7 +168,9 @@ export function useVentaDetalleActions({
       );
 
       if (result.serviceProfileDelta) {
-        await updateServicioPerfilOcupadoWorkflow(result.serviceProfileDelta);
+        await useServiciosStore
+          .getState()
+          .updatePerfilOcupado(result.serviceProfileDelta.servicioId, result.serviceProfileDelta.shouldIncrement);
       }
 
       if (result.ventaActualizada) setVentaData(result.ventaActualizada);

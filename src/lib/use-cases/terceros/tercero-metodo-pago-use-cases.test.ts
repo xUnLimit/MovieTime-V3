@@ -4,22 +4,36 @@ const tercerosRepository = vi.hoisted(() => ({
   updateTercero: vi.fn(),
 }));
 
-const localStateReactions = vi.hoisted(() => ({
-  updateTerceroMetodoPagoLocalState: vi.fn(),
+const cacheReactions = vi.hoisted(() => ({
+  emitTerceroMetodoPagoUpdated: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/terceros-repository', () => tercerosRepository);
-vi.mock('@/lib/store-reactions/terceros-local-state-reactions', () => localStateReactions);
+const tercerosStore = vi.hoisted(() => {
+  const mockSetState = vi.fn();
+  return {
+    mockSetState,
+    useTercerosStore: {
+      getState: vi.fn(() => ({
+        terceros: [{ id: 'tercero-1' }],
+        selectedTercero: { id: 'tercero-1' },
+      })),
+      setState: mockSetState,
+    },
+  };
+});
 
-import { updateTerceroMetodoPagoLocalState } from '@/lib/store-reactions/terceros-local-state-reactions';
+vi.mock('@/lib/supabase/terceros-repository', () => tercerosRepository);
+vi.mock('@/lib/events/cache-reactions', () => cacheReactions);
+vi.mock('@/store/tercerosStore', () => tercerosStore);
+
 import { updateTercero } from '@/lib/supabase/terceros-repository';
 import { syncTerceroMetodoPagoUseCase as syncTerceroMetodoPago } from './tercero-metodo-pago-use-cases';
 
 describe('syncTerceroMetodoPagoUseCase', () => {
   beforeEach(() => {
     vi.mocked(updateTercero).mockReset();
-    vi.mocked(updateTerceroMetodoPagoLocalState).mockReset();
     vi.mocked(updateTercero).mockResolvedValue(undefined);
+    tercerosStore.mockSetState.mockReset();
   });
 
   it('persists pending payment method as null to satisfy the terceros FK', async () => {
@@ -31,7 +45,6 @@ describe('syncTerceroMetodoPagoUseCase', () => {
     expect(updateTercero).toHaveBeenCalledWith('tercero-1', {
       metodoPagoId: null,
     });
-    expect(updateTerceroMetodoPagoLocalState).toHaveBeenCalledWith('tercero-1', '');
   });
 
   it('persists a real payment method id unchanged', async () => {
@@ -43,6 +56,5 @@ describe('syncTerceroMetodoPagoUseCase', () => {
     expect(updateTercero).toHaveBeenCalledWith('tercero-1', {
       metodoPagoId: 'metodo-2',
     });
-    expect(updateTerceroMetodoPagoLocalState).toHaveBeenCalledWith('tercero-1', 'metodo-2');
   });
 });
