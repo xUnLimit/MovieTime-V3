@@ -32,7 +32,9 @@ MovieTime PTY es una herramienta de gestion. La interfaz debe priorizar lectura 
 
 ### 3.1 Tema
 
-El producto es **dark-first** y debe usar los tokens globales definidos en `src/app/globals.css`.
+El producto es **dark-first**. `src/app/layout.tsx` monta el documento con `className="dark"` y `ThemeProvider` usa `defaultTheme="dark"`. El sistema tambien soporta tema claro, pero la experiencia principal y las capturas operativas deben validarse primero en oscuro.
+
+Todo componente debe usar los tokens globales definidos en `src/app/globals.css`.
 
 Tokens base:
 
@@ -237,7 +239,9 @@ Tamanos:
 - `default`: formularios y acciones principales.
 - `sm`: toolbar y acciones secundarias.
 - `xs`: tablas densas.
+- `lg`: acciones principales de mayor jerarquia en dialogos o pantallas simples.
 - `icon`, `icon-sm`, `icon-xs`: acciones icon-only.
+- `icon-lg`: acciones icon-only de mayor jerarquia en layouts amplios.
 
 Reglas:
 
@@ -264,7 +268,24 @@ Uso prohibido:
 - Cards como layout principal de landing.
 - Cards decorativas sin informacion accionable.
 
-### 5.5 Dialogs, Dropdowns y Menus
+### 5.5 Badges
+
+Archivo canonico: `src/components/ui/badge.tsx`
+
+Uso:
+
+- Estados compactos.
+- Etiquetas de categoria.
+- Indicadores de tipo o prioridad.
+
+Reglas:
+
+- Usar `variant="outline"` o `variant="secondary"` para informacion neutral.
+- Usar `variant="destructive"` solo para errores, inactivos o acciones peligrosas.
+- No usar badges como botones salvo que el componente lo haga explicitamente con `asChild`.
+- No saturar tablas con badges de color si el texto simple comunica mejor.
+
+### 5.6 Dialogs, Dropdowns y Menus
 
 Reglas:
 
@@ -272,8 +293,9 @@ Reglas:
 - Todo dialogo debe tener titulo y descripcion accesible cuando aplique.
 - Menus deben tener labels cortos y acciones ordenadas por frecuencia.
 - Las acciones destructivas deben separarse visualmente o usar `destructive`.
+- Filtros con trigger compuesto deben usar `FilterTriggerContent` cuando aplique.
 
-### 5.6 Formularios
+### 5.7 Formularios
 
 Reglas:
 
@@ -312,6 +334,8 @@ Reglas:
 Reglas:
 
 - Mostrar mensaje claro y accion de reintento si aplica.
+- Usar `ModuleErrorBoundary` para aislar fallos de modulos completos.
+- Usar `DashboardErrorFallback` para fallos de pantalla/dashboard cuando aplique.
 - No ocultar errores de lectura remota.
 - Los errores de side-effects fire-and-forget deben registrarse con contexto estructurado.
 - No usar `catch {}` vacio.
@@ -339,12 +363,14 @@ La UI debe respetar el contrato de arquitectura:
 | Reglas de negocio | Use-cases |
 | Supabase/RPC | Repositories/RPC adapters |
 | Comunicacion entre modulos | StoreEventBus / eventos tipados |
+| Query client y defaults | `QueryProvider` + `createQueryClient` |
+| Query keys | `queryKeys` |
 
 Reglas:
 
 - No hacer `useEffect + useState` para data fetching remoto nuevo.
 - No usar `window.dispatchEvent` para comunicacion de negocio.
-- No usar `localStorage` como bus de eventos.
+- No usar `localStorage` como bus de eventos de negocio. Se permite para persistencia local explicita, como tema, auth o storage del cliente Supabase.
 - No llamar helpers Supabase directamente desde componentes salvo excepcion documentada.
 - No duplicar conteos o metricas en stores si ya existen como read model/query.
 
@@ -421,16 +447,37 @@ Antes de abrir o cerrar un PR de UI:
 
 ---
 
-## 12. Archivos Canonicos
+## 12. Brechas Actuales A Corregir
+
+Esta guia describe el estandar vigente, pero el repo aun conserva algunas excepciones historicas que deben corregirse cuando se toque el modulo correspondiente:
+
+1. `src/components/ventas/VentasMetrics.tsx` aun pasa `Calculando...` como `value` en algunos KPIs. El patron correcto es usar `MetricCard loading`.
+2. Algunas tablas especializadas usan primitives de `Table` directamente en vez de `DataTable` por layouts anchos o contenido especifico. Esto es aceptable solo si mantienen `table-scroll-shell` / `table-scroll-content` y documentan la razon en el componente.
+3. Algunos componentes legacy mantienen textos o estilos no normalizados. No se deben copiar como patron nuevo.
+4. `localStorage` aparece en tema, auth y cliente Supabase como persistencia tecnica. Eso no contradice la regla: lo prohibido es usarlo como bus de eventos de negocio.
+
+---
+
+## 13. Archivos Canonicos
 
 | Area | Archivo |
 |---|---|
 | Tokens globales y helpers CSS | `src/app/globals.css` |
+| Tema | `src/components/layout/ThemeProvider.tsx` |
+| Query provider | `src/components/providers/QueryProvider.tsx` |
+| Query client | `src/lib/query-client.ts` |
+| Query keys | `src/lib/query-keys.ts` |
+| Event bus | `src/lib/events/store-event-bus.ts` |
+| Class merge utility | `src/lib/utils/cn.ts` |
 | Metricas | `src/components/shared/MetricCard.tsx` |
 | Tablas | `src/components/shared/DataTable.tsx` |
 | Empty state | `src/components/shared/EmptyState.tsx` |
 | Loading | `src/components/shared/LoadingSpinner.tsx` |
+| Error de modulo | `src/components/shared/ModuleErrorBoundary.tsx` |
+| Error de dashboard | `src/components/shared/DashboardErrorFallback.tsx` |
+| Filtros compuestos | `src/components/shared/FilterTriggerContent.tsx` |
 | Botones | `src/components/ui/button.tsx` |
+| Badges | `src/components/ui/badge.tsx` |
 | Cards | `src/components/ui/card.tsx` |
 | Data ownership | `docs/adr/0002-react-query-zustand-ownership.md` |
 | Eventos tipados | `docs/adr/0004-typed-client-events.md` |
@@ -438,7 +485,7 @@ Antes de abrir o cerrar un PR de UI:
 
 ---
 
-## 13. Gobierno Del Design System
+## 14. Gobierno Del Design System
 
 1. Todo componente compartido nuevo debe resolver un patron repetido real.
 2. Toda variante nueva debe documentarse aqui si queda disponible para mas de un modulo.
@@ -448,7 +495,7 @@ Antes de abrir o cerrar un PR de UI:
 
 ---
 
-## 14. Regla De Cierre
+## 15. Regla De Cierre
 
 Una pantalla se considera alineada al design system cuando:
 
