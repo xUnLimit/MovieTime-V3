@@ -15,7 +15,7 @@ vi.mock('@/store/tercerosStore', () => ({
 
 import { updateTercero } from '@/lib/supabase/terceros-repository';
 import { useTercerosStore } from '@/store/tercerosStore';
-import { syncTerceroMetodoPago } from './terceroMetodoPagoSyncService';
+import { syncTerceroMetodoPagoUseCase as syncTerceroMetodoPago } from './tercero-metodo-pago-use-cases';
 
 const terceroBase = {
   id: 'tercero-1',
@@ -31,7 +31,7 @@ const terceroBase = {
   createdBy: 'user-1',
 };
 
-describe('syncTerceroMetodoPago', () => {
+describe('syncTerceroMetodoPagoUseCase', () => {
   beforeEach(() => {
     vi.mocked(updateTercero).mockReset();
     vi.mocked(useTercerosStore.setState).mockReset();

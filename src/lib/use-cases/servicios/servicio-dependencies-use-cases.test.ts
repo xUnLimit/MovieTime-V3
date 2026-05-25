@@ -34,7 +34,7 @@ vi.mock('@/store/notificacionesStore', () => ({
   },
 }));
 
-describe('servicioSyncService', () => {
+describe('servicio-dependencies-use-cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     queryVentasMock.mockResolvedValue([]);
@@ -55,7 +55,7 @@ describe('servicioSyncService', () => {
       const ventaUpdated = vi.fn();
       const unsubscribeServicio = storeEventBus.on('SERVICIO_UPDATED', servicioUpdated);
       const unsubscribeVenta = storeEventBus.on('VENTA_UPDATED', ventaUpdated);
-      const { syncServicioDependencias } = await import('./servicioSyncService');
+      const { syncServicioDependencias } = await import('./servicio-dependencies-use-cases');
 
       await syncServicioDependencias(
         {
@@ -99,7 +99,7 @@ describe('servicioSyncService', () => {
     it('no llama a sincronizarUnaVenta si el servicio no tiene ventas asociadas', async () => {
       queryVentasMock.mockResolvedValue([]);
 
-      const { syncServicioDependencias } = await import('./servicioSyncService');
+      const { syncServicioDependencias } = await import('./servicio-dependencies-use-cases');
 
       await syncServicioDependencias(
         { id: 'servicio-1', nombre: 'A', correo: '', contrasena: '', categoriaId: 'cat-1', categoriaNombre: '' },
@@ -118,7 +118,7 @@ describe('servicioSyncService', () => {
         { id: 'servicio-2', nombre: 'Disney', correo: 'b@demo.com', contrasena: '5678', categoriaId: 'cat-2', categoriaNombre: 'Kids' },
       ]);
 
-      const { resyncServiciosDenormalizedData } = await import('./servicioSyncService');
+      const { resyncServiciosDenormalizedData } = await import('./servicio-dependencies-use-cases');
       const result = await resyncServiciosDenormalizedData();
 
       expect(syncNotificacionesMock).toHaveBeenCalledTimes(1);
@@ -131,7 +131,7 @@ describe('servicioSyncService', () => {
     it('devuelve serviciosRevisados=0 cuando no hay servicios', async () => {
       getServiciosMock.mockResolvedValue([]);
 
-      const { resyncServiciosDenormalizedData } = await import('./servicioSyncService');
+      const { resyncServiciosDenormalizedData } = await import('./servicio-dependencies-use-cases');
       const result = await resyncServiciosDenormalizedData();
 
       expect(result).toEqual({ serviciosRevisados: 0, ventasActualizadas: 0 });

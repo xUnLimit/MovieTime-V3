@@ -1,12 +1,13 @@
 # Pendientes Post Arquitectura
 
 **Fecha:** 2026-05-25  
+**Estado:** Completado
 **Scope:** Limpieza pendiente despues de implementar las prioridades arquitectonicas.  
 **Excluded:** Testing, cobertura y metas de porcentaje de coverage.
 
 ## Resumen
 
-Las prioridades arquitectonicas 1-10 ya quedaron implementadas y validadas. Lo pendiente no es funcional: es limpieza de compatibilidad legacy, documentacion y segmentacion del cambio para que la nueva arquitectura quede como unica interface visible.
+Las prioridades arquitectonicas 1-10 ya quedaron implementadas y validadas. La limpieza de compatibilidad legacy se cerro removiendo los re-exports temporales, migrando callers/pruebas a los modulos nuevos y dejando la nueva arquitectura como interface visible.
 
 ## 1. Eliminar Compatibilidad Legacy
 

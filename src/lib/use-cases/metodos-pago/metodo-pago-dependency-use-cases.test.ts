@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 describe('syncMetodoPagoDependencias', () => {
   it('es un no-op en Supabase V2 — los snapshots preservan el historial y no se propagan', async () => {
-    const { syncMetodoPagoDependencias } = await import('@/lib/services/metodoPagoSyncService');
+    const {
+      syncMetodoPagoDependenciasUseCase: syncMetodoPagoDependencias,
+    } = await import('./metodo-pago-dependency-use-cases');
 
     await expect(
       syncMetodoPagoDependencias({

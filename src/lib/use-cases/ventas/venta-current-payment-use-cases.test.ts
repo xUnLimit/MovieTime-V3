@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getVentaConUltimoPago } from './ventaSyncService';
+import { getVentaConUltimoPagoUseCase as getVentaConUltimoPago } from './venta-current-payment-use-cases';
 import type { PagoVenta, VentaDoc } from '@/types';
 
 vi.mock('@/lib/supabase/ventas-repository', () => ({
@@ -31,7 +31,7 @@ function pago(overrides: Partial<PagoVenta>): PagoVenta {
   };
 }
 
-describe('ventaSyncService', () => {
+describe('venta-current-payment-use-cases', () => {
   it('ignora reembolsos al derivar el pago vigente de la venta', async () => {
     const result = await getVentaConUltimoPago(ventaBase, [
       pago({

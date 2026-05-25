@@ -78,7 +78,7 @@ export interface VentaReembolsoResult {
  * ARQUITECTURA: Single Source of Truth
  * - Este documento NO almacena datos de pago (precio, descuento, fechas, etc.)
  * - Esos datos viven en la colección `pagosVenta`
- * - Para obtener datos actuales, usar `getVentaConUltimoPago()` de ventaSyncService
+ * - Para obtener datos actuales, usar `getVentaConUltimoPagoUseCase()` de venta-current-payment-use-cases
  */
 export interface VentaDoc {
   id: string;

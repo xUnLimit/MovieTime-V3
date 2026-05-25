@@ -31,11 +31,11 @@ const notificationSyncService = vi.hoisted(() => ({
   sincronizarUnaVenta: vi.fn(),
 }));
 
-const ventaSyncService = vi.hoisted(() => ({
+const ventaCurrentPaymentUseCases = vi.hoisted(() => ({
   getVentaConUltimoPagoUseCase: vi.fn(),
 }));
 
-const terceroMetodoPagoSyncService = vi.hoisted(() => ({
+const terceroMetodoPagoUseCases = vi.hoisted(() => ({
   syncTerceroMetodoPagoUseCase: vi.fn(),
 }));
 
@@ -43,8 +43,8 @@ vi.mock('@/lib/supabase/ventas-repository', () => ventasRepository);
 vi.mock('@/lib/dashboard-read-models', () => dashboardStatsService);
 vi.mock('@/lib/payments', () => paymentsModule);
 vi.mock('@/lib/notifications', () => notificationSyncService);
-vi.mock('@/lib/use-cases/ventas/venta-current-payment-use-cases', () => ventaSyncService);
-vi.mock('@/lib/use-cases/terceros/tercero-metodo-pago-use-cases', () => terceroMetodoPagoSyncService);
+vi.mock('@/lib/use-cases/ventas/venta-current-payment-use-cases', () => ventaCurrentPaymentUseCases);
+vi.mock('@/lib/use-cases/terceros/tercero-metodo-pago-use-cases', () => terceroMetodoPagoUseCases);
 vi.mock('@/lib/supabase/catalogos-repository', () => ({
   getMetodoPagoById: vi.fn(),
 }));
@@ -96,7 +96,7 @@ describe('ventas refund use cases', () => {
     ]);
     ventasRepository.createVentaRefund.mockResolvedValueOnce('pago-reembolso');
     ventasRepository.getVentaById.mockResolvedValueOnce(ventaBase);
-    ventaSyncService.getVentaConUltimoPagoUseCase.mockResolvedValueOnce({
+    ventaCurrentPaymentUseCases.getVentaConUltimoPagoUseCase.mockResolvedValueOnce({
       ...ventaBase,
       estado: 'inactivo',
     });

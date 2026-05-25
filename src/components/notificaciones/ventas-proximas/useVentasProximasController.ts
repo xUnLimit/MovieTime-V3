@@ -9,6 +9,10 @@ import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
 import { queryKeys } from '@/lib/query-keys';
 import { cutVentaFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
+import {
+  confirmVentaRenewalFromNotificationUseCase as confirmVentaRenewal,
+  loadVentaRenewalOptionsUseCase as loadVentaRenewalOptions,
+} from '@/lib/use-cases/notificaciones/notificaciones-renewal-use-cases';
 import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { MetodoPago, TemplateMensaje } from '@/types';
 import type { Plan } from '@/types/categorias';
@@ -18,10 +22,6 @@ import {
   notifyVentaCancellation,
   notifyVentaExpiration,
 } from './venta-notification-messaging';
-import {
-  confirmVentaRenewal,
-  loadVentaRenewalOptions,
-} from './venta-renewal-actions';
 import { useVentasProximasPagination } from './useVentasProximasPagination';
 
 export function useVentasProximasController() {

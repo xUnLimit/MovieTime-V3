@@ -39,7 +39,7 @@ vi.mock('@/lib/server/supabase-server', () => ({
   }),
 }));
 
-import { sendExecutivePushDailySummary } from './executivePushService';
+import { sendExecutivePushDailySummary } from './executive-push-delivery';
 
 function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: string; dias_restantes: number; leida: boolean }> } = {}) {
   const ventaNotifications = options.ventaNotifications ?? [
