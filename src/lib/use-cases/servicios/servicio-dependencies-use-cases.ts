@@ -17,6 +17,9 @@ interface SyncServicioDependenciasOptions {
 
 export interface SyncServicioDependenciasResult {
   ventasActualizadas: number;
+  ventaIds: string[];
+  cacheInvalidations: Array<{ entity: 'servicio' | 'venta'; entityId?: string }>;
+  notificationRefresh: boolean;
 }
 
 function emitServicioSyncEvents(servicioId: string | null, ventaIds: string[]) {
@@ -46,19 +49,46 @@ export async function syncServicioDependencias(
 ): Promise<SyncServicioDependenciasResult> {
   void _previousServicio;
   const { refreshNotifications = true, emitEvents = true } = options;
-  let ventasDelServicioIds: string[] = [];
+  const outcome = await planServicioDependencySync(nextServicio, {
+    refreshNotifications,
+  });
 
+  await applyServicioDependencySyncReactions(nextServicio.id, outcome, { emitEvents });
+
+  return outcome;
+}
+
+export async function planServicioDependencySync(
+  nextServicio: ServicioDenormalizedSnapshot,
+  options: Pick<SyncServicioDependenciasOptions, 'refreshNotifications'> = {}
+): Promise<SyncServicioDependenciasResult> {
   const ventasDelServicio = await queryVentas<{ id: string }>([
     { field: 'servicioId', operator: '==', value: nextServicio.id },
   ]);
-  ventasDelServicioIds = ventasDelServicio.map((venta) => venta.id);
+  const ventaIds = ventasDelServicio.map((venta) => venta.id);
 
-  if (refreshNotifications) {
-    await sincronizarUnServicio(nextServicio.id);
+  return {
+    ventasActualizadas: 0,
+    ventaIds,
+    cacheInvalidations: [
+      { entity: 'servicio', entityId: nextServicio.id },
+      ...ventaIds.map((ventaId) => ({ entity: 'venta' as const, entityId: ventaId })),
+    ],
+    notificationRefresh: options.refreshNotifications ?? true,
+  };
+}
 
-    if (ventasDelServicioIds.length > 0) {
+export async function applyServicioDependencySyncReactions(
+  servicioId: string,
+  outcome: SyncServicioDependenciasResult,
+  options: Pick<SyncServicioDependenciasOptions, 'emitEvents'> = {}
+) {
+  if (outcome.notificationRefresh) {
+    await sincronizarUnServicio(servicioId);
+
+    if (outcome.ventaIds.length > 0) {
       await Promise.all(
-        ventasDelServicioIds.map((id) => sincronizarUnaVenta(id))
+        outcome.ventaIds.map((id) => sincronizarUnaVenta(id))
       );
     }
 
@@ -68,11 +98,9 @@ export async function syncServicioDependencias(
     ]);
   }
 
-  if (emitEvents) {
-    emitServicioSyncEvents(nextServicio.id, ventasDelServicioIds);
+  if (options.emitEvents ?? true) {
+    emitServicioSyncEvents(servicioId, outcome.ventaIds);
   }
-
-  return { ventasActualizadas: 0 };
 }
 
 /**

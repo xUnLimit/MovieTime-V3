@@ -4,11 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-keys';
 import {
+  buildFinancialForecastFromReadModel,
   buildPronosticoSignature,
-  calculateFinancialForecast,
   type MesPronostico,
 } from '@/lib/forecasting';
-import { convertToUSDSync, ensureRatesLoaded } from '@/lib/payments';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 import type { ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 
@@ -44,13 +43,11 @@ export function usePronosticoFinanciero(
         return [];
       }
 
-      await ensureRatesLoaded();
-      return calculateFinancialForecast({
+      return buildFinancialForecastFromReadModel({
         ventas,
         servicios,
         monthsCount,
         endAtCurrentYear,
-        convertToUSD: convertToUSDSync,
       });
     },
     enabled: Boolean(stats),

@@ -141,12 +141,16 @@ async function buildSummaryBlocks(client: ServiceClient): Promise<ExecutivePushS
   });
 }
 
-export async function getExecutivePushSummaryForEndpoint(endpoint: string): Promise<ExecutivePushSummaryPayload & { destinationWithQuery: string }> {
+export async function getExecutivePushSummaryForEndpoint(
+  endpoint: string,
+  userId: string,
+): Promise<ExecutivePushSummaryPayload & { destinationWithQuery: string }> {
   const client = createServiceRoleClient();
   const { data: subscription, error: subscriptionError } = await client
     .from('push_subscriptions')
     .select('*')
     .eq('endpoint', endpoint)
+    .eq('user_id', userId)
     .eq('enabled', true)
     .maybeSingle();
 
@@ -204,12 +208,14 @@ export async function sendExecutivePushDailySummary(options?: { force?: boolean;
     let disabled = 0;
     const failures: PushDeliveryFailure[] = [];
 
+    const payload = buildExecutivePushSummaryPayload(blocks);
+
     for (let index = 0; index < subscriptions.length; index += PUSH_DELIVERY_CONCURRENCY) {
       const batch = subscriptions.slice(index, index + PUSH_DELIVERY_CONCURRENCY);
       await Promise.all(
         batch.map(async (subscription) => {
           try {
-            await sendExecutivePushPing(subscription);
+            await sendExecutivePushPing(subscription, payload);
             sent += 1;
           } catch (error) {
             const failure = toPushDeliveryFailure(subscription, error);

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.rpc_idempotency_keys (
   result_id TEXT NOT NULL,
   created_by UUID NOT NULL DEFAULT auth.uid(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (idempotency_key, rpc_name)
+  PRIMARY KEY (created_by, rpc_name, idempotency_key)
 );
 
 ALTER TABLE public.rpc_idempotency_keys ENABLE ROW LEVEL SECURITY;
@@ -64,8 +64,16 @@ DECLARE
   v_venta_id TEXT;
   v_periodo_id TEXT;
   v_existing_result_id TEXT;
-  v_created_by UUID := COALESCE(p_created_by, auth.uid());
+  v_created_by UUID := auth.uid();
 BEGIN
+  IF v_created_by IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  IF p_created_by IS NOT NULL AND p_created_by <> v_created_by THEN
+    RAISE EXCEPTION 'created_by must match authenticated user';
+  END IF;
+
   IF p_idempotency_key IS NOT NULL THEN
     PERFORM pg_advisory_xact_lock(hashtextextended(p_idempotency_key::TEXT, 0));
 
@@ -176,7 +184,7 @@ BEGIN
   IF p_idempotency_key IS NOT NULL THEN
     INSERT INTO public.rpc_idempotency_keys (idempotency_key, rpc_name, result_id, created_by)
     VALUES (p_idempotency_key, 'create_venta_with_initial_payment', v_venta_id, v_created_by)
-    ON CONFLICT (idempotency_key, rpc_name) DO NOTHING;
+    ON CONFLICT (created_by, rpc_name, idempotency_key) DO NOTHING;
   END IF;
 
   RETURN v_venta_id;
@@ -220,8 +228,16 @@ DECLARE
   v_servicio_id TEXT;
   v_periodo_id TEXT;
   v_existing_result_id TEXT;
-  v_created_by UUID := COALESCE(p_created_by, auth.uid());
+  v_created_by UUID := auth.uid();
 BEGIN
+  IF v_created_by IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  IF p_created_by IS NOT NULL AND p_created_by <> v_created_by THEN
+    RAISE EXCEPTION 'created_by must match authenticated user';
+  END IF;
+
   IF p_idempotency_key IS NOT NULL THEN
     PERFORM pg_advisory_xact_lock(hashtextextended(p_idempotency_key::TEXT, 0));
 
@@ -336,7 +352,7 @@ BEGIN
   IF p_idempotency_key IS NOT NULL THEN
     INSERT INTO public.rpc_idempotency_keys (idempotency_key, rpc_name, result_id, created_by)
     VALUES (p_idempotency_key, 'create_servicio_with_initial_payment', v_servicio_id, v_created_by)
-    ON CONFLICT (idempotency_key, rpc_name) DO NOTHING;
+    ON CONFLICT (created_by, rpc_name, idempotency_key) DO NOTHING;
   END IF;
 
   RETURN v_servicio_id;
@@ -374,10 +390,14 @@ DECLARE
   v_periodo_id TEXT;
   v_pago_id TEXT;
   v_existing_result_id TEXT;
-  v_created_by UUID := COALESCE(p_created_by, auth.uid());
+  v_created_by UUID := auth.uid();
 BEGIN
   IF NOT public.is_authenticated() THEN
     RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  IF p_created_by IS NOT NULL AND p_created_by <> v_created_by THEN
+    RAISE EXCEPTION 'created_by must match authenticated user';
   END IF;
 
   IF p_idempotency_key IS NOT NULL THEN
@@ -474,7 +494,7 @@ BEGIN
   IF p_idempotency_key IS NOT NULL THEN
     INSERT INTO public.rpc_idempotency_keys (idempotency_key, rpc_name, result_id, created_by)
     VALUES (p_idempotency_key, 'create_venta_payment', v_pago_id, v_created_by)
-    ON CONFLICT (idempotency_key, rpc_name) DO NOTHING;
+    ON CONFLICT (created_by, rpc_name, idempotency_key) DO NOTHING;
   END IF;
 
   RETURN v_pago_id;
@@ -509,10 +529,14 @@ DECLARE
   v_periodo_id TEXT;
   v_pago_id TEXT;
   v_existing_result_id TEXT;
-  v_created_by UUID := COALESCE(p_created_by, auth.uid());
+  v_created_by UUID := auth.uid();
 BEGIN
   IF NOT public.is_authenticated() THEN
     RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  IF p_created_by IS NOT NULL AND p_created_by <> v_created_by THEN
+    RAISE EXCEPTION 'created_by must match authenticated user';
   END IF;
 
   IF p_idempotency_key IS NOT NULL THEN
@@ -603,7 +627,7 @@ BEGIN
   IF p_idempotency_key IS NOT NULL THEN
     INSERT INTO public.rpc_idempotency_keys (idempotency_key, rpc_name, result_id, created_by)
     VALUES (p_idempotency_key, 'create_servicio_payment', v_pago_id, v_created_by)
-    ON CONFLICT (idempotency_key, rpc_name) DO NOTHING;
+    ON CONFLICT (created_by, rpc_name, idempotency_key) DO NOTHING;
   END IF;
 
   RETURN v_pago_id;
@@ -636,10 +660,14 @@ DECLARE
   v_pago_id TEXT;
   v_disponible_usd NUMERIC;
   v_existing_result_id TEXT;
-  v_created_by UUID := COALESCE(p_created_by, auth.uid());
+  v_created_by UUID := auth.uid();
 BEGIN
   IF NOT public.is_authenticated() THEN
     RAISE EXCEPTION 'not authenticated';
+  END IF;
+
+  IF p_created_by IS NOT NULL AND p_created_by <> v_created_by THEN
+    RAISE EXCEPTION 'created_by must match authenticated user';
   END IF;
 
   IF p_idempotency_key IS NOT NULL THEN
@@ -746,7 +774,7 @@ BEGIN
   IF p_idempotency_key IS NOT NULL THEN
     INSERT INTO public.rpc_idempotency_keys (idempotency_key, rpc_name, result_id, created_by)
     VALUES (p_idempotency_key, 'create_venta_refund', v_pago_id, v_created_by)
-    ON CONFLICT (idempotency_key, rpc_name) DO NOTHING;
+    ON CONFLICT (created_by, rpc_name, idempotency_key) DO NOTHING;
   END IF;
 
   RETURN v_pago_id;

@@ -7,6 +7,12 @@ import { useVentasStore } from '@/store/ventasStore';
 
 type RefreshNotificationCaches = () => Promise<void>;
 
+export type NotificationActionOutcome = {
+  completed: true;
+  cacheInvalidations: Array<{ entity: 'venta' | 'servicio'; entityId: string }>;
+  storeRefreshes: Array<'ventas' | 'servicios' | 'notificaciones'>;
+};
+
 export async function cutVentaFromNotificationUseCase({
   motivoCorte,
   refreshNotificationCaches,
@@ -15,7 +21,7 @@ export async function cutVentaFromNotificationUseCase({
   motivoCorte: string;
   refreshNotificationCaches: RefreshNotificationCaches;
   ventaId: string;
-}) {
+}): Promise<NotificationActionOutcome> {
   await useVentasStore.getState().updateVenta(ventaId, {
     estado: 'inactivo',
     cortadaAt: new Date(),
@@ -32,6 +38,12 @@ export async function cutVentaFromNotificationUseCase({
 
   toast.success('Venta cortada exitosamente');
   void useVentasStore.getState().fetchVentas(true);
+
+  return {
+    completed: true,
+    cacheInvalidations: [{ entity: 'venta', entityId: ventaId }],
+    storeRefreshes: ['ventas', 'notificaciones'],
+  };
 }
 
 export async function inactivateServicioFromNotificationUseCase({
@@ -42,11 +54,17 @@ export async function inactivateServicioFromNotificationUseCase({
   refreshNotificationCaches: RefreshNotificationCaches;
   servicioId: string;
   servicioNombre: string;
-}) {
+}): Promise<NotificationActionOutcome> {
   await useServiciosStore.getState().updateServicio(servicioId, { activo: false });
   await useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicioId);
   toast.success('Servicio inactivado', {
     description: `${servicioNombre} ha sido marcado como inactivo.`,
   });
   await refreshNotificationCaches();
+
+  return {
+    completed: true,
+    cacheInvalidations: [{ entity: 'servicio', entityId: servicioId }],
+    storeRefreshes: ['servicios', 'notificaciones'],
+  };
 }

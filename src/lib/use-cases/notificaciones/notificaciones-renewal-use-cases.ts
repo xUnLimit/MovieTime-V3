@@ -27,6 +27,16 @@ type NotificacionServicioConId = NotificacionServicio & { id: string };
 
 type RefreshNotificationCaches = () => Promise<void>;
 
+export type NotificationRenewalOutcome = {
+  renewed: true;
+  warnings: string[];
+  cacheInvalidations: Array<{ entity: 'venta' | 'servicio'; entityId: string }>;
+  whatsappMessage?: {
+    phone: string;
+    message: string;
+  };
+};
+
 export async function loadVentaRenewalOptionsUseCase(
   notif: NotificacionVentaConId,
 ): Promise<{
@@ -55,7 +65,7 @@ export async function confirmVentaRenewalFromNotificationUseCase({
   data: EnrichedPagoDialogFormData;
   notif: NotificacionVentaConId;
   refreshNotificationCaches: RefreshNotificationCaches;
-}) {
+}): Promise<NotificationRenewalOutcome> {
   const { metodosPago } = useMetodosPagoStore.getState();
   const metodoPagoSeleccionado = metodosPago.find(
     (m) => m.id === data.metodoPagoId,
@@ -71,7 +81,9 @@ export async function confirmVentaRenewalFromNotificationUseCase({
     getActivityLogOptions(),
   );
 
+  const warnings: string[] = [];
   if (renovacion.syncPaymentMethodFailed) {
+    warnings.push('sync_payment_method_failed');
     toast.warning('Venta renovada con advertencia', {
       description:
         'La renovacion se guardo, pero no se pudo actualizar el metodo de pago en terceros.',
@@ -91,6 +103,18 @@ export async function confirmVentaRenewalFromNotificationUseCase({
     useVentasStore.getState().fetchVentas(true),
   );
   showRenewalSuccessToast(notif, data);
+
+  return {
+    renewed: true,
+    warnings,
+    cacheInvalidations: [{ entity: 'venta', entityId: notif.ventaId }],
+    whatsappMessage: data.notificarWhatsApp && data.mensajeWhatsApp
+      ? {
+          phone: notif.clienteTelefono ? notif.clienteTelefono.replace(/[^\d+]/g, '') : '',
+          message: data.mensajeWhatsApp,
+        }
+      : undefined,
+  };
 }
 
 export async function loadServicioRenewalOptionsUseCase(
@@ -124,7 +148,7 @@ export async function confirmServicioRenewalFromNotificationUseCase({
   metodosPagoServicio: MetodoPago[];
   refreshNotificationCaches: RefreshNotificationCaches;
   servicio: Servicio;
-}) {
+}): Promise<NotificationRenewalOutcome> {
   const metodoPagoSeleccionado = metodosPagoServicio.find(
     (metodo) => metodo.id === data.metodoPagoId,
   );
@@ -138,6 +162,12 @@ export async function confirmServicioRenewalFromNotificationUseCase({
   await useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicio.id);
   await refreshNotificationCaches();
   refreshCategoriasCache({ entity: 'servicio', entityId: servicio.id });
+
+  return {
+    renewed: true,
+    warnings: [],
+    cacheInvalidations: [{ entity: 'servicio', entityId: servicio.id }],
+  };
 }
 
 function toVentaDocFromNotification(notif: NotificacionVentaConId): VentaDoc {

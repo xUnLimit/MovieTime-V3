@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const secretPatterns = [
   {
@@ -42,6 +43,20 @@ function getStagedFiles() {
     .filter((path) => !ignoredPaths.some((ignored) => ignored.test(path.replaceAll('\\', '/'))));
 }
 
+function getWorkingTreeFiles() {
+  const tracked = execFileSync('git', ['diff', '--name-only', '--diff-filter=ACMR', '-z'], {
+    encoding: 'utf8',
+  });
+  const untracked = execFileSync('git', ['ls-files', '--others', '--exclude-standard', '-z'], {
+    encoding: 'utf8',
+  });
+
+  return [...tracked.split('\0'), ...untracked.split('\0')]
+    .map((path) => path.trim())
+    .filter(Boolean)
+    .filter((path) => !ignoredPaths.some((ignored) => ignored.test(path.replaceAll('\\', '/'))));
+}
+
 function getStagedContent(path) {
   try {
     return execFileSync('git', ['show', `:${path}`], {
@@ -53,25 +68,40 @@ function getStagedContent(path) {
   }
 }
 
+function getWorkingTreeContent(path) {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch {
+    return '';
+  }
+}
+
 const findings = [];
 
-for (const file of getStagedFiles()) {
-  const content = getStagedContent(file);
-  if (content.includes('\0')) continue;
+function scanContent(scope, file, content) {
+  if (content.includes('\0')) return;
 
   const lines = content.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     for (const { name, pattern } of secretPatterns) {
       if (pattern.test(line)) {
-        findings.push(`${file}:${index + 1} possible ${name}`);
+        findings.push(`${scope}:${file}:${index + 1} possible ${name}`);
       }
     }
   }
 }
 
+for (const file of getStagedFiles()) {
+  scanContent('staged', file, getStagedContent(file));
+}
+
+for (const file of getWorkingTreeFiles()) {
+  scanContent('working-tree', file, getWorkingTreeContent(file));
+}
+
 if (findings.length > 0) {
-  console.error('Secret scan failed. Review these staged lines before committing:');
+  console.error('Secret scan failed. Review these lines before committing:');
   for (const finding of findings) {
     console.error(`- ${finding}`);
   }

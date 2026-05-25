@@ -11,6 +11,7 @@
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
+    "env:validate": "tsx scripts/validate-env.ts",
     "secrets:scan": "node scripts/scan-secrets.mjs",
     "migrate:validate": "tsx scripts/validate-supabase-migration.ts",
     "supabase:reset:dry": "tsx scripts/reset-supabase-staging.ts",

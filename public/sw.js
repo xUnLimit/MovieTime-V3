@@ -95,7 +95,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  event.waitUntil(handlePushEvent());
+  event.waitUntil(handlePushEvent(event));
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -117,28 +117,9 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-async function handlePushEvent() {
-  if (!self.registration.pushManager) {
-    return;
-  }
-
-  const subscription = await self.registration.pushManager.getSubscription();
-  if (!subscription) {
-    return;
-  }
-
+async function handlePushEvent(event) {
   try {
-    const response = await fetch('/api/push/pending', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: subscription.endpoint }),
-    });
-
-    if (!response.ok) {
-      throw new Error('No se pudo resolver la push pendiente.');
-    }
-
-    const payload = await response.json();
+    const payload = eventDataToJson(event);
     if (!Array.isArray(payload.blocks) || payload.blocks.length === 0) {
       return;
     }
@@ -160,4 +141,11 @@ async function handlePushEvent() {
       data: { url: '/dashboard' },
     });
   }
+}
+
+function eventDataToJson(event) {
+  if (!event || !event.data) {
+    throw new Error('Missing push payload.');
+  }
+  return event.data.json();
 }

@@ -103,10 +103,8 @@ function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: s
       };
     }
 
-    // The summary builder queries the notification views; the production push
-    // path currently doesn't reach buildSummaryBlocks (sendSubscriptionPing
-    // sends a constant payload), but keep these stubs to be safe if the call
-    // chain changes.
+    // The summary builder queries the notification views to create the exact
+    // payload encrypted into the push event.
     if (table === 'v_notificaciones_venta') {
       return {
         select: () => ({
@@ -160,13 +158,25 @@ describe('sendExecutivePushDailySummary', () => {
           auth: 'auth-1',
         },
       },
-      JSON.stringify({ kind: 'executive_daily_summary' }),
+      expect.stringContaining('"kind":"executive_daily_summary"'),
       {
         TTL: 60,
         urgency: 'normal',
         timeout: 15000,
       }
     );
+    const [, rawPayload] = webPushMocks.sendNotification.mock.calls[0];
+    expect(JSON.parse(rawPayload)).toMatchObject({
+      kind: 'executive_daily_summary',
+      title: 'Recordatorio',
+      destination: '/notificaciones',
+      blocks: [
+        expect.objectContaining({
+          key: 'clientes_por_notificar',
+          count: 1,
+        }),
+      ],
+    });
     expect(result).toMatchObject({ sent: 1, disabled: 0, failed: 0 });
     expect(supabaseMocks.configUpdateEq).toHaveBeenCalledWith('id', 'global');
   });

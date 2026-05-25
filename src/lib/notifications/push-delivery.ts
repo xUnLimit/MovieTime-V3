@@ -3,9 +3,8 @@ import { createECDH } from 'node:crypto';
 import webPush from 'web-push';
 
 import { env } from '@/config';
-import type { PushSubscriptionRecord } from '@/types';
+import type { ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
 
-const EXECUTIVE_PUSH_PAYLOAD = JSON.stringify({ kind: 'executive_daily_summary' });
 const PUSH_REQUEST_TIMEOUT_MS = 15_000;
 
 export type PushDeliveryFailure = {
@@ -82,6 +81,7 @@ export function toPushDeliveryFailure(
 
 export async function sendExecutivePushPing(
   subscription: Pick<PushSubscriptionRecord, 'endpoint' | 'p256dh' | 'auth'>,
+  payload: ExecutivePushSummaryPayload,
 ) {
   configureVapid();
   await webPush.sendNotification(
@@ -92,7 +92,7 @@ export async function sendExecutivePushPing(
         auth: subscription.auth,
       },
     },
-    EXECUTIVE_PUSH_PAYLOAD,
+    JSON.stringify(payload),
     {
       TTL: 60,
       urgency: 'normal',
