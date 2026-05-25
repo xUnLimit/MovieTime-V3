@@ -54,13 +54,22 @@ function parseEnv<T extends z.ZodTypeAny>(schema: T, values: unknown, label: str
   return result.data;
 }
 
-const publicEnv = parseEnv(publicEnvSchema, process.env, 'public');
+const publicEnvValues = {
+  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_ENABLE_SW_DEV: process.env.NEXT_PUBLIC_ENABLE_SW_DEV,
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+};
+
+const publicEnv = parseEnv(publicEnvSchema, publicEnvValues, 'public');
 const serverEnv = typeof window === 'undefined'
   ? parseEnv(serverEnvSchema, process.env, 'server')
   : {};
 
 export function validateEnvironment() {
-  parseEnv(publicEnvSchema, process.env, 'public');
+  parseEnv(publicEnvSchema, publicEnvValues, 'public');
   if (typeof window === 'undefined') {
     parseEnv(serverEnvSchema, process.env, 'server');
   }
