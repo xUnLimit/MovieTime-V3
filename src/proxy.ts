@@ -1,7 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const STATIC_ASSET_PREFIX = '/_next/static/';
-
 function normalizeHeaderValue(value: string): string {
   return value.replace(/\s{2,}/g, ' ').trim();
 }
@@ -41,32 +39,7 @@ function buildContentSecurityPolicy(nonce: string): string {
   return normalizeHeaderValue(directives.join('; '));
 }
 
-function setStaticAssetCors(response: NextResponse, request: NextRequest): void {
-  response.headers.set('Access-Control-Allow-Origin', request.nextUrl.origin);
-  response.headers.set('Vary', 'Origin');
-}
-
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (pathname.startsWith(STATIC_ASSET_PREFIX) && pathname.endsWith('/')) {
-    return new NextResponse('Not Found', {
-      status: 404,
-      headers: {
-        'Access-Control-Allow-Origin': request.nextUrl.origin,
-        'Content-Type': 'text/plain; charset=utf-8',
-        'X-Content-Type-Options': 'nosniff',
-        Vary: 'Origin',
-      },
-    });
-  }
-
-  if (pathname.startsWith(STATIC_ASSET_PREFIX)) {
-    const response = NextResponse.next();
-    setStaticAssetCors(response, request);
-    return response;
-  }
-
   const nonce = generateNonce();
   const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
   const requestHeaders = new Headers(request.headers);
@@ -85,7 +58,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: '/((?!api|_next/image|favicon.ico).*)',
+      source:
+        '/((?!api|_next/static|_next/image|favicon.ico|favicon.svg|logo.svg|sw.js|manifest.webmanifest|apple-icon|icon|icon-192.png|icon-512.png).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },
