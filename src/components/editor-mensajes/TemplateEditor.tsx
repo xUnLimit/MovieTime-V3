@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,14 @@ interface TemplateEditorProps {
   templates: TemplateMensaje[];
   onTemplateSaved?: () => void | Promise<void>;
 }
+
+type EditorDraft = {
+  tipo: TipoTemplate;
+  templateId: string | null;
+  templateContenido: string;
+  contenido: string;
+  dirty: boolean;
+};
 
 const TIPO_TEMPLATES: { value: TipoTemplate; label: string }[] = [
   { value: 'notificacion_regular', label: 'Notificación Regular' },
@@ -57,15 +65,47 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
     return templates.find((t) => t.tipo === selectedTipo) || null;
   }, [selectedTipo, templates]);
 
-  const defaultContenido = currentTemplate?.contenido || '';
-  const [contenido, setContenido] = useState(defaultContenido);
-  const [lastTipo, setLastTipo] = useState(selectedTipo);
+  const templateId = currentTemplate?.id ?? null;
+  const templateContenido = currentTemplate?.contenido ?? '';
+  const [editorDraft, setEditorDraft] = useState<EditorDraft>({
+    tipo: selectedTipo,
+    templateId: null,
+    templateContenido: '',
+    contenido: '',
+    dirty: false,
+  });
 
-  // Sync when tipo changes (not when just template updates)
-  if (selectedTipo !== lastTipo) {
-    setLastTipo(selectedTipo);
-    setContenido(defaultContenido);
+  let draft = editorDraft;
+  const templateChanged =
+    draft.tipo !== selectedTipo ||
+    draft.templateId !== templateId ||
+    draft.templateContenido !== templateContenido;
+
+  if (templateChanged) {
+    const nextContenido =
+      draft.tipo !== selectedTipo || !draft.dirty
+        ? templateContenido
+        : draft.contenido;
+
+    draft = {
+      tipo: selectedTipo,
+      templateId,
+      templateContenido,
+      contenido: nextContenido,
+      dirty: nextContenido !== templateContenido,
+    };
+    setEditorDraft(draft);
   }
+
+  const contenido = draft.contenido;
+
+  const setContenido = (nextContenido: string) => {
+    setEditorDraft((currentDraft) => ({
+      ...currentDraft,
+      contenido: nextContenido,
+      dirty: nextContenido !== currentDraft.templateContenido,
+    }));
+  };
 
   const handleCopyPlaceholder = async (placeholder: string) => {
     try {

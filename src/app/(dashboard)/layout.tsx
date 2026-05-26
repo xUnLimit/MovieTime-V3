@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -20,6 +20,8 @@ export default function DashboardLayout({
   const { isAuthenticated, isHydrated } = useAuthStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const openMobileSidebar = useCallback(() => setMobileSidebarOpen(true), []);
+  const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
 
   useEffect(() => {
     // Solo redirigir después de que Zustand se haya hidratado
@@ -64,7 +66,7 @@ export default function DashboardLayout({
           collapsed={sidebarCollapsed}
           onCollapse={setSidebarCollapsed}
           mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
+          onMobileClose={closeMobileSidebar}
         />
 
         {/* Main Content */}
@@ -78,7 +80,7 @@ export default function DashboardLayout({
             }}
           >
             <button
-              onClick={() => setMobileSidebarOpen(true)}
+              onClick={openMobileSidebar}
               className="flex items-center justify-center h-9 w-9 rounded-lg text-foreground hover:bg-muted transition-colors"
               aria-label="Abrir menú"
             >

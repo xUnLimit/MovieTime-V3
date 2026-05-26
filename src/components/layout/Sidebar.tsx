@@ -27,6 +27,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
   const { user } = useAuthStore();
   const { isOpen, toggle } = useSidebarState();
   const themeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousPathnameRef = useRef(pathname);
   const toggleTheme = useSidebarThemeTransition({
     setTheme,
     theme,
@@ -67,7 +68,10 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
 
   // Close mobile sidebar on route change
   useEffect(() => {
-    if (mobileOpen && onMobileClose) {
+    const previousPathname = previousPathnameRef.current;
+    previousPathnameRef.current = pathname;
+
+    if (previousPathname !== pathname && mobileOpen && onMobileClose) {
       onMobileClose();
     }
   }, [mobileOpen, onMobileClose, pathname]);
