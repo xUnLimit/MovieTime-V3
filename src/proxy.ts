@@ -20,8 +20,8 @@ function buildContentSecurityPolicy(nonce: string): string {
     "object-src 'none'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
-    `style-src 'self' ${isDevelopment ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
-    `style-src-elem 'self' ${isDevelopment ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    "style-src 'self' 'unsafe-inline'",
+    "style-src-elem 'self' 'unsafe-inline'",
     "style-src-attr 'unsafe-inline'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ''}`,
     [

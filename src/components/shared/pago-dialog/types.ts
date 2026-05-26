@@ -18,7 +18,7 @@ interface BaseProps {
   onOpenChange: (open: boolean) => void;
   metodosPago: MetodoPago[];
   mode: PagoDialogMode;
-  onConfirm: (data: EnrichedPagoDialogFormData) => void;
+  onConfirm: (data: EnrichedPagoDialogFormData) => void | Promise<void>;
   categoriaPlanes?: Plan[];
   tipoPlan?: Plan['tipoPlan'];
   clienteNombre?: string;

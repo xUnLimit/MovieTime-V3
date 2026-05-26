@@ -226,7 +226,7 @@ export function usePagoDialogController(props: PagoDialogProps) {
       // Pasar el mensaje editado (solo si hay WhatsApp activado)
       mensajeWhatsApp: data.notificarWhatsApp && previewMessage ? previewMessage : undefined,
     };
-    props.onConfirm(enrichedData);
+    await props.onConfirm(enrichedData);
     props.onOpenChange(false);
   };
 
