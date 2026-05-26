@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -19,7 +19,7 @@ import type { TemplateMensaje } from "@/types";
 
 import { pagoDialogSchema, type PagoDialogFormData } from "./schema";
 import type { PagoDialogProps } from "./types";
-import { buildVentaPreviewMessage, getCicloPagoMonths, getDefaultCosto, getDefaultMetodoPagoId, getPagoDialogCopy, getPagoDialogPresentation, getPagoDialogResetValues, hasServicioPagoChanges } from "./helpers";
+import { buildVentaPreviewMessage, getCicloPagoMonths, getDefaultCosto, getDefaultMetodoPagoId, getPagoDialogCopy, getPagoDialogPresentation, getPagoDialogResetValues, getPagoDialogTargetKey, hasServicioPagoChanges } from "./helpers";
 import { usePagoDialogNumberInputs } from "./usePagoDialogNumberInputs";
 
 export function usePagoDialogController(props: PagoDialogProps) {
@@ -31,6 +31,10 @@ export function usePagoDialogController(props: PagoDialogProps) {
   const venta = props.context === 'venta' ? props.venta : null;
   const servicio = props.context === 'servicio' ? props.servicio : null;
   const pago = props.pago ?? null;
+  const resetSessionRef = useRef<{ open: boolean; targetKey: string | null }>({
+    open: false,
+    targetKey: null,
+  });
   const { metodosPago } = props;
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
@@ -117,23 +121,53 @@ export function usePagoDialogController(props: PagoDialogProps) {
       plan.cicloPago === periodoValue && (!props.tipoPlan || plan.tipoPlan === props.tipoPlan)
     ) ?? null;
   }, [periodoValue, props.categoriaPlanes, props.tipoPlan]);
+  const dialogTargetKey = useMemo(() => getPagoDialogTargetKey(props), [
+    props.context,
+    props.mode,
+    pago?.id,
+    servicio?.id,
+    servicio?.nombre,
+    venta?.clienteNombre,
+  ]);
+  const resetValues = useMemo(() => getPagoDialogResetValues(props), [
+    props.context,
+    props.mode,
+    props.categoriaPlanes,
+    props.tipoPlan,
+    pago,
+    servicio?.cicloPago,
+    servicio?.costoServicio,
+    servicio?.fechaVencimiento,
+    servicio?.metodoPagoId,
+    servicio?.notas,
+    servicio?.renovacionAutomatica,
+    venta?.fechaFin,
+    venta?.metodoPagoId,
+    venta?.notas,
+    venta?.precioFinal,
+  ]);
   const costoNormalizado = roundToDecimals(Number(costoValue) || 0);
   const descuentoNumero = Number(descuentoValue) || 0;
   const precioFinal = calculateDiscountedAmount(costoNormalizado, descuentoNumero);
 
   useEffect(() => {
-    if (!props.open) return;
+    if (!props.open) {
+      resetSessionRef.current = { open: false, targetKey: null };
+      return;
+    }
 
-    const resetValues = getPagoDialogResetValues(props);
+    const shouldInitialize =
+      !resetSessionRef.current.open ||
+      resetSessionRef.current.targetKey !== dialogTargetKey;
+
+    resetSessionRef.current = { open: true, targetKey: dialogTargetKey };
+
+    if (!shouldInitialize) return;
     if (resetValues) reset(resetValues);
   }, [
-    props,
     props.open,
-    props.pago,
-    servicio?.fechaVencimiento,
-    servicio?.metodoPagoId,
-    servicio?.costoServicio,
-    servicio?.renovacionAutomatica,
+    dialogTargetKey,
+    resetValues,
     reset,
   ]);
 

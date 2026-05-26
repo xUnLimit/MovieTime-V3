@@ -80,6 +80,24 @@ export function getDefaultCosto(props: PagoDialogProps) {
     : 0;
 }
 
+export function getPagoDialogTargetKey(props: PagoDialogProps) {
+  if (props.context === 'venta') {
+    return [
+      props.context,
+      props.mode,
+      props.venta.clienteNombre ?? 'venta',
+      props.mode === 'edit' ? props.pago?.id ?? 'nuevo-pago' : 'renovacion',
+    ].join(':');
+  }
+
+  return [
+    props.context,
+    props.mode,
+    props.servicio.id ?? props.servicio.nombre ?? 'servicio',
+    props.mode === 'edit' ? props.pago?.id ?? 'nuevo-pago' : 'renovacion',
+  ].join(':');
+}
+
 export function getPagoDialogResetValues(props: PagoDialogProps): PagoDialogFormData | null {
   if (props.context === 'venta') {
     const { venta } = props;

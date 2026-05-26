@@ -6,6 +6,7 @@ import {
   getDefaultMetodoPagoId,
   getPagoDialogPresentation,
   getPagoDialogResetValues,
+  getPagoDialogTargetKey,
   hasServicioPagoChanges,
   buildVentaPreviewMessage,
 } from './helpers';
@@ -87,6 +88,63 @@ describe('pago dialog helpers', () => {
     } as never);
 
     expect(values).toBeNull();
+  });
+
+  it('keeps the servicio renew target key stable when mutable payment fields change', () => {
+    const baseServicio = {
+      id: 'servicio-1',
+      nombre: 'Netflix',
+      metodoPagoId: 'metodo-1',
+      costoServicio: 12,
+      fechaVencimiento: new Date('2026-05-01T00:00:00.000Z'),
+    };
+
+    const firstKey = getPagoDialogTargetKey({
+      ...baseProps,
+      context: 'servicio',
+      mode: 'renew',
+      servicio: baseServicio,
+    } as never);
+
+    const updatedKey = getPagoDialogTargetKey({
+      ...baseProps,
+      context: 'servicio',
+      mode: 'renew',
+      servicio: {
+        ...baseServicio,
+        costoServicio: 15,
+        fechaVencimiento: new Date('2026-06-01T00:00:00.000Z'),
+      },
+    } as never);
+
+    expect(updatedKey).toBe(firstKey);
+  });
+
+  it('changes the servicio edit target key when editing a different payment', () => {
+    const servicio = {
+      id: 'servicio-1',
+      nombre: 'Netflix',
+      metodoPagoId: 'metodo-1',
+      costoServicio: 12,
+    };
+
+    const firstKey = getPagoDialogTargetKey({
+      ...baseProps,
+      context: 'servicio',
+      mode: 'edit',
+      servicio,
+      pago: { id: 'pago-1' },
+    } as never);
+
+    const secondKey = getPagoDialogTargetKey({
+      ...baseProps,
+      context: 'servicio',
+      mode: 'edit',
+      servicio,
+      pago: { id: 'pago-2' },
+    } as never);
+
+    expect(secondKey).not.toBe(firstKey);
   });
 
   it('maps billing cycles to month increments', () => {
