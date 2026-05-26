@@ -96,7 +96,7 @@ export function IngresosVsGastosChart() {
   }, [selectedMonth, stats]);
 
   return (
-    <Card className="py-3 gap-0">
+    <Card className="py-3 gap-0 h-full flex flex-col">
       <CardHeader className="flex flex-col gap-2 p-0 px-4 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="text-base">Ingresos vs Gastos</CardTitle>
@@ -131,7 +131,7 @@ export function IngresosVsGastosChart() {
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
-      <CardContent className="px-4 pt-0 pb-1">
+      <CardContent className="px-4 pt-0 pb-1 flex-1 min-h-0">
         {isLoading ? (
           <Skeleton className="w-full h-[320px] rounded-lg" />
         ) : (

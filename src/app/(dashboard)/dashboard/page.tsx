@@ -45,11 +45,11 @@ export default function DashboardPage() {
 
       <DashboardMetrics />
 
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        <div className="md:col-span-2 lg:col-span-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-stretch">
+        <div className="md:col-span-2 lg:col-span-3 flex flex-col">
           <IngresosVsGastosChart />
         </div>
-        <div className="md:col-span-2 lg:col-span-1">
+        <div className="md:col-span-2 lg:col-span-1 flex flex-col">
           <PronosticoFinanciero />
         </div>
       </div>
