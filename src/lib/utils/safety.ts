@@ -2,6 +2,7 @@ type AsyncSideEffectContext = {
   operation: string;
   entity?: string;
   entityId?: string | null;
+  critical?: boolean;
 };
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -64,5 +65,6 @@ export function logAsyncSideEffectError(
     context.entityId ? `id=${context.entityId}` : null,
   ].filter(Boolean).join(' ');
 
-  console.error(`[SideEffect] ${scope}`, error);
+  const prefix = context.critical ? '[SideEffect:CRITICAL]' : '[SideEffect]';
+  console.error(`${prefix} ${scope}`, error);
 }

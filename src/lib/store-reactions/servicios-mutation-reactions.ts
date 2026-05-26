@@ -12,6 +12,7 @@ function deleteServicioNotifications(servicioId: string) {
       operation: 'deleteNotificacionesPorServicio',
       entity: 'servicio',
       entityId: servicioId,
+      critical: true,
     },
   );
 }

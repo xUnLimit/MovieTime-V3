@@ -24,6 +24,7 @@ function deleteVentaNotifications(ventaId: string) {
       operation: 'deleteNotificacionesPorVenta',
       entity: 'venta',
       entityId: ventaId,
+      critical: true,
     },
   );
 }

@@ -13,6 +13,10 @@ export function getServicioUseCase(id: string) {
   return getServicioById<Servicio>(id);
 }
 
+export function queryServiciosEnReposoUseCase() {
+  return queryServicios<Servicio>([{ field: 'enReposo', operator: '==', value: true }]);
+}
+
 export async function fetchServiciosCountsUseCase() {
   const [totalServiciosRaw, serviciosEnReposo, serviciosActivosRaw, serviciosEnReposoDocs, totalCategoriasActivas] =
     await Promise.all([

@@ -1,5 +1,4 @@
 import {
-  countMetodosPago,
   createMetodoPago,
   getMetodoPagoById,
   removeMetodoPago,
@@ -9,14 +8,6 @@ import type { MetodoPago } from '@/types';
 
 export function getMetodoPagoUseCase(id: string) {
   return getMetodoPagoById<MetodoPago>(id);
-}
-
-export async function fetchMetodosPagoCountsUseCase() {
-  await Promise.all([
-    countMetodosPago([{ field: 'asociadoA', operator: 'in', value: ['tercero', 'servicio'] }]),
-    countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'tercero' }]),
-    countMetodosPago([{ field: 'asociadoA', operator: '==', value: 'servicio' }]),
-  ]);
 }
 
 export async function createMetodoPagoUseCase(

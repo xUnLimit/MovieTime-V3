@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
 import { queryKeys } from "@/lib/query-keys";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios/servicios-payment-use-cases";
-import { queryVentas } from "@/lib/supabase/ventas-repository";
+import { getVentasActivasParaCredenciales } from "@/lib/use-cases/servicios/servicio-credential-notification-use-case";
 import {
   changedCredentialsCount,
   hasCredentialChanges,
@@ -18,7 +18,6 @@ import type {
   PagoServicio,
   Servicio,
   Tercero,
-  VentaDoc,
 } from "@/types";
 
 import {
@@ -136,10 +135,7 @@ export function useServicioFormSubmit({
         refreshPagos();
 
         if (changedCredentialsCount(credentialChanges) > 0) {
-          const ventasActivas = await queryVentas<VentaDoc>([
-            { field: "servicioId", operator: "==", value: servicio.id },
-            { field: "estado", operator: "!=", value: "inactivo" },
-          ]);
+          const ventasActivas = await getVentasActivasParaCredenciales(servicio.id);
 
           if (ventasActivas.length > 0) {
             const servicioActualizado = {

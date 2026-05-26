@@ -18,6 +18,7 @@ function invalidateForecastReadModels({ entity, entityId }: ForecastSyncContext)
       operation: 'invalidateForecastReadModels',
       entity,
       entityId,
+      critical: true,
     },
   );
 }

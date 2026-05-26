@@ -98,6 +98,10 @@ export const queryKeys = {
     all: ['tipos-gasto'] as const,
     list: () => [...queryKeys.tiposGasto.all, 'list'] as const,
   },
+  config: {
+    all: ['config'] as const,
+    global: () => [...queryKeys.config.all, 'global'] as const,
+  },
   featureFlags: {
     all: ['feature-flags'] as const,
   },

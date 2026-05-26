@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { useConfig } from "@/hooks/use-config";
 import {
   getPushSubscriptionStatus,
   registerPushSubscription,
@@ -36,7 +37,8 @@ export function useConfiguracionDialogController({
   const user = useAuthStore((state) => state.user);
   const { data: stats } = useDashboardStats();
   const { selectedYear, setSelectedYear } = useDashboardFilterStore();
-  const { config, fetchConfig, updateExecutivePush } = useConfigStore();
+  const { data: config, refetch: refetchConfig } = useConfig();
+  const { updateExecutivePush } = useConfigStore();
   const {
     isInstalled,
     isOnline,
@@ -60,7 +62,7 @@ export function useConfiguracionDialogController({
 
   useEffect(() => {
     if (!open) return;
-    safeAsyncSideEffect(fetchConfig(true), {
+    safeAsyncSideEffect(refetchConfig(), {
       operation: 'fetchConfig',
       entity: 'config',
     });
@@ -75,7 +77,7 @@ export function useConfiguracionDialogController({
       }),
       { operation: 'getPushSubscriptionStatus', entity: 'pwa' },
     );
-  }, [open, fetchConfig, hydrateOfflineState, setNotificationPermission]);
+  }, [open, refetchConfig, hydrateOfflineState, setNotificationPermission]);
 
   const availableYears = useMemo(() => {
     return getAvailableDashboardYears(stats?.ingresosPorMes);
@@ -129,7 +131,8 @@ export function useConfiguracionDialogController({
   const handleExecutivePushToggle = async (enabled: boolean) => {
     if (!executivePush) return;
     try {
-      await updateExecutivePush(getExecutivePushToggleUpdate(executivePush, enabled, user?.id));
+      await updateExecutivePush(getExecutivePushToggleUpdate(executivePush, enabled, user?.id), executivePush);
+      await refetchConfig();
       toast.success('Configuracion de push ejecutiva actualizada.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la configuracion.');
@@ -162,7 +165,8 @@ export function useConfiguracionDialogController({
         updatedBy: user?.id,
         windowEnd,
         windowStart,
-      }));
+      }), executivePush);
+      await refetchConfig();
       toast.success('Programacion de recordatorios actualizada.');
     } catch (error) {
       setDraftIntervalHours(executivePush.intervalHours);
@@ -188,7 +192,7 @@ export function useConfiguracionDialogController({
         toast.warning('Push procesada sin entregas. Verifica las suscripciones activas.');
       }
       // Refresh config so the "last sent" indicator reflects the test send.
-      safeAsyncSideEffect(fetchConfig(true), {
+      safeAsyncSideEffect(refetchConfig(), {
         operation: 'fetchConfigAfterPushTest',
         entity: 'config',
       });
@@ -207,7 +211,8 @@ export function useConfiguracionDialogController({
         checked,
         executivePush,
         updatedBy: user?.id,
-      }));
+      }), executivePush);
+      await refetchConfig();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo actualizar los bloques.');
     }
