@@ -48,3 +48,6 @@ next-env.d.ts
 # migration scratch/output
 scripts/migrate-to-supabase/reports/
 supabase/.temp/
+
+# local agent scratch/output
+.superpowers/
