@@ -1,4 +1,6 @@
-const CACHE_NAME = 'movietime-pwa-v5';
+const CACHE_NAME = 'movietime-pwa-v6';
+const NEXT_ASSET_PREFIX = '/_next/';
+const API_PREFIX = '/api/';
 const APP_SHELL = [
   '/',
   '/login',
@@ -56,6 +58,10 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  if (url.pathname.startsWith(NEXT_ASSET_PREFIX) || url.pathname.startsWith(API_PREFIX)) {
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(
