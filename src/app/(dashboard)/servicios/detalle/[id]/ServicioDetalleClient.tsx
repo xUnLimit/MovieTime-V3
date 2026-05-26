@@ -7,6 +7,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
+import { useServicios } from '@/hooks/use-servicios';
+import { useTemplates } from '@/hooks/use-templates';
 import { getCurrencySymbol } from '@/lib/constants';
 
 import { ServicioDetalleDialogs } from './components/ServicioDetalleDialogs';
@@ -31,21 +33,28 @@ import {
   getReturnToServicios,
   sortPagosServicioByNewest,
 } from './servicio-detalle-helpers';
+import type { TemplateMensaje } from '@/types';
 
 function ServicioDetallePageBody({ id, from }: { id: string; from: string | null }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const {
+    deleteNotificacionesPorVenta,
     deleteNotificacionesPorServicio,
     deleteServicio,
     enqueueWhatsAppMessages,
     fetchCounts,
     fetchServicios,
-    fetchTemplates,
-    fetchTerceros,
-    getTemplateByTipo,
-    servicios,
+    updatePerfilOcupado,
   } = useServicioDetalleStoreDependencies();
+
+  const { data: servicios = [], refetch: refetchServicios } = useServicios();
+  const { data: templates = [], refetch: refetchTemplates } = useTemplates();
+  const getTemplateByTipo = useMemo(
+    () => (tipo: TemplateMensaje['tipo']) =>
+      templates.find((template) => template.tipo === tipo && template.activo),
+    [templates],
+  );
 
   const {
     categoria,
@@ -72,11 +81,13 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   } = useServicioSaleActions({
     enqueueWhatsAppMessages,
     fetchServicios,
-    fetchTemplates,
-    fetchTerceros,
+    deleteNotificacionesPorVenta,
+    refetchServicios,
+    refetchTemplates,
     getTemplateByTipo,
     queryClient,
     setVentasServicio,
+    updatePerfilOcupado,
   });
 
   const {

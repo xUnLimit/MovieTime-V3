@@ -178,8 +178,8 @@ export async function updateServicioUseCase(
 
   const cambios = detectarCambios(
     'servicio',
-    servicio as unknown as Record<string, unknown>,
-    servicioActualizado as unknown as Record<string, unknown>
+    servicio,
+    servicioActualizado
   );
 
   await options.recordActivityLog?.({

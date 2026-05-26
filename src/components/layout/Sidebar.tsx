@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, Moon, Sun } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -38,7 +38,19 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
   }, [user?.role]);
 
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : !isOpen;
-  const setCollapsed = onCollapse || (() => toggle());
+  const setCollapsed = useCallback(
+    (nextCollapsed: boolean) => {
+      if (onCollapse) {
+        onCollapse(nextCollapsed);
+        return;
+      }
+
+      if (nextCollapsed !== collapsed) {
+        toggle();
+      }
+    },
+    [collapsed, onCollapse, toggle],
+  );
 
   // Keyboard shortcut: Ctrl/Cmd + B
   useEffect(() => {
@@ -51,16 +63,14 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
 
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collapsed]);
+  }, [collapsed, setCollapsed]);
 
   // Close mobile sidebar on route change
   useEffect(() => {
     if (mobileOpen && onMobileClose) {
       onMobileClose();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [mobileOpen, onMobileClose, pathname]);
 
   const sidebarContent = (isMobile: boolean, withRef = false) => (
     <aside

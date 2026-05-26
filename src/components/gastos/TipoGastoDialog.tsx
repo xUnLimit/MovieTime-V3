@@ -6,7 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { TipoGasto } from '@/types';
-import { useTiposGastoStore } from '@/store/tiposGastoStore';
+import {
+  createTipoGastoMutation,
+  updateTipoGastoMutation,
+} from '@/lib/client-domain-mutations';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +40,6 @@ interface TipoGastoDialogProps {
 }
 
 export function TipoGastoDialog({ open, onOpenChange, tipoGasto, onSaved }: TipoGastoDialogProps) {
-  const { createTipoGasto, updateTipoGasto } = useTiposGastoStore();
   const {
     register,
     handleSubmit,
@@ -82,12 +84,12 @@ export function TipoGastoDialog({ open, onOpenChange, tipoGasto, onSaved }: Tipo
 
     try {
       if (tipoGasto) {
-        await updateTipoGasto(tipoGasto.id, payload);
+        await updateTipoGastoMutation(tipoGasto.id, payload);
         toast.success('Tipo de gasto actualizado', {
           description: 'Los cambios del tipo de gasto fueron guardados correctamente.',
         });
       } else {
-        await createTipoGasto(payload);
+        await createTipoGastoMutation(payload);
         toast.success('Tipo de gasto creado', {
           description: 'El tipo de gasto fue registrado correctamente.',
         });

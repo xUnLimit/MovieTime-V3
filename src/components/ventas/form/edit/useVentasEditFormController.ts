@@ -23,15 +23,14 @@ import { ventaEditSchema, type VentaEditFormData } from "@/features/ventas/venta
 import { SERVICIOS_DROPDOWN_VISIBLE_ROWS } from "@/features/ventas/ventas-form-shared";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useTerceros } from "@/hooks/use-terceros";
+import { refreshServicioProfileCountMutation } from "@/lib/client-domain-mutations";
 import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
-import { useServiciosStore } from "@/store/serviciosStore";
 
 import type { VentaEditData } from "./types";
 
 export function useVentasEditFormController(venta: VentaEditData) {
   const router = useRouter();
   const { data: categorias = [] } = useCategoriasFull();
-  const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
   const { data: terceros = [] } = useTerceros();
 
   const [searchCliente, setSearchCliente] = useState("");
@@ -223,7 +222,7 @@ export function useVentasEditFormController(venta: VentaEditData) {
     onSaved: () => router.push(`/ventas/${venta.id}`),
     serviciosCategoria,
     setError,
-    updatePerfilOcupado,
+    updatePerfilOcupado: refreshServicioProfileCountMutation,
     venta,
   });
 

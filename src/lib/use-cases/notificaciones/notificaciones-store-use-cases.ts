@@ -1,0 +1,66 @@
+import { queryNotificationIdsRead } from '@/lib/supabase/domain-read-adapters';
+import {
+  countNotificaciones,
+  removeNotificacion,
+  updateNotificacion,
+} from '@/lib/supabase/notifications-repository';
+import { queryNotificationsRead } from '@/lib/supabase/domain-read-adapters';
+
+export async function fetchNotificationCountsUseCase() {
+  const now = new Date();
+  const inSevenDays = new Date();
+  inSevenDays.setDate(now.getDate() + 7);
+
+  await Promise.all([
+    countNotificaciones(),
+    countNotificaciones([{ field: 'entidad', operator: '==', value: 'venta' }]),
+    countNotificaciones([{ field: 'entidad', operator: '==', value: 'servicio' }]),
+    countNotificaciones([{ field: 'entidad', operator: '==', value: 'reposo' }]),
+    queryNotificationsRead([
+      { field: 'fecha', operator: '>=', value: now },
+      { field: 'fecha', operator: '<=', value: inSevenDays },
+    ]),
+    queryNotificationsRead([{ field: 'leida', operator: '==', value: false }]),
+  ]);
+}
+
+export async function toggleNotificacionLeidaUseCase(
+  notifId: string,
+  leida: boolean,
+) {
+  await updateNotificacion(notifId, {
+    leida,
+    updatedAt: new Date(),
+  });
+}
+
+export async function toggleNotificacionResaltadaUseCase(
+  notifId: string,
+  resaltada: boolean,
+) {
+  await updateNotificacion(notifId, {
+    resaltada,
+    updatedAt: new Date(),
+  });
+}
+
+export async function deleteNotificacionUseCase(notifId: string) {
+  await removeNotificacion(notifId);
+}
+
+export async function deleteNotificacionesPorVentaUseCase(ventaId: string) {
+  const notifsToDelete = await queryNotificationIdsRead([
+    { field: 'entidad', operator: '==', value: 'venta' },
+    { field: 'ventaId', operator: '==', value: ventaId },
+  ]);
+
+  await Promise.all(notifsToDelete.map((notificacion) => removeNotificacion(notificacion.id)));
+}
+
+export async function deleteNotificacionesPorServicioUseCase(servicioId: string) {
+  const notifsToDelete = await queryNotificationIdsRead([
+    { field: 'servicioId', operator: '==', value: servicioId },
+  ]);
+
+  await Promise.all(notifsToDelete.map((notificacion) => removeNotificacion(notificacion.id)));
+}

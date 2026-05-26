@@ -21,7 +21,7 @@ export interface ServiciosListTableProps {
   onPageSizeChange?: (size: number) => void;
 }
 
-export interface ServicioRow extends Record<string, unknown> {
+export interface ServicioRow {
   id: string;
   nombre: string;
   correo: string;

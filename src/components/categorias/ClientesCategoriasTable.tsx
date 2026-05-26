@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreHorizontal, Eye, Edit, Trash2, Check, ListFilter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useCategoriasStore } from "@/store/categoriasStore";
+import { deleteCategoriaMutation } from "@/lib/client-domain-mutations";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -36,7 +36,6 @@ export function ClientesCategoriasTable({
   title = "Categorías de Clientes",
   onCategoriaDeleted,
 }: ClientesCategoriasTableProps) {
-    const { deleteCategoria } = useCategoriasStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoriaToDelete, setCategoriaToDelete] = useState<Categoria | null>(
     null,
@@ -72,7 +71,7 @@ export function ClientesCategoriasTable({
   const handleConfirmDelete = async () => {
     if (categoriaToDelete) {
       try {
-        await deleteCategoria(categoriaToDelete.id);
+        await deleteCategoriaMutation(categoriaToDelete.id, categoriaToDelete);
         await onCategoriaDeleted?.();
         toast.success("Categoría eliminada", {
           description: "La categoría ha sido eliminada correctamente.",

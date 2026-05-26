@@ -1,133 +1,23 @@
-﻿import { createTemplate, ENTITIES, getTemplates, logCacheHit, removeTemplate, updateTemplate } from '@/lib/supabase/templates-repository';
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 
-import {
-  afterTemplateCreated,
-  afterTemplateDeleted,
-  afterTemplateUpdated,
-} from '@/lib/store-reactions/templates-mutation-reactions';
-import { CACHE_TTL_MS } from '@/lib/constants';
-import type { TemplateMensaje, TipoTemplate } from '@/types';
+import type { TemplateMensaje } from '@/types';
 
 interface TemplatesState {
-  templates: TemplateMensaje[];
-  isLoading: boolean;
   error: string | null;
-  lastFetch: number | null;
   selectedTemplate: TemplateMensaje | null;
-
-  // Actions
-  fetchTemplates: (force?: boolean) => Promise<void>;
-  createTemplate: (template: Omit<TemplateMensaje, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTemplate: (id: string, updates: Partial<TemplateMensaje>) => Promise<void>;
-  deleteTemplate: (id: string) => Promise<void>;
+  setError: (error: string | null) => void;
   setSelectedTemplate: (template: TemplateMensaje | null) => void;
-  getTemplateByTipo: (tipo: TipoTemplate) => TemplateMensaje | undefined;
 }
-
-const CACHE_TIMEOUT = CACHE_TTL_MS;
 
 export const useTemplatesStore = create<TemplatesState>()(
   devtools(
-    persist(
-      (set, get) => ({
-        templates: [],
-        isLoading: false,
-        error: null,
-        lastFetch: null,
-        selectedTemplate: null,
-
-        fetchTemplates: async (force = false) => {
-          const { lastFetch } = get();
-          if (!force && lastFetch && (Date.now() - lastFetch) < CACHE_TIMEOUT) {
-            logCacheHit(ENTITIES.TEMPLATES);
-            return;
-          }
-
-          set({ isLoading: true, error: null });
-          try {
-            const templates = await getTemplates<TemplateMensaje>();
-            set({ templates, isLoading: false, error: null, lastFetch: Date.now() });
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar templates';
-            console.error('Error fetching templates:', error);
-            set({ isLoading: false, error: errorMessage });
-          }
-        },
-
-        createTemplate: async (templateData) => {
-          try {
-            const id = await createTemplate(templateData as Omit<TemplateMensaje, 'id'>);
-
-            const newTemplate: TemplateMensaje = {
-              ...templateData,
-              id,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-
-            set((state) => ({
-              templates: [...state.templates, newTemplate]
-            }));
-
-            await afterTemplateCreated(newTemplate);
-          } catch (error) {
-            console.error('Error creating template:', error);
-            throw error;
-          }
-        },
-
-        updateTemplate: async (id, updates) => {
-          const oldTemplate = get().templates.find(t => t.id === id);
-
-          try {
-            await updateTemplate(id, updates);
-
-            set((state) => ({
-              templates: state.templates.map((template) =>
-                template.id === id
-                  ? { ...template, ...updates, updatedAt: new Date() }
-                  : template
-              )
-            }));
-
-            await afterTemplateUpdated({ templateId: id, oldTemplate, updates });
-          } catch (error) {
-            console.error('Error updating template:', error);
-            throw error;
-          }
-        },
-
-        deleteTemplate: async (id) => {
-          const templateEliminado = get().templates.find(t => t.id === id);
-
-          try {
-            await removeTemplate(id);
-
-            set((state) => ({
-              templates: state.templates.filter((template) => template.id !== id)
-            }));
-
-            await afterTemplateDeleted(id, templateEliminado);
-          } catch (error) {
-            console.error('Error deleting template:', error);
-            throw error;
-          }
-        },
-
-        setSelectedTemplate: (template) => {
-          set({ selectedTemplate: template });
-        },
-
-        getTemplateByTipo: (tipo) => {
-          return get().templates.find((t) => t.tipo === tipo && t.activo);
-        }
-      }),
-      {
-        name: 'templates-storage',
-        partialize: (state) => ({ templates: state.templates })
-      }
-    )
+    (set) => ({
+      error: null,
+      selectedTemplate: null,
+      setError: (error) => set({ error }),
+      setSelectedTemplate: (template) => set({ selectedTemplate: template }),
+    }),
+    { name: 'templates-store' }
   )
 );

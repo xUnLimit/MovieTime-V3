@@ -6,7 +6,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMetodosPagoStore } from "@/store/metodosPagoStore";
+import {
+  createMetodoPagoMutation,
+  updateMetodoPagoMutation,
+} from "@/lib/client-domain-mutations";
 import { useRouter } from "next/navigation";
 import { MetodoPago } from "@/types";
 import { AdditionalInfoSection } from "./form/AdditionalInfoSection";
@@ -46,7 +49,6 @@ export function MetodoPagoForm({
 }: MetodoPagoFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { createMetodoPago, updateMetodoPago } = useMetodosPagoStore();
   const [activeTab, setActiveTab] = useState("basica");
   const [paisSearch, setPaisSearch] = useState("");
   const [isBasicaTabComplete, setIsBasicaTabComplete] = useState(
@@ -160,14 +162,14 @@ export function MetodoPagoForm({
   };
 
   const onSubmit = useMetodoPagoFormSubmit({
-    createMetodoPago,
+    createMetodoPago: createMetodoPagoMutation,
     hasChanges,
     metodoPago,
     mode,
     queryClient,
     returnTo,
     routerPush: router.push,
-    updateMetodoPago,
+    updateMetodoPago: (id, updates) => updateMetodoPagoMutation(id, updates, metodoPago),
   });
   const onCancel = () => {
     router.push(returnTo);

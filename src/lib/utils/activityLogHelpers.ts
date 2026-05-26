@@ -70,19 +70,21 @@ const TRACKEABLE_FIELDS: Record<string, Record<string, { label: string; tipo: Ca
 /**
  * Compara dos objetos y genera un array de cambios
  */
-export function detectarCambios<T extends Record<string, unknown>>(
+export function detectarCambios<TAnterior extends object, TNuevo extends object>(
   entidad: string,
-  anterior: T,
-  nuevo: T
+  anterior: TAnterior,
+  nuevo: TNuevo
 ): CambioLog[] {
   const cambios: CambioLog[] = [];
   const camposTrackeable = TRACKEABLE_FIELDS[entidad];
+  const anteriorRecord = anterior as Record<string, unknown>;
+  const nuevoRecord = nuevo as Record<string, unknown>;
 
   if (!camposTrackeable) return cambios;
 
   for (const [campoKey, config] of Object.entries(camposTrackeable)) {
-    const valorAnterior = anterior[campoKey];
-    const valorNuevo = nuevo[campoKey];
+    const valorAnterior = anteriorRecord[campoKey];
+    const valorNuevo = nuevoRecord[campoKey];
 
     // Comparar valores (manejar null, undefined, objetos Date, etc.)
     if (!sonValoresIguales(valorAnterior, valorNuevo)) {

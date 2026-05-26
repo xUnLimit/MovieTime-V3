@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { queryKeys } from "@/lib/query-keys";
+import { applyNotificationQueryReactions } from "@/lib/store-reactions/notification-query-reactions";
 import {
   activateAndRenewReposoServicioUseCase,
   activateReposoServicioUseCase,
@@ -67,10 +68,15 @@ function ReposoPageContent() {
     if (!selectedServicio) return;
     setIsActivating(true);
     try {
-      await activateReposoServicioUseCase({
-        queryClient,
+      const outcome = await activateReposoServicioUseCase({
         servicio: selectedServicio,
       });
+      await applyNotificationQueryReactions(queryClient, outcome);
+      if (outcome.type === "reposoActivated") {
+        toast.success("Servicio activado", {
+          description: `${outcome.servicioNombre} ha sido activado exitosamente.`,
+        });
+      }
       setActivarDialogOpen(false);
       setSelectedServicio(null);
     } catch (error) {
@@ -87,11 +93,16 @@ function ReposoPageContent() {
   ) => {
     if (!selectedServicio) return;
     try {
-      await activateAndRenewReposoServicioUseCase({
+      const outcome = await activateAndRenewReposoServicioUseCase({
         pagoData,
-        queryClient,
         servicio: selectedServicio,
       });
+      await applyNotificationQueryReactions(queryClient, outcome);
+      if (outcome.type === "reposoActivatedAndRenewed") {
+        toast.success("Servicio activado y renovado", {
+          description: `${outcome.servicioNombre} ha sido activado y renovado.`,
+        });
+      }
       setRenovarDialogOpen(false);
       setSelectedServicio(null);
     } catch (error) {
@@ -104,11 +115,18 @@ function ReposoPageContent() {
   const handleConfirmDelete = async () => {
     if (!selectedServicio) return;
     try {
-      await deleteReposoServicioUseCase({
+      const outcome = await deleteReposoServicioUseCase({
         deletePayments,
-        queryClient,
         servicio: selectedServicio,
       });
+      await applyNotificationQueryReactions(queryClient, outcome);
+      if (outcome.type === "reposoServicioDeleted") {
+        toast.success("Servicio eliminado", {
+          description: outcome.deletedPayments
+            ? "El servicio y todos sus registros de pago han sido eliminados."
+            : "El servicio fue eliminado. Los registros de pago se conservaron.",
+        });
+      }
       setDeleteDialogOpen(false);
       setSelectedServicio(null);
     } catch (error) {

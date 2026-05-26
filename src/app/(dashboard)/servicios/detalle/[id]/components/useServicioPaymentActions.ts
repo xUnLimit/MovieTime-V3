@@ -2,16 +2,12 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import {
-  invalidateDashboardCache,
-  refreshCategoriasCache,
-} from "@/lib/commands/client-cache";
 import { queryKeys } from "@/lib/query-keys";
 import {
-  deleteServicioPagoUseCase,
-  renewServicioUseCase,
-  updateServicioPagoUseCase,
-} from "@/lib/use-cases/servicios/servicios-payment-use-cases";
+  deleteServicioPagoDetalleWorkflow,
+  renewServicioDetalleWorkflow,
+  updateServicioPagoDetalleWorkflow,
+} from "@/lib/use-cases/servicios/servicio-detail-use-cases";
 import type { MetodoPago, PagoServicio, Servicio } from "@/types";
 
 import type { MetodoPagoDetalle, PagoFormData } from "./types";
@@ -47,6 +43,7 @@ export function useServicioPaymentActions({
   const [editarPagoDialogOpen, setEditarPagoDialogOpen] = useState(false);
   const [pagoToEdit, setPagoToEdit] = useState<PagoServicio | null>(null);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
+  const [deleteRenovacionDialogOpen, setDeleteRenovacionDialogOpen] = useState(false);
 
   const handleRenovar = () => {
     setRenovarDialogOpen(true);
@@ -57,9 +54,6 @@ export function useServicioPaymentActions({
     setDeleteRenovacionDialogOpen(true);
   };
 
-  const [deleteRenovacionDialogOpen, setDeleteRenovacionDialogOpen] =
-    useState(false);
-
   const handleEditarPago = (pago: PagoServicio) => {
     setPagoToEdit(pago);
     setEditarPagoDialogOpen(true);
@@ -68,21 +62,17 @@ export function useServicioPaymentActions({
   const handleConfirmEditarPago = async (data: PagoFormData) => {
     if (!pagoToEdit || !servicio) return;
     try {
-      const metodoPagoSeleccionado = metodosPago.find(
-        (item) => item.id === data.metodoPagoId,
-      );
-      const esUltimoPago = pagosOrdenados[0]?.id === pagoToEdit.id;
-      const { servicioActualizado } = await updateServicioPagoUseCase(
-        servicio,
-        pagoToEdit,
+      const outcome = await updateServicioPagoDetalleWorkflow({
         data,
-        {
-          metodoPago: metodoPagoSeleccionado,
-          isLatestPayment: esUltimoPago,
-        },
-      );
+        metodosPago,
+        pago: pagoToEdit,
+        pagosOrdenados,
+        servicio,
+      });
 
-      if (servicioActualizado) setServicio(servicioActualizado);
+      if (outcome.type === "servicioPaymentUpdated" && outcome.servicioActualizado) {
+        setServicio(outcome.servicioActualizado);
+      }
 
       refreshPagos();
       toast.success("Pago actualizado", {
@@ -100,42 +90,33 @@ export function useServicioPaymentActions({
 
   const handleConfirmDeleteRenovacion = async () => {
     if (!pagoToDelete || !servicio) return;
-    const eraUltimaRenovacion = pagosOrdenados[0]?.id === pagoToDelete.id;
 
     try {
-      const pagosActualizados = pagosServicio.filter(
-        (pago) => pago.id !== pagoToDelete.id,
-      );
-      const { servicioActualizado } = await deleteServicioPagoUseCase(
-        servicio,
-        pagoToDelete,
-        pagosActualizados,
-        {
-          isLatestPayment: eraUltimaRenovacion,
-          fallbackMoneda: metodoPago?.moneda,
+      const outcome = await deleteServicioPagoDetalleWorkflow({
+        deps: {
+          invalidateCategorias: () => queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+          refreshPagos,
         },
-      );
-      invalidateDashboardCache({
-        entity: "servicio",
-        entityId: id,
+        fallbackMoneda: metodoPago?.moneda,
+        id,
+        pago: pagoToDelete,
+        pagosOrdenados,
+        pagosServicio,
+        servicio,
       });
-      refreshCategoriasCache({
-        entity: "servicio",
-        entityId: id,
-      });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all });
-      await refreshPagos();
-      if (eraUltimaRenovacion && servicioActualizado) {
-        setServicio(servicioActualizado);
+
+      if (outcome.type === "servicioPaymentDeleted" && outcome.latestPayment && outcome.servicioActualizado) {
+        setServicio(outcome.servicioActualizado);
       }
-      toast.success("Renovación eliminada", {
+
+      toast.success("Renovacion eliminada", {
         description: "El registro de pago ha sido eliminado del historial.",
       });
       setPagoToDelete(null);
       setDeleteRenovacionDialogOpen(false);
     } catch (error) {
-      console.error("Error al eliminar renovación:", error);
-      toast.error("Error al eliminar renovación", {
+      console.error("Error al eliminar renovacion:", error);
+      toast.error("Error al eliminar renovacion", {
         description: error instanceof Error ? error.message : undefined,
       });
     }
@@ -144,36 +125,30 @@ export function useServicioPaymentActions({
   const handleConfirmRenovacion = async (data: PagoFormData) => {
     if (!servicio) return;
     try {
-      const metodoPagoSeleccionado = metodosPago.find(
-        (item) => item.id === data.metodoPagoId,
-      );
-      const { servicioActualizado } = await renewServicioUseCase(servicio, data, {
-        numeroRenovacion: renovaciones + 1,
-        metodoPago: metodoPagoSeleccionado,
+      const outcome = await renewServicioDetalleWorkflow({
+        data,
+        deps: {
+          deleteNotificacionesPorServicio,
+          invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
+          refreshPagos,
+        },
+        id,
+        metodosPago,
+        renovaciones,
+        servicio,
       });
 
-      invalidateDashboardCache({
-        entity: "servicio",
-        entityId: id,
-      });
+      if (outcome.type === "servicioRenewed") {
+        setServicio(outcome.servicioActualizado);
+      }
 
-      setServicio(servicioActualizado);
-      refreshPagos();
-
-      await deleteNotificacionesPorServicio(id);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
-      refreshCategoriasCache({
-        entity: "servicio",
-        entityId: id,
-      });
-
-      toast.success("Renovación registrada", {
-        description: "El nuevo período de pago se ha registrado correctamente.",
+      toast.success("Renovacion registrada", {
+        description: "El nuevo periodo de pago se ha registrado correctamente.",
       });
       setRenovarDialogOpen(false);
     } catch (error) {
-      console.error("Error al registrar la renovación:", error);
-      toast.error("Error al registrar la renovación", {
+      console.error("Error al registrar la renovacion:", error);
+      toast.error("Error al registrar la renovacion", {
         description: error instanceof Error ? error.message : undefined,
       });
     }

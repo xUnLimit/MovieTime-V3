@@ -3,17 +3,18 @@ import { startOfDay } from 'date-fns';
 import { NotFoundError } from '@/lib/errors/domain-errors';
 import {
   countTerceros,
-  createTercero,
   getTerceros,
   getTerceroById,
-  removeTercero,
-  updateTercero,
 } from '@/lib/supabase/terceros-repository';
 import { ENTITIES } from '@/lib/supabase/entities';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
+import {
+  createTerceroFromDomain,
+  removeTerceroFromDomain,
+  updateTerceroFromDomain,
+} from '@/lib/terceros/terceros-write-adapter';
 import { storeEventBus } from '@/lib/events/store-event-bus';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
 import type { ActivityLog, Tercero } from '@/types';
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
@@ -27,32 +28,6 @@ export function getTerceroUseCase<T = Tercero>(id: string) {
 
 export function fetchTercerosUseCase<T = Tercero>() {
   return getTerceros<T>();
-}
-
-function getTerceroSqlPayload(usuario: Partial<Tercero>) {
-  const payload: Record<string, unknown> = {};
-  const allowedFields: Array<keyof Tercero> = [
-    'nombre',
-    'apellido',
-    'tipo',
-    'telefono',
-    'email',
-    'metodoPagoId',
-    'active',
-    'notas',
-    'createdBy',
-  ];
-
-  for (const field of allowedFields) {
-    if (usuario[field] !== undefined) {
-      payload[field] =
-        field === 'metodoPagoId' && isPendingTerceroPaymentMethodId(usuario[field] as string | null)
-          ? null
-          : usuario[field];
-    }
-  }
-
-  return payload;
 }
 
 export async function fetchTercerosCountsUseCase() {
@@ -71,7 +46,7 @@ export async function createTerceroUseCase(
   usuarioData: Omit<Tercero, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos'>,
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
-  const id = await createTercero(getTerceroSqlPayload({ ...usuarioData, active: true }));
+  const id = await createTerceroFromDomain(usuarioData);
 
   const usuario: Tercero = {
     ...usuarioData,
@@ -105,7 +80,7 @@ export async function updateTerceroUseCase(
   }
 ) {
   const oldTercero = options.oldTercero ?? await getTerceroById<Tercero>(id);
-  await updateTercero(id, getTerceroSqlPayload(updates));
+  await updateTerceroFromDomain(id, updates);
 
   const nombreChanged = oldTercero
     ? updates.nombre !== undefined || updates.apellido !== undefined
@@ -133,8 +108,8 @@ export async function updateTerceroUseCase(
   const cambios = oldTercero && usuarioActualizado
     ? detectarCambios(
         entidadTipo,
-        oldTercero as unknown as Record<string, unknown>,
-        usuarioActualizado as unknown as Record<string, unknown>
+        oldTercero,
+        usuarioActualizado
       )
     : [];
 
@@ -169,7 +144,7 @@ export async function deleteTerceroUseCase(
   deletedUser: Tercero,
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ) {
-  await removeTercero(id);
+  await removeTerceroFromDomain(id);
 
   await options.recordActivityLog?.({
     ...options.logContext,

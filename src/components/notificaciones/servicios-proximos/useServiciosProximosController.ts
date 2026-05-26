@@ -4,13 +4,16 @@ import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
-import { queryKeys } from '@/lib/query-keys';
+import {
+  toggleNotificationHighlightedStoreCache,
+  toggleNotificationReadStoreCache,
+} from '@/lib/store-reactions/notification-cache-reactions';
+import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
 import { inactivateServicioFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
 import {
   confirmServicioRenewalFromNotificationUseCase,
   loadServicioRenewalOptionsUseCase,
 } from '@/lib/use-cases/notificaciones/notificaciones-renewal-use-cases';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { MetodoPago, Servicio } from '@/types';
 import {
   getPaginasNotificacionesServicio,
@@ -25,10 +28,6 @@ export function useServiciosProximosController({
 }) {
   const queryClient = useQueryClient();
   const { data: notificaciones = [] } = useNotificaciones();
-  const {
-    toggleLeida,
-    toggleResaltada,
-  } = useNotificacionesStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<string>('todos');
@@ -62,7 +61,9 @@ export function useServiciosProximosController({
   const paginatedNotificaciones = notificationPages[safeCurrentPage - 1] ?? [];
 
   const refreshNotificationCaches = async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+    await applyNotificationQueryReactions(queryClient, {
+      notificationInvalidationNeeded: true,
+    });
   };
 
   const handleSearchChange = (value: string) => {
@@ -81,7 +82,7 @@ export function useServiciosProximosController({
   };
 
   const handleToggleLeida = async (notifId: string, leida: boolean) => {
-    await toggleLeida(notifId, leida);
+    await toggleNotificationReadStoreCache(notifId, leida);
     await refreshNotificationCaches();
   };
 
@@ -119,10 +120,14 @@ export function useServiciosProximosController({
     if (!notifParaAcciones) return;
 
     try {
-      await inactivateServicioFromNotificationUseCase({
+      const outcome = await inactivateServicioFromNotificationUseCase({
         refreshNotificationCaches,
         servicioId: notifParaAcciones.servicioId,
         servicioNombre: notifParaAcciones.servicioNombre,
+      });
+      await applyNotificationQueryReactions(queryClient, outcome);
+      toast.success('Servicio inactivado', {
+        description: `${notifParaAcciones.servicioNombre} ha sido marcado como inactivo.`,
       });
     } catch {
       toast.error('Error al inactivar servicio', {
@@ -135,7 +140,7 @@ export function useServiciosProximosController({
     if (!notifParaAcciones) return;
 
     try {
-      await toggleResaltada(notifParaAcciones.id, true);
+      await toggleNotificationHighlightedStoreCache(notifParaAcciones.id, true);
       await refreshNotificationCaches();
       toast.success('Notificación resaltada', {
         description: 'La notificación ha sido marcada para seguimiento.',
@@ -151,7 +156,7 @@ export function useServiciosProximosController({
     if (!notifParaAcciones) return;
 
     try {
-      await toggleResaltada(notifParaAcciones.id, false);
+      await toggleNotificationHighlightedStoreCache(notifParaAcciones.id, false);
       await refreshNotificationCaches();
       toast.success('Notificación desmarcada', {
         description: 'La notificación ya no está marcada para seguimiento.',
@@ -188,12 +193,13 @@ export function useServiciosProximosController({
     if (!servicioParaRenovar || !notifParaRenovar) return;
 
     try {
-      await confirmServicioRenewalFromNotificationUseCase({
+      const outcome = await confirmServicioRenewalFromNotificationUseCase({
         data,
         metodosPagoServicio,
         refreshNotificationCaches,
         servicio: servicioParaRenovar,
       });
+      await applyNotificationQueryReactions(queryClient, outcome);
 
       toast.success('Renovación registrada', {
         description: 'El nuevo período de pago se ha registrado correctamente.',

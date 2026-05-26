@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Check, Globe2, Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useMetodosPagoStore } from "@/store/metodosPagoStore";
+import { deleteMetodoPagoMutation } from "@/lib/client-domain-mutations";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -31,7 +31,6 @@ export function ServiciosMetodosPagoTable({
   title = "Métodos de pago de Servicios",
   onMetodoDeleted,
 }: ServiciosMetodosPagoTableProps) {
-  const deleteMetodoPago = useMetodosPagoStore((state) => state.deleteMetodoPago);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [metodoToDelete, setMetodoToDelete] = useState<MetodoPago | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,7 +73,7 @@ export function ServiciosMetodosPagoTable({
   const handleConfirmDelete = async () => {
     if (metodoToDelete) {
       try {
-        await deleteMetodoPago(metodoToDelete.id);
+        await deleteMetodoPagoMutation(metodoToDelete.id, metodoToDelete);
         await onMetodoDeleted?.();
         toast.success("Método de pago eliminado");
       } catch (error) {

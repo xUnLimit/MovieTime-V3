@@ -1,9 +1,4 @@
-import { toast } from 'sonner';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import {
-  invalidateDashboardCache,
-  refreshCategoriasCache,
-} from '@/lib/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import {
   getCategoriaPlanesRead,
@@ -48,6 +43,8 @@ export type NotificationRenewalOutcome = {
   renewed: true;
   warnings: string[];
   cacheInvalidations: Array<{ entity: 'venta' | 'servicio'; entityId: string }>;
+  notificationInvalidationNeeded: boolean;
+  storeRefreshes: Array<'ventas' | 'servicios' | 'notificaciones' | 'categorias'>;
   whatsappMessage?: {
     phone: string;
     message: string;
@@ -108,28 +105,21 @@ export async function confirmVentaRenewalFromNotificationUseCase({
   const warnings: string[] = [];
   if (renovacion.syncPaymentMethodFailed) {
     warnings.push('sync_payment_method_failed');
-    toast.warning('Venta renovada con advertencia', {
-      description:
-        'La renovacion se guardo, pero no se pudo actualizar el metodo de pago en terceros.',
-    });
   }
 
   void renovacion.pronostico;
   syncVentaForecastReadModels(notif.ventaId);
-  invalidateDashboardCache({
-    entity: 'venta',
-    entityId: notif.ventaId,
-  });
   await deleteVentaNotificationsStoreWorkflow(notif.ventaId);
   await refreshNotificationCaches();
 
   refreshVentasStoreCache();
-  showRenewalSuccessToast(notif, data);
 
   return {
     renewed: true,
     warnings,
     cacheInvalidations: [{ entity: 'venta', entityId: notif.ventaId }],
+    notificationInvalidationNeeded: true,
+    storeRefreshes: ['ventas', 'notificaciones'],
     whatsappMessage: data.notificarWhatsApp && data.mensajeWhatsApp
       ? {
           phone: notif.clienteTelefono ? notif.clienteTelefono.replace(/[^\d+]/g, '') : '',
@@ -188,15 +178,15 @@ export async function confirmServicioRenewalFromNotificationUseCase({
     logPrefix: 'Servicio renovado desde notificaciones',
   });
 
-  invalidateDashboardCache({ entity: 'servicio', entityId: servicio.id });
   await deleteServicioNotificationsStoreWorkflow(servicio.id);
   await refreshNotificationCaches();
-  refreshCategoriasCache({ entity: 'servicio', entityId: servicio.id });
 
   return {
     renewed: true,
     warnings: [],
     cacheInvalidations: [{ entity: 'servicio', entityId: servicio.id }],
+    notificationInvalidationNeeded: true,
+    storeRefreshes: ['servicios', 'notificaciones', 'categorias'],
   };
 }
 
@@ -222,34 +212,3 @@ function toVentaDocFromNotification(notif: NotificacionVentaConId): VentaDoc {
   } as VentaDoc;
 }
 
-function showRenewalSuccessToast(
-  notif: NotificacionVentaConId,
-  data: NotificationRenewalInput,
-) {
-  if (data.notificarWhatsApp && data.mensajeWhatsApp) {
-    const phone = notif.clienteTelefono
-      ? notif.clienteTelefono.replace(/[^\d+]/g, '')
-      : '';
-    const mensajeAEnviar = data.mensajeWhatsApp;
-    toast.success('Venta renovada exitosamente', {
-      duration: Infinity,
-      action: {
-        label: 'Enviar WhatsApp',
-        onClick: () => {
-          const base = phone
-            ? `https://web.whatsapp.com/send?phone=${phone}&text=`
-            : `https://web.whatsapp.com/send?text=`;
-          window.open(
-            base + encodeURIComponent(mensajeAEnviar),
-            '_blank',
-            'noopener,noreferrer',
-          );
-        },
-      },
-      actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
-    });
-    return;
-  }
-
-  toast.success('Venta renovada exitosamente');
-}

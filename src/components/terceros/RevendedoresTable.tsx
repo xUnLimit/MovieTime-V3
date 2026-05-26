@@ -11,7 +11,7 @@ import {
 } from "@/components/shared/PaginationFooter";
 import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
-import { useTercerosStore } from "@/store/tercerosStore";
+import { deleteTerceroMutation } from "@/lib/client-domain-mutations";
 import type { Tercero } from "@/types";
 import { RevendedoresTableActions } from "./RevendedoresTableActions";
 import { TodosTercerosTableToolbar } from "./TodosTercerosTableToolbar";
@@ -46,7 +46,6 @@ export function RevendedoresTable({
   onMetodoPagoFilterChange,
   metodoPagoOptions,
 }: RevendedoresTableProps) {
-  const { deleteTercero } = useTercerosStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [revendedorToDelete, setRevendedorToDelete] = useState<Tercero | null>(
     null,
@@ -73,12 +72,16 @@ export function RevendedoresTable({
     if (!revendedorToDelete) return;
 
     try {
-      await deleteTercero(revendedorToDelete.id, {
-        tipo: revendedorToDelete.tipo,
-        nombre: revendedorToDelete.nombre,
-        createdAt: revendedorToDelete.createdAt,
-        serviciosActivos: revendedorToDelete.serviciosActivos,
-      });
+      await deleteTerceroMutation(
+        revendedorToDelete.id,
+        {
+          tipo: revendedorToDelete.tipo,
+          nombre: revendedorToDelete.nombre,
+          createdAt: revendedorToDelete.createdAt,
+          serviciosActivos: revendedorToDelete.serviciosActivos,
+        },
+        revendedorToDelete,
+      );
       toast.success("Revendedor eliminado", {
         description: "El revendedor ha sido eliminado correctamente del sistema.",
       });

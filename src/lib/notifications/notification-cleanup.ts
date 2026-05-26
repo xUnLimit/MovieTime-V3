@@ -39,7 +39,7 @@ export async function limpiarNotificacionesHuerfanas(
 /**
  * Main synchronization function
  * Call this once per page load (e.g., in dashboard layout useEffect)
- * Uses localStorage cache to prevent multiple syncs per day
+ * Uses a client-side sync marker to prevent multiple syncs per day
  *
  * Performance: ~1-2 seconds with bulk reads and parallel writes.
  */

@@ -1,6 +1,6 @@
 # MovieTime PTY
 
-Sistema de gestion de suscripciones de servicios de streaming para Panama. Administra usuarios, servicios, ventas, categorias, metodos de pago, gastos, dashboard financiero y notificaciones de vencimiento.
+Sistema de gestion de suscripciones de servicios de streaming para Panama. Administra terceros, servicios, ventas, categorias, metodos de pago, gastos, dashboard financiero y notificaciones de vencimiento.
 
 ## Stack
 
@@ -47,10 +47,11 @@ La aplicacion usa Supabase como unica fuente de datos. La capa de datos esta org
 
 ```txt
 UI / hooks
-  -> stores Zustand para estado y cache
-    -> use-cases para flujos de negocio compuestos
-      -> repositorios Supabase
-        -> tablas, vistas, RPC y triggers
+  -> React Query para lecturas remotas
+  -> stores Zustand para estado UI, compatibilidad y optimismo acotado
+  -> use-cases para flujos de negocio compuestos
+  -> Adapters/repositorios Supabase tipados
+  -> tablas, vistas, RPC y triggers
 ```
 
 Directorios principales:
@@ -59,10 +60,11 @@ Directorios principales:
 |------|-----------|
 | `src/app` | Rutas Next.js App Router |
 | `src/components` | Componentes de UI por dominio |
-| `src/store` | Stores Zustand |
+| `src/store` | Stores Zustand para UI, compatibilidad y fronteras legacy |
 | `src/lib/use-cases` | Casos de uso de negocio |
-| `src/lib/supabase` | Cliente, repositorios, mappers y tipos Supabase |
-| `src/lib/services` | Servicios de sincronizacion y calculo |
+| `src/lib/supabase` | Cliente, repositorios, RPC Adapters, mappers y tipos Supabase |
+| `src/lib/store-reactions` | Reacciones de cache/store tras mutaciones |
+| `src/lib/services` | Servicios operacionales acotados |
 | `supabase/migrations` | Schema, vistas, funciones, triggers y RLS |
 | `scripts` | Scripts operativos Supabase |
 
@@ -73,3 +75,5 @@ Directorios principales:
 ## Contexto del dominio
 
 El vocabulario del dominio y las reglas de arquitectura estan en `CONTEXT.md`. Actualizalo cuando cambien conceptos como ventas, servicios, pagos, pronosticos o metricas derivadas.
+
+En el dominio comercial, la persona o negocio administrado por la app se llama `Tercero`. El nombre fisico `usuarios` puede aparecer en tablas historicas o perfiles de autenticacion/autorizacion; no debe usarse como nombre nuevo para clientes o revendedores.

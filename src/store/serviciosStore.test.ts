@@ -1,55 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { Servicio } from '@/types/servicios';
-
-const getServiciosMock = vi.fn();
-const logCacheHitMock = vi.fn();
-const countVentasActivasByServicioUseCaseMock = vi.fn();
-
-vi.mock('@/lib/supabase/servicios-repository', () => ({
-  ENTITIES: { SERVICIOS: 'servicios' },
-  getServicios: getServiciosMock,
-  logCacheHit: logCacheHitMock,
-  removePagoServicio: vi.fn(),
-}));
-
-vi.mock('@/lib/use-cases/ventas/ventas-query-use-cases', () => ({
-  countVentasActivasByServicioUseCase: countVentasActivasByServicioUseCaseMock,
-}));
-
-vi.mock('@/lib/use-cases/servicios/servicios-write-use-cases', () => ({
-  createServicioUseCase: vi.fn(),
-  deleteServicioUseCase: vi.fn(),
-  resyncServicioReferenciasUseCase: vi.fn(),
-  updateServicioUseCase: vi.fn(),
-}));
-
-vi.mock('@/lib/use-cases/servicios/servicios-query-use-cases', () => ({
-  fetchServiciosCountsUseCase: vi.fn(),
-}));
-
-vi.mock('@/lib/forecasting', () => ({
-  syncServicioForecastReadModels: vi.fn(),
-}));
-
-vi.mock('@/store/activityLogStore', () => ({
-  useActivityLogStore: {
-    getState: () => ({
-      addLog: vi.fn(),
-    }),
-  },
-}));
-
-vi.mock('@/store/authStore', () => ({
-  useAuthStore: {
-    getState: () => ({
-      user: {
-        id: 'admin-1',
-        email: 'admin@test.com',
-      },
-    }),
-  },
-}));
 
 const baseServicio: Servicio = {
   id: 'servicio-1',
@@ -70,48 +21,32 @@ const baseServicio: Servicio = {
   createdBy: 'admin-1',
 };
 
-describe('useServiciosStore.updatePerfilOcupado', () => {
+describe('useServiciosStore', () => {
   beforeEach(async () => {
-    vi.clearAllMocks();
     const { useServiciosStore } = await import('./serviciosStore');
     useServiciosStore.setState({
-      servicios: [],
-      isLoading: false,
       error: null,
-      lastFetch: null,
-      lastCountsFetch: null,
       selectedServicio: null,
-      totalServicios: 0,
-      serviciosActivos: 0,
-      totalCategoriasActivas: 0,
     });
   });
 
-  it('does nothing when the service is not loaded or selected', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  it('keeps only UI state and does not expose remote mutation APIs', async () => {
     const { useServiciosStore } = await import('./serviciosStore');
+    const state = useServiciosStore.getState() as Record<string, unknown>;
 
-    await useServiciosStore.getState().updatePerfilOcupado('servicio-archivado', false);
-
-    expect(countVentasActivasByServicioUseCaseMock).not.toHaveBeenCalled();
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-    expect(useServiciosStore.getState().servicios).toEqual([]);
-
-    consoleErrorSpy.mockRestore();
+    expect(state.fetchServicios).toBeUndefined();
+    expect(state.fetchCounts).toBeUndefined();
+    expect(state.createServicio).toBeUndefined();
+    expect(state.updateServicio).toBeUndefined();
+    expect(state.deleteServicio).toBeUndefined();
+    expect(state.updatePerfilOcupado).toBeUndefined();
   });
 
-  it('updates loaded service profile count from active sales count', async () => {
-    countVentasActivasByServicioUseCaseMock.mockResolvedValueOnce(1);
+  it('stores the selected servicio locally', async () => {
     const { useServiciosStore } = await import('./serviciosStore');
-    useServiciosStore.setState({
-      servicios: [baseServicio],
-      selectedServicio: baseServicio,
-    });
 
-    await useServiciosStore.getState().updatePerfilOcupado('servicio-1', false);
+    useServiciosStore.getState().setSelectedServicio(baseServicio);
 
-    expect(countVentasActivasByServicioUseCaseMock).toHaveBeenCalledWith('servicio-1');
-    expect(useServiciosStore.getState().servicios[0].perfilesOcupados).toBe(1);
-    expect(useServiciosStore.getState().selectedServicio?.perfilesOcupados).toBe(1);
+    expect(useServiciosStore.getState().selectedServicio).toEqual(baseServicio);
   });
 });

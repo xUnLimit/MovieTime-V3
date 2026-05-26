@@ -5,28 +5,21 @@ import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { queryKeys } from '@/lib/query-keys';
-import { invalidateDashboardCache } from '@/lib/commands/client-cache';
-import { syncVentaForecastReadModels } from '@/lib/forecasting';
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import { useServiciosStore } from '@/store/serviciosStore';
-import { useVentasStore } from '@/store/ventasStore';
 import {
-  createVentaRefundUseCase,
-} from '@/lib/use-cases/ventas/ventas-refund-use-cases';
-import {
-  deleteVentaPagoUseCase,
-  renewVentaUseCase,
-  updateVentaPagoUseCase,
-} from '@/lib/use-cases/ventas/ventas-payment-use-cases';
+  deleteVentaDetalleWorkflow,
+  deleteVentaPagoDetalleWorkflow,
+  refundVentaDetalleWorkflow,
+  renewVentaDetalleWorkflow,
+  updateVentaPagoDetalleWorkflow,
+} from '@/lib/use-cases/ventas/venta-detail-use-cases';
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
-import { emitVentaUpdated } from '@/lib/events/cache-reactions';
-import { refreshVentaDetalleData } from './venta-detalle-refresh';
 import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
 
 type UseVentaDetalleActionsParams = {
   deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
+  deleteVenta: (ventaId: string, servicioId?: string, perfilNumero?: number | null, deletePagos?: boolean) => Promise<void>;
   ensureDialogDependencies: () => Promise<void>;
   getTemplateByTipo: (tipo: TemplateMensaje['tipo']) => TemplateMensaje | undefined;
   id: string;
@@ -36,11 +29,13 @@ type UseVentaDetalleActionsParams = {
   refreshPagos: () => Promise<unknown> | unknown;
   servicioContrasena: string;
   setVentaData: (nextVenta: VentaDoc | null) => void;
+  updatePerfilOcupado: (servicioId: string, shouldIncrement: boolean) => Promise<void>;
   venta: VentaDoc | null;
 };
 
 export function useVentaDetalleActions({
   deleteNotificacionesPorVenta,
+  deleteVenta,
   ensureDialogDependencies,
   getTemplateByTipo,
   id,
@@ -50,6 +45,7 @@ export function useVentaDetalleActions({
   refreshPagos,
   servicioContrasena,
   setVentaData,
+  updatePerfilOcupado,
   venta,
 }: UseVentaDetalleActionsParams) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -73,11 +69,13 @@ export function useVentaDetalleActions({
   const handleDelete = async (deletePagos: boolean) => {
     if (!venta) return;
     try {
-      await useVentasStore
-        .getState()
-        .deleteVenta(venta.id, venta.servicioId, venta.perfilNumero, deletePagos);
+      const outcome = await deleteVentaDetalleWorkflow({
+        deps: { deleteVenta },
+        deletePagos,
+        venta,
+      });
 
-      if (deletePagos) {
+      if (outcome.type === 'ventaDeleted' && outcome.deletedPayments) {
         toast.success('Venta eliminada', {
           description: 'La venta y todos sus registros de pago han sido eliminados.',
         });
@@ -98,36 +96,32 @@ export function useVentaDetalleActions({
   const handleConfirmRenovacion = async (data: VentaPagoFormData) => {
     if (!venta) return;
     try {
-      const metodoPagoSeleccionado = metodosPago.find((metodo) => metodo.id === data.metodoPagoId);
-      const renovacion = await renewVentaUseCase(venta, {
-        ...data,
-        metodoPagoNombre: metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
-      }, getActivityLogOptions());
+      const outcome = await renewVentaDetalleWorkflow({
+        deps: {
+          deleteNotificacionesPorVenta,
+          invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
+          refreshPagos,
+        },
+        id,
+        input: data,
+        metodosPago,
+        venta,
+      });
 
-      if (renovacion.syncPaymentMethodFailed) {
+      if (outcome.type === 'ventaRenewed' && outcome.syncPaymentMethodFailed) {
         toast.warning('Venta renovada con advertencia', {
           description:
             'La renovacion se guardo, pero no se pudo actualizar el metodo de pago en terceros.',
         });
       }
 
-      void renovacion.pronostico;
-      syncVentaForecastReadModels(id);
-      invalidateDashboardCache({ entity: 'venta', entityId: id });
-
-      await refreshVentaDetalleData(id, setVentaData);
-
-      refreshPagos();
-      await deleteNotificacionesPorVenta(id);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+      if (outcome.type === 'ventaRenewed') setVentaData(outcome.ventaActualizada);
       setRenovarDialogOpen(false);
-      emitVentaUpdated(id);
 
-      if (data.notificarWhatsApp && venta) {
+      if (outcome.type === 'ventaRenewed' && outcome.whatsappRequested && venta) {
         showVentaRenovadaWhatsAppToast({
           data,
-          monto: renovacion.monto,
+          monto: outcome.monto,
           servicioContrasena,
           templateRenovacion: getTemplateByTipo('renovacion'),
           venta,
@@ -150,44 +144,27 @@ export function useVentaDetalleActions({
   const handleConfirmReembolso = async (data: VentaReembolsoFormData) => {
     if (!venta) return;
     try {
-      const result = await createVentaRefundUseCase(
-        venta,
+      const outcome = await refundVentaDetalleWorkflow(
         {
-          ventaId: venta.id,
-          monto: data.monto,
-          metodoPagoId: data.metodoPagoId,
-          metodoPagoNombre: data.metodoPagoNombre,
-          destinoReembolso: data.destinoReembolso,
-          moneda: data.moneda,
-          fecha: data.fecha,
-          nota: data.nota,
-          cortarServicio: data.cortarServicio,
-          motivoCorte: data.motivoCorte,
+          deps: {
+            deleteNotificacionesPorVenta,
+            invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
+            refreshPagos,
+            updatePerfilOcupado,
+          },
+          id,
+          input: data,
+          venta,
         },
-        getActivityLogOptions(),
       );
 
-      if (result.serviceProfileDelta) {
-        await useServiciosStore
-          .getState()
-          .updatePerfilOcupado(result.serviceProfileDelta.servicioId, result.serviceProfileDelta.shouldIncrement);
-      }
-
-      if (result.ventaActualizada) setVentaData(result.ventaActualizada);
-      refreshPagos();
-      void result.pronostico;
-      syncVentaForecastReadModels(id);
-      invalidateDashboardCache({ entity: 'venta', entityId: id });
-
-      if (data.cortarServicio) {
-        await deleteNotificacionesPorVenta(id);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+      if (outcome.type === 'ventaRefunded' && outcome.ventaActualizada) {
+        setVentaData(outcome.ventaActualizada);
       }
 
       setReembolsoDialogOpen(false);
-      emitVentaUpdated(id);
 
-      toast.success(data.cortarServicio ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
+      toast.success(outcome.type === 'ventaRefunded' && outcome.cut ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
     } catch (error) {
       console.error('Error registrando reembolso:', error);
       toast.error('Error al registrar reembolso', {
@@ -212,15 +189,15 @@ export function useVentaDetalleActions({
     }
 
     try {
-      const metodoPagoSeleccionado = metodosPago.find((metodo) => metodo.id === data.metodoPagoId);
-      const updateResult = await updateVentaPagoUseCase(venta, pagoToEdit.id, {
-        ...data,
-        metodoPagoNombre:
-          data.metodoPagoNombre || metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
-        moneda: data.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
+      const outcome = await updateVentaPagoDetalleWorkflow({
+        id,
+        input: data,
+        metodosPago,
+        pagoId: pagoToEdit.id,
+        venta,
       });
 
-      if (updateResult.syncPaymentMethodFailed) {
+      if (outcome.type === 'ventaPaymentUpdated' && outcome.syncPaymentMethodFailed) {
         toast.warning('Pago actualizado con advertencia', {
           description:
             'El pago se actualizo, pero no se pudo reflejar el metodo de pago en terceros.',
@@ -230,8 +207,7 @@ export function useVentaDetalleActions({
       setEditarPagoDialogOpen(false);
       setPagoToEdit(null);
 
-      await refreshVentaDetalleData(id, setVentaData);
-
+      if (outcome.type === 'ventaPaymentUpdated') setVentaData(outcome.ventaActualizada);
       refreshPagos();
       toast.success('Pago actualizado exitosamente');
     } catch (error) {
@@ -251,12 +227,14 @@ export function useVentaDetalleActions({
     }
 
     try {
-      const { ventaActualizada } = await deleteVentaPagoUseCase(id, pagoToDelete.id);
+      const outcome = await deleteVentaPagoDetalleWorkflow({ id, pagoId: pagoToDelete.id });
 
       setDeletePagoDialogOpen(false);
       setPagoToDelete(null);
 
-      if (ventaActualizada) setVentaData(ventaActualizada);
+      if (outcome.type === 'ventaPaymentDeleted' && outcome.ventaActualizada) {
+        setVentaData(outcome.ventaActualizada);
+      }
 
       refreshPagos();
       toast.success('Pago eliminado exitosamente');

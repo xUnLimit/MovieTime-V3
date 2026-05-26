@@ -11,7 +11,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import type { CrecimientoVista } from "./crecimiento-terceros-config";
-import type { CrecimientoPeriod } from "./crecimiento-terceros-helpers";
+import type {
+  BalancePoint,
+  ChurnPoint,
+  CrecimientoPeriod,
+  TercerosGrowthPoint,
+} from "./crecimiento-terceros-helpers";
 import {
   BaseLegend,
   BaseTooltip,
@@ -24,9 +29,9 @@ import {
 
 interface CrecimientoTercerosChartViewProps {
   animationClass: string;
-  balanceData: Array<Record<string, unknown>>;
-  churnData: Array<Record<string, unknown>>;
-  data: Array<Record<string, unknown>>;
+  balanceData: BalancePoint[];
+  churnData: ChurnPoint[];
+  data: TercerosGrowthPoint[];
   isLoading: boolean;
   selectedPeriod: CrecimientoPeriod;
   vista: CrecimientoVista;
@@ -68,7 +73,7 @@ function GrowthChart({
   data,
   selectedPeriod,
 }: {
-  data: Array<Record<string, unknown>>;
+  data: TercerosGrowthPoint[];
   selectedPeriod: CrecimientoPeriod;
 }) {
   return (
@@ -130,7 +135,7 @@ function GrowthChart({
   );
 }
 
-function ChurnChart({ data }: { data: Array<Record<string, unknown>> }) {
+function ChurnChart({ data }: { data: ChurnPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} margin={{ top: 22, right: 10, left: 0, bottom: 0 }}>
@@ -167,7 +172,7 @@ function ChurnChart({ data }: { data: Array<Record<string, unknown>> }) {
   );
 }
 
-function BalanceChart({ data }: { data: Array<Record<string, unknown>> }) {
+function BalanceChart({ data }: { data: BalancePoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} margin={{ top: 16, right: 10, left: 0, bottom: 0 }}>

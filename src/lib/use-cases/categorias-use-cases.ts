@@ -2,8 +2,6 @@ import {
   buildCategorias,
   createCategoriaRecord,
   deleteCategoriaRecord,
-  getCategoriasCounts,
-  getCategoriasFull,
   updateCategoriaRecord,
   upsertCategoriaPlanes,
 } from '@/lib/supabase/categorias-repository';
@@ -58,8 +56,8 @@ export async function updateCategoriaUseCase(
   const cambios = options.oldCategoria
     ? detectarCambios(
         'categoria',
-        options.oldCategoria as unknown as Record<string, unknown>,
-        updatedCategoria as unknown as Record<string, unknown>
+        options.oldCategoria,
+        updatedCategoria
       )
     : [];
 

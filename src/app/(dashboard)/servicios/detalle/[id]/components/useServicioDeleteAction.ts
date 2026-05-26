@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { queryKeys } from '@/lib/query-keys';
+import { deleteServicioDetalleWorkflow } from '@/lib/use-cases/servicios/servicio-detail-use-cases';
 
 type ServicioDeleteActionParams = {
   id: string;
@@ -29,8 +30,20 @@ export function useServicioDeleteAction({
 
   const handleConfirmDelete = async () => {
     try {
-      await deleteServicio(id, deletePayments);
-      if (deletePayments) {
+      const outcome = await deleteServicioDetalleWorkflow({
+        deletePayments,
+        deps: {
+          deleteServicio,
+          invalidateCategorias: () => Promise.all([
+            queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
+            queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
+          ]),
+          refreshCounts: () => fetchCounts(true),
+        },
+        id,
+      });
+
+      if (outcome.type === 'servicioDeleted' && outcome.deletedPayments) {
         toast.success('Servicio eliminado', {
           description: 'El servicio y todos sus registros de pago han sido eliminados.',
         });
@@ -39,12 +52,6 @@ export function useServicioDeleteAction({
           description: 'El servicio fue eliminado. Los registros de pago se conservaron.',
         });
       }
-
-      await Promise.all([
-        fetchCounts(true),
-        queryClient.invalidateQueries({ queryKey: queryKeys.categorias.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.servicios.all }),
-      ]);
 
       onDeleted();
     } catch (error) {

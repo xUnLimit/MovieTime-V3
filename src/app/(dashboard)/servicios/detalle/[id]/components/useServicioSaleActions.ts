@@ -2,15 +2,12 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { invalidateDashboardCache } from "@/lib/commands/client-cache";
 import { queryKeys } from "@/lib/query-keys";
-import { getActivityLogOptions } from "@/lib/activity/activity-log-writer";
-import { getVentaDetalleRead } from "@/lib/supabase/domain-read-adapters";
-import { getVentaById } from "@/lib/supabase/ventas-repository";
-import { updateVentaUseCase } from "@/lib/use-cases/ventas/ventas-write-use-cases";
-import { useNotificacionesStore } from "@/store/notificacionesStore";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useTercerosStore } from "@/store/tercerosStore";
+import {
+  cutVentaFromServicioDetalleWorkflow,
+  fetchVentaForServicioActionUseCase,
+  transferVentaFromServicioDetalleWorkflow,
+} from "@/lib/use-cases/servicios/servicio-detail-use-cases";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { Servicio, TipoTemplate, VentaDoc } from "@/types";
 
@@ -24,10 +21,12 @@ import type { PerfilVenta } from "./types";
 type ServicioSaleActionsParams = {
   enqueueWhatsAppMessages: (payloads: Array<Omit<PendingWhatsAppToast, "id">>) => void;
   fetchServicios: (force?: boolean) => Promise<unknown>;
-  fetchTemplates: (force?: boolean) => Promise<unknown>;
-  fetchTerceros: (force?: boolean) => Promise<unknown>;
+  deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
+  refetchServicios: () => Promise<unknown>;
+  refetchTemplates: () => Promise<unknown>;
   getTemplateByTipo: (tipo: TipoTemplate) => { contenido?: string } | undefined;
   queryClient: QueryClient;
+  updatePerfilOcupado: (servicioId: string, shouldIncrement: boolean) => Promise<void>;
   setVentasServicio: Dispatch<
     SetStateAction<Array<PerfilVenta & { perfilNumero?: number | null }>>
   >;
@@ -36,10 +35,12 @@ type ServicioSaleActionsParams = {
 export function useServicioSaleActions({
   enqueueWhatsAppMessages,
   fetchServicios,
-  fetchTemplates,
-  fetchTerceros,
+  deleteNotificacionesPorVenta,
+  refetchServicios,
+  refetchTemplates,
   getTemplateByTipo,
   queryClient,
+  updatePerfilOcupado,
   setVentasServicio,
 }: ServicioSaleActionsParams) {
   const [cutVentaDialogOpen, setCutVentaDialogOpen] = useState(false);
@@ -48,8 +49,7 @@ export function useServicioSaleActions({
   const [transferVentaDialogOpen, setTransferVentaDialogOpen] = useState(false);
 
   const loadVentaForAction = async (ventaId: string) => {
-    const venta = await getVentaDetalleRead(ventaId) ?? await getVentaById<VentaDoc>(ventaId);
-    if (!venta) throw new Error("Venta no encontrada");
+    const venta = await fetchVentaForServicioActionUseCase(ventaId);
     setSelectedActionVenta(venta);
     return venta;
   };
@@ -67,7 +67,7 @@ export function useServicioSaleActions({
 
   const handleOpenTransferVenta = async (ventaId: string) => {
     try {
-      await Promise.all([fetchServicios(true), fetchTemplates(true)]);
+      await Promise.all([fetchServicios(true), refetchServicios(), refetchTemplates()]);
       await loadVentaForAction(ventaId);
       setTransferVentaDialogOpen(true);
     } catch (error) {
@@ -81,31 +81,21 @@ export function useServicioSaleActions({
     if (!selectedActionVenta?.id) return;
     setIsSaleActionSubmitting(true);
     try {
-      const { serviceProfileDelta } = await updateVentaUseCase(
-        selectedActionVenta.id,
-        {
-          estado: "inactivo",
-          cortadaAt: new Date(),
-          motivoCorte,
+      const outcome = await cutVentaFromServicioDetalleWorkflow({
+        deps: {
+          deleteNotificacionesPorVenta,
+          invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
+          updatePerfilOcupado,
         },
-        {
-          currentVenta: selectedActionVenta,
-          ...getActivityLogOptions(),
-        },
-      );
+        motivoCorte,
+        venta: selectedActionVenta,
+      });
 
-      if (serviceProfileDelta) {
-        await useServiciosStore
-          .getState()
-          .updatePerfilOcupado(serviceProfileDelta.servicioId, serviceProfileDelta.shouldIncrement);
+      if (outcome.type === "servicioVentaCut") {
+        setVentasServicio((current) =>
+          current.filter((venta) => venta.ventaId !== outcome.ventaId),
+        );
       }
-
-      setVentasServicio((current) =>
-        current.filter((venta) => venta.ventaId !== selectedActionVenta.id),
-      );
-      invalidateDashboardCache({ entity: "venta", entityId: selectedActionVenta.id });
-      await useNotificacionesStore.getState().deleteNotificacionesPorVenta(selectedActionVenta.id);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
       setCutVentaDialogOpen(false);
       setSelectedActionVenta(null);
       toast.success("Venta cortada", {
@@ -130,57 +120,47 @@ export function useServicioSaleActions({
     if (!selectedActionVenta?.id) return;
     setIsSaleActionSubmitting(true);
     try {
+      const targetServicioDoc = targetServicio as Servicio;
       const updatedVentaForMessage = buildTransferVentaForMessage({
         codigo,
         perfilNombre,
         perfilNumero,
         selectedActionVenta,
-        targetServicio: targetServicio as Servicio,
+        targetServicio: targetServicioDoc,
       });
 
-      await updateVentaUseCase(
-        selectedActionVenta.id,
-        {
-          servicioId: targetServicio.id,
-          perfilNumero,
-          perfilNombre,
-          codigo,
+      const outcome = await transferVentaFromServicioDetalleWorkflow({
+        codigo,
+        deps: {
+          invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
+          updatePerfilOcupado,
         },
-        {
-          currentVenta: selectedActionVenta,
-          ...getActivityLogOptions(),
-        },
-      );
+        notificarWhatsApp,
+        perfilNombre,
+        perfilNumero,
+        targetServicio: targetServicioDoc,
+        venta: selectedActionVenta,
+      });
 
-      if ((selectedActionVenta.estado ?? "activo") !== "inactivo") {
-        const serviciosStore = useServiciosStore.getState();
-        await Promise.all([
-          serviciosStore.updatePerfilOcupado(selectedActionVenta.servicioId, false),
-          serviciosStore.updatePerfilOcupado(targetServicio.id, true),
-        ]);
-      }
-
-      if (notificarWhatsApp) {
-        await fetchTerceros(true);
-        const tercero = useTercerosStore.getState().terceros.find((item) => item.id === selectedActionVenta.clienteId);
+      if (notificarWhatsApp && outcome.type === "servicioVentaTransferred") {
         const template = getTemplateByTipo("transferencia_servicio");
 
         enqueueWhatsAppMessages([
           buildTransferWhatsAppToast({
             selectedActionVenta,
-            targetServicio: targetServicio as Servicio,
+            targetServicio: targetServicioDoc,
             templateContenido: template?.contenido,
-            tercero,
+            tercero: outcome.tercero ?? undefined,
             updatedVentaForMessage,
           }),
         ]);
       }
 
-      setVentasServicio((current) =>
-        current.filter((venta) => venta.ventaId !== selectedActionVenta.id),
-      );
-      invalidateDashboardCache({ entity: "venta", entityId: selectedActionVenta.id });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+      if (outcome.type === "servicioVentaTransferred") {
+        setVentasServicio((current) =>
+          current.filter((venta) => venta.ventaId !== outcome.ventaId),
+        );
+      }
       setTransferVentaDialogOpen(false);
       setSelectedActionVenta(null);
       toast.success("Venta transferida", {

@@ -8,7 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Copy, Calendar, DollarSign, Mail, Lock, User } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { TemplateMensaje, TipoTemplate } from '@/types';
-import { useTemplatesStore } from '@/store/templatesStore';
+import {
+  createTemplateMutation,
+  updateTemplateMutation,
+} from '@/lib/client-domain-mutations';
 import { queryKeys } from '@/lib/query-keys';
 import { toast } from 'sonner';
 
@@ -48,7 +51,6 @@ const PLACEHOLDERS = [
 
 export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorProps) {
   const queryClient = useQueryClient();
-  const { updateTemplate, createTemplate } = useTemplatesStore();
   const [selectedTipo, setSelectedTipo] = useState<TipoTemplate>('notificacion_regular');
 
   const currentTemplate = useMemo(() => {
@@ -83,17 +85,21 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
 
       if (currentTemplate) {
         // Update existing template
-        await updateTemplate(currentTemplate.id, {
-          contenido,
-          placeholders: detectedPlaceholders,
-        });
+        await updateTemplateMutation(
+          currentTemplate.id,
+          {
+            contenido,
+            placeholders: detectedPlaceholders,
+          },
+          currentTemplate,
+        );
         await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
         await onTemplateSaved?.();
         toast.success('Plantilla actualizada', { description: 'Los cambios en la plantilla han sido guardados correctamente.' });
       } else {
         // Create new template
         const tipoLabel = TIPO_TEMPLATES.find((t) => t.value === selectedTipo)?.label || selectedTipo;
-        await createTemplate({
+        await createTemplateMutation({
           nombre: tipoLabel,
           tipo: selectedTipo,
           contenido,

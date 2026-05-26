@@ -1,20 +1,40 @@
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import { invalidateStoreQueries } from '@/store/store-query-invalidation';
+import {
+  deleteNotificacionesPorServicioUseCase,
+  deleteNotificacionesPorVentaUseCase,
+  fetchNotificationCountsUseCase,
+  toggleNotificacionLeidaUseCase,
+  toggleNotificacionResaltadaUseCase,
+} from '@/lib/use-cases/notificaciones/notificaciones-store-use-cases';
 
 export async function refreshNotificationListCache() {
-  await useNotificacionesStore.getState().fetchNotificaciones(true);
+  await invalidateStoreQueries(['notificaciones', 'dashboard']);
 }
 
 export async function refreshNotificationStoreCache() {
   await Promise.all([
     refreshNotificationListCache(),
-    useNotificacionesStore.getState().fetchCounts(),
+    fetchNotificationCountsUseCase(),
   ]);
+  await invalidateStoreQueries(['notificaciones']);
 }
 
 export async function deleteVentaNotificationStoreCache(ventaId: string) {
-  await useNotificacionesStore.getState().deleteNotificacionesPorVenta(ventaId);
+  await deleteNotificacionesPorVentaUseCase(ventaId);
+  await refreshNotificationListCache();
 }
 
 export async function deleteServicioNotificationStoreCache(servicioId: string) {
-  await useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicioId);
+  await deleteNotificacionesPorServicioUseCase(servicioId);
+  await refreshNotificationListCache();
+}
+
+export async function toggleNotificationReadStoreCache(notificationId: string, read: boolean) {
+  await toggleNotificacionLeidaUseCase(notificationId, read);
+  await refreshNotificationListCache();
+}
+
+export async function toggleNotificationHighlightedStoreCache(notificationId: string, highlighted: boolean) {
+  await toggleNotificacionResaltadaUseCase(notificationId, highlighted);
+  await refreshNotificationListCache();
 }

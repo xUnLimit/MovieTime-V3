@@ -3,7 +3,7 @@ import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activit
 import { syncMetodoPagoDependenciasUseCase } from '@/lib/use-cases/metodos-pago/metodo-pago-dependency-use-cases';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useGastosStore } from '@/store/gastosStore';
+import { invalidateStoreQueries } from '@/store/store-query-invalidation';
 import type { MetodoPago, TipoGasto } from '@/types';
 
 export async function afterCategoriaDeleted(categoriaId: string) {
@@ -94,15 +94,7 @@ export async function afterTipoGastoUpdated(tipoId: string, oldTipo: TipoGasto, 
   if (!updates.nombre || updates.nombre === oldTipo.nombre) return;
 
   safeAsyncSideEffect(
-    Promise.resolve().then(() => {
-      useGastosStore.setState((state) => ({
-        gastos: state.gastos.map((gasto) =>
-          gasto.tipoGastoId === tipoId
-            ? { ...gasto, tipoGastoNombre: updates.nombre!, updatedAt: new Date() }
-            : gasto,
-        ),
-      }));
-    }),
+    invalidateStoreQueries(['gastos', 'tiposGasto']),
     {
       operation: 'syncTipoGastoNombreLocal',
       entity: 'tipo_gasto',

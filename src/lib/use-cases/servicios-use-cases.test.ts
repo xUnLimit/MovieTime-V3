@@ -39,7 +39,6 @@ vi.mock('@/lib/notifications', () => ({
 
 vi.mock('@/lib/payments', () => ({
   convertToUSD: vi.fn(),
-  createRenewalServicioPayment: vi.fn(),
   financialPayments: {
     registerRenewalServicioPayment: vi.fn(),
   },
@@ -68,7 +67,7 @@ import {
   updateServicio,
 } from '@/lib/supabase/servicios-repository';
 import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { createRenewalServicioPayment, financialPayments } from '@/lib/payments';
+import { financialPayments } from '@/lib/payments';
 import { sincronizarUnServicio } from '@/lib/notifications';
 import { syncServicioDependencias } from '@/lib/use-cases/servicios/servicio-dependencies-use-cases';
 import { convertToUSD } from '@/lib/payments';
@@ -129,7 +128,6 @@ beforeEach(() => {
   vi.mocked(queryPagosServicio).mockReset();
   vi.mocked(updateLatestServicioPeriodo).mockReset();
   vi.mocked(updateServicio).mockReset();
-  vi.mocked(createRenewalServicioPayment).mockReset();
   vi.mocked(financialPayments.registerRenewalServicioPayment).mockReset();
   vi.mocked(syncServicioDependencias).mockReset();
   vi.mocked(getServicioById).mockReset();
@@ -143,7 +141,6 @@ beforeEach(() => {
   vi.mocked(queryPagosServicio).mockResolvedValue([]);
   vi.mocked(updateLatestServicioPeriodo).mockResolvedValue(undefined);
   vi.mocked(updateServicio).mockResolvedValue(undefined);
-  vi.mocked(createRenewalServicioPayment).mockResolvedValue(undefined);
   vi.mocked(financialPayments.registerRenewalServicioPayment).mockResolvedValue(undefined);
   vi.mocked(syncServicioDependencias).mockResolvedValue(undefined);
   vi.mocked(convertToUSD).mockResolvedValue(10);
@@ -286,4 +283,3 @@ describe('renewServicioUseCase', () => {
     expect(result.servicioActualizado.renovacionAutomatica).toBe(true);
   });
 });
-

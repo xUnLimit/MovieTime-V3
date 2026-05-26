@@ -1,11 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const getByIdMock = vi.fn();
-const queryDocumentsMock = vi.fn();
-const createMock = vi.fn();
-const updateMock = vi.fn();
-const removeMock = vi.fn();
-const getMetodoPagoByIdMock = vi.fn();
+const {
+  getByIdMock,
+  queryDocumentsMock,
+  createMock,
+  updateMock,
+  removeMock,
+  getMetodoPagoByIdMock,
+} = vi.hoisted(() => ({
+  getByIdMock: vi.fn(),
+  queryDocumentsMock: vi.fn(),
+  createMock: vi.fn(),
+  updateMock: vi.fn(),
+  removeMock: vi.fn(),
+  getMetodoPagoByIdMock: vi.fn(),
+}));
 
 vi.mock('@/lib/supabase/notifications-repository', () => ({
   createNotificacion: createMock,
@@ -23,6 +32,8 @@ vi.mock('@/lib/supabase/catalogos-repository', () => ({
   getMetodoPagoById: getMetodoPagoByIdMock,
   queryMetodosPago: vi.fn().mockResolvedValue([]),
 }));
+
+import { sincronizarUnServicio } from '@/lib/notifications';
 
 const servicioBase = {
   id: 'servicio-1',
@@ -65,8 +76,6 @@ describe('notifications module sync', () => {
     });
     queryDocumentsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
-    const { sincronizarUnServicio } = await import('@/lib/notifications');
-
     await sincronizarUnServicio('servicio-1');
 
     expect(createMock).toHaveBeenCalledWith(
@@ -101,8 +110,6 @@ describe('notifications module sync', () => {
       ])
       .mockResolvedValueOnce([]);
 
-    const { sincronizarUnServicio } = await import('@/lib/notifications');
-
     await sincronizarUnServicio('servicio-1');
 
     expect(updateMock).toHaveBeenCalledWith(
@@ -126,8 +133,6 @@ describe('notifications module sync', () => {
       numeroTarjeta: '4111 1111 1111 4321',
     });
     queryDocumentsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
-
-    const { sincronizarUnServicio } = await import('@/lib/notifications');
 
     await sincronizarUnServicio('servicio-1');
 

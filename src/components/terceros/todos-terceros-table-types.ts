@@ -1,6 +1,6 @@
 import type { Tercero } from '@/types';
 
-export interface TerceroDisplay extends Record<string, unknown> {
+export interface TerceroDisplay {
   id: string;
   nombre: string;
   apellido: string;

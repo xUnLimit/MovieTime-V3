@@ -1,8 +1,7 @@
 import {
-  getMetodoPagoRead,
-  getServicioRead,
-} from "@/lib/supabase/domain-read-adapters";
-import { queryVentas } from "@/lib/supabase/ventas-repository";
+  fetchServicioDetalleBundleUseCase,
+  fetchServicioVentasProfilesUseCase,
+} from "@/lib/use-cases/servicios/servicio-detail-use-cases";
 import { buildServiceTransferMessage } from "@/lib/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";
@@ -38,13 +37,7 @@ export function toPerfilVenta(
 }
 
 export async function fetchServicioVentasProfiles(id: string) {
-  const ventasBase = await queryVentas<VentaDoc>([
-    { field: "servicioId", operator: "==", value: id },
-  ]);
-
-  return ventasBase
-    .filter((venta) => (venta.estado ?? "activo") !== "inactivo")
-    .map(toPerfilVenta);
+  return fetchServicioVentasProfilesUseCase(id);
 }
 
 export async function fetchServicioDetalleBundle(id: string): Promise<{
@@ -52,31 +45,7 @@ export async function fetchServicioDetalleBundle(id: string): Promise<{
   metodoPago: MetodoPagoDetalle | null;
   servicio: Servicio;
 }> {
-  const servicio = await getServicioRead(id);
-  if (!servicio) {
-    throw new Error("Servicio no encontrado");
-  }
-
-  const metodoPagoReal = servicio.metodoPagoId
-    ? await getMetodoPagoRead(servicio.metodoPagoId).catch(() => null)
-    : null;
-
-  return {
-    servicio,
-    categoria: {
-      id: servicio.categoriaId,
-      nombre: servicio.categoriaNombre,
-    },
-    metodoPago: servicio.metodoPagoId
-      ? {
-          id: servicio.metodoPagoId,
-          nombre: metodoPagoReal?.nombre || servicio.metodoPagoNombre || "",
-          moneda: metodoPagoReal?.moneda || servicio.moneda || "USD",
-          alias: metodoPagoReal?.alias,
-          numeroTarjeta: metodoPagoReal?.numeroTarjeta,
-        }
-      : null,
-  };
+  return fetchServicioDetalleBundleUseCase(id);
 }
 
 export function buildTransferVentaForMessage({

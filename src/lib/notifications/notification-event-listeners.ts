@@ -19,7 +19,7 @@ export function initializeNotificationEventListeners() {
     });
   });
 
-  storeEventBus.on('SERVICIO_DELETED', async (event) => {
+  storeEventBus.on('SERVICIO_DELETED', async () => {
     // Deletion is handled by RPC cascade; just invalidate cache
     await sincronizarNotificacionesForzado().catch((error) => {
       console.error('[NotificationEventListener] Failed to sync SERVICIO_DELETED:', error);
@@ -45,14 +45,14 @@ export function initializeNotificationEventListeners() {
     });
   });
 
-  storeEventBus.on('VENTA_DELETED', async (event) => {
+  storeEventBus.on('VENTA_DELETED', async () => {
     await sincronizarNotificacionesForzado().catch((error) => {
       console.error('[NotificationEventListener] Failed to sync VENTA_DELETED:', error);
     });
   });
 
   // Listen for full invalidation signals
-  storeEventBus.on('NOTIFICACIONES_INVALIDATED', async (event) => {
+  storeEventBus.on('NOTIFICACIONES_INVALIDATED', async () => {
     await sincronizarNotificacionesForzado().catch((error) => {
       console.error('[NotificationEventListener] Failed to sync NOTIFICACIONES_INVALIDATED:', error);
     });

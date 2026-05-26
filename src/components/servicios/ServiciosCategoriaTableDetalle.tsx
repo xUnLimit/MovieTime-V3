@@ -11,8 +11,8 @@ import { PaginationFooter } from "@/components/shared/PaginationFooter";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { deleteServicioMutation } from "@/lib/client-domain-mutations";
 import { queryKeys } from "@/lib/query-keys";
-import { useServiciosStore } from "@/store/serviciosStore";
 import type { Servicio } from "@/types";
 import { ServiciosCategoriaTableDetalleActions } from "./ServiciosCategoriaTableDetalleActions";
 import { ServiciosCategoriaTableDetalleToolbar } from "./ServiciosCategoriaTableDetalleToolbar";
@@ -68,7 +68,6 @@ export const ServiciosCategoriaTableDetalle = memo(
     onPrevious,
   }: ServiciosCategoriaTableDetalleProps) {
     const queryClient = useQueryClient();
-    const { deleteServicio } = useServiciosStore();
     const pathname = usePathname();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [servicioToDelete, setServicioToDelete] = useState<Servicio | null>(
@@ -91,7 +90,7 @@ export const ServiciosCategoriaTableDetalle = memo(
       if (!servicioToDelete) return;
 
       try {
-        await deleteServicio(servicioToDelete.id, deletePayments);
+        await deleteServicioMutation(servicioToDelete.id, deletePayments);
 
         if (deletePayments) {
           toast.success("Servicio eliminado", {

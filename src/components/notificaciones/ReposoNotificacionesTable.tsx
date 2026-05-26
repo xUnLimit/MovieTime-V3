@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/table";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { useNotificaciones } from "@/hooks/use-notificaciones";
-import { queryKeys } from "@/lib/query-keys";
-import { useNotificacionesStore } from "@/store/notificacionesStore";
+import { toggleNotificationReadStoreCache } from "@/lib/store-reactions/notification-cache-reactions";
+import { applyNotificationQueryReactions } from "@/lib/store-reactions/notification-query-reactions";
 import { ReposoNotificacionesRows } from "./ReposoNotificacionesRows";
 import { ReposoNotificacionesToolbar } from "./ReposoNotificacionesToolbar";
 import { filterReposoRows } from "./reposo-notificaciones-table-helpers";
@@ -27,7 +27,6 @@ import {
 export function ReposoNotificacionesTable() {
   const queryClient = useQueryClient();
   const { data: notificaciones = [] } = useNotificaciones();
-  const toggleLeida = useNotificacionesStore((state) => state.toggleLeida);
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("todos");
   const estadoFilterLabel =
@@ -71,8 +70,10 @@ export function ReposoNotificacionesTable() {
   };
 
   const handleToggleLeida = async (notifId: string, leida: boolean) => {
-    await toggleLeida(notifId, leida);
-    await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+    await toggleNotificationReadStoreCache(notifId, leida);
+    await applyNotificationQueryReactions(queryClient, {
+      notificationInvalidationNeeded: true,
+    });
   };
 
   return (

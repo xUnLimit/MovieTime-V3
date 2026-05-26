@@ -95,6 +95,9 @@ export interface VentaDoc {
   cortadaAt?: Date | null;
   cortadaBy?: string | null;
   motivoCorte?: string | null;
+  archivadoAt?: Date | null;
+  archivadoBy?: string | null;
+  motivoArchivado?: string | null;
   perfilNumero?: number | null;
   perfilNombre?: string;
   codigo?: string;

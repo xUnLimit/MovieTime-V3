@@ -26,6 +26,12 @@ export interface Servicio {
   fechaVencimiento?: Date;
   notas?: string;
   activo: boolean;
+  cortadoAt?: Date | null;
+  cortadoBy?: string | null;
+  motivoCorte?: string | null;
+  archivadoAt?: Date | null;
+  archivadoBy?: string | null;
+  motivoArchivado?: string | null;
   // Reposo (servicio temporalmente pausado)
   enReposo?: boolean;
   diasReposo?: number;          // 28-31 days

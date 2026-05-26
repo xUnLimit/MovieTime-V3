@@ -32,7 +32,7 @@ export function normalizeServicioPagoInput(
   };
 }
 
-const SERVICIO_TABLE_UPDATE_KEYS = new Set([
+const SERVICIO_TABLE_UPDATE_KEYS = [
   'categoriaId',
   'tipo',
   'nombre',
@@ -52,28 +52,37 @@ const SERVICIO_TABLE_UPDATE_KEYS = new Set([
   'motivoArchivado',
   'notas',
   'createdBy',
-]);
+] as const satisfies ReadonlyArray<keyof Servicio>;
 
 export function getServicioTableUpdates(updates: Partial<Servicio>): Partial<Servicio> {
   const result: Partial<Servicio> = {};
-  const source = updates as Record<string, unknown>;
-  const target = result as Record<string, unknown>;
   for (const key of SERVICIO_TABLE_UPDATE_KEYS) {
-    if (source[key] !== undefined) target[key] = source[key];
+    assignDefined(result, updates, key);
   }
   return result;
 }
 
+function assignDefined<T extends object, K extends keyof T>(
+  target: Partial<T>,
+  source: Partial<T>,
+  key: K,
+) {
+  const value = source[key];
+  if (value !== undefined) target[key] = value;
+}
+
+const SERVICIO_PERIODO_UPDATE_KEYS = [
+  'costoServicio',
+  'moneda',
+  'cicloPago',
+  'fechaInicio',
+  'fechaVencimiento',
+  'renovacionAutomatica',
+  'metodoPagoId',
+] as const satisfies ReadonlyArray<keyof Servicio>;
+
 export function hasServicioPeriodoUpdates(updates: Partial<Servicio>): boolean {
-  return [
-    'costoServicio',
-    'moneda',
-    'cicloPago',
-    'fechaInicio',
-    'fechaVencimiento',
-    'renovacionAutomatica',
-    'metodoPagoId',
-  ].some((key) => (updates as Record<string, unknown>)[key] !== undefined);
+  return SERVICIO_PERIODO_UPDATE_KEYS.some((key) => updates[key] !== undefined);
 }
 
 export async function getUsdValues(amount: number, moneda: string) {

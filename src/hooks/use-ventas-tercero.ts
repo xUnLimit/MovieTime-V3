@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { subscribeToVentasTerceroReactions } from '@/lib/events/cache-reactions';
+import { deleteVentaMutation } from '@/lib/client-domain-mutations';
 import { queryKeys } from '@/lib/query-keys';
 import { queryVentas } from '@/lib/supabase/ventas-repository';
-import { useVentasStore } from '@/store/ventasStore';
 import { CACHE_TTL_MS } from '@/lib/constants';
 import type { VentaDoc } from '@/types';
 
@@ -85,7 +85,6 @@ async function fetchVentasTercero(usuarioId: string): Promise<VentasTerceroQuery
  */
 export function useVentasTercero(usuarioId: string) {
   const queryClient = useQueryClient();
-  const { deleteVenta: deleteVentaFromStore } = useVentasStore();
   const queryKey = useMemo(() => queryKeys.ventas.byTercero(usuarioId || 'empty'), [usuarioId]);
   const queryEnabled = Boolean(usuarioId);
 
@@ -118,7 +117,7 @@ export function useVentasTercero(usuarioId: string) {
     }
 
     try {
-      await deleteVentaFromStore(ventaId, servicioId, perfilNumero, true);
+      await deleteVentaMutation(ventaId, servicioId, perfilNumero, true);
       void queryClient.invalidateQueries({ queryKey });
     } catch (error) {
       if (ventaEliminada) {
@@ -126,7 +125,7 @@ export function useVentasTercero(usuarioId: string) {
       }
       throw error;
     }
-  }, [data, deleteVentaFromStore, queryClient, queryKey]);
+  }, [data, queryClient, queryKey]);
 
   return {
     ventas: data.ventas,

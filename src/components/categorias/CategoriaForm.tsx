@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCategoriasStore } from "@/store/categoriasStore";
+import {
+  createCategoriaMutation,
+  updateCategoriaMutation,
+} from "@/lib/client-domain-mutations";
 import type { Categoria } from "@/types";
 
 import { CategoriaBasicInfoSection } from "./form/CategoriaBasicInfoSection";
@@ -31,7 +34,6 @@ export function CategoriaForm({
   returnTo = "/categorias",
 }: CategoriaFormProps) {
   const router = useRouter();
-  const { createCategoria, updateCategoria } = useCategoriasStore();
   const [activeTab, setActiveTab] = useState("general");
   const [isGeneralTabComplete, setIsGeneralTabComplete] = useState(
     mode === "edit",
@@ -141,7 +143,7 @@ export function CategoriaForm({
 
   const onSubmit = useCategoriaFormSubmit({
     categoria,
-    createCategoria,
+    createCategoria: createCategoriaMutation,
     mode,
     planes,
     returnTo,
@@ -149,7 +151,7 @@ export function CategoriaForm({
     setActiveTab,
     setPlanesError,
     tiposPlanes,
-    updateCategoria,
+    updateCategoria: (id, updates) => updateCategoriaMutation(id, updates, categoria),
   });
   const onCancel = () => router.push(returnTo);
 

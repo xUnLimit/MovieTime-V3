@@ -6,10 +6,12 @@ import { differenceInCalendarDays } from "date-fns";
 import { toast } from "sonner";
 
 import { useVentasTercero } from "@/hooks/use-ventas-tercero";
+import {
+  updateServicioMutation,
+  updateVentaMutation,
+} from "@/lib/client-domain-mutations";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchServiciosByIdsRead } from "@/lib/supabase/domain-read-adapters";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useVentasStore } from "@/store/ventasStore";
 import type { Tercero } from "@/types";
 
 type TerceroServicioCredential = {
@@ -48,8 +50,6 @@ export function useTerceroDetailsController(usuario: Tercero) {
   const { ventas: ventasTercero, renovacionesByServicio } = useVentasTercero(
     usuario.id,
   );
-  const updateVenta = useVentasStore((s) => s.updateVenta);
-  const updateServicio = useServiciosStore((s) => s.updateServicio);
   const [estadoDialog, setEstadoDialog] = useState<{
     open: boolean;
     modo: "activar" | "inactivar";
@@ -149,9 +149,9 @@ export function useTerceroDetailsController(usuario: Tercero) {
     const nuevoEstadoVenta = modo === "activar" ? "activo" : "inactivo";
     const nuevoActivoServicio = modo === "activar";
     try {
-      await updateVenta(venta.id, { estado: nuevoEstadoVenta });
+      await updateVentaMutation(venta.id, { estado: nuevoEstadoVenta });
       if (alcance === "venta_y_servicio") {
-        await updateServicio(venta.servicioId, { activo: nuevoActivoServicio });
+        await updateServicioMutation(venta.servicioId, { activo: nuevoActivoServicio });
       }
       toast.success(
         modo === "activar"

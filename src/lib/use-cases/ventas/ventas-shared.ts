@@ -1,8 +1,7 @@
 import { format } from 'date-fns';
 
-import { getVentaById } from '@/lib/supabase/ventas-repository';
 import { convertToUSD } from '@/lib/payments';
-import { getVentaConUltimoPagoUseCase } from '@/lib/use-cases/ventas/venta-current-payment-use-cases';
+import { getVentaConPagoActual } from '@/lib/ventas/ventas-read-adapter';
 import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
 import { toMoneyNumber } from '@/lib/utils/safety';
 import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
@@ -46,7 +45,7 @@ export type VentaPagoResult = {
   syncPaymentMethodFailed: boolean;
 };
 
-const VENTA_TABLE_UPDATE_KEYS = new Set([
+const VENTA_TABLE_UPDATE_KEYS = [
   'clienteId',
   'servicioId',
   'categoriaId',
@@ -61,16 +60,23 @@ const VENTA_TABLE_UPDATE_KEYS = new Set([
   'archivadoBy',
   'motivoArchivado',
   'notas',
-]);
+] as const satisfies ReadonlyArray<keyof VentaDoc>;
 
 export function getVentaTableUpdates(updates: Partial<VentaDoc>): Partial<VentaDoc> {
   const result: Partial<VentaDoc> = {};
-  const source = updates as Record<string, unknown>;
-  const target = result as Record<string, unknown>;
   for (const key of VENTA_TABLE_UPDATE_KEYS) {
-    if (source[key] !== undefined) target[key] = source[key];
+    assignDefined(result, updates, key);
   }
   return result;
+}
+
+function assignDefined<T extends object, K extends keyof T>(
+  target: Partial<T>,
+  source: Partial<T>,
+  key: K,
+) {
+  const value = source[key];
+  if (value !== undefined) target[key] = value;
 }
 
 export async function getUsdValues(amount: number, moneda: string) {
@@ -91,33 +97,6 @@ export function nullableUuid(id?: string | null) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
     ? id
     : null;
-}
-
-export function ventaBaseFromRecord(doc: Record<string, unknown>): VentaDoc {
-  return {
-    id: doc.id as string,
-    clienteId: (doc.clienteId as string) || '',
-    clienteNombre: (doc.clienteNombre as string) || 'Sin cliente',
-    categoriaId: (doc.categoriaId as string) || '',
-    categoriaNombre: (doc.categoriaNombre as string) || undefined,
-    servicioId: (doc.servicioId as string) || '',
-    servicioNombre: (doc.servicioNombre as string) || 'Servicio',
-    servicioCorreo: (doc.servicioCorreo as string) || undefined,
-    servicioContrasena: (doc.servicioContrasena as string) || undefined,
-    clienteTelefono: (doc.clienteTelefono as string) || undefined,
-    estado: (doc.estado as VentaDoc['estado']) ?? 'activo',
-    cortadaAt: doc.cortadaAt ? new Date(doc.cortadaAt as string) : null,
-    motivoCorte: (doc.motivoCorte as string | null | undefined) ?? null,
-    perfilNumero: (doc.perfilNumero as number) ?? null,
-    perfilNombre: (doc.perfilNombre as string) || undefined,
-    codigo: (doc.codigo as string) || undefined,
-    notas: (doc.notas as string) || undefined,
-    createdAt: (doc.createdAt as Date) || undefined,
-    updatedAt: (doc.updatedAt as Date) || undefined,
-    fechaInicio: (doc.fechaInicio as Date) || new Date(),
-    fechaFin: (doc.fechaFin as Date) || new Date(),
-    cicloPago: (doc.cicloPago as VentaDoc['cicloPago']) || 'mensual',
-  };
 }
 
 export function getPagoValues(venta: VentaDoc, input: VentaPagoInput) {
@@ -155,7 +134,5 @@ export function toVentaPronostico(v: VentaDoc): VentaPronostico | null {
 }
 
 export async function getVentaConPagoActualUseCase(id: string): Promise<VentaDoc | null> {
-  const doc = await getVentaById<Record<string, unknown>>(id);
-  if (!doc) return null;
-  return getVentaConUltimoPagoUseCase(ventaBaseFromRecord(doc));
+  return getVentaConPagoActual(id);
 }

@@ -1,5 +1,9 @@
 # Auditoría enterprise del proyecto MovieTime PTY
 
+> **Documento historico.** Esta auditoria conserva el estado observado en un corte anterior del 2026-05-25. No representa por si sola el runtime actual. Para el estado vigente y el plan de fases activo, usar `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`.
+>
+> Hallazgos que este documento lista como criticos ya fueron cerrados en el estado actual: `/api/push/pending` exige admin autenticado, la idempotencia de RPCs criticas esta aislada por `created_by`, y `npm test -- --run` pasa completo.
+
 **Fecha:** 2026-05-25  
 **Repositorio:** `MovieTime-Supabase`  
 **Alcance:** arquitectura, dominio, seguridad, Supabase/Postgres, frontend, estado cliente, testing, operaciones, PWA y mantenibilidad.

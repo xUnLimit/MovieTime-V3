@@ -152,8 +152,8 @@ export async function updateVentaUseCase(
   } as VentaDoc;
   const cambios = detectarCambios(
     'venta',
-    ventaAnterior as unknown as Record<string, unknown>,
-    ventaActualizada as unknown as Record<string, unknown>
+    ventaAnterior,
+    ventaActualizada
   );
 
   await options.recordActivityLog?.({

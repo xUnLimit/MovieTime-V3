@@ -9,7 +9,10 @@ import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Check, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Gasto, TipoGasto } from '@/types';
-import { useGastosStore } from '@/store/gastosStore';
+import {
+  createGastoMutation,
+  updateGastoMutation,
+} from '@/lib/client-domain-mutations';
 import {
   Dialog,
   DialogContent,
@@ -57,7 +60,6 @@ function toDateInputValue(date: Date) {
 }
 
 export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: GastoFormProps) {
-  const { createGasto, updateGasto } = useGastosStore();
   const [openFecha, setOpenFecha] = useState(false);
   const {
     register,
@@ -116,12 +118,12 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: Ga
 
     try {
       if (gasto) {
-        await updateGasto(gasto.id, payload);
+        await updateGastoMutation(gasto.id, payload);
         toast.success('Gasto actualizado', {
           description: 'Los cambios del gasto fueron guardados correctamente.',
         });
       } else {
-        await createGasto(payload);
+        await createGastoMutation(payload);
         toast.success('Gasto registrado', {
           description: 'El gasto fue registrado correctamente.',
         });

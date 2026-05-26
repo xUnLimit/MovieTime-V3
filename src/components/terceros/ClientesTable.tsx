@@ -11,7 +11,7 @@ import {
 } from "@/components/shared/PaginationFooter";
 import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
-import { useTercerosStore } from "@/store/tercerosStore";
+import { deleteTerceroMutation } from "@/lib/client-domain-mutations";
 import type { Tercero } from "@/types";
 import { ClientesTableActions } from "./ClientesTableActions";
 import { TodosTercerosTableToolbar } from "./TodosTercerosTableToolbar";
@@ -46,7 +46,6 @@ export function ClientesTable({
   onMetodoPagoFilterChange,
   metodoPagoOptions,
 }: ClientesTableProps) {
-  const { deleteTercero } = useTercerosStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState<Tercero | null>(null);
 
@@ -68,12 +67,16 @@ export function ClientesTable({
     if (!clienteToDelete) return;
 
     try {
-      await deleteTercero(clienteToDelete.id, {
-        tipo: clienteToDelete.tipo,
-        nombre: clienteToDelete.nombre,
-        createdAt: clienteToDelete.createdAt,
-        serviciosActivos: clienteToDelete.serviciosActivos,
-      });
+      await deleteTerceroMutation(
+        clienteToDelete.id,
+        {
+          tipo: clienteToDelete.tipo,
+          nombre: clienteToDelete.nombre,
+          createdAt: clienteToDelete.createdAt,
+          serviciosActivos: clienteToDelete.serviciosActivos,
+        },
+        clienteToDelete,
+      );
       toast.success("Cliente eliminado", {
         description: "El cliente ha sido eliminado correctamente del sistema.",
       });

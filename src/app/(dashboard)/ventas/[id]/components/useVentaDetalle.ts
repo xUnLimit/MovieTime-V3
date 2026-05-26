@@ -28,7 +28,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { deleteNotificacionesPorVenta } = useVentaDetalleStoreDependencies();
+  const { deleteNotificacionesPorVenta, deleteVenta, updatePerfilOcupado } = useVentaDetalleStoreDependencies();
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
     (tipo: TemplateMensaje['tipo']) =>
@@ -147,6 +147,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     setReembolsoDialogOpen,
   } = useVentaDetalleActions({
     deleteNotificacionesPorVenta,
+    deleteVenta,
     ensureDialogDependencies,
     getTemplateByTipo,
     id,
@@ -156,6 +157,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     refreshPagos,
     servicioContrasena,
     setVentaData,
+    updatePerfilOcupado,
     venta,
   });
 

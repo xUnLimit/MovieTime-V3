@@ -11,8 +11,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
+import { deleteTerceroMutation } from '@/lib/client-domain-mutations';
 import { isUuid } from '@/lib/utils/safety';
-import { useTercerosStore } from '@/store/tercerosStore';
 
 function TerceroDetallesPageContent() {
   const params = useParams();
@@ -20,7 +20,6 @@ function TerceroDetallesPageContent() {
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
 
-  const deleteTercero = useTercerosStore((state) => state.deleteTercero);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { data: usuario = null, isLoading } = useTerceroDetail(id);
 
@@ -81,7 +80,7 @@ function TerceroDetallesPageContent() {
 
   const handleConfirmDelete = async () => {
     try {
-      await deleteTercero(usuario!.id);
+      await deleteTerceroMutation(usuario!.id, undefined, usuario!);
       toast.success(`${usuario?.tipo === 'revendedor' ? 'Revendedor' : 'Cliente'} eliminado`, { description: 'El tercero ha sido eliminado correctamente del sistema.' });
       router.push('/terceros');
     } catch (error) {

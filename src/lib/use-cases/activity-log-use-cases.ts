@@ -1,8 +1,6 @@
 import {
-  countActivityLogs,
   queryActivityLogs,
   removeActivityLog,
-  removeAllActivityLogs,
 } from '@/lib/supabase/activity-log-repository';
 import { ENTITIES } from '@/lib/supabase/entities';
 import type { ActivityLog } from '@/types';

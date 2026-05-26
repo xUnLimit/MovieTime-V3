@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
+import { deleteMetodoPagoMutation } from '@/lib/client-domain-mutations';
 import { isUuid } from '@/lib/utils/safety';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
 import {
   MetodoPagoAdditionalInfo,
   MetodoPagoBasicInfo,
@@ -22,7 +22,6 @@ function VerMetodoPagoPageContent() {
   const router = useRouter();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const deleteMetodoPago = useMetodosPagoStore((state) => state.deleteMetodoPago);
   const { data: metodo = null, isLoading } = useMetodoPagoDetail(id);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +30,7 @@ function VerMetodoPagoPageContent() {
   const handleDelete = async () => {
     if (metodo) {
       try {
-        await deleteMetodoPago(metodo.id);
+        await deleteMetodoPagoMutation(metodo.id, metodo);
         toast.success('Método de pago eliminado', { description: 'El método de pago ha sido eliminado correctamente.' });
         router.push('/metodos-pago');
       } catch (error) {

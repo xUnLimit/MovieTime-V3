@@ -1,50 +1,80 @@
-import { useNotificacionesStore } from '@/store/notificacionesStore';
-import { useMetodosPagoStore } from '@/store/metodosPagoStore';
-import { useServiciosStore } from '@/store/serviciosStore';
-import { useVentasStore } from '@/store/ventasStore';
+import { getActiveQueryClient } from '@/lib/query-client-registry';
+import { queryKeys } from '@/lib/query-keys';
+import { invalidateStoreQueries } from '@/store/store-query-invalidation';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
+import {
+  deleteNotificacionUseCase,
+  deleteNotificacionesPorServicioUseCase,
+  deleteNotificacionesPorVentaUseCase,
+} from '@/lib/use-cases/notificaciones/notificaciones-store-use-cases';
+import {
+  deleteServicioUseCase,
+  updateServicioUseCase,
+} from '@/lib/use-cases/servicios/servicios-write-use-cases';
+import { updateVentaUseCase } from '@/lib/use-cases/ventas/ventas-write-use-cases';
+import type { Servicio } from '@/types';
 import type { MetodoPago } from '@/types';
 
 export async function cutVentaFromNotificationStoreWorkflow(ventaId: string, motivoCorte: string) {
-  await useVentasStore.getState().updateVenta(ventaId, {
-    estado: 'inactivo',
-    cortadaAt: new Date(),
-    motivoCorte,
-  });
-  await useNotificacionesStore.getState().deleteNotificacionesPorVenta(ventaId);
+  await updateVentaUseCase(ventaId, {
+      estado: 'inactivo',
+      cortadaAt: new Date(),
+      motivoCorte,
+    },
+    getActivityLogOptions(),
+  );
+  await deleteNotificacionesPorVentaUseCase(ventaId);
+  await invalidateStoreQueries(['ventas', 'notificaciones', 'dashboard', 'pagination']);
 }
 
 export async function inactivateServicioFromNotificationStoreWorkflow(servicioId: string) {
-  await useServiciosStore.getState().updateServicio(servicioId, { activo: false });
-  await useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicioId);
+  await updateServicioUseCase(servicioId, { activo: false }, getActivityLogOptions());
+  await deleteNotificacionesPorServicioUseCase(servicioId);
+  await invalidateStoreQueries(['servicios', 'notificaciones', 'dashboard', 'pagination']);
 }
 
 export async function activateReposoServicioStoreWorkflow(
   servicioId: string,
-  updates: Parameters<ReturnType<typeof useServiciosStore.getState>['updateServicio']>[1],
+  updates: Partial<Servicio>,
 ) {
-  await useServiciosStore.getState().updateServicio(servicioId, updates);
+  await updateServicioUseCase(servicioId, updates, getActivityLogOptions());
+  await invalidateStoreQueries(['servicios', 'dashboard', 'pagination']);
 }
 
 export async function deleteReposoServicioStoreWorkflow(servicioId: string, deletePayments: boolean) {
-  await useServiciosStore.getState().deleteServicio(servicioId, deletePayments);
+  await deleteServicioUseCase(servicioId, {
+    deletePayments,
+    ...getActivityLogOptions(),
+  });
+  await invalidateStoreQueries(['servicios', 'categorias', 'ventas', 'notificaciones', 'dashboard', 'pagination']);
 }
 
 export async function deleteNotificationStoreItem(notificationId: string) {
-  await useNotificacionesStore.getState().deleteNotificacion(notificationId);
+  await deleteNotificacionUseCase(notificationId);
+  await invalidateStoreQueries(['notificaciones', 'dashboard']);
 }
 
 export function refreshVentasStoreCache() {
-  void useVentasStore.getState().fetchVentas(true);
+  const queryClient = getActiveQueryClient();
+  void queryClient?.invalidateQueries({ queryKey: queryKeys.ventas.all });
+  void queryClient?.invalidateQueries({ queryKey: queryKeys.pagination.all });
 }
 
 export function getCurrentMetodosPagoStoreSnapshot(): MetodoPago[] {
-  return useMetodosPagoStore.getState().metodosPago;
+  const queryClient = getActiveQueryClient();
+  if (!queryClient) return [];
+
+  return queryClient
+    .getQueriesData<unknown>({ queryKey: queryKeys.metodosPago.all })
+    .flatMap(([, data]) => (Array.isArray(data) ? data as MetodoPago[] : []));
 }
 
 export async function deleteVentaNotificationsStoreWorkflow(ventaId: string) {
-  await useNotificacionesStore.getState().deleteNotificacionesPorVenta(ventaId);
+  await deleteNotificacionesPorVentaUseCase(ventaId);
+  await invalidateStoreQueries(['notificaciones', 'dashboard']);
 }
 
 export async function deleteServicioNotificationsStoreWorkflow(servicioId: string) {
-  await useNotificacionesStore.getState().deleteNotificacionesPorServicio(servicioId);
+  await deleteNotificacionesPorServicioUseCase(servicioId);
+  await invalidateStoreQueries(['notificaciones', 'dashboard']);
 }

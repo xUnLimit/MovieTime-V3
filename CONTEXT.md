@@ -3,6 +3,7 @@
 ## Domain
 
 - Tercero: person or business managed by the app. A tercero can be a cliente or revendedor.
+- Usuario auth: authenticated application profile used for login, active/admin checks and server-side authorization. The physical table can be named `usuarios`; do not use this term for the commercial tercero domain.
 - Categoria: commercial grouping used to organize servicios, ventas, plans, counters, income and expenses.
 - Servicio: provider account or subscription inventory that can have profiles, periods, payments and renewal forecasts.
 - Venta: customer subscription assigned to a servicio/profile and tracked through venta periods and payments.

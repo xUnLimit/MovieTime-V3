@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { PROFILE_PAGE_SIZE } from '@/lib/utils/perfiles';
 
@@ -84,39 +84,25 @@ export function useServicioProfiles(
   );
 
   const profilePageCount = Math.max(Math.ceil(filteredPerfiles.length / PROFILE_PAGE_SIZE), 1);
+  const effectiveProfilePage = showProfileControls
+    ? Math.min(profilePage, Math.max(profilePageCount - 1, 0))
+    : 0;
 
   const visiblePerfiles = useMemo(() => {
     if (!showProfileControls) return filteredPerfiles;
-    const start = profilePage * PROFILE_PAGE_SIZE;
+    const start = effectiveProfilePage * PROFILE_PAGE_SIZE;
     return filteredPerfiles.slice(start, start + PROFILE_PAGE_SIZE);
-  }, [filteredPerfiles, profilePage, showProfileControls]);
+  }, [effectiveProfilePage, filteredPerfiles, showProfileControls]);
 
   const visibleProfileNumbers = useMemo(
     () => visiblePerfiles.map((perfil) => perfil.numero),
     [visiblePerfiles]
   );
 
-  useEffect(() => {
-    if (!showProfileControls) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- preserves existing page clamp behavior during refactor.
-    setProfilePage((prev) => Math.min(prev, Math.max(profilePageCount - 1, 0)));
-  }, [profilePageCount, showProfileControls]);
-
-  useEffect(() => {
-    if (!showProfileControls) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- preserves existing reset behavior when controls disappear.
-      setProfilePage(0);
-      setProfileSearch('');
-    }
-  }, [showProfileControls]);
-
-  useEffect(() => {
-    if (expandedProfileNumber === null) return;
-    if (!visibleProfileNumbers.includes(expandedProfileNumber)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- preserves existing collapse behavior when the profile leaves the page.
-      setExpandedProfileNumber(null);
-    }
-  }, [expandedProfileNumber, visibleProfileNumbers]);
+  const visibleExpandedProfileNumber =
+    expandedProfileNumber !== null && visibleProfileNumbers.includes(expandedProfileNumber)
+      ? expandedProfileNumber
+      : null;
 
   const toggleProfile = (profileNumber: number) => {
     setExpandedProfileNumber((prev) => (prev === profileNumber ? null : profileNumber));
@@ -136,11 +122,11 @@ export function useServicioProfiles(
   };
 
   return {
-    expandedProfileNumber,
+    expandedProfileNumber: visibleExpandedProfileNumber,
     perfilesDisponibles,
-    profilePage,
+    profilePage: effectiveProfilePage,
     profilePageCount,
-    profileSearch,
+    profileSearch: showProfileControls ? profileSearch : '',
     showProfileControls,
     visiblePerfiles,
     goToNextProfilePage,

@@ -24,7 +24,6 @@ const dashboardStatsService = vi.hoisted(() => ({
 
 const paymentsModule = vi.hoisted(() => ({
   convertToUSD: vi.fn(),
-  createRenewalVentaPayment: vi.fn(),
 }));
 
 const notificationSyncService = vi.hoisted(() => ({

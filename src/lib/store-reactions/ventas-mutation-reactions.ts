@@ -2,7 +2,7 @@ import { storeEventBus } from '@/lib/events/store-event-bus';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { deleteVentaNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { useServiciosStore } from '@/store/serviciosStore';
+import { invalidateStoreQueries } from '@/store/store-query-invalidation';
 
 type ServiceProfileDelta = {
   servicioId: string;
@@ -12,9 +12,7 @@ type ServiceProfileDelta = {
 async function applyServiceProfileDelta(delta: ServiceProfileDelta) {
   if (!delta) return;
 
-  await useServiciosStore
-    .getState()
-    .updatePerfilOcupado(delta.servicioId, delta.shouldIncrement);
+  await invalidateStoreQueries(['servicios', 'ventas', 'pagination']);
 }
 
 function deleteVentaNotifications(ventaId: string) {

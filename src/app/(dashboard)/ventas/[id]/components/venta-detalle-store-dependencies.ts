@@ -1,8 +1,15 @@
 'use client';
 
-import { useNotificacionesStore } from '@/store/notificacionesStore';
+import {
+  deleteVentaMutation,
+  refreshServicioProfileCountMutation,
+} from '@/lib/client-domain-mutations';
+import { deleteNotificacionesPorVentaUseCase } from '@/lib/use-cases/notificaciones/notificaciones-store-use-cases';
 
 export function useVentaDetalleStoreDependencies() {
-  const deleteNotificacionesPorVenta = useNotificacionesStore((state) => state.deleteNotificacionesPorVenta);
-  return { deleteNotificacionesPorVenta };
+  return {
+    deleteNotificacionesPorVenta: deleteNotificacionesPorVentaUseCase,
+    deleteVenta: deleteVentaMutation,
+    updatePerfilOcupado: refreshServicioProfileCountMutation,
+  };
 }

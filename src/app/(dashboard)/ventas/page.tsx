@@ -14,16 +14,15 @@ import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
+import { deleteVentaMutation } from '@/lib/client-domain-mutations';
 import { subscribeToVentaListReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
 import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas/ventas-query-use-cases';
-import { useVentasStore } from '@/store/ventasStore';
 import { VentaDoc } from '@/types';
 import { FilterOption } from '@/lib/supabase/pagination';
 
 function VentasPageContent() {
   const queryClient = useQueryClient();
-  const deleteVenta = useVentasStore((state) => state.deleteVenta);
   const { data: categorias = [] } = useCategoriasFull();
 
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'inactivas'>('todas');
@@ -93,7 +92,7 @@ function VentasPageContent() {
   const handleConfirmDeleteVenta = async (deletePagos: boolean) => {
     if (!deleteVentaId) return;
     try {
-      await deleteVenta(deleteVentaId, deleteVentaServicioId, deleteVentaPerfilNumero, deletePagos);
+      await deleteVentaMutation(deleteVentaId, deleteVentaServicioId, deleteVentaPerfilNumero, deletePagos);
       toast.success(deletePagos ? 'Venta y pagos eliminados' : 'Venta eliminada', { description: deletePagos ? 'La venta y todos sus pagos asociados han sido eliminados.' : 'La venta ha sido eliminada. Los pagos se conservaron.' });
       setDeleteVentaId(null);
       setDeleteVentaServicioId(undefined);

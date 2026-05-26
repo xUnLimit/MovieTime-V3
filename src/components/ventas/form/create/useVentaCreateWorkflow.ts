@@ -12,8 +12,10 @@ import type {
   VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
 import { useTemplates } from "@/hooks/use-templates";
-import { useServiciosStore } from "@/store/serviciosStore";
-import { useVentasStore } from "@/store/ventasStore";
+import {
+  createVentaMutation,
+  refreshServicioProfileCountMutation,
+} from "@/lib/client-domain-mutations";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Categoria, Plan, Servicio, Tercero } from "@/types";
 
@@ -115,8 +117,6 @@ export function useVentaCreateWorkflow({
   tipoItem,
 }: UseVentaCreateWorkflowParams) {
   const router = useRouter();
-  const updatePerfilOcupado = useServiciosStore((state) => state.updatePerfilOcupado);
-  const createVenta = useVentasStore((state) => state.createVenta);
   const setPendingWhatsApp = useWhatsAppToastStore((state) => state.setPending);
   const { data: templates = [] } = useTemplates();
   const templateNotificacion = useMemo(
@@ -161,7 +161,7 @@ export function useVentaCreateWorkflow({
   const { handleGuardarVenta, saving } = useVentaCreateSubmit({
     clienteId,
     clienteSeleccionado,
-    createVenta,
+    createVenta: createVentaMutation,
     editedMessage,
     estadoVenta,
     fechaFin,
@@ -173,7 +173,7 @@ export function useVentaCreateWorkflow({
     onSaved: () => router.push("/ventas"),
     setPendingWhatsApp,
     totalFinal,
-    updatePerfilOcupado,
+    updatePerfilOcupado: refreshServicioProfileCountMutation,
   });
 
   const { handleAddItem, handleEditItem, handleRemoveItem } =

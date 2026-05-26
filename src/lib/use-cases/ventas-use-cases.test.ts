@@ -24,7 +24,6 @@ const dashboardStatsService = vi.hoisted(() => ({
 
 const paymentsModule = vi.hoisted(() => ({
   convertToUSD: vi.fn(),
-  createRenewalVentaPayment: vi.fn(),
   financialPayments: {
     registerRenewalVentaPayment: vi.fn(),
   },
@@ -92,7 +91,6 @@ describe('ventas use cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     paymentsModule.convertToUSD.mockImplementation(async (amount: number) => amount);
-    paymentsModule.createRenewalVentaPayment.mockResolvedValue('pago-renovacion');
     paymentsModule.financialPayments.registerRenewalVentaPayment.mockResolvedValue('pago-renovacion');
     notificationSyncService.sincronizarUnaVenta.mockResolvedValue(undefined);
   });

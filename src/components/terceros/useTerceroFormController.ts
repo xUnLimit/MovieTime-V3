@@ -7,6 +7,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
+import {
+  createTerceroMutation,
+  updateTerceroMutation,
+} from "@/lib/client-domain-mutations";
 import { queryKeys } from "@/lib/query-keys";
 import {
   createPendingTerceroPaymentMethod,
@@ -15,7 +19,6 @@ import {
   PENDING_TERCERO_PAYMENT_ID,
   PENDING_TERCERO_PAYMENT_NAME,
 } from "@/lib/utils/terceroMetodoPago";
-import { useTercerosStore } from "@/store/tercerosStore";
 import type { MetodoPago, Tercero } from "@/types";
 
 const usuarioSchema = z.object({
@@ -64,7 +67,6 @@ export function useTerceroFormController({
   onSuccess,
 }: UseTerceroFormControllerParams) {
   const queryClient = useQueryClient();
-  const { createTercero, updateTercero } = useTercerosStore();
   const pendienteOption = useMemo<MetodoPago>(
     () => createPendingTerceroPaymentMethod(),
     [],
@@ -229,7 +231,7 @@ export function useTerceroFormController({
 
       if (usuario) {
         // Actualizar tercero existente (incluyendo cambio de tipo si es necesario)
-        await updateTercero(usuario.id, usuarioData);
+        await updateTerceroMutation(usuario.id, usuarioData, usuario);
         const cambioTipo = usuario.tipo !== data.tipoTercero;
         toast.success(
           cambioTipo
@@ -243,7 +245,7 @@ export function useTerceroFormController({
         );
       } else {
         // Crear nuevo tercero
-        await createTercero(usuarioData);
+        await createTerceroMutation(usuarioData);
         toast.success(
           `${data.tipoTercero === "cliente" ? "Cliente" : "Revendedor"} creado`,
           {

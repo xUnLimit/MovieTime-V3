@@ -5,7 +5,9 @@
 **Alcance:** arquitectura, seguridad, Supabase/Postgres, estado cliente, UI, PWA, tests, operaciones y documentacion.  
 **Objetivo:** listar con detalle lo que esta mal, incompleto, riesgoso o mejorable, separando bugs/riesgos de oportunidades.
 
-**Estado de ejecucion:** Fase 0, Fase 1 y Fase 2 implementadas. Fase 3 implementada para Notificacion, pagos, adapters de pagos y seams de detalle Venta/Servicio. Fase 4 implementada para PWA/offline facade, push ejecutiva API/settings/delivery, DataTable helper tipado, clasificacion de `src/lib/services`, naming nuevo hacia Tercero y documentacion activa. Los cambios que requieren ADR nueva siguen marcados como no tocar.
+> **Documento activo de backlog.** Los hallazgos criticos iniciales se conservan como trazabilidad, pero deben leerse junto con la evidencia de cierre de este documento y con `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`. En el estado actual, `/api/push/pending`, la idempotencia por usuario y la estabilidad de tests ya estan corregidos.
+
+**Estado de ejecucion:** Fase 0 a Fase 7 implementadas y validadas. Seguridad/RPC/RLS, tests/operacion, arquitectura cliente, payments, workflows de detalle, Notificaciones/Reposo, coverage/contratos y cierre documental quedaron registrados en `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`. Los cambios que requieren ADR nueva siguen marcados como no tocar.
 
 ## Lectura rapida
 
@@ -17,11 +19,13 @@ Este documento no significa que el proyecto este mal. Significa que el proyecto 
 - Tests/operacion: suite Vitest estable, lint y build verdes; env/reset/secrets validados en fases previas.
 - Cliente/cache: cache/store reactions centralizadas y comandos desacoplados de stores donde correspondia.
 - Notificaciones: use-cases sin imports directos a stores; workflows de store aislados en `src/lib/store-reactions`.
+- Notificaciones/Reposo: use-cases sin `toast`, `window`, browser APIs ni `QueryClient`; outcomes y reactions concentran feedback/cache.
 - Pagos: interfaz `financialPayments` orientada a dominio; ventas/servicios ya no llaman factories posicionales directamente para renovaciones criticas.
 - Supabase adapters: payloads fisicos de pagos confinados en `payments-repository`/RPC adapters; `record-core` conserva casts solo como frontera generica interna.
 - Detalle Venta/Servicio: acciones de pantalla movidas a use-cases/reactions/fachadas de dependencias; stores internos ya no se importan desde los handlers criticos de Venta ni sale-actions de Servicio.
 - PWA/offline: `offline-facade` expone preparar copia, estado, lecturas, paginacion y guard de mutaciones.
 - Push ejecutiva: rutas API usan `executive-push-api`; settings y delivery quedan separados.
+- Coverage/contratos: `npm run test:coverage` corre con thresholds progresivos; rutas push con service role tienen tests de auth/ownership.
 - DataTable/services/docs: helper tipado `defineDataTableColumns`, README de `src/lib/services` y este backlog actualizado como documento activo.
 - No tocar sin ADR: multiusuario RLS, quitar `force-dynamic`, cambiar offline mutations y mover metricas fuera de Postgres quedan explicitamente fuera del cierre.
 
@@ -720,6 +724,44 @@ La direccion es correcta. La deuda es terminar la migracion, no cambiar de herra
 4. Mejorar DataTable/Table Adapters.
 5. Normalizar naming `Tercero`.
 6. Archivar docs superados.
+
+### Fase 5: Notificaciones y Reposo
+
+**Estado:** Implementada en `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`. Se separaron use-cases de Notificaciones/Reposo de UI/browser/cache directo, se agregaron outcomes de dominio y se movieron invalidaciones a reactions.
+
+1. Renovar Venta y Servicio desde Notificacion con outcomes.
+2. Cortar Venta e inactivar Servicio desde Notificacion sin feedback visual en dominio.
+3. Activar, renovar y eliminar Servicio en Reposo con outcomes.
+4. Mover `toast`, WhatsApp y `QueryClient` a UI/reactions.
+
+### Fase 6: Contratos y coverage
+
+**Estado:** Implementada en `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`. Coverage corre con thresholds progresivos y las rutas push sensibles tienen contratos de auth/ownership.
+
+1. Medir coverage y fijar thresholds de no-regresion.
+2. Agregar contratos para `/api/push/subscriptions` y `/api/push/test`.
+3. Confirmar RPCs criticas detras de Adapters tipados.
+4. Reducir casts estructurales triviales y documentar excepciones.
+
+### Fase 7: Cierre final
+
+**Estado:** Implementada en `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`. Se ejecutaron busquedas finales, validacion completa, actualizacion documental y clasificacion de deuda residual.
+
+1. Validar Fases 0 a 6.
+2. Clasificar deuda residual.
+3. Confirmar comandos completos: lint, tests, coverage, build, migrate validate y secret scan.
+4. Alinear documentacion activa con runtime.
+
+## Deuda residual aceptada tras cierre final
+
+| Deuda | Razon | ADR/decision relacionada | Reabrir cuando |
+| --- | --- | --- | --- |
+| Stores Zustand de dominio siguen existiendo como frontera legacy. | Migrarlos totalmente a React Query requiere fase dedicada y cambia superficie amplia. | ADR-0002. | Se toque una pantalla completa de lecturas/mutaciones o aparezcan bugs de cache duplicada. |
+| `Record<string, unknown>` en DataTable, rows, charts y metadata de activity log. | Son fronteras genericas de render/metadata; no son payload financiero ni auth. | ADR-0005. | Se cree un adapter tipado por tabla/chart o se cambie formato de activity log. |
+| `ventas-shared.ventaBaseFromRecord` y `terceros-use-cases.getTerceroSqlPayload`. | Adaptan record fisico legacy/repositorio generico a dominio. | ADR-0003/ADR-0005. | Se cree Adapter dedicado de lectura Venta o escritura Terceros. |
+| `eslint-disable` puntuales de hooks React. | Protegen comportamiento existente de efectos durante refactors; lint sigue verde. | Decision tecnica local. | Se refactoricen esos componentes o React Compiler/ESLint cambie la regla aplicable. |
+| Coverage global moderado por UI/stores legacy. | Thresholds actuales son de no-regresion y priorizan Modules criticos. | Fase 6. | Se agregue CI stricter o se migre un modulo legacy completo. |
+| `force-dynamic` y modelo RLS single-tenant. | Decisiones protegidas por arquitectura actual. | ADR-0006 y notas de build/auth. | Producto requiera multiusuario/tenant o caching estatico. |
 
 ## Candidatos que requieren ADR antes de cambiar
 

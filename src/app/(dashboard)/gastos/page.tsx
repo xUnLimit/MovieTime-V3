@@ -13,13 +13,14 @@ import { TipoGastoDialog } from '@/components/gastos/TipoGastoDialog';
 import { TiposGastoTable } from '@/components/gastos/TiposGastoTable';
 import { useGastos } from '@/hooks/use-gastos';
 import { useTiposGasto } from '@/hooks/use-tipos-gasto';
-import { useGastosStore } from '@/store/gastosStore';
-import { useTiposGastoStore } from '@/store/tiposGastoStore';
+import {
+  deleteGastoMutation,
+  deleteTipoGastoMutation,
+  toggleTipoGastoActivoMutation,
+} from '@/lib/client-domain-mutations';
 import { Gasto, TipoGasto } from '@/types';
 
 function GastosPageContent() {
-  const deleteGasto = useGastosStore((state) => state.deleteGasto);
-  const { toggleActivo, deleteTipoGasto } = useTiposGastoStore();
   const { data: gastos = [], refetch: refetchGastos } = useGastos();
   const { data: tiposGasto = [], refetch: refetchTiposGasto } = useTiposGasto();
   const [activeTab, setActiveTab] = useState('gastos');
@@ -54,17 +55,17 @@ function GastosPageContent() {
   };
 
   const handleToggleTipoActivo = async (tipoGasto: TipoGasto) => {
-    await toggleActivo(tipoGasto.id);
+    await toggleTipoGastoActivoMutation(tipoGasto.id);
     await refetchTiposGasto();
   };
 
   const handleDeleteTipo = async (tipoGasto: TipoGasto) => {
-    await deleteTipoGasto(tipoGasto.id);
+    await deleteTipoGastoMutation(tipoGasto.id);
     await refetchTiposGasto();
   };
 
   const handleDeleteGasto = async (id: string) => {
-    await deleteGasto(id);
+    await deleteGastoMutation(id);
     await refetchGastos();
   };
 

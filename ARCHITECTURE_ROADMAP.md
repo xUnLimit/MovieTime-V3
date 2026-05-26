@@ -1,6 +1,8 @@
 # MovieTime PTY - Arquitectura Enterprise
 # Estado actual - Mayo 2026
 
+> Para la auditoria activa y el plan de fases con compuertas estrictas, usar `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`.
+
 ---
 
 ## Resumen
@@ -91,8 +93,7 @@ UI / App Router
 | Fase 3 - React Query y EventBus | Cerrada |
 | Fase 4 - Consolidacion enterprise | Cerrada |
 
-La cobertura y pruebas E2E/RPC siguen fuera del alcance activo por decision
-explita. La arquitectura runtime esta cerrada.
+La auditoria actual exige validaciones reproducibles por fase. La cobertura y pruebas E2E/RPC no deben cambiarse sin una decision documentada en el plan activo o una ADR cuando aplique.
 
 ---
 
@@ -121,6 +122,7 @@ npm run migrate:validate
 - `docs/adr/0003-typed-rpc-adapters-and-idempotency.md`
 - `docs/adr/0004-typed-client-events.md`
 - `docs/adr/0005-modular-monolith-deep-modules.md`
+- `docs/adr/0006-single-tenant-admin-rls-model.md`
 
 ---
 
@@ -128,4 +130,5 @@ npm run migrate:validate
 
 No existen imports runtime hacia rutas retiradas de dashboard, notificaciones
 o use-cases agregados. Los documentos historicos de migracion y disenos
-superados fueron retirados del arbol activo; el historial se conserva en Git.
+superados deben leerse desde `docs/README.md`, que separa fuentes activas,
+historicas y ADRs vigentes.

@@ -18,7 +18,7 @@ import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNot
 import { MetricCard } from '@/components/shared/MetricCard';
 import { useNotificacionesMontos } from '@/hooks/use-notificaciones-montos';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
-import { queryKeys } from '@/lib/query-keys';
+import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { sincronizarNotificaciones } from '@/lib/notifications';
@@ -111,7 +111,9 @@ function NotificacionesPageContent() {
     const init = async () => {
       try {
         await sincronizarNotificaciones();
-        await queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all });
+        await applyNotificationQueryReactions(queryClient, {
+          notificationInvalidationNeeded: true,
+        });
       } catch (error) {
         console.error('Error initializing notifications:', error);
         toast.error('Error al cargar notificaciones', { description: 'No se pudieron obtener las notificaciones. Intenta nuevamente.' });

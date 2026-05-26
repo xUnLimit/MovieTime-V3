@@ -11,9 +11,9 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCategoriaDetail } from '@/hooks/use-entity-detail';
+import { deleteCategoriaMutation } from '@/lib/client-domain-mutations';
 import { formatearFechaHora } from '@/lib/utils/calculations';
 import { isUuid } from '@/lib/utils/safety';
-import { useCategoriasStore } from '@/store/categoriasStore';
 import { Plan } from '@/types';
 import { CategoriaDetailPlanCard } from './CategoriaDetailPlanCard';
 import { getTipoCategoriaLabel, getTipoLabel } from './categoria-detail-helpers';
@@ -23,7 +23,6 @@ function VerCategoriaPageContent() {
   const router = useRouter();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
-  const deleteCategoria = useCategoriasStore((state) => state.deleteCategoria);
   const { data: categoria = null, isLoading } = useCategoriaDetail(id);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
@@ -31,7 +30,7 @@ function VerCategoriaPageContent() {
   const handleDelete = async () => {
     if (categoria) {
       try {
-        await deleteCategoria(categoria.id);
+        await deleteCategoriaMutation(categoria.id, categoria);
         toast.success('Categoría eliminada', { description: 'La categoría ha sido eliminada correctamente.' });
         router.push('/categorias');
       } catch (error) {

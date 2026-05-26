@@ -2,11 +2,16 @@ import { countCategorias } from '@/lib/supabase/categorias-repository';
 import { ENTITIES } from '@/lib/supabase/entities';
 import {
   countServicios,
+  getServicioById,
   queryServicios,
 } from '@/lib/supabase/servicios-repository';
 import type { Servicio } from '@/types';
 
 export const SERVICIOS_COLLECTION = ENTITIES.SERVICIOS;
+
+export function getServicioUseCase(id: string) {
+  return getServicioById<Servicio>(id);
+}
 
 export async function fetchServiciosCountsUseCase() {
   const [totalServiciosRaw, serviciosEnReposo, serviciosActivosRaw, serviciosEnReposoDocs, totalCategoriasActivas] =

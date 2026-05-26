@@ -7,13 +7,16 @@ import { toast } from 'sonner';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
-import { queryKeys } from '@/lib/query-keys';
+import {
+  toggleNotificationHighlightedStoreCache,
+  toggleNotificationReadStoreCache,
+} from '@/lib/store-reactions/notification-cache-reactions';
+import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
 import { cutVentaFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
 import {
   confirmVentaRenewalFromNotificationUseCase as confirmVentaRenewal,
   loadVentaRenewalOptionsUseCase as loadVentaRenewalOptions,
 } from '@/lib/use-cases/notificaciones/notificaciones-renewal-use-cases';
-import { useNotificacionesStore } from '@/store/notificacionesStore';
 import type { MetodoPago, TemplateMensaje } from '@/types';
 import type { Plan } from '@/types/categorias';
 
@@ -27,10 +30,6 @@ import { useVentasProximasPagination } from './useVentasProximasPagination';
 export function useVentasProximasController() {
   const queryClient = useQueryClient();
   const { data: notificaciones = [] } = useNotificaciones();
-  const {
-    toggleLeida,
-    toggleResaltada,
-  } = useNotificacionesStore();
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
     (tipo: TemplateMensaje['tipo']) =>
@@ -93,13 +92,13 @@ export function useVentasProximasController() {
   };
 
   const refreshNotificationCaches = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: queryKeys.notificaciones.all,
+    await applyNotificationQueryReactions(queryClient, {
+      notificationInvalidationNeeded: true,
     });
   };
 
   const handleToggleLeida = async (notifId: string, leida: boolean) => {
-    await toggleLeida(notifId, leida);
+    await toggleNotificationReadStoreCache(notifId, leida);
     await refreshNotificationCaches();
   };
 
@@ -161,11 +160,19 @@ export function useVentasProximasController() {
     if (!notifSeleccionada) return;
 
     try {
-      await confirmVentaRenewal({
+      const outcome = await confirmVentaRenewal({
         data,
         notif: notifSeleccionada,
         refreshNotificationCaches,
       });
+      await applyNotificationQueryReactions(queryClient, outcome);
+      if (outcome.warnings.includes('sync_payment_method_failed')) {
+        toast.warning('Venta renovada con advertencia', {
+          description:
+            'La renovacion se guardo, pero no se pudo actualizar el metodo de pago en terceros.',
+        });
+      }
+      showVentaRenewalOutcome(outcome);
       setRenovarDialogOpen(false);
       setNotifSeleccionada(null);
     } catch (error) {
@@ -182,7 +189,7 @@ export function useVentasProximasController() {
     if (!notifSeleccionada) return;
 
     try {
-      await toggleResaltada(notifSeleccionada.id, !notifSeleccionada.resaltada);
+      await toggleNotificationHighlightedStoreCache(notifSeleccionada.id, !notifSeleccionada.resaltada);
       await refreshNotificationCaches();
       toast.success('Notificación resaltada para seguimiento');
     } catch (error) {
@@ -195,7 +202,7 @@ export function useVentasProximasController() {
     if (!notifSeleccionada) return;
 
     try {
-      await toggleResaltada(notifSeleccionada.id, false);
+      await toggleNotificationHighlightedStoreCache(notifSeleccionada.id, false);
       await refreshNotificationCaches();
       toast.success('Resaltado descartado');
     } catch (error) {
@@ -208,11 +215,13 @@ export function useVentasProximasController() {
     if (!notifSeleccionada) return;
 
     try {
-      await cutVentaFromNotificationUseCase({
+      const outcome = await cutVentaFromNotificationUseCase({
         motivoCorte,
         refreshNotificationCaches,
         ventaId: notifSeleccionada.ventaId,
       });
+      await applyNotificationQueryReactions(queryClient, outcome);
+      toast.success('Venta cortada exitosamente');
     } catch (error) {
       console.error('Error cortando venta:', error);
       toast.error('Error al cortar la venta');
@@ -254,4 +263,31 @@ export function useVentasProximasController() {
     visiblePasswords,
     copyToClipboard,
   };
+}
+
+function showVentaRenewalOutcome({
+  whatsappMessage,
+}: Awaited<ReturnType<typeof confirmVentaRenewal>>) {
+  if (!whatsappMessage) {
+    toast.success('Venta renovada exitosamente');
+    return;
+  }
+
+  toast.success('Venta renovada exitosamente', {
+    duration: Infinity,
+    action: {
+      label: 'Enviar WhatsApp',
+      onClick: () => {
+        const base = whatsappMessage.phone
+          ? `https://web.whatsapp.com/send?phone=${whatsappMessage.phone}&text=`
+          : 'https://web.whatsapp.com/send?text=';
+        window.open(
+          base + encodeURIComponent(whatsappMessage.message),
+          '_blank',
+          'noopener,noreferrer',
+        );
+      },
+    },
+    actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
+  });
 }

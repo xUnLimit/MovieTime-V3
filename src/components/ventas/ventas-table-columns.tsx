@@ -9,7 +9,7 @@ import {
 } from "@/lib/utils/calculations";
 import type { VentaDoc } from "@/types";
 
-export interface VentaRow extends Record<string, unknown> {
+export interface VentaRow {
   id: string;
   cliente: string;
   clienteDetalle: string;

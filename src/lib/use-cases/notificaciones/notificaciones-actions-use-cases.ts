@@ -1,6 +1,3 @@
-import { toast } from 'sonner';
-
-import { invalidateDashboardCache } from '@/lib/commands/client-cache';
 import {
   cutVentaFromNotificationStoreWorkflow,
   inactivateServicioFromNotificationStoreWorkflow,
@@ -12,6 +9,7 @@ type RefreshNotificationCaches = () => Promise<void>;
 export type NotificationActionOutcome = {
   completed: true;
   cacheInvalidations: Array<{ entity: 'venta' | 'servicio'; entityId: string }>;
+  notificationInvalidationNeeded: boolean;
   storeRefreshes: Array<'ventas' | 'servicios' | 'notificaciones'>;
 };
 
@@ -27,17 +25,12 @@ export async function cutVentaFromNotificationUseCase({
   await cutVentaFromNotificationStoreWorkflow(ventaId, motivoCorte);
   await refreshNotificationCaches();
 
-  invalidateDashboardCache({
-    entity: 'venta',
-    entityId: ventaId,
-  });
-
-  toast.success('Venta cortada exitosamente');
   refreshVentasStoreCache();
 
   return {
     completed: true,
     cacheInvalidations: [{ entity: 'venta', entityId: ventaId }],
+    notificationInvalidationNeeded: true,
     storeRefreshes: ['ventas', 'notificaciones'],
   };
 }
@@ -45,21 +38,18 @@ export async function cutVentaFromNotificationUseCase({
 export async function inactivateServicioFromNotificationUseCase({
   refreshNotificationCaches,
   servicioId,
-  servicioNombre,
 }: {
   refreshNotificationCaches: RefreshNotificationCaches;
   servicioId: string;
-  servicioNombre: string;
+  servicioNombre?: string;
 }): Promise<NotificationActionOutcome> {
   await inactivateServicioFromNotificationStoreWorkflow(servicioId);
-  toast.success('Servicio inactivado', {
-    description: `${servicioNombre} ha sido marcado como inactivo.`,
-  });
   await refreshNotificationCaches();
 
   return {
     completed: true,
     cacheInvalidations: [{ entity: 'servicio', entityId: servicioId }],
+    notificationInvalidationNeeded: true,
     storeRefreshes: ['servicios', 'notificaciones'],
   };
 }

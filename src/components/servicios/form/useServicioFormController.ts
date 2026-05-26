@@ -13,8 +13,11 @@ import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";
 import { useTemplates } from "@/hooks/use-templates";
 import { useTerceros } from "@/hooks/use-terceros";
+import {
+  createServicioMutation,
+  updateServicioMutation,
+} from "@/lib/client-domain-mutations";
 import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
-import { useServiciosStore } from "@/store/serviciosStore";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio } from "@/types";
 
@@ -39,8 +42,6 @@ export function useServicioFormController({
 }: UseServicioFormControllerParams) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const createServicio = useServiciosStore((state) => state.createServicio);
-  const updateServicio = useServiciosStore((state) => state.updateServicio);
   const { data: categorias = [] } = useCategoriasFull();
   const { data: templates = [] } = useTemplates();
   const credentialTemplate = useMemo(
@@ -156,34 +157,33 @@ export function useServicioFormController({
 
 
   useEffect(() => {
-    if (servicio?.id) {
-      setValue("nombre", servicio.nombre);
-      setValue("categoriaId", servicio.categoriaId);
-      setValue("tipoPlan", servicio.tipo);
-      setValue("correo", servicio.correo);
-      setValue("contrasena", servicio.contrasena);
-      setValue("metodoPagoId", servicio.metodoPagoId || "");
-      setValue("costoServicio", String(servicio.costoServicio || 0));
-      setValue(
-        "perfilesDisponibles",
-        String(servicio.perfilesDisponibles || 1),
-      );
-      setValue("cicloPago", servicio.cicloPago || "mensual");
-      if (servicio.fechaInicio) {
-        setValue("fechaInicio", new Date(servicio.fechaInicio));
-      }
-      if (servicio.fechaVencimiento) {
-        setValue("fechaVencimiento", new Date(servicio.fechaVencimiento));
-      }
-      setValue(
-        "estado",
-        servicio.enReposo ? "reposo" : servicio.activo ? "activo" : "inactivo",
-      );
-      setValue("renovacionAutomatica", servicio.renovacionAutomatica ?? false);
-      setValue("notas", servicio.notas || "");
+    if (!servicio?.id) return;
+
+    setValue("nombre", servicio.nombre);
+    setValue("categoriaId", servicio.categoriaId);
+    setValue("tipoPlan", servicio.tipo);
+    setValue("correo", servicio.correo);
+    setValue("contrasena", servicio.contrasena);
+    setValue("metodoPagoId", servicio.metodoPagoId || "");
+    setValue("costoServicio", String(servicio.costoServicio || 0));
+    setValue(
+      "perfilesDisponibles",
+      String(servicio.perfilesDisponibles || 1),
+    );
+    setValue("cicloPago", servicio.cicloPago || "mensual");
+    if (servicio.fechaInicio) {
+      setValue("fechaInicio", new Date(servicio.fechaInicio));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [servicio?.id, setValue]);
+    if (servicio.fechaVencimiento) {
+      setValue("fechaVencimiento", new Date(servicio.fechaVencimiento));
+    }
+    setValue(
+      "estado",
+      servicio.enReposo ? "reposo" : servicio.activo ? "activo" : "inactivo",
+    );
+    setValue("renovacionAutomatica", servicio.renovacionAutomatica ?? false);
+    setValue("notas", servicio.notas || "");
+  }, [servicio, setValue]);
 
   const { handleCicloPagoChange, handleFechaVencimientoSelect } =
     useServicioFormBillingDates({
@@ -198,7 +198,7 @@ export function useServicioFormController({
 
   const { onSubmit } = useServicioFormSubmit({
     categorias,
-    createServicio,
+    createServicio: createServicioMutation,
     credentialTemplateContent: credentialTemplate?.contenido,
     enqueueWhatsAppMessages,
     metodosPago,
@@ -210,7 +210,7 @@ export function useServicioFormController({
     setError,
     terceros,
     ultimoPago,
-    updateServicio,
+    updateServicio: updateServicioMutation,
   });
 
 

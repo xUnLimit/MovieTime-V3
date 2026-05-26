@@ -11,8 +11,8 @@ import {
 } from "@/components/shared/PaginationFooter";
 import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
+import { deleteTerceroMutation } from "@/lib/client-domain-mutations";
 import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
-import { useTercerosStore } from "@/store/tercerosStore";
 import { Tercero } from "@/types";
 import { TodosTercerosTableActions } from "./TodosTercerosTableActions";
 import { TodosTercerosTableToolbar } from "./TodosTercerosTableToolbar";
@@ -50,7 +50,6 @@ export function TodosTercerosTable({
   onMetodoPagoFilterChange,
   metodoPagoOptions,
 }: TodosTercerosTableProps) {
-  const { deleteTercero } = useTercerosStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [usuarioToDelete, setTerceroToDelete] = useState<TerceroDisplay | null>(
     null,
@@ -91,12 +90,16 @@ export function TodosTercerosTable({
     if (!usuarioToDelete) return;
 
     try {
-      await deleteTercero(usuarioToDelete.original.id, {
-        tipo: usuarioToDelete.original.tipo,
-        nombre: usuarioToDelete.original.nombre,
-        createdAt: usuarioToDelete.original.createdAt,
-        serviciosActivos: usuarioToDelete.original.serviciosActivos,
-      });
+      await deleteTerceroMutation(
+        usuarioToDelete.original.id,
+        {
+          tipo: usuarioToDelete.original.tipo,
+          nombre: usuarioToDelete.original.nombre,
+          createdAt: usuarioToDelete.original.createdAt,
+          serviciosActivos: usuarioToDelete.original.serviciosActivos,
+        },
+        usuarioToDelete.original,
+      );
       toast.success(`${usuarioToDelete.tipo} eliminado`, {
         description: "El tercero ha sido eliminado correctamente del sistema.",
       });

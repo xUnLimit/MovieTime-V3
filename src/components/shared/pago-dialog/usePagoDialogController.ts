@@ -126,14 +126,15 @@ export function usePagoDialogController(props: PagoDialogProps) {
 
     const resetValues = getPagoDialogResetValues(props);
     if (resetValues) reset(resetValues);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    props,
     props.open,
     props.pago,
     servicio?.fechaVencimiento,
     servicio?.metodoPagoId,
     servicio?.costoServicio,
     servicio?.renovacionAutomatica,
+    reset,
   ]);
 
   useEffect(() => {
