@@ -4,9 +4,9 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { queryMetodosPagoTercerosRead } from "@/lib/supabase/domain-read-adapters";
-import { queryServicios } from "@/lib/supabase/servicios-repository";
-import { queryVentas } from "@/lib/supabase/ventas-repository";
+import { queryMetodosPagoTercerosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
+import { queryServiciosByCategoriaUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { queryVentasActivasByServiciosUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import {
   PENDING_TERCERO_PAYMENT_CURRENCY,
   PENDING_TERCERO_PAYMENT_ID,
@@ -14,7 +14,7 @@ import {
   withPendingTerceroPaymentMethod,
 } from "@/lib/utils/terceroMetodoPago";
 import type { MetodoPagoTerceroOption } from "@/features/ventas/ventas-form-shared";
-import type { Servicio, VentaDoc } from "@/types";
+import type { VentaDoc } from "@/types";
 
 const PENDING_METODO_PAGO_TERCERO_OPTION: MetodoPagoTerceroOption = {
   id: PENDING_TERCERO_PAYMENT_ID,
@@ -63,7 +63,7 @@ export function useMetodosPagoTercerosOptions() {
   return useQuery({
     queryKey: queryKeys.metodosPago.tercerosOptions(),
     queryFn: async () => {
-      const metodos = await queryMetodosPagoTercerosRead();
+      const metodos = await queryMetodosPagoTercerosUseCase();
       const options = metodos.map((metodo): MetodoPagoTerceroOption => ({
         id: metodo.id,
         nombre: metodo.nombre,
@@ -80,7 +80,7 @@ export function useMetodosPagoTercerosWithPending() {
   return useQuery({
     queryKey: queryKeys.metodosPago.tercerosWithPending(),
     queryFn: async () => {
-      const metodos = await queryMetodosPagoTercerosRead();
+      const metodos = await queryMetodosPagoTercerosUseCase();
 
       return withPendingTerceroPaymentMethod(metodos);
     },
@@ -91,9 +91,7 @@ export function useServiciosByCategoria(categoriaId: string) {
   return useQuery({
     queryKey: queryKeys.servicios.byCategoria(categoriaId || "invalid"),
     queryFn: () =>
-      queryServicios<Servicio>([
-        { field: "categoriaId", operator: "==", value: categoriaId },
-      ]),
+      queryServiciosByCategoriaUseCase(categoriaId),
     enabled: Boolean(categoriaId),
   });
 }
@@ -114,10 +112,7 @@ export function useVentasActivasByServicio(
         return buildVentasActivasByServicio([], [], options.excludeVentaId);
       }
 
-      const ventas = await queryVentas<VentaDoc>([
-        { field: "servicioId", operator: "in", value: servicioIds },
-        { field: "estado", operator: "!=", value: "inactivo" },
-      ]);
+      const ventas = await queryVentasActivasByServiciosUseCase<VentaDoc>(servicioIds);
 
       return buildVentasActivasByServicio(servicioIds, ventas, options.excludeVentaId);
     },

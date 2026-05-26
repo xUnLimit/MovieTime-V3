@@ -1,4 +1,4 @@
-import { invalidateStoreQueries } from '@/store/store-query-invalidation';
+import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
 import {
   deleteNotificacionesPorServicioUseCase,
   deleteNotificacionesPorVentaUseCase,

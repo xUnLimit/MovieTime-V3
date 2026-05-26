@@ -16,7 +16,7 @@ import { subscribeToServicioCategoryListReactions } from '@/lib/events/cache-rea
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import { isUuid } from '@/lib/utils/safety';
 import { Servicio } from '@/types';
-import type { FilterOption } from '@/lib/supabase/pagination';
+import type { FilterOption } from '@/types/pagination';
 
 function ServiciosCategoriaPageContent() {
   const params = useParams();

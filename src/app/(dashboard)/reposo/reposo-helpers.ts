@@ -1,6 +1,6 @@
 import { differenceInDays, startOfDay } from "date-fns";
 
-import { queryMetodosPagoServiciosRead } from "@/lib/supabase/domain-read-adapters";
+import { queryMetodosPagoServiciosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
 import { queryServiciosEnReposoUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import type { MetodoPago } from "@/types/metodos-pago";
 import type { Servicio } from "@/types/servicios";
@@ -53,7 +53,7 @@ export async function fetchReposoServicesQuery(): Promise<ReposoServicio[]> {
 }
 
 export async function fetchServicioMetodosPagoQuery(): Promise<MetodoPago[]> {
-  return queryMetodosPagoServiciosRead();
+  return queryMetodosPagoServiciosUseCase();
 }
 
 export function getReposoMetrics(servicios: ReposoServicio[]) {

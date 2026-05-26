@@ -1,4 +1,5 @@
 import { ENTITIES } from '@/lib/supabase/entities';
+import { getVentaDetalleRead } from '@/lib/supabase/domain-read-adapters';
 import {
   countVentas,
   queryVentas,
@@ -8,6 +9,10 @@ import type { PagoVenta, VentaDoc } from '@/types';
 
 export const VENTAS_COLLECTION = ENTITIES.VENTAS;
 export { timestampToDate } from '@/lib/supabase/dates';
+
+export function getVentaDetalleUseCase(id: string) {
+  return getVentaDetalleRead(id);
+}
 
 export async function fetchVentasCountsUseCase() {
   const [totalVentas, ventasActivas, ventasInactivas] = await Promise.all([
@@ -34,6 +39,25 @@ export async function fetchVentasByClienteIdsUseCase<T = VentaDoc>(
     )
   );
   return results.flat();
+}
+
+export function queryVentasByServicioUseCase<T = VentaDoc>(servicioId: string) {
+  return queryVentas<T>([
+    { field: 'servicioId', operator: '==', value: servicioId },
+  ]);
+}
+
+export function queryVentasActivasByServiciosUseCase<T = VentaDoc>(servicioIds: string[]) {
+  return queryVentas<T>([
+    { field: 'servicioId', operator: 'in', value: servicioIds },
+    { field: 'estado', operator: '!=', value: 'inactivo' },
+  ]);
+}
+
+export function queryVentasByClienteUseCase<T = VentaDoc>(clienteId: string) {
+  return queryVentas<T>([
+    { field: 'clienteId', operator: '==', value: clienteId },
+  ]);
 }
 
 export function countVentasActivasByServicioUseCase(servicioId: string) {

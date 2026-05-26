@@ -14,7 +14,7 @@ import { useFeatureFlag } from '@/hooks/use-feature-flag';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { subscribeToServicioListReactions } from '@/lib/events/cache-reactions';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
-import { FilterOption } from '@/lib/supabase/pagination';
+import type { FilterOption } from '@/types/pagination';
 import { Servicio } from '@/types';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 

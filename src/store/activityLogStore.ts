@@ -1,7 +1,6 @@
-import { createActivityLog } from '@/lib/supabase/activity-log-repository';
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { createActivityLogUseCase } from '@/lib/use-cases/activity-log-use-cases';
 import type { ActivityLog } from '@/types';
 
 interface ActivityLogState {
@@ -12,10 +11,7 @@ export const useActivityLogStore = create<ActivityLogState>()(
   devtools(
     () => ({
       addLog: async (logData) => {
-        await createActivityLog({
-          ...logData,
-          timestamp: new Date().toISOString(),
-        });
+        await createActivityLogUseCase(logData);
       },
     }),
     { name: 'activity-log-store' }

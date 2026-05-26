@@ -17,9 +17,9 @@ import {
   getExecutivePushToggleUpdate,
   isExecutivePushScheduleUnchanged,
 } from "@/lib/executive-push/executive-push-settings";
+import { updateExecutivePushUseCase } from "@/lib/use-cases/config-use-cases";
 import { safeAsyncSideEffect } from "@/lib/utils/safety";
 import { useAuthStore } from "@/store/authStore";
-import { useConfigStore } from "@/store/configStore";
 import { useDashboardFilterStore } from "@/store/dashboardFilterStore";
 import { usePwaStore } from "@/store/pwaStore";
 import {
@@ -38,7 +38,6 @@ export function useConfiguracionDialogController({
   const { data: stats } = useDashboardStats();
   const { selectedYear, setSelectedYear } = useDashboardFilterStore();
   const { data: config, refetch: refetchConfig } = useConfig();
-  const { updateExecutivePush } = useConfigStore();
   const {
     isInstalled,
     isOnline,
@@ -131,7 +130,7 @@ export function useConfiguracionDialogController({
   const handleExecutivePushToggle = async (enabled: boolean) => {
     if (!executivePush) return;
     try {
-      await updateExecutivePush(getExecutivePushToggleUpdate(executivePush, enabled, user?.id), executivePush);
+      await updateExecutivePushUseCase(getExecutivePushToggleUpdate(executivePush, enabled, user?.id), executivePush);
       await refetchConfig();
       toast.success('Configuracion de push ejecutiva actualizada.');
     } catch (error) {
@@ -159,7 +158,7 @@ export function useConfiguracionDialogController({
 
     setIsSavingExecutiveSchedule(true);
     try {
-      await updateExecutivePush(getExecutivePushScheduleUpdate({
+      await updateExecutivePushUseCase(getExecutivePushScheduleUpdate({
         executivePush,
         intervalHours: nextIntervalHours,
         updatedBy: user?.id,
@@ -206,7 +205,7 @@ export function useConfiguracionDialogController({
   const handleBlockToggle = async (blockKey: string, checked: boolean) => {
     if (!executivePush) return;
     try {
-      await updateExecutivePush(getExecutivePushBlocksUpdate({
+      await updateExecutivePushUseCase(getExecutivePushBlocksUpdate({
         blockKey,
         checked,
         executivePush,

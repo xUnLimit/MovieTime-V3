@@ -4,10 +4,22 @@ import {
   removeMetodoPago,
   updateMetodoPago,
 } from '@/lib/supabase/catalogos-repository';
+import {
+  queryMetodosPagoServiciosRead,
+  queryMetodosPagoTercerosRead,
+} from '@/lib/supabase/domain-read-adapters';
 import type { MetodoPago } from '@/types';
 
 export function getMetodoPagoUseCase(id: string) {
   return getMetodoPagoById<MetodoPago>(id);
+}
+
+export function queryMetodosPagoServiciosUseCase(options: { soloActivos?: boolean } = {}) {
+  return queryMetodosPagoServiciosRead(options);
+}
+
+export function queryMetodosPagoTercerosUseCase(options: { soloActivos?: boolean } = {}) {
+  return queryMetodosPagoTercerosRead(options);
 }
 
 export async function createMetodoPagoUseCase(

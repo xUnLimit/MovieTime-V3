@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { queryVentas } from "@/lib/supabase/ventas-repository";
+import { queryVentasByServicioUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 import type {
   PerfilDetalleOcupado,
   PerfilDetalleVisual,
@@ -61,9 +61,7 @@ export function useVentaPerfilDetalle(pendingProfiles: PendingVentaPerfil[]) {
       ? queryKeys.ventas.byServicio(servicioDetalle.id)
       : queryKeys.ventas.byServicio("invalid"),
     queryFn: async () => {
-      const ventas = await queryVentas<VentaDoc>([
-        { field: "servicioId", operator: "==", value: servicioDetalle!.id },
-      ]);
+      const ventas = await queryVentasByServicioUseCase<VentaDoc>(servicioDetalle!.id);
 
       return buildPerfilesOcupadosDetalle(ventas);
     },

@@ -10,8 +10,7 @@ import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { subscribeToTercerosPageReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
-import { queryMetodosPagoTercerosRead } from '@/lib/supabase/domain-read-adapters';
-import { FilterOption } from '@/lib/supabase/pagination';
+import { queryMetodosPagoTercerosUseCase } from '@/lib/use-cases/metodos-pago-use-cases';
 import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
 import {
   getTerceroMetodoPagoNombre,
@@ -19,6 +18,7 @@ import {
   withPendingTerceroPaymentMethod,
 } from '@/lib/utils/terceroMetodoPago';
 import type { Tercero } from '@/types';
+import type { FilterOption } from '@/types/pagination';
 
 interface MetodoPagoFilterOption {
   value: string;
@@ -190,7 +190,7 @@ export type TercerosPageController = ReturnType<typeof useTercerosPageController
 
 async function buildMetodoPagoOptions(): Promise<MetodoPagoFilterOption[]> {
   const metodos = withPendingTerceroPaymentMethod(
-    await queryMetodosPagoTercerosRead({ soloActivos: true }),
+    await queryMetodosPagoTercerosUseCase({ soloActivos: true }),
   );
 
   const seen = new Set<string>();

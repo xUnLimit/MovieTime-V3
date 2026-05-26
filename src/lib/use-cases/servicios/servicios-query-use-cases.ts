@@ -13,6 +13,25 @@ export function getServicioUseCase(id: string) {
   return getServicioById<Servicio>(id);
 }
 
+export function queryServiciosByCategoriaUseCase(categoriaId: string) {
+  return queryServicios<Servicio>([
+    { field: 'categoriaId', operator: '==', value: categoriaId },
+  ]);
+}
+
+export function fetchServiciosByIdsUseCase(ids: string[]) {
+  return queryServicios<Servicio>([
+    { field: '__name__', operator: 'in', value: ids },
+  ]);
+}
+
+export function countServiciosProximosPagoByCategoriaUseCase(categoriaId: string, fechaMaxima: Date) {
+  return queryServicios<Servicio>([
+    { field: 'categoriaId', operator: '==', value: categoriaId },
+    { field: 'fechaVencimiento', operator: '<=', value: fechaMaxima },
+  ]).then((servicios) => servicios.length);
+}
+
 export function queryServiciosEnReposoUseCase() {
   return queryServicios<Servicio>([{ field: 'enReposo', operator: '==', value: true }]);
 }

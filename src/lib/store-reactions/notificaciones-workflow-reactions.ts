@@ -1,6 +1,6 @@
 import { getActiveQueryClient } from '@/lib/query-client-registry';
 import { queryKeys } from '@/lib/query-keys';
-import { invalidateStoreQueries } from '@/store/store-query-invalidation';
+import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   deleteNotificacionUseCase,

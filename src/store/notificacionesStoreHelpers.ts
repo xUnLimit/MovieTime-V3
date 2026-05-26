@@ -1,10 +1,12 @@
-import { countNotificaciones } from "@/lib/supabase/notifications-repository";
-import { queryNotificationsRead } from "@/lib/supabase/domain-read-adapters";
 import {
   getServicioNotifications,
   getVentaNotifications,
   type NotificacionConId,
 } from "@/lib/notifications/notification-helpers";
+import {
+  fetchNotificationCountsUseCase,
+  queryNotificationsUseCase,
+} from "@/lib/use-cases/notificaciones/notificaciones-query-use-cases";
 
 export async function getVentaNotificationsToDelete(
   notificaciones: NotificacionConId[],
@@ -13,7 +15,7 @@ export async function getVentaNotificationsToDelete(
   const localNotifsToDelete = getVentaNotifications(notificaciones, ventaId);
   return localNotifsToDelete.length > 0
     ? localNotifsToDelete
-    : queryNotificationsRead([
+    : queryNotificationsUseCase([
         { field: "entidad", operator: "==", value: "venta" },
         { field: "ventaId", operator: "==", value: ventaId },
       ]);
@@ -26,27 +28,14 @@ export async function getServicioNotificationsToDelete(
   const localNotifsToDelete = getServicioNotifications(notificaciones, servicioId);
   return localNotifsToDelete.length > 0
     ? localNotifsToDelete
-    : queryNotificationsRead([
+    : queryNotificationsUseCase([
         { field: "entidad", operator: "==", value: "servicio" },
         { field: "servicioId", operator: "==", value: servicioId },
       ]);
 }
 
 export async function fetchNotificationCounts() {
-  const [totalNotificaciones, ventasProximas, serviciosProximas, reposoCompletados] =
-    await Promise.all([
-      countNotificaciones(),
-      countNotificaciones([{ field: "entidad", operator: "==", value: "venta" }]),
-      countNotificaciones([{ field: "entidad", operator: "==", value: "servicio" }]),
-      countNotificaciones([{ field: "entidad", operator: "==", value: "reposo" }]),
-    ]);
-
-  return {
-    reposoCompletados,
-    serviciosProximos: serviciosProximas,
-    totalNotificaciones,
-    ventasProximas,
-  };
+  return fetchNotificationCountsUseCase();
 }
 
 export function updateNotificationFlag(

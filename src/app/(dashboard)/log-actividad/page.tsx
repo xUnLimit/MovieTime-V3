@@ -13,7 +13,7 @@ import {
   deleteActivityLogsUseCase,
 } from '@/lib/use-cases/activity-log-use-cases';
 import { ActivityLog } from '@/types';
-import { FilterOption } from '@/lib/supabase/pagination';
+import type { FilterOption } from '@/types/pagination';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 

@@ -11,7 +11,7 @@ import {
   updateVentaMutation,
 } from "@/lib/client-domain-mutations";
 import { queryKeys } from "@/lib/query-keys";
-import { fetchServiciosByIdsRead } from "@/lib/supabase/domain-read-adapters";
+import { fetchServiciosByIdsUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import type { Tercero } from "@/types";
 
 type TerceroServicioCredential = {
@@ -29,7 +29,7 @@ async function fetchServiciosCredentialsByIds(
   }
 
   const allServicios = await Promise.all(
-    chunks.map((chunk) => fetchServiciosByIdsRead(chunk)),
+    chunks.map((chunk) => fetchServiciosByIdsUseCase(chunk)),
   );
 
   return allServicios.flat().reduce<Record<string, TerceroServicioCredential>>(

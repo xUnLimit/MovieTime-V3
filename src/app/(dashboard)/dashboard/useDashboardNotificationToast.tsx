@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import type { NotificacionConId } from "@/hooks/use-notificaciones";
 import { queryKeys } from "@/lib/query-keys";
-import { queryNotificationsRead } from "@/lib/supabase/domain-read-adapters";
+import { queryNotificationsUseCase } from "@/lib/use-cases/notificaciones/notificaciones-query-use-cases";
 import { esNotificacionServicio, esNotificacionVenta } from "@/types/notificaciones";
 
 declare global {
@@ -160,7 +160,7 @@ export function useDashboardNotificationToast() {
       try {
         const notificaciones = await queryClient.ensureQueryData({
           queryKey: queryKeys.notificaciones.lists(),
-          queryFn: () => queryNotificationsRead(),
+          queryFn: () => queryNotificationsUseCase(),
         });
         unread = notificaciones.filter((n) => !n.leida);
       } catch (error) {

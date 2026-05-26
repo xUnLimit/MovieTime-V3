@@ -30,12 +30,8 @@ vi.mock('@/components/notificaciones/NotificationBell', () => ({
   NotificationBell: () => <div>NotificationBell</div>,
 }));
 
-vi.mock('@/lib/supabase/notifications-repository', () => ({
-  queryNotifications: queryNotificationsMock,
-}));
-
-vi.mock('@/lib/supabase/domain-read-adapters', () => ({
-  queryNotificationsRead: queryNotificationsMock,
+vi.mock('@/lib/use-cases/notificaciones/notificaciones-query-use-cases', () => ({
+  queryNotificationsUseCase: queryNotificationsMock,
 }));
 
 vi.mock('@/components/ui/card', () => ({

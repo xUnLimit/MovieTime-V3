@@ -2,7 +2,7 @@ import { storeEventBus } from '@/lib/events/store-event-bus';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { deleteVentaNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { invalidateStoreQueries } from '@/store/store-query-invalidation';
+import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
 
 type ServiceProfileDelta = {
   servicioId: string;

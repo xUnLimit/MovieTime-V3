@@ -3,7 +3,7 @@ import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activit
 import { syncMetodoPagoDependenciasUseCase } from '@/lib/use-cases/metodos-pago/metodo-pago-dependency-use-cases';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { invalidateStoreQueries } from '@/store/store-query-invalidation';
+import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
 import type { MetodoPago, TipoGasto } from '@/types';
 
 export async function afterCategoriaDeleted(categoriaId: string) {

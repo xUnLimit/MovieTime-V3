@@ -2,11 +2,11 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { User } from '@/types';
 import {
-  signIn,
-  signOut as supabaseSignOut,
-  getCurrentProfile,
-  onAuthStateChange,
-} from '@/lib/supabase/auth';
+  loadActiveProfileUseCase,
+  onAuthStateChangeUseCase,
+  signInUseCase,
+  signOutUseCase,
+} from '@/lib/use-cases/auth-use-cases';
 import {
   clearOfflineAuthUser,
   getOfflineAuthDecision,
@@ -55,17 +55,6 @@ interface AuthState {
   initAuth: () => void;
 }
 
-async function loadActiveProfile(): Promise<User> {
-  const user = await getCurrentProfile();
-  if (!user) {
-    throw new Error('No se encontro un perfil activo para este usuario.');
-  }
-  if (!user.active) {
-    throw new Error('Este usuario esta inactivo.');
-  }
-  return user;
-}
-
 export const useAuthStore = create<AuthState>()(
   devtools(
     (set) => ({
@@ -87,8 +76,8 @@ export const useAuthStore = create<AuthState>()(
               localStorage.removeItem(REMEMBER_KEY);
             }
 
-            await signIn(email, password);
-            const user = await loadActiveProfile();
+            await signInUseCase(email, password);
+            const user = await loadActiveProfileUseCase();
 
             saveOfflineAuthUser(user);
             setOfflineAuthSessionActive(false);
@@ -100,7 +89,7 @@ export const useAuthStore = create<AuthState>()(
               isHydrated: true,
             });
           } catch (error) {
-            await supabaseSignOut().catch((signOutError) => {
+            await signOutUseCase().catch((signOutError) => {
               logAsyncSideEffectError(signOutError, {
                 operation: 'supabaseSignOutAfterLoginFailure',
                 entity: 'auth',
@@ -133,7 +122,7 @@ export const useAuthStore = create<AuthState>()(
 
         logout: async () => {
           try {
-            await supabaseSignOut();
+            await signOutUseCase();
             clearAllAuthStorage();
             clearDashboardToastSessionState();
             set({
@@ -171,10 +160,10 @@ export const useAuthStore = create<AuthState>()(
           }
           authListenerInitialized = true;
           clearAllAuthStorage();
-          onAuthStateChange(async (session) => {
+          onAuthStateChangeUseCase(async (session) => {
             if (session) {
               try {
-                const user = await loadActiveProfile();
+                const user = await loadActiveProfileUseCase();
                 saveOfflineAuthUser(user);
                 setOfflineAuthSessionActive(false);
                 set({ user, isAuthenticated: true, isLoading: false, isHydrated: true });
@@ -197,7 +186,7 @@ export const useAuthStore = create<AuthState>()(
                   setOfflineAuthSessionActive(decision === 'preserve');
                   return;
                 }
-                await supabaseSignOut().catch((signOutError) => {
+                await signOutUseCase().catch((signOutError) => {
                   logAsyncSideEffectError(signOutError, {
                     operation: 'supabaseSignOutAfterProfileFailure',
                     entity: 'auth',

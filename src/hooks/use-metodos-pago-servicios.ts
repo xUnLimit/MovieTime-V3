@@ -3,11 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query-keys";
-import { queryMetodosPagoServiciosRead } from "@/lib/supabase/domain-read-adapters";
+import { queryMetodosPagoServiciosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
 
 export function useMetodosPagoServicios() {
   return useQuery({
     queryKey: queryKeys.metodosPago.servicios(),
-    queryFn: () => queryMetodosPagoServiciosRead({ soloActivos: true }),
+    queryFn: () => queryMetodosPagoServiciosUseCase({ soloActivos: true }),
   });
 }

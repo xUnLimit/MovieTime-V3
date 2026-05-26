@@ -19,7 +19,7 @@ import { subscribeToVentaListReactions } from '@/lib/events/cache-reactions';
 import { queryKeys } from '@/lib/query-keys';
 import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas/ventas-query-use-cases';
 import { VentaDoc } from '@/types';
-import { FilterOption } from '@/lib/supabase/pagination';
+import type { FilterOption } from '@/types/pagination';
 
 function VentasPageContent() {
   const queryClient = useQueryClient();

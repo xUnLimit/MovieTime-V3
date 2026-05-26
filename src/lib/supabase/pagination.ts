@@ -4,12 +4,8 @@ import { readField, normalizeFilterValue } from './filters';
 import type { Database } from './database.types';
 import { getOfflinePaginated, shouldUseOfflineRead, readOfflineCollection } from '@/lib/pwa/offline-copy';
 import { mapPaginatedRow, reviveDates, toCamelCaseObject } from './pagination-mappers';
-
-export interface FilterOption {
-  field: string;
-  operator: '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in' | 'is' | 'ilike' | 'orIlike';
-  value: unknown;
-}
+import type { FilterOption } from '@/types/pagination';
+export type { FilterOption } from '@/types/pagination';
 
 export interface PaginationOptions {
   pageSize: number;
