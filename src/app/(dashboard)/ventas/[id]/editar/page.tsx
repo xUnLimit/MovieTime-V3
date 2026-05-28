@@ -43,7 +43,7 @@ function EditarVentaPageContent() {
     isError,
     isLoading,
   } = useQuery({
-    queryKey: queryKeys.ventas.detail(id ?? 'invalid'),
+    queryKey: queryKeys.ventas.edit(id ?? 'invalid'),
     queryFn: () => fetchVentaEditData(id!),
     enabled: Boolean(id),
   });
