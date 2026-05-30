@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Eye, EyeOff, WifiOff } from 'lucide-react';
-import { hasOfflineAuthUser } from '@/lib/pwa/offline-auth';
+import { hasOfflineAuthUser } from '@/modules/pwa/offline-auth';
 
 export default function LoginPage() {
   const router = useRouter();

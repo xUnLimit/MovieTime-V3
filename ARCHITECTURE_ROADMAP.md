@@ -32,35 +32,35 @@ UI / App Router
 
 ## Modulos Principales
 
-- `src/lib/use-cases/ventas/`
+- `src/application/use-cases/ventas/`
   - `ventas-query-use-cases.ts`
   - `ventas-write-use-cases.ts`
   - `ventas-payment-use-cases.ts`
   - `ventas-refund-use-cases.ts`
   - `ventas-shared.ts`
 
-- `src/lib/use-cases/servicios/`
+- `src/application/use-cases/servicios/`
   - `servicios-query-use-cases.ts`
   - `servicios-write-use-cases.ts`
   - `servicios-payment-use-cases.ts`
   - `servicios-shared.ts`
 
-- `src/lib/payments/`
+- `src/modules/payments/`
   - Fachada unica para moneda, montos, factories de pago y sumas USD.
 
-- `src/lib/notifications/`
+- `src/modules/notifications/`
   - Sincronizacion, calculo, cleanup y push delivery de notificaciones.
 
-- `src/lib/dashboard-read-models/`
+- `src/modules/dashboard-read-models/`
   - Lectura de dashboard y metricas desde RPC/read models.
 
-- `src/lib/forecasting/`
+- `src/modules/forecasting/`
   - Sincronizacion y mapeo de pronostico financiero.
 
-- `src/lib/events/`
+- `src/platform/events/`
   - `StoreEventBus` para eventos de negocio del cliente.
 
-- `src/lib/supabase/`
+- `src/platform/supabase/`
   - Repositories, mappers, pagination, guards y adapters RPC tipados.
 
 ---
@@ -74,9 +74,9 @@ UI / App Router
 4. Las lecturas remotas usan TanStack Query salvo excepcion documentada.
 5. Zustand no contiene invariantes transaccionales; conserva estado UI/cache.
 6. Los stores y componentes importan use-cases especificos, no agregadores.
-7. Pagos y conversion de moneda se consumen desde `@/lib/payments`.
-8. Dashboard se consume desde `@/lib/dashboard-read-models`.
-9. Notificaciones se consumen desde `@/lib/notifications`.
+7. Pagos y conversion de moneda se consumen desde `@/modules/payments`.
+8. Dashboard se consume desde `@/modules/dashboard-read-models`.
+9. Notificaciones se consumen desde `@/modules/notifications`.
 10. Eventos cliente entre modulos usan `StoreEventBus`.
 11. Side-effects fire-and-forget usan `safeAsyncSideEffect`.
 12. Errores de negocio extienden `DomainError`.

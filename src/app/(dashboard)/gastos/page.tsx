@@ -17,7 +17,7 @@ import {
   deleteGastoMutation,
   deleteTipoGastoMutation,
   toggleTipoGastoActivoMutation,
-} from '@/lib/client-domain-mutations';
+} from '@/application/client-domain-mutations';
 import { Gasto, TipoGasto } from '@/types';
 
 function GastosPageContent() {

@@ -16,7 +16,7 @@ import {
   fetchVentaDetalleQuery,
   getEstadoDetalle,
   type VentaDetalleQueryData,
-} from '@/lib/use-cases/ventas/venta-detail-use-cases';
+} from '@/application/use-cases/ventas/venta-detail-use-cases';
 import { calcularMontoSinConsumir, roundToDecimals } from '@/platform/utils/calculations';
 import type { TemplateMensaje, VentaDoc } from '@/types';
 

@@ -12,7 +12,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('@/lib/client-domain-mutations', () => ({
+vi.mock('@/application/client-domain-mutations', () => ({
   createTemplateMutation: vi.fn(),
   updateTemplateMutation: vi.fn(),
 }));

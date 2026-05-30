@@ -7,7 +7,7 @@ import {
   deleteServicioPagoDetalleWorkflow,
   renewServicioDetalleWorkflow,
   updateServicioPagoDetalleWorkflow,
-} from "@/lib/use-cases/servicios/servicio-detail-use-cases";
+} from "@/application/use-cases/servicios/servicio-detail-use-cases";
 import type { MetodoPago, PagoServicio, Servicio } from "@/types";
 
 import type { MetodoPagoDetalle, PagoFormData } from "./types";

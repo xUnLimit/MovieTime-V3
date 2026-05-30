@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 
 import type { VentaItem } from '@/features/ventas/ventas-form-shared';
-import { syncTerceroMetodoPagoUseCase } from '@/lib/use-cases/terceros/tercero-metodo-pago-use-cases';
+import { syncTerceroMetodoPagoUseCase } from '@/application/use-cases/terceros/tercero-metodo-pago-use-cases';
 import type { Tercero, VentaDoc } from '@/types';
 
 import {

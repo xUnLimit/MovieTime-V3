@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   createMetodoPagoMutation,
   updateMetodoPagoMutation,
-} from "@/lib/client-domain-mutations";
+} from "@/application/client-domain-mutations";
 import { useRouter } from "next/navigation";
 import { MetodoPago } from "@/types";
 import { AdditionalInfoSection } from "./form/AdditionalInfoSection";

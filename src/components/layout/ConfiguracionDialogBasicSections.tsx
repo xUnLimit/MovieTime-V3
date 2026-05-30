@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { formatSyncDate } from "@/lib/pwa/format-sync-date";
+import { formatSyncDate } from "@/modules/pwa/format-sync-date";
 import type { useConfiguracionDialogController } from "./useConfiguracionDialogController";
 
 type ConfiguracionController = ReturnType<typeof useConfiguracionDialogController>;

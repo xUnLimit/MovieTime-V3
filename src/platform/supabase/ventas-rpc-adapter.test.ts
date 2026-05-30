@@ -9,7 +9,7 @@ vi.mock('./client', () => ({
   },
 }));
 
-vi.mock('@/lib/pwa/offline-copy', () => ({
+vi.mock('@/modules/pwa/offline-copy', () => ({
   assertOnlineMutation: assertOnlineMutationMock,
 }));
 

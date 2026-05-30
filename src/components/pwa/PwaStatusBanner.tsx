@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { formatSyncDate } from '@/lib/pwa/format-sync-date';
+import { formatSyncDate } from '@/modules/pwa/format-sync-date';
 import { usePwaStore } from '@/store/pwaStore';
 
 export function PwaStatusBanner() {

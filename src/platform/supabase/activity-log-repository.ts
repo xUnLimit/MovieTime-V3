@@ -1,7 +1,7 @@
 import { supabase } from './client';
 import { getAll, queryDocuments, getCount, create, remove, logCacheHit } from './record-core';
 import { ENTITIES, type QueryFilter } from './entities';
-import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
+import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 
 export { logCacheHit };
 

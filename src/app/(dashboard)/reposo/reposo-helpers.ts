@@ -1,7 +1,7 @@
 import { differenceInDays, startOfDay } from "date-fns";
 
-import { queryMetodosPagoServiciosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
-import { queryServiciosEnReposoUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { queryMetodosPagoServiciosUseCase } from "@/application/use-cases/metodos-pago-use-cases";
+import { queryServiciosEnReposoUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 import type { MetodoPago } from "@/types/metodos-pago";
 import type { Servicio } from "@/types/servicios";
 

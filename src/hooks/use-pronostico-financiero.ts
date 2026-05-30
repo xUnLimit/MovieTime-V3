@@ -7,11 +7,11 @@ import {
   buildFinancialForecastFromReadModel,
   buildPronosticoSignature,
   type MesPronostico,
-} from '@/lib/forecasting';
+} from '@/modules/forecasting';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 import type { ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 
-export type { MesPronostico } from '@/lib/forecasting';
+export type { MesPronostico } from '@/modules/forecasting';
 
 interface UsePronosticoFinancieroOptions {
   monthsCount?: number;

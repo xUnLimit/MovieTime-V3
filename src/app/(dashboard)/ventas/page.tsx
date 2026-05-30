@@ -14,10 +14,10 @@ import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { deleteVentaMutation } from '@/lib/client-domain-mutations';
+import { deleteVentaMutation } from '@/application/client-domain-mutations';
 import { subscribeToVentaListReactions } from '@/platform/events/cache-reactions';
 import { queryKeys } from '@/platform/query-keys';
-import { VENTAS_COLLECTION } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import { VENTAS_COLLECTION } from '@/application/use-cases/ventas/ventas-query-use-cases';
 import { VentaDoc } from '@/types';
 import type { FilterOption } from '@/types/pagination';
 

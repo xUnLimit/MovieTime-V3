@@ -1,6 +1,6 @@
 import { toDateOnly, toIso } from './dates';
-import { convertToUSD } from '@/lib/payments';
-import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
+import { convertToUSD } from '@/modules/payments';
+import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import {
   createServicioPaymentRpc,
   createVentaPaymentRpc,

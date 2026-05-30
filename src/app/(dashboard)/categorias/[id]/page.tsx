@@ -11,7 +11,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCategoriaDetail } from '@/hooks/use-entity-detail';
-import { deleteCategoriaMutation } from '@/lib/client-domain-mutations';
+import { deleteCategoriaMutation } from '@/application/client-domain-mutations';
 import { formatearFechaHora } from '@/platform/utils/calculations';
 import { isUuid } from '@/platform/utils/safety';
 import { Plan } from '@/types';

@@ -16,8 +16,8 @@ import { useTerceros } from "@/hooks/use-terceros";
 import {
   createServicioMutation,
   updateServicioMutation,
-} from "@/lib/client-domain-mutations";
-import { countVentasActivasByServicioUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
+} from "@/application/client-domain-mutations";
+import { countVentasActivasByServicioUseCase } from "@/application/use-cases/ventas/ventas-query-use-cases";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Servicio } from "@/types";
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { sendForcedExecutivePush } from '@/lib/executive-push/executive-push-api';
+import { sendForcedExecutivePush } from '@/modules/executive-push/executive-push-api';
 import { requireAuthenticatedAdmin } from '@/platform/server/request-auth';
 
 export const runtime = 'nodejs';

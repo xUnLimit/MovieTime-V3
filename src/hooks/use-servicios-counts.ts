@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { fetchServiciosCountsUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { fetchServiciosCountsUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 
 export function useServiciosCounts() {
   return useQuery({

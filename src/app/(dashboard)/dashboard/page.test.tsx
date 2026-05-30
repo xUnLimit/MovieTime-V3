@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createQueryClient } from '@/lib/query-client';
+import { createQueryClient } from '@/platform/query-client';
 
 const queryNotificationsMock = vi.fn();
 
@@ -30,7 +30,7 @@ vi.mock('@/components/notificaciones/NotificationBell', () => ({
   NotificationBell: () => <div>NotificationBell</div>,
 }));
 
-vi.mock('@/lib/use-cases/notificaciones/notificaciones-query-use-cases', () => ({
+vi.mock('@/application/use-cases/notificaciones/notificaciones-query-use-cases', () => ({
   queryNotificationsUseCase: queryNotificationsMock,
 }));
 

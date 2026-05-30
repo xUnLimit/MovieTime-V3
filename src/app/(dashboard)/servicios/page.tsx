@@ -13,7 +13,7 @@ import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { subscribeToServicioListReactions } from '@/platform/events/cache-reactions';
-import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
+import { SERVICIOS_COLLECTION } from '@/application/use-cases/servicios/servicios-query-use-cases';
 import type { FilterOption } from '@/types/pagination';
 import { Servicio } from '@/types';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';

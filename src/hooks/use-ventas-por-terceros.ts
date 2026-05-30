@@ -9,7 +9,7 @@ import {
   subscribeToVentasPorTercerosReactions,
 } from '@/platform/events/cache-reactions';
 import { queryKeys } from '@/platform/query-keys';
-import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import { fetchVentasByClienteIdsUseCase } from '@/application/use-cases/ventas/ventas-query-use-cases';
 import { CACHE_TTL_MS } from '@/platform/constants';
 import type { VentaDoc } from '@/types';
 

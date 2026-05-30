@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getCurrencySymbol } from '@/platform/constants';
-import { formatAggregateInUSD } from '@/lib/payments';
+import { formatAggregateInUSD } from '@/modules/payments';
 import { formatearFecha } from '@/platform/utils/calculations';
 import type { MetodoPago, PagoServicio } from '@/types';
 

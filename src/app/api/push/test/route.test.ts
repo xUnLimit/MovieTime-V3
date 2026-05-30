@@ -7,7 +7,7 @@ vi.mock('@/platform/server/request-auth', () => ({
   requireAuthenticatedAdmin: authMock,
 }));
 
-vi.mock('@/lib/executive-push/executive-push-api', () => ({
+vi.mock('@/modules/executive-push/executive-push-api', () => ({
   sendForcedExecutivePush,
 }));
 

@@ -10,14 +10,14 @@ import {
   registerPushSubscription,
   triggerExecutivePushTest,
   unregisterPushSubscription,
-} from "@/lib/pwa/push-client";
+} from "@/modules/pwa/push-client";
 import {
   getExecutivePushBlocksUpdate,
   getExecutivePushScheduleUpdate,
   getExecutivePushToggleUpdate,
   isExecutivePushScheduleUnchanged,
-} from "@/lib/executive-push/executive-push-settings";
-import { updateExecutivePushUseCase } from "@/lib/use-cases/config-use-cases";
+} from "@/modules/executive-push/executive-push-settings";
+import { updateExecutivePushUseCase } from "@/application/use-cases/config-use-cases";
 import { safeAsyncSideEffect } from "@/platform/utils/safety";
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardFilterStore } from "@/store/dashboardFilterStore";

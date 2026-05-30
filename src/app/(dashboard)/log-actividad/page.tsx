@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { LogTimeline } from '@/components/log-actividad/LogTimeline';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { ACTIVITY_LOG_COLLECTION } from '@/lib/use-cases/activity-log-use-cases';
+import { ACTIVITY_LOG_COLLECTION } from '@/application/use-cases/activity-log-use-cases';
 import {
   deleteAllActivityLogsUseCase,
   deleteActivityLogsOlderThanUseCase,
   deleteActivityLogsUseCase,
-} from '@/lib/use-cases/activity-log-use-cases';
+} from '@/application/use-cases/activity-log-use-cases';
 import { ActivityLog } from '@/types';
 import type { FilterOption } from '@/types/pagination';
 import { toast } from 'sonner';

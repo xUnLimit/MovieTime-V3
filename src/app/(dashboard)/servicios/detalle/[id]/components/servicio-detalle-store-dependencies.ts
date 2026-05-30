@@ -3,12 +3,12 @@
 import {
   deleteServicioMutation,
   refreshServicioProfileCountMutation,
-} from '@/lib/client-domain-mutations';
+} from '@/application/client-domain-mutations';
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import {
   deleteNotificacionesPorServicioUseCase,
   deleteNotificacionesPorVentaUseCase,
-} from '@/lib/use-cases/notificaciones/notificaciones-store-use-cases';
+} from '@/application/use-cases/notificaciones/notificaciones-store-use-cases';
 import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
 
 export function useServicioDetalleStoreDependencies() {

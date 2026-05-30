@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { initializeNotificationEventListeners } from '@/lib/notifications/notification-event-listeners';
+import { initializeNotificationEventListeners } from '@/modules/notifications/notification-event-listeners';
 
 export function NotificationEventsInitializer() {
   const initializedRef = useRef(false);

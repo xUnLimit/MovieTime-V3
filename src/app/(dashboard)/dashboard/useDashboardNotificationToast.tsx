@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import type { NotificacionConId } from "@/hooks/use-notificaciones";
 import { queryKeys } from "@/platform/query-keys";
-import { queryNotificationsUseCase } from "@/lib/use-cases/notificaciones/notificaciones-query-use-cases";
+import { queryNotificationsUseCase } from "@/application/use-cases/notificaciones/notificaciones-query-use-cases";
 import { esNotificacionServicio, esNotificacionVenta } from "@/types/notificaciones";
 
 declare global {

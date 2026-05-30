@@ -8,7 +8,7 @@ import { LogFilters } from '@/components/log-actividad/LogFilters';
 import { DataTable } from '@/components/shared/DataTable';
 import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { Card } from '@/components/ui/card';
-import { countActivityLogsUseCase } from '@/lib/use-cases/activity-log-use-cases';
+import { countActivityLogsUseCase } from '@/application/use-cases/activity-log-use-cases';
 import type { ActivityLog } from '@/types';
 import { createLogTimelineColumns } from './log-timeline-columns';
 

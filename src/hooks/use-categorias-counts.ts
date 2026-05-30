@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { fetchCategoriasCounts } from "@/lib/use-cases/categorias-use-cases";
+import { fetchCategoriasCounts } from "@/application/use-cases/categorias-use-cases";
 
 export function useCategoriasCounts() {
   return useQuery({

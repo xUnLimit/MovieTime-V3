@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { queryMetodosPagoServiciosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
+import { queryMetodosPagoServiciosUseCase } from "@/application/use-cases/metodos-pago-use-cases";
 
 export function useMetodosPagoServicios() {
   return useQuery({

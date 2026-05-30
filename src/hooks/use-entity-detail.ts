@@ -8,7 +8,7 @@ import {
   getMetodoPagoRead,
   getServicioRead,
 } from '@/platform/supabase/domain-read-adapters';
-import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
+import { getTerceroUseCase } from '@/application/use-cases/terceros-use-cases';
 import type { Tercero } from '@/types';
 
 export function useCategoriaDetail(categoriaId: string | null) {

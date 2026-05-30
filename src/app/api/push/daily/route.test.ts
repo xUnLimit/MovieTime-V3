@@ -8,7 +8,7 @@ vi.mock('@/platform/config', () => ({
   },
 }));
 
-vi.mock('@/lib/executive-push/executive-push-delivery', () => ({
+vi.mock('@/modules/executive-push/executive-push-delivery', () => ({
   sendExecutivePushDailySummary,
 }));
 

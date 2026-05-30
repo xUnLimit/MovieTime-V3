@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getCurrencySymbol } from "@/platform/constants";
-import { formatAggregateInUSD, sumInUSD } from "@/lib/payments";
+import { formatAggregateInUSD, sumInUSD } from "@/modules/payments";
 import { formatearFecha } from "@/platform/utils/calculations";
 import { queryKeys } from "@/platform/query-keys";
 import { VentaPago } from "@/types";

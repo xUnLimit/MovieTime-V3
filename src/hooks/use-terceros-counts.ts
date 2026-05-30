@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { fetchTercerosCountsUseCase } from "@/lib/use-cases/terceros-use-cases";
+import { fetchTercerosCountsUseCase } from "@/application/use-cases/terceros-use-cases";
 
 export function useTercerosCounts() {
   return useQuery({

@@ -6,7 +6,7 @@ import { queryKeys } from '@/platform/query-keys';
 import {
   fetchServicioDetalleBundleUseCase,
   fetchServicioVentasProfilesUseCase,
-} from '@/lib/use-cases/servicios/servicio-detail-use-cases';
+} from '@/application/use-cases/servicios/servicio-detail-use-cases';
 import type { Servicio } from '@/types';
 
 import type { CategoriaDetalle, MetodoPagoDetalle, PerfilVenta } from './types';

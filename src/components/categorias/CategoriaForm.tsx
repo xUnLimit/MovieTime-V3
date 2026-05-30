@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   createCategoriaMutation,
   updateCategoriaMutation,
-} from "@/lib/client-domain-mutations";
+} from "@/application/client-domain-mutations";
 import type { Categoria } from "@/types";
 
 import { CategoriaBasicInfoSection } from "./form/CategoriaBasicInfoSection";

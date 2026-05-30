@@ -9,9 +9,9 @@ import { useVentasTercero } from "@/hooks/use-ventas-tercero";
 import {
   updateServicioMutation,
   updateVentaMutation,
-} from "@/lib/client-domain-mutations";
+} from "@/application/client-domain-mutations";
 import { queryKeys } from "@/platform/query-keys";
-import { fetchServiciosByIdsUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { fetchServiciosByIdsUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 import type { Tercero } from "@/types";
 
 type TerceroServicioCredential = {

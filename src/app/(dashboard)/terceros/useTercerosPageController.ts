@@ -10,8 +10,8 @@ import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { subscribeToTercerosPageReactions } from '@/platform/events/cache-reactions';
 import { queryKeys } from '@/platform/query-keys';
-import { queryMetodosPagoTercerosUseCase } from '@/lib/use-cases/metodos-pago-use-cases';
-import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
+import { queryMetodosPagoTercerosUseCase } from '@/application/use-cases/metodos-pago-use-cases';
+import { TERCEROS_COLLECTION } from '@/application/use-cases/terceros-use-cases';
 import {
   getTerceroMetodoPagoNombre,
   isPendingTerceroPaymentMethodId,

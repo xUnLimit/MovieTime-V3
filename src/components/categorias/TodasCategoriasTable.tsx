@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Check, ListFilter, Search, MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { deleteCategoriaMutation } from "@/lib/client-domain-mutations";
+import { deleteCategoriaMutation } from "@/application/client-domain-mutations";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import Link from "next/link";

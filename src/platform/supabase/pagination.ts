@@ -2,7 +2,7 @@ import { supabase } from './client';
 import { ENTITIES, type CollectionName } from './entities';
 import { readField, normalizeFilterValue } from './filters';
 import type { Database } from './database.types';
-import { getOfflinePaginated, shouldUseOfflineRead, readOfflineCollection } from '@/lib/pwa/offline-copy';
+import { getOfflinePaginated, shouldUseOfflineRead, readOfflineCollection } from '@/modules/pwa/offline-copy';
 import { mapPaginatedRow, reviveDates, toCamelCaseObject } from './pagination-mappers';
 import type { FilterOption } from '@/types/pagination';
 export type { FilterOption } from '@/types/pagination';

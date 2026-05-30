@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { createActivityLogUseCase } from '@/lib/use-cases/activity-log-use-cases';
+import { createActivityLogUseCase } from '@/application/use-cases/activity-log-use-cases';
 import type { ActivityLog } from '@/types';
 
 interface ActivityLogState {

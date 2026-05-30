@@ -7,13 +7,13 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { queryKeys } from "@/platform/query-keys";
-import { getActivityLogOptions } from "@/lib/activity/activity-log-writer";
-import { applyNotificationQueryReactions } from "@/lib/store-reactions/notification-query-reactions";
+import { getActivityLogOptions } from "@/application/activity/activity-log-writer";
+import { applyNotificationQueryReactions } from "@/application/store-reactions/notification-query-reactions";
 import {
   activateAndRenewReposoServicioUseCase,
   activateReposoServicioUseCase,
   deleteReposoServicioUseCase,
-} from "@/lib/use-cases/notificaciones/notificaciones-reposo-use-cases";
+} from "@/application/use-cases/notificaciones/notificaciones-reposo-use-cases";
 import { toast } from "sonner";
 import {
   fetchReposoServicesQuery,

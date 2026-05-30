@@ -10,7 +10,7 @@ import * as z from "zod";
 import {
   createTerceroMutation,
   updateTerceroMutation,
-} from "@/lib/client-domain-mutations";
+} from "@/application/client-domain-mutations";
 import { queryKeys } from "@/platform/query-keys";
 import {
   createPendingTerceroPaymentMethod,

@@ -3,8 +3,8 @@
 import {
   deleteVentaMutation,
   refreshServicioProfileCountMutation,
-} from '@/lib/client-domain-mutations';
-import { deleteNotificacionesPorVentaUseCase } from '@/lib/use-cases/notificaciones/notificaciones-store-use-cases';
+} from '@/application/client-domain-mutations';
+import { deleteNotificacionesPorVentaUseCase } from '@/application/use-cases/notificaciones/notificaciones-store-use-cases';
 
 export function useVentaDetalleStoreDependencies() {
   return {

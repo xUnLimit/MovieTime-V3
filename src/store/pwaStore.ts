@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { offlineCopy } from '@/lib/pwa/offline-facade';
-import type { OfflineSyncProgress, OfflineSyncStatus } from '@/lib/pwa/offline-types';
+import { offlineCopy } from '@/modules/pwa/offline-facade';
+import type { OfflineSyncProgress, OfflineSyncStatus } from '@/modules/pwa/offline-types';
 
 interface PwaState {
   isOnline: boolean;

@@ -11,7 +11,7 @@ import { PaginationFooter } from "@/components/shared/PaginationFooter";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { deleteServicioMutation } from "@/lib/client-domain-mutations";
+import { deleteServicioMutation } from "@/application/client-domain-mutations";
 import { queryKeys } from "@/platform/query-keys";
 import type { Servicio } from "@/types";
 import { ServiciosCategoriaTableDetalleActions } from "./ServiciosCategoriaTableDetalleActions";

@@ -9,7 +9,7 @@ import { TipoGasto } from '@/types';
 import {
   createTipoGastoMutation,
   updateTipoGastoMutation,
-} from '@/lib/client-domain-mutations';
+} from '@/application/client-domain-mutations';
 import {
   Dialog,
   DialogContent,

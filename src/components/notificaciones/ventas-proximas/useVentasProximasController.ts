@@ -10,14 +10,14 @@ import { useTemplates } from '@/hooks/use-templates';
 import {
   toggleNotificationHighlightedStoreCache,
   toggleNotificationReadStoreCache,
-} from '@/lib/store-reactions/notification-cache-reactions';
-import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import { cutVentaFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
+} from '@/application/store-reactions/notification-cache-reactions';
+import { applyNotificationQueryReactions } from '@/application/store-reactions/notification-query-reactions';
+import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
+import { cutVentaFromNotificationUseCase } from '@/application/use-cases/notificaciones/notificaciones-actions-use-cases';
 import {
   confirmVentaRenewalFromNotificationUseCase as confirmVentaRenewal,
   loadVentaRenewalOptionsUseCase as loadVentaRenewalOptions,
-} from '@/lib/use-cases/notificaciones/notificaciones-renewal-use-cases';
+} from '@/application/use-cases/notificaciones/notificaciones-renewal-use-cases';
 import type { MetodoPago, TemplateMensaje } from '@/types';
 import type { Plan } from '@/types/categorias';
 

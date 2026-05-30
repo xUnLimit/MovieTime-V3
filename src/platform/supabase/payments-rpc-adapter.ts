@@ -1,4 +1,4 @@
-import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
+import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import { assertRpcStringId } from '@/platform/utils/safety';
 
 import { withIdempotencyKey } from './idempotency';

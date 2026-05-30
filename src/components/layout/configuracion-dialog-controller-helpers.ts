@@ -1,4 +1,4 @@
-import { getExecutivePushDueStatus } from "@/lib/pwa/push-schedule";
+import { getExecutivePushDueStatus } from "@/modules/pwa/push-schedule";
 
 interface MonthlyMetric {
   mes: string;

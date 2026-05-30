@@ -12,7 +12,7 @@ import { Gasto, TipoGasto } from '@/types';
 import {
   createGastoMutation,
   updateGastoMutation,
-} from '@/lib/client-domain-mutations';
+} from '@/application/client-domain-mutations';
 import {
   Dialog,
   DialogContent,

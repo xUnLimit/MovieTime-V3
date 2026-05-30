@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { getDashboardHome } from "@/lib/dashboard-read-models";
+import { getDashboardHome } from "@/modules/dashboard-read-models";
 
 export function useDashboardHome() {
   return useQuery({

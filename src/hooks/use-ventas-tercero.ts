@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { subscribeToVentasTerceroReactions } from '@/platform/events/cache-reactions';
-import { deleteVentaMutation } from '@/lib/client-domain-mutations';
+import { deleteVentaMutation } from '@/application/client-domain-mutations';
 import { queryKeys } from '@/platform/query-keys';
-import { queryVentasByClienteUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
+import { queryVentasByClienteUseCase } from '@/application/use-cases/ventas/ventas-query-use-cases';
 import { CACHE_TTL_MS } from '@/platform/constants';
 import type { VentaDoc } from '@/types';
 

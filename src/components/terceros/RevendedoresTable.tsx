@@ -11,7 +11,7 @@ import {
 } from "@/components/shared/PaginationFooter";
 import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
-import { deleteTerceroMutation } from "@/lib/client-domain-mutations";
+import { deleteTerceroMutation } from "@/application/client-domain-mutations";
 import type { Tercero } from "@/types";
 import { RevendedoresTableActions } from "./RevendedoresTableActions";
 import { TodosTercerosTableToolbar } from "./TodosTercerosTableToolbar";

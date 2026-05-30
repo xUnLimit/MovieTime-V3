@@ -3,12 +3,12 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { queryKeys } from "@/platform/query-keys";
-import { getActivityLogOptions } from "@/lib/activity/activity-log-writer";
+import { getActivityLogOptions } from "@/application/activity/activity-log-writer";
 import {
   cutVentaFromServicioDetalleWorkflow,
   fetchVentaForServicioActionUseCase,
   transferVentaFromServicioDetalleWorkflow,
-} from "@/lib/use-cases/servicios/servicio-detail-use-cases";
+} from "@/application/use-cases/servicios/servicio-detail-use-cases";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { Servicio, TipoTemplate, VentaDoc } from "@/types";
 

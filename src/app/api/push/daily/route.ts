@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import {
   isAuthorizedExecutivePushCronRequest,
   sendScheduledExecutivePush,
-} from '@/lib/executive-push/executive-push-api';
+} from '@/modules/executive-push/executive-push-api';
 
 export const runtime = 'nodejs';
 

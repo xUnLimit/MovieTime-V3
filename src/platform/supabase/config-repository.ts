@@ -1,7 +1,7 @@
 import { supabase } from './client';
 import type { Configuracion, TasasCambio } from '@/types';
-import { getOfflineConfig, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
-import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
+import { getOfflineConfig, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
+import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 
 const CONFIG_DOC_ID = 'global';
 

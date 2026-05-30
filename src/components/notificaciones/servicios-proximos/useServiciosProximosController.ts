@@ -4,17 +4,17 @@ import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
+import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
 import {
   toggleNotificationHighlightedStoreCache,
   toggleNotificationReadStoreCache,
-} from '@/lib/store-reactions/notification-cache-reactions';
-import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
-import { inactivateServicioFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
+} from '@/application/store-reactions/notification-cache-reactions';
+import { applyNotificationQueryReactions } from '@/application/store-reactions/notification-query-reactions';
+import { inactivateServicioFromNotificationUseCase } from '@/application/use-cases/notificaciones/notificaciones-actions-use-cases';
 import {
   confirmServicioRenewalFromNotificationUseCase,
   loadServicioRenewalOptionsUseCase,
-} from '@/lib/use-cases/notificaciones/notificaciones-renewal-use-cases';
+} from '@/application/use-cases/notificaciones/notificaciones-renewal-use-cases';
 import type { MetodoPago, Servicio } from '@/types';
 import {
   getPaginasNotificacionesServicio,

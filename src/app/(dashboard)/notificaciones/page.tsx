@@ -18,10 +18,10 @@ import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNot
 import { MetricCard } from '@/components/shared/MetricCard';
 import { useNotificacionesMontos } from '@/hooks/use-notificaciones-montos';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
-import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
+import { applyNotificationQueryReactions } from '@/application/store-reactions/notification-query-reactions';
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { sincronizarNotificaciones } from '@/lib/notifications';
+import { sincronizarNotificaciones } from '@/modules/notifications';
 import { toast } from 'sonner';
 
 // Metrics component matching CategoriasMetrics style

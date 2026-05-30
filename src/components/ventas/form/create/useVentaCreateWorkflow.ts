@@ -15,7 +15,7 @@ import { useTemplates } from "@/hooks/use-templates";
 import {
   createVentaMutation,
   refreshServicioProfileCountMutation,
-} from "@/lib/client-domain-mutations";
+} from "@/application/client-domain-mutations";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Categoria, Plan, Servicio, Tercero } from "@/types";
 

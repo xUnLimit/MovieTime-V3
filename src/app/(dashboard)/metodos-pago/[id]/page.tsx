@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
-import { deleteMetodoPagoMutation } from '@/lib/client-domain-mutations';
+import { deleteMetodoPagoMutation } from '@/application/client-domain-mutations';
 import { isUuid } from '@/platform/utils/safety';
 import {
   MetodoPagoAdditionalInfo,

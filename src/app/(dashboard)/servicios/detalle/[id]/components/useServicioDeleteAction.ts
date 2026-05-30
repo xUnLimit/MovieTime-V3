@@ -3,7 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { queryKeys } from '@/platform/query-keys';
-import { deleteServicioDetalleWorkflow } from '@/lib/use-cases/servicios/servicio-detail-use-cases';
+import { deleteServicioDetalleWorkflow } from '@/application/use-cases/servicios/servicio-detail-use-cases';
 
 type ServicioDeleteActionParams = {
   id: string;

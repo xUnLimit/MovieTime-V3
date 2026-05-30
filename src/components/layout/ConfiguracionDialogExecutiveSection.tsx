@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { EXECUTIVE_PUSH_BLOCKS } from "@/lib/pwa/push-constants";
+import { EXECUTIVE_PUSH_BLOCKS } from "@/modules/pwa/push-constants";
 import type { useConfiguracionDialogController } from "./useConfiguracionDialogController";
 
 type ConfiguracionController = ReturnType<typeof useConfiguracionDialogController>;

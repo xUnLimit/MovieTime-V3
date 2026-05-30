@@ -4,9 +4,9 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { queryMetodosPagoTercerosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
-import { queryServiciosByCategoriaUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
-import { queryVentasActivasByServiciosUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
+import { queryMetodosPagoTercerosUseCase } from "@/application/use-cases/metodos-pago-use-cases";
+import { queryServiciosByCategoriaUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
+import { queryVentasActivasByServiciosUseCase } from "@/application/use-cases/ventas/ventas-query-use-cases";
 import {
   PENDING_TERCERO_PAYMENT_CURRENCY,
   PENDING_TERCERO_PAYMENT_ID,

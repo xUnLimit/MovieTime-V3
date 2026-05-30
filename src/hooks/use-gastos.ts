@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { fetchGastosUseCase } from "@/lib/use-cases/gastos-use-cases";
+import { fetchGastosUseCase } from "@/application/use-cases/gastos-use-cases";
 import type { Gasto } from "@/types";
 
 export function useGastos() {

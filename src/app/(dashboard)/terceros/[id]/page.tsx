@@ -11,7 +11,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
-import { deleteTerceroMutation } from '@/lib/client-domain-mutations';
+import { deleteTerceroMutation } from '@/application/client-domain-mutations';
 import { isUuid } from '@/platform/utils/safety';
 
 function TerceroDetallesPageContent() {

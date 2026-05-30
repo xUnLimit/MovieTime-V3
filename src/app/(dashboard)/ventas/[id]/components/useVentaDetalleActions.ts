@@ -5,14 +5,14 @@ import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { queryKeys } from '@/platform/query-keys';
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
+import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
 import {
   deleteVentaDetalleWorkflow,
   deleteVentaPagoDetalleWorkflow,
   refundVentaDetalleWorkflow,
   renewVentaDetalleWorkflow,
   updateVentaPagoDetalleWorkflow,
-} from '@/lib/use-cases/ventas/venta-detail-use-cases';
+} from '@/application/use-cases/ventas/venta-detail-use-cases';
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';

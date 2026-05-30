@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { CACHE_TTL_MS } from '@/platform/constants';
 import { queryKeys } from '@/platform/query-keys';
-import { obtenerPagosDeServicio } from '@/lib/payments';
+import { obtenerPagosDeServicio } from '@/modules/payments';
 import type { PagoServicio } from '@/types';
 
 /**

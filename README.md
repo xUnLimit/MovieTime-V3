@@ -60,11 +60,11 @@ Directorios principales:
 |------|-----------|
 | `src/app` | Rutas Next.js App Router |
 | `src/components` | Componentes de UI por dominio |
-| `src/store` | Stores Zustand para UI, compatibilidad y fronteras legacy |
-| `src/lib/use-cases` | Casos de uso de negocio |
-| `src/lib/supabase` | Cliente, repositorios, RPC Adapters, mappers y tipos Supabase |
-| `src/lib/store-reactions` | Reacciones de cache/store tras mutaciones |
-| `src/lib/services` | Servicios operacionales acotados |
+| `src/hooks` | Lecturas remotas con React Query + paginacion |
+| `src/store` | Estado de UI/auth/PWA/filtros (Zustand) |
+| `src/application` | Orquestacion de negocio: use-cases, composition root (client-domain-mutations), store-reactions, activity |
+| `src/modules` | Modulos de dominio profundo: payments, notifications, dashboard-read-models, forecasting, executive-push, pwa, services |
+| `src/platform` | Infra transversal: supabase, events, cache, observability, errors, config, utils, server |
 | `supabase/migrations` | Schema, vistas, funciones, triggers y RLS |
 | `scripts` | Scripts operativos Supabase |
 

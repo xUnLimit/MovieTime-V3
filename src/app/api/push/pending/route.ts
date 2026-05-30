@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getExecutivePushSummaryForEndpoint } from '@/lib/executive-push/executive-push-delivery';
+import { getExecutivePushSummaryForEndpoint } from '@/modules/executive-push/executive-push-delivery';
 import { requireAuthenticatedAdmin } from '@/platform/server/request-auth';
 
 export const runtime = 'nodejs';

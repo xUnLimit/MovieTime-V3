@@ -1,7 +1,7 @@
 import {
   fetchServicioDetalleBundleUseCase,
   fetchServicioVentasProfilesUseCase,
-} from "@/lib/use-cases/servicios/servicio-detail-use-cases";
+} from "@/application/use-cases/servicios/servicio-detail-use-cases";
 import { buildServiceTransferMessage } from "@/platform/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";

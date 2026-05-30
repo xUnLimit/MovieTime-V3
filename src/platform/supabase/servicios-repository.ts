@@ -12,7 +12,7 @@ import { supabase } from './client';
 import { toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
 import { assertRecordId } from '@/platform/utils/safety';
-import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
+import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import {
   createServicioWithInitialPaymentRpc,
   deleteServicioPaymentRpc,

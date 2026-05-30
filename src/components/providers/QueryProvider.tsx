@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useEffect, useState, type ReactNode } from 'react';
 
-import { createQueryClient } from '@/lib/query-client';
+import { createQueryClient } from '@/platform/query-client';
 import { registerActiveQueryClient } from '@/platform/query-client-registry';
 
 type QueryProviderProps = {

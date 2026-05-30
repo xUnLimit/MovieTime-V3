@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { getConfigUseCase } from "@/lib/use-cases/config-use-cases";
+import { getConfigUseCase } from "@/application/use-cases/config-use-cases";
 
 export function useConfig() {
   return useQuery({

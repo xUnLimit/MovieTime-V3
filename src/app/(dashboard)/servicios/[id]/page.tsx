@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { subscribeToServicioCategoryListReactions } from '@/platform/events/cache-reactions';
-import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
+import { SERVICIOS_COLLECTION } from '@/application/use-cases/servicios/servicios-query-use-cases';
 import { isUuid } from '@/platform/utils/safety';
 import { Servicio } from '@/types';
 import type { FilterOption } from '@/types/pagination';

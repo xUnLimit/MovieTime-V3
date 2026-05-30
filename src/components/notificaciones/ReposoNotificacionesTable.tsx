@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/table";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { useNotificaciones } from "@/hooks/use-notificaciones";
-import { toggleNotificationReadStoreCache } from "@/lib/store-reactions/notification-cache-reactions";
-import { applyNotificationQueryReactions } from "@/lib/store-reactions/notification-query-reactions";
+import { toggleNotificationReadStoreCache } from "@/application/store-reactions/notification-cache-reactions";
+import { applyNotificationQueryReactions } from "@/application/store-reactions/notification-query-reactions";
 import { ReposoNotificacionesRows } from "./ReposoNotificacionesRows";
 import { ReposoNotificacionesToolbar } from "./ReposoNotificacionesToolbar";
 import { filterReposoRows } from "./reposo-notificaciones-table-helpers";

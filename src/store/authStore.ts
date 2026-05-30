@@ -6,14 +6,14 @@ import {
   onAuthStateChangeUseCase,
   signInUseCase,
   signOutUseCase,
-} from '@/lib/use-cases/auth-use-cases';
+} from '@/application/use-cases/auth-use-cases';
 import {
   clearOfflineAuthUser,
   getOfflineAuthDecision,
   loadOfflineAuthUser,
   saveOfflineAuthUser,
   setOfflineAuthSessionActive,
-} from '@/lib/pwa/offline-auth';
+} from '@/modules/pwa/offline-auth';
 import { logAsyncSideEffectError } from '@/platform/utils/safety';
 
 const REMEMBER_KEY = 'auth-remember';

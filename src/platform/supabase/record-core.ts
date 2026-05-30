@@ -17,8 +17,8 @@ import {
   type CreatePagoVentaInput,
 } from './payments-repository';
 import { insertRawRow, normalizeWritePayload } from './write-utils';
-import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
-import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
+import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
+import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 
 export { ENTITIES };
 export type { CollectionName, QueryFilter };

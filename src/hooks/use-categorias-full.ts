@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/platform/query-keys";
-import { fetchCategoriasFull } from "@/lib/use-cases/categorias-use-cases";
+import { fetchCategoriasFull } from "@/application/use-cases/categorias-use-cases";
 import type { Categoria } from "@/types";
 
 export function useCategoriasFull() {

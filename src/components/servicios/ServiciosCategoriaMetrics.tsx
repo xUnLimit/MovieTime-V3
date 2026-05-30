@@ -6,7 +6,7 @@ import { Calendar, Monitor } from "lucide-react";
 
 import { MetricCard } from "@/components/shared/MetricCard";
 import { queryKeys } from "@/platform/query-keys";
-import { countServiciosProximosPagoByCategoriaUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
+import { countServiciosProximosPagoByCategoriaUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 import { Categoria } from "@/types";
 
 interface ServiciosCategoriaMetricsProps {
