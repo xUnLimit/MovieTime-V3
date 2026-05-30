@@ -60,8 +60,8 @@ export async function createVentaRefund(payload: CreateVentaRefundPayload): Prom
 export const getPagoVentaById = <T>(id: string) => getById<T>(ENTITIES.PAGOS_VENTA, id);
 export const queryPagosVenta = <T>(filters: QueryFilter[] = []) => queryDocuments<T>(ENTITIES.PAGOS_VENTA, filters);
 export const countPagosVenta = (filters: QueryFilter[] = []) => getCount(ENTITIES.PAGOS_VENTA, filters);
-export const createPagoVenta = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
-  createPagoVentaRecord(payload as unknown as CreatePagoVentaInput);
+export const createPagoVenta = (payload: CreatePagoVentaInput) =>
+  createPagoVentaRecord(payload);
 export const updatePagoVenta = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.PAGOS_VENTA, id, payload);
 

@@ -20,6 +20,18 @@ export { convertTimestamps, timestampToDate } from './dates';
 
 type QueryResult<T> = QueryBuilder & PromiseLike<T>;
 
+/**
+ * Adapta el builder del SDK de Supabase a nuestro QueryResult encadenable.
+ *
+ * El cast `as unknown as` es inevitable: el tipo del builder de supabase-js es
+ * altamente generico/dinamico y no es asignable a una interfaz de filtros generica.
+ * Centralizarlo aqui mantiene el unico punto de cast (en vez de repetirlo en cada
+ * lectura) y deja la frontera SDK -> motor-generico documentada en un solo lugar.
+ */
+function asQuery<T>(builder: unknown): QueryResult<T> {
+  return builder as QueryResult<T>;
+}
+
 export function logCacheHit(collectionName: string) {
   if (process.env.NODE_ENV === 'development') {
     console.debug(`[Supabase cache hit] ${collectionName}`);
@@ -66,10 +78,9 @@ export async function queryDocuments<T>(
   }
 
   const entity = readEntity(collectionName);
-  let query = supabase.from(entity as never).select('*') as unknown as QueryResult<{
-    data: unknown[] | null;
-    error: Error | null;
-  }>;
+  let query = asQuery<{ data: unknown[] | null; error: Error | null }>(
+    supabase.from(entity as never).select('*'),
+  );
 
   query = applyFilters(collectionName, query, filters);
 
@@ -89,12 +100,9 @@ export async function getCount(
   }
 
   const entity = readEntity(collectionName);
-  let query = supabase
-    .from(entity as never)
-    .select('*', { count: 'exact', head: true }) as unknown as QueryResult<{
-      count: number | null;
-      error: Error | null;
-    }>;
+  let query = asQuery<{ count: number | null; error: Error | null }>(
+    supabase.from(entity as never).select('*', { count: 'exact', head: true }),
+  );
 
   query = applyFilters(collectionName, query, filters);
 
@@ -235,12 +243,9 @@ export async function countFromView(
   filters: QueryFilter[],
   fieldOverrides: Record<string, string> = {},
 ): Promise<number> {
-  let query = supabase
-    .from(viewName as never)
-    .select('*', { count: 'exact', head: true }) as unknown as QueryResult<{
-      count: number | null;
-      error: Error | null;
-    }>;
+  let query = asQuery<{ count: number | null; error: Error | null }>(
+    supabase.from(viewName as never).select('*', { count: 'exact', head: true }),
+  );
 
   for (const filter of filters) {
     const field = fieldOverrides[filter.field] ?? readField(collectionName, filter.field);
