@@ -1,5 +1,7 @@
 import { addDays, startOfDay } from 'date-fns';
 
+import { createLogger } from '@/platform/observability/logger';
+
 import { queryMetodosPago } from '@/platform/supabase/catalogos-repository';
 import { queryNotificaciones, removeNotificacion } from '@/platform/supabase/notifications-repository';
 import { getServicioById } from '@/platform/supabase/servicios-repository';
@@ -16,6 +18,8 @@ import type {
 } from '@/types/notificaciones';
 import type { Servicio } from '@/types/servicios';
 import type { VentaDoc } from '@/types/ventas';
+
+const log = createLogger('NotificationSync');
 
 export async function runVentaNotificationSync(ventaId: string): Promise<void> {
   try {
@@ -49,7 +53,7 @@ export async function runVentaNotificationSync(ventaId: string): Promise<void> {
       await Promise.all(notificacionesExistentes.map((notificacion) => removeNotificacion(notificacion.id)));
     }
   } catch (error) {
-    console.error(`[NotificationSync] Error in surgical sync for venta ${ventaId}:`, error);
+    log.error('Error in surgical sync for venta', { ventaId, error });
   }
 }
 
@@ -95,6 +99,6 @@ export async function runServicioNotificationSync(servicioId: string): Promise<v
       await Promise.all(notifReposoExistentes.map((notificacion) => removeNotificacion(notificacion.id)));
     }
   } catch (error) {
-    console.error(`[NotificationSync] Error in surgical sync for servicio ${servicioId}:`, error);
+    log.error('Error in surgical sync for servicio', { servicioId, error });
   }
 }

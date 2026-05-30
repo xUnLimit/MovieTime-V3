@@ -1,3 +1,4 @@
+import { createLogger } from '@/platform/observability/logger';
 import { runBulkNotificationSync } from '@/modules/notifications/notification-bulk-sync';
 import {
   isNotificationSyncRunning,
@@ -10,6 +11,8 @@ import {
   runServicioNotificationSync,
   runVentaNotificationSync,
 } from '@/modules/notifications/notification-surgical-sync';
+
+const log = createLogger('NotificationSync');
 
 export async function sincronizarNotificaciones(forzarActualizacion = false): Promise<void> {
   if (!forzarActualizacion && !shouldSyncNotifications()) {
@@ -31,13 +34,13 @@ export async function sincronizarNotificaciones(forzarActualizacion = false): Pr
 
     if (huboFallosParciales && !forzarActualizacion && typeof window !== 'undefined') {
       resetNotificationsSyncMarker();
-      console.warn('[NotificationSync] Partial failures detected; sync will retry on next load.');
+      log.warn('Partial failures detected; sync will retry on next load');
     }
   } catch (error) {
     if (!forzarActualizacion && typeof window !== 'undefined') {
       resetNotificationsSyncMarker();
     }
-    console.error('[NotificationSync] Error during synchronization:', error);
+    log.error('Error during synchronization', { error });
     throw error;
   } finally {
     setNotificationSyncRunning(false);

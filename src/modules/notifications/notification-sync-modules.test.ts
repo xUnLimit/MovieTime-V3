@@ -97,7 +97,11 @@ describe('notification sync modules', () => {
 
     expect(notificationsRepository.createNotificacion).not.toHaveBeenCalled();
     expect(notificationsRepository.updateNotificacion).not.toHaveBeenCalled();
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('missing fechaFin'));
+    // El logger central emite el warn como (mensaje, metadata).
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('missing fechaFin'),
+      expect.objectContaining({ ventaId: 'venta-sin-fecha' }),
+    );
 
     warnSpy.mockRestore();
   });

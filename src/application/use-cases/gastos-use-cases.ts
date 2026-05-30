@@ -7,7 +7,10 @@ import {
   removeGasto,
   updateGasto,
 } from "@/platform/supabase/catalogos-repository";
+import { createLogger } from "@/platform/observability/logger";
 import type { Gasto, TipoGasto } from "@/types";
+
+const log = createLogger("GastosUseCase");
 
 // NOTE: este use-case no importa store-reactions (que tocan el store de activity-log).
 // Devuelve los datos del resultado y el composition root (gastos-client-mutations)
@@ -57,7 +60,7 @@ async function logBestEffortFailure(promise: Promise<unknown>, operation: string
   try {
     await promise;
   } catch (error) {
-    console.error(`[GastosUseCase] ${operation} failed`, error);
+    log.error('Best-effort operation failed', { operation, error });
   }
 }
 

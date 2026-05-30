@@ -1,5 +1,7 @@
 import { addDays } from 'date-fns';
 
+import { createLogger } from '@/platform/observability/logger';
+
 import { queryMetodosPago } from '@/platform/supabase/catalogos-repository';
 import { queryNotificaciones } from '@/platform/supabase/notifications-repository';
 import { queryServicios } from '@/platform/supabase/servicios-repository';
@@ -16,6 +18,8 @@ import type {
 } from '@/types/notificaciones';
 import type { Servicio } from '@/types/servicios';
 import type { VentaDoc } from '@/types/ventas';
+
+const log = createLogger('NotificationSync');
 
 export async function runBulkNotificationSync(forzarActualizacion: boolean) {
   const fechaLimite = addDays(new Date(), 7);
@@ -63,7 +67,7 @@ export async function runBulkNotificationSync(forzarActualizacion: boolean) {
     procesarNotificacionVenta(venta, mapNotifVentas.get(venta.id), forzarActualizacion, mapMetodosPago)
       .catch((error) => {
         huboFallosParciales = true;
-        console.error(`[NotificationSync] Error processing venta ${venta.id}:`, error);
+        log.error('Error processing venta in bulk sync', { ventaId: venta.id, error });
       }),
   );
 
@@ -71,7 +75,7 @@ export async function runBulkNotificationSync(forzarActualizacion: boolean) {
     procesarNotificacionServicio(servicio, mapNotifServicios.get(servicio.id), forzarActualizacion, mapMetodosPago)
       .catch((error) => {
         huboFallosParciales = true;
-        console.error(`[NotificationSync] Error processing servicio ${servicio.id}:`, error);
+        log.error('Error processing servicio in bulk sync', { servicioId: servicio.id, error });
       }),
   );
 
@@ -79,7 +83,7 @@ export async function runBulkNotificationSync(forzarActualizacion: boolean) {
     procesarNotificacionReposo(servicio, mapNotifReposo.get(servicio.id), forzarActualizacion)
       .catch((error) => {
         huboFallosParciales = true;
-        console.error(`[NotificationSync] Error processing reposo ${servicio.id}:`, error);
+        log.error('Error processing reposo in bulk sync', { servicioId: servicio.id, error });
       }),
   );
 

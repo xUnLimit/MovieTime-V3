@@ -1,4 +1,5 @@
 import { env } from '@/platform/config';
+import { createLogger } from '@/platform/observability/logger';
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
 import type { ExecutivePushBlock, ExecutivePushSummaryBlock, ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
 import {
@@ -13,6 +14,8 @@ import {
 } from '@/modules/pwa/push-helpers';
 import { getExecutivePushDeliverySkipReason, getExecutivePushDueStatus } from '@/modules/pwa/push-schedule';
 import { buildExecutivePushSummaryBlocks } from './executive-push-summary-blocks';
+
+const log = createLogger('ExecutivePush');
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 type ExecutivePushResult = {
@@ -80,7 +83,7 @@ async function updateExecutivePushRun(
     .eq('id', runId);
 
   if (error) {
-    console.error('Error updating executive push run:', {
+    log.error('Error updating executive push run', {
       runId,
       status: values.status,
       message: error.message,
@@ -221,7 +224,7 @@ export async function sendExecutivePushDailySummary(options?: { force?: boolean;
             const failure = toPushDeliveryFailure(subscription, error);
             failures.push(failure);
 
-            console.error('Error sending executive push ping:', {
+            log.error('Error sending executive push ping', {
               endpointOrigin: failure.endpointOrigin,
               statusCode: failure.statusCode,
               body: failure.body,

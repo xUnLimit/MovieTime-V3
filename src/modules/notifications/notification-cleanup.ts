@@ -1,3 +1,4 @@
+import { createLogger } from '@/platform/observability/logger';
 import { removeNotificacion } from '@/platform/supabase/notifications-repository';
 import type {
   Notificacion,
@@ -7,6 +8,9 @@ import type {
 } from '@/types/notificaciones';
 import type { Servicio } from '@/types/servicios';
 import type { VentaDoc } from '@/types/ventas';
+
+const log = createLogger('NotificationSync');
+
 export async function limpiarNotificacionesHuerfanas(
   ventasActivas: VentaDoc[],
   serviciosActivos: Servicio[],
@@ -32,7 +36,7 @@ export async function limpiarNotificacionesHuerfanas(
     }
   } catch (error) {
     // Cleanup is best-effort, don't fail the sync
-    console.warn('[NotificationSync] Error cleaning up orphan notifications:', error);
+    log.warn('Error cleaning up orphan notifications', { error });
   }
 }
 

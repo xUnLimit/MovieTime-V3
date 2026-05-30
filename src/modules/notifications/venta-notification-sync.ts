@@ -1,5 +1,6 @@
 import { differenceInDays, startOfDay } from 'date-fns';
 
+import { createLogger } from '@/platform/observability/logger';
 import { createNotificacion, updateNotificacion } from '@/platform/supabase/notifications-repository';
 import {
   calcularPrioridad,
@@ -9,6 +10,9 @@ import {
 import type { MetodoPago } from '@/types/metodos-pago';
 import type { NotificacionVenta } from '@/types/notificaciones';
 import type { VentaDoc } from '@/types/ventas';
+
+const log = createLogger('NotificationSync');
+
 export async function procesarNotificacionVenta(
   venta: VentaDoc,
   notifExistente?: NotificacionVenta & { id: string },
@@ -17,9 +21,7 @@ export async function procesarNotificacionVenta(
 ): Promise<void> {
   // Validate required denormalized field (fechaFin es el único crítico para calcular diasRestantes)
   if (!venta.fechaFin) {
-    console.warn(
-      `[NotificationSync] Venta ${venta.id} missing fechaFin. Skipping.`
-    );
+    log.warn('Venta missing fechaFin; skipping notification', { ventaId: venta.id });
     return;
   }
 

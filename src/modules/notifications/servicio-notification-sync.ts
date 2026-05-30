@@ -1,5 +1,6 @@
 import { differenceInDays, startOfDay } from 'date-fns';
 
+import { createLogger } from '@/platform/observability/logger';
 import { createNotificacion, updateNotificacion } from '@/platform/supabase/notifications-repository';
 import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import {
@@ -10,6 +11,8 @@ import {
 import type { MetodoPago } from '@/types/metodos-pago';
 import type { NotificacionServicio } from '@/types/notificaciones';
 import type { Servicio } from '@/types/servicios';
+
+const log = createLogger('NotificationSync');
 
 function obtenerTerminacionTarjeta(metodoPago?: Pick<MetodoPago, 'numeroTarjeta'> | null): string {
   return metodoPago?.numeroTarjeta?.replace(/\D/g, '').slice(-4) || '';
@@ -25,9 +28,7 @@ export async function procesarNotificacionServicio(
   metodosPagoById?: Map<string, MetodoPago>
 ): Promise<void> {
   if (!servicio.fechaVencimiento) {
-    console.warn(
-      `[NotificationSync] Servicio ${servicio.id} missing fechaVencimiento. Skipping.`
-    );
+    log.warn('Servicio missing fechaVencimiento; skipping notification', { servicioId: servicio.id });
     return;
   }
 
