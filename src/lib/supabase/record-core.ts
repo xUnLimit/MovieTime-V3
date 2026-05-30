@@ -166,23 +166,36 @@ export async function update<T extends Record<string, unknown>>(
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Hard-delete de infraestructura: borra la fila. SIN decisiones de negocio.
+ * La politica de soft-delete (archivado) de ventas/servicios vive en sus repos
+ * especificos via archiveRecord(); este adapter generico no decide que entidad se archiva.
+ */
 export async function remove(collectionName: CollectionName, id: string): Promise<void> {
   assertOnlineMutation();
   const table = writeTable(collectionName);
-
-  if (collectionName === ENTITIES.SERVICIOS || collectionName === ENTITIES.VENTAS) {
-    const { error } = await supabase
-      .from(table as never)
-      .update({
-        archivado_at: new Date().toISOString(),
-        motivo_archivado: 'Eliminado desde la app',
-      } as never)
-      .eq('id', id);
-    if (error) throw new Error(error.message);
-    return;
-  }
-
   const { error } = await supabase.from(table as never).delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Soft-delete de infraestructura: marca la fila como archivada. SOLO ejecuta el UPDATE;
+ * el caller (repo especifico de la entidad) decide cuando archivar en vez de borrar.
+ */
+export async function archiveRecord(
+  collectionName: CollectionName,
+  id: string,
+  motivo = 'Eliminado desde la app',
+): Promise<void> {
+  assertOnlineMutation();
+  const table = writeTable(collectionName);
+  const { error } = await supabase
+    .from(table as never)
+    .update({
+      archivado_at: new Date().toISOString(),
+      motivo_archivado: motivo,
+    } as never)
+    .eq('id', id);
   if (error) throw new Error(error.message);
 }
 

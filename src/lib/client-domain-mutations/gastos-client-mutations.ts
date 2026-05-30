@@ -3,13 +3,19 @@ import {
   deleteGastoUseCase,
   updateGastoUseCase,
 } from '@/lib/use-cases/gastos-use-cases';
+import {
+  afterGastoCreated,
+  afterGastoDeleted,
+  afterGastoUpdated,
+} from '@/lib/store-reactions/gastos-mutation-reactions';
 import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
 import type { Gasto } from '@/types';
 
 export async function createGastoMutation(
   gasto: Omit<Gasto, 'id' | 'createdAt' | 'updatedAt' | 'tipoGastoNombre'>,
 ) {
-  await createGastoUseCase(gasto);
+  const { gasto: created } = await createGastoUseCase(gasto);
+  await afterGastoCreated(created);
   await invalidateStoreQueries(['gastos', 'tiposGasto', 'dashboard', 'pagination']);
 }
 
@@ -17,11 +23,13 @@ export async function updateGastoMutation(
   id: string,
   updates: Partial<Omit<Gasto, 'id' | 'createdAt' | 'updatedAt'>>,
 ) {
-  await updateGastoUseCase(id, updates);
+  const result = await updateGastoUseCase(id, updates);
+  await afterGastoUpdated(result);
   await invalidateStoreQueries(['gastos', 'tiposGasto', 'dashboard', 'pagination']);
 }
 
 export async function deleteGastoMutation(id: string) {
-  await deleteGastoUseCase(id);
+  const { gasto } = await deleteGastoUseCase(id);
+  await afterGastoDeleted(gasto);
   await invalidateStoreQueries(['gastos', 'tiposGasto', 'dashboard', 'pagination']);
 }

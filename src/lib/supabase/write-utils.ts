@@ -1,7 +1,7 @@
 import { supabase } from './client';
 import { toSnakeCase } from './mappers';
 import { ENTITIES, type CollectionName, type PublicTableName } from './entities';
-import { assertRecordId } from '@/lib/utils/safety';
+import { assertRecordId, isUuid } from '@/lib/utils/safety';
 
 export async function insertRawRow(
   table: PublicTableName,
@@ -163,12 +163,8 @@ export function normalizeWritePayload(
 
 function sanitizeUuidReferences(row: Record<string, unknown>) {
   for (const key of ['created_by', 'archivado_by', 'cortado_by', 'cortada_by']) {
-    if (row[key] !== undefined && !isUuid(String(row[key]))) {
+    if (row[key] !== undefined && !isUuid(row[key])) {
       row[key] = null;
     }
   }
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

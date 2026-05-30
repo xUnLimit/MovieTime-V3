@@ -5,7 +5,7 @@ import {
   getCount,
   create,
   update,
-  remove,
+  archiveRecord,
   logCacheHit,
 } from './record-core';
 import { supabase } from './client';
@@ -33,7 +33,8 @@ export const createVenta = <T extends Record<string, unknown>>(payload: Omit<T, 
   create(ENTITIES.VENTAS, payload);
 export const updateVenta = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.VENTAS, id, payload);
-export const removeVenta = (id: string) => remove(ENTITIES.VENTAS, id);
+// Politica de persistencia del agregado venta: se archiva (soft-delete), no se borra.
+export const removeVenta = (id: string) => archiveRecord(ENTITIES.VENTAS, id);
 
 export async function removeVentaWithPayments(id: string, deletePayments: boolean): Promise<void> {
   await deleteVentaWithPaymentsRpc({

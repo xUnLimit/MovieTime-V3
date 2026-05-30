@@ -7,12 +7,20 @@ import {
   removeGasto,
   updateGasto,
 } from "@/lib/supabase/catalogos-repository";
-import {
-  afterGastoCreated,
-  afterGastoDeleted,
-  afterGastoUpdated,
-} from "@/lib/store-reactions/gastos-mutation-reactions";
 import type { Gasto, TipoGasto } from "@/types";
+
+// NOTE: este use-case no importa store-reactions (que tocan el store de activity-log).
+// Devuelve los datos del resultado y el composition root (gastos-client-mutations)
+// dispara el activity-log y la invalidacion de dashboard. Asi la capa de aplicacion
+// permanece libre de Zustand.
+export type CreateGastoResult = { gasto: Gasto };
+export type UpdateGastoResult = {
+  gastoId: string;
+  gastoAnterior: Gasto;
+  gastoActualizado: Gasto;
+  shouldInvalidateDashboard: boolean;
+};
+export type DeleteGastoResult = { gasto: Gasto };
 
 function sortGastos(gastos: Gasto[]) {
   return [...gastos].sort((a, b) => {
@@ -55,7 +63,7 @@ async function logBestEffortFailure(promise: Promise<unknown>, operation: string
 
 export async function createGastoUseCase(
   gastoData: Omit<Gasto, 'id' | 'createdAt' | 'updatedAt' | 'tipoGastoNombre'>,
-) {
+): Promise<CreateGastoResult> {
   let gastoId: string | null = null;
 
   try {
@@ -76,7 +84,7 @@ export async function createGastoUseCase(
       updatedAt: new Date(),
     };
 
-    await afterGastoCreated(newGasto);
+    return { gasto: newGasto };
   } catch (error) {
     if (gastoId) {
       await logBestEffortFailure(removeGasto(gastoId), 'rollback removeGasto');
@@ -88,7 +96,7 @@ export async function createGastoUseCase(
 export async function updateGastoUseCase(
   id: string,
   updates: Partial<Omit<Gasto, 'id' | 'createdAt' | 'updatedAt'>>,
-) {
+): Promise<UpdateGastoResult> {
   const gastoActual = await getGastoById<Gasto>(id);
   if (!gastoActual) throw new Error('Gasto no encontrado');
 
@@ -116,18 +124,18 @@ export async function updateGastoUseCase(
   void _tipoGastoNombre;
   await updateGasto(id, writeUpdates);
 
-  await afterGastoUpdated({
+  return {
     gastoId: id,
     gastoAnterior: gastoActual,
     gastoActualizado,
     shouldInvalidateDashboard: requiereRecalculoDashboard,
-  });
+  };
 }
 
-export async function deleteGastoUseCase(id: string) {
+export async function deleteGastoUseCase(id: string): Promise<DeleteGastoResult> {
   const gasto = await getGastoById<Gasto>(id);
   if (!gasto) throw new Error('Gasto no encontrado');
 
   await removeGasto(id);
-  await afterGastoDeleted(gasto);
+  return { gasto };
 }

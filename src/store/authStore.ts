@@ -39,6 +39,33 @@ function isBrowserOnline() {
   return navigator.onLine;
 }
 
+type AuthSetter = (partial: Partial<AuthState>) => void;
+
+/**
+ * Intenta preservar la sesion offline en memoria cuando no se puede validar el perfil
+ * (sin conexion). Devuelve true si manejo el estado (preserve/keep), false si se debe limpiar.
+ * Centraliza la decision que antes estaba duplicada en ambas ramas de onAuthStateChange.
+ */
+function tryPreserveOfflineSession(set: AuthSetter): boolean {
+  const current = useAuthStore.getState();
+  const offlineUser = current.user ?? loadOfflineAuthUser();
+  const decision = getOfflineAuthDecision({
+    isOnline: isBrowserOnline(),
+    hasPersistedUser: Boolean(offlineUser),
+  });
+
+  if (decision === 'clear') return false;
+
+  set({
+    user: offlineUser,
+    isAuthenticated: decision === 'preserve',
+    isLoading: false,
+    isHydrated: true,
+  });
+  setOfflineAuthSessionActive(decision === 'preserve');
+  return true;
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -132,7 +159,7 @@ export const useAuthStore = create<AuthState>()(
               isHydrated: true,
             });
           } catch (error) {
-            console.error('Error logging out:', error);
+            logAsyncSideEffectError(error, { operation: 'logout', entity: 'auth' });
             const message = error instanceof Error ? error.message : 'Error al cerrar sesion';
             throw new Error(message);
           }
@@ -170,22 +197,8 @@ export const useAuthStore = create<AuthState>()(
               } catch (error) {
                 void error;
                 // Offline profile checks can fail even when the persisted session is valid.
-                const current = useAuthStore.getState();
-                const offlineUser = current.user ?? loadOfflineAuthUser();
-                const decision = getOfflineAuthDecision({
-                  isOnline: isBrowserOnline(),
-                  hasPersistedUser: Boolean(offlineUser),
-                });
-                if (decision !== 'clear') {
-                  set({
-                    user: offlineUser,
-                    isAuthenticated: decision === 'preserve',
-                    isLoading: false,
-                    isHydrated: true,
-                  });
-                  setOfflineAuthSessionActive(decision === 'preserve');
-                  return;
-                }
+                if (tryPreserveOfflineSession(set)) return;
+
                 await signOutUseCase().catch((signOutError) => {
                   logAsyncSideEffectError(signOutError, {
                     operation: 'supabaseSignOutAfterProfileFailure',
@@ -197,22 +210,8 @@ export const useAuthStore = create<AuthState>()(
               }
             } else {
               // Keep the in-memory user while offline so read-only navigation keeps working.
-              const current = useAuthStore.getState();
-              const offlineUser = current.user ?? loadOfflineAuthUser();
-              const decision = getOfflineAuthDecision({
-                isOnline: isBrowserOnline(),
-                hasPersistedUser: Boolean(offlineUser),
-              });
-              if (decision !== 'clear') {
-                set({
-                  user: offlineUser,
-                  isAuthenticated: decision === 'preserve',
-                  isLoading: false,
-                  isHydrated: true,
-                });
-                setOfflineAuthSessionActive(decision === 'preserve');
-                return;
-              }
+              if (tryPreserveOfflineSession(set)) return;
+
               clearAllAuthStorage();
               set({ user: null, isAuthenticated: false, isLoading: false, isHydrated: true });
             }

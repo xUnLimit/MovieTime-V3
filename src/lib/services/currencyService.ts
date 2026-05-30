@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { createLogger } from '@/lib/observability/logger';
 import {
   API_BASE_URL,
   FALLBACK_RATES,
@@ -7,6 +8,8 @@ import {
   type CachedRates,
   type ExchangeRateAPIResponse,
 } from './currency-rates';
+
+const log = createLogger('CurrencyService');
 
 // ===========================
 // CURRENCY SERVICE CLASS
@@ -35,7 +38,7 @@ class CurrencyService {
       const cachedRates = await this.getRates();
 
       if (!cachedRates || !cachedRates.rates) {
-        console.warn('[CurrencyService] No rates available, defaulting to 1.0');
+        log.error('No rates available, degrading to 1.0', { fromCurrency, toCurrency, fallback: 1.0 });
         return 1.0;
       }
 
@@ -46,7 +49,7 @@ class CurrencyService {
         const fromRate = cachedRates.rates[fromRateKey];
 
         if (!fromRate) {
-          console.warn(`[CurrencyService] Rate not found for ${fromCurrency}, defaulting to 1.0`);
+          log.error('Rate not found for source currency, degrading to 1.0', { fromCurrency, fallback: 1.0 });
           return 1.0;
         }
 
@@ -62,13 +65,13 @@ class CurrencyService {
       const toRate = cachedRates.rates[toRateKey];
 
       if (!toRate) {
-        console.warn(`[CurrencyService] Rate not found for ${toCurrency}, defaulting to 1.0`);
+        log.error('Rate not found for target currency, degrading to 1.0', { toCurrency, fallback: 1.0 });
         return 1.0;
       }
 
       return amountInUSD * toRate;
     } catch (error) {
-      console.warn('[CurrencyService] Error getting exchange rate, defaulting to 1.0:', error);
+      log.error('Error getting exchange rate, degrading to 1.0', { fromCurrency, toCurrency, fallback: 1.0, error });
       return 1.0;
     }
   }
@@ -110,14 +113,16 @@ class CurrencyService {
       await this.refreshExchangeRates();
       return this.memoryCache;
     } catch (error) {
-      console.warn('[CurrencyService] Failed to refresh rates, using cached/default rates:', error);
-
       // Use stale cache if available
       if (supabaseCache) {
+        log.warn('Failed to refresh rates, using STALE cached rates', {
+          lastUpdated: supabaseCache.lastUpdated, error,
+        });
         this.memoryCache = supabaseCache;
         return supabaseCache;
       }
 
+      log.error('Failed to refresh rates and no cache available, using FALLBACK rates', { error });
       this.memoryCache = FALLBACK_RATES;
       return FALLBACK_RATES;
     }
@@ -158,7 +163,7 @@ class CurrencyService {
       try {
         await this.saveRatesToCache(cachedRates);
       } catch (cacheError) {
-        console.warn('[CurrencyService] Fresh rates loaded but could not be saved to Supabase:', cacheError);
+        log.warn('Fresh rates loaded but could not be persisted to Supabase', { error: cacheError });
       }
     } catch (error) {
       throw error;
@@ -198,7 +203,7 @@ class CurrencyService {
         apiVersion: 'v6'
       };
     } catch (error) {
-      console.warn('[CurrencyService] Error reading cached rates from Supabase:', error);
+      log.warn('Error reading cached rates from Supabase', { error });
       return null;
     }
   }
@@ -222,7 +227,7 @@ class CurrencyService {
         .upsert(rows, { onConflict: 'currency_pair' });
       if (error) throw new Error(error.message);
     } catch (error) {
-      console.warn('[CurrencyService] Error saving rates to Supabase:', error);
+      log.warn('Error saving rates to Supabase', { error });
       throw error;
     }
   }

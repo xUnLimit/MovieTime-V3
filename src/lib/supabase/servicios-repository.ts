@@ -5,7 +5,7 @@ import {
   getCount,
   create,
   update,
-  remove,
+  archiveRecord,
   logCacheHit,
 } from './record-core';
 import { supabase } from './client';
@@ -31,7 +31,8 @@ export const createServicio = <T extends Record<string, unknown>>(payload: Omit<
   create(ENTITIES.SERVICIOS, payload);
 export const updateServicio = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.SERVICIOS, id, payload);
-export const removeServicio = (id: string) => remove(ENTITIES.SERVICIOS, id);
+// Politica de persistencia del agregado servicio: se archiva (soft-delete), no se borra.
+export const removeServicio = (id: string) => archiveRecord(ENTITIES.SERVICIOS, id);
 
 export async function removeServicioWithPayments(id: string, deletePayments: boolean): Promise<void> {
   await deleteServicioWithPaymentsRpc({
