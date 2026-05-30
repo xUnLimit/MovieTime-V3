@@ -72,19 +72,20 @@ Directorios principales:
 
 `.github/workflows/quality.yml` ejecuta los gates de calidad en cada Pull Request y push a `main`:
 
-- **Job `quality`** (siempre): `secrets:scan` (sobre los archivos cambiados vs la rama base), `lint`, `test:coverage` y `build`. No requiere credenciales reales: el `build` usa placeholders dummy para las variables que `src/config/env.ts` valida en build-time (la build no se conecta a Supabase).
+- **Job `quality`** (siempre): `secrets:scan` (sobre los archivos cambiados vs la rama base), `lint`, `test:coverage` y `build`. No requiere credenciales: `src/config/env.ts` omite la validacion estricta durante `next build` (detecta la fase de build via `NEXT_PHASE`), asi que el build compila sin variables. La validacion estricta de entorno corre en runtime real.
 - **Job `supabase-validation`** (condicional): corre `migrate:validate` contra Supabase. Solo se ejecuta si los *secrets* del repo estan configurados; si no, se omite con un aviso en vez de fallar (util para forks).
 
-Secrets opcionales del repositorio (Settings -> Secrets and variables -> Actions) para activar la validacion Supabase y usar credenciales reales en el build:
+Secrets opcionales del repositorio (Settings -> Secrets and variables -> Actions) para activar la validacion Supabase:
 
 | Secret | Uso |
 |--------|-----|
 | `SUPABASE_SERVICE_ROLE_KEY` | `migrate:validate` (server only) |
-| `NEXT_PUBLIC_SUPABASE_URL` | `migrate:validate` + build |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `migrate:validate` + build |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET`, `NEXT_PUBLIC_APP_URL` | build con valores reales (opcional) |
+| `NEXT_PUBLIC_SUPABASE_URL` | `migrate:validate` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `migrate:validate` |
 
 > Recomendado: marcar el job `quality` como *required status check* en la proteccion de la rama `main` para impedir merges con gates en rojo.
+>
+> **Vercel:** el build de Vercel (Production y Preview) tambien compila sin variables, pero la app en runtime SI las necesita. Configura las variables de entorno del proyecto para los entornos **Production y Preview** en el dashboard de Vercel.
 
 ## Validacion
 

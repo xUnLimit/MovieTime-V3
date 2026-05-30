@@ -2,6 +2,12 @@ import { z } from 'zod';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Durante `next build` no deben exigirse variables de runtime: el build no se
+// conecta a Supabase ni envia push, solo compila. Validar estricto aqui rompia
+// el build en CI y en Vercel Preview cuando faltaba alguna var. La validacion
+// estricta se mantiene en runtime real (servidor levantado), donde si importa.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
 const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().trim().min(1).optional(),
   NEXT_PUBLIC_APP_URL: isProduction
@@ -49,6 +55,14 @@ function parseEnv<T extends z.ZodTypeAny>(schema: T, values: unknown, label: str
     const details = result.error.issues
       .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
       .join('; ');
+
+    // En fase de build no abortamos: solo advertimos. El build no necesita
+    // credenciales de runtime; la validacion estricta corre cuando el server arranca.
+    if (isBuildPhase) {
+      console.warn(`[env] Skipping strict ${label} validation during build: ${details}`);
+      return (values ?? {}) as z.infer<T>;
+    }
+
     throw new Error(`Invalid ${label} environment: ${details}`);
   }
   return result.data;
