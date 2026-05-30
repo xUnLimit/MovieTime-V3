@@ -1,7 +1,51 @@
 import { supabase } from './client';
 import { toSnakeCase } from './mappers';
-import { ENTITIES, type CollectionName, type PublicTableName } from './entities';
+import { ENTITIES, writeTable, type CollectionName, type PublicTableName } from './entities';
+import type { Database } from './database.types';
 import { assertRecordId, isUuid } from '@/platform/utils/safety';
+
+/**
+ * Columnas escribibles por tabla para el path de escritura generico.
+ *
+ * Antes esto era una allowlist en texto libre que duplicaba el schema SQL y
+ * `database.types.ts` (triple fuente de verdad). Ahora cada lista usa
+ * `satisfies readonly (keyof Database['public']['Tables'][T]['Insert'])[]`,
+ * asi el COMPILADOR verifica que cada columna existe en los tipos generados:
+ * si el schema cambia y se regeneran los tipos, un nombre invalido rompe el build.
+ *
+ * Se excluyen a proposito las columnas gestionadas por la DB / por triggers
+ * (`id`, `created_at`, `updated_at`, `perfiles_ocupados`): la app nunca las escribe.
+ * Los pagos (pagos_venta / pagos_servicio) van por RPC dedicados (idempotentes),
+ * no por este path, por eso no necesitan entrada aqui.
+ */
+type InsertKeys<T extends PublicTableName> = keyof Database['public']['Tables'][T]['Insert'];
+
+const WRITABLE_COLUMNS = {
+  terceros: [
+    'nombre', 'apellido', 'tipo', 'telefono', 'email',
+    'metodo_pago_id', 'active', 'notas', 'created_by',
+  ] satisfies readonly InsertKeys<'terceros'>[],
+  servicios: [
+    'categoria_id', 'plan_tipo_id', 'nombre', 'correo', 'contrasena',
+    'perfiles_disponibles', 'activo', 'en_reposo', 'dias_reposo',
+    'fecha_inicio_reposo', 'fecha_fin_reposo', 'cortado_at', 'cortado_by',
+    'motivo_corte', 'archivado_at', 'archivado_by', 'motivo_archivado',
+    'notas', 'created_by',
+  ] satisfies readonly InsertKeys<'servicios'>[],
+  ventas: [
+    'cliente_id', 'servicio_id', 'categoria_id', 'estado', 'perfil_numero',
+    'perfil_nombre', 'codigo', 'cortada_at', 'cortada_by', 'motivo_corte',
+    'archivado_at', 'archivado_by', 'motivo_archivado', 'notas', 'created_by',
+  ] satisfies readonly InsertKeys<'ventas'>[],
+  gastos: [
+    'tipo_gasto_id', 'fecha', 'monto_original', 'moneda_original',
+    'monto_usd', 'exchange_rate', 'detalle', 'created_by',
+  ] satisfies readonly InsertKeys<'gastos'>[],
+} satisfies Partial<Record<PublicTableName, readonly string[]>>;
+
+function getWritableColumns(table: PublicTableName): readonly string[] | undefined {
+  return (WRITABLE_COLUMNS as Partial<Record<PublicTableName, readonly string[]>>)[table];
+}
 
 export async function insertRawRow(
   table: PublicTableName,
@@ -24,102 +68,6 @@ export function normalizeWritePayload(
 ): Record<string, unknown> {
   const snake = toSnakeCase<Record<string, unknown>>(payload);
   sanitizeUuidReferences(snake);
-  const allowedByCollection: Partial<Record<CollectionName, string[]>> = {
-    terceros: [
-      'nombre',
-      'apellido',
-      'tipo',
-      'telefono',
-      'email',
-      'metodo_pago_id',
-      'active',
-      'notas',
-      'created_by',
-    ],
-    servicios: [
-      'categoria_id',
-      'plan_tipo_id',
-      'nombre',
-      'correo',
-      'contrasena',
-      'perfiles_disponibles',
-      'activo',
-      'en_reposo',
-      'dias_reposo',
-      'fecha_inicio_reposo',
-      'fecha_fin_reposo',
-      'cortado_at',
-      'cortado_by',
-      'motivo_corte',
-      'archivado_at',
-      'archivado_by',
-      'motivo_archivado',
-      'notas',
-      'created_by',
-    ],
-    ventas: [
-      'cliente_id',
-      'servicio_id',
-      'categoria_id',
-      'estado',
-      'perfil_numero',
-      'perfil_nombre',
-      'codigo',
-      'cortada_at',
-      'cortada_by',
-      'motivo_corte',
-      'archivado_at',
-      'archivado_by',
-      'motivo_archivado',
-      'notas',
-      'created_by',
-    ],
-    gastos: [
-      'tipo_gasto_id',
-      'fecha',
-      'monto_original',
-      'moneda_original',
-      'monto_usd',
-      'exchange_rate',
-      'detalle',
-      'created_by',
-    ],
-    pagosServicio: [
-      'servicio_periodo_id',
-      'servicio_id',
-      'fecha_pago',
-      'estado',
-      'monto_original',
-      'moneda_original',
-      'monto_usd',
-      'exchange_rate',
-      'categoria_id_snapshot',
-      'metodo_pago_id',
-      'metodo_pago_nombre_snapshot',
-      'notas',
-      'created_by',
-      'anulada_at',
-      'anulada_by',
-      'motivo_anulacion',
-    ],
-    pagosVenta: [
-      'venta_periodo_id',
-      'venta_id',
-      'fecha_pago',
-      'estado',
-      'monto_original',
-      'moneda_original',
-      'monto_usd',
-      'exchange_rate',
-      'metodo_pago_id',
-      'metodo_pago_nombre_snapshot',
-      'notas',
-      'created_by',
-      'anulada_at',
-      'anulada_by',
-      'motivo_anulacion',
-    ],
-  };
 
   if (collectionName === ENTITIES.SERVICIOS && snake.tipo !== undefined) {
     if (snake.plan_tipo_id === undefined) {
@@ -134,7 +82,7 @@ export function normalizeWritePayload(
     delete snake.monto;
   }
 
-  const allowed = allowedByCollection[collectionName];
+  const allowed = getWritableColumns(writeTable(collectionName));
   if (!allowed) return snake;
 
   const result: Record<string, unknown> = {};
