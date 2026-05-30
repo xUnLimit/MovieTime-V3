@@ -54,3 +54,6 @@ supabase/.temp/
 
 # Claude Code ephemeral lock (per-session pid/sessionId; do not commit)
 .claude/scheduled_tasks.lock
+
+# AI agent skills (local tooling, not project code)
+.agents/

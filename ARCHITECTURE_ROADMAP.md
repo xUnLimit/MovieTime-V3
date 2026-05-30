@@ -1,7 +1,7 @@
 # MovieTime PTY - Arquitectura Enterprise
 # Estado actual - Mayo 2026
 
-> Para la auditoria activa y el plan de fases con compuertas estrictas, usar `docs/2026-05-25-auditoria-arquitectura-actual-improve-codebase.md`.
+> Para la auditoria activa, arquitectura objetivo y deuda priorizada, usar `docs/2026-05-30-auditoria-arquitectonica-profunda-verificada.md`.
 
 ---
 
