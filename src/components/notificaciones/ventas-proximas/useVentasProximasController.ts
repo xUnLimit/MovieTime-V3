@@ -12,6 +12,7 @@ import {
   toggleNotificationReadStoreCache,
 } from '@/lib/store-reactions/notification-cache-reactions';
 import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { cutVentaFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
 import {
   confirmVentaRenewalFromNotificationUseCase as confirmVentaRenewal,
@@ -162,6 +163,7 @@ export function useVentasProximasController() {
     try {
       const outcome = await confirmVentaRenewal({
         data,
+        log: getActivityLogOptions(),
         notif: notifSeleccionada,
         refreshNotificationCaches,
       });
@@ -216,6 +218,7 @@ export function useVentasProximasController() {
 
     try {
       const outcome = await cutVentaFromNotificationUseCase({
+        log: getActivityLogOptions(),
         motivoCorte,
         refreshNotificationCaches,
         ventaId: notifSeleccionada.ventaId,

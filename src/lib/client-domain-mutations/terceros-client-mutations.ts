@@ -1,5 +1,4 @@
 import {
-  afterTerceroDeleted,
   afterTerceroUpdated,
 } from '@/lib/store-reactions/terceros-mutation-reactions';
 import {
@@ -42,7 +41,7 @@ export async function deleteTerceroMutation(
   localTercero?: Tercero,
 ) {
   const deletedUser = await resolveTerceroForDelete(id, usuarioData, localTercero);
+  // deleteTerceroUseCase emite TERCERO_DELETED (unico emisor del hecho de dominio).
   await deleteTerceroUseCase(id, deletedUser, getActivityLogOptions());
-  await afterTerceroDeleted(id);
   await invalidateStoreQueries(['terceros', 'ventas', 'notificaciones', 'pagination']);
 }

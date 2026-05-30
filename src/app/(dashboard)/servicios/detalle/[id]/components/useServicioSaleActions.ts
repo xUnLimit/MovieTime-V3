@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { queryKeys } from "@/lib/query-keys";
+import { getActivityLogOptions } from "@/lib/activity/activity-log-writer";
 import {
   cutVentaFromServicioDetalleWorkflow,
   fetchVentaForServicioActionUseCase,
@@ -87,6 +88,7 @@ export function useServicioSaleActions({
           invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
           updatePerfilOcupado,
         },
+        log: getActivityLogOptions(),
         motivoCorte,
         venta: selectedActionVenta,
       });
@@ -135,6 +137,7 @@ export function useServicioSaleActions({
           invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
           updatePerfilOcupado,
         },
+        log: getActivityLogOptions(),
         notificarWhatsApp,
         perfilNombre,
         perfilNumero,

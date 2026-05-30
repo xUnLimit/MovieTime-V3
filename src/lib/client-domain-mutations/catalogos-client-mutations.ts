@@ -1,5 +1,4 @@
 import {
-  afterCategoriaDeleted,
   afterMetodoPagoCreated,
   afterMetodoPagoDeleted,
   afterMetodoPagoUpdated,
@@ -40,11 +39,11 @@ export async function updateCategoriaMutation(id: string, updates: Partial<Categ
 }
 
 export async function deleteCategoriaMutation(id: string, categoria?: Categoria) {
+  // deleteCategoriaUseCase emite CATEGORIA_DELETED (unico emisor del hecho de dominio).
   await deleteCategoriaUseCase(id, {
     categoria,
     ...getActivityLogOptions(),
   });
-  await afterCategoriaDeleted(id);
   await invalidateStoreQueries(['categorias', 'servicios', 'ventas', 'pagination']);
 }
 

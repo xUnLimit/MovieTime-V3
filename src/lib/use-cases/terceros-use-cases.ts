@@ -123,7 +123,13 @@ export async function updateTerceroUseCase(
     cambios: cambios.length > 0 ? cambios : undefined,
   });
 
-  return { oldTercero, usuarioActualizado, shouldRefreshNotificaciones, shouldDispatchTerceroNombreUpdated: nombreChanged || telefonoChanged };
+  // El use-case es el unico emisor del hecho de dominio.
+  const shouldDispatchTerceroNombreUpdated = nombreChanged || telefonoChanged;
+  if (shouldDispatchTerceroNombreUpdated) {
+    storeEventBus.emit({ type: 'TERCERO_NOMBRE_UPDATED', terceroId: id });
+  }
+
+  return { oldTercero, usuarioActualizado, shouldRefreshNotificaciones, shouldDispatchTerceroNombreUpdated };
 }
 
 export async function resolveTerceroForDelete(

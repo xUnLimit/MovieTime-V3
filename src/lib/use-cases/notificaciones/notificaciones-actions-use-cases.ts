@@ -1,3 +1,4 @@
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   cutVentaFromNotificationStoreWorkflow,
   inactivateServicioFromNotificationStoreWorkflow,
@@ -14,15 +15,17 @@ export type NotificationActionOutcome = {
 };
 
 export async function cutVentaFromNotificationUseCase({
+  log,
   motivoCorte,
   refreshNotificationCaches,
   ventaId,
 }: {
+  log: ActivityLogOptions;
   motivoCorte: string;
   refreshNotificationCaches: RefreshNotificationCaches;
   ventaId: string;
 }): Promise<NotificationActionOutcome> {
-  await cutVentaFromNotificationStoreWorkflow(ventaId, motivoCorte);
+  await cutVentaFromNotificationStoreWorkflow(ventaId, motivoCorte, log);
   await refreshNotificationCaches();
 
   refreshVentasStoreCache();
@@ -36,14 +39,16 @@ export async function cutVentaFromNotificationUseCase({
 }
 
 export async function inactivateServicioFromNotificationUseCase({
+  log,
   refreshNotificationCaches,
   servicioId,
 }: {
+  log: ActivityLogOptions;
   refreshNotificationCaches: RefreshNotificationCaches;
   servicioId: string;
   servicioNombre?: string;
 }): Promise<NotificationActionOutcome> {
-  await inactivateServicioFromNotificationStoreWorkflow(servicioId);
+  await inactivateServicioFromNotificationStoreWorkflow(servicioId, log);
   await refreshNotificationCaches();
 
   return {

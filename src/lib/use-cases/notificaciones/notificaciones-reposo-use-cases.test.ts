@@ -35,6 +35,8 @@ const servicio = {
   renovaciones: 2,
 } as Servicio;
 
+const testLog = { logContext: { usuarioId: 'u1' }, recordActivityLog: vi.fn() } as never;
+
 describe('notificaciones reposo use-cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,7 +67,7 @@ describe('notificaciones reposo use-cases', () => {
   });
 
   it('activates a reposo servicio and returns UI/cache outcome', async () => {
-    const outcome = await activateReposoServicioUseCase({ servicio });
+    const outcome = await activateReposoServicioUseCase({ log: testLog, servicio });
 
     expect(outcome).toEqual({
       type: 'reposoActivated',
@@ -82,6 +84,7 @@ describe('notificaciones reposo use-cases', () => {
         fechaInicioReposo: undefined,
         fechaFinReposo: undefined,
       }),
+      testLog,
     );
   });
 
@@ -98,6 +101,7 @@ describe('notificaciones reposo use-cases', () => {
     };
 
     const outcome = await activateAndRenewReposoServicioUseCase({
+      log: testLog,
       pagoData,
       servicio,
     });
@@ -111,13 +115,14 @@ describe('notificaciones reposo use-cases', () => {
     expect(servicioPayments.renewServicioUseCase).toHaveBeenCalledWith(
       servicio,
       expect.objectContaining({ notas: 'Renovacion' }),
-      { numeroRenovacion: 3 },
+      expect.objectContaining({ numeroRenovacion: 3 }),
     );
   });
 
   it('deletes a reposo servicio and reports whether payments were deleted', async () => {
     const outcome = await deleteReposoServicioUseCase({
       deletePayments: true,
+      log: testLog,
       servicio,
     });
 
@@ -128,6 +133,6 @@ describe('notificaciones reposo use-cases', () => {
       deletedPayments: true,
       queryTargets: ['categorias', 'servicios', 'notificaciones'],
     });
-    expect(workflowReactions.deleteReposoServicioStoreWorkflow).toHaveBeenCalledWith('servicio-1', true);
+    expect(workflowReactions.deleteReposoServicioStoreWorkflow).toHaveBeenCalledWith('servicio-1', true, testLog);
   });
 });

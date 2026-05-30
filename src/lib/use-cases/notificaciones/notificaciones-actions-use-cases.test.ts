@@ -13,6 +13,8 @@ import {
   inactivateServicioFromNotificationUseCase,
 } from './notificaciones-actions-use-cases';
 
+const testLog = { logContext: { usuarioId: 'u1' }, recordActivityLog: vi.fn() } as never;
+
 describe('notificaciones action use-cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -25,6 +27,7 @@ describe('notificaciones action use-cases', () => {
 
     await expect(
       cutVentaFromNotificationUseCase({
+        log: testLog,
         motivoCorte: 'Sin pago',
         refreshNotificationCaches,
         ventaId: 'venta-1',
@@ -36,7 +39,7 @@ describe('notificaciones action use-cases', () => {
       storeRefreshes: ['ventas', 'notificaciones'],
     });
 
-    expect(workflow.cutVentaFromNotificationStoreWorkflow).toHaveBeenCalledWith('venta-1', 'Sin pago');
+    expect(workflow.cutVentaFromNotificationStoreWorkflow).toHaveBeenCalledWith('venta-1', 'Sin pago', testLog);
     expect(refreshNotificationCaches).toHaveBeenCalledTimes(1);
     expect(workflow.refreshVentasStoreCache).toHaveBeenCalledTimes(1);
   });
@@ -46,6 +49,7 @@ describe('notificaciones action use-cases', () => {
 
     await expect(
       inactivateServicioFromNotificationUseCase({
+        log: testLog,
         refreshNotificationCaches,
         servicioId: 'servicio-1',
         servicioNombre: 'Netflix',
@@ -57,7 +61,7 @@ describe('notificaciones action use-cases', () => {
       storeRefreshes: ['servicios', 'notificaciones'],
     });
 
-    expect(workflow.inactivateServicioFromNotificationStoreWorkflow).toHaveBeenCalledWith('servicio-1');
+    expect(workflow.inactivateServicioFromNotificationStoreWorkflow).toHaveBeenCalledWith('servicio-1', testLog);
     expect(refreshNotificationCaches).toHaveBeenCalledTimes(1);
   });
 });

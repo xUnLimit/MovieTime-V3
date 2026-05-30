@@ -1,4 +1,3 @@
-import { storeEventBus } from '@/lib/events/store-event-bus';
 import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activity-log-writer';
 import { syncMetodoPagoDependenciasUseCase } from '@/lib/use-cases/metodos-pago/metodo-pago-dependency-use-cases';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
@@ -6,9 +5,7 @@ import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
 import type { MetodoPago, TipoGasto } from '@/types';
 
-export async function afterCategoriaDeleted(categoriaId: string) {
-  storeEventBus.emit({ type: 'CATEGORIA_DELETED', categoriaId });
-}
+// NOTE: CATEGORIA_DELETED lo emite deleteCategoriaUseCase (unico emisor del hecho de dominio).
 
 function recordMetodoPagoActivityLog({
   accion,

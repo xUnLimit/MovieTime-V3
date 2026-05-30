@@ -1,4 +1,3 @@
-import { storeEventBus } from '@/lib/events/store-event-bus';
 import { syncServicioForecastReadModels } from '@/lib/forecasting';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
 import { deleteServicioNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
@@ -17,18 +16,17 @@ function deleteServicioNotifications(servicioId: string) {
   );
 }
 
+// NOTE: estas reacciones NO emiten eventos de dominio (SERVICIO_CREATED/UPDATED/DELETED).
+// El use-case es el unico emisor del hecho de dominio (ver servicios-write-use-cases.ts).
 export async function afterServicioCreated(servicioId: string) {
   syncServicioForecastReadModels(servicioId);
-  storeEventBus.emit({ type: 'SERVICIO_CREATED', servicioId });
 }
 
 export async function afterServicioUpdated(servicioId: string) {
   syncServicioForecastReadModels(servicioId);
-  storeEventBus.emit({ type: 'SERVICIO_UPDATED', servicioId });
 }
 
 export async function afterServicioDeleted(servicioId: string) {
   deleteServicioNotifications(servicioId);
   syncServicioForecastReadModels(servicioId);
-  storeEventBus.emit({ type: 'SERVICIO_DELETED', servicioId });
 }

@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { queryKeys } from "@/lib/query-keys";
+import { getActivityLogOptions } from "@/lib/activity/activity-log-writer";
 import { applyNotificationQueryReactions } from "@/lib/store-reactions/notification-query-reactions";
 import {
   activateAndRenewReposoServicioUseCase,
@@ -69,6 +70,7 @@ function ReposoPageContent() {
     setIsActivating(true);
     try {
       const outcome = await activateReposoServicioUseCase({
+        log: getActivityLogOptions(),
         servicio: selectedServicio,
       });
       await applyNotificationQueryReactions(queryClient, outcome);
@@ -94,6 +96,7 @@ function ReposoPageContent() {
     if (!selectedServicio) return;
     try {
       const outcome = await activateAndRenewReposoServicioUseCase({
+        log: getActivityLogOptions(),
         pagoData,
         servicio: selectedServicio,
       });
@@ -117,6 +120,7 @@ function ReposoPageContent() {
     try {
       const outcome = await deleteReposoServicioUseCase({
         deletePayments,
+        log: getActivityLogOptions(),
         servicio: selectedServicio,
       });
       await applyNotificationQueryReactions(queryClient, outcome);

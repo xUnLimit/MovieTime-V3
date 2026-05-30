@@ -50,7 +50,13 @@ import {
   transferVentaFromServicioDetalleWorkflow,
   updateServicioPagoDetalleWorkflow,
 } from './servicio-detail-use-cases';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import type { MetodoPago, PagoServicio, Servicio, VentaDoc } from '@/types';
+
+const testLog = {
+  logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' },
+  recordActivityLog: vi.fn(),
+} as unknown as ActivityLogOptions;
 
 const servicio = {
   id: 'servicio-1',
@@ -237,6 +243,7 @@ describe('servicio detail workflows', () => {
 
     const outcome = await cutVentaFromServicioDetalleWorkflow({
       deps,
+      log: testLog,
       motivoCorte: 'Mora',
       venta,
     });
@@ -260,6 +267,7 @@ describe('servicio detail workflows', () => {
     const outcome = await transferVentaFromServicioDetalleWorkflow({
       codigo: '1234',
       deps,
+      log: testLog,
       notificarWhatsApp: true,
       perfilNombre: 'Perfil 1',
       perfilNumero: 1,

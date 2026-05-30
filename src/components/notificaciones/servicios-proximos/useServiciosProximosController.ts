@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   toggleNotificationHighlightedStoreCache,
   toggleNotificationReadStoreCache,
@@ -121,6 +122,7 @@ export function useServiciosProximosController({
 
     try {
       const outcome = await inactivateServicioFromNotificationUseCase({
+        log: getActivityLogOptions(),
         refreshNotificationCaches,
         servicioId: notifParaAcciones.servicioId,
         servicioNombre: notifParaAcciones.servicioNombre,
@@ -195,6 +197,7 @@ export function useServiciosProximosController({
     try {
       const outcome = await confirmServicioRenewalFromNotificationUseCase({
         data,
+        log: getActivityLogOptions(),
         metodosPagoServicio,
         refreshNotificationCaches,
         servicio: servicioParaRenovar,

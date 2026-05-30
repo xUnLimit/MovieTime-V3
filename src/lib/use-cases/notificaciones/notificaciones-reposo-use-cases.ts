@@ -1,4 +1,5 @@
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   activateReposoServicioStoreWorkflow,
   deleteNotificationStoreItem,
@@ -76,8 +77,10 @@ export function getReposoDependenciesInvalidationOutcome(): ReposoWorkflowOutcom
 }
 
 export async function activateReposoServicioUseCase({
+  log,
   servicio,
 }: {
+  log: ActivityLogOptions;
   servicio: ReposoServicioBase;
 }): Promise<ReposoWorkflowOutcome> {
   await activateReposoServicioStoreWorkflow(servicio.id, {
@@ -87,7 +90,7 @@ export async function activateReposoServicioUseCase({
     diasReposo: undefined,
     fechaInicioReposo: undefined,
     fechaFinReposo: undefined,
-  });
+  }, log);
   await clearReposoNotificationsUseCase(servicio.id);
   return {
     type: 'reposoActivated',
@@ -98,9 +101,11 @@ export async function activateReposoServicioUseCase({
 }
 
 export async function activateAndRenewReposoServicioUseCase({
+  log,
   pagoData,
   servicio,
 }: {
+  log: ActivityLogOptions;
   pagoData: EnrichedPagoDialogFormData;
   servicio: ReposoServicioBase;
 }): Promise<ReposoWorkflowOutcome> {
@@ -121,13 +126,14 @@ export async function activateAndRenewReposoServicioUseCase({
     moneda: pagoData.moneda,
     costoServicio: pagoData.costo,
     notas: notaPrincipal,
-  });
+  }, log);
 
   await renewServicioUseCase(servicio, {
     ...pagoData,
     notas: notaPrincipal,
   }, {
     numeroRenovacion: (servicio.renovaciones ?? 0) + 1,
+    ...log,
   });
 
   await clearReposoNotificationsUseCase(servicio.id);
@@ -141,12 +147,14 @@ export async function activateAndRenewReposoServicioUseCase({
 
 export async function deleteReposoServicioUseCase({
   deletePayments,
+  log,
   servicio,
 }: {
   deletePayments: boolean;
+  log: ActivityLogOptions;
   servicio: ReposoServicioBase;
 }): Promise<ReposoWorkflowOutcome> {
-  await deleteReposoServicioStoreWorkflow(servicio.id, deletePayments);
+  await deleteReposoServicioStoreWorkflow(servicio.id, deletePayments, log);
   await clearReposoNotificationsUseCase(servicio.id);
   return {
     type: 'reposoServicioDeleted',

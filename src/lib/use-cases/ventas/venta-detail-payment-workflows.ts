@@ -1,7 +1,7 @@
 import { CYCLE_MONTHS } from '@/lib/constants';
 import { invalidateDashboardCache } from '@/lib/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { emitVentaUpdated } from '@/lib/events/cache-reactions';
 import { createVentaRefundUseCase } from '@/lib/use-cases/ventas/ventas-refund-use-cases';
 import {
@@ -22,12 +22,14 @@ export async function renewVentaDetalleWorkflow({
   deps,
   id,
   input,
+  log,
   metodosPago,
   venta,
 }: {
   deps: Pick<VentaDetalleWorkflowDeps, 'deleteNotificacionesPorVenta' | 'invalidateNotifications' | 'refreshPagos'>;
   id: string;
   input: VentaPagoWorkflowInput;
+  log: ActivityLogOptions;
   metodosPago: MetodoPago[];
   venta: VentaDoc;
 }): Promise<VentaDetalleWorkflowOutcome> {
@@ -36,7 +38,7 @@ export async function renewVentaDetalleWorkflow({
     ...input,
     metodoPagoNombre: metodoPagoSeleccionado?.nombre || venta.metodoPagoNombre,
     moneda: input.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
-  }, getActivityLogOptions());
+  }, log);
 
   void renovacion.pronostico;
   syncVentaForecastReadModels(id);
@@ -61,11 +63,13 @@ export async function refundVentaDetalleWorkflow({
   deps,
   id,
   input,
+  log,
   venta,
 }: {
   deps: Pick<VentaDetalleWorkflowDeps, 'deleteNotificacionesPorVenta' | 'invalidateNotifications' | 'refreshPagos' | 'updatePerfilOcupado'>;
   id: string;
   input: VentaRefundWorkflowInput;
+  log: ActivityLogOptions;
   venta: VentaDoc;
 }): Promise<VentaDetalleWorkflowOutcome> {
   const result = await createVentaRefundUseCase(
@@ -82,7 +86,7 @@ export async function refundVentaDetalleWorkflow({
       cortarServicio: input.cortarServicio,
       motivoCorte: input.motivoCorte,
     },
-    getActivityLogOptions(),
+    log,
   );
 
   if (result.serviceProfileDelta) {

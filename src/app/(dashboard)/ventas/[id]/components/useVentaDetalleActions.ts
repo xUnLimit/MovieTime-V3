@@ -5,6 +5,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { queryKeys } from '@/lib/query-keys';
+import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   deleteVentaDetalleWorkflow,
   deleteVentaPagoDetalleWorkflow,
@@ -104,6 +105,7 @@ export function useVentaDetalleActions({
         },
         id,
         input: data,
+        log: getActivityLogOptions(),
         metodosPago,
         venta,
       });
@@ -154,6 +156,7 @@ export function useVentaDetalleActions({
           },
           id,
           input: data,
+          log: getActivityLogOptions(),
           venta,
         },
       );

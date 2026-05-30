@@ -1,4 +1,3 @@
-import { storeEventBus } from '@/lib/events/store-event-bus';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { deleteVentaNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
 import { safeAsyncSideEffect } from '@/lib/utils/safety';
@@ -29,20 +28,20 @@ function deleteVentaNotifications(ventaId: string) {
   );
 }
 
-export async function afterVentaCreated(ventaId: string) {
-  syncVentaForecastReadModels(ventaId);
-  storeEventBus.emit({ type: 'VENTA_CREATED', ventaId });
+// NOTE: estas reacciones NO emiten eventos de dominio (VENTA_CREATED/UPDATED/DELETED).
+// El use-case es el unico emisor del hecho de dominio (ver ventas-write-use-cases.ts).
+// Aqui solo se aplican efectos derivados: forecast read-models, invalidacion y limpieza de notificaciones.
+export async function afterVentaCreated(_ventaId: string) {
+  syncVentaForecastReadModels(_ventaId);
 }
 
 export async function afterVentaUpdated(ventaId: string, delta: ServiceProfileDelta) {
   await applyServiceProfileDelta(delta);
   syncVentaForecastReadModels(ventaId);
-  storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId });
 }
 
 export async function afterVentaDeleted(ventaId: string, delta: ServiceProfileDelta) {
   await applyServiceProfileDelta(delta);
   deleteVentaNotifications(ventaId);
   syncVentaForecastReadModels(ventaId);
-  storeEventBus.emit({ type: 'VENTA_DELETED', ventaId });
 }

@@ -41,7 +41,13 @@ import {
   confirmVentaRenewalFromNotificationUseCase,
   loadVentaRenewalOptionsUseCase,
 } from './notificaciones-renewal-use-cases';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import type { MetodoPago, NotificacionVenta, Servicio } from '@/types';
+
+const testLog = {
+  logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' },
+  recordActivityLog: vi.fn(),
+} as unknown as ActivityLogOptions;
 
 const ventaNotification = {
   id: 'notif-1',
@@ -98,6 +104,7 @@ describe('notificaciones renewal use-cases', () => {
         mensajeWhatsApp: 'Pago renovado',
         notificarWhatsApp: true,
       },
+      log: testLog,
       notif: ventaNotification,
       refreshNotificationCaches,
     });
@@ -139,6 +146,7 @@ describe('notificaciones renewal use-cases', () => {
 
     const outcome = await confirmServicioRenewalFromNotificationUseCase({
       data: { metodoPagoId: 'metodo-1' },
+      log: testLog,
       metodosPagoServicio: metodosPago,
       refreshNotificationCaches,
       servicio,

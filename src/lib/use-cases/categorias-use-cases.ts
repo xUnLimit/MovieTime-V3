@@ -5,6 +5,7 @@ import {
   updateCategoriaRecord,
   upsertCategoriaPlanes,
 } from '@/lib/supabase/categorias-repository';
+import { storeEventBus } from '@/lib/events/store-event-bus';
 import { detectarCambios } from '@/lib/utils/activityLogHelpers';
 import type { ActivityLog, Categoria } from '@/types';
 
@@ -92,4 +93,7 @@ export async function deleteCategoriaUseCase(
     entidadNombre: options.categoria?.nombre ?? id,
     detalles: `Categoria eliminada: "${options.categoria?.nombre}"`,
   });
+
+  // El use-case es el unico emisor del hecho de dominio.
+  storeEventBus.emit({ type: 'CATEGORIA_DELETED', categoriaId: id });
 }

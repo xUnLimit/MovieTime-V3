@@ -1,4 +1,4 @@
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import {
   getCategoriaPlanesRead,
@@ -73,10 +73,12 @@ export async function loadVentaRenewalOptionsUseCase(
 
 export async function confirmVentaRenewalFromNotificationUseCase({
   data,
+  log,
   notif,
   refreshNotificationCaches,
 }: {
   data: NotificationRenewalInput;
+  log: ActivityLogOptions;
   notif: NotificacionVentaConId;
   refreshNotificationCaches: RefreshNotificationCaches;
 }): Promise<NotificationRenewalOutcome> {
@@ -99,7 +101,7 @@ export async function confirmVentaRenewalFromNotificationUseCase({
         metodoPagoSeleccionado?.nombre || data.metodoPagoNombre || '',
       moneda: data.moneda || metodoPagoSeleccionado?.moneda || notif.moneda || 'USD',
     },
-    getActivityLogOptions(),
+    log,
   );
 
   const warnings: string[] = [];
@@ -152,11 +154,13 @@ export async function loadServicioRenewalOptionsUseCase(
 
 export async function confirmServicioRenewalFromNotificationUseCase({
   data,
+  log,
   metodosPagoServicio,
   refreshNotificationCaches,
   servicio,
 }: {
   data: NotificationRenewalInput;
+  log: ActivityLogOptions;
   metodosPagoServicio: MetodoPago[];
   refreshNotificationCaches: RefreshNotificationCaches;
   servicio: Servicio;
@@ -174,7 +178,7 @@ export async function confirmServicioRenewalFromNotificationUseCase({
     moneda: data.moneda ?? servicio.moneda,
   }, {
     metodoPago: metodoPagoSeleccionado,
-    ...getActivityLogOptions(),
+    ...log,
     logPrefix: 'Servicio renovado desde notificaciones',
   });
 

@@ -1,5 +1,5 @@
 import { invalidateDashboardCache } from '@/lib/commands/client-cache';
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
 import { updateVentaUseCase } from '@/lib/use-cases/ventas/ventas-write-use-cases';
 import type {
@@ -10,10 +10,12 @@ import type { Servicio, VentaDoc } from '@/types';
 
 export async function cutVentaFromServicioDetalleWorkflow({
   deps,
+  log,
   motivoCorte,
   venta,
 }: {
   deps: Pick<ServicioDetalleWorkflowDeps, 'deleteNotificacionesPorVenta' | 'invalidateNotifications' | 'updatePerfilOcupado'>;
+  log: ActivityLogOptions;
   motivoCorte: string;
   venta: VentaDoc;
 }): Promise<ServicioDetalleWorkflowOutcome> {
@@ -26,7 +28,7 @@ export async function cutVentaFromServicioDetalleWorkflow({
     },
     {
       currentVenta: venta,
-      ...getActivityLogOptions(),
+      ...log,
     },
   );
 
@@ -48,6 +50,7 @@ export async function cutVentaFromServicioDetalleWorkflow({
 export async function transferVentaFromServicioDetalleWorkflow({
   codigo,
   deps,
+  log,
   notificarWhatsApp,
   perfilNombre,
   perfilNumero,
@@ -56,6 +59,7 @@ export async function transferVentaFromServicioDetalleWorkflow({
 }: {
   codigo?: string;
   deps: Pick<ServicioDetalleWorkflowDeps, 'invalidateNotifications' | 'updatePerfilOcupado'>;
+  log: ActivityLogOptions;
   notificarWhatsApp: boolean;
   perfilNombre?: string;
   perfilNumero?: number | null;
@@ -72,7 +76,7 @@ export async function transferVentaFromServicioDetalleWorkflow({
     },
     {
       currentVenta: venta,
-      ...getActivityLogOptions(),
+      ...log,
     },
   );
 

@@ -1,7 +1,7 @@
 import { getActiveQueryClient } from '@/lib/query-client-registry';
 import { queryKeys } from '@/lib/query-keys';
 import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
-import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import {
   deleteNotificacionUseCase,
   deleteNotificacionesPorServicioUseCase,
@@ -15,20 +15,30 @@ import { updateVentaUseCase } from '@/lib/use-cases/ventas/ventas-write-use-case
 import type { Servicio } from '@/types';
 import type { MetodoPago } from '@/types';
 
-export async function cutVentaFromNotificationStoreWorkflow(ventaId: string, motivoCorte: string) {
+// NOTE: el contexto de log (identidad del usuario) se INYECTA por parametro (log).
+// Estos workflows no leen el store de auth/activity; el caller (composition root en UI)
+// pasa getActivityLogOptions(). Esto mantiene la capa de aplicacion libre de Zustand.
+export async function cutVentaFromNotificationStoreWorkflow(
+  ventaId: string,
+  motivoCorte: string,
+  log: ActivityLogOptions,
+) {
   await updateVentaUseCase(ventaId, {
       estado: 'inactivo',
       cortadaAt: new Date(),
       motivoCorte,
     },
-    getActivityLogOptions(),
+    log,
   );
   await deleteNotificacionesPorVentaUseCase(ventaId);
   await invalidateStoreQueries(['ventas', 'notificaciones', 'dashboard', 'pagination']);
 }
 
-export async function inactivateServicioFromNotificationStoreWorkflow(servicioId: string) {
-  await updateServicioUseCase(servicioId, { activo: false }, getActivityLogOptions());
+export async function inactivateServicioFromNotificationStoreWorkflow(
+  servicioId: string,
+  log: ActivityLogOptions,
+) {
+  await updateServicioUseCase(servicioId, { activo: false }, log);
   await deleteNotificacionesPorServicioUseCase(servicioId);
   await invalidateStoreQueries(['servicios', 'notificaciones', 'dashboard', 'pagination']);
 }
@@ -36,15 +46,20 @@ export async function inactivateServicioFromNotificationStoreWorkflow(servicioId
 export async function activateReposoServicioStoreWorkflow(
   servicioId: string,
   updates: Partial<Servicio>,
+  log: ActivityLogOptions,
 ) {
-  await updateServicioUseCase(servicioId, updates, getActivityLogOptions());
+  await updateServicioUseCase(servicioId, updates, log);
   await invalidateStoreQueries(['servicios', 'dashboard', 'pagination']);
 }
 
-export async function deleteReposoServicioStoreWorkflow(servicioId: string, deletePayments: boolean) {
+export async function deleteReposoServicioStoreWorkflow(
+  servicioId: string,
+  deletePayments: boolean,
+  log: ActivityLogOptions,
+) {
   await deleteServicioUseCase(servicioId, {
     deletePayments,
-    ...getActivityLogOptions(),
+    ...log,
   });
   await invalidateStoreQueries(['servicios', 'categorias', 'ventas', 'notificaciones', 'dashboard', 'pagination']);
 }

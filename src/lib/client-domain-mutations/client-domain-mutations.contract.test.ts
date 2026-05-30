@@ -65,9 +65,17 @@ describe('client domain mutation contract', () => {
       .mockImplementation(() => Promise.resolve());
 
     mocks.getActivityLogOptions.mockReturnValue({ actorId: 'user-1' });
-    mocks.createVentaUseCase.mockResolvedValue({ venta: { id: 'venta-1' } });
-    mocks.updateServicioUseCase.mockResolvedValue(undefined);
-    mocks.deleteCategoriaUseCase.mockResolvedValue(undefined);
+    // El use-case real es el unico emisor del evento de dominio; el mock replica ese contrato.
+    mocks.createVentaUseCase.mockImplementation(async () => {
+      storeEventBus.emit({ type: 'VENTA_CREATED', ventaId: 'venta-1' });
+      return { venta: { id: 'venta-1' } };
+    });
+    mocks.updateServicioUseCase.mockImplementation(async () => {
+      storeEventBus.emit({ type: 'SERVICIO_UPDATED', servicioId: 'servicio-1' });
+    });
+    mocks.deleteCategoriaUseCase.mockImplementation(async () => {
+      storeEventBus.emit({ type: 'CATEGORIA_DELETED', categoriaId: 'categoria-1' });
+    });
     mocks.cutVentaFromNotificationStoreWorkflow.mockResolvedValue(undefined);
   });
 
@@ -137,13 +145,18 @@ describe('client domain mutation contract', () => {
     const refreshNotificationCaches = vi.fn().mockResolvedValue(undefined);
 
     const outcome = await cutVentaFromNotificationUseCase({
+      log: { logContext: { usuarioId: 'u1' } } as never,
       motivoCorte: 'Sin pago',
       refreshNotificationCaches,
       ventaId: 'venta-1',
     });
     await applyNotificationQueryReactions(queryClient, outcome);
 
-    expect(mocks.cutVentaFromNotificationStoreWorkflow).toHaveBeenCalledWith('venta-1', 'Sin pago');
+    expect(mocks.cutVentaFromNotificationStoreWorkflow).toHaveBeenCalledWith(
+      'venta-1',
+      'Sin pago',
+      { logContext: { usuarioId: 'u1' } },
+    );
     expect(refreshNotificationCaches).toHaveBeenCalledTimes(1);
     expect(mocks.refreshVentasStoreCache).toHaveBeenCalledTimes(1);
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: queryKeys.ventas.all });

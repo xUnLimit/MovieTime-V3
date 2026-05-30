@@ -121,6 +121,10 @@ export function usePagoDialogController(props: PagoDialogProps) {
       plan.cicloPago === periodoValue && (!props.tipoPlan || plan.tipoPlan === props.tipoPlan)
     ) ?? null;
   }, [periodoValue, props.categoriaPlanes, props.tipoPlan]);
+  // getPagoDialogTargetKey solo lee context, mode, venta.clienteNombre, servicio.id/nombre y pago?.id.
+  // Los deps enumeran exactamente esos campos primitivos; depender de `props` entero recalcularia
+  // en cada render (props es un objeto nuevo). Los deps son completos y correctos.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const dialogTargetKey = useMemo(() => getPagoDialogTargetKey(props), [
     props.context,
     props.mode,
@@ -129,6 +133,10 @@ export function usePagoDialogController(props: PagoDialogProps) {
     servicio?.nombre,
     venta?.clienteNombre,
   ]);
+  // getPagoDialogResetValues lee context, mode, pago, y campos puntuales de venta/servicio.
+  // Los deps enumeran exactamente esos campos; depender de `props` entero recalcularia en cada
+  // render (props es un objeto nuevo). Los deps son completos y correctos.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const resetValues = useMemo(() => getPagoDialogResetValues(props), [
     props.context,
     props.mode,

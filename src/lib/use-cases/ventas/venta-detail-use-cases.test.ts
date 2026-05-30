@@ -51,7 +51,13 @@ import {
   renewVentaDetalleWorkflow,
   updateVentaPagoDetalleWorkflow,
 } from './venta-detail-use-cases';
+import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import type { MetodoPago, VentaDoc } from '@/types';
+
+const testLog = {
+  logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' },
+  recordActivityLog: vi.fn(),
+} as unknown as ActivityLogOptions;
 
 const venta = {
   id: 'venta-1',
@@ -114,6 +120,7 @@ describe('venta detail workflows', () => {
         fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
         notificarWhatsApp: true,
       },
+      log: testLog,
       metodosPago,
       venta,
     });
@@ -158,6 +165,7 @@ describe('venta detail workflows', () => {
         cortarServicio: true,
         motivoCorte: 'Solicitud del cliente',
       },
+      log: testLog,
       venta,
     });
 

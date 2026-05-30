@@ -4,7 +4,7 @@ import { getStoreLogContext } from '@/lib/utils/storeHelpers';
 import { useActivityLogStore } from '@/store/activityLogStore';
 import type { ActivityLog } from '@/types';
 
-type ActivityLogOptions = {
+export type ActivityLogOptions = {
   logContext: ServicioLogContext & VentaLogContext;
   recordActivityLog: ServicioRecordActivityLog & VentaRecordActivityLog;
 };
