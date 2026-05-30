@@ -465,10 +465,10 @@ Esta guia describe el estandar vigente, pero el repo aun conserva algunas excepc
 | Tokens globales y helpers CSS | `src/app/globals.css` |
 | Tema | `src/components/layout/ThemeProvider.tsx` |
 | Query provider | `src/components/providers/QueryProvider.tsx` |
-| Query client | `src/lib/query-client.ts` |
-| Query keys | `src/lib/query-keys.ts` |
-| Event bus | `src/lib/events/store-event-bus.ts` |
-| Class merge utility | `src/lib/utils/cn.ts` |
+| Query client | `src/platform/query-client.ts` |
+| Query keys | `src/platform/query-keys.ts` |
+| Event bus | `src/platform/events/store-event-bus.ts` |
+| Class merge utility | `src/platform/utils` |
 | Metricas | `src/components/shared/MetricCard.tsx` |
 | Tablas | `src/components/shared/DataTable.tsx` |
 | Empty state | `src/components/shared/EmptyState.tsx` |

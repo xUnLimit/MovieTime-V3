@@ -24,6 +24,24 @@
 - Communication between business modules uses `StoreEventBus` (`@/platform/events`); do not add `window.dispatchEvent`/`localStorage` business events.
 - Keep production modules under 300 lines unless there is an explicit documented exception.
 
+## Import rules per layer (enforced by `src/platform/architecture-boundaries.test.ts`)
+
+| Layer | MAY import | MUST NOT import |
+|---|---|---|
+| `platform/` | other `platform/` | `application/`, `modules/`, `@/store`, React/UI |
+| `modules/<x>/` | its own files, `platform/` | `@/store`, `application/`, other modules' internals, React |
+| `application/` | `modules/`, `platform/` | `@/store` (the boundary test checks this transitively), React, `@/components`, `@/hooks` |
+| `store/` | `application/`, `modules/`, `platform/` | `@/platform/supabase` directly (go through use-cases) |
+| `app/` `components/` `hooks/` | `hooks/`, `application/`, `modules/`, `store/`, `platform/utils` | `@/platform/supabase` directly |
+
+## How to add code (follow the existing pattern)
+
+- **New feature on an existing entity:** add the type in `src/types`, the write in the relevant `@/platform/supabase` repository (thin, no decisions), the orchestration in `@/application/use-cases/<domain>`, and the read hook in `src/hooks` (React Query). UI calls the use-case/command, never the repository.
+- **A use-case** has the shape `fn(input, deps)` where `deps` carries injected ports and `{ logContext, recordActivityLog }`. It NEVER calls `useAuthStore.getState()` or `getActivityLogOptions()` itself — the composition root (`@/application/client-domain-mutations`) injects them.
+- **Critical write (payment/refund/period):** go through a typed `*-rpc-adapter` in `@/platform/supabase` with `assertOnlineMutation()`, `withIdempotencyKey()` and `assertRpcStringId()`. Never `String(data)`.
+- **A domain event** is emitted once, by the use-case. Reactions only invalidate cache / sync read models; they do not re-emit.
+- **Do NOT** create a new generic aggregator, a `lib/` folder, or a parallel "mutations" home. The four homes are: repositories (`platform/supabase`), use-cases (`application/use-cases`), composition root (`application/client-domain-mutations`), reactions (`application/store-reactions`).
+
 ## Safety Rules
 
 - Validate dynamic route IDs with `isUuid`/`assertUuid` before querying Supabase.

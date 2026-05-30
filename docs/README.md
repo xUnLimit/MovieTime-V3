@@ -3,14 +3,17 @@
 Indice de la documentacion viva. Las auditorias y planes historicos se eliminaron
 del repo (el historial sigue en git); aqui solo queda lo vigente.
 
-## Documentos activos
+## Mapa de la documentacion
 
-- [Auditoria arquitectonica profunda verificada (2026-05-30)](2026-05-30-auditoria-arquitectonica-profunda-verificada.md): auditoria mas reciente verificada en codigo, con estado de remediacion, arquitectura objetivo y deuda priorizada.
-- [Architecture roadmap](../ARCHITECTURE_ROADMAP.md): resumen de arquitectura vigente.
-- [Developer guide](DEVELOPER_GUIDE.md): guia operativa para desarrollo.
-- [Design system](DESIGN_SYSTEM.md): reglas y convenciones UI.
-- [Performance optimizations](PERFORMANCE_OPTIMIZATIONS.md): notas de performance vigentes.
-- [ADR index](adr/README.md): decisiones arquitecturales aceptadas.
+Cada tema tiene **un solo lugar** (sin duplicar reglas entre documentos):
+
+- **Reglas de arquitectura e imports por capa** → [`CLAUDE.md`](../CLAUDE.md) (raiz). Fuente unica; toda IA la lee al iniciar.
+- **Vocabulario de dominio** → [`CONTEXT.md`](../CONTEXT.md) (raiz).
+- **Decisiones arquitecturales (el "por que")** → [ADR index](adr/README.md).
+- **Como desarrollar (paso a paso)** → [Developer guide](DEVELOPER_GUIDE.md).
+- **UI: reglas y convenciones** → [Design system](DESIGN_SYSTEM.md).
+- **Performance y error boundaries** → [Performance optimizations](PERFORMANCE_OPTIMIZATIONS.md).
+- **Estado/auditoria del proyecto** → [Auditoria arquitectonica profunda verificada (2026-05-30)](2026-05-30-auditoria-arquitectonica-profunda-verificada.md).
 
 ## Decisiones protegidas por ADR
 
