@@ -57,3 +57,4 @@ supabase/.temp/
 
 # AI agent skills (local tooling, not project code)
 .agents/
+skills-lock.json
