@@ -1,0 +1,111 @@
+name: quality
+
+# Gates de calidad versionados (auditoria 2026-05-30, Fase 0 #A: CI/CD).
+# Antes, lint/test/build/migrate solo corrian a mano en local: nada impedia
+# que un PR con tests rotos llegara a main. Este workflow los ejecuta en cada
+# PR y push a main.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancela ejecuciones previas del mismo ref para no malgastar minutos.
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: lint + test + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Necesario para que el secret scan pueda diffear contra la rama base.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Secret scan (archivos cambiados vs base)
+        run: |
+          # scan-secrets.mjs revisa archivos staged + working-tree. En un checkout
+          # limpio de CI no hay nada staged, asi que stageamos el diff contra la
+          # base del PR (o el commit anterior en push) para que tenga algo que revisar.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+          git fetch origin "${{ github.base_ref || 'main' }}" --depth=1 || true
+          if git rev-parse --verify "$BASE" >/dev/null 2>&1; then
+            git diff --name-only --diff-filter=ACMR "$BASE"...HEAD -z | xargs -0 -r git add -N
+          fi
+          npm run secrets:scan
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests + coverage
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+        env:
+          # next build fuerza NODE_ENV=production, y src/config/env.ts valida en top-level
+          # (importado por app/layout.tsx) que estas dos vars PUBLICAS existan. La anon key
+          # es publica por diseno (protegida por RLS), no es un secreto. Se usan los secrets
+          # del repo si estan; si no (forks), valores dummy validos para que el build compile.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://ci-placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-placeholder-anon-key-not-a-real-secret' }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'ci-placeholder-vapid-public-key-value' }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://ci.example.com' }}
+          # env.ts valida el serverEnvSchema en top-level durante el build (Node, sin window).
+          # El build NO se conecta a Supabase: solo valida que estas vars existan y tengan
+          # forma (min length). Placeholders dummy de >=20 chars satisfacen la validacion
+          # sin ser credenciales reales.
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ci-placeholder-service-role-not-a-real-secret' }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY || 'ci-placeholder-vapid-private-key-value' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET || 'ci-placeholder-cron-secret-value' }}
+
+  supabase-validation:
+    name: supabase migrate:validate
+    runs-on: ubuntu-latest
+    # Solo corre cuando los secrets de Supabase estan configurados en el repo.
+    # Si no lo estan (forks, contribuidores externos), se omite en vez de fallar.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Supabase secrets
+        id: check
+        run: |
+          if [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ] && [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Supabase secrets no configurados; se omite migrate:validate."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.check.outputs.configured == 'true'
+        run: npm ci
+
+      - name: Validate Supabase migrations + data + security
+        if: steps.check.outputs.configured == 'true'
+        run: npm run migrate:validate
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
