@@ -51,3 +51,6 @@ supabase/.temp/
 
 # local agent scratch/output
 .superpowers/
+
+# Claude Code ephemeral lock (per-session pid/sessionId; do not commit)
+.claude/scheduled_tasks.lock
