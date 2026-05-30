@@ -4,18 +4,12 @@ import {
   readEntity,
   writeTable,
   type CollectionName,
+  type PublicViewName,
   type QueryBuilder,
   type QueryFilter,
 } from './entities';
 import { readField, normalizeFilterValue } from './filters';
 import { mapReadRow, enrichCategorias, enrichTerceros } from './read-models';
-import { createNotification, queryNotifications, updateNotification } from './notifications-repository';
-import {
-  createPagoServicio,
-  createPagoVenta,
-  type CreatePagoServicioInput,
-  type CreatePagoVentaInput,
-} from './payments-repository';
 import { insertRawRow, normalizeWritePayload } from './write-utils';
 import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
 import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
@@ -71,10 +65,6 @@ export async function queryDocuments<T>(
     return readOfflineCollection<T>(collectionName, filters);
   }
 
-  if (collectionName === ENTITIES.NOTIFICACIONES) {
-    return queryNotifications<T>(filters);
-  }
-
   const entity = readEntity(collectionName);
   let query = supabase.from(entity as never).select('*') as unknown as QueryResult<{
     data: unknown[] | null;
@@ -98,10 +88,6 @@ export async function getCount(
     return rows.length;
   }
 
-  if (collectionName === ENTITIES.TERCEROS && filters.some((filter) => filter.field === 'serviciosActivos')) {
-    return getTercerosDerivedCount(filters);
-  }
-
   const entity = readEntity(collectionName);
   let query = supabase
     .from(entity as never)
@@ -122,17 +108,6 @@ export async function create<T extends Record<string, unknown>>(
   payload: Omit<T, 'id'>
 ): Promise<string> {
   assertOnlineMutation();
-
-  if (collectionName === ENTITIES.NOTIFICACIONES) {
-    return createNotification(payload as Record<string, unknown>);
-  }
-  if (collectionName === ENTITIES.PAGOS_SERVICIO) {
-    return createPagoServicio(payload as unknown as CreatePagoServicioInput);
-  }
-  if (collectionName === ENTITIES.PAGOS_VENTA) {
-    return createPagoVenta(payload as unknown as CreatePagoVentaInput);
-  }
-
   return createRaw(collectionName, normalizeWritePayload(collectionName, payload as Record<string, unknown>, 'insert'));
 }
 
@@ -150,11 +125,6 @@ export async function update<T extends Record<string, unknown>>(
   payload: Partial<T>
 ): Promise<void> {
   assertOnlineMutation();
-
-  if (collectionName === ENTITIES.NOTIFICACIONES) {
-    await updateNotification(id, payload as Record<string, unknown>);
-    return;
-  }
 
   const table = writeTable(collectionName);
   const snake = normalizeWritePayload(collectionName, payload as Record<string, unknown>, 'update');
@@ -242,22 +212,38 @@ function escapeIlikeTerm(value: string): string {
   return value.trim().replace(/[,%()]/g, ' ').replace(/[%_\\]/g, '\\$&');
 }
 
+// Tabla de enrichers por coleccion (Open/Closed): anadir uno es agregar una entrada,
+// no editar una cadena de if. Las colecciones sin entrada se devuelven tal cual.
+const ROW_ENRICHERS: Partial<Record<CollectionName, <T>(rows: T[]) => Promise<T[]>>> = {
+  [ENTITIES.TERCEROS]: enrichTerceros,
+  [ENTITIES.CATEGORIAS]: enrichCategorias,
+};
+
 async function enrichCollectionRows<T>(collectionName: CollectionName, rows: T[]): Promise<T[]> {
-  if (collectionName === ENTITIES.TERCEROS) return enrichTerceros(rows);
-  if (collectionName === ENTITIES.CATEGORIAS) return enrichCategorias(rows);
-  return rows;
+  const enrich = ROW_ENRICHERS[collectionName];
+  return enrich ? enrich(rows) : rows;
 }
 
-async function getTercerosDerivedCount(filters: QueryFilter[]): Promise<number> {
+/**
+ * Conteo generico contra una vista derivada, con override de nombres de campo.
+ * El repo especifico decide CUANDO usar una vista derivada (ej: terceros con
+ * serviciosActivos); el core solo provee el motor de conteo+filtros.
+ */
+export async function countFromView(
+  collectionName: CollectionName,
+  viewName: PublicViewName,
+  filters: QueryFilter[],
+  fieldOverrides: Record<string, string> = {},
+): Promise<number> {
   let query = supabase
-    .from('v_terceros_servicios_activos')
+    .from(viewName as never)
     .select('*', { count: 'exact', head: true }) as unknown as QueryResult<{
       count: number | null;
       error: Error | null;
     }>;
 
   for (const filter of filters) {
-    const field = filter.field === 'serviciosActivos' ? 'servicios_activos' : readField(ENTITIES.TERCEROS, filter.field);
+    const field = fieldOverrides[filter.field] ?? readField(collectionName, filter.field);
     const value = normalizeFilterValue(field, filter.value);
     if (filter.operator === '==') query = query.eq(field, value) as typeof query;
     if (filter.operator === '!=') query = query.neq(field, value) as typeof query;

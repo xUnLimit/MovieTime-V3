@@ -7,24 +7,24 @@ import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import { readOfflineCollection, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
 import {
   getById as coreGetById,
-  queryDocuments as coreQueryDocuments,
   getCount as coreGetCount,
-  create as coreCreate,
-  update as coreUpdate,
   remove as coreRemove,
   logCacheHit,
 } from './record-core';
 
 export { logCacheHit };
 
+// Notificaciones tienen su propia forma de query/create/update (campos polimorficos por
+// entidad), por eso usan funciones dedicadas en este repo en vez del path generico del core.
+// Las lecturas/conteos/borrado sencillos sí reusan el motor generico.
 export const getNotificacionById = <T>(id: string) => coreGetById<T>(ENTITIES.NOTIFICACIONES, id);
 export const queryNotificaciones = <T>(filters: QueryFilter[] = []) =>
-  coreQueryDocuments<T>(ENTITIES.NOTIFICACIONES, filters);
+  queryNotifications<T>(filters);
 export const countNotificaciones = (filters: QueryFilter[] = []) => coreGetCount(ENTITIES.NOTIFICACIONES, filters);
 export const createNotificacion = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
-  coreCreate(ENTITIES.NOTIFICACIONES, payload);
+  createNotification(payload as Record<string, unknown>);
 export const updateNotificacion = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
-  coreUpdate(ENTITIES.NOTIFICACIONES, id, payload);
+  updateNotification(id, payload as Record<string, unknown>);
 export const removeNotificacion = (id: string) => coreRemove(ENTITIES.NOTIFICACIONES, id);
 
 export async function queryNotifications<T>(filters: QueryFilter[]): Promise<T[]> {

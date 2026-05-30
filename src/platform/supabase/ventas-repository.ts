@@ -14,6 +14,10 @@ import { ENTITIES, type QueryFilter } from './entities';
 import { assertRecordId } from '@/platform/utils/safety';
 import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import {
+  createPagoVenta as createPagoVentaRecord,
+  type CreatePagoVentaInput,
+} from './payments-repository';
+import {
   createVentaRefundRpc,
   createVentaWithInitialPaymentRpc,
   deleteVentaPaymentRpc,
@@ -57,7 +61,7 @@ export const getPagoVentaById = <T>(id: string) => getById<T>(ENTITIES.PAGOS_VEN
 export const queryPagosVenta = <T>(filters: QueryFilter[] = []) => queryDocuments<T>(ENTITIES.PAGOS_VENTA, filters);
 export const countPagosVenta = (filters: QueryFilter[] = []) => getCount(ENTITIES.PAGOS_VENTA, filters);
 export const createPagoVenta = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
-  create(ENTITIES.PAGOS_VENTA, payload);
+  createPagoVentaRecord(payload as unknown as CreatePagoVentaInput);
 export const updatePagoVenta = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.PAGOS_VENTA, id, payload);
 
