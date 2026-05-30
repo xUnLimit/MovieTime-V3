@@ -2,8 +2,8 @@ import {
   createTercero,
   removeTercero,
   updateTercero,
-} from '@/lib/supabase/terceros-repository';
-import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
+} from '@/platform/supabase/terceros-repository';
+import { isPendingTerceroPaymentMethodId } from '@/platform/utils/terceroMetodoPago';
 import type { Tercero } from '@/types';
 
 export type CreateTerceroInput = Omit<Tercero, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos'>;

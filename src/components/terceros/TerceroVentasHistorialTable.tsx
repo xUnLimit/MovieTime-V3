@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatearFecha } from "@/lib/utils/calculations";
+import { formatearFecha } from "@/platform/utils/calculations";
 
 import type { TerceroDetailsRow } from "./useTerceroDetailsController";
 

@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
 import { useTemplates } from '@/hooks/use-templates';
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 import {
   buildVentaPaymentRows,
   fetchCategoriaPlanesQuery,
@@ -17,7 +17,7 @@ import {
   getEstadoDetalle,
   type VentaDetalleQueryData,
 } from '@/lib/use-cases/ventas/venta-detail-use-cases';
-import { calcularMontoSinConsumir, roundToDecimals } from '@/lib/utils/calculations';
+import { calcularMontoSinConsumir, roundToDecimals } from '@/platform/utils/calculations';
 import type { TemplateMensaje, VentaDoc } from '@/types';
 
 import type { VentaDetalleViewModel } from './types';

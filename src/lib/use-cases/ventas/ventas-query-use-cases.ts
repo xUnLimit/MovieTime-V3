@@ -1,14 +1,14 @@
-import { ENTITIES } from '@/lib/supabase/entities';
-import { getVentaDetalleRead } from '@/lib/supabase/domain-read-adapters';
+import { ENTITIES } from '@/platform/supabase/entities';
+import { getVentaDetalleRead } from '@/platform/supabase/domain-read-adapters';
 import {
   countVentas,
   queryVentas,
   queryPagosVenta,
-} from '@/lib/supabase/ventas-repository';
+} from '@/platform/supabase/ventas-repository';
 import type { PagoVenta, VentaDoc } from '@/types';
 
 export const VENTAS_COLLECTION = ENTITIES.VENTAS;
-export { timestampToDate } from '@/lib/supabase/dates';
+export { timestampToDate } from '@/platform/supabase/dates';
 
 export function getVentaDetalleUseCase(id: string) {
   return getVentaDetalleRead(id);

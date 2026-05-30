@@ -1,4 +1,4 @@
-import { calcularDiasRelativosCalendario } from '@/lib/utils/calculations';
+import { calcularDiasRelativosCalendario } from '@/platform/utils/calculations';
 import type { VentaDoc } from '@/types';
 
 export function getVentaEstadoDisplay(venta: VentaDoc | null) {

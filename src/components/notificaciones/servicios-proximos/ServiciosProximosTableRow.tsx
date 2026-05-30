@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { getCurrencySymbol } from '@/lib/constants';
+import { getCurrencySymbol } from '@/platform/constants';
 
 import {
   formatearFecha,

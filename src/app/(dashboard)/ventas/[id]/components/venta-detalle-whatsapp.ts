@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { generarMensajeVenta } from '@/lib/utils/whatsapp';
+import { generarMensajeVenta } from '@/platform/utils/whatsapp';
 import type { TemplateMensaje, VentaDoc } from '@/types';
 
 export function showVentaRenovadaWhatsAppToast({

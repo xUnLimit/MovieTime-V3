@@ -16,19 +16,19 @@ const {
   getMetodoPagoByIdMock: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/notifications-repository', () => ({
+vi.mock('@/platform/supabase/notifications-repository', () => ({
   createNotificacion: createMock,
   queryNotificaciones: queryDocumentsMock,
   removeNotificacion: removeMock,
   updateNotificacion: updateMock,
 }));
 
-vi.mock('@/lib/supabase/servicios-repository', () => ({
+vi.mock('@/platform/supabase/servicios-repository', () => ({
   getServicioById: getByIdMock,
   removePagoServicio: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/catalogos-repository', () => ({
+vi.mock('@/platform/supabase/catalogos-repository', () => ({
   getMetodoPagoById: getMetodoPagoByIdMock,
   queryMetodosPago: vi.fn().mockResolvedValue([]),
 }));

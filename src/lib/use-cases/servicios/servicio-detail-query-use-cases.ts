@@ -1,5 +1,5 @@
-import { getMetodoPagoRead, getServicioRead, getVentaDetalleRead } from '@/lib/supabase/domain-read-adapters';
-import { getVentaById, queryVentas } from '@/lib/supabase/ventas-repository';
+import { getMetodoPagoRead, getServicioRead, getVentaDetalleRead } from '@/platform/supabase/domain-read-adapters';
+import { getVentaById, queryVentas } from '@/platform/supabase/ventas-repository';
 import type { MetodoPagoDetalle, PerfilVentaDetalle } from '@/lib/use-cases/servicios/servicio-detail-types';
 import type { Servicio, VentaDoc } from '@/types';
 

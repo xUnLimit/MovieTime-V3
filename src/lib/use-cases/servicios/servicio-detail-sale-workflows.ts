@@ -1,4 +1,4 @@
-import { invalidateDashboardCache } from '@/lib/commands/client-cache';
+import { invalidateDashboardCache } from '@/platform/commands/client-cache';
 import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
 import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
 import { updateVentaUseCase } from '@/lib/use-cases/ventas/ventas-write-use-cases';

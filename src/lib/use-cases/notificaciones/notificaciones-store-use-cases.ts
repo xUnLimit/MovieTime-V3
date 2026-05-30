@@ -1,10 +1,10 @@
-import { queryNotificationIdsRead } from '@/lib/supabase/domain-read-adapters';
+import { queryNotificationIdsRead } from '@/platform/supabase/domain-read-adapters';
 import {
   countNotificaciones,
   removeNotificacion,
   updateNotificacion,
-} from '@/lib/supabase/notifications-repository';
-import { queryNotificationsRead } from '@/lib/supabase/domain-read-adapters';
+} from '@/platform/supabase/notifications-repository';
+import { queryNotificationsRead } from '@/platform/supabase/domain-read-adapters';
 
 export async function fetchNotificationCountsUseCase() {
   const now = new Date();

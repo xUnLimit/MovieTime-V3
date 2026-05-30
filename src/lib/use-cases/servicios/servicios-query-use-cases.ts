@@ -1,10 +1,10 @@
-import { countCategorias } from '@/lib/supabase/categorias-repository';
-import { ENTITIES } from '@/lib/supabase/entities';
+import { countCategorias } from '@/platform/supabase/categorias-repository';
+import { ENTITIES } from '@/platform/supabase/entities';
 import {
   countServicios,
   getServicioById,
   queryServicios,
-} from '@/lib/supabase/servicios-repository';
+} from '@/platform/supabase/servicios-repository';
 import type { Servicio } from '@/types';
 
 export const SERVICIOS_COLLECTION = ENTITIES.SERVICIOS;

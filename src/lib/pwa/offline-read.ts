@@ -2,7 +2,7 @@ import { OFFLINE_COLLECTIONS } from './offline-constants';
 import { applyOfflineFilters, isOfflineEnvironment, sortOfflineRows } from './offline-helpers';
 import { getOfflineSnapshot } from './offline-db';
 import { isOfflineAuthSessionActive } from './offline-auth';
-import type { CollectionName, QueryFilter } from '@/lib/supabase/entities';
+import type { CollectionName, QueryFilter } from '@/platform/supabase/entities';
 import type { Configuracion } from '@/types';
 import type { OfflineAppSnapshot, OfflineDashboardHomeSnapshot } from './offline-types';
 

@@ -2,7 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import {
   deleteServicioPagoDetalleWorkflow,
   renewServicioDetalleWorkflow,

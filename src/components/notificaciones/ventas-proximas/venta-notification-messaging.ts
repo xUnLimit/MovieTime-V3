@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { generarMensajeVenta, openWhatsApp } from '@/lib/utils/whatsapp';
+import { generarMensajeVenta, openWhatsApp } from '@/platform/utils/whatsapp';
 import type { TemplateMensaje } from '@/types';
 
 import type { NotificacionVentaConId } from './types';

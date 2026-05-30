@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { queryMetodosPagoTercerosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
 
 export function useMetodosPagoTerceros(options: { enabled?: boolean } = {}) {

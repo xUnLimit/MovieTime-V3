@@ -4,15 +4,15 @@ import {
   deleteCategoriaRecord,
   updateCategoriaRecord,
   upsertCategoriaPlanes,
-} from '@/lib/supabase/categorias-repository';
-import { storeEventBus } from '@/lib/events/store-event-bus';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+} from '@/platform/supabase/categorias-repository';
+import { storeEventBus } from '@/platform/events/store-event-bus';
+import { detectarCambios } from '@/platform/utils/activityLogHelpers';
 import type { ActivityLog, Categoria } from '@/types';
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
 type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
 
-export { getCategoriasFull as fetchCategoriasFull, getCategoriasCounts as fetchCategoriasCounts } from '@/lib/supabase/categorias-repository';
+export { getCategoriasFull as fetchCategoriasFull, getCategoriasCounts as fetchCategoriasCounts } from '@/platform/supabase/categorias-repository';
 
 export async function createCategoriaUseCase(
   categoriaData: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>,

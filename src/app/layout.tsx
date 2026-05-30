@@ -8,7 +8,7 @@ import { NotificationEventsInitializer } from '@/components/providers/Notificati
 import { PwaBootstrap } from '@/components/pwa/PwaBootstrap';
 import { Toaster } from '@/components/ui/sonner';
 import { PendingWhatsAppToast } from '@/components/whatsapp/PendingWhatsAppToast';
-import { siteConfig } from '@/config';
+import { siteConfig } from '@/platform/config';
 
 import './globals.css';
 

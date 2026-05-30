@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServicioForm } from '@/components/servicios/ServicioForm';
 import { useServicioDetail } from '@/hooks/use-entity-detail';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 
 function EditarServicioPageContent() {
   const params = useParams();

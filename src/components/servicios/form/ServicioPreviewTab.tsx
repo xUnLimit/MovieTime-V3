@@ -3,11 +3,11 @@ import { Users } from "lucide-react";
 
 import { TabsContent } from "@/components/ui/tabs";
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
-import { formatearFecha } from "@/lib/utils/calculations";
+import { formatearFecha } from "@/platform/utils/calculations";
 import {
   PROFILE_PREVIEW_FULL_RENDER_LIMIT,
   getProfilePreviewSample,
-} from "@/lib/utils/perfiles";
+} from "@/platform/utils/perfiles";
 import type { TipoPlanConfig } from "@/types";
 
 import { ServicioPreviewFooterActions } from "./ServicioFormActions";

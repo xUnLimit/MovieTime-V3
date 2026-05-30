@@ -9,7 +9,7 @@ const cacheReactions = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/terceros/terceros-write-adapter', () => tercerosWriteAdapter);
-vi.mock('@/lib/events/cache-reactions', () => cacheReactions);
+vi.mock('@/platform/events/cache-reactions', () => cacheReactions);
 
 import { updateTerceroMetodoPago } from '@/lib/terceros/terceros-write-adapter';
 import { syncTerceroMetodoPagoUseCase as syncTerceroMetodoPago } from './tercero-metodo-pago-use-cases';

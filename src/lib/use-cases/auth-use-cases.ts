@@ -3,7 +3,7 @@ import {
   onAuthStateChange,
   signIn,
   signOut,
-} from '@/lib/supabase/auth';
+} from '@/platform/supabase/auth';
 import type { User } from '@/types';
 
 export function signInUseCase(email: string, password: string) {

@@ -8,7 +8,7 @@ import {
   afterGastoDeleted,
   afterGastoUpdated,
 } from '@/lib/store-reactions/gastos-mutation-reactions';
-import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
+import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { Gasto } from '@/types';
 
 export async function createGastoMutation(

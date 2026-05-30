@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/lib/query-keys";
-import { getMetodosPago } from "@/lib/supabase/catalogos-repository";
+import { queryKeys } from "@/platform/query-keys";
+import { getMetodosPago } from "@/platform/supabase/catalogos-repository";
 import type { MetodoPago } from "@/types";
 
 export function useMetodosPago() {

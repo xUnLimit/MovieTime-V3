@@ -12,7 +12,7 @@ import {
   createTemplateMutation,
   updateTemplateMutation,
 } from '@/lib/client-domain-mutations';
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 import { toast } from 'sonner';
 
 interface TemplateEditorProps {

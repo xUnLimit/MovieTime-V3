@@ -10,7 +10,7 @@ import {
   activityActionColors,
   getActivityDisplayConfig,
   isCorteActivityLog,
-} from "@/lib/utils/activityDisplayHelpers";
+} from "@/platform/utils/activityDisplayHelpers";
 import type { ActivityLog } from "@/types";
 
 interface LogTimelineColumnsParams {

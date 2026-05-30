@@ -6,9 +6,9 @@ import {
   deleteCategoriaMutation,
   updateServicioMutation,
 } from '@/lib/client-domain-mutations';
-import { storeEventBus, type StoreEvent } from '@/lib/events/store-event-bus';
-import { queryKeys } from '@/lib/query-keys';
-import { registerActiveQueryClient } from '@/lib/query-client-registry';
+import { storeEventBus, type StoreEvent } from '@/platform/events/store-event-bus';
+import { queryKeys } from '@/platform/query-keys';
+import { registerActiveQueryClient } from '@/platform/query-client-registry';
 import { applyNotificationQueryReactions } from '@/lib/store-reactions/notification-query-reactions';
 import { cutVentaFromNotificationUseCase } from '@/lib/use-cases/notificaciones/notificaciones-actions-use-cases';
 

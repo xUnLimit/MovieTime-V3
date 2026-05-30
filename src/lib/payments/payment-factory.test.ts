@@ -9,8 +9,8 @@ const paymentsRepository = vi.hoisted(() => ({
   createPagoVenta: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/pagos-repository', () => pagosRepository);
-vi.mock('@/lib/supabase/payments-repository', () => paymentsRepository);
+vi.mock('@/platform/supabase/pagos-repository', () => pagosRepository);
+vi.mock('@/platform/supabase/payments-repository', () => paymentsRepository);
 
 import {
   countServicioRenewals,

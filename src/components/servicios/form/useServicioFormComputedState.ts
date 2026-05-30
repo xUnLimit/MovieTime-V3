@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
-import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
+import { getServicioMetodoPagoNombre } from "@/platform/utils/servicioMetodoPago";
 import type { Categoria, MetodoPago, Servicio } from "@/types";
 
 import { getSimboloMoneda } from "./servicio-form-helpers";

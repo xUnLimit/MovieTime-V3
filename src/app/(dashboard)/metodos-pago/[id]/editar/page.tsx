@@ -9,7 +9,7 @@ import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 import { toast } from 'sonner';
 
 function EditarMetodoPagoPageContent() {

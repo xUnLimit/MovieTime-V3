@@ -1,6 +1,6 @@
 import { differenceInDays, startOfDay } from 'date-fns';
 
-import { createNotificacion, updateNotificacion } from '@/lib/supabase/notifications-repository';
+import { createNotificacion, updateNotificacion } from '@/platform/supabase/notifications-repository';
 import {
   calcularPrioridad,
   generarTitulo,

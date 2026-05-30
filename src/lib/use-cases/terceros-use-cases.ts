@@ -1,20 +1,20 @@
 import { startOfDay } from 'date-fns';
 
-import { NotFoundError } from '@/lib/errors/domain-errors';
+import { NotFoundError } from '@/platform/errors/domain-errors';
 import {
   countTerceros,
   getTerceros,
   getTerceroById,
-} from '@/lib/supabase/terceros-repository';
-import { ENTITIES } from '@/lib/supabase/entities';
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+} from '@/platform/supabase/terceros-repository';
+import { ENTITIES } from '@/platform/supabase/entities';
+import { queryVentas } from '@/platform/supabase/ventas-repository';
 import {
   createTerceroFromDomain,
   removeTerceroFromDomain,
   updateTerceroFromDomain,
 } from '@/lib/terceros/terceros-write-adapter';
-import { storeEventBus } from '@/lib/events/store-event-bus';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { storeEventBus } from '@/platform/events/store-event-bus';
+import { detectarCambios } from '@/platform/utils/activityLogHelpers';
 import type { ActivityLog, Tercero } from '@/types';
 
 type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;

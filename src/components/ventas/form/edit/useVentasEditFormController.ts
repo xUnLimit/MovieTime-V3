@@ -24,7 +24,7 @@ import { SERVICIOS_DROPDOWN_VISIBLE_ROWS } from "@/features/ventas/ventas-form-s
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useTerceros } from "@/hooks/use-terceros";
 import { refreshServicioProfileCountMutation } from "@/lib/client-domain-mutations";
-import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
+import { PENDING_TERCERO_PAYMENT_ID } from "@/platform/utils/terceroMetodoPago";
 
 import type { VentaEditData } from "./types";
 

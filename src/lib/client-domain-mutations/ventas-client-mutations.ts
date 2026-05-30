@@ -9,7 +9,7 @@ import {
   updateVentaUseCase,
 } from '@/lib/use-cases/ventas/ventas-write-use-cases';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
+import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { VentaDoc } from '@/types';
 
 export async function createVentaMutation(venta: Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'>) {

@@ -12,7 +12,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
 import { deleteTerceroMutation } from '@/lib/client-domain-mutations';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 
 function TerceroDetallesPageContent() {
   const params = useParams();

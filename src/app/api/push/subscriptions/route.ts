@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { createServiceRoleClient } from '@/lib/server/supabase-server';
-import { requireAuthenticatedAdmin } from '@/lib/server/request-auth';
+import { createServiceRoleClient } from '@/platform/server/supabase-server';
+import { requireAuthenticatedAdmin } from '@/platform/server/request-auth';
 
 export async function POST(request: Request) {
   try {

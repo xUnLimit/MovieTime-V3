@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/supabase/domain-read-adapters', () => ({
+vi.mock('@/platform/supabase/domain-read-adapters', () => ({
   queryNotificationIdsRead: vi.fn(),
   queryNotificationsRead: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/notifications-repository', () => ({
+vi.mock('@/platform/supabase/notifications-repository', () => ({
   countNotificaciones: vi.fn(),
   removeNotificacion: vi.fn(),
   updateNotificacion: vi.fn(),
@@ -14,12 +14,12 @@ vi.mock('@/lib/supabase/notifications-repository', () => ({
 import {
   queryNotificationIdsRead,
   queryNotificationsRead,
-} from '@/lib/supabase/domain-read-adapters';
+} from '@/platform/supabase/domain-read-adapters';
 import {
   countNotificaciones,
   removeNotificacion,
   updateNotificacion,
-} from '@/lib/supabase/notifications-repository';
+} from '@/platform/supabase/notifications-repository';
 import {
   deleteNotificacionUseCase,
   deleteNotificacionesPorServicioUseCase,

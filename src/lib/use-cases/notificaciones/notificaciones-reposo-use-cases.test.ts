@@ -15,7 +15,7 @@ const servicioPayments = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/store-reactions/notificaciones-workflow-reactions', () => workflowReactions);
-vi.mock('@/lib/supabase/domain-read-adapters', () => domainReadAdapters);
+vi.mock('@/platform/supabase/domain-read-adapters', () => domainReadAdapters);
 vi.mock('@/lib/use-cases/servicios/servicios-payment-use-cases', () => servicioPayments);
 
 import {

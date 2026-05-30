@@ -1,7 +1,7 @@
 import { render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/config', () => ({
+vi.mock('@/platform/config', () => ({
   env: {
     isDevelopment: true,
     enableDevServiceWorker: false,

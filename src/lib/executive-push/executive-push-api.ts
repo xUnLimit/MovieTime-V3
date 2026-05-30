@@ -1,4 +1,4 @@
-import { env } from '@/config';
+import { env } from '@/platform/config';
 import { sendExecutivePushDailySummary } from '@/lib/executive-push/executive-push-delivery';
 
 export async function readExecutivePushRunId(request: Request) {

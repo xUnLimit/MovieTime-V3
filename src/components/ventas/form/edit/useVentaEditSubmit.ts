@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { invalidateDashboardCache } from '@/lib/commands/client-cache';
+import { invalidateDashboardCache } from '@/platform/commands/client-cache';
 import { updateVentaWithLatestPagoUseCase } from '@/lib/use-cases/ventas/ventas-payment-use-cases';
 import type { Categoria, MetodoPago, Servicio, Tercero, VentaDoc } from '@/types';
 

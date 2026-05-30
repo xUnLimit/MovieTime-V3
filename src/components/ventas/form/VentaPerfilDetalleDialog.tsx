@@ -6,8 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { calcularDiasRestantes, formatearFecha } from "@/lib/utils/calculations";
+import { cn } from "@/platform/utils";
+import { calcularDiasRestantes, formatearFecha } from "@/platform/utils/calculations";
 import type {
   PerfilDetalleVisual,
   PerfilesDetalleResumen,

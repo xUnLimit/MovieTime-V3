@@ -12,9 +12,9 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { subscribeToServicioCategoryListReactions } from '@/lib/events/cache-reactions';
+import { subscribeToServicioCategoryListReactions } from '@/platform/events/cache-reactions';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 import { Servicio } from '@/types';
 import type { FilterOption } from '@/types/pagination';
 

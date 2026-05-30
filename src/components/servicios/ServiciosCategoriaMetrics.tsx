@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar, Monitor } from "lucide-react";
 
 import { MetricCard } from "@/components/shared/MetricCard";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { countServiciosProximosPagoByCategoriaUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import { Categoria } from "@/types";
 

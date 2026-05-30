@@ -18,8 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { getCurrencySymbol } from '@/lib/constants';
-import { calcularDiasRelativosCalendario } from '@/lib/utils/calculations';
+import { getCurrencySymbol } from '@/platform/constants';
+import { calcularDiasRelativosCalendario } from '@/platform/utils/calculations';
 
 import { ServicioProfilesFooter } from './ServicioProfilesFooter';
 import type { PerfilDetalle, ServicioDetalle } from './types';

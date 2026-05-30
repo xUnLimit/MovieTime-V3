@@ -10,7 +10,7 @@ import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema
 import {
   isPendingTerceroPaymentMethodId,
   PENDING_TERCERO_PAYMENT_ID,
-} from "@/lib/utils/terceroMetodoPago";
+} from "@/platform/utils/terceroMetodoPago";
 import { VentaClientePagoFields } from "@/components/ventas/form/VentaClientePagoFields";
 import { VentaEditPaymentDetailsFields } from "@/components/ventas/form/edit/VentaEditPaymentDetailsFields";
 import { VentaEditPlanFields } from "@/components/ventas/form/edit/VentaEditPlanFields";

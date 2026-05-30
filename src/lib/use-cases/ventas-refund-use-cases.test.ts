@@ -38,13 +38,13 @@ const terceroMetodoPagoUseCases = vi.hoisted(() => ({
   syncTerceroMetodoPagoUseCase: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/ventas-repository', () => ventasRepository);
+vi.mock('@/platform/supabase/ventas-repository', () => ventasRepository);
 vi.mock('@/lib/dashboard-read-models', () => dashboardStatsService);
 vi.mock('@/lib/payments', () => paymentsModule);
 vi.mock('@/lib/notifications', () => notificationSyncService);
 vi.mock('@/lib/use-cases/ventas/venta-current-payment-use-cases', () => ventaCurrentPaymentUseCases);
 vi.mock('@/lib/use-cases/terceros/tercero-metodo-pago-use-cases', () => terceroMetodoPagoUseCases);
-vi.mock('@/lib/supabase/catalogos-repository', () => ({
+vi.mock('@/platform/supabase/catalogos-repository', () => ({
   getMetodoPagoById: vi.fn(),
 }));
 

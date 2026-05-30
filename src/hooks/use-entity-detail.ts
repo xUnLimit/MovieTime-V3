@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { subscribeToTerceroDetailReactions } from '@/lib/events/cache-reactions';
-import { queryKeys } from '@/lib/query-keys';
+import { subscribeToTerceroDetailReactions } from '@/platform/events/cache-reactions';
+import { queryKeys } from '@/platform/query-keys';
 import {
   getCategoriaRead,
   getMetodoPagoRead,
   getServicioRead,
-} from '@/lib/supabase/domain-read-adapters';
+} from '@/platform/supabase/domain-read-adapters';
 import { getTerceroUseCase } from '@/lib/use-cases/terceros-use-cases';
 import type { Tercero } from '@/types';
 

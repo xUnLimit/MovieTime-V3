@@ -30,8 +30,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getCurrencySymbol } from "@/lib/constants";
-import { formatearFecha } from "@/lib/utils/calculations";
+import { getCurrencySymbol } from "@/platform/constants";
+import { formatearFecha } from "@/platform/utils/calculations";
 
 import type { TerceroDetailsRow } from "./useTerceroDetailsController";
 

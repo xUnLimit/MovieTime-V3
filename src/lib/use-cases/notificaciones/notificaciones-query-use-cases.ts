@@ -1,9 +1,9 @@
 import {
   queryNotificationIdsRead,
   queryNotificationsRead,
-} from '@/lib/supabase/domain-read-adapters';
-import { countNotificaciones } from '@/lib/supabase/notifications-repository';
-import type { QueryFilter } from '@/lib/supabase/entities';
+} from '@/platform/supabase/domain-read-adapters';
+import { countNotificaciones } from '@/platform/supabase/notifications-repository';
+import type { QueryFilter } from '@/platform/supabase/entities';
 
 export { queryNotificationIdsRead };
 

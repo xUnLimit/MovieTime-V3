@@ -1,4 +1,4 @@
-import { formatearFecha } from "@/lib/utils/calculations";
+import { formatearFecha } from "@/platform/utils/calculations";
 
 interface VentaEditPreviewProps {
   clienteNombre: string;

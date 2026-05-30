@@ -11,7 +11,7 @@ import {
 import { supabase } from './client';
 import { timestampToDate, toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
-import { assertRecordId } from '@/lib/utils/safety';
+import { assertRecordId } from '@/platform/utils/safety';
 import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
 import {
   createVentaRefundRpc,

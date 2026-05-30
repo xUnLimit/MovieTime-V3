@@ -1,7 +1,7 @@
 import { supabase } from './client';
 import { toSnakeCase } from './mappers';
 import { ENTITIES, type CollectionName, type PublicTableName } from './entities';
-import { assertRecordId, isUuid } from '@/lib/utils/safety';
+import { assertRecordId, isUuid } from '@/platform/utils/safety';
 
 export async function insertRawRow(
   table: PublicTableName,

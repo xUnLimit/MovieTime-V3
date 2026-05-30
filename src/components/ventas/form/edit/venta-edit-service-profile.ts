@@ -1,5 +1,5 @@
-import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
-import { rankServicios } from "@/lib/utils/servicioRanking";
+import { PROFILE_PAGE_SIZE } from "@/platform/utils/perfiles";
+import { rankServicios } from "@/platform/utils/servicioRanking";
 import type { Servicio, VentaDoc } from "@/types";
 
 export function getServicioRankingCandidateIds({

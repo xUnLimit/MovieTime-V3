@@ -1,12 +1,12 @@
 import { Clock, Monitor, RefreshCw, User } from "lucide-react";
 
 import type { Column } from "@/components/shared/DataTable";
-import { getCurrencySymbol } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { getCurrencySymbol } from "@/platform/constants";
+import { cn } from "@/platform/utils";
 import {
   calcularMontoSinConsumir,
   formatearFecha,
-} from "@/lib/utils/calculations";
+} from "@/platform/utils/calculations";
 import type { VentaDoc } from "@/types";
 
 export interface VentaRow {

@@ -1,9 +1,9 @@
 import { addDays } from 'date-fns';
 
-import { queryMetodosPago } from '@/lib/supabase/catalogos-repository';
-import { queryNotificaciones } from '@/lib/supabase/notifications-repository';
-import { queryServicios } from '@/lib/supabase/servicios-repository';
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { queryMetodosPago } from '@/platform/supabase/catalogos-repository';
+import { queryNotificaciones } from '@/platform/supabase/notifications-repository';
+import { queryServicios } from '@/platform/supabase/servicios-repository';
+import { queryVentas } from '@/platform/supabase/ventas-repository';
 import { limpiarNotificacionesHuerfanas } from '@/lib/notifications/notification-cleanup';
 import { procesarNotificacionReposo } from '@/lib/notifications/reposo-notification-sync';
 import { procesarNotificacionServicio } from '@/lib/notifications/servicio-notification-sync';

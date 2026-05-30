@@ -6,11 +6,11 @@ const updateMock = vi.hoisted(() => vi.fn());
 const eqMock = vi.hoisted(() => vi.fn());
 const fromMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/server/request-auth', () => ({
+vi.mock('@/platform/server/request-auth', () => ({
   requireAuthenticatedAdmin: authMock,
 }));
 
-vi.mock('@/lib/server/supabase-server', () => ({
+vi.mock('@/platform/server/supabase-server', () => ({
   createServiceRoleClient: () => ({
     from: fromMock,
   }),

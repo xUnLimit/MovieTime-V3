@@ -7,7 +7,7 @@ import { ArrowRight, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 import type { NotificacionConId } from "@/hooks/use-notificaciones";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { queryNotificationsUseCase } from "@/lib/use-cases/notificaciones/notificaciones-query-use-cases";
 import { esNotificacionServicio, esNotificacionVenta } from "@/types/notificaciones";
 

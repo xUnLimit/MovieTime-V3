@@ -10,7 +10,7 @@ import {
   shouldUseOfflineRead,
   assertOnlineMutation,
 } from '@/lib/pwa/offline-copy';
-import type { CollectionName, QueryFilter } from '@/lib/supabase/entities';
+import type { CollectionName, QueryFilter } from '@/platform/supabase/entities';
 import type { OfflineSyncProgress } from '@/lib/pwa/offline-types';
 
 export const offlineCopy = {

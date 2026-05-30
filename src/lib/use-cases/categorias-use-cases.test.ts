@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Categoria } from '@/types';
 
-vi.mock('@/lib/supabase/categorias-repository', () => ({
+vi.mock('@/platform/supabase/categorias-repository', () => ({
   buildCategorias: vi.fn(),
   createCategoriaRecord: vi.fn(),
   deleteCategoriaRecord: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/categorias-repository', () => ({
   upsertCategoriaPlanes: vi.fn(),
 }));
 
-vi.mock('@/lib/utils/activityLogHelpers', () => ({
+vi.mock('@/platform/utils/activityLogHelpers', () => ({
   detectarCambios: vi.fn(() => []),
 }));
 
@@ -21,7 +21,7 @@ import {
   createCategoriaRecord,
   deleteCategoriaRecord,
   upsertCategoriaPlanes,
-} from '@/lib/supabase/categorias-repository';
+} from '@/platform/supabase/categorias-repository';
 import { createCategoriaUseCase, deleteCategoriaUseCase } from './categorias-use-cases';
 
 const baseCategoria: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'> = {

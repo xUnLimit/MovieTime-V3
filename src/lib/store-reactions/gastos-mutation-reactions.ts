@@ -1,9 +1,9 @@
 import { format } from 'date-fns';
 
-import { invalidateDashboardCache } from '@/lib/commands/client-cache';
+import { invalidateDashboardCache } from '@/platform/commands/client-cache';
 import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activity-log-writer';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { detectarCambios } from '@/platform/utils/activityLogHelpers';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
 import type { Gasto } from '@/types';
 
 function recordGastoActivityLog({

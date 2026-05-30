@@ -6,10 +6,10 @@ import {
   getServicioTipoRead,
   queryMetodosPagoServiciosRead,
   queryMetodosPagoTercerosRead,
-} from '@/lib/supabase/domain-read-adapters';
+} from '@/platform/supabase/domain-read-adapters';
 import { renewServicioUseCase } from '@/lib/use-cases/servicios/servicios-payment-use-cases';
 import { renewVentaUseCase } from '@/lib/use-cases/ventas/ventas-payment-use-cases';
-import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
+import { withPendingTerceroPaymentMethod } from '@/platform/utils/terceroMetodoPago';
 import {
   deleteServicioNotificationsStoreWorkflow,
   deleteVentaNotificationsStoreWorkflow,

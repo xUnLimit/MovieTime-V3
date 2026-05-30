@@ -5,7 +5,7 @@ import {
   deleteNotificationStoreItem,
   deleteReposoServicioStoreWorkflow,
 } from '@/lib/store-reactions/notificaciones-workflow-reactions';
-import { queryNotificationIdsRead } from '@/lib/supabase/domain-read-adapters';
+import { queryNotificationIdsRead } from '@/platform/supabase/domain-read-adapters';
 import { renewServicioUseCase } from '@/lib/use-cases/servicios/servicios-payment-use-cases';
 import type { Servicio } from '@/types/servicios';
 

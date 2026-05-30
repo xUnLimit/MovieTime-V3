@@ -5,8 +5,8 @@ import { MessageCircle, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { formatearFechaHora } from "@/lib/utils/calculations";
-import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
+import { formatearFechaHora } from "@/platform/utils/calculations";
+import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 import type { Tercero } from "@/types";
 
 import { CambiarEstadoVentaDialog } from "./CambiarEstadoVentaDialog";

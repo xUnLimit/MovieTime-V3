@@ -8,7 +8,7 @@ import { PwaStatusBanner } from '@/components/pwa/PwaStatusBanner';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallback';
 import { sincronizarNotificaciones } from '@/lib/notifications';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
 import { Menu } from 'lucide-react';
 
 export default function DashboardLayout({

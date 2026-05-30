@@ -1,8 +1,8 @@
-import { CYCLE_MONTHS } from '@/lib/constants';
-import { invalidateDashboardCache } from '@/lib/commands/client-cache';
+import { CYCLE_MONTHS } from '@/platform/constants';
+import { invalidateDashboardCache } from '@/platform/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import type { ActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import { emitVentaUpdated } from '@/lib/events/cache-reactions';
+import { emitVentaUpdated } from '@/platform/events/cache-reactions';
 import { createVentaRefundUseCase } from '@/lib/use-cases/ventas/ventas-refund-use-cases';
 import {
   deleteVentaPagoUseCase,

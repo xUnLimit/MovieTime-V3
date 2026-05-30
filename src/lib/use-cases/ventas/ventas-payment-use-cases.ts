@@ -1,8 +1,8 @@
 import { format } from 'date-fns';
 
-import { ValidationError } from '@/lib/errors/domain-errors';
-import { toDateOnly } from '@/lib/supabase/dates';
-import { logAsyncSideEffectError } from '@/lib/utils/safety';
+import { ValidationError } from '@/platform/errors/domain-errors';
+import { toDateOnly } from '@/platform/supabase/dates';
+import { logAsyncSideEffectError } from '@/platform/utils/safety';
 import {
   getPagoVentaById,
   queryPagosVenta,
@@ -10,7 +10,7 @@ import {
   updateLatestVentaPeriodo,
   updateVenta,
   updateVentaPaymentAndPeriod,
-} from '@/lib/supabase/ventas-repository';
+} from '@/platform/supabase/ventas-repository';
 import { financialPayments } from '@/lib/payments';
 import { syncTerceroMetodoPagoUseCase } from '@/lib/use-cases/terceros/tercero-metodo-pago-use-cases';
 import type { PagoVenta, VentaDoc } from '@/types';

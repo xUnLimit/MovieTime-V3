@@ -1,4 +1,4 @@
-import { toDateOnly } from '@/lib/supabase/dates';
+import { toDateOnly } from '@/platform/supabase/dates';
 import {
   getPagoServicioById,
   getServicioById,
@@ -6,10 +6,10 @@ import {
   removePagoServicio,
   updateServicio,
   updateServicioPaymentAndPeriod,
-} from '@/lib/supabase/servicios-repository';
+} from '@/platform/supabase/servicios-repository';
 import { sincronizarUnServicio } from '@/lib/notifications';
 import { financialPayments } from '@/lib/payments';
-import { getCurrencySymbol } from '@/lib/constants';
+import { getCurrencySymbol } from '@/platform/constants';
 import type { MetodoPago, PagoServicio, Servicio } from '@/types';
 import {
   getServicioTableUpdates,

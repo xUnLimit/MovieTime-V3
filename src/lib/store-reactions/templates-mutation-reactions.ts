@@ -1,6 +1,6 @@
 import { getActivityLogContext, recordActivityLog } from '@/lib/activity/activity-log-writer';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { detectarCambios } from '@/platform/utils/activityLogHelpers';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
 import type { TemplateMensaje } from '@/types';
 
 function recordTemplateActivityLog({

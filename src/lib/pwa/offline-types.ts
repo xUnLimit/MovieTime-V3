@@ -1,4 +1,4 @@
-import type { CollectionName, QueryFilter } from '@/lib/supabase/entities';
+import type { CollectionName, QueryFilter } from '@/platform/supabase/entities';
 import type { Configuracion, DashboardCounts, DashboardStats } from '@/types';
 import type { ActivityLog } from '@/types';
 

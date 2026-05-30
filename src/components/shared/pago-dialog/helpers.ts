@@ -1,8 +1,8 @@
 import type { Plan } from '@/types/categorias';
 import type { PagoServicio, TemplateMensaje } from '@/types';
-import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
-import { PENDING_TERCERO_PAYMENT_ID } from '@/lib/utils/terceroMetodoPago';
-import { generarMensajeVenta } from '@/lib/utils/whatsapp';
+import { calculateDiscountedAmount, roundToDecimals } from '@/platform/utils/calculations';
+import { PENDING_TERCERO_PAYMENT_ID } from '@/platform/utils/terceroMetodoPago';
+import { generarMensajeVenta } from '@/platform/utils/whatsapp';
 import type { PagoDialogFormData } from './schema';
 import type { PagoDialogProps } from './types';
 

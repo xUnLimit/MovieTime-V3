@@ -4,7 +4,7 @@ const notificationsRepository = vi.hoisted(() => ({
   removeNotificacion: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/notifications-repository', () => notificationsRepository);
+vi.mock('@/platform/supabase/notifications-repository', () => notificationsRepository);
 
 import { limpiarNotificacionesHuerfanas } from './notification-cleanup';
 

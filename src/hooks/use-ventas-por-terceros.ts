@@ -7,10 +7,10 @@ import { differenceInCalendarDays } from 'date-fns';
 import {
   invalidateVentasPorTercerosCache as invalidateVentasPorTercerosCacheReaction,
   subscribeToVentasPorTercerosReactions,
-} from '@/lib/events/cache-reactions';
-import { queryKeys } from '@/lib/query-keys';
+} from '@/platform/events/cache-reactions';
+import { queryKeys } from '@/platform/query-keys';
 import { fetchVentasByClienteIdsUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
-import { CACHE_TTL_MS } from '@/lib/constants';
+import { CACHE_TTL_MS } from '@/platform/constants';
 import type { VentaDoc } from '@/types';
 
 /**

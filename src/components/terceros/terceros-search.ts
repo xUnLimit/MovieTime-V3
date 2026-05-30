@@ -1,5 +1,5 @@
-import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
-import { isPendingTerceroPaymentMethodId } from "@/lib/utils/terceroMetodoPago";
+import { normalizePhoneSearch, normalizeSearchText } from "@/platform/utils";
+import { isPendingTerceroPaymentMethodId } from "@/platform/utils/terceroMetodoPago";
 import type { Tercero } from "@/types";
 
 export type TercerosTab = "todos" | "clientes" | "revendedores";

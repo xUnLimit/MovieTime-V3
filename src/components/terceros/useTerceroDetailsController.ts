@@ -10,7 +10,7 @@ import {
   updateServicioMutation,
   updateVentaMutation,
 } from "@/lib/client-domain-mutations";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { fetchServiciosByIdsUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import type { Tercero } from "@/types";
 

@@ -1,6 +1,6 @@
 import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
-import { assertRpcStringId } from '@/lib/utils/safety';
-import type { Database } from '@/lib/supabase/database.types';
+import { assertRpcStringId } from '@/platform/utils/safety';
+import type { Database } from '@/platform/supabase/database.types';
 
 import { withIdempotencyKey } from './idempotency';
 import { typedRpcClient, type RpcResult } from './rpc-client';

@@ -5,7 +5,7 @@ import {
   updateNotificationSendHour,
   updateWhatsappPrefix,
   upsertExchangeRates,
-} from '@/lib/supabase/config-repository';
+} from '@/platform/supabase/config-repository';
 import type { ExecutivePushSettings, TasasCambio } from '@/types';
 
 function sameArray(left: readonly string[] | undefined, right: readonly string[] | undefined) {

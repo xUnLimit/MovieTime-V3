@@ -9,7 +9,7 @@ import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { useServicios } from '@/hooks/use-servicios';
 import { useTemplates } from '@/hooks/use-templates';
-import { getCurrencySymbol } from '@/lib/constants';
+import { getCurrencySymbol } from '@/platform/constants';
 
 import { ServicioDetalleDialogs } from './components/ServicioDetalleDialogs';
 import { ServicioDetalleHeader } from './components/ServicioDetalleHeader';

@@ -2,13 +2,13 @@ import {
   createActivityLog,
   queryActivityLogs,
   removeActivityLog,
-} from '@/lib/supabase/activity-log-repository';
-import { ENTITIES } from '@/lib/supabase/entities';
+} from '@/platform/supabase/activity-log-repository';
+import { ENTITIES } from '@/platform/supabase/entities';
 import type { ActivityLog } from '@/types';
 
 export const ACTIVITY_LOG_COLLECTION = ENTITIES.ACTIVITY_LOG;
 
-export { countActivityLogs as countActivityLogsUseCase, removeAllActivityLogs as deleteAllActivityLogsUseCase } from '@/lib/supabase/activity-log-repository';
+export { countActivityLogs as countActivityLogsUseCase, removeAllActivityLogs as deleteAllActivityLogsUseCase } from '@/platform/supabase/activity-log-repository';
 
 export function createActivityLogUseCase(logData: Omit<ActivityLog, 'id' | 'timestamp'>) {
   return createActivityLog({

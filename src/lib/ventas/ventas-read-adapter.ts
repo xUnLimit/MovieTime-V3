@@ -1,4 +1,4 @@
-import { getVentaById, queryVentas } from '@/lib/supabase/ventas-repository';
+import { getVentaById, queryVentas } from '@/platform/supabase/ventas-repository';
 import { getVentaConUltimoPagoUseCase } from '@/lib/use-cases/ventas/venta-current-payment-use-cases';
 import type { VentaDoc } from '@/types';
 

@@ -1,5 +1,5 @@
-import { NotFoundError } from '@/lib/errors/domain-errors';
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
+import { NotFoundError } from '@/platform/errors/domain-errors';
+import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import {
   createServicioWithInitialPayment,
   getServicioById,
@@ -8,15 +8,15 @@ import {
   removeServicioWithPayments,
   updateLatestServicioPeriodo,
   updateServicio,
-} from '@/lib/supabase/servicios-repository';
-import { toDateOnly, toIso } from '@/lib/supabase/dates';
+} from '@/platform/supabase/servicios-repository';
+import { toDateOnly, toIso } from '@/platform/supabase/dates';
 import {
   resyncServiciosDenormalizedData,
   syncServicioDependencias,
 } from '@/lib/use-cases/servicios/servicio-dependencies-use-cases';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/platform/events/store-event-bus';
 import { convertToUSD, sumPaymentsInUSD } from '@/lib/payments';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+import { detectarCambios } from '@/platform/utils/activityLogHelpers';
 import type { MetodoPago, Servicio } from '@/types';
 import {
   getServicioTableUpdates,

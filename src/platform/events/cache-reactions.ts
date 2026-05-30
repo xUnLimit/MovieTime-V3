@@ -1,8 +1,8 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 
-import { refreshCategoriasCache } from '@/lib/commands/client-cache';
-import { storeEventBus } from '@/lib/events/store-event-bus';
-import { queryKeys } from '@/lib/query-keys';
+import { refreshCategoriasCache } from '@/platform/commands/client-cache';
+import { storeEventBus } from '@/platform/events/store-event-bus';
+import { queryKeys } from '@/platform/query-keys';
 
 type RefreshHandler = () => void;
 type AsyncRefreshHandler = () => Promise<unknown>;

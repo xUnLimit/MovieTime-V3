@@ -3,7 +3,7 @@ import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatearFechaHora } from '@/lib/utils/calculations';
+import { formatearFechaHora } from '@/platform/utils/calculations';
 import type { MetodoPago } from '@/types/metodos-pago';
 import {
   CopyableField,

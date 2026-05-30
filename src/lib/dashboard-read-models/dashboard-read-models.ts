@@ -1,12 +1,12 @@
 import { format } from 'date-fns';
-import type { Json } from '@/lib/supabase/database.types';
+import type { Json } from '@/platform/supabase/database.types';
 import { getOfflineDashboardHome, shouldUseOfflineRead } from '@/lib/pwa/offline-copy';
 import {
   getDashboardChurnStatsRpc,
   getDashboardHomeRpc,
   getDashboardStatsLiveRpc,
   type DashboardStatsRpcRow,
-} from '@/lib/supabase/dashboard-rpc-adapter';
+} from '@/platform/supabase/dashboard-rpc-adapter';
 import type {
   DashboardStats,
   IngresoCategoria,

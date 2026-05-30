@@ -8,7 +8,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
 import { deleteMetodoPagoMutation } from '@/lib/client-domain-mutations';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 import {
   MetodoPagoAdditionalInfo,
   MetodoPagoBasicInfo,

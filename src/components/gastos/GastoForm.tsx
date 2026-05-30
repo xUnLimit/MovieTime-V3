@@ -33,8 +33,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { formatearFecha } from '@/lib/utils/calculations';
+import { cn } from '@/platform/utils';
+import { formatearFecha } from '@/platform/utils/calculations';
 
 const gastoSchema = z.object({
   tipoGastoId: z.string().min(1, 'Selecciona un tipo de gasto'),

@@ -1,6 +1,6 @@
 import { Card } from '@/components/ui/card';
-import { getCurrencySymbol } from '@/lib/constants';
-import { formatearFecha } from '@/lib/utils/calculations';
+import { getCurrencySymbol } from '@/platform/constants';
+import { formatearFecha } from '@/platform/utils/calculations';
 import type { VentaPago } from '@/types';
 
 interface VentaNotesCardProps {

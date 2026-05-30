@@ -1,4 +1,4 @@
-import { invalidateDashboardCache, refreshCategoriasCache } from '@/lib/commands/client-cache';
+import { invalidateDashboardCache, refreshCategoriasCache } from '@/platform/commands/client-cache';
 import {
   deleteServicioPagoUseCase,
   renewServicioUseCase,

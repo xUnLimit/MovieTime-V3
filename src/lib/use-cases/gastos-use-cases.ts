@@ -6,7 +6,7 @@ import {
   getTiposGasto,
   removeGasto,
   updateGasto,
-} from "@/lib/supabase/catalogos-repository";
+} from "@/platform/supabase/catalogos-repository";
 import type { Gasto, TipoGasto } from "@/types";
 
 // NOTE: este use-case no importa store-reactions (que tocan el store de activity-log).

@@ -1,5 +1,5 @@
-import { env } from '@/config';
-import { createServiceRoleClient } from '@/lib/server/supabase-server';
+import { env } from '@/platform/config';
+import { createServiceRoleClient } from '@/platform/server/supabase-server';
 import type { ExecutivePushBlock, ExecutivePushSummaryBlock, ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
 import {
   sendExecutivePushPing,

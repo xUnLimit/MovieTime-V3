@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { fetchCategoriasFull } from "@/lib/use-cases/categorias-use-cases";
 import type { Categoria } from "@/types";
 

@@ -2,7 +2,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 import {
   fetchServicioDetalleBundleUseCase,
   fetchServicioVentasProfilesUseCase,

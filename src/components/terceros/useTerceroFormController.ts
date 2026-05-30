@@ -11,14 +11,14 @@ import {
   createTerceroMutation,
   updateTerceroMutation,
 } from "@/lib/client-domain-mutations";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import {
   createPendingTerceroPaymentMethod,
   getTerceroMetodoPagoMoneda,
   isPendingTerceroPaymentMethodId,
   PENDING_TERCERO_PAYMENT_ID,
   PENDING_TERCERO_PAYMENT_NAME,
-} from "@/lib/utils/terceroMetodoPago";
+} from "@/platform/utils/terceroMetodoPago";
 import type { MetodoPago, Tercero } from "@/types";
 
 const usuarioSchema = z.object({

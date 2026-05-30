@@ -1,6 +1,6 @@
-import { emitTerceroMetodoPagoUpdated } from '@/lib/events/cache-reactions';
+import { emitTerceroMetodoPagoUpdated } from '@/platform/events/cache-reactions';
 import { updateTerceroMetodoPago } from '@/lib/terceros/terceros-write-adapter';
-import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
+import { isPendingTerceroPaymentMethodId } from '@/platform/utils/terceroMetodoPago';
 
 interface SyncTerceroMetodoPagoInput {
   terceroId?: string | null;

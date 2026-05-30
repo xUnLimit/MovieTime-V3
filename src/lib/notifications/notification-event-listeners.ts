@@ -1,4 +1,4 @@
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { storeEventBus } from '@/platform/events/store-event-bus';
 import {
   sincronizarNotificacionesForzado,
   sincronizarUnaVenta,

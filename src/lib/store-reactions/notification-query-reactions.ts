@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 
 type CacheInvalidation = {
   entity: 'venta' | 'servicio';

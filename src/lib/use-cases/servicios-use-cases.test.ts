@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PagoServicio, Servicio } from '@/types';
 
-vi.mock('@/lib/supabase/catalogos-repository', () => ({
+vi.mock('@/platform/supabase/catalogos-repository', () => ({
   getMetodoPagoById: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/categorias-repository', () => ({
+vi.mock('@/platform/supabase/categorias-repository', () => ({
   countCategorias: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/servicios-repository', () => ({
+vi.mock('@/platform/supabase/servicios-repository', () => ({
   countServicios: vi.fn(),
   createServicioWithInitialPayment: vi.fn(),
   getPagoServicioById: vi.fn(),
@@ -53,7 +53,7 @@ vi.mock('@/lib/payments', () => ({
   }),
 }));
 
-vi.mock('@/lib/utils/activityLogHelpers', () => ({
+vi.mock('@/platform/utils/activityLogHelpers', () => ({
   detectarCambios: vi.fn(() => []),
 }));
 
@@ -65,8 +65,8 @@ import {
   removePagoServicio,
   updateLatestServicioPeriodo,
   updateServicio,
-} from '@/lib/supabase/servicios-repository';
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
+} from '@/platform/supabase/servicios-repository';
+import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import { financialPayments } from '@/lib/payments';
 import { sincronizarUnServicio } from '@/lib/notifications';
 import { syncServicioDependencias } from '@/lib/use-cases/servicios/servicio-dependencies-use-cases';

@@ -33,13 +33,13 @@ const cacheReactions = vi.hoisted(() => ({
   emitVentaUpdated: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/domain-read-adapters', () => domainReadAdapters);
+vi.mock('@/platform/supabase/domain-read-adapters', () => domainReadAdapters);
 vi.mock('@/lib/use-cases/ventas/venta-current-payment-use-cases', () => ventaCurrentPayment);
 vi.mock('@/lib/use-cases/ventas/ventas-payment-use-cases', () => ventaPayments);
 vi.mock('@/lib/use-cases/ventas/ventas-refund-use-cases', () => ventaRefunds);
-vi.mock('@/lib/commands/client-cache', () => clientCache);
+vi.mock('@/platform/commands/client-cache', () => clientCache);
 vi.mock('@/lib/forecasting', () => forecasting);
-vi.mock('@/lib/events/cache-reactions', () => cacheReactions);
+vi.mock('@/platform/events/cache-reactions', () => cacheReactions);
 vi.mock('@/lib/activity/activity-log-writer', () => ({
   getActivityLogOptions: vi.fn(() => ({ logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } })),
 }));

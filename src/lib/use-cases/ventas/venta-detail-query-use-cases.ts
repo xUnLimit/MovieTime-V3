@@ -3,9 +3,9 @@ import {
   getServicioContrasenaRead,
   getVentaDetalleRead,
   queryMetodosPagoTercerosRead,
-} from '@/lib/supabase/domain-read-adapters';
+} from '@/platform/supabase/domain-read-adapters';
 import { getVentaConUltimoPagoUseCase } from '@/lib/use-cases/ventas/venta-current-payment-use-cases';
-import { withPendingTerceroPaymentMethod } from '@/lib/utils/terceroMetodoPago';
+import { withPendingTerceroPaymentMethod } from '@/platform/utils/terceroMetodoPago';
 import type { MetodoPago, VentaDoc } from '@/types';
 import type { Plan } from '@/types/categorias';
 import type { VentaDetalleQueryData } from '@/lib/use-cases/ventas/venta-detail-types';

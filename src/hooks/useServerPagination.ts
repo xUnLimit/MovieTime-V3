@@ -3,8 +3,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { queryKeys } from '@/lib/query-keys';
-import { getPaginated, getCount } from '@/lib/supabase/pagination';
+import { queryKeys } from '@/platform/query-keys';
+import { getPaginated, getCount } from '@/platform/supabase/pagination';
 import type { FilterOption } from '@/types/pagination';
 
 interface UseServerPaginationOptions {

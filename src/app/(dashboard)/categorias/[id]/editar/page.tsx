@@ -9,7 +9,7 @@ import { CategoriaForm } from '@/components/categorias/CategoriaForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useCategoriaDetail } from '@/hooks/use-entity-detail';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 import { toast } from 'sonner';
 
 function EditarCategoriaPageContent() {

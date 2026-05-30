@@ -1,5 +1,5 @@
 import { assertOnlineMutation } from '@/lib/pwa/offline-copy';
-import { assertRpcStringId } from '@/lib/utils/safety';
+import { assertRpcStringId } from '@/platform/utils/safety';
 
 import { withIdempotencyKey } from './idempotency';
 import { typedRpcClient, type RpcResult } from './rpc-client';

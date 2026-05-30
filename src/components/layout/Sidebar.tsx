@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, Moon, Sun } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/platform/utils';
 import { useTheme } from '@/components/layout/ThemeProvider';
 import { useSidebarState } from '@/hooks/use-sidebar';
 import { useAuthStore } from '@/store/authStore';

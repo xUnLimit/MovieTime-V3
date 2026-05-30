@@ -1,6 +1,6 @@
-﻿import { getServicios } from '@/lib/supabase/servicios-repository';
-import { queryVentas } from '@/lib/supabase/ventas-repository';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+﻿import { getServicios } from '@/platform/supabase/servicios-repository';
+import { queryVentas } from '@/platform/supabase/ventas-repository';
+import { storeEventBus } from '@/platform/events/store-event-bus';
 import { sincronizarNotificacionesForzado, sincronizarUnServicio, sincronizarUnaVenta } from '@/lib/notifications';
 import type { Servicio, VentaDoc } from '@/types';
 

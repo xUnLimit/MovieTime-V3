@@ -1,11 +1,11 @@
 'use client';
 
 import { getDashboardHome } from '@/lib/dashboard-read-models';
-import { getCategoriasFull } from '@/lib/supabase/categorias-repository';
-import { getConfig } from '@/lib/supabase/config-repository';
-import { queryNotifications } from '@/lib/supabase/notifications-repository';
-import { ENTITIES, type CollectionName } from '@/lib/supabase/entities';
-import { getAll as getAllRecords } from '@/lib/supabase/record-core';
+import { getCategoriasFull } from '@/platform/supabase/categorias-repository';
+import { getConfig } from '@/platform/supabase/config-repository';
+import { queryNotifications } from '@/platform/supabase/notifications-repository';
+import { ENTITIES, type CollectionName } from '@/platform/supabase/entities';
+import { getAll as getAllRecords } from '@/platform/supabase/record-core';
 import { OFFLINE_DB_VERSION } from './offline-constants';
 import { saveOfflineSnapshot } from './offline-db';
 import { getOfflineCollectionsForSync } from './offline-read';

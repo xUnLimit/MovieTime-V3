@@ -1,4 +1,4 @@
-import type { CollectionName, QueryFilter } from '@/lib/supabase/entities';
+import type { CollectionName, QueryFilter } from '@/platform/supabase/entities';
 
 function normalizeComparableValue(value: unknown): unknown {
   if (value instanceof Date) return value.getTime();

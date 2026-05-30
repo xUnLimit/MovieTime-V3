@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { queryMetodosPagoTercerosUseCase } from "@/lib/use-cases/metodos-pago-use-cases";
 import { queryServiciosByCategoriaUseCase } from "@/lib/use-cases/servicios/servicios-query-use-cases";
 import { queryVentasActivasByServiciosUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
@@ -12,7 +12,7 @@ import {
   PENDING_TERCERO_PAYMENT_ID,
   PENDING_TERCERO_PAYMENT_NAME,
   withPendingTerceroPaymentMethod,
-} from "@/lib/utils/terceroMetodoPago";
+} from "@/platform/utils/terceroMetodoPago";
 import type { MetodoPagoTerceroOption } from "@/features/ventas/ventas-form-shared";
 import type { VentaDoc } from "@/types";
 

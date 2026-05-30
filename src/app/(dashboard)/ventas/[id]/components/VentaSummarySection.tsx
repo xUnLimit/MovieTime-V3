@@ -3,7 +3,7 @@ import { Calendar, User } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { formatearFecha } from '@/lib/utils/calculations';
+import { formatearFecha } from '@/platform/utils/calculations';
 import type { VentaDoc } from '@/types';
 
 import type { VentaEstadoDetalle } from './types';

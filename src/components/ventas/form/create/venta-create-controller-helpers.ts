@@ -5,9 +5,9 @@ import {
   type VentaItemErrors,
 } from "@/features/ventas/ventas-form-shared";
 import type { VentaFormData } from "@/features/ventas/venta-form-schema";
-import { PENDING_TERCERO_PAYMENT_ID } from "@/lib/utils/terceroMetodoPago";
-import { PROFILE_PAGE_SIZE } from "@/lib/utils/perfiles";
-import { normalizePhoneSearch, normalizeSearchText } from "@/lib/utils";
+import { PENDING_TERCERO_PAYMENT_ID } from "@/platform/utils/terceroMetodoPago";
+import { PROFILE_PAGE_SIZE } from "@/platform/utils/perfiles";
+import { normalizePhoneSearch, normalizeSearchText } from "@/platform/utils";
 import type { Categoria, Plan, Servicio, Tercero } from "@/types";
 
 import { createClientId } from "./venta-create-id";

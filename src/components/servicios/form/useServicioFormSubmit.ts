@@ -5,13 +5,13 @@ import type { UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { updateServicioPagoUseCase } from "@/lib/use-cases/servicios/servicios-payment-use-cases";
 import { getVentasActivasParaCredenciales } from "@/lib/use-cases/servicios/servicio-credential-notification-use-case";
 import {
   changedCredentialsCount,
   hasCredentialChanges,
-} from "@/lib/utils/credentialNotification";
+} from "@/platform/utils/credentialNotification";
 import type {
   Categoria,
   MetodoPago,

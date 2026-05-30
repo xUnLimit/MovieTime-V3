@@ -2,9 +2,9 @@ import { format } from 'date-fns';
 
 import { convertToUSD } from '@/lib/payments';
 import { getVentaConPagoActual } from '@/lib/ventas/ventas-read-adapter';
-import { calculateDiscountedAmount, roundToDecimals } from '@/lib/utils/calculations';
-import { toMoneyNumber } from '@/lib/utils/safety';
-import { isPendingTerceroPaymentMethodId } from '@/lib/utils/terceroMetodoPago';
+import { calculateDiscountedAmount, roundToDecimals } from '@/platform/utils/calculations';
+import { toMoneyNumber } from '@/platform/utils/safety';
+import { isPendingTerceroPaymentMethodId } from '@/platform/utils/terceroMetodoPago';
 import type { ActivityLog, PagoVenta, VentaDoc } from '@/types';
 import type { VentaPronostico } from '@/types/dashboard';
 

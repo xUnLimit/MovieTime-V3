@@ -2,7 +2,7 @@ import { MessageCircle, Monitor } from "lucide-react";
 
 import type { Column } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
-import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
+import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 import type { Tercero } from "@/types";
 
 type VentasPorTerceroStats = Record<string, { montoSinConsumir?: number } | undefined>;

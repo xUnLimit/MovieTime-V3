@@ -22,7 +22,7 @@ import {
   updateTipoGastoUseCase,
 } from '@/lib/use-cases/tipos-gasto-use-cases';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
+import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { Categoria, MetodoPago, TipoGasto } from '@/types';
 
 export async function createCategoriaMutation(categoria: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>) {

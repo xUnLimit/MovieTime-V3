@@ -2,12 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const getActiveQueryClient = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/query-client-registry', () => ({
+vi.mock('@/platform/query-client-registry', () => ({
   getActiveQueryClient,
 }));
 
-import { storeEventBus } from '@/lib/events/store-event-bus';
-import { queryKeys } from '@/lib/query-keys';
+import { storeEventBus } from '@/platform/events/store-event-bus';
+import { queryKeys } from '@/platform/query-keys';
 import { refreshCategoriasCache } from './client-cache';
 
 describe('client-cache commands', () => {

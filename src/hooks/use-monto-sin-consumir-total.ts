@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 import { convertToUSD } from '@/lib/payments';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 

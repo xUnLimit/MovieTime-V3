@@ -9,7 +9,7 @@ import {
   updateServicioUseCase,
 } from '@/lib/use-cases/servicios/servicios-write-use-cases';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
+import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { Servicio } from '@/types';
 
 export async function createServicioMutation(servicio: Omit<Servicio, 'id' | 'createdAt' | 'updatedAt' | 'perfilesOcupados'>) {

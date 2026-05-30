@@ -2,7 +2,7 @@ import { createECDH } from 'node:crypto';
 
 import webPush from 'web-push';
 
-import { env } from '@/config';
+import { env } from '@/platform/config';
 import type { ExecutivePushSummaryPayload, PushSubscriptionRecord } from '@/types';
 
 const PUSH_REQUEST_TIMEOUT_MS = 15_000;

@@ -1,7 +1,7 @@
 import { syncVentaForecastReadModels } from '@/lib/forecasting';
 import { deleteVentaNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
+import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 
 type ServiceProfileDelta = {
   servicioId: string;

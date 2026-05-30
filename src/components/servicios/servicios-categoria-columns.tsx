@@ -4,12 +4,12 @@ import { RefreshCw, User } from "lucide-react";
 
 import type { Column } from "@/components/shared/DataTable";
 import { Badge } from "@/components/ui/badge";
-import { CURRENCY_SYMBOLS } from "@/lib/constants";
-import { calcularDiasRelativosCalendario } from "@/lib/utils/calculations";
+import { CURRENCY_SYMBOLS } from "@/platform/constants";
+import { calcularDiasRelativosCalendario } from "@/platform/utils/calculations";
 import {
   getProfileIndicatorStates,
   PROFILE_ICON_LIMIT,
-} from "@/lib/utils/perfiles";
+} from "@/platform/utils/perfiles";
 import type { Servicio } from "@/types";
 
 export type ServicioCategoriaRow = Servicio & {

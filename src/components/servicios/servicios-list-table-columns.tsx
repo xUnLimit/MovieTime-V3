@@ -1,9 +1,9 @@
 import { Clock, Monitor, RefreshCw } from "lucide-react";
 
 import type { Column } from "@/components/shared/DataTable";
-import { getCurrencySymbol } from "@/lib/constants";
-import { cn } from "@/lib/utils";
-import { formatearFecha } from "@/lib/utils/calculations";
+import { getCurrencySymbol } from "@/platform/constants";
+import { cn } from "@/platform/utils";
+import { formatearFecha } from "@/platform/utils/calculations";
 import type { ServicioRow } from "./servicios-list-table-types";
 
 export function createServiciosListColumns(): Column<ServicioRow>[] {

@@ -1,7 +1,7 @@
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
-import { getActiveQueryClient } from '@/lib/query-client-registry';
-import { queryKeys } from '@/lib/query-keys';
-import { storeEventBus } from '@/lib/events/store-event-bus';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
+import { getActiveQueryClient } from '@/platform/query-client-registry';
+import { queryKeys } from '@/platform/query-keys';
+import { storeEventBus } from '@/platform/events/store-event-bus';
 
 type CacheContext = {
   entity?: string;

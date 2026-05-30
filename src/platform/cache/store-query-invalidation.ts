@@ -1,5 +1,5 @@
-import { queryKeys } from '@/lib/query-keys';
-import { getActiveQueryClient } from '@/lib/query-client-registry';
+import { queryKeys } from '@/platform/query-keys';
+import { getActiveQueryClient } from '@/platform/query-client-registry';
 
 export type StoreQueryDomain =
   | 'categorias'

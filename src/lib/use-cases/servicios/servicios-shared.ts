@@ -1,5 +1,5 @@
 import { convertToUSD } from '@/lib/payments';
-import { toMoneyNumber } from '@/lib/utils/safety';
+import { toMoneyNumber } from '@/platform/utils/safety';
 import type { ActivityLog, MetodoPago, Servicio } from '@/types';
 import type { ServicioPronostico } from '@/types/dashboard';
 

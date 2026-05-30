@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { getVentaConUltimoPagoUseCase as getVentaConUltimoPago } from './venta-current-payment-use-cases';
 import type { PagoVenta, VentaDoc } from '@/types';
 
-vi.mock('@/lib/supabase/ventas-repository', () => ({
+vi.mock('@/platform/supabase/ventas-repository', () => ({
   queryPagosVenta: vi.fn(),
 }));
 

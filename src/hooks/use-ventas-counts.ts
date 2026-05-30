@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { fetchVentasCountsUseCase } from "@/lib/use-cases/ventas/ventas-query-use-cases";
 
 export function useVentasCounts() {

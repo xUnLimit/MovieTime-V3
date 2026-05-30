@@ -27,7 +27,7 @@ const forecasting = vi.hoisted(() => ({
   syncVentaForecastReadModels: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/domain-read-adapters', () => domainReadAdapters);
+vi.mock('@/platform/supabase/domain-read-adapters', () => domainReadAdapters);
 vi.mock('@/lib/use-cases/servicios/servicios-payment-use-cases', () => servicioPayments);
 vi.mock('@/lib/use-cases/ventas/ventas-payment-use-cases', () => ventaPayments);
 vi.mock('@/lib/store-reactions/notificaciones-workflow-reactions', () => workflowReactions);

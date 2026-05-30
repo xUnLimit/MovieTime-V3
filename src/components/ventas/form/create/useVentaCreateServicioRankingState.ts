@@ -11,7 +11,7 @@ import {
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
   type VentaItem,
 } from "@/features/ventas/ventas-form-shared";
-import { rankServicios } from "@/lib/utils/servicioRanking";
+import { rankServicios } from "@/platform/utils/servicioRanking";
 import type { Plan, Servicio } from "@/types";
 
 import {

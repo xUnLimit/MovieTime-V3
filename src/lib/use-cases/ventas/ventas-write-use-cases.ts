@@ -1,8 +1,8 @@
 import { format } from 'date-fns';
 
-import { NotFoundError, ValidationError } from '@/lib/errors/domain-errors';
-import { getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { toDateOnly, toIso } from '@/lib/supabase/dates';
+import { NotFoundError, ValidationError } from '@/platform/errors/domain-errors';
+import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
+import { toDateOnly, toIso } from '@/platform/supabase/dates';
 import {
   createVenta,
   createVentaWithInitialPayment,
@@ -10,9 +10,9 @@ import {
   removeVenta,
   removeVentaWithPayments,
   updateVenta,
-} from '@/lib/supabase/ventas-repository';
-import { storeEventBus } from '@/lib/events/store-event-bus';
-import { detectarCambios } from '@/lib/utils/activityLogHelpers';
+} from '@/platform/supabase/ventas-repository';
+import { storeEventBus } from '@/platform/events/store-event-bus';
+import { detectarCambios } from '@/platform/utils/activityLogHelpers';
 import type { MetodoPago, VentaDoc } from '@/types';
 import {
   getUsdValues,

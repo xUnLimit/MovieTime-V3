@@ -1,4 +1,4 @@
-import { queryPagosVenta } from '@/lib/supabase/ventas-repository';
+import { queryPagosVenta } from '@/platform/supabase/ventas-repository';
 import type { PagoVenta, VentaDoc } from '@/types';
 
 export interface VentaConUltimoPago extends VentaDoc {

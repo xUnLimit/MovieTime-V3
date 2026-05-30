@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { PROFILE_PAGE_SIZE } from '@/lib/utils/perfiles';
+import { PROFILE_PAGE_SIZE } from '@/platform/utils/perfiles';
 
 import type { PerfilDetalle, PerfilVenta, ServicioDetalle } from './types';
 

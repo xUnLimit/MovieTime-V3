@@ -6,7 +6,7 @@ import {
   getTiposGasto,
   removeTipoGasto,
   updateTipoGasto,
-} from '@/lib/supabase/catalogos-repository';
+} from '@/platform/supabase/catalogos-repository';
 import type { TipoGasto } from '@/types';
 
 async function assertUniqueNombre(normalizedNombre: string, currentId?: string) {

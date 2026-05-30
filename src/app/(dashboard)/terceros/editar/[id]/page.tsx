@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { TerceroForm } from '@/components/terceros/TerceroForm';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
 import { useMetodosPagoTerceros } from '@/hooks/use-metodos-pago-terceros';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 import { toast } from 'sonner';
 
 function EditarTerceroPageContent() {

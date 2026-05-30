@@ -4,12 +4,12 @@ import { useEffect, useMemo } from "react";
 import type { UseFormClearErrors, UseFormSetValue } from "react-hook-form";
 
 import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
-import { getCurrencySymbol } from "@/lib/constants";
+import { getCurrencySymbol } from "@/platform/constants";
 import {
   calculateDiscountedAmount,
   roundToDecimals,
-} from "@/lib/utils/calculations";
-import { getTerceroMetodoPagoMoneda } from "@/lib/utils/terceroMetodoPago";
+} from "@/platform/utils/calculations";
+import { getTerceroMetodoPagoMoneda } from "@/platform/utils/terceroMetodoPago";
 import type { MetodoPago, Plan } from "@/types";
 
 import { hasVentaEditChanges } from "./ventaEditChanges";

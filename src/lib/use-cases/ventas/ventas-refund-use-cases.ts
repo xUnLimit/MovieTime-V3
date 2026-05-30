@@ -1,10 +1,10 @@
-import { InsufficientFundsError, ValidationError } from '@/lib/errors/domain-errors';
-import { toDateOnly, toIso } from '@/lib/supabase/dates';
+import { InsufficientFundsError, ValidationError } from '@/platform/errors/domain-errors';
+import { toDateOnly, toIso } from '@/platform/supabase/dates';
 import {
   createVentaRefund,
   queryPagosVenta,
-} from '@/lib/supabase/ventas-repository';
-import { roundToDecimals } from '@/lib/utils/calculations';
+} from '@/platform/supabase/ventas-repository';
+import { roundToDecimals } from '@/platform/utils/calculations';
 import type { PagoVenta, VentaDoc, VentaReembolsoInput, VentaReembolsoResult } from '@/types';
 import {
   getNetPaidAmount,

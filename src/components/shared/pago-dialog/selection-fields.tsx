@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { getServicioMetodoPagoNombre } from '@/lib/utils/servicioMetodoPago';
+import { getServicioMetodoPagoNombre } from '@/platform/utils/servicioMetodoPago';
 import type { MetodoPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 import { getCicloPagoLabel, getCiclosDisponibles, getPrecioPorCiclo } from './helpers';

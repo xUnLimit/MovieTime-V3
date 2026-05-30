@@ -3,11 +3,11 @@ import {
   getMetodoPagoById,
   removeMetodoPago,
   updateMetodoPago,
-} from '@/lib/supabase/catalogos-repository';
+} from '@/platform/supabase/catalogos-repository';
 import {
   queryMetodosPagoServiciosRead,
   queryMetodosPagoTercerosRead,
-} from '@/lib/supabase/domain-read-adapters';
+} from '@/platform/supabase/domain-read-adapters';
 import type { MetodoPago } from '@/types';
 
 export function getMetodoPagoUseCase(id: string) {

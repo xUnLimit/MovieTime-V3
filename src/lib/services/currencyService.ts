@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase/client';
-import { createLogger } from '@/lib/observability/logger';
+import { supabase } from '@/platform/supabase/client';
+import { createLogger } from '@/platform/observability/logger';
 import {
   API_BASE_URL,
   FALLBACK_RATES,

@@ -1,5 +1,5 @@
 import { syncServicioForecastReadModels } from '@/lib/forecasting';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
 import { deleteServicioNotificationStoreCache } from '@/lib/store-reactions/notification-cache-reactions';
 
 function deleteServicioNotifications(servicioId: string) {

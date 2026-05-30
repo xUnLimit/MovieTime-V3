@@ -1,6 +1,6 @@
-import { getActiveQueryClient } from '@/lib/query-client-registry';
-import { queryKeys } from '@/lib/query-keys';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { getActiveQueryClient } from '@/platform/query-client-registry';
+import { queryKeys } from '@/platform/query-keys';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
 
 type ForecastSyncContext = {
   entity: 'venta' | 'servicio';

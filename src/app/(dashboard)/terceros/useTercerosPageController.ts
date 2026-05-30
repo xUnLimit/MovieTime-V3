@@ -8,15 +8,15 @@ import { filterTercerosForTercerosPage, type TercerosTab } from '@/components/te
 import { useTerceros } from '@/hooks/use-terceros';
 import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { subscribeToTercerosPageReactions } from '@/lib/events/cache-reactions';
-import { queryKeys } from '@/lib/query-keys';
+import { subscribeToTercerosPageReactions } from '@/platform/events/cache-reactions';
+import { queryKeys } from '@/platform/query-keys';
 import { queryMetodosPagoTercerosUseCase } from '@/lib/use-cases/metodos-pago-use-cases';
 import { TERCEROS_COLLECTION } from '@/lib/use-cases/terceros-use-cases';
 import {
   getTerceroMetodoPagoNombre,
   isPendingTerceroPaymentMethodId,
   withPendingTerceroPaymentMethod,
-} from '@/lib/utils/terceroMetodoPago';
+} from '@/platform/utils/terceroMetodoPago';
 import type { Tercero } from '@/types';
 import type { FilterOption } from '@/types/pagination';
 

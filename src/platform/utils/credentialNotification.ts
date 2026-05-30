@@ -1,4 +1,4 @@
-import { formatearFechaWhatsApp, replacePlaceholders } from '@/lib/utils/whatsapp';
+import { formatearFechaWhatsApp, replacePlaceholders } from '@/platform/utils/whatsapp';
 import type { Servicio, VentaDoc, WhatsAppData } from '@/types';
 
 export interface CredentialChangeFlags {

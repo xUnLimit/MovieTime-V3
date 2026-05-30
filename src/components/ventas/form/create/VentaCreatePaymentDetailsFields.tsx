@@ -16,8 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { handleDecimalKeyDown, handleIntegerKeyDown } from "@/components/ventas/form/input-key-handlers";
 import type { VentaItemErrors } from "@/features/ventas/ventas-form-shared";
-import { cn } from "@/lib/utils";
-import { formatearFecha } from "@/lib/utils/calculations";
+import { cn } from "@/platform/utils";
+import { formatearFecha } from "@/platform/utils/calculations";
 
 interface VentaCreatePaymentDetailsFieldsProps {
   codigoRegistration: UseFormRegisterReturn<"codigo">;

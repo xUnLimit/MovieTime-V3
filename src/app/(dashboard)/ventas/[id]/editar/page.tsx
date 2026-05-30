@@ -9,10 +9,10 @@ import { useQuery } from '@tanstack/react-query';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 import { getVentaConUltimoPagoUseCase } from '@/lib/use-cases/ventas/venta-current-payment-use-cases';
 import { getVentaDetalleUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 import { toast } from 'sonner';
 
 async function fetchVentaEditData(id: string): Promise<VentaEditData | null> {

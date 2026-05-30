@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import { fetchMetodosPagoCountsUseCase } from "@/lib/use-cases/catalogos-use-cases";
 
 export function useMetodosPagoCounts() {

@@ -6,15 +6,15 @@ import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
 
 import { useTemplates } from "@/hooks/use-templates";
-import { getCurrencySymbol } from "@/lib/constants";
-import { calculateDiscountedAmount, roundToDecimals } from "@/lib/utils/calculations";
-import { getServicioMetodoPagoNombre } from "@/lib/utils/servicioMetodoPago";
+import { getCurrencySymbol } from "@/platform/constants";
+import { calculateDiscountedAmount, roundToDecimals } from "@/platform/utils/calculations";
+import { getServicioMetodoPagoNombre } from "@/platform/utils/servicioMetodoPago";
 import {
   getTerceroMetodoPagoMoneda,
   getTerceroMetodoPagoNombre,
   isPendingTerceroPaymentMethodId,
   withPendingTerceroPaymentMethod,
-} from "@/lib/utils/terceroMetodoPago";
+} from "@/platform/utils/terceroMetodoPago";
 import type { TemplateMensaje } from "@/types";
 
 import { pagoDialogSchema, type PagoDialogFormData } from "./schema";

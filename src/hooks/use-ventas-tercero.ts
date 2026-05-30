@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { subscribeToVentasTerceroReactions } from '@/lib/events/cache-reactions';
+import { subscribeToVentasTerceroReactions } from '@/platform/events/cache-reactions';
 import { deleteVentaMutation } from '@/lib/client-domain-mutations';
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 import { queryVentasByClienteUseCase } from '@/lib/use-cases/ventas/ventas-query-use-cases';
-import { CACHE_TTL_MS } from '@/lib/constants';
+import { CACHE_TTL_MS } from '@/platform/constants';
 import type { VentaDoc } from '@/types';
 
 interface VentasTerceroQueryData {

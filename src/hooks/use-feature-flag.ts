@@ -2,11 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/platform/query-keys";
 import {
   fetchFeatureFlags,
   type FeatureFlagMap,
-} from "@/lib/supabase/feature-flags-repository";
+} from "@/platform/supabase/feature-flags-repository";
 
 function useFeatureFlagsQuery() {
   return useQuery<FeatureFlagMap>({

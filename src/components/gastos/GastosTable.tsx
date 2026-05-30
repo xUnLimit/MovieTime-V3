@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Calendar } from '@/components/ui/calendar';
 import { Gasto, TipoGasto } from '@/types';
-import { formatearFecha } from '@/lib/utils/calculations';
+import { formatearFecha } from '@/platform/utils/calculations';
 
 interface GastoDisplay extends Gasto {
   searchText: string;

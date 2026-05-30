@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 const sendExecutivePushDailySummary = vi.hoisted(() => vi.fn());
 
-vi.mock('@/config', () => ({
+vi.mock('@/platform/config', () => ({
   env: {
     pushCronSecret: 'cron-secret',
   },

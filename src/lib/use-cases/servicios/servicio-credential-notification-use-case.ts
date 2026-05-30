@@ -1,6 +1,6 @@
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { queryVentas } from '@/platform/supabase/ventas-repository';
 import type { Servicio, Tercero, VentaDoc } from '@/types';
-import type { CredentialChangeFlags } from '@/lib/utils/credentialNotification';
+import type { CredentialChangeFlags } from '@/platform/utils/credentialNotification';
 
 export type ServicioForCredentialNotification = Pick<
   Servicio,

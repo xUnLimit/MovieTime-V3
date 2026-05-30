@@ -18,7 +18,7 @@ import {
   isExecutivePushScheduleUnchanged,
 } from "@/lib/executive-push/executive-push-settings";
 import { updateExecutivePushUseCase } from "@/lib/use-cases/config-use-cases";
-import { safeAsyncSideEffect } from "@/lib/utils/safety";
+import { safeAsyncSideEffect } from "@/platform/utils/safety";
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardFilterStore } from "@/store/dashboardFilterStore";
 import { usePwaStore } from "@/store/pwaStore";

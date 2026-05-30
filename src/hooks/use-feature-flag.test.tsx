@@ -7,7 +7,7 @@ const featureFlagMocks = vi.hoisted(() => ({
   fetchFeatureFlags: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/feature-flags-repository', () => ({
+vi.mock('@/platform/supabase/feature-flags-repository', () => ({
   fetchFeatureFlags: featureFlagMocks.fetchFeatureFlags,
 }));
 

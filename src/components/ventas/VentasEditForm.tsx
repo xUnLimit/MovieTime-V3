@@ -8,7 +8,7 @@ import { VentaEditDatosTab } from "@/components/ventas/form/edit/VentaEditDatosT
 import type { VentaEditData } from "@/components/ventas/form/edit/types";
 import { useVentasEditFormController } from "@/components/ventas/form/edit/useVentasEditFormController";
 import { getCicloPagoLabel } from "@/features/ventas/ventas-form-shared";
-import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
+import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 
 export type { VentaEditData };
 

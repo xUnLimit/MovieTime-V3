@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/supabase/terceros-repository', () => ({
+vi.mock('@/platform/supabase/terceros-repository', () => ({
   countTerceros: vi.fn(),
   createTercero: vi.fn(),
   getTerceroById: vi.fn(),
@@ -8,7 +8,7 @@ vi.mock('@/lib/supabase/terceros-repository', () => ({
   updateTercero: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/ventas-repository', () => ({
+vi.mock('@/platform/supabase/ventas-repository', () => ({
   queryVentas: vi.fn(),
 }));
 
@@ -20,12 +20,12 @@ vi.mock('@/lib/notifications', () => ({
   sincronizarNotificacionesForzado: vi.fn(),
 }));
 
-vi.mock('@/lib/utils/activityLogHelpers', () => ({
+vi.mock('@/platform/utils/activityLogHelpers', () => ({
   detectarCambios: vi.fn(() => []),
 }));
 
-import { createTercero, getTerceroById, updateTercero } from '@/lib/supabase/terceros-repository';
-import { queryVentas } from '@/lib/supabase/ventas-repository';
+import { createTercero, getTerceroById, updateTercero } from '@/platform/supabase/terceros-repository';
+import { queryVentas } from '@/platform/supabase/ventas-repository';
 import { createTerceroUseCase, resolveTerceroForDelete, updateTerceroUseCase } from './terceros-use-cases';
 
 describe('terceros use cases', () => {

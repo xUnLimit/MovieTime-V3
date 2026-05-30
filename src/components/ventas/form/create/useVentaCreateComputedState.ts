@@ -7,11 +7,11 @@ import {
   type PendingVentaPerfil,
 } from "@/components/ventas/form/useVentaPerfilDetalle";
 import type { VentaItem } from "@/features/ventas/ventas-form-shared";
-import { getCurrencySymbol } from "@/lib/constants";
+import { getCurrencySymbol } from "@/platform/constants";
 import {
   calculateDiscountedAmount,
   roundToDecimals,
-} from "@/lib/utils/calculations";
+} from "@/platform/utils/calculations";
 import type { MetodoPago, Tercero } from "@/types";
 
 interface UseVentaCreateComputedStateParams {

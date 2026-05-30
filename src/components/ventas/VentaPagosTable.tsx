@@ -10,10 +10,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getCurrencySymbol } from "@/lib/constants";
+import { getCurrencySymbol } from "@/platform/constants";
 import { formatAggregateInUSD, sumInUSD } from "@/lib/payments";
-import { formatearFecha } from "@/lib/utils/calculations";
-import { queryKeys } from "@/lib/query-keys";
+import { formatearFecha } from "@/platform/utils/calculations";
+import { queryKeys } from "@/platform/query-keys";
 import { VentaPago } from "@/types";
 
 interface VentaPagosTableProps {

@@ -1,4 +1,4 @@
-import { ENTITIES, type CollectionName } from '@/lib/supabase/entities';
+import { ENTITIES, type CollectionName } from '@/platform/supabase/entities';
 
 export const OFFLINE_DB_NAME = 'movietime-offline';
 export const OFFLINE_DB_VERSION = 1;

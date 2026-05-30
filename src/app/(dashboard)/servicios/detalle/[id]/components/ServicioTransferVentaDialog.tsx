@@ -21,8 +21,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useVentasActivasByServicio } from '@/components/ventas/form/useVentaFormQueries';
-import { rankServicios } from '@/lib/utils/servicioRanking';
-import { cn } from '@/lib/utils';
+import { rankServicios } from '@/platform/utils/servicioRanking';
+import { cn } from '@/platform/utils';
 import type { Servicio, VentaDoc } from '@/types';
 import { getVentaEstadoDisplay } from './servicio-sale-actions-helpers';
 

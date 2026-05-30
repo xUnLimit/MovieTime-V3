@@ -6,7 +6,7 @@ config({ quiet: true });
 Object.assign(process.env, { NODE_ENV: process.env.NODE_ENV || 'production' });
 
 async function main() {
-  const { validateEnvironment } = await import('../src/config/env');
+  const { validateEnvironment } = await import('../src/platform/config/env');
 
   validateEnvironment();
   console.log('Environment validation passed.');

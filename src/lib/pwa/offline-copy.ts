@@ -13,7 +13,7 @@ import {
   shouldUseOfflineRead,
 } from '@/lib/pwa/offline-read';
 import { syncOfflineSnapshot } from '@/lib/pwa/offline-sync';
-import type { CollectionName, QueryFilter } from '@/lib/supabase/entities';
+import type { CollectionName, QueryFilter } from '@/platform/supabase/entities';
 import type { OfflineSyncProgress } from '@/lib/pwa/offline-types';
 
 export async function prepareOfflineCopy(onProgress?: (progress: OfflineSyncProgress) => void) {

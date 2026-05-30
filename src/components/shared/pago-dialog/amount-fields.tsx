@@ -1,5 +1,5 @@
 import { Label } from '@/components/ui/label';
-import { roundToDecimals } from '@/lib/utils/calculations';
+import { roundToDecimals } from '@/platform/utils/calculations';
 import { DECIMAL_INPUT_PATTERN } from './helpers';
 import type { FormErrors, FormSetValue, StateSetter } from './field-types';
 

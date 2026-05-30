@@ -1,7 +1,7 @@
 import { addMonths, endOfMonth, format, isWithinInterval, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { CYCLE_MONTHS, type CicloPago } from '@/lib/constants';
+import { CYCLE_MONTHS, type CicloPago } from '@/platform/constants';
 import type { PronosticoMensual, ServicioPronostico, VentaPronostico } from '@/types/dashboard';
 
 export interface MesPronostico extends PronosticoMensual {

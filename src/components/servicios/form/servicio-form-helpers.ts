@@ -1,11 +1,11 @@
 import { addDays } from "date-fns";
 
-import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/lib/constants";
+import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/platform/constants";
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
 import {
   buildCredentialUpdateMessage,
   type CredentialChangeFlags,
-} from "@/lib/utils/credentialNotification";
+} from "@/platform/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { Categoria, MetodoPago, Servicio, TipoPlanConfig } from "@/types";
 import type { Tercero, VentaDoc } from "@/types";

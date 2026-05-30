@@ -14,7 +14,7 @@ import {
   saveOfflineAuthUser,
   setOfflineAuthSessionActive,
 } from '@/lib/pwa/offline-auth';
-import { logAsyncSideEffectError } from '@/lib/utils/safety';
+import { logAsyncSideEffectError } from '@/platform/utils/safety';
 
 const REMEMBER_KEY = 'auth-remember';
 const DASHBOARD_TOAST_SESSION_KEY = 'movietime:dashboard-toast-state';

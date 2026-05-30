@@ -1,4 +1,4 @@
-import { countMetodosPago } from '@/lib/supabase/catalogos-repository';
+import { countMetodosPago } from '@/platform/supabase/catalogos-repository';
 
 export async function fetchMetodosPagoCountsUseCase() {
   const [totalMetodos, metodosTerceros, metodosServicios] = await Promise.all([

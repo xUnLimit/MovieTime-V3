@@ -1,7 +1,7 @@
 'use client';
 
-import { env } from '@/config';
-import { supabase } from '@/lib/supabase/client';
+import { env } from '@/platform/config';
+import { supabase } from '@/platform/supabase/client';
 
 function base64UrlToUint8Array(value: string) {
   const padding = '='.repeat((4 - (value.length % 4)) % 4);

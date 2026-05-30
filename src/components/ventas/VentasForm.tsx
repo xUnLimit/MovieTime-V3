@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   isPendingTerceroPaymentMethodId,
   PENDING_TERCERO_PAYMENT_ID,
-} from "@/lib/utils/terceroMetodoPago";
+} from "@/platform/utils/terceroMetodoPago";
 
 export function VentasForm() {
   const {

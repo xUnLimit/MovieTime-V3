@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { getTerceroMetodoPagoNombre } from "@/lib/utils/terceroMetodoPago";
+import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 import type { MetodoPago, Tercero } from "@/types";
 
 import { useTerceroFormController } from "./useTerceroFormController";

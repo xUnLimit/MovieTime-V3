@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-import type { Database } from '@/lib/supabase/database.types';
+import type { Database } from '@/platform/supabase/database.types';
 
 export function createServiceRoleClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

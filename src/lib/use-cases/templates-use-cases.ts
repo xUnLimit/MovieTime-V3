@@ -2,7 +2,7 @@ import {
   createTemplate,
   removeTemplate,
   updateTemplate,
-} from '@/lib/supabase/templates-repository';
+} from '@/platform/supabase/templates-repository';
 import type { TemplateMensaje } from '@/types';
 
 export async function createTemplateUseCase(

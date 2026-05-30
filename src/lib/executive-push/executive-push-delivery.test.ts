@@ -25,7 +25,7 @@ vi.mock('web-push', () => ({
 
 // Test-only VAPID keys — NOT real credentials.
 // web-push is fully mocked so these values are never used for real encryption.
-vi.mock('@/config', () => ({
+vi.mock('@/platform/config', () => ({
   env: {
     vapidPublicKey: vapidTestConfig.publicKey,
     vapidSubject: vapidTestConfig.subject,
@@ -33,7 +33,7 @@ vi.mock('@/config', () => ({
   },
 }));
 
-vi.mock('@/lib/server/supabase-server', () => ({
+vi.mock('@/platform/server/supabase-server', () => ({
   createServiceRoleClient: () => ({
     from: supabaseMocks.from,
   }),

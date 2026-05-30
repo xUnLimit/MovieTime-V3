@@ -9,8 +9,8 @@ const catalogosRepository = vi.hoisted(() => ({
   getMetodoPagoById: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/notifications-repository', () => notificationsRepository);
-vi.mock('@/lib/supabase/catalogos-repository', () => catalogosRepository);
+vi.mock('@/platform/supabase/notifications-repository', () => notificationsRepository);
+vi.mock('@/platform/supabase/catalogos-repository', () => catalogosRepository);
 
 import { procesarNotificacionReposo } from './reposo-notification-sync';
 import { procesarNotificacionServicio } from './servicio-notification-sync';

@@ -8,9 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getCurrencySymbol } from '@/lib/constants';
+import { getCurrencySymbol } from '@/platform/constants';
 import { formatAggregateInUSD } from '@/lib/payments';
-import { formatearFecha } from '@/lib/utils/calculations';
+import { formatearFecha } from '@/platform/utils/calculations';
 import type { MetodoPago, PagoServicio } from '@/types';
 
 import type { MetodoPagoDetalle, PagoAction } from './types';

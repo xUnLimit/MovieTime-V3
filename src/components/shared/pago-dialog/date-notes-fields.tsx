@@ -6,8 +6,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
-import { formatearFecha } from '@/lib/utils/calculations';
+import { cn } from '@/platform/utils';
+import { formatearFecha } from '@/platform/utils/calculations';
 import type { FormRegister, FormSetValue, StateSetter } from './field-types';
 
 interface DateFieldProps {

@@ -1,4 +1,4 @@
-import { removeNotificacion } from '@/lib/supabase/notifications-repository';
+import { removeNotificacion } from '@/platform/supabase/notifications-repository';
 import type {
   Notificacion,
   NotificacionReposo,

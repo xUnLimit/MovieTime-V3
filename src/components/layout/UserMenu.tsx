@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { LogOut, User, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { cn } from '@/lib/utils';
+import { cn } from '@/platform/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,

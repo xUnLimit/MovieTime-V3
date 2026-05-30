@@ -10,7 +10,7 @@ import { ServiciosMetodosPagoTable } from '@/components/metodos-pago/ServiciosMe
 import { MetodosPagoMetrics } from '@/components/metodos-pago/MetodosPagoMetrics';
 import { useMetodosPago } from '@/hooks/use-metodos-pago';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/platform/query-keys';
 import { useQueryClient } from '@tanstack/react-query';
 
 function MetodosPagoPageContent() {

@@ -26,8 +26,8 @@ import {
 } from "@/components/ventas/form/input-key-handlers";
 import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
 import { MESES_POR_CICLO } from "@/features/ventas/ventas-form-shared";
-import { cn } from "@/lib/utils";
-import { formatearFecha } from "@/lib/utils/calculations";
+import { cn } from "@/platform/utils";
+import { formatearFecha } from "@/platform/utils/calculations";
 import type { Plan } from "@/types";
 
 interface VentaEditPaymentDetailsFieldsProps {

@@ -12,7 +12,7 @@ import { ServiciosListTable } from '@/components/servicios/ServiciosListTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
 import { useServerPagination } from '@/hooks/useServerPagination';
-import { subscribeToServicioListReactions } from '@/lib/events/cache-reactions';
+import { subscribeToServicioListReactions } from '@/platform/events/cache-reactions';
 import { SERVICIOS_COLLECTION } from '@/lib/use-cases/servicios/servicios-query-use-cases';
 import type { FilterOption } from '@/types/pagination';
 import { Servicio } from '@/types';

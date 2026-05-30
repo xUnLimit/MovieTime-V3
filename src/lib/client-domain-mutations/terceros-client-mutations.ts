@@ -9,7 +9,7 @@ import {
   updateTerceroUseCase,
 } from '@/lib/use-cases/terceros-use-cases';
 import { getActivityLogOptions } from '@/lib/activity/activity-log-writer';
-import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
+import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { Tercero } from '@/types';
 
 export async function createTerceroMutation(usuario: Omit<Tercero, 'id' | 'createdAt' | 'updatedAt' | 'serviciosActivos'>) {

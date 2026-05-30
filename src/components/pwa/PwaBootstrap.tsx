@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 
-import { env } from '@/config';
-import { safeAsyncSideEffect } from '@/lib/utils/safety';
+import { env } from '@/platform/config';
+import { safeAsyncSideEffect } from '@/platform/utils/safety';
 import { usePwaStore } from '@/store/pwaStore';
 
 const MOVIETIME_CACHE_PREFIX = 'movietime-';

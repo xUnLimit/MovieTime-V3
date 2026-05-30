@@ -7,14 +7,14 @@ const syncUnServicioMock = vi.fn();
 const syncUnaVentaMock = vi.fn();
 const refreshNotificationStoreCacheMock = vi.fn();
 
-vi.mock('@/lib/supabase/servicios-repository', () => ({
+vi.mock('@/platform/supabase/servicios-repository', () => ({
   getServicios: getServiciosMock,
   ENTITIES: {
     SERVICIOS: 'servicios',
   },
 }));
 
-vi.mock('@/lib/supabase/ventas-repository', () => ({
+vi.mock('@/platform/supabase/ventas-repository', () => ({
   queryVentas: queryVentasMock,
 }));
 
@@ -43,7 +43,7 @@ describe('servicio-dependencies-use-cases', () => {
     it('regenera notificaciones del servicio y sus ventas asociadas', async () => {
       queryVentasMock.mockResolvedValue([{ id: 'venta-1' }, { id: 'venta-2' }]);
 
-      const { storeEventBus } = await import('@/lib/events/store-event-bus');
+      const { storeEventBus } = await import('@/platform/events/store-event-bus');
       const servicioUpdated = vi.fn();
       const ventaUpdated = vi.fn();
       const unsubscribeServicio = storeEventBus.on('SERVICIO_UPDATED', servicioUpdated);

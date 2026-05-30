@@ -13,8 +13,8 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
-import { subscribeToCategoriaListReactions } from '@/lib/events/cache-reactions';
-import { queryKeys } from '@/lib/query-keys';
+import { subscribeToCategoriaListReactions } from '@/platform/events/cache-reactions';
+import { queryKeys } from '@/platform/query-keys';
 
 function CategoriasPageContent() {
   const queryClient = useQueryClient();

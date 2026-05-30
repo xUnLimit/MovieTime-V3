@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { getActivityDisplayConfig } from '@/lib/utils/activityDisplayHelpers';
+import { getActivityDisplayConfig } from '@/platform/utils/activityDisplayHelpers';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
 export function RecentActivity() {

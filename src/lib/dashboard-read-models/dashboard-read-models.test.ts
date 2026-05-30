@@ -12,7 +12,7 @@ const dashboardRpc = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/pwa/offline-copy', () => offlineRead);
-vi.mock('@/lib/supabase/dashboard-rpc-adapter', () => dashboardRpc);
+vi.mock('@/platform/supabase/dashboard-rpc-adapter', () => dashboardRpc);
 
 import {
   getDashboardChurnStats,

@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { queryKeys } from '@/lib/query-keys';
-import { queryPagosVenta } from '@/lib/supabase/ventas-repository';
+import { queryKeys } from '@/platform/query-keys';
+import { queryPagosVenta } from '@/platform/supabase/ventas-repository';
 import type { PagoVenta } from '@/types';
 
 /**

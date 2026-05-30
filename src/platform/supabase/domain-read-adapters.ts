@@ -1,12 +1,12 @@
-import { queryMetodosPago, getMetodoPagoById } from '@/lib/supabase/catalogos-repository';
-import { queryNotifications } from '@/lib/supabase/notifications-repository';
-import { getCategoriaById } from '@/lib/supabase/categorias-repository';
+import { queryMetodosPago, getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
+import { queryNotifications } from '@/platform/supabase/notifications-repository';
+import { getCategoriaById } from '@/platform/supabase/categorias-repository';
 import {
   queryServicios,
   getServicioById,
-} from '@/lib/supabase/servicios-repository';
-import { getVentaById, timestampToDate } from '@/lib/supabase/ventas-repository';
-import type { QueryFilter } from '@/lib/supabase/entities';
+} from '@/platform/supabase/servicios-repository';
+import { getVentaById, timestampToDate } from '@/platform/supabase/ventas-repository';
+import type { QueryFilter } from '@/platform/supabase/entities';
 import type { Categoria, MetodoPago, Notificacion, Servicio, VentaDoc } from '@/types';
 import type { Plan } from '@/types/categorias';
 

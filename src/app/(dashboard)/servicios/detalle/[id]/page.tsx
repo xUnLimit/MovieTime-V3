@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { isUuid } from '@/lib/utils/safety';
+import { isUuid } from '@/platform/utils/safety';
 
 import ServicioDetalleClient from './ServicioDetalleClient';
 

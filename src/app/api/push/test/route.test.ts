@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 const authMock = vi.hoisted(() => vi.fn());
 const sendForcedExecutivePush = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/server/request-auth', () => ({
+vi.mock('@/platform/server/request-auth', () => ({
   requireAuthenticatedAdmin: authMock,
 }));
 

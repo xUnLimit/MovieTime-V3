@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { calcularDiasRelativosCalendario, formatearFecha, formatearFechaHora } from '@/lib/utils/calculations';
+import { calcularDiasRelativosCalendario, formatearFecha, formatearFechaHora } from '@/platform/utils/calculations';
 
 import type { CategoriaDetalle, MetodoPagoDetalle, ServicioDetalle } from './types';
 

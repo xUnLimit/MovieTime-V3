@@ -2,8 +2,8 @@ import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema
 import {
   getTerceroMetodoPagoMoneda,
   getTerceroMetodoPagoNombre,
-} from "@/lib/utils/terceroMetodoPago";
-import { calculateDiscountedAmount, roundToDecimals } from "@/lib/utils/calculations";
+} from "@/platform/utils/terceroMetodoPago";
+import { calculateDiscountedAmount, roundToDecimals } from "@/platform/utils/calculations";
 import type { Categoria, Plan, Servicio, Tercero, VentaDoc } from "@/types";
 
 type PaymentMethodOption = {

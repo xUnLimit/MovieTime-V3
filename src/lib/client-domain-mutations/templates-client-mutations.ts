@@ -8,7 +8,7 @@ import {
   deleteTemplateUseCase,
   updateTemplateUseCase,
 } from '@/lib/use-cases/templates-use-cases';
-import { invalidateStoreQueries } from '@/lib/cache/store-query-invalidation';
+import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { TemplateMensaje } from '@/types';
 
 export async function createTemplateMutation(template: Omit<TemplateMensaje, 'id' | 'createdAt' | 'updatedAt'>) {
