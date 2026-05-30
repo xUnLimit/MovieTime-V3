@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
@@ -44,11 +45,16 @@ export const viewport: Viewport = {
   interactiveWidget: 'resizes-content',
 };
 
-export default function RootLayout({
+export const dynamic = 'force-dynamic';
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Required for Next to apply the per-request CSP nonce generated in proxy.ts.
+  await headers();
+
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <body className="font-body antialiased">
