@@ -2,16 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/platform/query-keys";
 import {
-  fetchFeatureFlags,
+  fetchFeatureFlagsUseCase,
   type FeatureFlagMap,
-} from "@/platform/supabase/feature-flags-repository";
+} from "@/application/use-cases/feature-flags-use-cases";
+import { queryKeys } from "@/platform/query-keys";
 
 function useFeatureFlagsQuery() {
   return useQuery<FeatureFlagMap>({
     queryKey: queryKeys.featureFlags.all,
-    queryFn: fetchFeatureFlags,
+    queryFn: fetchFeatureFlagsUseCase,
     staleTime: 5 * 60 * 1000,
   });
 }

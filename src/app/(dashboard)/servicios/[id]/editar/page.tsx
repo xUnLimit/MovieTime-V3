@@ -7,12 +7,12 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ServicioForm } from '@/components/servicios/ServicioForm';
 import { useServicioDetail } from '@/hooks/use-entity-detail';
-import { isUuid } from '@/platform/utils/safety';
+import { isUuid, safeInternalPath } from '@/platform/utils/safety';
 
 function EditarServicioPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const from = searchParams.get('from') || '/servicios';
+  const from = safeInternalPath(searchParams.get('from'), '/servicios');
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = isUuid(rawId) ? rawId : null;
   const { data: servicio, isLoading } = useServicioDetail(id);

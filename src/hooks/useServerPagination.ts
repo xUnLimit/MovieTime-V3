@@ -3,8 +3,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { getCountUseCase, getPaginatedUseCase } from '@/application/use-cases/pagination-use-cases';
 import { queryKeys } from '@/platform/query-keys';
-import { getPaginated, getCount } from '@/platform/supabase/pagination';
 import type { FilterOption } from '@/types/pagination';
 
 interface UseServerPaginationOptions {
@@ -24,9 +24,9 @@ interface PaginationState {
 }
 
 /**
- * Hook para paginación server-side con cursores.
- * Solo trae pageSize docs por página desde Supabase.
- * Se resetea automáticamente cuando cambian los filtros.
+ * Hook para paginacion server-side con cursores.
+ * Solo trae pageSize docs por pagina desde Supabase.
+ * Lee desde la primera pagina cuando cambian los filtros, sin mutar estado durante render.
  */
 export function useServerPagination<T>({
   collectionName,
@@ -48,13 +48,6 @@ export function useServerPagination<T>({
   }));
 
   const signatureChanged = paginationState.signature !== paginationSignature;
-  if (signatureChanged) {
-    setPaginationState({
-      signature: paginationSignature,
-      pageIndex: 0,
-      cursors: [undefined],
-    });
-  }
 
   const effectivePageIndex = signatureChanged ? 0 : paginationState.pageIndex;
   const effectiveCursors = signatureChanged ? [undefined] : paginationState.cursors;
@@ -83,7 +76,7 @@ export function useServerPagination<T>({
     queryKey,
     queryFn: async () => {
       const [result, count] = await Promise.all([
-        getPaginated<T>(collectionName, {
+        getPaginatedUseCase<T>(collectionName, {
           pageSize,
           startAfterDoc: effectiveCursors[effectivePageIndex],
           filters,
@@ -91,7 +84,7 @@ export function useServerPagination<T>({
           orderDirection,
         }),
         includeTotalCount
-          ? getCount(collectionName, filters)
+          ? getCountUseCase(collectionName, filters)
           : Promise.resolve<number | null>(null),
       ]);
 
@@ -118,7 +111,7 @@ export function useServerPagination<T>({
 
   const next = useCallback(() => {
     setPaginationState((current) => {
-      const cursors = current.signature === paginationSignature ? [...current.cursors] : [undefined];
+      const cursors = current.signature === paginationSignature && !signatureChanged ? [...current.cursors] : [undefined];
       const lastDoc = pageResult?.result.lastDoc;
       if (typeof lastDoc === 'number') {
         cursors[effectivePageIndex + 1] = lastDoc;
@@ -130,14 +123,14 @@ export function useServerPagination<T>({
         cursors,
       };
     });
-  }, [effectivePageIndex, pageResult?.result.lastDoc, paginationSignature]);
+  }, [effectivePageIndex, pageResult?.result.lastDoc, paginationSignature, signatureChanged]);
   const previous = useCallback(() => {
     setPaginationState((current) => ({
       signature: paginationSignature,
       pageIndex: Math.max(0, effectivePageIndex - 1),
-      cursors: current.signature === paginationSignature ? current.cursors : [undefined],
+      cursors: current.signature === paginationSignature && !signatureChanged ? current.cursors : [undefined],
     }));
-  }, [effectivePageIndex, paginationSignature]);
+  }, [effectivePageIndex, paginationSignature, signatureChanged]);
   const refresh = useCallback(() => {
     setPaginationState({
       signature: paginationSignature,

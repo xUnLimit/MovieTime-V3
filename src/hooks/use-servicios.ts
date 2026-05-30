@@ -2,13 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { fetchServiciosUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 import { queryKeys } from "@/platform/query-keys";
-import { getServicios } from "@/platform/supabase/servicios-repository";
-import type { Servicio } from "@/types/servicios";
 
 export function useServicios() {
   return useQuery({
     queryKey: queryKeys.servicios.lists(),
-    queryFn: () => getServicios<Servicio>(),
+    queryFn: fetchServiciosUseCase,
   });
 }

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { isUuid } from '@/platform/utils/safety';
+import { isUuid, safeInternalPath } from '@/platform/utils/safety';
 
 import ServicioDetalleClient from './ServicioDetalleClient';
 
@@ -19,7 +19,8 @@ export default async function ServicioDetallePage({ params, searchParams }: Page
 
   const resolvedSearchParams = await searchParams;
   const fromParam = resolvedSearchParams?.from;
-  const from = Array.isArray(fromParam) ? fromParam[0] ?? null : fromParam ?? null;
+  const rawFrom = Array.isArray(fromParam) ? fromParam[0] ?? null : fromParam ?? null;
+  const from = rawFrom ? safeInternalPath(rawFrom, '/servicios') : null;
 
   return <ServicioDetalleClient id={serviceId} from={from} />;
 }

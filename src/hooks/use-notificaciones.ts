@@ -2,16 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { queryKeys } from "@/platform/query-keys";
 import {
-  queryNotificationsRead,
+  queryNotificationsUseCase,
   type NotificacionConId,
-} from "@/platform/supabase/domain-read-adapters";
+} from "@/application/use-cases/notificaciones/notificaciones-query-use-cases";
+import { queryKeys } from "@/platform/query-keys";
 export type { NotificacionConId };
 
 export function useNotificaciones() {
   return useQuery({
     queryKey: queryKeys.notificaciones.lists(),
-    queryFn: () => queryNotificationsRead(),
+    queryFn: () => queryNotificationsUseCase(),
   });
 }

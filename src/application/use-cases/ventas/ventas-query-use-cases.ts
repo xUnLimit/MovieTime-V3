@@ -60,6 +60,12 @@ export function queryVentasByClienteUseCase<T = VentaDoc>(clienteId: string) {
   ]);
 }
 
+export function queryPagosVentaByVentaUseCase<T = PagoVenta>(ventaId: string) {
+  return queryPagosVenta<T>([
+    { field: 'ventaId', operator: '==', value: ventaId },
+  ]);
+}
+
 export function countVentasActivasByServicioUseCase(servicioId: string) {
   return countVentas([
     { field: 'servicioId', operator: '==', value: servicioId },

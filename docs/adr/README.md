@@ -17,6 +17,7 @@ ADRs iniciales para la ruta enterprise:
 - [0005 - Arquitectura modular monolitica con modulos profundos](0005-modular-monolith-deep-modules.md)
 - [0006 - Modelo RLS single-tenant administrativo](0006-single-tenant-admin-rls-model.md)
 - [0007 - Migracion final de stores remotos a React Query](0007-react-query-final-store-migration.md)
+- [0008 - Politica de zoom en PWA movil interna](0008-mobile-pwa-viewport-zoom-policy.md)
 
 Documentos activos relacionados:
 

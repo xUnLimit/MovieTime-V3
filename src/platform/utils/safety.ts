@@ -46,6 +46,38 @@ export function toMoneyNumber(value: unknown, label = 'monto'): number {
   return amount;
 }
 
+function isUnsafeInternalPath(path: string): boolean {
+  if (!path.startsWith('/') || path.startsWith('//')) return true;
+  if (path.includes('\\')) return true;
+  try {
+    return decodeURIComponent(path).includes('\\');
+  } catch {
+    return true;
+  }
+}
+
+export function safeInternalPath(value: unknown, fallback = '/'): string {
+  const safeFallback =
+    typeof fallback === 'string' && !isUnsafeInternalPath(fallback)
+      ? fallback
+      : '/';
+
+  if (typeof value !== 'string') return safeFallback;
+
+  const candidate = value.trim();
+  if (isUnsafeInternalPath(candidate)) return safeFallback;
+
+  try {
+    const url = new URL(candidate, 'https://movietime.local');
+    if (url.origin !== 'https://movietime.local') return safeFallback;
+
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    return isUnsafeInternalPath(path) ? safeFallback : path;
+  } catch {
+    return safeFallback;
+  }
+}
+
 export function safeAsyncSideEffect(
   promise: Promise<unknown>,
   context: AsyncSideEffectContext

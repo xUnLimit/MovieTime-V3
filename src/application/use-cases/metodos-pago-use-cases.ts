@@ -1,10 +1,12 @@
 import {
   createMetodoPago,
+  getMetodosPago,
   getMetodoPagoById,
   removeMetodoPago,
   updateMetodoPago,
 } from '@/platform/supabase/catalogos-repository';
 import {
+  getMetodoPagoRead,
   queryMetodosPagoServiciosRead,
   queryMetodosPagoTercerosRead,
 } from '@/platform/supabase/domain-read-adapters';
@@ -12,6 +14,14 @@ import type { MetodoPago } from '@/types';
 
 export function getMetodoPagoUseCase(id: string) {
   return getMetodoPagoById<MetodoPago>(id);
+}
+
+export function getMetodoPagoReadUseCase(id: string) {
+  return getMetodoPagoRead(id);
+}
+
+export function fetchMetodosPagoUseCase() {
+  return getMetodosPago<MetodoPago>();
 }
 
 export function queryMetodosPagoServiciosUseCase(options: { soloActivos?: boolean } = {}) {

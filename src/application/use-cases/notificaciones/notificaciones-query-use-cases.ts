@@ -1,11 +1,13 @@
 import {
   queryNotificationIdsRead,
   queryNotificationsRead,
+  type NotificacionConId,
 } from '@/platform/supabase/domain-read-adapters';
 import { countNotificaciones } from '@/platform/supabase/notifications-repository';
 import type { QueryFilter } from '@/platform/supabase/entities';
 
 export { queryNotificationIdsRead };
+export type { NotificacionConId };
 
 export function queryNotificationsUseCase(filters: QueryFilter[] = []) {
   return queryNotificationsRead(filters);

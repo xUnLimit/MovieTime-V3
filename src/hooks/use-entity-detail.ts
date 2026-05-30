@@ -1,20 +1,18 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { getCategoriaReadUseCase } from '@/application/use-cases/categorias-use-cases';
+import { getMetodoPagoReadUseCase } from '@/application/use-cases/metodos-pago-use-cases';
+import { getServicioReadUseCase } from '@/application/use-cases/servicios/servicios-query-use-cases';
+import { getTerceroUseCase } from '@/application/use-cases/terceros-use-cases';
 import { subscribeToTerceroDetailReactions } from '@/platform/events/cache-reactions';
 import { queryKeys } from '@/platform/query-keys';
-import {
-  getCategoriaRead,
-  getMetodoPagoRead,
-  getServicioRead,
-} from '@/platform/supabase/domain-read-adapters';
-import { getTerceroUseCase } from '@/application/use-cases/terceros-use-cases';
 import type { Tercero } from '@/types';
 
 export function useCategoriaDetail(categoriaId: string | null) {
   return useQuery({
     queryKey: queryKeys.categorias.detail(categoriaId ?? 'invalid'),
-    queryFn: () => getCategoriaRead(categoriaId!),
+    queryFn: () => getCategoriaReadUseCase(categoriaId!),
     enabled: Boolean(categoriaId),
   });
 }
@@ -22,7 +20,7 @@ export function useCategoriaDetail(categoriaId: string | null) {
 export function useMetodoPagoDetail(metodoPagoId: string | null) {
   return useQuery({
     queryKey: queryKeys.metodosPago.detail(metodoPagoId ?? 'invalid'),
-    queryFn: () => getMetodoPagoRead(metodoPagoId!),
+    queryFn: () => getMetodoPagoReadUseCase(metodoPagoId!),
     enabled: Boolean(metodoPagoId),
   });
 }
@@ -30,7 +28,7 @@ export function useMetodoPagoDetail(metodoPagoId: string | null) {
 export function useServicioDetail(servicioId: string | null) {
   return useQuery({
     queryKey: queryKeys.servicios.detail(servicioId ?? 'invalid'),
-    queryFn: () => getServicioRead(servicioId!),
+    queryFn: () => getServicioReadUseCase(servicioId!),
     enabled: Boolean(servicioId),
   });
 }

@@ -5,6 +5,7 @@ import {
   updateCategoriaRecord,
   upsertCategoriaPlanes,
 } from '@/platform/supabase/categorias-repository';
+import { getCategoriaRead } from '@/platform/supabase/domain-read-adapters';
 import { storeEventBus } from '@/platform/events/store-event-bus';
 import { detectarCambios } from '@/platform/utils/activityLogHelpers';
 import type { ActivityLog, Categoria } from '@/types';
@@ -13,6 +14,10 @@ type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise
 type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
 
 export { getCategoriasFull as fetchCategoriasFull, getCategoriasCounts as fetchCategoriasCounts } from '@/platform/supabase/categorias-repository';
+
+export function getCategoriaReadUseCase(id: string) {
+  return getCategoriaRead(id);
+}
 
 export async function createCategoriaUseCase(
   categoriaData: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>,

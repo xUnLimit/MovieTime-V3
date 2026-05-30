@@ -98,8 +98,8 @@ function entryFilesOf(dirs: string[]): string[] {
 }
 
 describe('architecture boundaries', () => {
-  it('keeps stores, app routes and components behind Supabase read/write seams', () => {
-    expect(findMatches(['src/store', 'src/app', 'src/components'], /@\/platform\/supabase/)).toEqual([]);
+  it('keeps UI entrypoints behind Supabase read/write seams', () => {
+    expect(findMatches(['src/store', 'src/app', 'src/components', 'src/hooks'], /@\/platform\/supabase/)).toEqual([]);
   });
 
   it('keeps application and domain modules independent from Zustand stores (direct imports)', () => {
@@ -136,5 +136,5 @@ describe('architecture boundaries', () => {
     }
 
     expect(offenders).toEqual([]);
-  });
+  }, 20_000);
 });

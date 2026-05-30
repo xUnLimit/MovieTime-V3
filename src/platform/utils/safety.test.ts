@@ -6,6 +6,7 @@ import {
   assertUuid,
   logAsyncSideEffectError,
   safeAsyncSideEffect,
+  safeInternalPath,
   toMoneyNumber,
 } from './safety';
 
@@ -30,6 +31,14 @@ describe('safety assertions', () => {
   it('normalizes money values and rejects invalid amounts', () => {
     expect(toMoneyNumber('10.50')).toBe(10.5);
     expect(() => toMoneyNumber('abc')).toThrow('monto debe ser un numero valido');
+  });
+
+  it('keeps navigation paths internal when reading return URLs', () => {
+    expect(safeInternalPath('/servicios/crear?from=/servicios', '/servicios')).toBe('/servicios/crear?from=/servicios');
+    expect(safeInternalPath('servicios', '/servicios')).toBe('/servicios');
+    expect(safeInternalPath('https://evil.example/phish', '/servicios')).toBe('/servicios');
+    expect(safeInternalPath('//evil.example/phish', '/servicios')).toBe('/servicios');
+    expect(safeInternalPath('/\\evil.example', '/servicios')).toBe('/servicios');
   });
 
   it('logs side-effect failures with operation context', async () => {

@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { ServicioForm } from '@/components/servicios/ServicioForm';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { safeInternalPath } from '@/platform/utils/safety';
 
 function CrearServicioPageContent() {
   const searchParams = useSearchParams();
-  const from = searchParams.get('from') || '/servicios';
+  const from = safeInternalPath(searchParams.get('from'), '/servicios');
 
   return (
     <div className="space-y-6">

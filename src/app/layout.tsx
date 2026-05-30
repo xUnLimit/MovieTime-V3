@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { headers } from 'next/headers';
 
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
@@ -39,20 +38,17 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   width: 'device-width',
   initialScale: 1,
+  // ADR-0008: PWA interna app-like; compensar con UI legible y tap targets amplios.
   maximumScale: 1,
   userScalable: false,
   interactiveWidget: 'resizes-content',
 };
 
-export const dynamic = 'force-dynamic';
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await headers();
-
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <body className="font-body antialiased">

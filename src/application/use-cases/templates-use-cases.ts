@@ -1,9 +1,14 @@
 import {
   createTemplate,
+  getTemplates,
   removeTemplate,
   updateTemplate,
 } from '@/platform/supabase/templates-repository';
 import type { TemplateMensaje } from '@/types';
+
+export function fetchTemplatesUseCase() {
+  return getTemplates<TemplateMensaje>();
+}
 
 export async function createTemplateUseCase(
   templateData: Omit<TemplateMensaje, 'id' | 'createdAt' | 'updatedAt'>,
