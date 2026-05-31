@@ -1,11 +1,11 @@
-const CACHE_NAME = 'movietime-pwa-v6';
+const CACHE_NAME = 'movietime-pwa-v7';
 const NEXT_ASSET_PREFIX = '/_next/';
 const API_PREFIX = '/api/';
 const APP_SHELL = [
   '/',
   '/login',
   '/dashboard',
-  '/usuarios',
+  '/terceros',
   '/servicios',
   '/ventas',
   '/notificaciones',
@@ -59,6 +59,10 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  if (isNextAppRouterRequest(request, url)) {
+    return;
+  }
+
   if (url.pathname.startsWith(NEXT_ASSET_PREFIX) || url.pathname.startsWith(API_PREFIX)) {
     return;
   }
@@ -99,6 +103,16 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+function isNextAppRouterRequest(request, url) {
+  const accept = request.headers.get('accept') || '';
+  return (
+    url.searchParams.has('_rsc') ||
+    request.headers.get('rsc') === '1' ||
+    request.headers.has('next-router-prefetch') ||
+    accept.includes('text/x-component')
+  );
+}
 
 self.addEventListener('push', (event) => {
   event.waitUntil(handlePushEvent(event));
