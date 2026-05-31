@@ -1,7 +1,7 @@
 import { getActiveQueryClient } from '@/platform/query-client-registry';
 import { queryKeys } from '@/platform/query-keys';
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
-import type { ActivityLogOptions } from '@/application/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import {
   deleteNotificacionUseCase,
   deleteNotificacionesPorServicioUseCase,

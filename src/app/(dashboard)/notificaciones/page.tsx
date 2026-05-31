@@ -22,6 +22,7 @@ import { applyNotificationQueryReactions } from '@/application/store-reactions/n
 import { esNotificacionServicio } from '@/types/notificaciones';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { sincronizarNotificaciones } from '@/modules/notifications';
+import { reportError } from '@/platform/observability/logger';
 import { toast } from 'sonner';
 
 // Metrics component matching CategoriasMetrics style
@@ -47,14 +48,14 @@ function NotificacionesMetrics() {
         underlineColor="bg-blue-500"
       />
       <MetricCard
-        title="Ventas Próximas"
+        title="Ventas PrÃ³ximas"
         value={ventasProximas}
         icon={ShoppingCart}
         iconColor="text-red-500"
         underlineColor="bg-red-500"
       />
       <MetricCard
-        title="Servicios Próximos"
+        title="Servicios PrÃ³ximos"
         value={serviciosProximos}
         icon={Server}
         iconColor="text-orange-500"
@@ -115,7 +116,7 @@ function NotificacionesPageContent() {
           notificationInvalidationNeeded: true,
         });
       } catch (error) {
-        console.error('Error initializing notifications:', error);
+        reportError('NotificacionesPage', 'Error initializing notifications', error);
         toast.error('Error al cargar notificaciones', { description: 'No se pudieron obtener las notificaciones. Intenta nuevamente.' });
       }
     };
@@ -141,7 +142,7 @@ function NotificacionesPageContent() {
       {/* Metrics - matching CategoriasMetrics style */}
       <NotificacionesMetrics />
 
-      {/* Tabs - matching Categorías tabs style */}
+      {/* Tabs - matching CategorÃ­as tabs style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
         <div className="tabs-scroll-shell -mx-1 px-1">
           <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
@@ -149,7 +150,7 @@ function NotificacionesPageContent() {
             value="ventas"
             className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
-            Ventas Próximas
+            Ventas PrÃ³ximas
             {ventasProximas > 0 && (
               <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {ventasProximas}
@@ -160,7 +161,7 @@ function NotificacionesPageContent() {
             value="servicios"
             className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
-            Servicios Próximos
+            Servicios PrÃ³ximos
             {serviciosProximos > 0 && (
               <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {serviciosProximos}

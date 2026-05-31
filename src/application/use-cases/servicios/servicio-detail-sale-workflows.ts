@@ -1,5 +1,5 @@
 import { invalidateDashboardCache } from '@/platform/commands/client-cache';
-import type { ActivityLogOptions } from '@/application/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { getTerceroUseCase } from '@/application/use-cases/terceros-use-cases';
 import { updateVentaUseCase } from '@/application/use-cases/ventas/ventas-write-use-cases';
 import type {

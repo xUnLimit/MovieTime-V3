@@ -3,7 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { queryKeys } from "@/platform/query-keys";
-import { getActivityLogOptions } from "@/application/activity/activity-log-writer";
+import { getActivityLogOptions } from "@/platform/activity/activity-log-adapter";
 import {
   cutVentaFromServicioDetalleWorkflow,
   fetchVentaForServicioActionUseCase,

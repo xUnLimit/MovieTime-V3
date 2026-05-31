@@ -16,7 +16,7 @@ type LogMetadata = Record<string, unknown>;
 const SENSITIVE_KEYS = [
   'password',
   'contrasena',
-  'contraseña',
+  'contraseÃ±a',
   'token',
   'auth',
   'authorization',
@@ -73,6 +73,15 @@ export function createLogger(scope: string) {
     warn: (message: string, metadata?: LogMetadata) => emit('warn', scope, message, metadata),
     error: (message: string, metadata?: LogMetadata) => emit('error', scope, message, metadata),
   };
+}
+
+export function reportError(
+  scope: string,
+  message: string,
+  error: unknown,
+  metadata?: LogMetadata,
+) {
+  createLogger(scope).error(message, { ...metadata, error });
 }
 
 export type Logger = ReturnType<typeof createLogger>;

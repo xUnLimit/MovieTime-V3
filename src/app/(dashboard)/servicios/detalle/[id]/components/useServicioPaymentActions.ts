@@ -2,6 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import {
   deleteServicioPagoDetalleWorkflow,
@@ -81,7 +82,7 @@ export function useServicioPaymentActions({
       setPagoToEdit(null);
       setEditarPagoDialogOpen(false);
     } catch (error) {
-      console.error("Error al actualizar pago:", error);
+      reportError("ServicioPaymentActions", "Error al actualizar pago", error);
       toast.error("Error al actualizar pago", {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -115,7 +116,7 @@ export function useServicioPaymentActions({
       setPagoToDelete(null);
       setDeleteRenovacionDialogOpen(false);
     } catch (error) {
-      console.error("Error al eliminar renovacion:", error);
+      reportError("ServicioPaymentActions", "Error al eliminar renovacion", error);
       toast.error("Error al eliminar renovacion", {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -147,7 +148,7 @@ export function useServicioPaymentActions({
       });
       setRenovarDialogOpen(false);
     } catch (error) {
-      console.error("Error al registrar la renovacion:", error);
+      reportError("ServicioPaymentActions", "Error al registrar la renovacion", error);
       toast.error("Error al registrar la renovacion", {
         description: error instanceof Error ? error.message : undefined,
       });

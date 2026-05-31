@@ -5,6 +5,17 @@ import {
 
 export type { FeatureFlagMap };
 
-export function fetchFeatureFlagsUseCase() {
-  return fetchFeatureFlags();
+export async function fetchFeatureFlagsUseCase(): Promise<FeatureFlagMap> {
+  const flags = await fetchFeatureFlags();
+  return Object.fromEntries(
+    Object.entries(flags).map(([key, enabled]) => [key, Boolean(enabled)]),
+  );
+}
+
+export function resolveFeatureFlagUseCase(
+  flags: FeatureFlagMap | undefined,
+  key: string,
+  fallback = false,
+): boolean {
+  return flags?.[key] ?? fallback;
 }

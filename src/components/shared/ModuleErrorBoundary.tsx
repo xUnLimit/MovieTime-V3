@@ -4,6 +4,7 @@ import React from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { AlertTriangle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { reportError } from '@/platform/observability/logger';
 
 interface ModuleErrorBoundaryProps {
   children: React.ReactNode;
@@ -17,11 +18,10 @@ export function ModuleErrorBoundary({
   onReset,
 }: ModuleErrorBoundaryProps) {
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
-    // Log to console in development
-    console.error(`Error in ${moduleName} module:`, error, errorInfo);
-
-    // In production, you could send to error tracking service
-    // Example: Sentry.captureException(error, { contexts: { module: moduleName } });
+    reportError('ModuleErrorBoundary', `Error in ${moduleName} module`, error, {
+      errorInfo,
+      moduleName,
+    });
   };
 
   const fallback = (
@@ -38,8 +38,8 @@ export function ModuleErrorBoundary({
             Error en {moduleName}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Ha ocurrido un error al cargar este módulo. Por favor, intenta recargar
-            la página o contacta al soporte si el problema persiste.
+            Ha ocurrido un error al cargar este mÃ³dulo. Por favor, intenta recargar
+            la pÃ¡gina o contacta al soporte si el problema persiste.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export function ModuleErrorBoundary({
             }}
             variant="outline"
           >
-            Recargar página
+            Recargar pÃ¡gina
           </Button>
           <Button
             onClick={() => (window.location.href = '/dashboard')}

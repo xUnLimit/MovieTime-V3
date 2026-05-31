@@ -1,4 +1,4 @@
-import { getActivityLogContext, recordActivityLog } from '@/application/activity/activity-log-writer';
+import { getActivityLogContext, recordActivityLog } from '@/platform/activity/activity-log-adapter';
 import { detectarCambios } from '@/platform/utils/activityLogHelpers';
 import { safeAsyncSideEffect } from '@/platform/utils/safety';
 import type { TemplateMensaje } from '@/types';

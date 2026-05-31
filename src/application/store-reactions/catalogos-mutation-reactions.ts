@@ -1,4 +1,4 @@
-import { getActivityLogContext, recordActivityLog } from '@/application/activity/activity-log-writer';
+import { getActivityLogContext, recordActivityLog } from '@/platform/activity/activity-log-adapter';
 import { syncMetodoPagoDependenciasUseCase } from '@/application/use-cases/metodos-pago/metodo-pago-dependency-use-cases';
 import { detectarCambios } from '@/platform/utils/activityLogHelpers';
 import { safeAsyncSideEffect } from '@/platform/utils/safety';
@@ -39,7 +39,7 @@ export async function afterMetodoPagoCreated(metodo: MetodoPago) {
     accion: 'creacion',
     metodoId: metodo.id,
     metodoNombre: metodo.nombre,
-    detalles: `Método de pago creado: "${metodo.nombre}"`,
+    detalles: `MÃ©todo de pago creado: "${metodo.nombre}"`,
   });
 }
 
@@ -73,7 +73,7 @@ export async function afterMetodoPagoUpdated({
     accion: 'actualizacion',
     metodoId,
     metodoNombre: oldMetodo?.nombre ?? metodoId,
-    detalles: `Método de pago actualizado: "${oldMetodo?.nombre}"`,
+    detalles: `MÃ©todo de pago actualizado: "${oldMetodo?.nombre}"`,
     cambios,
   });
 }
@@ -83,7 +83,7 @@ export async function afterMetodoPagoDeleted(metodoId: string, metodo?: MetodoPa
     accion: 'eliminacion',
     metodoId,
     metodoNombre: metodo?.nombre ?? metodoId,
-    detalles: `Método de pago eliminado: "${metodo?.nombre}"`,
+    detalles: `MÃ©todo de pago eliminado: "${metodo?.nombre}"`,
   });
 }
 

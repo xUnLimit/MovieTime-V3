@@ -16,6 +16,7 @@ import { ActivityLog } from '@/types';
 import type { FilterOption } from '@/types/pagination';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
+import { reportError } from '@/platform/observability/logger';
 
 function LogActividadPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,7 +51,7 @@ function LogActividadPageContent() {
     includeTotalCount: true,
   });
 
-  // Filtrado client-side solo para búsqueda de texto (no se puede hacer server-side)
+  // Filtrado client-side solo para bÃºsqueda de texto (no se puede hacer server-side)
   const filteredLogs = useMemo(() => {
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
     if (!normalizedSearchTerm) return logs;
@@ -72,7 +73,7 @@ function LogActividadPageContent() {
       toast.success('Registros eliminados', { description: `${ids.length} registro(s) han sido eliminados del log de actividad.` });
       refresh();
     } catch (error) {
-      console.error('Error deleting logs:', error);
+      reportError('LogActividadPage', 'Error deleting logs', error);
       toast.error('Error al eliminar registros', { description: 'No se pudieron eliminar los registros seleccionados. Intenta nuevamente.' });
     }
   };
@@ -82,10 +83,10 @@ function LogActividadPageContent() {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
       const deletedCount = await deleteActivityLogsOlderThanUseCase(cutoff);
-      toast.success('Registros antiguos eliminados', { description: `${deletedCount} registro(s) anterior(es) al período seleccionado han sido eliminados.` });
+      toast.success('Registros antiguos eliminados', { description: `${deletedCount} registro(s) anterior(es) al perÃ­odo seleccionado han sido eliminados.` });
       refresh();
     } catch (error) {
-      console.error('Error deleting old logs:', error);
+      reportError('LogActividadPage', 'Error deleting old logs', error);
       toast.error('Error al eliminar registros', { description: 'No se pudieron eliminar los registros antiguos. Intenta nuevamente.' });
     }
   };
@@ -96,7 +97,7 @@ function LogActividadPageContent() {
       toast.success('Log de actividad eliminado', { description: `${deletedCount} registro(s) han sido eliminados.` });
       refresh();
     } catch (error) {
-      console.error('Error deleting all logs:', error);
+      reportError('LogActividadPage', 'Error deleting all logs', error);
       toast.error('Error al eliminar registros', { description: 'No se pudieron eliminar todos los registros. Intenta nuevamente.' });
     }
   };
@@ -122,7 +123,7 @@ function LogActividadPageContent() {
         setEntidadFilter={setEntidadFilter}
         usuarioFilter={usuarioFilter}
         setTerceroFilter={setTerceroFilter}
-        // Paginación
+        // PaginaciÃ³n
         hasMore={hasMore}
         hasPrevious={hasPrevious}
         page={page}

@@ -36,7 +36,7 @@ vi.mock('@/application/use-cases/servicios/servicios-payment-use-cases', () => s
 vi.mock('@/application/use-cases/ventas/ventas-write-use-cases', () => ventasWrite);
 vi.mock('@/application/use-cases/terceros-use-cases', () => tercerosUseCases);
 vi.mock('@/platform/commands/client-cache', () => clientCache);
-vi.mock('@/application/activity/activity-log-writer', () => ({
+vi.mock('@/platform/activity/activity-log-adapter', () => ({
   getActivityLogOptions: vi.fn(() => ({ logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } })),
 }));
 
@@ -50,7 +50,7 @@ import {
   transferVentaFromServicioDetalleWorkflow,
   updateServicioPagoDetalleWorkflow,
 } from './servicio-detail-use-cases';
-import type { ActivityLogOptions } from '@/application/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import type { MetodoPago, PagoServicio, Servicio, VentaDoc } from '@/types';
 
 const testLog = {

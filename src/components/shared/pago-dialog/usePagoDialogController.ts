@@ -7,19 +7,19 @@ import { useForm } from "react-hook-form";
 
 import { useTemplates } from "@/hooks/use-templates";
 import { getCurrencySymbol } from "@/platform/constants";
+import { reportError } from "@/platform/observability/logger";
 import { calculateDiscountedAmount, roundToDecimals } from "@/platform/utils/calculations";
 import { getServicioMetodoPagoNombre } from "@/platform/utils/servicioMetodoPago";
 import {
   getTerceroMetodoPagoMoneda,
   getTerceroMetodoPagoNombre,
-  isPendingTerceroPaymentMethodId,
-  withPendingTerceroPaymentMethod,
 } from "@/platform/utils/terceroMetodoPago";
 import type { TemplateMensaje } from "@/types";
 
 import { pagoDialogSchema, type PagoDialogFormData } from "./schema";
 import type { PagoDialogProps } from "./types";
 import { buildVentaPreviewMessage, getCicloPagoMonths, getDefaultCosto, getDefaultMetodoPagoId, getPagoDialogCopy, getPagoDialogPresentation, getPagoDialogResetValues, getPagoDialogTargetKey, hasServicioPagoChanges } from "./helpers";
+import { buildPagoDialogSubmitPayload, getPagoDialogPaymentMethods, getPagoDialogSelectedPlan } from "./pago-dialog-model";
 import { usePagoDialogNumberInputs } from "./usePagoDialogNumberInputs";
 
 export function usePagoDialogController(props: PagoDialogProps) {
@@ -42,8 +42,6 @@ export function usePagoDialogController(props: PagoDialogProps) {
       templates.find((template) => template.tipo === tipo && template.activo),
     [templates],
   );
-  const isVentaRenew = isVenta && props.mode === 'renew';
-
   const {
     register,
     handleSubmit,
@@ -87,40 +85,21 @@ export function usePagoDialogController(props: PagoDialogProps) {
     setIsDescuentoFocused,
   } = usePagoDialogNumberInputs();
 
-  const metodosFiltrados = useMemo(() => {
-    const metodosBase = metodosPago.filter((m) =>
-      m.activo && (isVenta ? m.asociadoA === 'tercero' : m.asociadoA === 'servicio')
-    );
-
-    return isVenta
-      ? (isVentaRenew
-          ? metodosBase.filter((metodo) => !isPendingTerceroPaymentMethodId(metodo.id))
-          : withPendingTerceroPaymentMethod(metodosBase))
-      : metodosBase;
-  }, [isVenta, isVentaRenew, metodosPago]);
-  const metodosPagoOrdenados = useMemo(() => {
-    if (isVenta) {
-      const pendientes = metodosFiltrados.filter((metodo) => isPendingTerceroPaymentMethodId(metodo.id));
-      const restantes = metodosFiltrados
-        .filter((metodo) => !isPendingTerceroPaymentMethodId(metodo.id))
-        .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-
-      return [...pendientes, ...restantes];
-    }
-
-    return [...metodosFiltrados].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  }, [isVenta, metodosFiltrados]);
+  const metodosPagoOrdenados = useMemo(() => getPagoDialogPaymentMethods({
+    context: props.context,
+    mode: props.mode,
+    metodosPago,
+  }), [metodosPago, props.context, props.mode]);
   const metodoPagoSeleccionado = metodosPagoOrdenados.find((m) => m.id === metodoPagoIdValue);
   const metodoPagoDisplayName = isVenta
     ? getTerceroMetodoPagoNombre(metodoPagoIdValue, metodoPagoSeleccionado?.nombre)
-    : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar método');
+    : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar mÃ©todo');
   const currencySymbol = getCurrencySymbol(getTerceroMetodoPagoMoneda(metodoPagoIdValue, metodoPagoSeleccionado?.moneda));
-  const selectedPlan = useMemo(() => {
-    if (!periodoValue || !props.categoriaPlanes?.length) return null;
-    return props.categoriaPlanes.find((plan) =>
-      plan.cicloPago === periodoValue && (!props.tipoPlan || plan.tipoPlan === props.tipoPlan)
-    ) ?? null;
-  }, [periodoValue, props.categoriaPlanes, props.tipoPlan]);
+  const selectedPlan = useMemo(() => getPagoDialogSelectedPlan({
+    periodoValue,
+    categoriaPlanes: props.categoriaPlanes,
+    tipoPlan: props.tipoPlan,
+  }), [periodoValue, props.categoriaPlanes, props.tipoPlan]);
   // getPagoDialogTargetKey solo lee context, mode, venta.clienteNombre, servicio.id/nombre y pago?.id.
   // Los deps enumeran exactamente esos campos primitivos; depender de `props` entero recalcularia
   // en cada render (props es un objeto nuevo). Los deps son completos y correctos.
@@ -206,7 +185,7 @@ export function usePagoDialogController(props: PagoDialogProps) {
         codigo: props.codigo,
       }));
     } catch (error) {
-      console.error('Error generando mensaje:', error);
+      reportError('PagoDialog', 'Error generando mensaje', error);
       setPreviewMessage('Error generando mensaje de vista previa');
     }
   }, [
@@ -251,23 +230,13 @@ export function usePagoDialogController(props: PagoDialogProps) {
   ]);
 
   const onSubmit = async (data: PagoDialogFormData) => {
-    // Agregar campos denormalizados del método de pago
-    const metodoPago = metodosFiltrados.find(m => m.id === data.metodoPagoId);
-    const costo = roundToDecimals(data.costo);
-    const descuento = data.descuento === undefined ? undefined : roundToDecimals(data.descuento);
-    const enrichedData = {
-      ...data,
-      costo,
-      descuento,
-      notas: data.notas?.trim() ?? '',
-      metodoPagoNombre: getTerceroMetodoPagoNombre(data.metodoPagoId, metodoPago?.nombre),
-      moneda: getTerceroMetodoPagoMoneda(data.metodoPagoId, metodoPago?.moneda),
-      planId: selectedPlan?.id ?? venta?.planId,
-      planNombre: selectedPlan?.nombre ?? venta?.planNombre,
-      planTipoNombre: venta?.planTipoNombre,
-      // Pasar el mensaje editado (solo si hay WhatsApp activado)
-      mensajeWhatsApp: data.notificarWhatsApp && previewMessage ? previewMessage : undefined,
-    };
+    const enrichedData = buildPagoDialogSubmitPayload({
+      data,
+      metodosPago: metodosPagoOrdenados,
+      selectedPlan,
+      venta: venta ?? undefined,
+      previewMessage,
+    });
     await props.onConfirm(enrichedData);
     props.onOpenChange(false);
   };

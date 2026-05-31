@@ -7,12 +7,13 @@ import { toast } from 'sonner';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
+import { reportError } from '@/platform/observability/logger';
 import {
   toggleNotificationHighlightedStoreCache,
   toggleNotificationReadStoreCache,
 } from '@/application/store-reactions/notification-cache-reactions';
 import { applyNotificationQueryReactions } from '@/application/store-reactions/notification-query-reactions';
-import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
+import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { cutVentaFromNotificationUseCase } from '@/application/use-cases/notificaciones/notificaciones-actions-use-cases';
 import {
   confirmVentaRenewalFromNotificationUseCase as confirmVentaRenewal,
@@ -118,7 +119,7 @@ export function useVentasProximasController() {
     try {
       notifyVentaExpiration(notif, template);
     } catch (error) {
-      console.error('Error generando mensaje WhatsApp:', error);
+      reportError('VentasProximas', 'Error generando mensaje WhatsApp', error);
       toast.error('Error generando mensaje de WhatsApp');
     }
   };
@@ -134,7 +135,7 @@ export function useVentasProximasController() {
     try {
       notifyVentaCancellation(notif, template);
     } catch (error) {
-      console.error('Error generando mensaje de cancelación:', error);
+      reportError('VentasProximas', 'Error generando mensaje de cancelacion', error);
       toast.error('Error generando mensaje de cancelación');
     }
   };
@@ -178,7 +179,7 @@ export function useVentasProximasController() {
       setRenovarDialogOpen(false);
       setNotifSeleccionada(null);
     } catch (error) {
-      console.error('Error renovando venta:', error);
+      reportError('VentasProximas', 'Error renovando venta', error);
       toast.error('Error al renovar la venta');
     }
   };
@@ -195,7 +196,7 @@ export function useVentasProximasController() {
       await refreshNotificationCaches();
       toast.success('Notificación resaltada para seguimiento');
     } catch (error) {
-      console.error('Error al resaltar:', error);
+      reportError('VentasProximas', 'Error al resaltar', error);
       toast.error('Error al resaltar la notificación');
     }
   };
@@ -208,7 +209,7 @@ export function useVentasProximasController() {
       await refreshNotificationCaches();
       toast.success('Resaltado descartado');
     } catch (error) {
-      console.error('Error al descartar resaltado:', error);
+      reportError('VentasProximas', 'Error al descartar resaltado', error);
       toast.error('Error al descartar el resaltado');
     }
   };
@@ -226,7 +227,7 @@ export function useVentasProximasController() {
       await applyNotificationQueryReactions(queryClient, outcome);
       toast.success('Venta cortada exitosamente');
     } catch (error) {
-      console.error('Error cortando venta:', error);
+      reportError('VentasProximas', 'Error cortando venta', error);
       toast.error('Error al cortar la venta');
       throw error;
     }

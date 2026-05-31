@@ -2,6 +2,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
 import {
   fetchServicioDetalleBundleUseCase,
@@ -58,7 +59,7 @@ export function useServicioDetalleData(id: string): ServicioDetalleData {
 
   useEffect(() => {
     if (!isServicioDetalleError) return;
-    console.error('Error cargando datos del servicio:', servicioDetalleError);
+    reportError('ServicioDetalleData', 'Error cargando datos del servicio', servicioDetalleError);
     toast.error('Error al cargar el servicio', {
       description: 'Ocurrio un problema al obtener los datos. Intenta nuevamente.',
     });
@@ -71,7 +72,7 @@ export function useServicioDetalleData(id: string): ServicioDetalleData {
 
   useEffect(() => {
     if (!isVentasServicioError) return;
-    console.error('Error cargando ventas del servicio:', ventasServicioError);
+    reportError('ServicioDetalleData', 'Error cargando ventas del servicio', ventasServicioError);
     toast.error('Error cargando ventas del servicio', {
       description: ventasServicioError instanceof Error ? ventasServicioError.message : undefined,
     });

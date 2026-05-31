@@ -1,7 +1,7 @@
 import { CYCLE_MONTHS } from '@/platform/constants';
 import { invalidateDashboardCache } from '@/platform/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/modules/forecasting';
-import type { ActivityLogOptions } from '@/application/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { emitVentaUpdated } from '@/platform/events/cache-reactions';
 import { createVentaRefundUseCase } from '@/application/use-cases/ventas/ventas-refund-use-cases';
 import {

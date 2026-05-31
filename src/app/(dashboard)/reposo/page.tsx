@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { queryKeys } from "@/platform/query-keys";
-import { getActivityLogOptions } from "@/application/activity/activity-log-writer";
+import { getActivityLogOptions } from "@/platform/activity/activity-log-adapter";
 import { applyNotificationQueryReactions } from "@/application/store-reactions/notification-query-reactions";
 import {
   activateAndRenewReposoServicioUseCase,

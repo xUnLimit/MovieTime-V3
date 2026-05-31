@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -12,6 +12,7 @@ import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEd
 import { queryKeys } from '@/platform/query-keys';
 import { getVentaConUltimoPagoUseCase } from '@/application/use-cases/ventas/venta-current-payment-use-cases';
 import { getVentaDetalleUseCase } from '@/application/use-cases/ventas/ventas-query-use-cases';
+import { reportError } from '@/platform/observability/logger';
 import { isUuid } from '@/platform/utils/safety';
 import { toast } from 'sonner';
 
@@ -50,7 +51,7 @@ function EditarVentaPageContent() {
 
   useEffect(() => {
     if (!isError) return;
-    console.error('Error cargando venta:', error);
+    reportError('EditarVentaPage', 'Error cargando venta', error);
     toast.error('Error cargando venta', {
       description: error instanceof Error ? error.message : undefined,
     });

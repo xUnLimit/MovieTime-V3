@@ -40,7 +40,7 @@ vi.mock('@/application/use-cases/ventas/ventas-refund-use-cases', () => ventaRef
 vi.mock('@/platform/commands/client-cache', () => clientCache);
 vi.mock('@/modules/forecasting', () => forecasting);
 vi.mock('@/platform/events/cache-reactions', () => cacheReactions);
-vi.mock('@/application/activity/activity-log-writer', () => ({
+vi.mock('@/platform/activity/activity-log-adapter', () => ({
   getActivityLogOptions: vi.fn(() => ({ logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } })),
 }));
 
@@ -51,7 +51,7 @@ import {
   renewVentaDetalleWorkflow,
   updateVentaPagoDetalleWorkflow,
 } from './venta-detail-use-cases';
-import type { ActivityLogOptions } from '@/application/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import type { MetodoPago, VentaDoc } from '@/types';
 
 const testLog = {

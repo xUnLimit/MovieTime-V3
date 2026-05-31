@@ -10,6 +10,7 @@ import {
   updateServicioMutation,
   updateVentaMutation,
 } from "@/application/client-domain-mutations";
+import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import { fetchServiciosByIdsUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 import type { Tercero } from "@/types";
@@ -35,8 +36,8 @@ async function fetchServiciosCredentialsByIds(
   return allServicios.flat().reduce<Record<string, TerceroServicioCredential>>(
     (acc, servicio) => {
       acc[servicio.id] = {
-        correo: (servicio.correo as string) || "—",
-        contrasena: (servicio.contrasena as string) || "—",
+        correo: (servicio.correo as string) || "â€”",
+        contrasena: (servicio.contrasena as string) || "â€”",
         nombre: (servicio.nombre as string) || "Servicio",
       };
       return acc;
@@ -67,12 +68,12 @@ export function useTerceroDetailsController(usuario: Tercero) {
   };
 
   const handleCopy = async (value: string, label?: string) => {
-    if (!value || value === "—") return;
+    if (!value || value === "â€”") return;
     try {
       await navigator.clipboard.writeText(value);
       toast.success(label ? `${label} copiado` : "Copiado al portapapeles");
     } catch (error) {
-      console.error("Error copiando:", error);
+      reportError("TerceroDetails", "Error copiando", error);
       toast.error("No se pudo copiar");
     }
   };
@@ -96,7 +97,7 @@ export function useTerceroDetailsController(usuario: Tercero) {
       semestral: "Semestral",
       anual: "Anual",
     };
-    return ciclo ? labels[ciclo] || ciclo : "—";
+    return ciclo ? labels[ciclo] || ciclo : "â€”";
   };
 
   const rows = useMemo(() => {
@@ -125,10 +126,10 @@ export function useTerceroDetailsController(usuario: Tercero) {
         servicioNombre: servicio?.nombre || venta.servicioNombre,
         servicioId: venta.servicioId,
         correo:
-          venta.servicioCorreo !== "—"
+          venta.servicioCorreo !== "â€”"
             ? venta.servicioCorreo
-            : servicio?.correo || "—",
-        contrasena: servicio?.contrasena || "—",
+            : servicio?.correo || "â€”",
+        contrasena: servicio?.contrasena || "â€”",
         cicloPago: getCicloPagoLabel(venta.cicloPago),
         fechaInicio: venta.fechaInicio,
         fechaFin: venta.fechaFin,
@@ -159,7 +160,7 @@ export function useTerceroDetailsController(usuario: Tercero) {
           : "Venta inactivada correctamente",
       );
     } catch {
-      toast.error("Ocurrió un error al cambiar el estado");
+      toast.error("OcurriÃ³ un error al cambiar el estado");
       throw new Error("cambio estado fallido");
     }
   };

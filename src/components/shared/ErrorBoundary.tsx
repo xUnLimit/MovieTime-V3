@@ -4,6 +4,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { reportError } from '@/platform/observability/logger';
 
 interface Props {
   children: ReactNode;
@@ -33,16 +34,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console in development
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    reportError('ErrorBoundary', 'ErrorBoundary caught an error', error, { errorInfo });
 
     // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
 
-    // In production, you could send this to an error reporting service
-    // e.g., Sentry, LogRocket, etc.
   }
 
   handleReset = () => {
@@ -66,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
-                <CardTitle className="text-red-600">Algo salió mal</CardTitle>
+                <CardTitle className="text-red-600">Algo saliÃ³ mal</CardTitle>
               </div>
               <CardDescription>
                 Ha ocurrido un error inesperado. Por favor, intenta nuevamente.

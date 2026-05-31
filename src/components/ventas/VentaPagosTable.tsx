@@ -14,6 +14,7 @@ import { getCurrencySymbol } from "@/platform/constants";
 import { formatAggregateInUSD, sumInUSD } from "@/modules/payments";
 import { formatearFecha } from "@/platform/utils/calculations";
 import { queryKeys } from "@/platform/query-keys";
+import { reportError } from "@/platform/observability/logger";
 import { VentaPago } from "@/types";
 
 interface VentaPagosTableProps {
@@ -75,7 +76,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
             })),
           );
         } catch (error) {
-          console.error("[VentaPagosTable] Error calculating total:", error);
+          reportError("VentaPagosTable", "Error calculating total", error);
           return 0;
         }
       },

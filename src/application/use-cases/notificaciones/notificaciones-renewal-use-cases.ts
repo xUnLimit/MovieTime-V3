@@ -1,4 +1,4 @@
-import type { ActivityLogOptions } from '@/application/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { syncVentaForecastReadModels } from '@/modules/forecasting';
 import {
   getCategoriaPlanesRead,

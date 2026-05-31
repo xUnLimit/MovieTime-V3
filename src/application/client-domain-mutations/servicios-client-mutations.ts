@@ -8,7 +8,7 @@ import {
   deleteServicioUseCase,
   updateServicioUseCase,
 } from '@/application/use-cases/servicios/servicios-write-use-cases';
-import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
+import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { Servicio } from '@/types';
 

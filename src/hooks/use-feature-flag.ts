@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   fetchFeatureFlagsUseCase,
+  resolveFeatureFlagUseCase,
   type FeatureFlagMap,
 } from "@/application/use-cases/feature-flags-use-cases";
 import { queryKeys } from "@/platform/query-keys";
@@ -18,5 +19,5 @@ function useFeatureFlagsQuery() {
 
 export function useFeatureFlag(key: string, fallback = false): boolean {
   const { data } = useFeatureFlagsQuery();
-  return data?.[key] ?? fallback;
+  return resolveFeatureFlagUseCase(data, key, fallback);
 }

@@ -4,8 +4,9 @@ import { useState } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
-import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
+import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import {
   deleteVentaDetalleWorkflow,
   deleteVentaPagoDetalleWorkflow,
@@ -87,7 +88,7 @@ export function useVentaDetalleActions({
       }
       onDeleted();
     } catch (error) {
-      console.error('Error eliminando venta:', error);
+      reportError('VentaDetalleActions', 'Error eliminando venta', error);
       toast.error('Error eliminando venta', {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -132,7 +133,7 @@ export function useVentaDetalleActions({
         toast.success('Venta renovada exitosamente');
       }
     } catch (error) {
-      console.error('Error renovando venta:', error);
+      reportError('VentaDetalleActions', 'Error renovando venta', error);
       toast.error('Error al renovar venta');
     }
   };
@@ -169,7 +170,7 @@ export function useVentaDetalleActions({
 
       toast.success(outcome.type === 'ventaRefunded' && outcome.cut ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
     } catch (error) {
-      console.error('Error registrando reembolso:', error);
+      reportError('VentaDetalleActions', 'Error registrando reembolso', error);
       toast.error('Error al registrar reembolso', {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -183,7 +184,7 @@ export function useVentaDetalleActions({
 
   const handleConfirmEditarPago = async (data: VentaPagoFormData) => {
     if (!venta || !pagoToEdit || !pagoToEdit.id) {
-      console.error('[EditarPago] Missing data:', {
+      reportError('VentaDetalleActions', 'EditarPago missing data', new Error('Missing data'), {
         venta: !!venta,
         pagoToEdit: !!pagoToEdit,
         id: pagoToEdit?.id,
@@ -214,14 +215,14 @@ export function useVentaDetalleActions({
       refreshPagos();
       toast.success('Pago actualizado exitosamente');
     } catch (error) {
-      console.error('[EditarPago] Error actualizando pago:', error);
+      reportError('VentaDetalleActions', 'EditarPago error actualizando pago', error);
       toast.error('Error al actualizar pago');
     }
   };
 
   const handleConfirmDeletePago = async () => {
     if (!venta || !pagoToDelete || !pagoToDelete.id) {
-      console.error('[DeletePago] Missing data:', {
+      reportError('VentaDetalleActions', 'DeletePago missing data', new Error('Missing data'), {
         venta: !!venta,
         pagoToDelete: !!pagoToDelete,
         id: pagoToDelete?.id,
@@ -242,7 +243,7 @@ export function useVentaDetalleActions({
       refreshPagos();
       toast.success('Pago eliminado exitosamente');
     } catch (error) {
-      console.error('[DeletePago] Error eliminando pago:', error);
+      reportError('VentaDetalleActions', 'DeletePago error eliminando pago', error);
       toast.error('Error al eliminar pago');
     }
   };

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { CACHE_TTL_MS } from '@/platform/constants';
+import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
 import { obtenerPagosDeServicio } from '@/modules/payments';
 import type { PagoServicio } from '@/types';
@@ -21,7 +22,7 @@ export function usePagosServicio(servicioId: string | null) {
       try {
         return await obtenerPagosDeServicio(servicioId);
       } catch (error) {
-        console.error('[usePagosServicio] Error loading pagos:', error);
+        reportError('usePagosServicio', 'Error loading pagos', error);
         return [];
       }
     },

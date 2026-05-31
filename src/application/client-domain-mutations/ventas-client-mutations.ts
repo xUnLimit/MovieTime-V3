@@ -8,7 +8,7 @@ import {
   deleteVentaUseCase,
   updateVentaUseCase,
 } from '@/application/use-cases/ventas/ventas-write-use-cases';
-import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
+import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { VentaDoc } from '@/types';
 

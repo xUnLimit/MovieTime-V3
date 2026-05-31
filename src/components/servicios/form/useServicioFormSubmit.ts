@@ -5,6 +5,7 @@ import type { UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import { updateServicioPagoUseCase } from "@/application/use-cases/servicios/servicios-payment-use-cases";
 import { getVentasActivasParaCredenciales } from "@/application/use-cases/servicios/servicio-credential-notification-use-case";
@@ -190,7 +191,7 @@ export function useServicioFormSubmit({
           : "Error al crear el servicio",
         { description: error instanceof Error ? error.message : undefined },
       );
-      console.error(error);
+      reportError("ServicioFormSubmit", "Error guardando servicio", error);
     }
   };
 

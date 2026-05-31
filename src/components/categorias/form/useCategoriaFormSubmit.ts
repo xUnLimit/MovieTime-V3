@@ -1,6 +1,7 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { toast } from "sonner";
 
+import { reportError } from "@/platform/observability/logger";
 import type { Categoria, Plan, TipoPlanConfig } from "@/types";
 
 import {
@@ -100,7 +101,7 @@ export function useCategoriaFormSubmit({
       toast.error(message, {
         description: error instanceof Error ? error.message : undefined,
       });
-      console.error(error);
+      reportError("CategoriaFormSubmit", message, error);
     }
   };
 }

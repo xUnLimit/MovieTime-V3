@@ -105,6 +105,8 @@ describe('architecture boundaries', () => {
   it('keeps application and domain modules independent from Zustand stores (direct imports)', () => {
     expect(
       findMatches([
+        'src/application/activity',
+        'src/application/client-domain-mutations',
         'src/application/use-cases',
         'src/application/store-reactions',
         'src/modules/payments',
@@ -137,4 +139,15 @@ describe('architecture boundaries', () => {
 
     expect(offenders).toEqual([]);
   }, 20_000);
+
+  it('keeps production UI/application errors behind the observability adapter', () => {
+    expect(
+      findMatches([
+        'src/app',
+        'src/components',
+        'src/hooks',
+        'src/application',
+      ], /console\.(log|warn|error)/),
+    ).toEqual([]);
+  });
 });

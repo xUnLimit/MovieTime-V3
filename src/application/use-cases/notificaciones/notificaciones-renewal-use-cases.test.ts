@@ -32,7 +32,7 @@ vi.mock('@/application/use-cases/servicios/servicios-payment-use-cases', () => s
 vi.mock('@/application/use-cases/ventas/ventas-payment-use-cases', () => ventaPayments);
 vi.mock('@/application/store-reactions/notificaciones-workflow-reactions', () => workflowReactions);
 vi.mock('@/modules/forecasting', () => forecasting);
-vi.mock('@/application/activity/activity-log-writer', () => ({
+vi.mock('@/platform/activity/activity-log-adapter', () => ({
   getActivityLogOptions: vi.fn(() => ({ logContext: { usuarioId: 'u1' } })),
 }));
 
@@ -41,7 +41,7 @@ import {
   confirmVentaRenewalFromNotificationUseCase,
   loadVentaRenewalOptionsUseCase,
 } from './notificaciones-renewal-use-cases';
-import type { ActivityLogOptions } from '@/application/activity/activity-log-writer';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import type { MetodoPago, NotificacionVenta, Servicio } from '@/types';
 
 const testLog = {

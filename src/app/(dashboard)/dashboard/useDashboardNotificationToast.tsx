@@ -7,6 +7,7 @@ import { ArrowRight, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 import type { NotificacionConId } from "@/hooks/use-notificaciones";
+import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import { queryNotificationsUseCase } from "@/application/use-cases/notificaciones/notificaciones-query-use-cases";
 import { esNotificacionServicio, esNotificacionVenta } from "@/types/notificaciones";
@@ -179,7 +180,7 @@ export function useDashboardNotificationToast() {
 
     showWelcomeToast().catch((error) => {
       toastShown.current = false;
-      console.error("[Dashboard] Error showing notification toast:", error);
+      reportError("Dashboard", "Error showing notification toast", error);
     });
   }, [queryClient]);
 }

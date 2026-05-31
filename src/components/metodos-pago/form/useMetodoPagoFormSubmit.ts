@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import type { MetodoPago } from "@/types";
 
@@ -71,7 +72,7 @@ export function useMetodoPagoFormSubmit({
       toast.error(message, {
         description: error instanceof Error ? error.message : undefined,
       });
-      console.error(error);
+      reportError("MetodoPagoFormSubmit", message, error);
     }
   };
 }

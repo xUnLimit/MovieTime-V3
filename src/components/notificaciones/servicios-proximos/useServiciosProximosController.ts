@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
-import { getActivityLogOptions } from '@/application/activity/activity-log-writer';
+import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
+import { reportError } from '@/platform/observability/logger';
 import {
   toggleNotificationHighlightedStoreCache,
   toggleNotificationReadStoreCache,
@@ -211,7 +212,7 @@ export function useServiciosProximosController({
       setNotifParaRenovar(null);
       setServicioParaRenovar(null);
     } catch (error) {
-      console.error('Error al registrar la renovación:', error);
+      reportError('ServiciosProximos', 'Error al registrar la renovacion', error);
       toast.error('Error al registrar la renovación', {
         description: error instanceof Error ? error.message : undefined,
       });

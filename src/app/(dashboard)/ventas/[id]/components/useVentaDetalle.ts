@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
 import { useTemplates } from '@/hooks/use-templates';
+import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
 import {
   buildVentaPaymentRows,
@@ -77,7 +78,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   useEffect(() => {
     if (!ventaDetalleQuery.error) return;
 
-    console.error('Error cargando venta:', ventaDetalleQuery.error);
+    reportError('VentaDetalle', 'Error cargando venta', ventaDetalleQuery.error);
     toast.error('Error cargando venta', {
       description:
         ventaDetalleQuery.error instanceof Error ? ventaDetalleQuery.error.message : undefined,
@@ -99,7 +100,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
         ))
       : 0;
 
-  const perfilDisplay = venta?.perfilNombre?.trim() || '—';
+  const perfilDisplay = venta?.perfilNombre?.trim() || 'â€”';
   const paymentRows = useMemo(
     () => buildVentaPaymentRows({ loadingPagos, pagosVenta, venta }),
     [venta, pagosVenta, loadingPagos],
@@ -120,7 +121,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
           : Promise.resolve([]),
       ]);
     } catch (error) {
-      console.error('Error cargando métodos de pago y planes:', error);
+      reportError('VentaDetalle', 'Error cargando metodos de pago y planes', error);
     }
   };
 

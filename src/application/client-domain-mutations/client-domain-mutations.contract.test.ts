@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
   refreshVentasStoreCache: vi.fn(),
 }));
 
-vi.mock('@/application/activity/activity-log-writer', () => ({
+vi.mock('@/platform/activity/activity-log-adapter', () => ({
   getActivityLogOptions: mocks.getActivityLogOptions,
 }));
 

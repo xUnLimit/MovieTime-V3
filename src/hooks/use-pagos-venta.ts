@@ -3,14 +3,15 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { queryPagosVentaByVentaUseCase } from '@/application/use-cases/ventas/ventas-query-use-cases';
+import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
 import type { PagoVenta } from '@/types';
 
 /**
- * Hook para cargar los pagos de una venta específica
+ * Hook para cargar los pagos de una venta especÃ­fica
  *
  * @param ventaId - ID de la venta
- * @returns Pagos ordenados por fecha (más reciente primero), loading state, y count de renovaciones
+ * @returns Pagos ordenados por fecha (mÃ¡s reciente primero), loading state, y count de renovaciones
  */
 export function usePagosVenta(ventaId: string) {
   const { data: pagos = [], isLoading, refetch } = useQuery({
@@ -27,7 +28,7 @@ export function usePagosVenta(ventaId: string) {
           return dateB.getTime() - dateA.getTime();
         });
       } catch (error) {
-        console.error('Error cargando pagos de venta:', error);
+        reportError('usePagosVenta', 'Error cargando pagos de venta', error);
         return [];
       }
     },

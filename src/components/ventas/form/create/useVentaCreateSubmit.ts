@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 import type { VentaItem } from '@/features/ventas/ventas-form-shared';
 import { syncTerceroMetodoPagoUseCase } from '@/application/use-cases/terceros/tercero-metodo-pago-use-cases';
+import { reportError } from '@/platform/observability/logger';
 import type { Tercero, VentaDoc } from '@/types';
 
 import {
@@ -105,7 +106,7 @@ export function useVentaCreateSubmit({
           moneda,
         });
       } catch (syncError) {
-        console.error('Error sincronizando metodo de pago del tercero:', syncError);
+        reportError('VentaCreateSubmit', 'Error sincronizando metodo de pago del tercero', syncError);
         toast.warning('Venta guardada con advertencia', {
           description:
             'La venta se creo, pero no se pudo actualizar el metodo de pago en terceros.',
@@ -136,7 +137,7 @@ export function useVentaCreateSubmit({
       }
       onSaved();
     } catch (error) {
-      console.error('Error guardando venta:', error);
+      reportError('VentaCreateSubmit', 'Error guardando venta', error);
       toast.error('Error al guardar la venta', {
         description: error instanceof Error ? error.message : undefined,
       });

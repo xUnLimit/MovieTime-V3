@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { deleteVentaMutation } from '@/application/client-domain-mutations';
 import { subscribeToVentaListReactions } from '@/platform/events/cache-reactions';
+import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
 import { VENTAS_COLLECTION } from '@/application/use-cases/ventas/ventas-query-use-cases';
 import { VentaDoc } from '@/types';
@@ -102,7 +103,7 @@ function VentasPageContent() {
       refresh();
       void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
     } catch (error) {
-      console.error('Error eliminando venta:', error);
+      reportError('VentasPage', 'Error eliminando venta', error);
       toast.error('Error eliminando venta', { description: error instanceof Error ? error.message : undefined });
     }
   };
