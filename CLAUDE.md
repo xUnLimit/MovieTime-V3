@@ -57,3 +57,9 @@
 - Add unit tests for pure helpers and use-case branches.
 - Add integration tests for sales, services, payments, renewals, RLS, rollback, and dashboard projections.
 - Before merging, run `npm run lint`, `npm test -- --run`, `npm run test:coverage`, `npm run build`, and `npm run migrate:validate`.
+
+## Git Workflow
+
+- Commit and push directly to `main`. Do NOT create feature/working branches or open pull requests for routine changes — the user works solo and prefers a single linear history on `main`.
+- Still run the full checklist (`npm run lint`, `npm test -- --run`, `npm run build`, `npm run migrate:validate`) BEFORE committing, and only commit/push when the user asks.
+- End commit messages with the `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` trailer.
