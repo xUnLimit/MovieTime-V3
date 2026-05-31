@@ -51,7 +51,7 @@ function LogActividadPageContent() {
     includeTotalCount: true,
   });
 
-  // Filtrado client-side solo para bÃºsqueda de texto (no se puede hacer server-side)
+  // Filtrado client-side solo para búsqueda de texto (no se puede hacer server-side)
   const filteredLogs = useMemo(() => {
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
     if (!normalizedSearchTerm) return logs;
@@ -83,7 +83,7 @@ function LogActividadPageContent() {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
       const deletedCount = await deleteActivityLogsOlderThanUseCase(cutoff);
-      toast.success('Registros antiguos eliminados', { description: `${deletedCount} registro(s) anterior(es) al perÃ­odo seleccionado han sido eliminados.` });
+      toast.success('Registros antiguos eliminados', { description: `${deletedCount} registro(s) anterior(es) al período seleccionado han sido eliminados.` });
       refresh();
     } catch (error) {
       reportError('LogActividadPage', 'Error deleting old logs', error);
@@ -123,7 +123,7 @@ function LogActividadPageContent() {
         setEntidadFilter={setEntidadFilter}
         usuarioFilter={usuarioFilter}
         setTerceroFilter={setTerceroFilter}
-        // PaginaciÃ³n
+        // Paginación
         hasMore={hasMore}
         hasPrevious={hasPrevious}
         page={page}

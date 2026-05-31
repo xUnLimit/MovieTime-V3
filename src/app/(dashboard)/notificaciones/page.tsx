@@ -48,14 +48,14 @@ function NotificacionesMetrics() {
         underlineColor="bg-blue-500"
       />
       <MetricCard
-        title="Ventas PrÃ³ximas"
+        title="Ventas Próximas"
         value={ventasProximas}
         icon={ShoppingCart}
         iconColor="text-red-500"
         underlineColor="bg-red-500"
       />
       <MetricCard
-        title="Servicios PrÃ³ximos"
+        title="Servicios Próximos"
         value={serviciosProximos}
         icon={Server}
         iconColor="text-orange-500"
@@ -142,7 +142,7 @@ function NotificacionesPageContent() {
       {/* Metrics - matching CategoriasMetrics style */}
       <NotificacionesMetrics />
 
-      {/* Tabs - matching CategorÃ­as tabs style */}
+      {/* Tabs - matching Categorías tabs style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
         <div className="tabs-scroll-shell -mx-1 px-1">
           <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
@@ -150,7 +150,7 @@ function NotificacionesPageContent() {
             value="ventas"
             className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
-            Ventas PrÃ³ximas
+            Ventas Próximas
             {ventasProximas > 0 && (
               <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {ventasProximas}
@@ -161,7 +161,7 @@ function NotificacionesPageContent() {
             value="servicios"
             className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
           >
-            Servicios PrÃ³ximos
+            Servicios Próximos
             {serviciosProximos > 0 && (
               <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
                 {serviciosProximos}

@@ -291,7 +291,7 @@ export function getPagoDialogCopy({
         ? 'Editar Pago'
         : `Renovar Venta: ${ventaClienteNombre || ''}`,
       description: isEdit
-        ? 'Actualiza la informaciÃ³n del pago seleccionado.'
+        ? 'Actualiza la información del pago seleccionado.'
         : 'Registre un nuevo pago para esta venta para extender su fecha de vencimiento.',
     };
   }
@@ -301,7 +301,7 @@ export function getPagoDialogCopy({
       ? `Editar pago del servicio: ${servicioNombre || ''}`
       : `Renovar Servicio: ${servicioNombre || ''}`,
     description: isEdit
-      ? `Corrija los datos del Ãºltimo pago registrado (${pagoDescripcion ?? 'Pago'}) si se ingresÃ³ algo incorrecto.`
+      ? `Corrija los datos del último pago registrado (${pagoDescripcion ?? 'Pago'}) si se ingresó algo incorrecto.`
       : 'Registre un nuevo pago para este servicio para extender su fecha de vencimiento.',
   };
 }

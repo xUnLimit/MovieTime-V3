@@ -8,10 +8,10 @@ import { queryKeys } from '@/platform/query-keys';
 import type { PagoVenta } from '@/types';
 
 /**
- * Hook para cargar los pagos de una venta especÃ­fica
+ * Hook para cargar los pagos de una venta específica
  *
  * @param ventaId - ID de la venta
- * @returns Pagos ordenados por fecha (mÃ¡s reciente primero), loading state, y count de renovaciones
+ * @returns Pagos ordenados por fecha (más reciente primero), loading state, y count de renovaciones
  */
 export function usePagosVenta(ventaId: string) {
   const { data: pagos = [], isLoading, refetch } = useQuery({

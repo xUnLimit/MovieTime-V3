@@ -100,7 +100,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
         ))
       : 0;
 
-  const perfilDisplay = venta?.perfilNombre?.trim() || 'â€”';
+  const perfilDisplay = venta?.perfilNombre?.trim() || '—';
   const paymentRows = useMemo(
     () => buildVentaPaymentRows({ loadingPagos, pagosVenta, venta }),
     [venta, pagosVenta, loadingPagos],

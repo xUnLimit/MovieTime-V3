@@ -93,7 +93,7 @@ export function usePagoDialogController(props: PagoDialogProps) {
   const metodoPagoSeleccionado = metodosPagoOrdenados.find((m) => m.id === metodoPagoIdValue);
   const metodoPagoDisplayName = isVenta
     ? getTerceroMetodoPagoNombre(metodoPagoIdValue, metodoPagoSeleccionado?.nombre)
-    : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar mÃ©todo');
+    : getServicioMetodoPagoNombre(metodoPagoSeleccionado, 'Seleccionar método');
   const currencySymbol = getCurrencySymbol(getTerceroMetodoPagoMoneda(metodoPagoIdValue, metodoPagoSeleccionado?.moneda));
   const selectedPlan = useMemo(() => getPagoDialogSelectedPlan({
     periodoValue,

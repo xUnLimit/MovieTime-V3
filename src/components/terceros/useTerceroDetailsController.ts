@@ -36,8 +36,8 @@ async function fetchServiciosCredentialsByIds(
   return allServicios.flat().reduce<Record<string, TerceroServicioCredential>>(
     (acc, servicio) => {
       acc[servicio.id] = {
-        correo: (servicio.correo as string) || "â€”",
-        contrasena: (servicio.contrasena as string) || "â€”",
+        correo: (servicio.correo as string) || "—",
+        contrasena: (servicio.contrasena as string) || "—",
         nombre: (servicio.nombre as string) || "Servicio",
       };
       return acc;
@@ -68,7 +68,7 @@ export function useTerceroDetailsController(usuario: Tercero) {
   };
 
   const handleCopy = async (value: string, label?: string) => {
-    if (!value || value === "â€”") return;
+    if (!value || value === "—") return;
     try {
       await navigator.clipboard.writeText(value);
       toast.success(label ? `${label} copiado` : "Copiado al portapapeles");
@@ -97,7 +97,7 @@ export function useTerceroDetailsController(usuario: Tercero) {
       semestral: "Semestral",
       anual: "Anual",
     };
-    return ciclo ? labels[ciclo] || ciclo : "â€”";
+    return ciclo ? labels[ciclo] || ciclo : "—";
   };
 
   const rows = useMemo(() => {
@@ -126,10 +126,10 @@ export function useTerceroDetailsController(usuario: Tercero) {
         servicioNombre: servicio?.nombre || venta.servicioNombre,
         servicioId: venta.servicioId,
         correo:
-          venta.servicioCorreo !== "â€”"
+          venta.servicioCorreo !== "—"
             ? venta.servicioCorreo
-            : servicio?.correo || "â€”",
-        contrasena: servicio?.contrasena || "â€”",
+            : servicio?.correo || "—",
+        contrasena: servicio?.contrasena || "—",
         cicloPago: getCicloPagoLabel(venta.cicloPago),
         fechaInicio: venta.fechaInicio,
         fechaFin: venta.fechaFin,
@@ -160,7 +160,7 @@ export function useTerceroDetailsController(usuario: Tercero) {
           : "Venta inactivada correctamente",
       );
     } catch {
-      toast.error("OcurriÃ³ un error al cambiar el estado");
+      toast.error("Ocurrió un error al cambiar el estado");
       throw new Error("cambio estado fallido");
     }
   };

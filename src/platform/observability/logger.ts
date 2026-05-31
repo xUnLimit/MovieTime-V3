@@ -16,7 +16,7 @@ type LogMetadata = Record<string, unknown>;
 const SENSITIVE_KEYS = [
   'password',
   'contrasena',
-  'contraseÃ±a',
+  'contraseña',
   'token',
   'auth',
   'authorization',
