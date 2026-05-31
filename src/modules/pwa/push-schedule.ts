@@ -7,6 +7,7 @@ type ExecutivePushSchedule = {
   timezone: string;
   lastSentAt?: string | Date | null;
   lastSentDate?: string | null;
+  lastSentSlot?: string | null;
 };
 
 export type ExecutivePushDueResult =
@@ -17,6 +18,8 @@ export type ExecutivePushDueResult =
       windowStartMinutes: number;
       windowEndMinutes: number;
       intervalHours: number;
+      scheduledMinutes: number;
+      slotKey: string;
     }
   | {
       due: false;
@@ -25,8 +28,10 @@ export type ExecutivePushDueResult =
         | 'invalid_time'
         | 'invalid_interval'
         | 'outside_window'
-        | 'interval_not_elapsed';
+        | 'interval_not_elapsed'
+        | 'slot_already_sent';
       today: string;
+      slotKey?: string;
     };
 
 function parseTime(value: string | undefined) {
@@ -85,6 +90,55 @@ function parseLastSentAt(value: string | Date | null | undefined) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function formatTimeFromMinutes(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
+}
+
+function addDays(dateKey: string, days: number) {
+  const date = new Date(`${dateKey}T12:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function getCurrentSlot(
+  today: string,
+  currentMinutes: number,
+  windowStartMinutes: number,
+  windowEndMinutes: number,
+  intervalHours: number
+) {
+  const stepMinutes = intervalHours * 60;
+
+  if (windowStartMinutes < windowEndMinutes) {
+    const scheduledMinutes = windowStartMinutes
+      + Math.floor((currentMinutes - windowStartMinutes) / stepMinutes) * stepMinutes;
+
+    return {
+      scheduledMinutes,
+      slotKey: `${today}T${formatTimeFromMinutes(scheduledMinutes)}`,
+    };
+  }
+
+  const currentExtendedMinutes = currentMinutes >= windowStartMinutes
+    ? currentMinutes
+    : currentMinutes + 24 * 60;
+  const scheduledExtendedMinutes = windowStartMinutes
+    + Math.floor((currentExtendedMinutes - windowStartMinutes) / stepMinutes) * stepMinutes;
+  const scheduledMinutes = scheduledExtendedMinutes % (24 * 60);
+  const slotDate = scheduledExtendedMinutes >= 24 * 60
+    ? today
+    : currentMinutes < windowEndMinutes
+      ? addDays(today, -1)
+      : today;
+
+  return {
+    scheduledMinutes,
+    slotKey: `${slotDate}T${formatTimeFromMinutes(scheduledMinutes)}`,
+  };
+}
+
 export function getExecutivePushDueStatus(
   schedule: ExecutivePushSchedule,
   now: Date = new Date()
@@ -110,15 +164,36 @@ export function getExecutivePushDueStatus(
     return { due: false, reason: 'outside_window', today };
   }
 
+  const currentSlot = getCurrentSlot(
+    today,
+    currentMinutes,
+    windowStartMinutes,
+    windowEndMinutes,
+    intervalHours
+  );
+
+  if (schedule.lastSentSlot && schedule.lastSentSlot === currentSlot.slotKey) {
+    return { due: false, reason: 'slot_already_sent', today, slotKey: currentSlot.slotKey };
+  }
+
   const lastSentAt = parseLastSentAt(schedule.lastSentAt);
-  if (lastSentAt) {
+  if (lastSentAt && !schedule.lastSentSlot) {
     const elapsedMs = now.getTime() - lastSentAt.getTime();
     if (elapsedMs < intervalHours * 60 * 60 * 1000) {
       return { due: false, reason: 'interval_not_elapsed', today };
     }
   }
 
-  return { due: true, today, currentMinutes, windowStartMinutes, windowEndMinutes, intervalHours };
+  return {
+    due: true,
+    today,
+    currentMinutes,
+    windowStartMinutes,
+    windowEndMinutes,
+    intervalHours,
+    scheduledMinutes: currentSlot.scheduledMinutes,
+    slotKey: currentSlot.slotKey,
+  };
 }
 
 export function getExecutivePushDeliverySkipReason(subscriptionCount: number, sent: number) {

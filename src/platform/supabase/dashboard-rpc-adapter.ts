@@ -21,11 +21,12 @@ export type DashboardStatsRpcRow = {
   ingresos_categorias_por_mes: Json | null;
   ventas_pronostico: Json | null;
   servicios_pronostico: Json | null;
+  churn_stats?: Json | null;
   updated_at: string | null;
 };
 
 type DashboardStatsRpcClient = {
-  rpc: (fn: 'get_dashboard_stats_live') => {
+  rpc: (fn: 'get_dashboard_stats_live' | 'get_dashboard_stats_snapshot') => {
     maybeSingle: () => Promise<RpcResult<DashboardStatsRpcRow>>;
   };
 };
@@ -43,6 +44,14 @@ const dashboardJsonRpcClient = typedRpcClient<DashboardJsonRpcClient>();
 export async function getDashboardStatsLiveRpc(): Promise<DashboardStatsRpcRow | null> {
   const { data, error } = await dashboardStatsRpcClient
     .rpc('get_dashboard_stats_live')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getDashboardStatsSnapshotRpc(): Promise<DashboardStatsRpcRow | null> {
+  const { data, error } = await dashboardStatsRpcClient
+    .rpc('get_dashboard_stats_snapshot')
     .maybeSingle();
   if (error) throw new Error(error.message);
   return data;

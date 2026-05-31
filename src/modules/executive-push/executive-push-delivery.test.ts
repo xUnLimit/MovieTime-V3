@@ -7,6 +7,7 @@ const webPushMocks = vi.hoisted(() => ({
 
 const supabaseMocks = vi.hoisted(() => ({
   from: vi.fn(),
+  configUpdate: vi.fn(),
   configUpdateEq: vi.fn(),
   runUpdate: vi.fn(),
   runUpdateEq: vi.fn(),
@@ -54,6 +55,7 @@ function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: s
     executive_push_timezone: 'UTC',
     executive_push_last_sent_at: null,
     executive_push_last_sent_date: null,
+    executive_push_last_sent_slot: null,
     executive_push_selected_blocks: ['clientes_por_notificar'],
     executive_push_block_order: ['clientes_por_notificar'],
   };
@@ -78,9 +80,9 @@ function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: s
             single: async () => ({ data: configRow, error: null }),
           }),
         }),
-        update: () => ({
+        update: supabaseMocks.configUpdate.mockImplementation(() => ({
           eq: supabaseMocks.configUpdateEq,
-        }),
+        })),
       };
     }
 
@@ -135,6 +137,7 @@ describe('sendExecutivePushDailySummary', () => {
     webPushMocks.setVapidDetails.mockReset();
     webPushMocks.sendNotification.mockReset().mockResolvedValue({ statusCode: 201, body: '', headers: {} });
     supabaseMocks.from.mockReset();
+    supabaseMocks.configUpdate.mockReset();
     supabaseMocks.configUpdateEq.mockReset();
     supabaseMocks.runUpdate.mockReset();
     supabaseMocks.runUpdateEq.mockReset();
@@ -178,6 +181,10 @@ describe('sendExecutivePushDailySummary', () => {
       ],
     });
     expect(result).toMatchObject({ sent: 1, disabled: 0, failed: 0 });
+    expect(supabaseMocks.configUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      executive_push_last_sent_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      executive_push_last_sent_slot: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
+    }));
     expect(supabaseMocks.configUpdateEq).toHaveBeenCalledWith('id', 'global');
   });
 

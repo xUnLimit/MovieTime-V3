@@ -8,6 +8,7 @@ const offlineRead = vi.hoisted(() => ({
 const dashboardRpc = vi.hoisted(() => ({
   getDashboardChurnStatsRpc: vi.fn(),
   getDashboardHomeRpc: vi.fn(),
+  getDashboardStatsSnapshotRpc: vi.fn(),
   getDashboardStatsLiveRpc: vi.fn(),
 }));
 
@@ -28,6 +29,7 @@ describe('dashboard-read-models', () => {
     offlineRead.shouldUseOfflineRead.mockResolvedValue(false);
     offlineRead.getOfflineDashboardHome.mockResolvedValue(null);
     dashboardRpc.getDashboardChurnStatsRpc.mockResolvedValue(null);
+    dashboardRpc.getDashboardStatsSnapshotRpc.mockResolvedValue(null);
     dashboardRpc.getDashboardStatsLiveRpc.mockResolvedValue(null);
     dashboardRpc.getDashboardHomeRpc.mockResolvedValue(null);
   });
@@ -68,8 +70,8 @@ describe('dashboard-read-models', () => {
     });
   });
 
-  it('maps live stats and churn RPC payloads', async () => {
-    dashboardRpc.getDashboardStatsLiveRpc.mockResolvedValue({
+  it('maps snapshot stats with embedded churn payload', async () => {
+    dashboardRpc.getDashboardStatsSnapshotRpc.mockResolvedValue({
       gastos_total: 12,
       ingresos_total: 24,
       terceros_por_mes: [{ mes: '2026-05', total: 2 }],
@@ -80,15 +82,15 @@ describe('dashboard-read-models', () => {
       ingresos_categorias_por_mes: [{ mes: '2026-05', categoriaId: 'cat-1', total: 10 }],
       ventas_pronostico: [{ id: 'venta-1', precioFinal: 10 }],
       servicios_pronostico: [{ id: 'servicio-1', costoServicio: 8 }],
-      updated_at: '2026-05-23T00:00:00.000Z',
-    });
-    dashboardRpc.getDashboardChurnStatsRpc.mockResolvedValue({
-      kpis: {
-        clientesActivos: 10,
-        clientesInactivos: 2,
-        tasaChurnMesActual: 20,
+      churn_stats: {
+        kpis: {
+          clientesActivos: 10,
+          clientesInactivos: 2,
+          tasaChurnMesActual: 20,
+        },
+        porMes: [{ mes: '2026-05', perdidos: 2, activosInicio: 10, churnPct: 20 }],
       },
-      porMes: [{ mes: '2026-05', perdidos: 2, activosInicio: 10, churnPct: 20 }],
+      updated_at: '2026-05-23T00:00:00.000Z',
     });
 
     await expect(getDashboardStats()).resolves.toMatchObject({
@@ -103,6 +105,8 @@ describe('dashboard-read-models', () => {
         },
       },
     });
+    expect(dashboardRpc.getDashboardStatsLiveRpc).not.toHaveBeenCalled();
+    expect(dashboardRpc.getDashboardChurnStatsRpc).not.toHaveBeenCalled();
   });
 
   it('maps dashboard home counts and recent activity', async () => {
@@ -177,4 +181,3 @@ describe('dashboard-read-models', () => {
     });
   });
 });
-

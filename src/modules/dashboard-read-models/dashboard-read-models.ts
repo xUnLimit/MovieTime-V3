@@ -4,7 +4,7 @@ import { getOfflineDashboardHome, shouldUseOfflineRead } from '@/modules/pwa/off
 import {
   getDashboardChurnStatsRpc,
   getDashboardHomeRpc,
-  getDashboardStatsLiveRpc,
+  getDashboardStatsSnapshotRpc,
   type DashboardStatsRpcRow,
 } from '@/platform/supabase/dashboard-rpc-adapter';
 import type {
@@ -55,14 +55,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     return (await getOfflineDashboardHome())?.stats ?? createEmptyStats();
   }
 
-  const [statsResult, churnStats] = await Promise.all([
-    getDashboardStatsLiveRpc(),
-    getDashboardChurnStats(),
-  ]);
+  const statsResult = await getDashboardStatsSnapshotRpc();
 
-  if (!statsResult) return { ...createEmptyStats(), churnStats };
+  if (!statsResult) return createEmptyStats();
 
-  return rowToStats({ ...statsResult, churn_stats: churnStats as unknown as Json });
+  return rowToStats(statsResult);
 }
 
 export async function getDashboardChurnStats(): Promise<ChurnStats> {

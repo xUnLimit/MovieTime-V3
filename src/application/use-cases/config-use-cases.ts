@@ -64,7 +64,7 @@ export function updateExecutivePushUseCase(
     executive_push_block_order: updates.blockOrder,
     executive_push_updated_by: updates.updatedBy ?? null,
     ...(shouldResetLastSent
-      ? { executive_push_last_sent_at: null, executive_push_last_sent_date: null }
+      ? { executive_push_last_sent_at: null, executive_push_last_sent_date: null, executive_push_last_sent_slot: null }
       : {}),
   });
 }

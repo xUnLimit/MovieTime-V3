@@ -64,6 +64,7 @@ export async function getConfig(): Promise<Configuracion> {
       updatedAt: new Date(config.updated_at),
       lastSentAt: typeof config.executive_push_last_sent_at === 'string' ? new Date(config.executive_push_last_sent_at) : null,
       lastSentDate: typeof config.executive_push_last_sent_date === 'string' ? config.executive_push_last_sent_date : null,
+      lastSentSlot: typeof config.executive_push_last_sent_slot === 'string' ? config.executive_push_last_sent_slot : null,
     },
     whatsapp: {
       prefijoTelefono: config.whatsapp_prefijo,
@@ -116,6 +117,7 @@ export async function updateExecutivePushSettings(payload: {
   executive_push_updated_by?: string | null;
   executive_push_last_sent_at?: string | null;
   executive_push_last_sent_date?: string | null;
+  executive_push_last_sent_slot?: string | null;
 }) {
   assertOnlineMutation();
   await updateConfig(payload);
@@ -136,6 +138,7 @@ async function updateConfig(payload: {
   executive_push_updated_by?: string | null;
   executive_push_last_sent_at?: string | null;
   executive_push_last_sent_date?: string | null;
+  executive_push_last_sent_slot?: string | null;
 }) {
   const { error } = await supabase.from('config').update(payload).eq('id', CONFIG_DOC_ID);
   if (error) throw new Error(error.message);

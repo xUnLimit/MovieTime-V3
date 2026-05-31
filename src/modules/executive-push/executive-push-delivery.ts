@@ -49,6 +49,7 @@ async function getExecutivePushSettings(client: ServiceClient) {
     timezone: data.executive_push_timezone ?? 'America/Bogota',
     lastSentAt: data.executive_push_last_sent_at ?? null,
     lastSentDate: data.executive_push_last_sent_date ?? null,
+    lastSentSlot: data.executive_push_last_sent_slot ?? null,
     selectedBlocks: Array.isArray(data.executive_push_selected_blocks)
       ? data.executive_push_selected_blocks as ExecutivePushBlock[]
       : [],
@@ -259,6 +260,7 @@ export async function sendExecutivePushDailySummary(options?: { force?: boolean;
       .update({
         executive_push_last_sent_at: new Date().toISOString(),
         executive_push_last_sent_date: dueStatus.today,
+        executive_push_last_sent_slot: dueStatus.due ? dueStatus.slotKey : null,
       })
       .eq('id', 'global');
     if (markSentError) throw new Error(markSentError.message);

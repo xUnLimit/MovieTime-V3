@@ -12,6 +12,7 @@ vi.mock('./client', () => ({
 import {
   getDashboardChurnStatsRpc,
   getDashboardHomeRpc,
+  getDashboardStatsSnapshotRpc,
   getDashboardStatsLiveRpc,
   type DashboardStatsRpcRow,
 } from './dashboard-rpc-adapter';
@@ -51,6 +52,29 @@ describe('getDashboardStatsLiveRpc', () => {
     maybeSingleMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
 
     await expect(getDashboardStatsLiveRpc()).rejects.toThrow('RPC failed');
+  });
+});
+
+describe('getDashboardStatsSnapshotRpc', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls the typed snapshot RPC and returns the row', async () => {
+    rpcMock.mockReturnValue({ maybeSingle: maybeSingleMock });
+    maybeSingleMock.mockResolvedValue({ data: statsRow, error: null });
+
+    await expect(getDashboardStatsSnapshotRpc()).resolves.toBe(statsRow);
+
+    expect(rpcMock).toHaveBeenCalledWith('get_dashboard_stats_snapshot');
+    expect(maybeSingleMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws the Supabase error message', async () => {
+    rpcMock.mockReturnValue({ maybeSingle: maybeSingleMock });
+    maybeSingleMock.mockResolvedValue({ data: null, error: { message: 'Snapshot failed' } });
+
+    await expect(getDashboardStatsSnapshotRpc()).rejects.toThrow('Snapshot failed');
   });
 });
 

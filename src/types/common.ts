@@ -60,6 +60,7 @@ export interface ExecutivePushSettings {
   updatedAt: Date;
   lastSentAt?: Date | null;
   lastSentDate?: string | null;
+  lastSentSlot?: string | null;
 }
 
 export interface ConfiguracionWhatsApp {

@@ -124,6 +124,7 @@ export type Database = {
           executive_push_enabled: boolean
           executive_push_last_sent_at: string | null
           executive_push_last_sent_date: string | null
+          executive_push_last_sent_slot: string | null
           executive_push_interval_hours: number
           executive_push_selected_blocks: Json | null
           executive_push_send_time: string
@@ -142,6 +143,7 @@ export type Database = {
           executive_push_enabled?: boolean
           executive_push_last_sent_at?: string | null
           executive_push_last_sent_date?: string | null
+          executive_push_last_sent_slot?: string | null
           executive_push_interval_hours?: number
           executive_push_selected_blocks?: Json | null
           executive_push_send_time?: string
@@ -160,6 +162,7 @@ export type Database = {
           executive_push_enabled?: boolean
           executive_push_last_sent_at?: string | null
           executive_push_last_sent_date?: string | null
+          executive_push_last_sent_slot?: string | null
           executive_push_interval_hours?: number
           executive_push_selected_blocks?: Json | null
           executive_push_send_time?: string
@@ -3337,6 +3340,24 @@ export type Database = {
           ventas_pronostico: Json
           servicios_pronostico: Json
           updated_at: string
+        }[]
+      }
+      get_dashboard_stats_snapshot: {
+        Args: never
+        Returns: {
+          id: string
+          ingresos_total: number
+          gastos_total: number
+          terceros_por_mes: Json
+          terceros_por_dia: Json
+          ingresos_por_mes: Json
+          ingresos_por_dia: Json
+          ingresos_por_categoria: Json
+          ingresos_categorias_por_mes: Json
+          ventas_pronostico: Json
+          servicios_pronostico: Json
+          updated_at: string
+          churn_stats: Json
         }[]
       }
       get_dashboard_churn_stats: { Args: never; Returns: Json }
