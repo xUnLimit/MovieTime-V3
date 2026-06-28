@@ -59,12 +59,14 @@ vi.mock('@/platform/utils/activityLogHelpers', () => ({
 
 import {
   createServicioWithInitialPayment,
+  getPagoServicioById,
   getServicioById,
   queryPagosServicio,
   removeServicio,
   removePagoServicio,
   updateLatestServicioPeriodo,
   updateServicio,
+  updateServicioPaymentAndPeriod,
 } from '@/platform/supabase/servicios-repository';
 import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import { financialPayments } from '@/modules/payments';
@@ -79,6 +81,7 @@ import {
 import {
   deleteServicioPagoUseCase,
   renewServicioUseCase,
+  updateServicioPagoUseCase,
 } from './servicios/servicios-payment-use-cases';
 
 const servicio: Servicio = {
@@ -123,11 +126,13 @@ const pago: PagoServicio = {
 beforeEach(() => {
   vi.mocked(getMetodoPagoById).mockReset();
   vi.mocked(createServicioWithInitialPayment).mockReset();
+  vi.mocked(getPagoServicioById).mockReset();
   vi.mocked(removePagoServicio).mockReset();
   vi.mocked(removeServicio).mockReset();
   vi.mocked(queryPagosServicio).mockReset();
   vi.mocked(updateLatestServicioPeriodo).mockReset();
   vi.mocked(updateServicio).mockReset();
+  vi.mocked(updateServicioPaymentAndPeriod).mockReset();
   vi.mocked(financialPayments.registerRenewalServicioPayment).mockReset();
   vi.mocked(syncServicioDependencias).mockReset();
   vi.mocked(getServicioById).mockReset();
@@ -136,11 +141,13 @@ beforeEach(() => {
 
   vi.mocked(getMetodoPagoById).mockResolvedValue({ id: 'metodo-1', nombre: 'Banco', moneda: 'USD' });
   vi.mocked(createServicioWithInitialPayment).mockResolvedValue('servicio-1');
+  vi.mocked(getPagoServicioById).mockResolvedValue({ ...pago, servicioPeriodoId: 'periodo-1' });
   vi.mocked(removePagoServicio).mockResolvedValue(undefined);
   vi.mocked(removeServicio).mockResolvedValue(undefined);
   vi.mocked(queryPagosServicio).mockResolvedValue([]);
   vi.mocked(updateLatestServicioPeriodo).mockResolvedValue(undefined);
   vi.mocked(updateServicio).mockResolvedValue(undefined);
+  vi.mocked(updateServicioPaymentAndPeriod).mockResolvedValue(undefined);
   vi.mocked(financialPayments.registerRenewalServicioPayment).mockResolvedValue(undefined);
   vi.mocked(syncServicioDependencias).mockResolvedValue(undefined);
   vi.mocked(convertToUSD).mockResolvedValue(10);
@@ -281,5 +288,37 @@ describe('renewServicioUseCase', () => {
       renovacionAutomatica: true,
     }));
     expect(result.servicioActualizado.renovacionAutomatica).toBe(true);
+  });
+});
+
+describe('updateServicioPagoUseCase', () => {
+  it('uses the edit form autorenew value when updating the service period', async () => {
+    await updateServicioPagoUseCase(
+      {
+        ...servicio,
+        renovacionAutomatica: true,
+      },
+      pago,
+      {
+        periodoRenovacion: 'mensual',
+        metodoPagoId: 'metodo-1',
+        metodoPagoNombre: 'Banco',
+        moneda: 'USD',
+        costo: 10,
+        fechaInicio: new Date('2026-06-01T00:00:00Z'),
+        fechaVencimiento: new Date('2026-07-01T00:00:00Z'),
+        renovacionAutomatica: false,
+      },
+      {
+        isLatestPayment: false,
+      },
+    );
+
+    expect(updateServicioPaymentAndPeriod).toHaveBeenCalledWith(
+      'pago-1',
+      expect.objectContaining({
+        renovacionAutomatica: false,
+      }),
+    );
   });
 });

@@ -117,6 +117,7 @@ export async function updateServicioPagoUseCase(
     pago.moneda || servicio.moneda
   );
   const { usd, rate } = await getUsdValues(input.costo, moneda);
+  const renovacionAutomatica = input.renovacionAutomatica ?? servicio.renovacionAutomatica ?? false;
   const pagoActual = await getPagoServicioById<PagoServicio & { servicioPeriodoId?: string }>(pago.id);
 
   if (pagoActual?.servicioPeriodoId) {
@@ -128,7 +129,7 @@ export async function updateServicioPagoUseCase(
       moneda,
       costoUsd: usd,
       exchangeRate: rate,
-      renovacionAutomatica: servicio.renovacionAutomatica,
+      renovacionAutomatica,
       metodoPagoId: input.metodoPagoId,
       metodoPagoNombre,
       notas: notaPrincipal,

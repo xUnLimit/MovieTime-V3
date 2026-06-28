@@ -120,6 +120,7 @@ export function useServicioFormSubmit({
               metodoPagoNombre: metodoPagoSeleccionado?.nombre,
               moneda: metodoPagoSeleccionado?.moneda,
               periodoRenovacion: data.cicloPago,
+              renovacionAutomatica: data.renovacionAutomatica,
             },
             {
               metodoPago: metodoPagoSeleccionado,
