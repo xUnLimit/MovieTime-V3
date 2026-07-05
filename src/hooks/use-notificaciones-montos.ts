@@ -24,7 +24,7 @@ export function useNotificacionesMontos() {
     () =>
       notificaciones
         .filter(esNotificacionVenta)
-        .filter((notificacion) => notificacion.diasRestantes < 0 && (notificacion.precioFinal ?? 0) > 0),
+        .filter((notificacion) => notificacion.diasRestantes <= 0 && (notificacion.precioFinal ?? 0) > 0),
     [notificaciones],
   );
 
