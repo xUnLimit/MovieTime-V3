@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { calcularPrioridad, generarTitulo, prioridadSubio } from './notification-calculator';
+import { calcularPrioridad, generarTitulo } from './notification-calculator';
 
 describe('notification-calculator', () => {
   it('maps remaining days to notification priorities', () => {
@@ -16,11 +16,5 @@ describe('notification-calculator', () => {
     expect(generarTitulo(0, 'servicio')).toBe('Servicio vence hoy ⚠️');
     expect(generarTitulo(1, 'venta')).toBe('Venta vence en 1 día');
     expect(generarTitulo(5, 'servicio')).toBe('Servicio vence en 5 días');
-  });
-
-  it('detects priority increases only when severity goes up', () => {
-    expect(prioridadSubio('media', 'alta')).toBe(true);
-    expect(prioridadSubio('critica', 'alta')).toBe(false);
-    expect(prioridadSubio('alta', 'alta')).toBe(false);
   });
 });

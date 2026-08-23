@@ -145,16 +145,22 @@ describe('notifications repository aggregate writes', () => {
     expect(fromMock).not.toHaveBeenCalled();
   });
 
-  it('updates a complete aggregate atomically while allowing state changes', async () => {
-    await updateNotification('notification-1', ventaPayload);
+  it('updates a complete aggregate atomically while preserving user-managed state', async () => {
+    await updateNotification('notification-1', {
+      ...ventaPayload,
+      leida: true,
+      resaltada: true,
+    });
 
     expect(aggregateRpcMock).toHaveBeenCalledWith({
       p_base: expect.objectContaining({
         id: 'notification-1',
         dedupe_key: 'venta:venta-1',
+        leida: false,
+        resaltada: false,
       }),
       p_detail: expect.objectContaining({ venta_id: 'venta-1' }),
-      p_preserve_existing_state: false,
+      p_preserve_existing_state: true,
     });
     expect(fromMock).not.toHaveBeenCalled();
   });

@@ -5,7 +5,6 @@ import { createNotificacion, updateNotificacion } from '@/platform/supabase/noti
 import {
   calcularPrioridad,
   generarTitulo,
-  prioridadSubio,
 } from '@/modules/notifications/notification-calculator';
 import type { MetodoPago } from '@/types/metodos-pago';
 import type { NotificacionVenta } from '@/types/notificaciones';
@@ -72,11 +71,9 @@ export async function procesarNotificacionVenta(
     // Update existing notification
     // Update if diasRestantes changed, or if forced refresh
     if (forzarActualizacion || notifExistente.diasRestantes !== diasRestantes) {
-      const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
-
       await updateNotificacion(notifExistente.id, {
         ...datosNotificacion,
-        leida: aumentoPrioridad ? false : notifExistente.leida, // Mark as unread if priority increased
+        leida: notifExistente.leida,
         resaltada: notifExistente.resaltada, // Always preserve highlighted state
       });
     }

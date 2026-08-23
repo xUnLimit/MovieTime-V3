@@ -55,7 +55,7 @@ describe('notification sync modules', () => {
     }));
   });
 
-  it('updates venta notifications when forced and marks unread if priority increased', async () => {
+  it('preserves a read venta notification when its priority increases', async () => {
     await procesarNotificacionVenta(
       {
         id: 'venta-1',
@@ -79,7 +79,7 @@ describe('notification sync modules', () => {
 
     expect(notificationsRepository.updateNotificacion).toHaveBeenCalledWith('notif-1', expect.objectContaining({
       prioridad: 'critica',
-      leida: false,
+      leida: true,
       resaltada: true,
     }));
   });
@@ -178,7 +178,7 @@ describe('notification sync modules', () => {
     }));
   });
 
-  it('updates servicio notifications when payment display metadata changes', async () => {
+  it('updates servicio metadata without reactivating a read notification', async () => {
     await procesarNotificacionServicio(
       {
         id: 'servicio-1',
@@ -223,7 +223,7 @@ describe('notification sync modules', () => {
       metodoPagoAlias: 'Nueva',
       metodoPagoTarjetaTerminacion: '4321',
       renovacionAutomatica: true,
-      leida: false,
+      leida: true,
       resaltada: true,
     }));
   });
@@ -258,7 +258,7 @@ describe('notification sync modules', () => {
     }));
   });
 
-  it('updates reposo notifications preserving highlighted state and unread on priority increase', async () => {
+  it('updates reposo notifications without reactivating them on priority increase', async () => {
     await procesarNotificacionReposo(
       {
         id: 'servicio-cercano',
@@ -284,7 +284,7 @@ describe('notification sync modules', () => {
       entidad: 'reposo',
       prioridad: 'critica',
       diasRestantes: -2,
-      leida: false,
+      leida: true,
       resaltada: true,
     }));
   });

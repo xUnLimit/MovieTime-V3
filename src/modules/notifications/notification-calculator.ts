@@ -24,8 +24,3 @@ export function generarTitulo(diasRestantes: number, entidad: ExpirationEntity):
     ? `Venta vence en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}`
     : `Servicio vence en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}`;
 }
-
-export function prioridadSubio(anterior: string, nueva: string): boolean {
-  const prioridades = ['baja', 'media', 'alta', 'critica'];
-  return prioridades.indexOf(nueva) > prioridades.indexOf(anterior);
-}

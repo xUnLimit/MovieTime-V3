@@ -90,7 +90,7 @@ export async function updateNotification(id: string, payload: Record<string, unk
     await upsertNotificationAggregateRpc({
       p_base: notificationBasePayload(id, payload),
       p_detail: notificationDetailPayload(payload),
-      p_preserve_existing_state: false,
+      p_preserve_existing_state: true,
     });
     return;
   }
@@ -176,8 +176,8 @@ function notificationBasePayload(id: string, payload: Record<string, unknown>) {
     mensaje: payload.mensaje == null ? null : String(payload.mensaje),
     dias_restantes: payload.diasRestantes == null ? null : Number(payload.diasRestantes),
     scheduled_for: notificationScheduledFor(payload),
-    leida: Boolean(payload.leida ?? false),
-    resaltada: Boolean(payload.resaltada ?? false),
+    leida: false,
+    resaltada: false,
   };
 }
 

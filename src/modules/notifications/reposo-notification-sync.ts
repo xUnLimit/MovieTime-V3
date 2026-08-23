@@ -1,7 +1,6 @@
 import { differenceInDays, startOfDay } from 'date-fns';
 
 import { createNotificacion, updateNotificacion } from '@/platform/supabase/notifications-repository';
-import { prioridadSubio } from '@/modules/notifications/notification-calculator';
 import type { NotificacionReposo } from '@/types/notificaciones';
 import type { Servicio } from '@/types/servicios';
 export async function procesarNotificacionReposo(
@@ -49,10 +48,9 @@ export async function procesarNotificacionReposo(
       notifExistente.titulo !== titulo;
 
     if (debeActualizar) {
-      const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
       await updateNotificacion(notifExistente.id, {
         ...datosNotificacion,
-        leida: aumentoPrioridad ? false : notifExistente.leida,
+        leida: notifExistente.leida,
         resaltada: notifExistente.resaltada,
       });
     }

@@ -6,7 +6,6 @@ import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import {
   calcularPrioridad,
   generarTitulo,
-  prioridadSubio,
 } from '@/modules/notifications/notification-calculator';
 import type { MetodoPago } from '@/types/metodos-pago';
 import type { NotificacionServicio } from '@/types/notificaciones';
@@ -85,11 +84,9 @@ export async function procesarNotificacionServicio(
       (notifExistente.renovacionAutomatica ?? false) !== renovacionAutomatica;
 
     if (debeActualizar) {
-      const aumentoPrioridad = prioridadSubio(notifExistente.prioridad, nuevaPrioridad);
-
       await updateNotificacion(notifExistente.id, {
         ...datosNotificacion,
-        leida: aumentoPrioridad ? false : notifExistente.leida,
+        leida: notifExistente.leida,
         resaltada: notifExistente.resaltada, // Always preserve highlighted state
       });
     }
