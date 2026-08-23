@@ -3,8 +3,10 @@ import { toCamelCase } from './mappers';
 import { reviveDates, toNullableDateOnly } from './dates';
 import { snakeField } from './filters';
 import { ENTITIES, type PublicViewName, type QueryBuilder, type QueryFilter } from './entities';
+import type { Json } from './database.types';
 import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import { readOfflineCollection, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
+import { upsertNotificationAggregateRpc } from './notifications-rpc-adapter';
 import {
   getById as coreGetById,
   getCount as coreGetCount,
@@ -75,107 +77,143 @@ export async function queryNotifications<T>(filters: QueryFilter[]): Promise<T[]
 }
 
 export async function createNotification(payload: Record<string, unknown>): Promise<string> {
-  assertOnlineMutation();
-  const entidad = String(payload.entidad ?? '');
   const id = crypto.randomUUID();
-  const { error } = await supabase.from('notificaciones').insert({
-    id,
-    dedupe_key: notificationDedupeKey(payload),
-    entidad,
-    tipo: payload.tipo ?? 'sistema',
-    prioridad: payload.prioridad ?? 'media',
-    titulo: payload.titulo ?? '',
-    mensaje: payload.mensaje ?? null,
-    dias_restantes: payload.diasRestantes ?? null,
-    scheduled_for: notificationScheduledFor(payload),
-    leida: Boolean(payload.leida ?? false),
-    resaltada: Boolean(payload.resaltada ?? false),
-  } as never);
-  if (error) throw new Error(error.message);
-
-  await upsertNotificationDetail(id, payload);
-  return id;
+  return upsertNotificationAggregateRpc({
+    p_base: notificationBasePayload(id, payload),
+    p_detail: notificationDetailPayload(payload),
+    p_preserve_existing_state: true,
+  });
 }
 
 export async function updateNotification(id: string, payload: Record<string, unknown>): Promise<void> {
+  if (payload.entidad) {
+    await upsertNotificationAggregateRpc({
+      p_base: notificationBasePayload(id, payload),
+      p_detail: notificationDetailPayload(payload),
+      p_preserve_existing_state: false,
+    });
+    return;
+  }
+
   assertOnlineMutation();
   const base = normalizeNotificationBasePayload(payload);
   if (Object.keys(base).length > 0) {
     const { error } = await supabase.from('notificaciones').update(base as never).eq('id', id);
     if (error) throw new Error(error.message);
   }
-
-  if (payload.entidad) {
-    await upsertNotificationDetail(id, payload);
-  }
 }
 
-async function upsertNotificationDetail(notificacionId: string, payload: Record<string, unknown>) {
+function notificationDetailPayload(payload: Record<string, unknown>): Json {
   if (payload.entidad === 'venta') {
-    const { error } = await supabase.from('notificaciones_venta').upsert({
-      notificacion_id: notificacionId,
-      venta_id: payload.ventaId,
-      cliente_id: payload.clienteId || null,
-      servicio_id: payload.servicioId || null,
-      categoria_id: payload.categoriaId || null,
-      cliente_nombre_snapshot: payload.clienteNombre ?? '',
-      cliente_telefono_snapshot: payload.clienteTelefono ?? null,
-      servicio_nombre_snapshot: payload.servicioNombre ?? '',
-      servicio_correo_snapshot: payload.servicioCorreo ?? null,
-      servicio_contrasena_snapshot: payload.servicioContrasena ?? null,
-      categoria_nombre_snapshot: payload.categoriaNombre ?? null,
-      perfil_nombre_snapshot: payload.perfilNombre ?? null,
-      codigo_snapshot: payload.codigo ?? null,
+    return {
+      venta_id: requiredNotificationString(payload.ventaId, 'ventaId'),
+      cliente_id: nullableNotificationString(payload.clienteId),
+      servicio_id: nullableNotificationString(payload.servicioId),
+      categoria_id: nullableNotificationString(payload.categoriaId),
+      cliente_nombre_snapshot: notificationString(payload.clienteNombre),
+      cliente_telefono_snapshot: nullableNotificationString(payload.clienteTelefono),
+      servicio_nombre_snapshot: notificationString(payload.servicioNombre),
+      servicio_correo_snapshot: nullableNotificationString(payload.servicioCorreo),
+      servicio_contrasena_snapshot: nullableNotificationString(payload.servicioContrasena),
+      categoria_nombre_snapshot: nullableNotificationString(payload.categoriaNombre),
+      perfil_nombre_snapshot: nullableNotificationString(payload.perfilNombre),
+      codigo_snapshot: nullableNotificationString(payload.codigo),
       fecha_inicio_snapshot: toNullableDateOnly(payload.fechaInicio),
       fecha_fin_snapshot: toNullableDateOnly(payload.fechaFin),
-      ciclo_pago_snapshot: payload.cicloPago ?? null,
-      precio_final_snapshot: payload.precioFinal ?? null,
-      moneda_snapshot: payload.moneda ?? null,
-      metodo_pago_nombre_snapshot: payload.metodoPagoNombre ?? payload.metodoPago ?? null,
-      metodo_pago_id: payload.metodoPagoId ?? null,
-    } as never);
-    if (error) throw new Error(error.message);
-    return;
+      ciclo_pago_snapshot: nullableNotificationString(payload.cicloPago),
+      precio_final_snapshot: nullableNotificationNumber(payload.precioFinal),
+      moneda_snapshot: nullableNotificationString(payload.moneda),
+      metodo_pago_nombre_snapshot: nullableNotificationString(payload.metodoPagoNombre ?? payload.metodoPago),
+      metodo_pago_id: nullableNotificationString(payload.metodoPagoId),
+    };
   }
 
   if (payload.entidad === 'servicio') {
-    const { error } = await supabase.from('notificaciones_servicio').upsert({
-      notificacion_id: notificacionId,
-      servicio_id: payload.servicioId,
-      categoria_id: payload.categoriaId || null,
-      servicio_nombre_snapshot: payload.servicioNombre ?? '',
-      servicio_correo_snapshot: payload.correo ?? null,
-      servicio_contrasena_snapshot: payload.contrasena ?? null,
-      categoria_nombre_snapshot: payload.categoriaNombre ?? null,
+    return {
+      servicio_id: requiredNotificationString(payload.servicioId, 'servicioId'),
+      categoria_id: nullableNotificationString(payload.categoriaId),
+      servicio_nombre_snapshot: notificationString(payload.servicioNombre),
+      servicio_correo_snapshot: nullableNotificationString(payload.correo),
+      servicio_contrasena_snapshot: nullableNotificationString(payload.contrasena),
+      categoria_nombre_snapshot: nullableNotificationString(payload.categoriaNombre),
       fecha_inicio_snapshot: null,
       fecha_vencimiento_snapshot: toNullableDateOnly(payload.fechaVencimiento),
-      ciclo_pago_snapshot: payload.cicloPago ?? null,
-      costo_servicio_snapshot: payload.costoServicio ?? null,
-      moneda_snapshot: payload.moneda ?? null,
-      metodo_pago_nombre_snapshot: payload.metodoPagoNombre ?? null,
-      metodo_pago_alias_snapshot: payload.metodoPagoAlias ?? null,
-      metodo_pago_tarjeta_terminacion_snapshot: payload.metodoPagoTarjetaTerminacion ?? null,
-      renovacion_automatica_snapshot: payload.renovacionAutomatica ?? null,
-    } as never);
-    if (error) throw new Error(error.message);
-    return;
+      ciclo_pago_snapshot: nullableNotificationString(payload.cicloPago),
+      costo_servicio_snapshot: nullableNotificationNumber(payload.costoServicio),
+      moneda_snapshot: nullableNotificationString(payload.moneda),
+      metodo_pago_nombre_snapshot: nullableNotificationString(payload.metodoPagoNombre),
+      metodo_pago_alias_snapshot: nullableNotificationString(payload.metodoPagoAlias),
+      metodo_pago_tarjeta_terminacion_snapshot: nullableNotificationString(payload.metodoPagoTarjetaTerminacion),
+      renovacion_automatica_snapshot: nullableNotificationBoolean(payload.renovacionAutomatica),
+    };
   }
 
   if (payload.entidad === 'reposo') {
-    const { error } = await supabase.from('notificaciones_reposo').upsert({
-      notificacion_id: notificacionId,
-      servicio_id: payload.servicioId,
-      categoria_id: payload.categoriaId || null,
-      servicio_nombre_snapshot: payload.servicioNombre ?? '',
-      servicio_correo_snapshot: payload.correo ?? null,
-      servicio_contrasena_snapshot: payload.contrasena ?? null,
-      categoria_nombre_snapshot: payload.categoriaNombre ?? null,
-      dias_reposo_snapshot: payload.diasReposo ?? null,
+    return {
+      servicio_id: requiredNotificationString(payload.servicioId, 'servicioId'),
+      categoria_id: nullableNotificationString(payload.categoriaId),
+      servicio_nombre_snapshot: notificationString(payload.servicioNombre),
+      servicio_correo_snapshot: nullableNotificationString(payload.correo),
+      servicio_contrasena_snapshot: nullableNotificationString(payload.contrasena),
+      categoria_nombre_snapshot: nullableNotificationString(payload.categoriaNombre),
+      dias_reposo_snapshot: nullableNotificationNumber(payload.diasReposo),
       fecha_inicio_reposo_snapshot: toNullableDateOnly(payload.fechaInicioReposo),
       fecha_fin_reposo_snapshot: toNullableDateOnly(payload.fechaFinReposo),
-    } as never);
-    if (error) throw new Error(error.message);
+    };
   }
+
+  throw new Error(`Entidad de notificacion no soportada: ${String(payload.entidad ?? '')}`);
+}
+
+function notificationBasePayload(id: string, payload: Record<string, unknown>) {
+  return {
+    id,
+    dedupe_key: notificationDedupeKey(payload),
+    entidad: String(payload.entidad ?? ''),
+    tipo: String(payload.tipo ?? 'sistema'),
+    prioridad: String(payload.prioridad ?? 'media'),
+    titulo: String(payload.titulo ?? ''),
+    mensaje: payload.mensaje == null ? null : String(payload.mensaje),
+    dias_restantes: payload.diasRestantes == null ? null : Number(payload.diasRestantes),
+    scheduled_for: notificationScheduledFor(payload),
+    leida: Boolean(payload.leida ?? false),
+    resaltada: Boolean(payload.resaltada ?? false),
+  };
+}
+
+function requiredNotificationString(value: unknown, field: string): string {
+  const normalized = nullableNotificationString(value);
+  if (!normalized) {
+    throw new Error(`${field} es requerido para sincronizar la notificacion`);
+  }
+  return normalized;
+}
+
+function notificationString(value: unknown): string {
+  return value == null ? '' : String(value);
+}
+
+function nullableNotificationString(value: unknown): string | null {
+  if (value == null) return null;
+  const normalized = String(value).trim();
+  return normalized || null;
+}
+
+function nullableNotificationNumber(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized)) {
+    throw new Error('La notificacion contiene un valor numerico invalido');
+  }
+  return normalized;
+}
+
+function nullableNotificationBoolean(value: unknown): boolean | null {
+  if (value == null) return null;
+  if (typeof value !== 'boolean') {
+    throw new Error('La notificacion contiene un valor booleano invalido');
+  }
+  return value;
 }
 
 function normalizeNotificationBasePayload(payload: Record<string, unknown>) {

@@ -69,7 +69,14 @@ export type CreateVentaWithInitialPaymentPayload = {
 };
 
 export type CreateVentaRefundPayload =
-  Omit<Database['public']['Functions']['create_venta_refund']['Args'], 'p_created_by'> & {
+  Omit<
+    Database['public']['Functions']['create_venta_refund']['Args'],
+    'p_created_by' | 'p_metodo_pago_id' | 'p_metodo_pago_nombre_snapshot' | 'p_nota' | 'p_motivo_corte'
+  > & {
+    p_metodo_pago_id: string | null;
+    p_metodo_pago_nombre_snapshot: string | null;
+    p_nota?: string | null;
+    p_motivo_corte?: string | null;
     p_idempotency_key?: string | null;
   };
 export type DeleteVentaWithPaymentsPayload =

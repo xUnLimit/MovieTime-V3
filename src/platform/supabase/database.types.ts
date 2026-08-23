@@ -1,8 +1,4 @@
-// Auto-generated from Supabase project amvougsdkpyptzahtram.
-// Re-generate with: supabase gen types typescript --project-id amvougsdkpyptzahtram
-// Do not edit by hand.
-
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -25,6 +21,7 @@ export type Database = {
           detalles: string
           entidad: Database["public"]["Enums"]["entidad_log_enum"]
           entidad_id: string
+          entidad_legacy_id: string | null
           entidad_nombre: string
           id: string
           metadata: Json | null
@@ -38,6 +35,7 @@ export type Database = {
           detalles: string
           entidad: Database["public"]["Enums"]["entidad_log_enum"]
           entidad_id: string
+          entidad_legacy_id?: string | null
           entidad_nombre: string
           id?: string
           metadata?: Json | null
@@ -51,6 +49,7 @@ export type Database = {
           detalles?: string
           entidad?: Database["public"]["Enums"]["entidad_log_enum"]
           entidad_id?: string
+          entidad_legacy_id?: string | null
           entidad_nombre?: string
           id?: string
           metadata?: Json | null
@@ -120,13 +119,13 @@ export type Database = {
       }
       config: {
         Row: {
-          executive_push_block_order: Json | null
+          executive_push_block_order: Json
           executive_push_enabled: boolean
+          executive_push_interval_hours: number
           executive_push_last_sent_at: string | null
           executive_push_last_sent_date: string | null
           executive_push_last_sent_slot: string | null
-          executive_push_interval_hours: number
-          executive_push_selected_blocks: Json | null
+          executive_push_selected_blocks: Json
           executive_push_send_time: string
           executive_push_timezone: string
           executive_push_updated_by: string | null
@@ -139,13 +138,13 @@ export type Database = {
           whatsapp_prefijo: string
         }
         Insert: {
-          executive_push_block_order?: Json | null
+          executive_push_block_order?: Json
           executive_push_enabled?: boolean
+          executive_push_interval_hours?: number
           executive_push_last_sent_at?: string | null
           executive_push_last_sent_date?: string | null
           executive_push_last_sent_slot?: string | null
-          executive_push_interval_hours?: number
-          executive_push_selected_blocks?: Json | null
+          executive_push_selected_blocks?: Json
           executive_push_send_time?: string
           executive_push_timezone?: string
           executive_push_updated_by?: string | null
@@ -158,13 +157,13 @@ export type Database = {
           whatsapp_prefijo?: string
         }
         Update: {
-          executive_push_block_order?: Json | null
+          executive_push_block_order?: Json
           executive_push_enabled?: boolean
+          executive_push_interval_hours?: number
           executive_push_last_sent_at?: string | null
           executive_push_last_sent_date?: string | null
           executive_push_last_sent_slot?: string | null
-          executive_push_interval_hours?: number
-          executive_push_selected_blocks?: Json | null
+          executive_push_selected_blocks?: Json
           executive_push_send_time?: string
           executive_push_timezone?: string
           executive_push_updated_by?: string | null
@@ -175,6 +174,53 @@ export type Database = {
           notificaciones_dias_anticipacion?: number
           updated_at?: string
           whatsapp_prefijo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "config_executive_push_updated_by_fkey"
+            columns: ["executive_push_updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      currencies: {
+        Row: {
+          activo: boolean
+          code: string
+          nombre: string | null
+        }
+        Insert: {
+          activo?: boolean
+          code: string
+          nombre?: string | null
+        }
+        Update: {
+          activo?: boolean
+          code?: string
+          nombre?: string | null
+        }
+        Relationships: []
+      }
+      exchange_rates: {
+        Row: {
+          currency_pair: string
+          last_updated: string
+          rate: number
+          source: string
+        }
+        Insert: {
+          currency_pair: string
+          last_updated?: string
+          rate: number
+          source?: string
+        }
+        Update: {
+          currency_pair?: string
+          last_updated?: string
+          rate?: number
+          source?: string
         }
         Relationships: []
       }
@@ -223,92 +269,27 @@ export type Database = {
         }
         Relationships: []
       }
-      push_subscriptions: {
+      feature_flags: {
         Row: {
-          auth: string
           created_at: string
+          description: string | null
           enabled: boolean
-          endpoint: string
-          id: string
-          last_seen_at: string
-          p256dh: string
-          platform: string
+          key: string
           updated_at: string
-          user_agent: string
-          user_id: string
         }
         Insert: {
-          auth: string
           created_at?: string
+          description?: string | null
           enabled?: boolean
-          endpoint: string
-          id?: string
-          last_seen_at?: string
-          p256dh: string
-          platform?: string
+          key: string
           updated_at?: string
-          user_agent?: string
-          user_id: string
         }
         Update: {
-          auth?: string
           created_at?: string
+          description?: string | null
           enabled?: boolean
-          endpoint?: string
-          id?: string
-          last_seen_at?: string
-          p256dh?: string
-          platform?: string
+          key?: string
           updated_at?: string
-          user_agent?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "push_subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      currencies: {
-        Row: {
-          activo: boolean
-          code: string
-          nombre: string | null
-        }
-        Insert: {
-          activo?: boolean
-          code: string
-          nombre?: string | null
-        }
-        Update: {
-          activo?: boolean
-          code?: string
-          nombre?: string | null
-        }
-        Relationships: []
-      }
-      exchange_rates: {
-        Row: {
-          currency_pair: string
-          last_updated: string
-          rate: number
-          source: string
-        }
-        Insert: {
-          currency_pair: string
-          last_updated?: string
-          rate: number
-          source?: string
-        }
-        Update: {
-          currency_pair?: string
-          last_updated?: string
-          rate?: number
-          source?: string
         }
         Relationships: []
       }
@@ -567,6 +548,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "notificaciones_reposo_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "notificaciones_reposo_notificacion_id_fkey"
             columns: ["notificacion_id"]
             isOneToOne: true
@@ -704,6 +692,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "notificaciones_servicio_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "notificaciones_servicio_notificacion_id_fkey"
             columns: ["notificacion_id"]
             isOneToOne: true
@@ -795,6 +790,7 @@ export type Database = {
           codigo_snapshot: string | null
           fecha_fin_snapshot: string | null
           fecha_inicio_snapshot: string | null
+          metodo_pago_id: string | null
           metodo_pago_nombre_snapshot: string | null
           moneda_snapshot: string | null
           notificacion_id: string
@@ -819,6 +815,7 @@ export type Database = {
           codigo_snapshot?: string | null
           fecha_fin_snapshot?: string | null
           fecha_inicio_snapshot?: string | null
+          metodo_pago_id?: string | null
           metodo_pago_nombre_snapshot?: string | null
           moneda_snapshot?: string | null
           notificacion_id: string
@@ -843,6 +840,7 @@ export type Database = {
           codigo_snapshot?: string | null
           fecha_fin_snapshot?: string | null
           fecha_inicio_snapshot?: string | null
+          metodo_pago_id?: string | null
           metodo_pago_nombre_snapshot?: string | null
           moneda_snapshot?: string | null
           notificacion_id?: string
@@ -871,6 +869,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "notificaciones_venta_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "notificaciones_venta_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
@@ -883,6 +888,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_terceros_servicios_activos"
             referencedColumns: ["tercero_id"]
+          },
+          {
+            foreignKeyName: "notificaciones_venta_metodo_pago_id_fkey"
+            columns: ["metodo_pago_id"]
+            isOneToOne: false
+            referencedRelation: "metodos_pago"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "notificaciones_venta_notificacion_id_fkey"
@@ -996,7 +1008,7 @@ export type Database = {
           fecha_pago: string
           id: string
           metodo_pago_id: string | null
-          metodo_pago_nombre_snapshot: string | null
+          metodo_pago_nombre_snapshot: string
           moneda_original: string
           monto_original: number
           monto_usd: number
@@ -1016,7 +1028,7 @@ export type Database = {
           fecha_pago?: string
           id?: string
           metodo_pago_id?: string | null
-          metodo_pago_nombre_snapshot?: string | null
+          metodo_pago_nombre_snapshot?: string
           moneda_original: string
           monto_original: number
           monto_usd: number
@@ -1036,7 +1048,7 @@ export type Database = {
           fecha_pago?: string
           id?: string
           metodo_pago_id?: string | null
-          metodo_pago_nombre_snapshot?: string | null
+          metodo_pago_nombre_snapshot?: string
           moneda_original?: string
           monto_original?: number
           monto_usd?: number
@@ -1052,6 +1064,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_servicio_categoria_id_snapshot_fkey"
+            columns: ["categoria_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_servicio_categoria_id_snapshot_fkey"
+            columns: ["categoria_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "pagos_servicio_categoria_id_snapshot_fkey"
+            columns: ["categoria_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
           },
           {
             foreignKeyName: "pagos_servicio_created_by_fkey"
@@ -1137,7 +1170,7 @@ export type Database = {
           fecha_pago: string
           id: string
           metodo_pago_id: string | null
-          metodo_pago_nombre_snapshot: string | null
+          metodo_pago_nombre_snapshot: string
           moneda_original: string
           monto_original: number
           monto_usd: number
@@ -1157,7 +1190,7 @@ export type Database = {
           fecha_pago?: string
           id?: string
           metodo_pago_id?: string | null
-          metodo_pago_nombre_snapshot?: string | null
+          metodo_pago_nombre_snapshot?: string
           moneda_original: string
           monto_original: number
           monto_usd: number
@@ -1177,7 +1210,7 @@ export type Database = {
           fecha_pago?: string
           id?: string
           metodo_pago_id?: string | null
-          metodo_pago_nombre_snapshot?: string | null
+          metodo_pago_nombre_snapshot?: string
           moneda_original?: string
           monto_original?: number
           monto_usd?: number
@@ -1312,6 +1345,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "planes_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "planes_plan_tipo_id_categoria_id_fkey"
             columns: ["plan_tipo_id", "categoria_id"]
             isOneToOne: false
@@ -1363,32 +1403,86 @@ export type Database = {
             referencedRelation: "v_categoria_counters"
             referencedColumns: ["categoria_id"]
           },
+          {
+            foreignKeyName: "planes_tipos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
         ]
       }
-      usuarios: {
+      push_subscriptions: {
         Row: {
-          active: boolean
+          auth: string
           created_at: string
-          display_name: string
+          enabled: boolean
+          endpoint: string
           id: string
-          role: string
+          last_seen_at: string
+          p256dh: string
+          platform: string
           updated_at: string
+          user_agent: string
+          user_id: string
         }
         Insert: {
-          active?: boolean
+          auth: string
           created_at?: string
-          display_name?: string
-          id: string
-          role?: string
+          enabled?: boolean
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          platform?: string
           updated_at?: string
+          user_agent?: string
+          user_id: string
         }
         Update: {
-          active?: boolean
+          auth?: string
           created_at?: string
-          display_name?: string
+          enabled?: boolean
+          endpoint?: string
           id?: string
-          role?: string
+          last_seen_at?: string
+          p256dh?: string
+          platform?: string
           updated_at?: string
+          user_agent?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rpc_idempotency_keys: {
+        Row: {
+          created_at: string
+          created_by: string
+          idempotency_key: string
+          result_id: string
+          rpc_name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          idempotency_key: string
+          result_id: string
+          rpc_name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          idempotency_key?: string
+          result_id?: string
+          rpc_name?: string
         }
         Relationships: []
       }
@@ -1585,6 +1679,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "servicios_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "servicios_cortado_by_fkey"
             columns: ["cortado_by"]
             isOneToOne: false
@@ -1633,33 +1734,6 @@ export type Database = {
           id?: string
           nombre?: string
           tipo?: Database["public"]["Enums"]["tipo_template_enum"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      tipos_gasto: {
-        Row: {
-          activo: boolean
-          created_at: string
-          descripcion: string | null
-          id: string
-          nombre: string
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          nombre: string
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          nombre?: string
           updated_at?: string
         }
         Relationships: []
@@ -1724,6 +1798,60 @@ export type Database = {
           },
         ]
       }
+      tipos_gasto: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      usuarios: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_name: string
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_name?: string
+          id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_name?: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       venta_periodos: {
         Row: {
           ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
@@ -1737,8 +1865,8 @@ export type Database = {
           moneda_original: string
           numero_periodo: number
           plan_id: string | null
-          plan_nombre_snapshot: string | null
-          plan_tipo_nombre_snapshot: string | null
+          plan_nombre_snapshot: string
+          plan_tipo_nombre_snapshot: string
           precio_original: number
           tipo: Database["public"]["Enums"]["periodo_tipo_enum"]
           total_original: number
@@ -1757,8 +1885,8 @@ export type Database = {
           moneda_original: string
           numero_periodo: number
           plan_id?: string | null
-          plan_nombre_snapshot?: string | null
-          plan_tipo_nombre_snapshot?: string | null
+          plan_nombre_snapshot?: string
+          plan_tipo_nombre_snapshot?: string
           precio_original: number
           tipo: Database["public"]["Enums"]["periodo_tipo_enum"]
           total_original: number
@@ -1777,8 +1905,8 @@ export type Database = {
           moneda_original?: string
           numero_periodo?: number
           plan_id?: string | null
-          plan_nombre_snapshot?: string | null
-          plan_tipo_nombre_snapshot?: string | null
+          plan_nombre_snapshot?: string
+          plan_tipo_nombre_snapshot?: string
           precio_original?: number
           tipo?: Database["public"]["Enums"]["periodo_tipo_enum"]
           total_original?: number
@@ -1911,6 +2039,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "ventas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
             referencedColumns: ["categoria_id"]
           },
           {
@@ -2079,6 +2214,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "notificaciones_reposo_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "notificaciones_reposo_servicio_id_fkey"
             columns: ["servicio_id"]
             isOneToOne: false
@@ -2161,6 +2303,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "notificaciones_servicio_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
             referencedColumns: ["categoria_id"]
           },
           {
@@ -2274,6 +2423,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "notificaciones_venta_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "notificaciones_venta_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
@@ -2366,6 +2522,7 @@ export type Database = {
           categoria_id: string | null
           categoria_id_snapshot: string | null
           categoria_nombre: string | null
+          ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"] | null
           created_at: string | null
           created_by: string | null
           estado: Database["public"]["Enums"]["pago_estado_enum"] | null
@@ -2393,6 +2550,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_servicio_categoria_id_snapshot_fkey"
+            columns: ["categoria_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_servicio_categoria_id_snapshot_fkey"
+            columns: ["categoria_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "pagos_servicio_categoria_id_snapshot_fkey"
+            columns: ["categoria_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
           },
           {
             foreignKeyName: "pagos_servicio_created_by_fkey"
@@ -2464,20 +2642,6 @@ export type Database = {
             referencedRelation: "v_servicios_full"
             referencedColumns: ["ultimo_periodo_id"]
           },
-          {
-            foreignKeyName: "servicios_categoria_id_fkey"
-            columns: ["categoria_id"]
-            isOneToOne: false
-            referencedRelation: "categorias"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "servicios_categoria_id_fkey"
-            columns: ["categoria_id"]
-            isOneToOne: false
-            referencedRelation: "v_categoria_counters"
-            referencedColumns: ["categoria_id"]
-          },
         ]
       }
       v_pagos_venta_full: {
@@ -2490,6 +2654,7 @@ export type Database = {
           cliente_nombre: string | null
           created_at: string | null
           created_by: string | null
+          descuento: number | null
           destino_reembolso: string | null
           estado: Database["public"]["Enums"]["pago_estado_enum"] | null
           exchange_rate: number | null
@@ -2503,8 +2668,12 @@ export type Database = {
           motivo_anulacion: string | null
           notas: string | null
           numero_periodo: number | null
+          periodo_ciclo_pago:
+            | Database["public"]["Enums"]["ciclo_pago_enum"]
+            | null
           periodo_fin: string | null
           periodo_inicio: string | null
+          precio_original: number | null
           servicio_id: string | null
           servicio_nombre: string | null
           venta_id: string | null
@@ -2593,6 +2762,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "ventas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
             referencedColumns: ["categoria_id"]
           },
           {
@@ -2728,7 +2904,6 @@ export type Database = {
           nombre: string | null
           notas: string | null
           perfiles_disponibles: number | null
-          perfiles_libres: number | null
           perfiles_ocupados: number | null
           plan_tipo_id: string | null
           updated_at: string | null
@@ -2753,6 +2928,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "servicios_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
             referencedColumns: ["categoria_id"]
           },
           {
@@ -2824,6 +3006,13 @@ export type Database = {
             referencedRelation: "v_categoria_counters"
             referencedColumns: ["categoria_id"]
           },
+          {
+            foreignKeyName: "servicios_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
         ]
       }
       v_servicios_full: {
@@ -2849,6 +3038,7 @@ export type Database = {
           nombre: string | null
           notas: string | null
           perfiles_disponibles: number | null
+          perfiles_libres: number | null
           perfiles_ocupados: number | null
           plan_tipo_id: string | null
           plan_tipo_nombre: string | null
@@ -2869,6 +3059,13 @@ export type Database = {
           updated_at: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pagos_servicio_metodo_pago_id_fkey"
+            columns: ["ultimo_metodo_pago_id"]
+            isOneToOne: false
+            referencedRelation: "metodos_pago"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "servicio_periodos_moneda_original_fkey"
             columns: ["ultima_moneda"]
@@ -2895,6 +3092,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "servicios_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
             referencedColumns: ["categoria_id"]
           },
           {
@@ -2925,8 +3129,8 @@ export type Database = {
           apellido: string | null
           nombre: string | null
           servicios_activos: number | null
-          tipo: Database["public"]["Enums"]["tercero_tipo_enum"] | null
           tercero_id: string | null
+          tipo: Database["public"]["Enums"]["tercero_tipo_enum"] | null
         }
         Relationships: []
       }
@@ -3047,6 +3251,13 @@ export type Database = {
             referencedColumns: ["categoria_id"]
           },
           {
+            foreignKeyName: "ventas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "ventas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
@@ -3126,6 +3337,7 @@ export type Database = {
           perfil_nombre: string | null
           perfil_numero: number | null
           renovaciones: number | null
+          servicio_contrasena: string | null
           servicio_correo: string | null
           servicio_id: string | null
           servicio_nombre: string | null
@@ -3135,26 +3347,40 @@ export type Database = {
           ultimo_ciclo_pago:
             | Database["public"]["Enums"]["ciclo_pago_enum"]
             | null
+          ultimo_descuento: number | null
+          ultimo_metodo_pago_id: string | null
+          ultimo_metodo_pago_nombre: string | null
           ultimo_numero_periodo: number | null
           ultimo_periodo_id: string | null
           ultimo_plan_id: string | null
           ultimo_plan_nombre: string | null
           ultimo_plan_tipo_nombre: string | null
           ultimo_precio_original: number | null
-          ultimo_descuento: number | null
-          ultimo_metodo_pago_id: string | null
-          ultimo_metodo_pago_nombre: string | null
           ultimo_total_original: number | null
           ultimo_total_usd: number | null
           updated_at: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "pagos_venta_metodo_pago_id_fkey"
+            columns: ["ultimo_metodo_pago_id"]
+            isOneToOne: false
+            referencedRelation: "metodos_pago"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "venta_periodos_moneda_original_fkey"
             columns: ["ultima_moneda"]
             isOneToOne: false
             referencedRelation: "currencies"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "venta_periodos_plan_id_fkey"
+            columns: ["ultimo_plan_id"]
+            isOneToOne: false
+            referencedRelation: "planes"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ventas_archivado_by_fkey"
@@ -3175,6 +3401,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "v_categoria_counters"
+            referencedColumns: ["categoria_id"]
+          },
+          {
+            foreignKeyName: "ventas_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "v_categoria_financial_metrics"
             referencedColumns: ["categoria_id"]
           },
           {
@@ -3237,6 +3470,10 @@ export type Database = {
       }
     }
     Functions: {
+      assert_notification_integrity: {
+        Args: { p_notification_id: string }
+        Returns: undefined
+      }
       check_doble_venta_perfil: {
         Args: never
         Returns: {
@@ -3312,85 +3549,368 @@ export type Database = {
           venta_id: string
         }[]
       }
-      delete_categoria: {
-        Args: { p_categoria_id: string }
-        Returns: undefined
-      }
+      claim_executive_push_due: { Args: never; Returns: string }
+      create_servicio_payment:
+        | {
+            Args: {
+              p_categoria_id_snapshot: string
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_costo_original: number
+              p_costo_usd: number
+              p_created_by?: string
+              p_exchange_rate: number
+              p_fecha_inicio: string
+              p_fecha_pago?: string
+              p_fecha_vencimiento: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_pago_notas?: string
+              p_renovacion_automatica: boolean
+              p_servicio_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_categoria_id_snapshot: string
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_costo_original: number
+              p_costo_usd: number
+              p_created_by?: string
+              p_exchange_rate: number
+              p_fecha_inicio: string
+              p_fecha_pago?: string
+              p_fecha_vencimiento: string
+              p_idempotency_key?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_pago_notas?: string
+              p_renovacion_automatica: boolean
+              p_servicio_id: string
+            }
+            Returns: string
+          }
+      create_servicio_with_initial_payment:
+        | {
+            Args: {
+              p_activo: boolean
+              p_categoria_id: string
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_contrasena: string
+              p_correo: string
+              p_costo_original: number
+              p_costo_usd: number
+              p_created_by?: string
+              p_dias_reposo: number
+              p_en_reposo: boolean
+              p_exchange_rate: number
+              p_fecha_fin_reposo: string
+              p_fecha_inicio: string
+              p_fecha_inicio_reposo: string
+              p_fecha_pago?: string
+              p_fecha_vencimiento: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_nombre: string
+              p_notas: string
+              p_pago_notas?: string
+              p_perfiles_disponibles: number
+              p_perfiles_ocupados: number
+              p_plan_tipo_id: string
+              p_renovacion_automatica: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_activo: boolean
+              p_categoria_id: string
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_contrasena: string
+              p_correo: string
+              p_costo_original: number
+              p_costo_usd: number
+              p_created_by?: string
+              p_dias_reposo: number
+              p_en_reposo: boolean
+              p_exchange_rate: number
+              p_fecha_fin_reposo: string
+              p_fecha_inicio: string
+              p_fecha_inicio_reposo: string
+              p_fecha_pago?: string
+              p_fecha_vencimiento: string
+              p_idempotency_key?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_nombre: string
+              p_notas: string
+              p_pago_notas?: string
+              p_perfiles_disponibles: number
+              p_perfiles_ocupados: number
+              p_plan_tipo_id: string
+              p_renovacion_automatica: boolean
+            }
+            Returns: string
+          }
+      create_venta_payment:
+        | {
+            Args: {
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_created_by?: string
+              p_descuento: number
+              p_exchange_rate: number
+              p_fecha_fin: string
+              p_fecha_inicio: string
+              p_fecha_pago?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_pago_notas?: string
+              p_plan_id?: string
+              p_plan_nombre_snapshot?: string
+              p_plan_tipo_nombre_snapshot?: string
+              p_precio_original: number
+              p_total_original: number
+              p_total_usd: number
+              p_venta_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_created_by?: string
+              p_descuento: number
+              p_exchange_rate: number
+              p_fecha_fin: string
+              p_fecha_inicio: string
+              p_fecha_pago?: string
+              p_idempotency_key?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_pago_notas?: string
+              p_plan_id?: string
+              p_plan_nombre_snapshot?: string
+              p_plan_tipo_nombre_snapshot?: string
+              p_precio_original: number
+              p_total_original: number
+              p_total_usd: number
+              p_venta_id: string
+            }
+            Returns: string
+          }
+      create_venta_refund:
+        | {
+            Args: {
+              p_cortar?: boolean
+              p_created_by?: string
+              p_destino_reembolso?: string
+              p_exchange_rate: number
+              p_fecha_reembolso?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_monto_original: number
+              p_monto_usd: number
+              p_motivo_corte?: string
+              p_nota?: string
+              p_venta_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_cortar?: boolean
+              p_created_by?: string
+              p_destino_reembolso?: string
+              p_exchange_rate: number
+              p_fecha_reembolso?: string
+              p_idempotency_key?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_monto_original: number
+              p_monto_usd: number
+              p_motivo_corte?: string
+              p_nota?: string
+              p_venta_id: string
+            }
+            Returns: string
+          }
+      create_venta_with_initial_payment:
+        | {
+            Args: {
+              p_categoria_id: string
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_cliente_id: string
+              p_codigo: string
+              p_created_by?: string
+              p_descuento: number
+              p_estado: Database["public"]["Enums"]["venta_estado_enum"]
+              p_exchange_rate: number
+              p_fecha_fin: string
+              p_fecha_inicio: string
+              p_fecha_pago?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_notas: string
+              p_pago_notas?: string
+              p_perfil_nombre: string
+              p_perfil_numero: number
+              p_plan_id?: string
+              p_plan_nombre_snapshot?: string
+              p_plan_tipo_nombre_snapshot?: string
+              p_precio_original: number
+              p_servicio_id: string
+              p_total_original: number
+              p_total_usd: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_categoria_id: string
+              p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+              p_cliente_id: string
+              p_codigo: string
+              p_created_by?: string
+              p_descuento: number
+              p_estado: Database["public"]["Enums"]["venta_estado_enum"]
+              p_exchange_rate: number
+              p_fecha_fin: string
+              p_fecha_inicio: string
+              p_fecha_pago?: string
+              p_idempotency_key?: string
+              p_metodo_pago_id: string
+              p_metodo_pago_nombre_snapshot: string
+              p_moneda_original: string
+              p_notas: string
+              p_pago_notas?: string
+              p_perfil_nombre: string
+              p_perfil_numero: number
+              p_plan_id?: string
+              p_plan_nombre_snapshot?: string
+              p_plan_tipo_nombre_snapshot?: string
+              p_precio_original: number
+              p_servicio_id: string
+              p_total_original: number
+              p_total_usd: number
+            }
+            Returns: string
+          }
+      delete_categoria: { Args: { p_categoria_id: string }; Returns: undefined }
       delete_servicio_payment_and_empty_period: {
         Args: { p_pago_id: string }
+        Returns: undefined
+      }
+      delete_servicio_with_payments: {
+        Args: { p_delete_payments?: boolean; p_servicio_id: string }
         Returns: undefined
       }
       delete_venta_payment_and_empty_period: {
         Args: { p_pago_id: string }
         Returns: undefined
       }
-      is_authenticated: { Args: never; Returns: boolean }
+      delete_venta_with_payments: {
+        Args: { p_delete_payments?: boolean; p_venta_id: string }
+        Returns: undefined
+      }
+      get_categorias_counts: { Args: never; Returns: Json }
+      get_categorias_full: { Args: never; Returns: Json }
+      get_dashboard_churn_stats: { Args: never; Returns: Json }
+      get_dashboard_home: { Args: never; Returns: Json }
       get_dashboard_stats_live: {
         Args: never
         Returns: {
-          id: string
-          ingresos_total: number
           gastos_total: number
-          terceros_por_mes: Json
-          terceros_por_dia: Json
-          ingresos_por_mes: Json
-          ingresos_por_dia: Json
-          ingresos_por_categoria: Json
+          id: string
           ingresos_categorias_por_mes: Json
-          ventas_pronostico: Json
+          ingresos_por_categoria: Json
+          ingresos_por_dia: Json
+          ingresos_por_mes: Json
+          ingresos_total: number
           servicios_pronostico: Json
+          terceros_por_dia: Json
+          terceros_por_mes: Json
           updated_at: string
+          ventas_pronostico: Json
         }[]
       }
       get_dashboard_stats_snapshot: {
         Args: never
         Returns: {
-          id: string
-          ingresos_total: number
-          gastos_total: number
-          terceros_por_mes: Json
-          terceros_por_dia: Json
-          ingresos_por_mes: Json
-          ingresos_por_dia: Json
-          ingresos_por_categoria: Json
-          ingresos_categorias_por_mes: Json
-          ventas_pronostico: Json
-          servicios_pronostico: Json
-          updated_at: string
           churn_stats: Json
+          gastos_total: number
+          id: string
+          ingresos_categorias_por_mes: Json
+          ingresos_por_categoria: Json
+          ingresos_por_dia: Json
+          ingresos_por_mes: Json
+          ingresos_total: number
+          servicios_pronostico: Json
+          terceros_por_dia: Json
+          terceros_por_mes: Json
+          updated_at: string
+          ventas_pronostico: Json
         }[]
       }
-      get_dashboard_churn_stats: { Args: never; Returns: Json }
-      get_categorias_full: { Args: never; Returns: Json }
-      get_categorias_counts: { Args: never; Returns: Json }
-      get_dashboard_home: { Args: never; Returns: Json }
-      delete_venta_with_payments: {
-        Args: { p_venta_id: string; p_delete_payments?: boolean }
+      is_authenticated: { Args: never; Returns: boolean }
+      refresh_dashboard_stats_snapshot: {
+        Args: { p_force?: boolean }
+        Returns: boolean
+      }
+      run_all_validations: { Args: never; Returns: Json }
+      run_security_audit_validations: { Args: never; Returns: Json }
+      trigger_executive_push: { Args: never; Returns: string }
+      update_servicio_payment_and_period: {
+        Args: {
+          p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+          p_costo_original: number
+          p_costo_usd: number
+          p_exchange_rate: number
+          p_fecha_inicio: string
+          p_fecha_vencimiento: string
+          p_metodo_pago_id: string
+          p_metodo_pago_nombre_snapshot: string
+          p_moneda_original: string
+          p_pago_id: string
+          p_pago_notas?: string
+          p_renovacion_automatica: boolean
+        }
         Returns: undefined
       }
-      create_venta_refund: {
+      update_venta_payment_and_period: {
         Args: {
-          p_venta_id: string
-          p_monto_original: number
+          p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+          p_descuento: number
+          p_exchange_rate: number
+          p_fecha_fin: string
+          p_fecha_inicio: string
+          p_metodo_pago_id: string
+          p_metodo_pago_nombre_snapshot: string
           p_moneda_original: string
-          p_monto_usd: number
-          p_exchange_rate: number | null
-          p_metodo_pago_id: string | null
-          p_metodo_pago_nombre_snapshot: string | null
-          p_destino_reembolso?: string | null
-          p_fecha_reembolso?: string
-          p_nota?: string | null
-          p_cortar?: boolean
-          p_motivo_corte?: string | null
-          p_created_by?: string | null
+          p_pago_id: string
+          p_pago_notas?: string
+          p_precio_original: number
+          p_total_original: number
+          p_total_usd: number
+        }
+        Returns: undefined
+      }
+      upsert_notification_aggregate: {
+        Args: {
+          p_base: Json
+          p_detail: Json
+          p_preserve_existing_state: boolean
         }
         Returns: string
       }
-      delete_servicio_with_payments: {
-        Args: { p_servicio_id: string; p_delete_payments?: boolean }
-        Returns: undefined
-      }
-      run_all_validations: { Args: never; Returns: Json }
     }
     Enums: {
       accion_log_enum:
@@ -3424,6 +3944,7 @@ export type Database = {
       notificacion_prioridad_enum: "baja" | "media" | "alta" | "critica"
       pago_estado_enum: "registrado" | "anulado" | "reembolsado"
       periodo_tipo_enum: "inicial" | "renovacion" | "ajuste"
+      tercero_tipo_enum: "cliente" | "revendedor"
       tipo_cuenta_enum: "ahorro" | "corriente" | "wallet" | "telefono" | "email"
       tipo_template_enum:
         | "notificacion_regular"
@@ -3433,7 +3954,6 @@ export type Database = {
         | "cancelacion"
         | "actualizacion_credenciales"
         | "transferencia_servicio"
-      tercero_tipo_enum: "cliente" | "revendedor"
       venta_estado_enum: "activo" | "inactivo"
     }
     CompositeTypes: {
@@ -3568,6 +4088,7 @@ export const Constants = {
         "corte",
         "eliminacion",
         "renovacion",
+        "reembolso",
       ],
       asociado_a_enum: ["tercero", "servicio"],
       categoria_tipo_cat_enum: ["plataforma_streaming", "otros"],
@@ -3595,6 +4116,7 @@ export const Constants = {
       notificacion_prioridad_enum: ["baja", "media", "alta", "critica"],
       pago_estado_enum: ["registrado", "anulado", "reembolsado"],
       periodo_tipo_enum: ["inicial", "renovacion", "ajuste"],
+      tercero_tipo_enum: ["cliente", "revendedor"],
       tipo_cuenta_enum: ["ahorro", "corriente", "wallet", "telefono", "email"],
       tipo_template_enum: [
         "notificacion_regular",
@@ -3605,7 +4127,6 @@ export const Constants = {
         "actualizacion_credenciales",
         "transferencia_servicio",
       ],
-      tercero_tipo_enum: ["cliente", "revendedor"],
       venta_estado_enum: ["activo", "inactivo"],
     },
   },
