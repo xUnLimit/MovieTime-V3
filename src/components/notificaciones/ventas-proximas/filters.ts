@@ -38,6 +38,20 @@ export function getVentasNotificacionesFiltradas(
   }
 
   return filtered.sort((a, b) => {
+    const aHasPromise = Boolean(a.fechaPrometidaPago);
+    const bHasPromise = Boolean(b.fechaPrometidaPago);
+    if (aHasPromise !== bHasPromise) {
+      return aHasPromise ? -1 : 1;
+    }
+
+    if (a.fechaPrometidaPago && b.fechaPrometidaPago) {
+      const promiseDateDiff =
+        a.fechaPrometidaPago.getTime() - b.fechaPrometidaPago.getTime();
+      if (promiseDateDiff !== 0) {
+        return promiseDateDiff;
+      }
+    }
+
     if (a.resaltada !== b.resaltada) {
       return a.resaltada ? -1 : 1;
     }

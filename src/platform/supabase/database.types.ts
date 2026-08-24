@@ -448,6 +448,7 @@ export type Database = {
           dias_restantes: number | null
           dismissed_at: string | null
           entidad: Database["public"]["Enums"]["notificacion_entidad_enum"]
+          fecha_prometida_pago: string | null
           id: string
           leida: boolean
           mensaje: string | null
@@ -465,6 +466,7 @@ export type Database = {
           dias_restantes?: number | null
           dismissed_at?: string | null
           entidad: Database["public"]["Enums"]["notificacion_entidad_enum"]
+          fecha_prometida_pago?: string | null
           id?: string
           leida?: boolean
           mensaje?: string | null
@@ -482,6 +484,7 @@ export type Database = {
           dias_restantes?: number | null
           dismissed_at?: string | null
           entidad?: Database["public"]["Enums"]["notificacion_entidad_enum"]
+          fecha_prometida_pago?: string | null
           id?: string
           leida?: boolean
           mensaje?: string | null
@@ -2383,6 +2386,7 @@ export type Database = {
             | null
           fecha_fin_snapshot: string | null
           fecha_inicio_snapshot: string | null
+          fecha_prometida_pago: string | null
           id: string | null
           leida: boolean | null
           mensaje: string | null

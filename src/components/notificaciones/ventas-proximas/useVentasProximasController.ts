@@ -19,6 +19,7 @@ import {
   confirmVentaRenewalFromNotificationUseCase as confirmVentaRenewal,
   loadVentaRenewalOptionsUseCase as loadVentaRenewalOptions,
 } from '@/application/use-cases/notificaciones/notificaciones-renewal-use-cases';
+import { setVentaPaymentPromiseUseCase } from '@/application/use-cases/notificaciones/notificaciones-store-use-cases';
 import type { MetodoPago, TemplateMensaje } from '@/types';
 import type { Plan } from '@/types/categorias';
 
@@ -58,6 +59,7 @@ export function useVentasProximasController() {
   const [isLoadingRenovar, setIsLoadingRenovar] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [accionesDialogOpen, setAccionesDialogOpen] = useState(false);
+  const [promesaDialogOpen, setPromesaDialogOpen] = useState(false);
   const [notifSeleccionada, setNotifSeleccionada] =
     useState<NotificacionVentaConId | null>(null);
   const [metodosPagoTerceros, setMetodosPagoTerceros] = useState<MetodoPago[]>(
@@ -188,29 +190,47 @@ export function useVentasProximasController() {
     setAccionesDialogOpen(true);
   };
 
-  const handleResaltar = async () => {
+  const handlePaymentPromise = (notif: NotificacionVentaConId) => {
+    setNotifSeleccionada(notif);
+    setPromesaDialogOpen(true);
+  };
+
+  const handleSavePaymentPromise = async (fecha: Date) => {
     if (!notifSeleccionada) return;
 
     try {
-      await toggleNotificationHighlightedStoreCache(notifSeleccionada.id, !notifSeleccionada.resaltada);
+      await setVentaPaymentPromiseUseCase(notifSeleccionada.id, fecha);
       await refreshNotificationCaches();
-      toast.success('Notificación resaltada para seguimiento');
+      toast.success('Promesa de pago guardada');
     } catch (error) {
-      reportError('VentasProximas', 'Error al resaltar', error);
-      toast.error('Error al resaltar la notificación');
+      reportError('VentasProximas', 'Error guardando promesa de pago', error);
+      toast.error('No se pudo guardar la promesa de pago');
+      throw error;
     }
   };
 
-  const handleDescartar = async () => {
+  const handleRemovePaymentPromise = async () => {
     if (!notifSeleccionada) return;
 
     try {
-      await toggleNotificationHighlightedStoreCache(notifSeleccionada.id, false);
+      await setVentaPaymentPromiseUseCase(notifSeleccionada.id, null);
       await refreshNotificationCaches();
-      toast.success('Resaltado descartado');
+      toast.success('Promesa de pago eliminada');
     } catch (error) {
-      reportError('VentasProximas', 'Error al descartar resaltado', error);
-      toast.error('Error al descartar el resaltado');
+      reportError('VentasProximas', 'Error eliminando promesa de pago', error);
+      toast.error('No se pudo quitar la promesa de pago');
+      throw error;
+    }
+  };
+
+  const handleClearLegacyHighlight = async (notif: NotificacionVentaConId) => {
+    try {
+      await toggleNotificationHighlightedStoreCache(notif.id, false);
+      await refreshNotificationCaches();
+      toast.success('Resaltado anterior eliminado');
+    } catch (error) {
+      reportError('VentasProximas', 'Error eliminando resaltado anterior', error);
+      toast.error('No se pudo quitar el resaltado');
     }
   };
 
@@ -241,25 +261,29 @@ export function useVentasProximasController() {
     handleCancelar,
     handleConfirmRenovacion,
     handleCortarFromModal,
-    handleDescartar,
+    handleClearLegacyHighlight,
     handleEstadoFilterChange,
+    handlePaymentPromise,
+    handleRemovePaymentPromise,
+    handleSavePaymentPromise,
     handleItemsPerPageChange,
     handleNextPage,
     handleNotificar,
     handlePreviousPage,
     handleRenovar,
-    handleResaltar,
     handleSearchChange,
     handleToggleLeida,
     itemsPerPage,
     metodosPagoTerceros,
     notifSeleccionada,
     paginatedNotificaciones,
+    promesaDialogOpen,
     renovarDialogOpen,
     safeCurrentPage,
     searchQuery,
     servicioTipoSeleccionado,
     setAccionesDialogOpen,
+    setPromesaDialogOpen,
     setRenovarDialogOpen,
     togglePasswordVisibility,
     totalPages,

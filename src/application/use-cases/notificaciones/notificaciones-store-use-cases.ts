@@ -5,6 +5,7 @@ import {
   updateNotificacion,
 } from '@/platform/supabase/notifications-repository';
 import { queryNotificationsRead } from '@/platform/supabase/domain-read-adapters';
+import { isValidPaymentPromiseDate } from './payment-promise';
 
 export async function fetchNotificationCountsUseCase() {
   const now = new Date();
@@ -41,6 +42,30 @@ export async function toggleNotificacionResaltadaUseCase(
   await updateNotificacion(notifId, {
     resaltada,
     updatedAt: new Date(),
+  });
+}
+
+export async function setVentaPaymentPromiseUseCase(
+  notifId: string,
+  promisedDate: Date | null,
+  now = new Date(),
+) {
+  if (promisedDate && !isValidPaymentPromiseDate(promisedDate, now)) {
+    throw new Error('La fecha prometida debe ser posterior a hoy');
+  }
+
+  if (promisedDate) {
+    await updateNotificacion(notifId, {
+      fechaPrometidaPago: promisedDate,
+      leida: true,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  await updateNotificacion(notifId, {
+    fechaPrometidaPago: null,
+    updatedAt: now,
   });
 }
 

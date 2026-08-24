@@ -3,37 +3,42 @@ import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog'
 import type { MetodoPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
-import { AccionesVentaDialog } from '../AccionesVentaDialog';
+import { CutVentaDialog } from './CutVentaDialog';
+import { PaymentPromiseDialog } from './PaymentPromiseDialog';
 import type { NotificacionVentaConId } from './types';
 
 interface VentasProximasDialogsProps {
   notifSeleccionada: NotificacionVentaConId | null;
   renovarDialogOpen: boolean;
   accionesDialogOpen: boolean;
+  promesaDialogOpen: boolean;
   metodosPagoTerceros: MetodoPago[];
   categoriaPlanes: Plan[];
   servicioTipoSeleccionado: string | undefined;
   onRenovarOpenChange: (open: boolean) => void;
   onAccionesOpenChange: (open: boolean) => void;
+  onPromesaOpenChange: (open: boolean) => void;
   onConfirmRenovacion: (data: EnrichedPagoDialogFormData) => void;
   onCortar: (motivoCorte: string) => Promise<void>;
-  onResaltar: () => Promise<void>;
-  onDescartar: () => Promise<void>;
+  onGuardarPromesa: (fecha: Date) => Promise<void>;
+  onQuitarPromesa: () => Promise<void>;
 }
 
 export function VentasProximasDialogs({
   notifSeleccionada,
   renovarDialogOpen,
   accionesDialogOpen,
+  promesaDialogOpen,
   metodosPagoTerceros,
   categoriaPlanes,
   servicioTipoSeleccionado,
   onRenovarOpenChange,
   onAccionesOpenChange,
+  onPromesaOpenChange,
   onConfirmRenovacion,
   onCortar,
-  onResaltar,
-  onDescartar,
+  onGuardarPromesa,
+  onQuitarPromesa,
 }: VentasProximasDialogsProps) {
   return (
     <>
@@ -65,14 +70,26 @@ export function VentasProximasDialogs({
         />
       )}
 
-      <AccionesVentaDialog
-        notificacion={notifSeleccionada}
-        isOpen={accionesDialogOpen}
-        onOpenChange={onAccionesOpenChange}
-        onCortar={onCortar}
-        onResaltar={onResaltar}
-        onDescartar={onDescartar}
-      />
+      {notifSeleccionada ? (
+        <CutVentaDialog
+          key={`cut-${notifSeleccionada.id}`}
+          notification={notifSeleccionada}
+          open={accionesDialogOpen}
+          onOpenChange={onAccionesOpenChange}
+          onCut={onCortar}
+        />
+      ) : null}
+
+      {notifSeleccionada ? (
+        <PaymentPromiseDialog
+          key={`promise-${notifSeleccionada.id}-${notifSeleccionada.fechaPrometidaPago?.getTime() ?? 'new'}`}
+          notification={notifSeleccionada}
+          open={promesaDialogOpen}
+          onOpenChange={onPromesaOpenChange}
+          onSave={onGuardarPromesa}
+          onRemove={onQuitarPromesa}
+        />
+      ) : null}
     </>
   );
 }

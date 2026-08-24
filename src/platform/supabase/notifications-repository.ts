@@ -224,6 +224,9 @@ function normalizeNotificationBasePayload(payload: Record<string, unknown>) {
   if (payload.diasRestantes !== undefined) result.dias_restantes = payload.diasRestantes;
   if (payload.leida !== undefined) result.leida = payload.leida;
   if (payload.resaltada !== undefined) result.resaltada = payload.resaltada;
+  if (payload.fechaPrometidaPago !== undefined) {
+    result.fecha_prometida_pago = toNullableDateOnly(payload.fechaPrometidaPago);
+  }
   result.updated_at = new Date().toISOString();
   return result;
 }

@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   BellOff,
   BellRing,
+  CalendarClock,
   Copy,
   Eye,
   EyeOff,
@@ -11,6 +12,7 @@ import {
   RefreshCw,
   Scissors,
   ShoppingCart,
+  StarOff,
   Tv2,
   User,
   XCircle,
@@ -26,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { getCurrencySymbol } from '@/platform/constants';
+import { getPaymentPromiseDisplay } from '@/application/use-cases/notificaciones/payment-promise';
 
 import {
   formatearFecha,
@@ -49,6 +52,8 @@ interface VentasProximasTableRowProps {
   onCancelar: VentaNotificationAction;
   onAcciones: VentaNotificationAction;
   onRenovar: VentaNotificationAction;
+  onPaymentPromise: VentaNotificationAction;
+  onClearLegacyHighlight: VentaNotificationAction;
 }
 
 export function VentasProximasTableRow({
@@ -61,38 +66,68 @@ export function VentasProximasTableRow({
   onCancelar,
   onAcciones,
   onRenovar,
+  onPaymentPromise,
+  onClearLegacyHighlight,
 }: VentasProximasTableRowProps) {
   const bellColors = getBellIconColor(notif.diasRestantes);
   const estadoBadge = getEstadoBadge(notif.diasRestantes, notif.resaltada);
   const isPasswordVisible = visiblePasswords.has(notif.id);
+  const promiseDisplay = notif.fechaPrometidaPago
+    ? getPaymentPromiseDisplay(notif.fechaPrometidaPago)
+    : null;
+  const promiseOverdue = promiseDisplay?.state === 'overdue';
+  const legacyHighlight = notif.resaltada && !notif.fechaPrometidaPago;
+  const rowToneClass = promiseDisplay
+    ? promiseOverdue
+      ? 'bg-red-50/70 dark:bg-red-500/10'
+      : 'bg-blue-50/70 dark:bg-blue-500/10'
+    : legacyHighlight
+      ? 'bg-orange-50/50 dark:bg-orange-500/5'
+      : '';
+  const displayedStatus = promiseDisplay
+    ? {
+        text: promiseDisplay.text,
+        variant: promiseOverdue
+          ? 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
+          : 'border-blue-500/50 bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300',
+      }
+    : estadoBadge;
 
   return (
-    <TableRow
-      className={`border-b transition-colors hover:bg-muted/50 ${
-        notif.resaltada ? 'bg-orange-50/50 dark:bg-orange-500/5' : ''
-      }`}
-    >
+    <TableRow className={`border-b transition-colors hover:bg-muted/50 ${rowToneClass}`}>
       <TableCell className="px-2 py-2 text-center">
         <Button
           variant="ghost"
           size="icon"
           className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
-            notif.resaltada
+            promiseDisplay
+              ? promiseOverdue
+                ? 'bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-500/30'
+                : 'bg-blue-100 dark:bg-blue-500/20 hover:bg-blue-200 dark:hover:bg-blue-500/30'
+              : notif.resaltada
               ? 'bg-orange-100 dark:bg-orange-500/20 hover:bg-orange-200 dark:hover:bg-orange-500/30'
               : notif.leida
                 ? 'bg-gray-100 dark:bg-gray-500/20 hover:bg-gray-200 dark:hover:bg-gray-500/30'
                 : `${bellColors.bgColor} ${bellColors.hoverBgColor}`
           } hover:scale-105`}
-          onClick={() => !notif.resaltada && onToggleLeida(notif.id, !notif.leida)}
+          onClick={() => !promiseDisplay && !notif.resaltada && onToggleLeida(notif.id, !notif.leida)}
           title={
-            notif.resaltada
+            promiseDisplay
+              ? promiseDisplay.text
+              : notif.resaltada
               ? 'Notificación resaltada (usa Acciones para gestionar)'
               : notif.leida
                 ? 'Marcar como sin leer'
                 : 'Marcar como leída'
           }
         >
-          {notif.resaltada ? (
+          {promiseDisplay ? (
+            <CalendarClock
+              className={`h-4 w-4 transition-all duration-200 ease-in-out ${
+                promiseOverdue ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'
+              }`}
+            />
+          ) : notif.resaltada ? (
             <AlertTriangle className="h-4 w-4 transition-all duration-200 ease-in-out text-orange-500" />
           ) : notif.leida ? (
             <BellOff className="h-4 w-4 transition-all duration-200 ease-in-out text-gray-400 dark:text-gray-500" />
@@ -223,12 +258,14 @@ export function VentasProximasTableRow({
       <TableCell className="px-2 py-2 text-center">
         <Badge
           variant="outline"
-          className={`font-normal gap-1 ${estadoBadge.variant}`}
+          className={`font-normal gap-1 ${displayedStatus.variant}`}
         >
-          {notif.resaltada && (
+          {promiseDisplay ? (
+            <CalendarClock className="h-3 w-3 shrink-0" />
+          ) : notif.resaltada ? (
             <AlertTriangle className="h-3 w-3 shrink-0" />
-          )}
-          {estadoBadge.text}
+          ) : null}
+          {displayedStatus.text}
         </Badge>
       </TableCell>
 
@@ -244,6 +281,18 @@ export function VentasProximasTableRow({
               <MessageSquare className="h-4 w-4 mr-2 text-green-600" />
               <span className="text-green-600">Notificar</span>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onPaymentPromise(notif)}>
+              <CalendarClock className="h-4 w-4 mr-2 text-blue-600" />
+              <span className="text-blue-600">
+                {notif.fechaPrometidaPago ? 'Editar promesa' : 'Promesa de pago'}
+              </span>
+            </DropdownMenuItem>
+            {notif.resaltada ? (
+              <DropdownMenuItem onClick={() => onClearLegacyHighlight(notif)}>
+                <StarOff className="h-4 w-4 mr-2 text-orange-600" />
+                <span className="text-orange-600">Quitar resaltado</span>
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem onClick={() => onCancelar(notif)}>
               <XCircle className="h-4 w-4 mr-2 text-red-600" />
               <span className="text-red-600">Cancelar</span>

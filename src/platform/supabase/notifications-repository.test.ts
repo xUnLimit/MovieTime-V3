@@ -175,4 +175,19 @@ describe('notifications repository aggregate writes', () => {
     );
     expect(updateEqMock).toHaveBeenCalledWith('id', 'notification-1');
   });
+
+  it('stores a promised payment as a date-only base update', async () => {
+    await updateNotification('notification-1', {
+      fechaPrometidaPago: new Date(2026, 7, 24),
+      leida: true,
+    });
+
+    expect(aggregateRpcMock).not.toHaveBeenCalled();
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fecha_prometida_pago: '2026-08-24',
+        leida: true,
+      }),
+    );
+  });
 });

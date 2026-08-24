@@ -58,6 +58,7 @@ export interface NotificacionVenta extends NotificacionBase {
   cicloPago?: 'mensual' | 'trimestral' | 'semestral' | 'anual';
   fechaInicio?: Date; // Start of current payment period
   fechaFin: Date; // Expiration date (required for calculations)
+  fechaPrometidaPago?: Date; // Customer's active payment promise (calendar date)
   precioFinal?: number; // Final price after discount
   metodoPagoId?: string; // Payment method ID (for renewals)
   metodoPagoNombre?: string; // Payment method label snapshot

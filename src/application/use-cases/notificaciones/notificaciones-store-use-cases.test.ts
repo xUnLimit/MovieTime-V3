@@ -25,6 +25,7 @@ import {
   deleteNotificacionesPorServicioUseCase,
   deleteNotificacionesPorVentaUseCase,
   fetchNotificationCountsUseCase,
+  setVentaPaymentPromiseUseCase,
   toggleNotificacionLeidaUseCase,
   toggleNotificacionResaltadaUseCase,
 } from './notificaciones-store-use-cases';
@@ -59,6 +60,49 @@ describe('notificaciones store use cases', () => {
       'notif-2',
       expect.objectContaining({ resaltada: false }),
     );
+  });
+
+  it('stores a future venta payment promise and marks the notification as read', async () => {
+    const promisedDate = new Date(2026, 7, 24);
+
+    await setVentaPaymentPromiseUseCase(
+      'notif-1',
+      promisedDate,
+      new Date('2026-08-23T15:00:00.000Z'),
+    );
+
+    expect(updateNotificacion).toHaveBeenCalledWith(
+      'notif-1',
+      expect.objectContaining({
+        fechaPrometidaPago: promisedDate,
+        leida: true,
+      }),
+    );
+  });
+
+  it('clears a payment promise without changing the read state', async () => {
+    await setVentaPaymentPromiseUseCase('notif-1', null);
+
+    expect(updateNotificacion).toHaveBeenCalledWith(
+      'notif-1',
+      expect.objectContaining({ fechaPrometidaPago: null }),
+    );
+    expect(updateNotificacion).not.toHaveBeenCalledWith(
+      'notif-1',
+      expect.objectContaining({ leida: expect.anything() }),
+    );
+  });
+
+  it('rejects today and past payment promise dates', async () => {
+    await expect(
+      setVentaPaymentPromiseUseCase(
+        'notif-1',
+        new Date(2026, 7, 23),
+        new Date('2026-08-23T15:00:00.000Z'),
+      ),
+    ).rejects.toThrow('La fecha prometida debe ser posterior a hoy');
+
+    expect(updateNotificacion).not.toHaveBeenCalled();
   });
 
   it('deletes a single notification', async () => {

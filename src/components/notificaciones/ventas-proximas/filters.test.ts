@@ -78,6 +78,29 @@ describe('ventas proximas filters', () => {
     ]);
   });
 
+  it('sorts promises first by promised date, then legacy highlights and normal rows', () => {
+    const notificaciones: NotificacionConId[] = [
+      venta('normal', { diasRestantes: -10 }),
+      venta('legacy', { resaltada: true, diasRestantes: -20 }),
+      venta('promise-later', {
+        fechaPrometidaPago: new Date(2026, 7, 27),
+        diasRestantes: -4,
+      }),
+      venta('promise-overdue', {
+        fechaPrometidaPago: new Date(2026, 7, 22),
+        diasRestantes: -1,
+      }),
+      venta('promise-sooner', {
+        fechaPrometidaPago: new Date(2026, 7, 25),
+        diasRestantes: -3,
+      }),
+    ];
+
+    expect(getVentasNotificacionesFiltradas(notificaciones, '', 'todos').map((n) => n.id)).toEqual([
+      'promise-overdue', 'promise-sooner', 'promise-later', 'legacy', 'normal',
+    ]);
+  });
+
   it('filters by search query and status buckets', () => {
     const notificaciones: NotificacionConId[] = [
       venta('proxima', { clienteNombre: 'Maria Gomez', diasRestantes: 3 }),

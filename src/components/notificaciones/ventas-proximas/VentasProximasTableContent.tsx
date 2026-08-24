@@ -24,6 +24,8 @@ interface VentasProximasTableContentProps {
   onCancelar: VentaNotificationAction;
   onAcciones: VentaNotificationAction;
   onRenovar: VentaNotificationAction;
+  onPaymentPromise: VentaNotificationAction;
+  onClearLegacyHighlight: VentaNotificationAction;
 }
 
 export function VentasProximasTableContent({
@@ -36,6 +38,8 @@ export function VentasProximasTableContent({
   onCancelar,
   onAcciones,
   onRenovar,
+  onPaymentPromise,
+  onClearLegacyHighlight,
 }: VentasProximasTableContentProps) {
   return (
     <div className="notification-table-scroll-shell rounded-md border">
@@ -94,6 +98,8 @@ export function VentasProximasTableContent({
               onCancelar={onCancelar}
               onAcciones={onAcciones}
               onRenovar={onRenovar}
+              onPaymentPromise={onPaymentPromise}
+              onClearLegacyHighlight={onClearLegacyHighlight}
             />
           ))}
         </TableBody>

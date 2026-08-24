@@ -45,6 +45,8 @@ export function VentasProximasTable() {
             onCancelar={controller.handleCancelar}
             onAcciones={controller.handleAcciones}
             onRenovar={controller.handleRenovar}
+            onPaymentPromise={controller.handlePaymentPromise}
+            onClearLegacyHighlight={controller.handleClearLegacyHighlight}
           />
 
           <VentasProximasPagination
@@ -62,15 +64,17 @@ export function VentasProximasTable() {
         notifSeleccionada={controller.notifSeleccionada}
         renovarDialogOpen={controller.renovarDialogOpen}
         accionesDialogOpen={controller.accionesDialogOpen}
+        promesaDialogOpen={controller.promesaDialogOpen}
         metodosPagoTerceros={controller.metodosPagoTerceros}
         categoriaPlanes={controller.categoriaPlanes}
         servicioTipoSeleccionado={controller.servicioTipoSeleccionado}
         onRenovarOpenChange={controller.setRenovarDialogOpen}
         onAccionesOpenChange={controller.setAccionesDialogOpen}
+        onPromesaOpenChange={controller.setPromesaDialogOpen}
         onConfirmRenovacion={controller.handleConfirmRenovacion}
         onCortar={controller.handleCortarFromModal}
-        onResaltar={controller.handleResaltar}
-        onDescartar={controller.handleDescartar}
+        onGuardarPromesa={controller.handleSavePaymentPromise}
+        onQuitarPromesa={controller.handleRemovePaymentPromise}
       />
     </Card>
   );
