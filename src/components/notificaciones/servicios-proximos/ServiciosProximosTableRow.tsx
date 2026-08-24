@@ -10,6 +10,8 @@ import {
   MoreHorizontal,
   PowerOff,
   RefreshCw,
+  Star,
+  StarOff,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +44,7 @@ interface ServiciosProximosTableRowProps {
   onCopyToClipboard: CopyToClipboardHandler;
   onTogglePasswordVisibility: (notifId: string) => void;
   onRenovar: ServicioNotificationAction;
+  onSeguimiento: ServicioNotificationAction;
   onAcciones: ServicioNotificationAction;
 }
 
@@ -52,6 +55,7 @@ export function ServiciosProximosTableRow({
   onCopyToClipboard,
   onTogglePasswordVisibility,
   onRenovar,
+  onSeguimiento,
   onAcciones,
 }: ServiciosProximosTableRowProps) {
   const bellColors = getBellIconColor(notif.diasRestantes);
@@ -84,7 +88,7 @@ export function ServiciosProximosTableRow({
           onClick={() => !notif.resaltada && onToggleLeida(notif.id, !notif.leida)}
           title={
             notif.resaltada
-              ? 'Notificación resaltada (click en Acciones para gestionar)'
+              ? 'Notificación en seguimiento'
               : notif.leida
                 ? 'Marcar como sin leer'
                 : 'Marcar como leída'
@@ -211,7 +215,12 @@ export function ServiciosProximosTableRow({
       <TableCell className="px-2 py-2 text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={`Abrir acciones de ${notif.servicioNombre}`}
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -219,6 +228,16 @@ export function ServiciosProximosTableRow({
             <DropdownMenuItem onClick={() => onRenovar(notif)}>
               <RefreshCw className="h-4 w-4 mr-2 text-purple-600" />
               <span className="text-purple-600">Renovar</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onSeguimiento(notif)}>
+              {notif.resaltada ? (
+                <StarOff className="h-4 w-4 mr-2 text-orange-600" />
+              ) : (
+                <Star className="h-4 w-4 mr-2 text-orange-600" />
+              )}
+              <span className="text-orange-600">
+                {notif.resaltada ? 'Quitar seguimiento' : 'Seguimiento'}
+              </span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onAcciones(notif)}>
               <PowerOff className="h-4 w-4 mr-2 text-red-600" />

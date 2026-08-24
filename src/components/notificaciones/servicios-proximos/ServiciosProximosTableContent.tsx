@@ -21,6 +21,7 @@ interface ServiciosProximosTableContentProps {
   onCopyToClipboard: CopyToClipboardHandler;
   onTogglePasswordVisibility: (notifId: string) => void;
   onRenovar: ServicioNotificationAction;
+  onSeguimiento: ServicioNotificationAction;
   onAcciones: ServicioNotificationAction;
 }
 
@@ -31,6 +32,7 @@ export function ServiciosProximosTableContent({
   onCopyToClipboard,
   onTogglePasswordVisibility,
   onRenovar,
+  onSeguimiento,
   onAcciones,
 }: ServiciosProximosTableContentProps) {
   return (
@@ -78,6 +80,7 @@ export function ServiciosProximosTableContent({
                 onCopyToClipboard={onCopyToClipboard}
                 onTogglePasswordVisibility={onTogglePasswordVisibility}
                 onRenovar={onRenovar}
+                onSeguimiento={onSeguimiento}
                 onAcciones={onAcciones}
               />
             ))}

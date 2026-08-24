@@ -50,6 +50,7 @@ export function ServiciosProximosTable({
             onCopyToClipboard={controller.copyToClipboard}
             onTogglePasswordVisibility={controller.togglePasswordVisibility}
             onRenovar={controller.handleRenovar}
+            onSeguimiento={controller.handleSeguimiento}
             onAcciones={controller.handleAcciones}
           />
 
@@ -85,8 +86,6 @@ export function ServiciosProximosTable({
         onAccionesOpenChange={controller.handleAccionesOpenChange}
         onConfirmRenovacion={controller.handleConfirmRenovacion}
         onInactivar={controller.handleInactivarServicio}
-        onResaltar={controller.handleResaltar}
-        onDescartar={controller.handleDescartar}
       />
     </Card>
   );

@@ -132,37 +132,23 @@ export function useServiciosProximosController({
       toast.success('Servicio inactivado', {
         description: `${notifParaAcciones.servicioNombre} ha sido marcado como inactivo.`,
       });
-    } catch {
+    } catch (error) {
       toast.error('Error al inactivar servicio', {
         description: 'No se pudo inactivar el servicio. Intenta nuevamente.',
       });
+      throw error;
     }
   };
 
-  const handleResaltar = async () => {
-    if (!notifParaAcciones) return;
-
+  const handleSeguimiento = async (notif: NotificacionServicioConId) => {
+    const nextHighlighted = !notif.resaltada;
     try {
-      await toggleNotificationHighlightedStoreCache(notifParaAcciones.id, true);
+      await toggleNotificationHighlightedStoreCache(notif.id, nextHighlighted);
       await refreshNotificationCaches();
-      toast.success('Notificación resaltada', {
-        description: 'La notificación ha sido marcada para seguimiento.',
-      });
-    } catch {
-      toast.error('Error al actualizar notificación', {
-        description: 'No se pudo cambiar el estado de la notificación. Intenta nuevamente.',
-      });
-    }
-  };
-
-  const handleDescartar = async () => {
-    if (!notifParaAcciones) return;
-
-    try {
-      await toggleNotificationHighlightedStoreCache(notifParaAcciones.id, false);
-      await refreshNotificationCaches();
-      toast.success('Notificación desmarcada', {
-        description: 'La notificación ya no está marcada para seguimiento.',
+      toast.success(nextHighlighted ? 'Notificación resaltada' : 'Notificación desmarcada', {
+        description: nextHighlighted
+          ? 'La notificación ha sido marcada para seguimiento.'
+          : 'La notificación ya no está marcada para seguimiento.',
       });
     } catch {
       toast.error('Error al actualizar notificación', {
@@ -239,7 +225,6 @@ export function useServiciosProximosController({
     handleAcciones,
     handleAccionesOpenChange,
     handleConfirmRenovacion,
-    handleDescartar,
     handleEstadoFilterChange,
     handleInactivarServicio,
     handleItemsPerPageChange,
@@ -247,7 +232,7 @@ export function useServiciosProximosController({
     handlePreviousPage: () => setCurrentPage((prev) => Math.max(1, prev - 1)),
     handleRenovar,
     handleRenovarOpenChange,
-    handleResaltar,
+    handleSeguimiento,
     handleSearchChange,
     handleToggleLeida,
     itemsPerPage,

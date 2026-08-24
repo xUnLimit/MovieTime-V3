@@ -15,8 +15,6 @@ interface ServiciosProximosDialogsProps {
   onAccionesOpenChange: (open: boolean) => void;
   onConfirmRenovacion: (data: EnrichedPagoDialogFormData) => void;
   onInactivar: () => Promise<void>;
-  onResaltar: () => Promise<void>;
-  onDescartar: () => Promise<void>;
 }
 
 export function ServiciosProximosDialogs({
@@ -29,8 +27,6 @@ export function ServiciosProximosDialogs({
   onAccionesOpenChange,
   onConfirmRenovacion,
   onInactivar,
-  onResaltar,
-  onDescartar,
 }: ServiciosProximosDialogsProps) {
   return (
     <>
@@ -51,8 +47,6 @@ export function ServiciosProximosDialogs({
         isOpen={accionesDialogOpen}
         onOpenChange={onAccionesOpenChange}
         onInactivar={onInactivar}
-        onResaltar={onResaltar}
-        onDescartar={onDescartar}
       />
     </>
   );

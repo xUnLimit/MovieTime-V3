@@ -60,6 +60,7 @@ export function useVentasProximasController() {
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [accionesDialogOpen, setAccionesDialogOpen] = useState(false);
   const [promesaDialogOpen, setPromesaDialogOpen] = useState(false);
+  const [notificarDialogOpen, setNotificarDialogOpen] = useState(false);
   const [notifSeleccionada, setNotifSeleccionada] =
     useState<NotificacionVentaConId | null>(null);
   const [metodosPagoTerceros, setMetodosPagoTerceros] = useState<MetodoPago[]>(
@@ -115,14 +116,16 @@ export function useVentasProximasController() {
       toast.error(
         `Template de ${tipoTemplate === 'dia_pago' ? 'día de pago' : 'notificación regular'} no encontrado`,
       );
-      return;
+      return false;
     }
 
     try {
       notifyVentaExpiration(notif, template);
+      return true;
     } catch (error) {
       reportError('VentasProximas', 'Error generando mensaje WhatsApp', error);
       toast.error('Error generando mensaje de WhatsApp');
+      return false;
     }
   };
 
@@ -131,14 +134,16 @@ export function useVentasProximasController() {
 
     if (!template) {
       toast.error('Template de cancelación no encontrado');
-      return;
+      return false;
     }
 
     try {
       notifyVentaCancellation(notif, template);
+      return true;
     } catch (error) {
       reportError('VentasProximas', 'Error generando mensaje de cancelacion', error);
       toast.error('Error generando mensaje de cancelación');
+      return false;
     }
   };
 
@@ -185,6 +190,11 @@ export function useVentasProximasController() {
       toast.error('Error al renovar la venta');
     }
   };
+  const handleOpenNotificar = (notif: NotificacionVentaConId) => {
+    setNotifSeleccionada(notif);
+    setNotificarDialogOpen(true);
+  };
+
   const handleAcciones = (notif: NotificacionVentaConId) => {
     setNotifSeleccionada(notif);
     setAccionesDialogOpen(true);
@@ -223,14 +233,20 @@ export function useVentasProximasController() {
     }
   };
 
-  const handleClearLegacyHighlight = async (notif: NotificacionVentaConId) => {
+  const handleSeguimiento = async (notif: NotificacionVentaConId) => {
+    const nextHighlighted = !notif.resaltada;
+
     try {
-      await toggleNotificationHighlightedStoreCache(notif.id, false);
+      await toggleNotificationHighlightedStoreCache(notif.id, nextHighlighted);
       await refreshNotificationCaches();
-      toast.success('Resaltado anterior eliminado');
+      toast.success(
+        nextHighlighted
+          ? 'Notificación resaltada para seguimiento'
+          : 'Seguimiento eliminado',
+      );
     } catch (error) {
-      reportError('VentasProximas', 'Error eliminando resaltado anterior', error);
-      toast.error('No se pudo quitar el resaltado');
+      reportError('VentasProximas', 'Error actualizando seguimiento', error);
+      toast.error('No se pudo actualizar el seguimiento');
     }
   };
 
@@ -261,9 +277,10 @@ export function useVentasProximasController() {
     handleCancelar,
     handleConfirmRenovacion,
     handleCortarFromModal,
-    handleClearLegacyHighlight,
+    handleSeguimiento,
     handleEstadoFilterChange,
     handlePaymentPromise,
+    handleOpenNotificar,
     handleRemovePaymentPromise,
     handleSavePaymentPromise,
     handleItemsPerPageChange,
@@ -277,12 +294,14 @@ export function useVentasProximasController() {
     metodosPagoTerceros,
     notifSeleccionada,
     paginatedNotificaciones,
+    notificarDialogOpen,
     promesaDialogOpen,
     renovarDialogOpen,
     safeCurrentPage,
     searchQuery,
     servicioTipoSeleccionado,
     setAccionesDialogOpen,
+    setNotificarDialogOpen,
     setPromesaDialogOpen,
     setRenovarDialogOpen,
     togglePasswordVisibility,

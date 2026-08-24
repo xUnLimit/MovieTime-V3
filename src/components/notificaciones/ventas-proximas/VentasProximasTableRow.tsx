@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {
   AlertTriangle,
   BellOff,
@@ -7,25 +6,10 @@ import {
   Copy,
   Eye,
   EyeOff,
-  MessageSquare,
-  MoreHorizontal,
-  RefreshCw,
-  Scissors,
-  ShoppingCart,
-  StarOff,
-  Tv2,
-  User,
-  XCircle,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { getCurrencySymbol } from '@/platform/constants';
 import { getPaymentPromiseDisplay } from '@/application/use-cases/notificaciones/payment-promise';
@@ -35,6 +19,7 @@ import {
   getBellIconColor,
   getEstadoBadge,
 } from './helpers';
+import { VentasProximasActionsMenu } from './VentasProximasActionsMenu';
 import type {
   CopyToClipboardHandler,
   NotificacionVentaConId,
@@ -49,11 +34,10 @@ interface VentasProximasTableRowProps {
   onCopyToClipboard: CopyToClipboardHandler;
   onTogglePasswordVisibility: (notifId: string) => void;
   onNotificar: VentaNotificationAction;
-  onCancelar: VentaNotificationAction;
   onAcciones: VentaNotificationAction;
   onRenovar: VentaNotificationAction;
   onPaymentPromise: VentaNotificationAction;
-  onClearLegacyHighlight: VentaNotificationAction;
+  onSeguimiento: VentaNotificationAction;
 }
 
 export function VentasProximasTableRow({
@@ -63,11 +47,10 @@ export function VentasProximasTableRow({
   onCopyToClipboard,
   onTogglePasswordVisibility,
   onNotificar,
-  onCancelar,
   onAcciones,
   onRenovar,
   onPaymentPromise,
-  onClearLegacyHighlight,
+  onSeguimiento,
 }: VentasProximasTableRowProps) {
   const bellColors = getBellIconColor(notif.diasRestantes);
   const estadoBadge = getEstadoBadge(notif.diasRestantes, notif.resaltada);
@@ -76,13 +59,12 @@ export function VentasProximasTableRow({
     ? getPaymentPromiseDisplay(notif.fechaPrometidaPago)
     : null;
   const promiseOverdue = promiseDisplay?.state === 'overdue';
-  const legacyHighlight = notif.resaltada && !notif.fechaPrometidaPago;
-  const rowToneClass = promiseDisplay
-    ? promiseOverdue
-      ? 'bg-red-50/70 dark:bg-red-500/10'
-      : 'bg-blue-50/70 dark:bg-blue-500/10'
-    : legacyHighlight
-      ? 'bg-orange-50/50 dark:bg-orange-500/5'
+  const rowToneClass = notif.resaltada
+    ? 'bg-orange-50/50 dark:bg-orange-500/5'
+    : promiseDisplay
+      ? promiseOverdue
+        ? 'bg-red-50/70 dark:bg-red-500/10'
+        : 'bg-blue-50/70 dark:bg-blue-500/10'
       : '';
   const displayedStatus = promiseDisplay
     ? {
@@ -115,7 +97,7 @@ export function VentasProximasTableRow({
             promiseDisplay
               ? promiseDisplay.text
               : notif.resaltada
-              ? 'Notificación resaltada (usa Acciones para gestionar)'
+              ? 'Notificación en seguimiento'
               : notif.leida
                 ? 'Marcar como sin leer'
                 : 'Marcar como leída'
@@ -270,61 +252,14 @@ export function VentasProximasTableRow({
       </TableCell>
 
       <TableCell className="px-2 py-2 text-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onNotificar(notif)}>
-              <MessageSquare className="h-4 w-4 mr-2 text-green-600" />
-              <span className="text-green-600">Notificar</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onPaymentPromise(notif)}>
-              <CalendarClock className="h-4 w-4 mr-2 text-blue-600" />
-              <span className="text-blue-600">
-                {notif.fechaPrometidaPago ? 'Editar promesa' : 'Promesa de pago'}
-              </span>
-            </DropdownMenuItem>
-            {notif.resaltada ? (
-              <DropdownMenuItem onClick={() => onClearLegacyHighlight(notif)}>
-                <StarOff className="h-4 w-4 mr-2 text-orange-600" />
-                <span className="text-orange-600">Quitar resaltado</span>
-              </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem onClick={() => onCancelar(notif)}>
-              <XCircle className="h-4 w-4 mr-2 text-red-600" />
-              <span className="text-red-600">Cancelar</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAcciones(notif)}>
-              <Scissors className="h-4 w-4 mr-2 text-orange-600" />
-              <span className="text-orange-600">Cortar</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onRenovar(notif)}>
-              <RefreshCw className="h-4 w-4 mr-2 text-purple-600" />
-              <span className="text-purple-600">Renovar</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link prefetch={false} href={`/terceros/${notif.clienteId}`}>
-                <User className="h-4 w-4 mr-2" />
-                Ver Cliente
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link prefetch={false} href={`/ventas/${notif.ventaId}`}>
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Ver Venta
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link prefetch={false} href={`/servicios/detalle/${notif.servicioId}`}>
-                <Tv2 className="h-4 w-4 mr-2" />
-                Ver Servicio
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <VentasProximasActionsMenu
+          notification={notif}
+          onNotificar={onNotificar}
+          onRenovar={onRenovar}
+          onSeguimiento={onSeguimiento}
+          onPaymentPromise={onPaymentPromise}
+          onCortar={onAcciones}
+        />
       </TableCell>
     </TableRow>
   );

@@ -41,12 +41,11 @@ export function VentasProximasTable() {
             onToggleLeida={controller.handleToggleLeida}
             onCopyToClipboard={controller.copyToClipboard}
             onTogglePasswordVisibility={controller.togglePasswordVisibility}
-            onNotificar={controller.handleNotificar}
-            onCancelar={controller.handleCancelar}
+            onNotificar={controller.handleOpenNotificar}
             onAcciones={controller.handleAcciones}
             onRenovar={controller.handleRenovar}
             onPaymentPromise={controller.handlePaymentPromise}
-            onClearLegacyHighlight={controller.handleClearLegacyHighlight}
+            onSeguimiento={controller.handleSeguimiento}
           />
 
           <VentasProximasPagination
@@ -65,13 +64,17 @@ export function VentasProximasTable() {
         renovarDialogOpen={controller.renovarDialogOpen}
         accionesDialogOpen={controller.accionesDialogOpen}
         promesaDialogOpen={controller.promesaDialogOpen}
+        notificarDialogOpen={controller.notificarDialogOpen}
         metodosPagoTerceros={controller.metodosPagoTerceros}
         categoriaPlanes={controller.categoriaPlanes}
         servicioTipoSeleccionado={controller.servicioTipoSeleccionado}
         onRenovarOpenChange={controller.setRenovarDialogOpen}
         onAccionesOpenChange={controller.setAccionesDialogOpen}
         onPromesaOpenChange={controller.setPromesaDialogOpen}
+        onNotificarOpenChange={controller.setNotificarDialogOpen}
         onConfirmRenovacion={controller.handleConfirmRenovacion}
+        onNotificar={controller.handleNotificar}
+        onCancelar={controller.handleCancelar}
         onCortar={controller.handleCortarFromModal}
         onGuardarPromesa={controller.handleSavePaymentPromise}
         onQuitarPromesa={controller.handleRemovePaymentPromise}

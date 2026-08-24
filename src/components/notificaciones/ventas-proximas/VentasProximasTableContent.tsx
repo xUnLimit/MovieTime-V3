@@ -21,11 +21,10 @@ interface VentasProximasTableContentProps {
   onCopyToClipboard: CopyToClipboardHandler;
   onTogglePasswordVisibility: (notifId: string) => void;
   onNotificar: VentaNotificationAction;
-  onCancelar: VentaNotificationAction;
   onAcciones: VentaNotificationAction;
   onRenovar: VentaNotificationAction;
   onPaymentPromise: VentaNotificationAction;
-  onClearLegacyHighlight: VentaNotificationAction;
+  onSeguimiento: VentaNotificationAction;
 }
 
 export function VentasProximasTableContent({
@@ -35,11 +34,10 @@ export function VentasProximasTableContent({
   onCopyToClipboard,
   onTogglePasswordVisibility,
   onNotificar,
-  onCancelar,
   onAcciones,
   onRenovar,
   onPaymentPromise,
-  onClearLegacyHighlight,
+  onSeguimiento,
 }: VentasProximasTableContentProps) {
   return (
     <div className="notification-table-scroll-shell rounded-md border">
@@ -95,11 +93,10 @@ export function VentasProximasTableContent({
               onCopyToClipboard={onCopyToClipboard}
               onTogglePasswordVisibility={onTogglePasswordVisibility}
               onNotificar={onNotificar}
-              onCancelar={onCancelar}
               onAcciones={onAcciones}
               onRenovar={onRenovar}
               onPaymentPromise={onPaymentPromise}
-              onClearLegacyHighlight={onClearLegacyHighlight}
+              onSeguimiento={onSeguimiento}
             />
           ))}
         </TableBody>

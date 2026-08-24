@@ -4,6 +4,7 @@ import type { MetodoPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
 import { CutVentaDialog } from './CutVentaDialog';
+import { NotifyVentaDialog } from './NotifyVentaDialog';
 import { PaymentPromiseDialog } from './PaymentPromiseDialog';
 import type { NotificacionVentaConId } from './types';
 
@@ -12,13 +13,17 @@ interface VentasProximasDialogsProps {
   renovarDialogOpen: boolean;
   accionesDialogOpen: boolean;
   promesaDialogOpen: boolean;
+  notificarDialogOpen: boolean;
   metodosPagoTerceros: MetodoPago[];
   categoriaPlanes: Plan[];
   servicioTipoSeleccionado: string | undefined;
   onRenovarOpenChange: (open: boolean) => void;
   onAccionesOpenChange: (open: boolean) => void;
   onPromesaOpenChange: (open: boolean) => void;
+  onNotificarOpenChange: (open: boolean) => void;
   onConfirmRenovacion: (data: EnrichedPagoDialogFormData) => void;
+  onNotificar: (notification: NotificacionVentaConId) => boolean | Promise<boolean>;
+  onCancelar: (notification: NotificacionVentaConId) => boolean | Promise<boolean>;
   onCortar: (motivoCorte: string) => Promise<void>;
   onGuardarPromesa: (fecha: Date) => Promise<void>;
   onQuitarPromesa: () => Promise<void>;
@@ -29,13 +34,17 @@ export function VentasProximasDialogs({
   renovarDialogOpen,
   accionesDialogOpen,
   promesaDialogOpen,
+  notificarDialogOpen,
   metodosPagoTerceros,
   categoriaPlanes,
   servicioTipoSeleccionado,
   onRenovarOpenChange,
   onAccionesOpenChange,
   onPromesaOpenChange,
+  onNotificarOpenChange,
   onConfirmRenovacion,
+  onNotificar,
+  onCancelar,
   onCortar,
   onGuardarPromesa,
   onQuitarPromesa,
@@ -69,6 +78,17 @@ export function VentasProximasDialogs({
           codigo={notifSeleccionada.codigo}
         />
       )}
+
+      {notifSeleccionada ? (
+        <NotifyVentaDialog
+          key={`notify-${notifSeleccionada.id}`}
+          notification={notifSeleccionada}
+          open={notificarDialogOpen}
+          onOpenChange={onNotificarOpenChange}
+          onNotify={onNotificar}
+          onCancelMessage={onCancelar}
+        />
+      ) : null}
 
       {notifSeleccionada ? (
         <CutVentaDialog
