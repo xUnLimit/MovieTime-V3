@@ -16,8 +16,8 @@ export function getPanamaTomorrow(now = new Date()): Date {
   return new Date(year, month - 1, day + 1);
 }
 
-export function isValidPaymentPromiseDate(date: Date, now = new Date()): boolean {
-  return toLocalDateKey(date) >= toLocalDateKey(getPanamaTomorrow(now));
+export function isValidPaymentPromiseDate(date: Date): boolean {
+  return date instanceof Date && !Number.isNaN(date.getTime());
 }
 
 export function getPaymentPromiseDisplay(

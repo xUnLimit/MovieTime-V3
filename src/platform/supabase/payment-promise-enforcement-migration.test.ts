@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -8,6 +8,13 @@ const migrationPath = join(
   'supabase',
   'migrations',
   '20260823173000_enforce_venta_payment_promise.sql',
+);
+
+const correctionMigrationPath = join(
+  process.cwd(),
+  'supabase',
+  'migrations',
+  '20260824130000_allow_any_venta_payment_promise_date.sql',
 );
 
 describe('venta payment promise database enforcement', () => {
@@ -25,5 +32,17 @@ describe('venta payment promise database enforcement', () => {
     expect(sql).toMatch(/IF NEW\.fecha_prometida_pago IS NOT NULL THEN/);
     expect(sql).toContain('NEW.leida := TRUE');
     expect(sql).toContain('BEFORE UPDATE OF fecha_prometida_pago');
+  });
+
+  it('replaces the database rule so any payment promise date is accepted', () => {
+    const sql = existsSync(correctionMigrationPath)
+      ? readFileSync(correctionMigrationPath, 'utf8')
+      : '';
+
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.enforce_venta_payment_promise()');
+    expect(sql).not.toMatch(/NEW\.fecha_prometida_pago\s*(?:<|>)/);
+    expect(sql).not.toContain('RAISE EXCEPTION');
+    expect(sql).toContain('NEW.leida := TRUE');
+    expect(sql).toContain('NEW.read_at := COALESCE(NEW.read_at, CURRENT_TIMESTAMP)');
   });
 });

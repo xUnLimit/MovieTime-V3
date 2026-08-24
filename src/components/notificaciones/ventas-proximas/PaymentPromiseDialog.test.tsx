@@ -58,6 +58,52 @@ describe('PaymentPromiseDialog', () => {
     expect(onSave).toHaveBeenCalledWith(new Date(2026, 7, 24));
   });
 
+  it('allows a past date to be selected and saved', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    render(
+      <PaymentPromiseDialog
+        notification={notification}
+        open
+        onOpenChange={vi.fn()}
+        onRemove={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '24 de agosto de 2026' }));
+    await user.click(
+      screen.getByRole('button', { name: /20 de agosto de 2026/i }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Guardar promesa' }));
+
+    expect(onSave).toHaveBeenCalledWith(new Date(2026, 7, 20));
+  });
+
+  it('allows today to be selected and saved', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    render(
+      <PaymentPromiseDialog
+        notification={notification}
+        open
+        onOpenChange={vi.fn()}
+        onRemove={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '24 de agosto de 2026' }));
+    await user.click(
+      screen.getByRole('button', { name: /23 de agosto de 2026/i }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Guardar promesa' }));
+
+    expect(onSave).toHaveBeenCalledWith(new Date(2026, 7, 23));
+  });
+
   it('allows an existing promise to be removed', async () => {
     const onRemove = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });

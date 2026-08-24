@@ -93,14 +93,33 @@ describe('notificaciones store use cases', () => {
     );
   });
 
-  it('rejects today and past payment promise dates', async () => {
+  it.each([
+    ['today', new Date(2026, 7, 23)],
+    ['past', new Date(2026, 7, 20)],
+  ])('stores a %s payment promise date', async (_label, promisedDate) => {
+    await setVentaPaymentPromiseUseCase(
+      'notif-1',
+      promisedDate,
+      new Date('2026-08-23T15:00:00.000Z'),
+    );
+
+    expect(updateNotificacion).toHaveBeenCalledWith(
+      'notif-1',
+      expect.objectContaining({
+        fechaPrometidaPago: promisedDate,
+        leida: true,
+      }),
+    );
+  });
+
+  it('rejects an invalid payment promise date', async () => {
     await expect(
       setVentaPaymentPromiseUseCase(
         'notif-1',
-        new Date(2026, 7, 23),
+        new Date(Number.NaN),
         new Date('2026-08-23T15:00:00.000Z'),
       ),
-    ).rejects.toThrow('La fecha prometida debe ser posterior a hoy');
+    ).rejects.toThrow('La fecha prometida no es válida');
 
     expect(updateNotificacion).not.toHaveBeenCalled();
   });

@@ -25,6 +25,46 @@ describe('observability logger', () => {
       expect(result.error).toEqual({ name: 'Error', message: 'boom' });
     });
 
+    it('preserves non-enumerable database error details', () => {
+      const databaseError = {};
+      Object.defineProperties(databaseError, {
+        name: { value: 'PostgrestError', enumerable: false },
+        message: { value: 'La fecha prometida fue rechazada', enumerable: false },
+        code: { value: '22007', enumerable: false },
+      });
+
+      expect(redact({ error: databaseError })).toEqual({
+        error: {
+          name: 'PostgrestError',
+          message: 'La fecha prometida fue rechazada',
+          code: '22007',
+        },
+      });
+    });
+
+    it('preserves details from a database Error subclass', () => {
+      class PostgrestError extends Error {
+        code = '22007';
+        details = 'La fila no cumple la regla';
+        hint = 'Revisa la fecha prometida';
+        override name = 'PostgrestError';
+      }
+
+      expect(
+        redact({
+          error: new PostgrestError('La fecha prometida fue rechazada'),
+        }),
+      ).toEqual({
+        error: {
+          name: 'PostgrestError',
+          message: 'La fecha prometida fue rechazada',
+          code: '22007',
+          details: 'La fila no cumple la regla',
+          hint: 'Revisa la fecha prometida',
+        },
+      });
+    });
+
     it('passes through primitives unchanged', () => {
       expect(redact(42)).toBe(42);
       expect(redact('plain')).toBe('plain');

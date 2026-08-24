@@ -38,9 +38,9 @@ function isSensitiveKey(key: string): boolean {
 export function redact(value: unknown, depth = 0): unknown {
   if (depth > 4) return '[Truncated]';
   if (value === null || typeof value !== 'object') return value;
-  if (value instanceof Error) {
-    return { name: value.name, message: value.message };
-  }
+  const errorDetails = serializeErrorLike(value);
+  if (errorDetails) return errorDetails;
+
   if (Array.isArray(value)) {
     return value.map((item) => redact(item, depth + 1));
   }
@@ -49,6 +49,26 @@ export function redact(value: unknown, depth = 0): unknown {
   for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
     result[key] = isSensitiveKey(key) ? '[REDACTED]' : redact(val, depth + 1);
   }
+  return result;
+}
+
+function serializeErrorLike(value: object): Record<string, string> | null {
+  const candidate = value as {
+    code?: unknown;
+    details?: unknown;
+    hint?: unknown;
+    message?: unknown;
+    name?: unknown;
+  };
+  if (typeof candidate.message !== 'string') return null;
+
+  const result: Record<string, string> = {
+    name: typeof candidate.name === 'string' ? candidate.name : 'Error',
+    message: candidate.message,
+  };
+  if (typeof candidate.code === 'string') result.code = candidate.code;
+  if (typeof candidate.details === 'string') result.details = candidate.details;
+  if (typeof candidate.hint === 'string') result.hint = candidate.hint;
   return result;
 }
 

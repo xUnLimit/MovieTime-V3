@@ -9,10 +9,13 @@ import {
 describe('venta payment promise helpers', () => {
   const panamaNow = new Date('2026-08-23T15:00:00.000Z');
 
-  it('uses the next Panama calendar day as the minimum promise date', () => {
+  it('uses tomorrow as default but accepts any valid promise date', () => {
     expect(getPanamaTomorrow(panamaNow)).toEqual(new Date(2026, 7, 24));
-    expect(isValidPaymentPromiseDate(new Date(2026, 7, 23), panamaNow)).toBe(false);
-    expect(isValidPaymentPromiseDate(new Date(2026, 7, 24), panamaNow)).toBe(true);
+    expect(isValidPaymentPromiseDate(new Date(2026, 7, 20))).toBe(true);
+    expect(isValidPaymentPromiseDate(new Date(2026, 7, 23))).toBe(true);
+    expect(isValidPaymentPromiseDate(new Date(2026, 7, 24))).toBe(true);
+    expect(isValidPaymentPromiseDate(new Date(2035, 0, 1))).toBe(true);
+    expect(isValidPaymentPromiseDate(new Date(Number.NaN))).toBe(false);
   });
 
   it('shows an active promise before and during the promised day', () => {

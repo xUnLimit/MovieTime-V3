@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NotificacionVentaConId } from './types';
@@ -6,13 +7,15 @@ import { PaymentPromiseDialog } from './PaymentPromiseDialog';
 
 describe('PaymentPromiseDialog expired promise', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-08-23T15:00:00.000Z'));
   });
 
   afterEach(() => vi.useRealTimers());
 
-  it('requires a new future date before saving an expired promise', () => {
+  it('allows an expired promise date to be saved again', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const notification = {
       id: 'notif-expired',
       entidad: 'venta',
@@ -40,10 +43,13 @@ describe('PaymentPromiseDialog expired promise', () => {
         open
         onOpenChange={vi.fn()}
         onRemove={vi.fn()}
-        onSave={vi.fn()}
+        onSave={onSave}
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Guardar cambios' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Guardar cambios' }).hasAttribute('disabled')).toBe(false);
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(onSave).toHaveBeenCalledWith(new Date(2026, 7, 22));
   });
 });

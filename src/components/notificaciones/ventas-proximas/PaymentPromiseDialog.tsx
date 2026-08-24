@@ -37,8 +37,8 @@ export function PaymentPromiseDialog({
   onRemove,
   onSave,
 }: PaymentPromiseDialogProps) {
-  const minimumDate = getPanamaTomorrow();
-  const initialDate = notification.fechaPrometidaPago ?? minimumDate;
+  const defaultDate = getPanamaTomorrow();
+  const initialDate = notification.fechaPrometidaPago ?? defaultDate;
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,7 +121,6 @@ export function PaymentPromiseDialog({
                   mode="single"
                   defaultMonth={selectedDate}
                   selected={selectedDate}
-                  disabled={{ before: minimumDate }}
                   onSelect={(date) => {
                     if (!date) return;
                     setSelectedDate(date);
@@ -131,7 +130,7 @@ export function PaymentPromiseDialog({
               </PopoverContent>
             </Popover>
             <p className="text-xs text-muted-foreground">
-              La fecha debe ser posterior a hoy. La promesa se marcará vencida al día siguiente.
+              Puedes seleccionar una fecha pasada, la fecha de hoy o una fecha futura.
             </p>
           </div>
         </div>

@@ -50,8 +50,8 @@ export async function setVentaPaymentPromiseUseCase(
   promisedDate: Date | null,
   now = new Date(),
 ) {
-  if (promisedDate && !isValidPaymentPromiseDate(promisedDate, now)) {
-    throw new Error('La fecha prometida debe ser posterior a hoy');
+  if (promisedDate && !isValidPaymentPromiseDate(promisedDate)) {
+    throw new Error('La fecha prometida no es válida');
   }
 
   if (promisedDate) {
