@@ -8,7 +8,7 @@ import { shouldRedirectToLogin } from '@/components/auth/auth-routing';
 
 export default function Home() {
   const router = useRouter();
-  const { authRecoveryError, isAuthenticated, isHydrated, retryAuth } = useAuthStore();
+  const { authRecoveryError, isAuthenticated, isHydrated, logout, retryAuth } = useAuthStore();
   const redirectToLogin = shouldRedirectToLogin({
     isHydrated,
     isAuthenticated,
@@ -29,7 +29,7 @@ export default function Home() {
 
   if (authRecoveryError) {
     return (
-      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} />
+      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} onLogout={logout} />
     );
   }
   return (

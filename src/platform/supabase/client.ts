@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import {
   AUTH_REMEMBER_KEY,
+  clearSupabaseAuthArtifacts,
   createRememberAwareStorage,
   getSupabaseAuthStorageKey,
   migrateLegacyAuthCookies,
@@ -15,6 +16,18 @@ let browserClient: SupabaseClient<Database> | null = null;
 function isRemembered(): boolean {
   if (typeof window === 'undefined') return true;
   return window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true';
+}
+
+export function clearBrowserSessionArtifacts(): void {
+  if (typeof window === 'undefined' || !supabaseUrl) return;
+
+  clearSupabaseAuthArtifacts({
+    storageKey: getSupabaseAuthStorageKey(supabaseUrl),
+    localStorage: window.localStorage,
+    sessionStorage: window.sessionStorage,
+    cookieDocument: window.document,
+    secure: window.location.protocol === 'https:',
+  });
 }
 
 export function getSupabaseClient(): SupabaseClient<Database> {

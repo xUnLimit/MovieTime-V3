@@ -1,4 +1,6 @@
 import {
+  InvalidAuthSessionError,
+  clearLocalSession,
   getCurrentSession,
   getCurrentProfile,
   onAuthStateChange,
@@ -25,12 +27,25 @@ export function signOutUseCase() {
   return signOut();
 }
 
+export function clearLocalSessionUseCase() {
+  clearLocalSession();
+}
+
 export function getCurrentSessionUseCase() {
   return getCurrentSession();
 }
 
 export async function loadActiveProfileUseCase(): Promise<User> {
-  const user = await getCurrentProfile();
+  let user: User | null;
+  try {
+    user = await getCurrentProfile();
+  } catch (error) {
+    if (error instanceof InvalidAuthSessionError) {
+      throw new TerminalAuthError(error.message);
+    }
+    throw error;
+  }
+
   if (!user) {
     throw new TerminalAuthError('No se encontro un perfil activo para este usuario.');
   }

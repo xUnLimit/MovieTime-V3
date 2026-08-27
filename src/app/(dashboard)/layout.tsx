@@ -19,7 +19,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { authRecoveryError, isAuthenticated, isHydrated, retryAuth } = useAuthStore();
+  const { authRecoveryError, isAuthenticated, isHydrated, logout, retryAuth } = useAuthStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const openMobileSidebar = useCallback(() => setMobileSidebarOpen(true), []);
@@ -58,7 +58,7 @@ export default function DashboardLayout({
 
   if (authRecoveryError) {
     return (
-      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} />
+      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} onLogout={logout} />
     );
   }
 

@@ -22,6 +22,7 @@ export default function LoginPage() {
     isHydrated,
     isLoading,
     login,
+    logout,
     restoreOfflineSession,
     retryAuth,
   } = useAuthStore();
@@ -108,7 +109,7 @@ export default function LoginPage() {
 
   if (authRecoveryError) {
     return (
-      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} />
+      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} onLogout={logout} />
     );
   }
 

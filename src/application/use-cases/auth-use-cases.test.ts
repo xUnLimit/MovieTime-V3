@@ -10,7 +10,12 @@ const authMocks = vi.hoisted(() => ({
   signOut: vi.fn(),
 }));
 
-vi.mock('@/platform/supabase/auth', () => authMocks);
+vi.mock('@/platform/supabase/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/platform/supabase/auth')>()),
+  ...authMocks,
+}));
+
+import { InvalidAuthSessionError } from '@/platform/supabase/auth';
 
 import {
   TerminalAuthError,
@@ -58,5 +63,13 @@ describe('auth use cases', () => {
     authMocks.getCurrentProfile.mockRejectedValue(transientError);
 
     await expect(loadActiveProfileUseCase()).rejects.toBe(transientError);
+  });
+
+  it('classifies a rejected persisted token as a terminal auth failure', async () => {
+    authMocks.getCurrentProfile.mockRejectedValue(
+      new InvalidAuthSessionError('La sesion guardada ya no es valida.')
+    );
+
+    await expect(loadActiveProfileUseCase()).rejects.toBeInstanceOf(TerminalAuthError);
   });
 });

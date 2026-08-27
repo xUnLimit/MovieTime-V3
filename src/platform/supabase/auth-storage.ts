@@ -20,6 +20,14 @@ type LegacyCookieMigrationInput = RememberAwareStorageInput & {
   secure: boolean;
 };
 
+
+type SupabaseAuthCleanupInput = {
+  storageKey: string;
+  localStorage: StorageLike;
+  sessionStorage: StorageLike;
+  cookieDocument: CookieDocument;
+  secure: boolean;
+};
 type StoredSession = {
   access_token: string;
   refresh_token: string;
@@ -176,8 +184,28 @@ export function clearLegacyAuthCookies(
   cookieDocument: CookieDocument = document,
   secure = typeof location !== 'undefined' && location.protocol === 'https:'
 ): void {
-  const parts = getLegacyCookieParts(parseCookies(cookieDocument.cookie), storageKey);
-  for (const part of parts) {
-    expireCookie(part.name, cookieDocument, secure);
+  const escapedKey = storageKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const cookiePattern = new RegExp(`^${escapedKey}(?:\\.\\d+)?$`);
+  const cookies = parseCookies(cookieDocument.cookie);
+  for (const name of cookies.keys()) {
+    if (cookiePattern.test(name)) {
+      expireCookie(name, cookieDocument, secure);
+    }
+  }
+}
+
+export function clearSupabaseAuthArtifacts({
+  storageKey,
+  localStorage,
+  sessionStorage,
+  cookieDocument,
+  secure,
+}: SupabaseAuthCleanupInput): void {
+  const authKeys = [storageKey, `${storageKey}-code-verifier`, `${storageKey}-user`];
+
+  for (const key of authKeys) {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+    clearLegacyAuthCookies(key, cookieDocument, secure);
   }
 }

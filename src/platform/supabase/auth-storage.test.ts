@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clearSupabaseAuthArtifacts,
   createRememberAwareStorage,
   getSupabaseAuthStorageKey,
   migrateLegacyAuthCookies,
@@ -183,5 +184,35 @@ describe('legacy Supabase cookie migration', () => {
 
     expect(migrated).toBe(false);
     expect(writes).toEqual([]);
+  });
+});
+
+describe('Supabase auth cleanup', () => {
+  it('removes session artifacts from both storages and expires legacy cookies', () => {
+    const localStorage = createMemoryStorage();
+    const sessionStorage = createMemoryStorage();
+    const keys = [AUTH_KEY, `${AUTH_KEY}-code-verifier`, `${AUTH_KEY}-user`];
+    for (const key of keys) {
+      localStorage.setItem(key, 'local-value');
+      sessionStorage.setItem(key, 'session-value');
+    }
+    const { document: cookieDocument, writes } = createCookieDocument(
+      `${AUTH_KEY}=session; ${AUTH_KEY}-code-verifier=verifier; ${AUTH_KEY}.0=chunk`
+    );
+
+    clearSupabaseAuthArtifacts({
+      storageKey: AUTH_KEY,
+      localStorage,
+      sessionStorage,
+      cookieDocument,
+      secure: true,
+    });
+
+    for (const key of keys) {
+      expect(localStorage.getItem(key)).toBeNull();
+      expect(sessionStorage.getItem(key)).toBeNull();
+    }
+    expect(writes.some((write) => write.startsWith(`${AUTH_KEY}=;`))).toBe(true);
+    expect(writes.some((write) => write.startsWith(`${AUTH_KEY}-code-verifier=;`))).toBe(true);
   });
 });

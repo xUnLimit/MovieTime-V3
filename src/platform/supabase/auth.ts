@@ -1,11 +1,40 @@
 import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from './client';
+import { clearBrowserSessionArtifacts, supabase } from './client';
 import type { User } from '@/types';
 
+
+const INVALID_AUTH_CODES = new Set([
+  'bad_jwt',
+  'invalid_jwt',
+  'refresh_token_not_found',
+  'refresh_token_already_used',
+  'session_not_found',
+]);
+
+type AuthFailure = {
+  status?: number;
+  code?: string;
+  name?: string;
+  message?: string;
+};
+
+export class InvalidAuthSessionError extends Error {
+  constructor(message = 'La sesion guardada ya no es valida.') {
+    super(message);
+    this.name = 'InvalidAuthSessionError';
+  }
+}
+
+function isInvalidAuthSession(error: AuthFailure): boolean {
+  return (
+    error.status === 401 ||
+    error.status === 403 ||
+    error.name === 'AuthSessionMissingError' ||
+    (typeof error.code === 'string' && INVALID_AUTH_CODES.has(error.code))
+  );
+}
 /**
- * Sign in with email/password. `rememberMe` is honored client-side via the
- * Supabase auth-helpers cookie; for now we just sign in and let the client
- * persist the session (Supabase persists by default).
+ * Sign in with email/password using the remember-aware browser storage.
  */
 export async function signIn(email: string, password: string): Promise<Session> {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -24,6 +53,10 @@ export async function sendPasswordReset(email: string, redirectTo?: string): Pro
   if (error) throw new Error(error.message);
 }
 
+
+export function clearLocalSession(): void {
+  clearBrowserSessionArtifacts();
+}
 export async function getCurrentSession(): Promise<Session | null> {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw new Error(error.message);
@@ -32,7 +65,10 @@ export async function getCurrentSession(): Promise<Session | null> {
 
 export async function getCurrentSupabaseUser(): Promise<SupabaseUser | null> {
   const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
+  if (error) {
+    if (isInvalidAuthSession(error)) throw new InvalidAuthSessionError(error.message);
+    throw error;
+  }
   return data.user;
 }
 

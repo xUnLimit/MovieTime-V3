@@ -4,6 +4,7 @@ import { User } from '@/types';
 import {
   TerminalAuthError,
   AUTH_REMEMBER_KEY,
+  clearLocalSessionUseCase,
   getCurrentSessionUseCase,
   loadActiveProfileUseCase,
   onAuthStateChangeUseCase,
@@ -100,8 +101,28 @@ function cancelProfileRetry() {
   }
 }
 
+function clearDeviceAuthStorage() {
+  try {
+    clearLocalSessionUseCase();
+  } catch (error) {
+    logAsyncSideEffectError(error, {
+      operation: 'clearSupabaseLocalSession',
+      entity: 'auth',
+    });
+  }
+
+  try {
+    clearAllAuthStorage();
+  } catch (error) {
+    logAsyncSideEffectError(error, {
+      operation: 'clearApplicationAuthStorage',
+      entity: 'auth',
+    });
+  }
+}
+
 function setSignedOutState(set: AuthSetter) {
-  clearAllAuthStorage();
+  clearDeviceAuthStorage();
   set({
     user: null,
     isAuthenticated: false,
@@ -234,6 +255,7 @@ export const useAuthStore = create<AuthState>()(
 
         login: async (email: string, password: string, rememberMe: boolean = false) => {
           set({ isLoading: true, authRecoveryError: null });
+          let session: Session | null = null;
 
           try {
             // Clear stale client auth state before Supabase writes a fresh session.
@@ -245,7 +267,7 @@ export const useAuthStore = create<AuthState>()(
               localStorage.removeItem(AUTH_REMEMBER_KEY);
             }
 
-            await signInUseCase(email, password);
+            session = await signInUseCase(email, password);
             const user = await loadActiveProfileUseCase();
 
             saveOfflineAuthUser(user);
@@ -259,13 +281,34 @@ export const useAuthStore = create<AuthState>()(
               authRecoveryError: null,
             });
           } catch (error) {
-            await signOutUseCase().catch((signOutError) => {
-              logAsyncSideEffectError(signOutError, {
-                operation: 'supabaseSignOutAfterLoginFailure',
-                entity: 'auth',
+            if (session && !(error instanceof TerminalAuthError)) {
+              const revision = ++authRevision;
+              cancelProfileRetry();
+              set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                isHydrated: false,
+                authRecoveryError: null,
               });
-            });
-            set({ isLoading: false, isHydrated: true, authRecoveryError: null });
+              scheduleProfileLoad(set, session, revision);
+              return;
+            }
+
+            if (session) {
+              ++authRevision;
+              cancelProfileRetry();
+              await signOutUseCase().catch((signOutError) => {
+                logAsyncSideEffectError(signOutError, {
+                  operation: 'supabaseSignOutAfterTerminalLoginFailure',
+                  entity: 'auth',
+                });
+              });
+              setSignedOutState(set);
+            } else {
+              set({ isLoading: false, isHydrated: true, authRecoveryError: null });
+            }
+
             const message = error instanceof Error ? error.message : 'Error al iniciar sesion';
             throw new Error(message);
           }
@@ -294,19 +337,13 @@ export const useAuthStore = create<AuthState>()(
         logout: async () => {
           try {
             await signOutUseCase();
-            clearAllAuthStorage();
-            clearDashboardToastSessionState();
-            set({
-              user: null,
-              isAuthenticated: false,
-              isLoading: false,
-              isHydrated: true,
-              authRecoveryError: null,
-            });
           } catch (error) {
             logAsyncSideEffectError(error, { operation: 'logout', entity: 'auth' });
-            const message = error instanceof Error ? error.message : 'Error al cerrar sesion';
-            throw new Error(message);
+          } finally {
+            ++authRevision;
+            cancelProfileRetry();
+            clearDashboardToastSessionState();
+            setSignedOutState(set);
           }
         },
 

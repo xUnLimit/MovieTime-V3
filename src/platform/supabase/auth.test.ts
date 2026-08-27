@@ -22,7 +22,12 @@ vi.mock('./client', () => ({
   },
 }));
 
-import { getCurrentProfile, getCurrentSupabaseUser, signOut } from './auth';
+import {
+  InvalidAuthSessionError,
+  getCurrentProfile,
+  getCurrentSupabaseUser,
+  signOut,
+} from './auth';
 
 describe('Supabase auth adapter', () => {
   beforeEach(() => {
@@ -42,6 +47,15 @@ describe('Supabase auth adapter', () => {
     clientMocks.getUser.mockResolvedValue({ data: { user: null }, error: authError });
 
     await expect(getCurrentSupabaseUser()).rejects.toBe(authError);
+  });
+
+  it('classifies a rejected token as an invalid local session', async () => {
+    clientMocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'invalid JWT', status: 401, code: 'bad_jwt' },
+    });
+
+    await expect(getCurrentSupabaseUser()).rejects.toBeInstanceOf(InvalidAuthSessionError);
   });
 
   it('propagates profile query failures instead of converting them to a missing profile', async () => {

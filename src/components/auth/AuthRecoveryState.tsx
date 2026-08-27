@@ -1,15 +1,16 @@
 'use client';
 
-import { RefreshCw, WifiOff } from 'lucide-react';
+import { LogOut, RefreshCw, WifiOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
 interface AuthRecoveryStateProps {
   message: string;
   onRetry: () => void;
+  onLogout: () => void | Promise<void>;
 }
 
-export function AuthRecoveryState({ message, onRetry }: AuthRecoveryStateProps) {
+export function AuthRecoveryState({ message, onRetry, onLogout }: AuthRecoveryStateProps) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
@@ -23,10 +24,16 @@ export function AuthRecoveryState({ message, onRetry }: AuthRecoveryStateProps) 
             Tu sesión guardada sigue intacta; no necesitas ingresar nuevamente tus credenciales.
           </p>
         </div>
-        <Button type="button" onClick={onRetry}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Reintentar
-        </Button>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button type="button" onClick={onRetry}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reintentar
+          </Button>
+          <Button type="button" variant="outline" onClick={() => void onLogout()}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Cerrar sesi&oacute;n
+          </Button>
+        </div>
       </div>
     </div>
   );

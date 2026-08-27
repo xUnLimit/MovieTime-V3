@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import type { User } from '@/types';
 
 const authUseCaseMocks = vi.hoisted(() => ({
+  clearLocalSessionUseCase: vi.fn(),
   getCurrentSessionUseCase: vi.fn(),
   loadActiveProfileUseCase: vi.fn(),
   onAuthStateChangeUseCase: vi.fn(),
@@ -63,6 +64,7 @@ describe('auth store session initialization', () => {
     vi.resetModules();
     vi.clearAllMocks();
     authUseCaseMocks.signOutUseCase.mockResolvedValue(undefined);
+    authUseCaseMocks.clearLocalSessionUseCase.mockImplementation(() => undefined);
     authUseCaseMocks.getCurrentSessionUseCase.mockResolvedValue(session);
     authUseCaseMocks.onAuthStateChangeUseCase.mockImplementation((callback: AuthListener) => {
       listener = callback;
@@ -156,6 +158,41 @@ describe('auth store session initialization', () => {
     expect(useAuthStore.getState()).toMatchObject({
       user,
       isAuthenticated: true,
+      isHydrated: true,
+      authRecoveryError: null,
+    });
+  });
+
+  it('preserves a newly created session when the first profile request fails transiently', async () => {
+    authUseCaseMocks.signInUseCase.mockResolvedValue(session);
+    authUseCaseMocks.loadActiveProfileUseCase
+      .mockRejectedValueOnce(new Error('fetch failed'))
+      .mockResolvedValue(user);
+
+    await expect(
+      useAuthStore.getState().login('admin@movietime.test', 'secret', true)
+    ).resolves.toBeUndefined();
+    expect(authUseCaseMocks.signOutUseCase).not.toHaveBeenCalled();
+
+    await vi.runAllTimersAsync();
+    expect(useAuthStore.getState()).toMatchObject({
+      user,
+      isAuthenticated: true,
+      isHydrated: true,
+      authRecoveryError: null,
+    });
+  });
+
+  it('always clears the local session and store even when Supabase sign-out has no network', async () => {
+    authUseCaseMocks.signOutUseCase.mockRejectedValue(new Error('network unavailable'));
+    useAuthStore.setState({ user, isAuthenticated: true, isHydrated: true });
+
+    await expect(useAuthStore.getState().logout()).resolves.toBeUndefined();
+
+    expect(authUseCaseMocks.clearLocalSessionUseCase).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      user: null,
+      isAuthenticated: false,
       isHydrated: true,
       authRecoveryError: null,
     });
