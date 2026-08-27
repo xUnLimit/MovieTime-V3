@@ -1,4 +1,4 @@
-import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from './client';
 import type { User } from '@/types';
 
@@ -40,10 +40,10 @@ export async function getCurrentSupabaseUser(): Promise<SupabaseUser | null> {
  * Subscribe to auth state changes. Returns the unsubscribe function.
  */
 export function onAuthStateChange(
-  callback: (session: Session | null) => void
+  callback: (event: AuthChangeEvent, session: Session | null) => void
 ): () => void {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session);
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    callback(event, session);
   });
   return () => data.subscription.unsubscribe();
 }
