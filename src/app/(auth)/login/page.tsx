@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { AuthRecoveryState } from '@/components/auth/AuthRecoveryState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,10 +12,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from 'sonner';
 import { Eye, EyeOff, WifiOff } from 'lucide-react';
 import { hasOfflineAuthUser } from '@/modules/pwa/offline-auth';
+import { AUTH_REMEMBER_KEY } from '@/platform/supabase/auth-storage';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, restoreOfflineSession, isAuthenticated, isLoading, isHydrated } = useAuthStore();
+  const {
+    authRecoveryError,
+    isAuthenticated,
+    isHydrated,
+    isLoading,
+    login,
+    restoreOfflineSession,
+    retryAuth,
+  } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +43,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const updateOfflineState = () => {
-      setRememberMe(localStorage.getItem('auth-remember') === 'true');
+      setRememberMe(localStorage.getItem(AUTH_REMEMBER_KEY) === 'true');
       setIsOnline(navigator.onLine);
       setCanUseOfflineAccess(hasOfflineAuthUser());
     };
@@ -95,6 +105,12 @@ export default function LoginPage() {
       toast.error(error instanceof Error ? error.message : 'No se pudo entrar en modo offline.');
     }
   };
+
+  if (authRecoveryError) {
+    return (
+      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">

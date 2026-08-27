@@ -3,22 +3,35 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { AuthRecoveryState } from '@/components/auth/AuthRecoveryState';
+import { shouldRedirectToLogin } from '@/components/auth/auth-routing';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { authRecoveryError, isAuthenticated, isHydrated, retryAuth } = useAuthStore();
+  const redirectToLogin = shouldRedirectToLogin({
+    isHydrated,
+    isAuthenticated,
+    authRecoveryError,
+  });
 
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || authRecoveryError) return;
 
     // Redirigir según estado de autenticación
     if (isAuthenticated) {
       router.push('/dashboard');
-    } else {
+    } else if (redirectToLogin) {
       router.push('/login');
     }
-  }, [isAuthenticated, isHydrated, router]);
+  }, [authRecoveryError, isAuthenticated, isHydrated, redirectToLogin, router]);
 
+
+  if (authRecoveryError) {
+    return (
+      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} />
+    );
+  }
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">

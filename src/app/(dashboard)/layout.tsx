@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { AuthRecoveryState } from '@/components/auth/AuthRecoveryState';
+import { shouldRedirectToLogin } from '@/components/auth/auth-routing';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PwaStatusBanner } from '@/components/pwa/PwaStatusBanner';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
@@ -17,18 +19,23 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, isHydrated } = useAuthStore();
+  const { authRecoveryError, isAuthenticated, isHydrated, retryAuth } = useAuthStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const openMobileSidebar = useCallback(() => setMobileSidebarOpen(true), []);
   const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
+  const redirectToLogin = shouldRedirectToLogin({
+    isHydrated,
+    isAuthenticated,
+    authRecoveryError,
+  });
 
   useEffect(() => {
     // Solo redirigir después de que Zustand se haya hidratado
-    if (isHydrated && !isAuthenticated) {
+    if (redirectToLogin) {
       router.push('/login');
     }
-  }, [isAuthenticated, isHydrated, router]);
+  }, [redirectToLogin, router]);
 
   // Sincronizar notificaciones cuando el usuario está autenticado
   useEffect(() => {
@@ -46,6 +53,12 @@ export default function DashboardLayout({
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
+    );
+  }
+
+  if (authRecoveryError) {
+    return (
+      <AuthRecoveryState message={authRecoveryError} onRetry={retryAuth} />
     );
   }
 
