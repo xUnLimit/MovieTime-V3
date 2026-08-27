@@ -15,7 +15,7 @@ export async function signIn(email: string, password: string): Promise<Session> 
 }
 
 export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw new Error(error.message);
 }
 
@@ -32,7 +32,7 @@ export async function getCurrentSession(): Promise<Session | null> {
 
 export async function getCurrentSupabaseUser(): Promise<SupabaseUser | null> {
   const { data, error } = await supabase.auth.getUser();
-  if (error) return null;
+  if (error) throw error;
   return data.user;
 }
 
@@ -62,7 +62,7 @@ export async function getCurrentProfile(): Promise<User | null> {
     .eq('id', supaUser.id)
     .maybeSingle();
 
-  if (error) return null;
+  if (error) throw error;
   if (!data) return null;
 
   return {
