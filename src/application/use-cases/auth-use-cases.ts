@@ -6,6 +6,8 @@ import {
   signOut,
 } from '@/platform/supabase/auth';
 import type { User } from '@/types';
+export { AUTH_REMEMBER_KEY } from '@/platform/supabase/auth-storage';
+
 
 export class TerminalAuthError extends Error {
   constructor(message: string) {

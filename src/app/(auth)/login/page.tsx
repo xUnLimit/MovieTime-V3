@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AuthRecoveryState } from '@/components/auth/AuthRecoveryState';
+import { AUTH_REMEMBER_KEY } from '@/application/use-cases/auth-use-cases';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from 'sonner';
 import { Eye, EyeOff, WifiOff } from 'lucide-react';
 import { hasOfflineAuthUser } from '@/modules/pwa/offline-auth';
-import { AUTH_REMEMBER_KEY } from '@/platform/supabase/auth-storage';
 
 export default function LoginPage() {
   const router = useRouter();

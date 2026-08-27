@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { User } from '@/types';
 import {
   TerminalAuthError,
+  AUTH_REMEMBER_KEY,
   getCurrentSessionUseCase,
   loadActiveProfileUseCase,
   onAuthStateChangeUseCase,
@@ -17,7 +18,6 @@ import {
   setOfflineAuthSessionActive,
 } from '@/modules/pwa/offline-auth';
 import { logAsyncSideEffectError } from '@/platform/utils/safety';
-import { AUTH_REMEMBER_KEY } from '@/platform/supabase/auth-storage';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 const DASHBOARD_TOAST_SESSION_KEY = 'movietime:dashboard-toast-state';
