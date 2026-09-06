@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 
 import { NotFoundError, ValidationError } from '@/platform/errors/domain-errors';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import { toDateOnly, toIso } from '@/platform/supabase/dates';
 import {
@@ -26,7 +27,7 @@ import {
 
 export async function createVentaUseCase(
   ventaData: VentaInput,
-  options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
+  options: { logContext: LogContext; recordActivityLog?: RecordActivityLog; idempotencyKey?: string }
 ) {
   if (!ventaData.planId || !ventaData.planNombre) {
     throw new ValidationError('Una venta debe tener un plan seleccionado.');
@@ -42,6 +43,7 @@ export async function createVentaUseCase(
         const { usd, rate } = await getUsdValues(monto, moneda);
 
         return createVentaWithInitialPayment({
+          p_idempotency_key: options.idempotencyKey,
           p_cliente_id: ventaData.clienteId || null,
           p_servicio_id: ventaData.servicioId,
           p_categoria_id: ventaData.categoriaId,
@@ -70,37 +72,39 @@ export async function createVentaUseCase(
       })()
     : await createVenta(getVentaTableUpdates(ventaDataLimpia) as Omit<VentaDoc, 'id'>);
 
-  const venta: VentaDoc = {
-    ...ventaDataLimpia,
-    id: ventaId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  return afterCommit(ventaId, async () => {
+    const venta: VentaDoc = {
+      ...ventaDataLimpia,
+      id: ventaId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-  await options.recordActivityLog?.({
-    ...options.logContext,
-    accion: 'creacion',
-    entidad: 'venta',
-    entidadId: ventaId,
-    entidadNombre: `${ventaData.clienteNombre} - ${ventaData.servicioNombre}`,
-    detalles: `Venta creada: ${ventaData.clienteNombre} / ${ventaData.servicioNombre} - $${ventaData.precioFinal ?? 0} ${ventaData.moneda ?? 'USD'} - ${format(ventaData.fechaInicio ?? new Date(), 'dd/MM/yyyy')} al ${format(ventaData.fechaFin ?? new Date(), 'dd/MM/yyyy')} (${ventaData.cicloPago})`,
-    metadata: {
-      precioFinal: ventaData.precioFinal ?? 0,
-      moneda: ventaData.moneda ?? 'USD',
-      cicloPago: ventaData.cicloPago,
-      fechaInicio: toDateOnly(ventaData.fechaInicio ?? new Date()),
-      fechaFin: toDateOnly(ventaData.fechaFin ?? new Date()),
-      clienteId: ventaData.clienteId,
-      servicioId: ventaData.servicioId,
-      origen: 'createVentaUseCase',
-    },
+    await options.recordActivityLog?.({
+      ...options.logContext,
+      accion: 'creacion',
+      entidad: 'venta',
+      entidadId: ventaId,
+      entidadNombre: `${ventaData.clienteNombre} - ${ventaData.servicioNombre}`,
+      detalles: `Venta creada: ${ventaData.clienteNombre} / ${ventaData.servicioNombre} - $${ventaData.precioFinal ?? 0} ${ventaData.moneda ?? 'USD'} - ${format(ventaData.fechaInicio ?? new Date(), 'dd/MM/yyyy')} al ${format(ventaData.fechaFin ?? new Date(), 'dd/MM/yyyy')} (${ventaData.cicloPago})`,
+      metadata: {
+        precioFinal: ventaData.precioFinal ?? 0,
+        moneda: ventaData.moneda ?? 'USD',
+        cicloPago: ventaData.cicloPago,
+        fechaInicio: toDateOnly(ventaData.fechaInicio ?? new Date()),
+        fechaFin: toDateOnly(ventaData.fechaFin ?? new Date()),
+        clienteId: ventaData.clienteId,
+        servicioId: ventaData.servicioId,
+        origen: 'createVentaUseCase',
+      },
+    });
+
+    const pronostico = toVentaPronostico(venta);
+
+    storeEventBus.emit({ type: 'VENTA_CREATED', ventaId });
+
+    return { venta, pronostico };
   });
-
-  const pronostico = toVentaPronostico(venta);
-
-  storeEventBus.emit({ type: 'VENTA_CREATED', ventaId });
-
-  return { venta, pronostico };
 }
 
 export async function updateVentaUseCase(

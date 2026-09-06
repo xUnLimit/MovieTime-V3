@@ -7,6 +7,7 @@ export type RecordActivityLog = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => 
 export type LogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
 
 export type ServicioPagoInput = {
+  idempotencyKey?: string;
   periodoRenovacion: string;
   metodoPagoId: string;
   costo: number;

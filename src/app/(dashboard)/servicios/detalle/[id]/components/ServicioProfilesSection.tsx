@@ -166,7 +166,7 @@ export function ServicioProfilesSection({
                         </div>
                       )}
                     </div>
-                    <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                    <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
                       <div className="min-w-0 space-y-2">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -238,6 +238,13 @@ export function ServicioProfilesSection({
                             </div>
                           );
                         })()}
+                      </div>
+                      <div className="min-w-0 space-y-2">
+                        <div className="flex items-center gap-2" title="Sin contar el pago inicial">
+                          <RefreshCw className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+                          <span className="text-muted-foreground">Renovaciones:</span>
+                          <span className="font-medium tabular-nums">{venta.renovaciones ?? '—'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createMutationIntent } from '@/platform/utils/mutation-intent';
 import { RotateCcw, Scissors } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,9 @@ export function VentaReembolsoDialog({
   montoSugerido,
   onConfirm,
 }: VentaReembolsoDialogProps) {
+  const intent = useRef(createMutationIntent());
+  const submitting = useRef(false);
+  useEffect(() => { if (open) intent.current = createMutationIntent(); }, [open]);
   const [step, setStep] = useState<'accion' | 'detalle'>('accion');
   const [accion, setAccion] = useState<ReembolsoAccion>('reembolso');
   const [monto, setMonto] = useState('');
@@ -90,10 +94,12 @@ export function VentaReembolsoDialog({
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || submitting.current) return;
+    submitting.current = true;
     setIsSubmitting(true);
     try {
       await onConfirm({
+        idempotencyKey: intent.current.keyFor([venta.id, montoNumber, metodoPagoId, destinoReembolso, moneda, fecha, nota, requiereMotivo, motivoCorte]),
         monto: montoNumber,
         metodoPagoId,
         metodoPagoNombre: getTerceroMetodoPagoNombre(metodoPagoId, metodoSeleccionado?.nombre),
@@ -105,6 +111,7 @@ export function VentaReembolsoDialog({
         motivoCorte: motivoCorte.trim(),
       });
     } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };

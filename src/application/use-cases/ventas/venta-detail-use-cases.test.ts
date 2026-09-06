@@ -53,6 +53,7 @@ import {
 } from './venta-detail-use-cases';
 import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import type { MetodoPago, VentaDoc } from '@/types';
+import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
 const testLog = {
   logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' },
@@ -74,6 +75,24 @@ const venta = {
 } as VentaDoc;
 
 describe('venta detail workflows', () => {
+  it('reports profile refresh failure after a refund as committed, not as a failed refund', async () => {
+    ventaRefunds.createVentaRefundUseCase.mockResolvedValueOnce({
+      pagoId: 'refund-1',
+      serviceProfileDelta: { servicioId: 'servicio-1', shouldIncrement: false },
+    });
+    await expect(refundVentaDetalleWorkflow({
+      deps: {
+        deleteNotificacionesPorVenta: vi.fn(), invalidateNotifications: vi.fn(), refreshPagos: vi.fn(),
+        updatePerfilOcupado: vi.fn().mockRejectedValue(new Error('refresh failed')),
+      },
+      id: venta.id,
+      input: { monto: 5, metodoPagoId: 'method', destinoReembolso: 'cliente', fecha: new Date(), cortarServicio: true },
+      log: testLog,
+      venta,
+    })).rejects.toBeInstanceOf(MutationCommittedError);
+    expect(ventaRefunds.createVentaRefundUseCase).toHaveBeenCalledOnce();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     domainReadAdapters.getVentaDetalleRead.mockResolvedValue(venta);

@@ -16,9 +16,11 @@ export async function createInitialVentaPayment(
   cicloPago?: CicloPago,
   notas?: string,
   fechaInicio?: Date,
-  fechaVencimiento?: Date
+  fechaVencimiento?: Date,
+  idempotencyKey?: string
 ): Promise<string> {
   return createPagoVenta({
+    idempotencyKey,
     ventaId,
     clienteId,
     clienteNombre,
@@ -53,7 +55,8 @@ export async function createRenewalVentaPayment(
   descuento?: number,
   planId?: string,
   planNombre?: string,
-  planTipoNombre?: string
+  planTipoNombre?: string,
+  idempotencyKey?: string
 ): Promise<string> {
   return createPagoVenta({
     ventaId,
@@ -75,6 +78,7 @@ export async function createRenewalVentaPayment(
     planId,
     planNombre,
     planTipoNombre,
+    idempotencyKey,
   });
 }
 
@@ -119,7 +123,8 @@ export async function createInitialServicioPayment(
   fechaInicio: Date,
   fechaVencimiento: Date,
   notas?: string,
-  renovacionAutomatica?: boolean
+  renovacionAutomatica?: boolean,
+  idempotencyKey?: string
 ): Promise<void> {
   await createPagoServicio({
     servicioId,
@@ -136,6 +141,7 @@ export async function createInitialServicioPayment(
     renovacionAutomatica,
     isPagoInicial: true,
     notas: notas || '',
+    idempotencyKey,
   });
 }
 
@@ -151,7 +157,8 @@ export async function createRenewalServicioPayment(
   fechaVencimiento: Date,
   numeroRenovacion: number,
   notas?: string,
-  renovacionAutomatica?: boolean
+  renovacionAutomatica?: boolean,
+  idempotencyKey?: string
 ): Promise<void> {
   await createPagoServicio({
     servicioId,
@@ -168,6 +175,7 @@ export async function createRenewalServicioPayment(
     renovacionAutomatica,
     isPagoInicial: false,
     notas: notas || '',
+    idempotencyKey,
   });
 }
 

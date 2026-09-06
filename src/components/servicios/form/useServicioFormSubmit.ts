@@ -1,8 +1,12 @@
 "use client";
+import { useRef } from 'react';
+import { createMutationIntent } from '@/platform/utils/mutation-intent';
 
 import type { QueryClient } from "@tanstack/react-query";
 import type { UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
+import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
+import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
 import { reportError } from "@/platform/observability/logger";
@@ -32,7 +36,7 @@ type CredentialMessages = ReturnType<typeof buildCredentialUpdateWhatsAppMessage
 
 interface UseServicioFormSubmitParams {
   categorias: Categoria[];
-  createServicio: (servicio: ServicioPayload) => Promise<void>;
+  createServicio: (servicio: ServicioPayload, idempotencyKey?: string) => Promise<void>;
   credentialTemplateContent?: string;
   enqueueWhatsAppMessages: (messages: CredentialMessages) => void;
   metodosPago: MetodoPago[];
@@ -63,7 +67,12 @@ export function useServicioFormSubmit({
   ultimoPago,
   updateServicio,
 }: UseServicioFormSubmitParams) {
+  const intent = useRef(createMutationIntent());
+  const submitting = useRef(false);
   const onSubmit = async (data: ServicioFormData) => {
+    if (submitting.current) return;
+    submitting.current = true;
+    let created = false;
     try {
       const credentialChanges = servicio?.id
         ? hasCredentialChanges(servicio, data)
@@ -171,7 +180,8 @@ export function useServicioFormSubmit({
           }
         }
       } else {
-        await createServicio(servicioData);
+        await createServicio(servicioData, intent.current.keyFor(data));
+        created = true;
         toast.success("Servicio creado", {
           description:
             "El nuevo servicio ha sido registrado correctamente en el sistema.",
@@ -186,6 +196,11 @@ export function useServicioFormSubmit({
 
       onSaved();
     } catch (error) {
+      if (notifyCommittedMutation(created ? new MutationCommittedError('servicio-create', error) : error)) {
+        reportError('ServicioFormSubmit', 'Servicio guardado con error secundario', error);
+        onSaved();
+        return;
+      }
       toast.error(
         servicio?.id
           ? "Error al actualizar el servicio"
@@ -193,6 +208,8 @@ export function useServicioFormSubmit({
         { description: error instanceof Error ? error.message : undefined },
       );
       reportError("ServicioFormSubmit", "Error guardando servicio", error);
+    } finally {
+      submitting.current = false;
     }
   };
 

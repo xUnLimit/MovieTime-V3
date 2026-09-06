@@ -10,6 +10,8 @@ import type {
   ServicioPagoWorkflowInput,
 } from '@/application/use-cases/servicios/servicio-detail-types';
 import type { MetodoPago, PagoServicio, Servicio } from '@/types';
+import { sincronizarUnServicio } from '@/modules/notifications';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 
 export async function updateServicioPagoDetalleWorkflow({
   data,
@@ -89,7 +91,7 @@ export async function renewServicioDetalleWorkflow({
   servicio,
 }: {
   data: ServicioPagoWorkflowInput;
-  deps: Pick<ServicioDetalleWorkflowDeps, 'deleteNotificacionesPorServicio' | 'invalidateNotifications' | 'refreshPagos'>;
+  deps: Pick<ServicioDetalleWorkflowDeps, 'invalidateNotifications' | 'refreshPagos'>;
   id: string;
   metodosPago: MetodoPago[];
   renovaciones: number;
@@ -101,11 +103,15 @@ export async function renewServicioDetalleWorkflow({
     metodoPago: metodoPagoSeleccionado,
   });
 
-  invalidateDashboardCache({ entity: 'servicio', entityId: id });
-  deps.refreshPagos();
-  await deps.deleteNotificacionesPorServicio(id);
-  await deps.invalidateNotifications();
-  refreshCategoriasCache({ entity: 'servicio', entityId: id });
+  return afterCommit(id, async () => {
+    invalidateDashboardCache({ entity: 'servicio', entityId: id });
+    await deps.refreshPagos();
+    // Reconcile only the service/repose notifications. Deleting by servicioId
+    // also removes sales notifications, which then get recreated as unread.
+    await sincronizarUnServicio(id);
+    await deps.invalidateNotifications();
+    refreshCategoriasCache({ entity: 'servicio', entityId: id });
 
-  return { type: 'servicioRenewed', servicioActualizado };
+    return { type: 'servicioRenewed', servicioActualizado };
+  });
 }

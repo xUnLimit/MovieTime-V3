@@ -21,6 +21,7 @@ export function useServicioProfiles(
       const existing = map.get(venta.perfilNumero);
       const entry: PerfilVenta = {
         ventaId: venta.ventaId,
+        renovaciones: venta.renovaciones,
         clienteId: venta.clienteId,
         clienteNombre: venta.clienteNombre,
         clienteTelefono: venta.clienteTelefono,

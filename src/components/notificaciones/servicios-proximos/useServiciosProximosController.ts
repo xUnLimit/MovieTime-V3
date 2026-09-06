@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
+import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { reportError } from '@/platform/observability/logger';
@@ -189,7 +191,7 @@ export function useServiciosProximosController({
         refreshNotificationCaches,
         servicio: servicioParaRenovar,
       });
-      await applyNotificationQueryReactions(queryClient, outcome);
+      await afterCommit(servicioParaRenovar.id, () => applyNotificationQueryReactions(queryClient, outcome));
 
       toast.success('Renovación registrada', {
         description: 'El nuevo período de pago se ha registrado correctamente.',
@@ -199,6 +201,12 @@ export function useServiciosProximosController({
       setServicioParaRenovar(null);
     } catch (error) {
       reportError('ServiciosProximos', 'Error al registrar la renovacion', error);
+      if (notifyCommittedMutation(error)) {
+        setRenovarDialogOpen(false);
+        setNotifParaRenovar(null);
+        setServicioParaRenovar(null);
+        return;
+      }
       toast.error('Error al registrar la renovación', {
         description: error instanceof Error ? error.message : undefined,
       });

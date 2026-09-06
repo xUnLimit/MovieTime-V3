@@ -3,6 +3,7 @@ import type { Plan } from '@/types/categorias';
 import type { PagoDialogFormData } from './schema';
 
 export type EnrichedPagoDialogFormData = PagoDialogFormData & {
+  idempotencyKey?: string;
   metodoPagoNombre?: string;
   moneda?: string;
   mensajeWhatsApp?: string;

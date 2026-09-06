@@ -14,6 +14,7 @@ export type VentaDetalleWorkflowDeps = {
 };
 
 export type VentaPagoWorkflowInput = {
+  idempotencyKey?: string;
   costo: number;
   descuento?: number;
   metodoPagoId: string;
@@ -30,6 +31,7 @@ export type VentaPagoWorkflowInput = {
 };
 
 export type VentaRefundWorkflowInput = {
+  idempotencyKey?: string;
   monto: number;
   metodoPagoId: string;
   metodoPagoNombre?: string;

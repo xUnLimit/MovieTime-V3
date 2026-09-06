@@ -1,4 +1,5 @@
 import { NotFoundError } from '@/platform/errors/domain-errors';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import {
   createServicioWithInitialPayment,
@@ -29,7 +30,7 @@ import {
 
 export async function createServicioUseCase(
   servicioData: Omit<Servicio, 'id' | 'createdAt' | 'updatedAt' | 'perfilesOcupados'>,
-  options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
+  options: { logContext: LogContext; recordActivityLog?: RecordActivityLog; idempotencyKey?: string }
 ) {
   let metodoPagoNombre: string | undefined;
   let moneda: string | undefined;
@@ -43,6 +44,7 @@ export async function createServicioUseCase(
   const monedaOriginal = moneda || 'USD';
   const { usd, rate } = await getUsdValues(costo, monedaOriginal);
   const id = await createServicioWithInitialPayment({
+    p_idempotency_key: options.idempotencyKey,
     p_categoria_id: servicioData.categoriaId,
     p_plan_tipo_id: servicioData.tipo || null,
     p_nombre: servicioData.nombre,
@@ -70,39 +72,41 @@ export async function createServicioUseCase(
     p_pago_notas: servicioData.notas ?? '',
   });
 
-  const servicio = {
-    ...servicioData,
-    id,
-    metodoPagoNombre,
-    moneda,
-    perfilesOcupados: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  } as Servicio;
+  return afterCommit(id, async () => {
+    const servicio = {
+      ...servicioData,
+      id,
+      metodoPagoNombre,
+      moneda,
+      perfilesOcupados: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Servicio;
 
-  const pronostico = toServicioPronostico(servicio);
+    const pronostico = toServicioPronostico(servicio);
 
-  await options.recordActivityLog?.({
-    ...options.logContext,
-    accion: 'creacion',
-    entidad: 'servicio',
-    entidadId: id,
-    entidadNombre: `${servicioData.nombre} [${servicioData.correo}]`,
-    detalles: `Servicio creado: "${servicioData.nombre}" [${servicioData.correo}] (${servicioData.tipo}) - $${servicioData.costoServicio ?? 0} ${moneda ?? 'USD'} (${servicioData.cicloPago ?? 'mensual'})`,
-    metadata: {
-      costoServicio: costo,
-      moneda: monedaOriginal,
-      cicloPago: servicioData.cicloPago ?? 'mensual',
-      categoriaId: servicioData.categoriaId,
-      fechaInicio: toDateOnly(servicioData.fechaInicio ?? new Date()),
-      fechaVencimiento: toDateOnly(servicioData.fechaVencimiento ?? new Date()),
-      origen: 'createServicioUseCase',
-    },
+    await options.recordActivityLog?.({
+      ...options.logContext,
+      accion: 'creacion',
+      entidad: 'servicio',
+      entidadId: id,
+      entidadNombre: `${servicioData.nombre} [${servicioData.correo}]`,
+      detalles: `Servicio creado: "${servicioData.nombre}" [${servicioData.correo}] (${servicioData.tipo}) - $${servicioData.costoServicio ?? 0} ${moneda ?? 'USD'} (${servicioData.cicloPago ?? 'mensual'})`,
+      metadata: {
+        costoServicio: costo,
+        moneda: monedaOriginal,
+        cicloPago: servicioData.cicloPago ?? 'mensual',
+        categoriaId: servicioData.categoriaId,
+        fechaInicio: toDateOnly(servicioData.fechaInicio ?? new Date()),
+        fechaVencimiento: toDateOnly(servicioData.fechaVencimiento ?? new Date()),
+        origen: 'createServicioUseCase',
+      },
+    });
+
+    storeEventBus.emit({ type: 'SERVICIO_CREATED', servicioId: id });
+
+    return { servicio, pronostico };
   });
-
-  storeEventBus.emit({ type: 'SERVICIO_CREATED', servicioId: id });
-
-  return { servicio, pronostico };
 }
 
 export async function updateServicioUseCase(

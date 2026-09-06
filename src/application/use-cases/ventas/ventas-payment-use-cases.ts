@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 
 import { ValidationError } from '@/platform/errors/domain-errors';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { toDateOnly } from '@/platform/supabase/dates';
 import { logAsyncSideEffectError } from '@/platform/utils/safety';
 import {
@@ -47,6 +48,7 @@ export async function renewVentaUseCase(
   }
 
   await financialPayments.registerRenewalVentaPayment({
+    idempotencyKey: input.idempotencyKey,
     ventaId: venta.id,
     clienteId: venta.clienteId || '',
     clienteNombre: venta.clienteNombre,
@@ -66,54 +68,56 @@ export async function renewVentaUseCase(
     planTipoNombre,
   });
 
-  await updateVenta(venta.id, { notas: notaPrincipal });
+  return afterCommit(venta.id, async () => {
+    await updateVenta(venta.id, { notas: notaPrincipal });
 
-  let syncPaymentMethodFailed = false;
-  try {
-    await syncTerceroMetodoPagoUseCase({
-      terceroId: venta.clienteId,
-      metodoPagoId: input.metodoPagoId,
-      metodoPagoNombre,
-      moneda,
-    });
-  } catch (error) {
-    syncPaymentMethodFailed = true;
-    logAsyncSideEffectError(error, {
-      operation: 'syncTerceroMetodoPago',
-      entity: 'venta',
-      entityId: venta.id,
-    });
-  }
+    let syncPaymentMethodFailed = false;
+    try {
+      await syncTerceroMetodoPagoUseCase({
+        terceroId: venta.clienteId,
+        metodoPagoId: input.metodoPagoId,
+        metodoPagoNombre,
+        moneda,
+      });
+    } catch (error) {
+      syncPaymentMethodFailed = true;
+      logAsyncSideEffectError(error, {
+        operation: 'syncTerceroMetodoPago',
+        entity: 'venta',
+        entityId: venta.id,
+      });
+    }
 
-  const pronostico = {
-    id: venta.id,
-    categoriaId: venta.categoriaId ?? '',
-    fechaInicio: input.fechaInicio.toISOString(),
-    fechaFin: input.fechaVencimiento.toISOString(),
-    cicloPago: input.periodoRenovacion,
-    precioFinal: monto,
-    moneda,
-  };
-
-  await options.recordActivityLog?.({
-    ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
-    accion: 'renovacion',
-    entidad: 'venta',
-    entidadId: venta.id,
-    entidadNombre: `${venta.clienteNombre} - ${venta.servicioNombre}`,
-    detalles: `${options.logPrefix ?? 'Venta renovada'}: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)} - hasta ${format(input.fechaVencimiento, 'dd/MM/yyyy')} (${input.periodoRenovacion})`,
-    metadata: {
-      monto,
-      moneda,
+    const pronostico = {
+      id: venta.id,
+      categoriaId: venta.categoriaId ?? '',
+      fechaInicio: input.fechaInicio.toISOString(),
+      fechaFin: input.fechaVencimiento.toISOString(),
       cicloPago: input.periodoRenovacion,
-      fechaInicio: toDateOnly(input.fechaInicio),
-      fechaFin: toDateOnly(input.fechaVencimiento),
-      descuento: descuentoNumero,
-      origen: 'renewVentaUseCase',
-    },
-  });
+      precioFinal: monto,
+      moneda,
+    };
 
-  return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, pronostico, syncPaymentMethodFailed };
+    await options.recordActivityLog?.({
+      ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
+      accion: 'renovacion',
+      entidad: 'venta',
+      entidadId: venta.id,
+      entidadNombre: `${venta.clienteNombre} - ${venta.servicioNombre}`,
+      detalles: `${options.logPrefix ?? 'Venta renovada'}: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)} - hasta ${format(input.fechaVencimiento, 'dd/MM/yyyy')} (${input.periodoRenovacion})`,
+      metadata: {
+        monto,
+        moneda,
+        cicloPago: input.periodoRenovacion,
+        fechaInicio: toDateOnly(input.fechaInicio),
+        fechaFin: toDateOnly(input.fechaVencimiento),
+        descuento: descuentoNumero,
+        origen: 'renewVentaUseCase',
+      },
+    });
+
+    return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, pronostico, syncPaymentMethodFailed };
+  });
 }
 
 export async function updateVentaPagoUseCase(

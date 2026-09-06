@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 
 import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
@@ -134,6 +135,10 @@ export function useVentaDetalleActions({
       }
     } catch (error) {
       reportError('VentaDetalleActions', 'Error renovando venta', error);
+      if (notifyCommittedMutation(error)) {
+        setRenovarDialogOpen(false);
+        return;
+      }
       toast.error('Error al renovar venta');
     }
   };
@@ -171,6 +176,10 @@ export function useVentaDetalleActions({
       toast.success(outcome.type === 'ventaRefunded' && outcome.cut ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
     } catch (error) {
       reportError('VentaDetalleActions', 'Error registrando reembolso', error);
+      if (notifyCommittedMutation(error)) {
+        setReembolsoDialogOpen(false);
+        return;
+      }
       toast.error('Error al registrar reembolso', {
         description: error instanceof Error ? error.message : undefined,
       });

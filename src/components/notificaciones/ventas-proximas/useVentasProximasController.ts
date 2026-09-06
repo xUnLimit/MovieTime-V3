@@ -5,6 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
+import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
 import { reportError } from '@/platform/observability/logger';
@@ -175,7 +177,7 @@ export function useVentasProximasController() {
         notif: notifSeleccionada,
         refreshNotificationCaches,
       });
-      await applyNotificationQueryReactions(queryClient, outcome);
+      await afterCommit(notifSeleccionada.ventaId, () => applyNotificationQueryReactions(queryClient, outcome));
       if (outcome.warnings.includes('sync_payment_method_failed')) {
         toast.warning('Venta renovada con advertencia', {
           description:
@@ -187,6 +189,11 @@ export function useVentasProximasController() {
       setNotifSeleccionada(null);
     } catch (error) {
       reportError('VentasProximas', 'Error renovando venta', error);
+      if (notifyCommittedMutation(error)) {
+        setRenovarDialogOpen(false);
+        setNotifSeleccionada(null);
+        return;
+      }
       toast.error('Error al renovar la venta');
     }
   };

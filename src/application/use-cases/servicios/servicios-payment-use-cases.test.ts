@@ -29,6 +29,7 @@ import {
   updateServicioPagoUseCase,
 } from './servicios-payment-use-cases';
 import type { PagoServicio, Servicio } from '@/types';
+import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
 const servicio = {
   id: 'servicio-1',
@@ -58,6 +59,22 @@ beforeEach(() => {
 
 describe('servicios payment use-cases', () => {
   describe('renewServicioUseCase', () => {
+    it('distinguishes failures after payment commit and forwards the original intent', async () => {
+      serviciosRepository.updateServicio.mockRejectedValueOnce(new Error('notes failed'));
+      await expect(renewServicioUseCase(servicio, { ...input, idempotencyKey: 'renewal-intent' }, {}))
+        .rejects.toBeInstanceOf(MutationCommittedError);
+      expect(payments.financialPayments.registerRenewalServicioPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ idempotencyKey: 'renewal-intent' }),
+      );
+    });
+
+    it('does not claim a commit when the payment request fails', async () => {
+      const error = new Error('payment failed');
+      payments.financialPayments.registerRenewalServicioPayment.mockRejectedValueOnce(error);
+      await expect(renewServicioUseCase(servicio, input, {})).rejects.toBe(error);
+      expect(serviciosRepository.updateServicio).not.toHaveBeenCalled();
+    });
+
     it('registers a renewal payment, updates the servicio and logs the activity', async () => {
       const recordActivityLog = vi.fn().mockResolvedValue(undefined);
 

@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/table';
 
 import { VentasProximasTableRow } from './VentasProximasTableRow';
+import { useVentaRenewalCounts } from '@/hooks/use-venta-renewal-counts';
 import type {
   CopyToClipboardHandler,
   NotificacionVentaConId,
@@ -39,9 +40,10 @@ export function VentasProximasTableContent({
   onPaymentPromise,
   onSeguimiento,
 }: VentasProximasTableContentProps) {
+  const renewalCounts = useVentaRenewalCounts(notificaciones.map(notif => notif.ventaId));
   return (
     <div className="notification-table-scroll-shell rounded-md border">
-      <Table className="table-scroll-content min-w-[1420px] xl:min-w-full">
+      <Table className="table-scroll-content min-w-[1540px] xl:min-w-full">
         <TableHeader>
           <TableRow className="border-b hover:bg-muted/50">
               <TableHead className="h-10 w-[56px] px-2 text-center text-muted-foreground">
@@ -74,6 +76,9 @@ export function VentasProximasTableContent({
               <TableHead className="h-10 min-w-[80px] px-2 text-center text-muted-foreground">
                 Monto
               </TableHead>
+              <TableHead className="h-10 min-w-[120px] px-2 text-center text-muted-foreground">
+                Renovaciones
+              </TableHead>
               <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
                 Estado
               </TableHead>
@@ -88,6 +93,8 @@ export function VentasProximasTableContent({
             <VentasProximasTableRow
               key={notif.id}
               notif={notif}
+              renovaciones={renewalCounts.data?.[notif.ventaId]}
+              renovacionesError={renewalCounts.isError}
               visiblePasswords={visiblePasswords}
               onToggleLeida={onToggleLeida}
               onCopyToClipboard={onCopyToClipboard}

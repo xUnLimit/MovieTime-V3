@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Categoria, MetodoPago, PagoServicio, Servicio } from '@/types';
 import type { ServicioFormData } from '@/features/servicios/servicio-form-schema';
@@ -136,7 +137,7 @@ describe('useServicioFormSubmit', () => {
     const queryClient = {
       invalidateQueries: vi.fn().mockResolvedValue(undefined),
     } as unknown as QueryClient;
-    const { onSubmit } = useServicioFormSubmit({
+    const { result } = renderHook(() => useServicioFormSubmit({
       categorias: [categoria],
       createServicio: vi.fn(),
       enqueueWhatsAppMessages: vi.fn(),
@@ -150,9 +151,9 @@ describe('useServicioFormSubmit', () => {
       terceros: [],
       ultimoPago,
       updateServicio,
-    });
+    }));
 
-    await onSubmit(formData);
+    await act(() => result.current.onSubmit(formData));
 
     expect(updateServicio).toHaveBeenCalledWith(
       'servicio-1',

@@ -1,4 +1,5 @@
 import { toDateOnly } from '@/platform/supabase/dates';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import {
   getPagoServicioById,
   getServicioById,
@@ -43,6 +44,7 @@ export async function renewServicioUseCase(
   ).filter((pago) => !pago.isPagoInicial && pago.descripcion !== 'Pago inicial').length + 1;
 
   await financialPayments.registerRenewalServicioPayment({
+    idempotencyKey: input.idempotencyKey,
     servicioId: servicio.id,
     categoriaId: servicio.categoriaId || '',
     monto: input.costo,
@@ -57,49 +59,51 @@ export async function renewServicioUseCase(
     renovacionAutomatica,
   });
 
-  const pronostico = {
-    id: servicio.id,
-    fechaVencimiento: input.fechaVencimiento.toISOString(),
-    cicloPago: input.periodoRenovacion,
-    costoServicio: input.costo,
-    moneda,
-  };
-  await updateServicio(servicio.id, getServicioTableUpdates({ notas: notaPrincipal }));
-
-  await options.recordActivityLog?.({
-    ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
-    accion: 'renovacion',
-    entidad: 'servicio',
-    entidadId: servicio.id,
-    entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
-    detalles: `${options.logPrefix ?? 'Servicio renovado'}: "${servicio.nombre}" [${servicio.correo}] - ${getCurrencySymbol(moneda)}${input.costo} - hasta ${input.fechaVencimiento.toLocaleDateString('es-PA')} (${input.periodoRenovacion})`,
-    metadata: {
-      costoServicio: input.costo,
-      moneda,
+  return afterCommit(servicio.id, async () => {
+    const pronostico = {
+      id: servicio.id,
+      fechaVencimiento: input.fechaVencimiento.toISOString(),
       cicloPago: input.periodoRenovacion,
-      fechaInicio: toDateOnly(input.fechaInicio),
-      fechaVencimiento: toDateOnly(input.fechaVencimiento),
-      numeroRenovacion,
-      origen: 'renewServicioUseCase',
-    },
-  });
-
-  return {
-    servicioActualizado: {
-      ...servicio,
-      fechaInicio: input.fechaInicio,
-      fechaVencimiento: input.fechaVencimiento,
       costoServicio: input.costo,
-      metodoPagoId: input.metodoPagoId || undefined,
-      metodoPagoNombre,
       moneda,
-      cicloPago,
-      renovacionAutomatica,
-      notas: notaPrincipal,
-      updatedAt: new Date(),
-    } as Servicio,
-    pronostico,
-  };
+    };
+    await updateServicio(servicio.id, getServicioTableUpdates({ notas: notaPrincipal }));
+
+    await options.recordActivityLog?.({
+      ...(options.logContext ?? { usuarioId: 'sistema', usuarioEmail: 'sistema' }),
+      accion: 'renovacion',
+      entidad: 'servicio',
+      entidadId: servicio.id,
+      entidadNombre: `${servicio.nombre} [${servicio.correo}]`,
+      detalles: `${options.logPrefix ?? 'Servicio renovado'}: "${servicio.nombre}" [${servicio.correo}] - ${getCurrencySymbol(moneda)}${input.costo} - hasta ${input.fechaVencimiento.toLocaleDateString('es-PA')} (${input.periodoRenovacion})`,
+      metadata: {
+        costoServicio: input.costo,
+        moneda,
+        cicloPago: input.periodoRenovacion,
+        fechaInicio: toDateOnly(input.fechaInicio),
+        fechaVencimiento: toDateOnly(input.fechaVencimiento),
+        numeroRenovacion,
+        origen: 'renewServicioUseCase',
+      },
+    });
+
+    return {
+      servicioActualizado: {
+        ...servicio,
+        fechaInicio: input.fechaInicio,
+        fechaVencimiento: input.fechaVencimiento,
+        costoServicio: input.costo,
+        metodoPagoId: input.metodoPagoId || undefined,
+        metodoPagoNombre,
+        moneda,
+        cicloPago,
+        renovacionAutomatica,
+        notas: notaPrincipal,
+        updatedAt: new Date(),
+      } as Servicio,
+      pronostico,
+    };
+  });
 }
 
 export async function updateServicioPagoUseCase(

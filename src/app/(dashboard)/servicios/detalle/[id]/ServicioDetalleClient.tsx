@@ -40,7 +40,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
   const queryClient = useQueryClient();
   const {
     deleteNotificacionesPorVenta,
-    deleteNotificacionesPorServicio,
     deleteServicio,
     enqueueWhatsAppMessages,
     fetchCounts,
@@ -134,7 +133,6 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     setPagoToEdit,
     setRenovarDialogOpen,
   } = useServicioPaymentActions({
-    deleteNotificacionesPorServicio,
     id,
     metodoPago,
     metodosPago,

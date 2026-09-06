@@ -1,8 +1,7 @@
 import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
-import { assertRpcStringId } from '@/platform/utils/safety';
 import type { Database } from '@/platform/supabase/database.types';
 
-import { withIdempotencyKey } from './idempotency';
+import { executeIdempotentRpc } from './idempotent-rpc';
 import { typedRpcClient, type RpcResult } from './rpc-client';
 
 type CreateServicioWithInitialPaymentRpcClient = {
@@ -93,12 +92,8 @@ export async function createServicioWithInitialPaymentRpc(
   payload: CreateServicioWithInitialPaymentPayload
 ): Promise<string> {
   assertOnlineMutation();
-  const { data, error } = await servicioInitialPaymentRpcClient.rpc(
-    'create_servicio_with_initial_payment',
-    withIdempotencyKey(payload)
-  );
-  if (error) throw new Error(error.message);
-  return assertRpcStringId(data, 'create_servicio_with_initial_payment');
+  return executeIdempotentRpc('create_servicio_with_initial_payment', payload, (request) =>
+    servicioInitialPaymentRpcClient.rpc('create_servicio_with_initial_payment', request));
 }
 
 export async function deleteServicioWithPaymentsRpc(

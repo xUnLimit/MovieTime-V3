@@ -11,11 +11,14 @@ import {
 import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { VentaDoc } from '@/types';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 
-export async function createVentaMutation(venta: Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'>) {
-  const { venta: created } = await createVentaUseCase(venta, getActivityLogOptions());
-  await afterVentaCreated(created.id);
-  await invalidateStoreQueries(['ventas', 'servicios', 'terceros', 'pagination']);
+export async function createVentaMutation(venta: Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'>, idempotencyKey?: string) {
+  const { venta: created } = await createVentaUseCase(venta, { ...getActivityLogOptions(), idempotencyKey });
+  return afterCommit(created.id, async () => {
+    await afterVentaCreated(created.id);
+    await invalidateStoreQueries(['ventas', 'servicios', 'terceros', 'pagination']);
+  });
 }
 
 export async function updateVentaMutation(id: string, updates: Partial<VentaDoc>) {

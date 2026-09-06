@@ -6,6 +6,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
+import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { queryKeys } from "@/platform/query-keys";
 import { getActivityLogOptions } from "@/platform/activity/activity-log-adapter";
 import { applyNotificationQueryReactions } from "@/application/store-reactions/notification-query-reactions";
@@ -100,7 +102,7 @@ function ReposoPageContent() {
         pagoData,
         servicio: selectedServicio,
       });
-      await applyNotificationQueryReactions(queryClient, outcome);
+      await afterCommit(selectedServicio.id, () => applyNotificationQueryReactions(queryClient, outcome));
       if (outcome.type === "reposoActivatedAndRenewed") {
         toast.success("Servicio activado y renovado", {
           description: `${outcome.servicioNombre} ha sido activado y renovado.`,
@@ -109,6 +111,11 @@ function ReposoPageContent() {
       setRenovarDialogOpen(false);
       setSelectedServicio(null);
     } catch (error) {
+      if (notifyCommittedMutation(error)) {
+        setRenovarDialogOpen(false);
+        setSelectedServicio(null);
+        return;
+      }
       toast.error("Error al activar y renovar", {
         description: error instanceof Error ? error.message : undefined,
       });

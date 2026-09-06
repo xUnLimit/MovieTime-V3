@@ -1,6 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 
 import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
@@ -14,7 +15,6 @@ import type { MetodoPago, PagoServicio, Servicio } from "@/types";
 import type { MetodoPagoDetalle, PagoFormData } from "./types";
 
 type ServicioPaymentActionsParams = {
-  deleteNotificacionesPorServicio: (servicioId: string) => Promise<void>;
   id: string;
   metodoPago: MetodoPagoDetalle | null;
   metodosPago: MetodoPago[];
@@ -28,7 +28,6 @@ type ServicioPaymentActionsParams = {
 };
 
 export function useServicioPaymentActions({
-  deleteNotificacionesPorServicio,
   id,
   metodoPago,
   metodosPago,
@@ -129,7 +128,6 @@ export function useServicioPaymentActions({
       const outcome = await renewServicioDetalleWorkflow({
         data,
         deps: {
-          deleteNotificacionesPorServicio,
           invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
           refreshPagos,
         },
@@ -149,6 +147,10 @@ export function useServicioPaymentActions({
       setRenovarDialogOpen(false);
     } catch (error) {
       reportError("ServicioPaymentActions", "Error al registrar la renovacion", error);
+      if (notifyCommittedMutation(error)) {
+        setRenovarDialogOpen(false);
+        return;
+      }
       toast.error("Error al registrar la renovacion", {
         description: error instanceof Error ? error.message : undefined,
       });

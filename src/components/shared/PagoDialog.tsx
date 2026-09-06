@@ -65,6 +65,7 @@ export function PagoDialog(props: PagoDialogProps) {
     submitDisabled,
     onSubmit,
     handleCancel,
+    handleOpenChange,
   } = usePagoDialogController(props);
 
   if (!shouldRender) return null;
@@ -136,7 +137,7 @@ export function PagoDialog(props: PagoDialogProps) {
   );
 
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+    <Dialog open={props.open} onOpenChange={handleOpenChange}>
       <DialogContent className={cn('max-w-[calc(100vw-2rem)]', dialogContentClassName)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

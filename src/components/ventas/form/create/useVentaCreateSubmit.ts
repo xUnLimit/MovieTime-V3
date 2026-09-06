@@ -1,5 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
+import { createMutationIntent } from '@/platform/utils/mutation-intent';
 import { toast } from 'sonner';
+import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
+import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
 import type { VentaItem } from '@/features/ventas/ventas-form-shared';
 import { syncTerceroMetodoPagoUseCase } from '@/application/use-cases/terceros/tercero-metodo-pago-use-cases';
@@ -20,7 +23,7 @@ type MetodoPagoResumen = {
 type UseVentaCreateSubmitParams = {
   clienteId: string | undefined;
   clienteSeleccionado: Tercero | undefined;
-  createVenta: (venta: CreateVentaInput) => Promise<void>;
+  createVenta: (venta: CreateVentaInput, idempotencyKey?: string) => Promise<void>;
   editedMessage: string;
   estadoVenta: string | undefined;
   fechaFin: Date | undefined;
@@ -58,9 +61,13 @@ export function useVentaCreateSubmit({
   updatePerfilOcupado,
 }: UseVentaCreateSubmitParams) {
   const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
+  const intent = useRef(createMutationIntent());
+  const completed = useRef(new Set<string>());
 
   const handleGuardarVenta = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting.current) return;
     if (items.length === 0) {
       toast.error('Sin servicios', {
         description: 'Agrega al menos un servicio antes de guardar la venta.',
@@ -81,7 +88,9 @@ export function useVentaCreateSubmit({
     const moneda = metodoPagoSeleccionado?.moneda || 'USD';
     const normalizedEstado = estadoVenta === 'inactivo' ? 'inactivo' : 'activo';
 
+    let batchCommitted = false;
     try {
+      submitting.current = true;
       setSaving(true);
       const writes = buildVentaCreateBatchInputs({
         clienteId,
@@ -95,8 +104,23 @@ export function useVentaCreateSubmit({
         metodoPagoNombre,
         moneda,
         totalFinal,
-      }).map((input) => createVenta(input));
-      await Promise.all(writes);
+      }).map(async (input, index) => {
+        const key = intent.current.keyFor([
+          items[index], clienteId, metodoPagoId, moneda, fechaInicio, fechaFin, normalizedEstado,
+        ]);
+        if (completed.current.has(key)) return;
+        try {
+          await createVenta(input, key);
+        } catch (error) {
+          if (!notifyCommittedMutation(error)) throw error;
+          reportError('VentaCreateSubmit', 'Venta guardada con error secundario', error);
+        }
+        completed.current.add(key);
+      });
+      const results = await Promise.allSettled(writes);
+      const failed = results.find((result) => result.status === 'rejected');
+      if (failed?.status === 'rejected') throw failed.reason;
+      batchCommitted = true;
 
       try {
         await syncTerceroMetodoPagoUseCase({
@@ -138,10 +162,18 @@ export function useVentaCreateSubmit({
       onSaved();
     } catch (error) {
       reportError('VentaCreateSubmit', 'Error guardando venta', error);
+      if (batchCommitted) {
+        notifyCommittedMutation(new MutationCommittedError('venta-batch', error));
+        onSaved();
+        return;
+      }
       toast.error('Error al guardar la venta', {
-        description: error instanceof Error ? error.message : undefined,
+        description: completed.current.size > 0
+          ? 'Parte del lote ya se guardo. Reintenta sin cambiar los datos para completar las ventas pendientes sin duplicarlas.'
+          : error instanceof Error ? error.message : undefined,
       });
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   };

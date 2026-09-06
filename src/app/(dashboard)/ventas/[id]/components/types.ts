@@ -2,6 +2,7 @@ import type { MetodoPago, VentaDoc, VentaPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
 export interface VentaPagoFormData {
+  idempotencyKey?: string;
   periodoRenovacion: string;
   metodoPagoId: string;
   metodoPagoNombre?: string;
@@ -15,6 +16,7 @@ export interface VentaPagoFormData {
 }
 
 export interface VentaReembolsoFormData {
+  idempotencyKey?: string;
   monto: number;
   metodoPagoId: string;
   metodoPagoNombre?: string;

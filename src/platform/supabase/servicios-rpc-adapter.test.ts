@@ -6,6 +6,7 @@ const assertOnlineMutationMock = vi.hoisted(() => vi.fn());
 vi.mock('./client', () => ({
   supabase: {
     rpc: rpcMock,
+    auth: { getSession: async () => ({ data: { session: { user: { id: 'test-user' } } }, error: null }) },
   },
 }));
 

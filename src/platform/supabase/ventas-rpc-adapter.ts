@@ -1,8 +1,7 @@
 import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
-import { assertRpcStringId } from '@/platform/utils/safety';
 import type { Database } from '@/platform/supabase/database.types';
 
-import { withIdempotencyKey } from './idempotency';
+import { executeIdempotentRpc } from './idempotent-rpc';
 import { typedRpcClient, type RpcResult } from './rpc-client';
 
 type CreateVentaWithInitialPaymentRpcClient = {
@@ -111,22 +110,14 @@ export async function createVentaWithInitialPaymentRpc(
   payload: CreateVentaWithInitialPaymentPayload
 ): Promise<string> {
   assertOnlineMutation();
-  const { data, error } = await ventaInitialPaymentRpcClient.rpc(
-    'create_venta_with_initial_payment',
-    withIdempotencyKey(payload)
-  );
-  if (error) throw new Error(error.message);
-  return assertRpcStringId(data, 'create_venta_with_initial_payment');
+  return executeIdempotentRpc('create_venta_with_initial_payment', payload, (request) =>
+    ventaInitialPaymentRpcClient.rpc('create_venta_with_initial_payment', request));
 }
 
 export async function createVentaRefundRpc(payload: CreateVentaRefundPayload): Promise<string> {
   assertOnlineMutation();
-  const { data, error } = await ventaRefundRpcClient.rpc(
-    'create_venta_refund',
-    withIdempotencyKey(payload)
-  );
-  if (error) throw new Error(error.message);
-  return assertRpcStringId(data, 'create_venta_refund');
+  return executeIdempotentRpc('create_venta_refund', payload, (request) =>
+    ventaRefundRpcClient.rpc('create_venta_refund', request));
 }
 
 export async function deleteVentaWithPaymentsRpc(

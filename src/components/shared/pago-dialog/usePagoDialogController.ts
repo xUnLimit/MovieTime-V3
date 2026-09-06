@@ -6,6 +6,7 @@ import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
 
 import { useTemplates } from "@/hooks/use-templates";
+import { createMutationIntent } from '@/platform/utils/mutation-intent';
 import { getCurrencySymbol } from "@/platform/constants";
 import { reportError } from "@/platform/observability/logger";
 import { calculateDiscountedAmount, roundToDecimals } from "@/platform/utils/calculations";
@@ -23,6 +24,8 @@ import { buildPagoDialogSubmitPayload, getPagoDialogPaymentMethods, getPagoDialo
 import { usePagoDialogNumberInputs } from "./usePagoDialogNumberInputs";
 
 export function usePagoDialogController(props: PagoDialogProps) {
+  const intent = useRef(createMutationIntent());
+  const submitting = useRef(false);
   const [fechaInicioOpen, setFechaInicioOpen] = useState(false);
   const [fechaVencimientoOpen, setFechaVencimientoOpen] = useState(false);
   const [previewMessage, setPreviewMessage] = useState('');
@@ -150,6 +153,7 @@ export function usePagoDialogController(props: PagoDialogProps) {
     resetSessionRef.current = { open: true, targetKey: dialogTargetKey };
 
     if (!shouldInitialize) return;
+    intent.current = createMutationIntent();
     if (resetValues) reset(resetValues);
   }, [
     props.open,
@@ -230,21 +234,34 @@ export function usePagoDialogController(props: PagoDialogProps) {
   ]);
 
   const onSubmit = async (data: PagoDialogFormData) => {
-    const enrichedData = buildPagoDialogSubmitPayload({
-      data,
-      metodosPago: metodosPagoOrdenados,
-      selectedPlan,
-      venta: venta ?? undefined,
-      previewMessage,
-    });
-    await props.onConfirm(enrichedData);
-    props.onOpenChange(false);
+    if (submitting.current) return;
+    submitting.current = true;
+    try {
+      const enrichedData = buildPagoDialogSubmitPayload({
+        data,
+        metodosPago: metodosPagoOrdenados,
+        selectedPlan,
+        venta: venta ?? undefined,
+        previewMessage,
+      });
+      await props.onConfirm({ ...enrichedData, idempotencyKey: intent.current.keyFor(enrichedData) });
+      // The owner closes only after confirmed success. It may catch an error to
+      // show a toast; closing here would discard the intent needed for retry.
+    } finally {
+      submitting.current = false;
+    }
   };
 
   const handleCancel = () => {
+    if (submitting.current) return;
     setIsCostoFocused(false);
     reset();
     props.onOpenChange(false);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open && submitting.current) return;
+    props.onOpenChange(open);
   };
 
   const shouldRender = !(!isVenta && isEdit && !pago);
@@ -302,5 +319,6 @@ export function usePagoDialogController(props: PagoDialogProps) {
     submitDisabled,
     onSubmit,
     handleCancel,
+    handleOpenChange,
   };
 }

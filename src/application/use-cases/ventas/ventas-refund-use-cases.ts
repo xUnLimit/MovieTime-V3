@@ -1,4 +1,5 @@
 import { InsufficientFundsError, ValidationError } from '@/platform/errors/domain-errors';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { toDateOnly, toIso } from '@/platform/supabase/dates';
 import {
   createVentaRefund,
@@ -48,7 +49,9 @@ export async function createVentaRefundUseCase(
   const pagos = await queryPagosVenta<PagoVenta>([{ field: 'ventaId', operator: '==', value: venta.id }]);
   const saldoDisponibleUsd = getNetPaidAmount(pagos);
 
-  if (usd > saldoDisponibleUsd + 0.0001) {
+  // With an intent key, SQL must check replay BEFORE checking the new balance.
+  // It locks the sale and validates funds atomically for genuinely new refunds.
+  if (!input.idempotencyKey && usd > saldoDisponibleUsd + 0.0001) {
     throw new InsufficientFundsError('El reembolso supera el saldo disponible de la venta.', {
       ventaId: venta.id,
       montoUsd: usd,
@@ -57,6 +60,7 @@ export async function createVentaRefundUseCase(
   }
 
   const pagoId = await createVentaRefund({
+    p_idempotency_key: input.idempotencyKey,
     p_venta_id: venta.id,
     p_monto_original: monto,
     p_moneda_original: moneda,
@@ -71,43 +75,45 @@ export async function createVentaRefundUseCase(
     p_motivo_corte: motivoCorte || null,
   });
 
-  const ventaActualizada = await getVentaConPagoActualUseCase(venta.id);
-  const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
-  const serviceProfileDelta = input.cortarServicio && venta.estado !== 'inactivo' && venta.servicioId
-    ? { servicioId: venta.servicioId, shouldIncrement: false }
-    : null;
+  return afterCommit(pagoId, async () => {
+    const ventaActualizada = await getVentaConPagoActualUseCase(venta.id);
+    const pronostico = ventaActualizada ? toVentaPronostico(ventaActualizada) : null;
+    const serviceProfileDelta = input.cortarServicio && venta.estado !== 'inactivo' && venta.servicioId
+      ? { servicioId: venta.servicioId, shouldIncrement: false }
+      : null;
 
-  await options.recordActivityLog?.({
-    ...options.logContext,
-    accion: 'reembolso',
-    entidad: 'venta',
-    entidadId: venta.id,
-    entidadNombre: `${venta.clienteNombre} - ${venta.servicioNombre}`,
-    detalles: input.cortarServicio
-      ? `Venta reembolsada y cortada: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)}`
-      : `Venta reembolsada: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)}`,
-    metadata: {
+    await options.recordActivityLog?.({
+      ...options.logContext,
+      accion: 'reembolso',
+      entidad: 'venta',
+      entidadId: venta.id,
+      entidadNombre: `${venta.clienteNombre} - ${venta.servicioNombre}`,
+      detalles: input.cortarServicio
+        ? `Venta reembolsada y cortada: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)}`
+        : `Venta reembolsada: ${venta.clienteNombre} / ${venta.servicioNombre} - ${moneda} ${monto.toFixed(2)}`,
+      metadata: {
+        monto,
+        montoUsd: usd,
+        moneda,
+        metodoPagoId: input.metodoPagoId,
+        metodoPagoNombre: input.metodoPagoNombre ?? null,
+        destinoReembolso,
+        fecha: toDateOnly(input.fecha),
+        cortarServicio: input.cortarServicio,
+        motivoCorte: motivoCorte || null,
+        nota: notaReembolso || null,
+        origen: 'createVentaRefundUseCase',
+      },
+    });
+
+    return {
+      pagoId,
       monto,
       montoUsd: usd,
       moneda,
-      metodoPagoId: input.metodoPagoId,
-      metodoPagoNombre: input.metodoPagoNombre ?? null,
-      destinoReembolso,
-      fecha: toDateOnly(input.fecha),
-      cortarServicio: input.cortarServicio,
-      motivoCorte: motivoCorte || null,
-      nota: notaReembolso || null,
-      origen: 'createVentaRefundUseCase',
-    },
+      ventaActualizada,
+      pronostico,
+      serviceProfileDelta,
+    };
   });
-
-  return {
-    pagoId,
-    monto,
-    montoUsd: usd,
-    moneda,
-    ventaActualizada,
-    pronostico,
-    serviceProfileDelta,
-  };
 }

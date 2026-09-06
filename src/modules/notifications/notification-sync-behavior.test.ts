@@ -53,6 +53,28 @@ const servicioBase = {
 };
 
 describe('notifications module sync', () => {
+  it('preserves customer read notifications after renewing the service and synchronizing again', async () => {
+    getByIdMock.mockResolvedValue({ ...servicioBase, fechaVencimiento: new Date('2099-06-01') });
+    const customerNotification = { id: 'customer-read', entidad: 'venta', servicioId: 'servicio-1', leida: true, resaltada: false };
+    const rows = new Map([
+      ['customer-read', customerNotification],
+      ['service-expired', { id: 'service-expired', entidad: 'servicio', servicioId: 'servicio-1', leida: false, resaltada: false }],
+    ]);
+    queryDocumentsMock.mockImplementation(async (filters: Array<{ field: string; value: string }>) =>
+      [...rows.values()].filter(row => filters.every(filter => row[filter.field as keyof typeof row] === filter.value)),
+    );
+    removeMock.mockImplementation(async (id: string) => { rows.delete(id); });
+
+    await sincronizarUnServicio('servicio-1');
+    await sincronizarUnServicio('servicio-1');
+
+    expect([...rows.values()]).toEqual([customerNotification]);
+    expect(removeMock).toHaveBeenCalledTimes(1);
+    expect(removeMock).toHaveBeenCalledWith('service-expired');
+    expect(createMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-29T12:00:00.000Z'));

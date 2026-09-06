@@ -1,5 +1,6 @@
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import {
   activateReposoServicioStoreWorkflow,
   deleteNotificationStoreItem,
@@ -136,13 +137,15 @@ export async function activateAndRenewReposoServicioUseCase({
     ...log,
   });
 
-  await clearReposoNotificationsUseCase(servicio.id);
-  return {
-    type: 'reposoActivatedAndRenewed',
-    servicioId: servicio.id,
-    servicioNombre: servicio.nombre,
-    queryTargets: ['categorias', 'servicios', 'notificaciones'],
-  };
+  return afterCommit(servicio.id, async () => {
+    await clearReposoNotificationsUseCase(servicio.id);
+    return {
+      type: 'reposoActivatedAndRenewed',
+      servicioId: servicio.id,
+      servicioNombre: servicio.nombre,
+      queryTargets: ['categorias', 'servicios', 'notificaciones'],
+    };
+  });
 }
 
 export async function deleteReposoServicioUseCase({

@@ -78,6 +78,26 @@ const ventaBase: VentaDoc = {
 };
 
 describe('ventas refund use cases', () => {
+  it('lets SQL replay an explicit refund intent even when the refreshed balance is zero', async () => {
+    ventasRepository.queryPagosVenta.mockResolvedValueOnce([]);
+    ventasRepository.createVentaRefund.mockResolvedValueOnce('existing-refund');
+    ventasRepository.getVentaById.mockResolvedValueOnce(ventaBase);
+    ventaCurrentPaymentUseCases.getVentaConUltimoPagoUseCase.mockResolvedValueOnce(ventaBase);
+    const result = await createVentaRefundUseCase(ventaBase, {
+      ventaId: ventaBase.id,
+      idempotencyKey: 'same-refund-intent',
+      monto: 10,
+      metodoPagoId: 'method-1',
+      metodoPagoNombre: 'Banco',
+      moneda: 'USD',
+      fecha: new Date('2026-05-15T00:00:00Z'),
+      destinoReembolso: 'Cuenta del cliente',
+      cortarServicio: false,
+    }, { logContext });
+    expect(result.pagoId).toBe('existing-refund');
+    expect(ventasRepository.createVentaRefund).toHaveBeenCalledWith(expect.objectContaining({ p_idempotency_key: 'same-refund-intent' }));
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     paymentsModule.convertToUSD.mockImplementation(async (amount: number) => amount);

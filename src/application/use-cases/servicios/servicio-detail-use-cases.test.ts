@@ -30,12 +30,17 @@ const clientCache = vi.hoisted(() => ({
   refreshCategoriasCache: vi.fn(),
 }));
 
+const notifications = vi.hoisted(() => ({
+  sincronizarUnServicio: vi.fn(),
+}));
+
 vi.mock('@/platform/supabase/domain-read-adapters', () => domainReadAdapters);
 vi.mock('@/platform/supabase/ventas-repository', () => ventasRepository);
 vi.mock('@/application/use-cases/servicios/servicios-payment-use-cases', () => servicioPayments);
 vi.mock('@/application/use-cases/ventas/ventas-write-use-cases', () => ventasWrite);
 vi.mock('@/application/use-cases/terceros-use-cases', () => tercerosUseCases);
 vi.mock('@/platform/commands/client-cache', () => clientCache);
+vi.mock('@/modules/notifications', () => notifications);
 vi.mock('@/platform/activity/activity-log-adapter', () => ({
   getActivityLogOptions: vi.fn(() => ({ logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } })),
 }));
@@ -77,8 +82,18 @@ const venta = {
 } as VentaDoc;
 
 describe('servicio detail workflows', () => {
+  it('preserves the live renewal count in the sale profile data, including zero', async () => {
+    ventasRepository.queryVentas.mockResolvedValueOnce([
+      { ...venta, renovaciones: 4, perfilNumero: 1 },
+      { ...venta, id: 'venta-2', renovaciones: 0, perfilNumero: 2 },
+    ]);
+    const profiles = await fetchServicioVentasProfilesUseCase('servicio-1');
+    expect(profiles.map(profile => profile.renovaciones)).toEqual([4, 0]);
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    notifications.sincronizarUnServicio.mockResolvedValue(undefined);
   });
 
   it('loads a servicio bundle without leaking repository details to UI helpers', async () => {
@@ -196,7 +211,6 @@ describe('servicio detail workflows', () => {
 
   it('renews a servicio and returns an explicit outcome', async () => {
     const deps = {
-      deleteNotificacionesPorServicio: vi.fn().mockResolvedValue(undefined),
       invalidateNotifications: vi.fn().mockResolvedValue(undefined),
       refreshPagos: vi.fn(),
     };
@@ -227,7 +241,7 @@ describe('servicio detail workflows', () => {
       expect.objectContaining({ metodoPagoId: 'metodo-1' }),
       expect.objectContaining({ numeroRenovacion: 3 }),
     );
-    expect(deps.deleteNotificacionesPorServicio).toHaveBeenCalledWith('servicio-1');
+    expect(notifications.sincronizarUnServicio).toHaveBeenCalledWith('servicio-1');
     expect(deps.invalidateNotifications).toHaveBeenCalledTimes(1);
   });
 

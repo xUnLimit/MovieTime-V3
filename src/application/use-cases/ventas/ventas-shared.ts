@@ -20,6 +20,7 @@ export type VentaInput = Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'> & {
 };
 
 export type VentaPagoInput = {
+  idempotencyKey?: string;
   periodoRenovacion: string;
   metodoPagoId: string;
   metodoPagoNombre?: string;

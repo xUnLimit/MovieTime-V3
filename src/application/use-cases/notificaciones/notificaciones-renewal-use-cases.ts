@@ -1,5 +1,7 @@
 import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { syncVentaForecastReadModels } from '@/modules/forecasting';
+import { sincronizarUnServicio } from '@/modules/notifications';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import {
   getCategoriaPlanesRead,
   getServicioRead,
@@ -11,7 +13,6 @@ import { renewServicioUseCase } from '@/application/use-cases/servicios/servicio
 import { renewVentaUseCase } from '@/application/use-cases/ventas/ventas-payment-use-cases';
 import { withPendingTerceroPaymentMethod } from '@/platform/utils/terceroMetodoPago';
 import {
-  deleteServicioNotificationsStoreWorkflow,
   deleteVentaNotificationsStoreWorkflow,
   getCurrentMetodosPagoStoreSnapshot,
   refreshVentasStoreCache,
@@ -23,6 +24,7 @@ type NotificacionVentaConId = NotificacionVenta & { id: string };
 type NotificacionServicioConId = NotificacionServicio & { id: string };
 
 export type NotificationRenewalInput = {
+  idempotencyKey?: string;
   metodoPagoId: string;
   metodoPagoNombre?: string;
   moneda?: string;
@@ -104,31 +106,33 @@ export async function confirmVentaRenewalFromNotificationUseCase({
     log,
   );
 
-  const warnings: string[] = [];
-  if (renovacion.syncPaymentMethodFailed) {
-    warnings.push('sync_payment_method_failed');
-  }
+  return afterCommit(notif.ventaId, async () => {
+    const warnings: string[] = [];
+    if (renovacion.syncPaymentMethodFailed) {
+      warnings.push('sync_payment_method_failed');
+    }
 
-  void renovacion.pronostico;
-  syncVentaForecastReadModels(notif.ventaId);
-  await deleteVentaNotificationsStoreWorkflow(notif.ventaId);
-  await refreshNotificationCaches();
+    void renovacion.pronostico;
+    syncVentaForecastReadModels(notif.ventaId);
+    await deleteVentaNotificationsStoreWorkflow(notif.ventaId);
+    await refreshNotificationCaches();
 
-  refreshVentasStoreCache();
+    refreshVentasStoreCache();
 
-  return {
-    renewed: true,
-    warnings,
-    cacheInvalidations: [{ entity: 'venta', entityId: notif.ventaId }],
-    notificationInvalidationNeeded: true,
-    storeRefreshes: ['ventas', 'notificaciones'],
-    whatsappMessage: data.notificarWhatsApp && data.mensajeWhatsApp
-      ? {
-          phone: notif.clienteTelefono ? notif.clienteTelefono.replace(/[^\d+]/g, '') : '',
-          message: data.mensajeWhatsApp,
-        }
-      : undefined,
-  };
+    return {
+      renewed: true,
+      warnings,
+      cacheInvalidations: [{ entity: 'venta', entityId: notif.ventaId }],
+      notificationInvalidationNeeded: true,
+      storeRefreshes: ['ventas', 'notificaciones'],
+      whatsappMessage: data.notificarWhatsApp && data.mensajeWhatsApp
+        ? {
+            phone: notif.clienteTelefono ? notif.clienteTelefono.replace(/[^\d+]/g, '') : '',
+            message: data.mensajeWhatsApp,
+          }
+        : undefined,
+    };
+  });
 }
 
 export async function loadServicioRenewalOptionsUseCase(
@@ -182,16 +186,18 @@ export async function confirmServicioRenewalFromNotificationUseCase({
     logPrefix: 'Servicio renovado desde notificaciones',
   });
 
-  await deleteServicioNotificationsStoreWorkflow(servicio.id);
-  await refreshNotificationCaches();
+  return afterCommit(servicio.id, async () => {
+    await sincronizarUnServicio(servicio.id);
+    await refreshNotificationCaches();
 
-  return {
-    renewed: true,
-    warnings: [],
-    cacheInvalidations: [{ entity: 'servicio', entityId: servicio.id }],
-    notificationInvalidationNeeded: true,
-    storeRefreshes: ['servicios', 'notificaciones', 'categorias'],
-  };
+    return {
+      renewed: true,
+      warnings: [],
+      cacheInvalidations: [{ entity: 'servicio', entityId: servicio.id }],
+      notificationInvalidationNeeded: true,
+      storeRefreshes: ['servicios', 'notificaciones', 'categorias'],
+    };
+  });
 }
 
 function toVentaDocFromNotification(notif: NotificacionVentaConId): VentaDoc {

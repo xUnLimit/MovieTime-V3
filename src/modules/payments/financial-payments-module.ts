@@ -26,6 +26,7 @@ export type SignedPaymentMovement = MonetarySnapshot & {
 };
 
 export type RegisterVentaPaymentCommand = {
+  idempotencyKey?: string;
   ventaId: string;
   clienteId: string;
   clienteNombre: string;
@@ -46,6 +47,7 @@ export type RegisterVentaPaymentCommand = {
 };
 
 export type RegisterServicioPaymentCommand = {
+  idempotencyKey?: string;
   servicioId: string;
   categoriaId: string;
   monto: number;
@@ -106,7 +108,8 @@ export async function registerInitialVentaPayment(command: RegisterVentaPaymentC
     command.cicloPago ?? undefined,
     command.notas ?? undefined,
     command.fechaInicio ?? undefined,
-    command.fechaVencimiento ?? undefined
+    command.fechaVencimiento ?? undefined,
+    command.idempotencyKey
   );
 }
 
@@ -128,7 +131,8 @@ export async function registerRenewalVentaPayment(command: RegisterVentaPaymentC
     command.descuento ?? undefined,
     command.planId ?? undefined,
     command.planNombre ?? undefined,
-    command.planTipoNombre ?? undefined
+    command.planTipoNombre ?? undefined,
+    command.idempotencyKey
   );
 }
 
@@ -144,7 +148,8 @@ export async function registerInitialServicioPayment(command: RegisterServicioPa
     command.fechaInicio,
     command.fechaVencimiento,
     command.notas ?? undefined,
-    command.renovacionAutomatica ?? undefined
+    command.renovacionAutomatica ?? undefined,
+    command.idempotencyKey
   );
 }
 
@@ -161,7 +166,8 @@ export async function registerRenewalServicioPayment(command: RegisterServicioPa
     command.fechaVencimiento,
     command.numeroRenovacion ?? 1,
     command.notas ?? undefined,
-    command.renovacionAutomatica ?? undefined
+    command.renovacionAutomatica ?? undefined,
+    command.idempotencyKey
   );
 }
 

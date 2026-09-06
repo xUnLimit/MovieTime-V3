@@ -7,6 +7,10 @@
 
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { webcrypto } from 'node:crypto';
+
+// jsdom does not implement SubtleCrypto; use Node's real Web Crypto implementation.
+Object.defineProperty(globalThis, 'crypto', { configurable: true, value: webcrypto });
 
 // Cleanup after each test
 afterEach(() => {

@@ -9,6 +9,7 @@ import {
 type CicloPago = 'mensual' | 'trimestral' | 'semestral' | 'anual';
 
 export type CreatePagoServicioInput = {
+  idempotencyKey?: string;
   servicioId: string;
   categoriaId?: string | null;
   fecha?: Date | string | null;
@@ -26,6 +27,7 @@ export type CreatePagoServicioInput = {
 };
 
 export type CreatePagoVentaInput = {
+  idempotencyKey?: string;
   ventaId: string;
   clienteId?: string | null;
   clienteNombre?: string | null;
@@ -57,6 +59,7 @@ export async function createPagoServicio(payload: CreatePagoServicioInput): Prom
   const { usd, rate } = await convertAmountToUSD(monto, moneda);
 
   return createServicioPaymentRpc({
+    p_idempotency_key: payload.idempotencyKey,
     p_servicio_id: servicioId,
     p_categoria_id_snapshot: optionalString(payload.categoriaId),
     p_fecha_inicio: toDateOnly(payload.fechaInicio ?? new Date()),
@@ -86,6 +89,7 @@ export async function createPagoVenta(payload: CreatePagoVentaInput): Promise<st
   const { usd, rate } = await convertAmountToUSD(monto, moneda);
 
   return createVentaPaymentRpc({
+    p_idempotency_key: payload.idempotencyKey,
     p_venta_id: ventaId,
     p_fecha_inicio: toDateOnly(payload.fechaInicio ?? new Date()),
     p_fecha_fin: toDateOnly(payload.fechaVencimiento ?? new Date()),

@@ -43,6 +43,7 @@ describe('financial-payments-module', () => {
 
   it('registers initial venta payments through the command boundary', async () => {
     await expect(registerInitialVentaPayment({
+      idempotencyKey: 'initial-venta-intent',
       ventaId: 'venta-1',
       clienteId: 'cliente-1',
       clienteNombre: 'Cliente Uno',
@@ -69,12 +70,14 @@ describe('financial-payments-module', () => {
       'mensual',
       'Alta',
       fechaInicio,
-      fechaVencimiento
+      fechaVencimiento,
+      'initial-venta-intent'
     );
   });
 
   it('registers renewal venta payments through the command boundary', async () => {
     await expect(registerRenewalVentaPayment({
+      idempotencyKey: 'renew-venta-intent',
       ventaId: 'venta-2',
       clienteId: 'cliente-2',
       clienteNombre: 'Cliente Dos',
@@ -111,12 +114,14 @@ describe('financial-payments-module', () => {
       10,
       'plan-1',
       'Premium',
-      'Streaming'
+      'Streaming',
+      'renew-venta-intent'
     );
   });
 
   it('registers initial servicio payments through the command boundary', async () => {
     await registerInitialServicioPayment({
+      idempotencyKey: 'initial-servicio-intent',
       servicioId: 'servicio-1',
       categoriaId: 'cat-1',
       monto: 20,
@@ -141,12 +146,14 @@ describe('financial-payments-module', () => {
       fechaInicio,
       fechaVencimiento,
       undefined,
-      undefined
+      undefined,
+      'initial-servicio-intent'
     );
   });
 
   it('registers renewal servicio payments through the command boundary', async () => {
     await registerRenewalServicioPayment({
+      idempotencyKey: 'renew-servicio-intent',
       servicioId: 'servicio-2',
       categoriaId: 'cat-2',
       monto: 35,
@@ -173,7 +180,8 @@ describe('financial-payments-module', () => {
       fechaVencimiento,
       1,
       'Renovacion',
-      true
+      true,
+      'renew-servicio-intent'
     );
   });
 

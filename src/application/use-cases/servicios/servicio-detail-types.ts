@@ -1,6 +1,7 @@
 import type { MetodoPago, PagoServicio, Servicio, Tercero, VentaDoc } from '@/types';
 
 export interface PerfilVentaDetalle {
+  renovaciones?: number;
   ventaId?: string;
   clienteId?: string;
   perfilNumero?: number | null;
@@ -24,7 +25,6 @@ export type CategoriaDetalle = Pick<Servicio, 'categoriaId' | 'categoriaNombre'>
 export type MetodoPagoDetalle = Pick<MetodoPago, 'id' | 'nombre' | 'moneda'> & Partial<MetodoPago>;
 
 export type ServicioDetalleWorkflowDeps = {
-  deleteNotificacionesPorServicio: (servicioId: string) => Promise<void>;
   deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
   deleteServicio: (servicioId: string, deletePayments?: boolean) => Promise<void>;
   invalidateCategorias: () => Promise<unknown>;
@@ -35,6 +35,7 @@ export type ServicioDetalleWorkflowDeps = {
 };
 
 export type ServicioPagoWorkflowInput = {
+  idempotencyKey?: string;
   costo: number;
   metodoPagoId: string;
   metodoPagoNombre?: string;

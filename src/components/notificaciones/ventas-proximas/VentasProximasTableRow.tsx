@@ -6,6 +6,7 @@ import {
   Copy,
   Eye,
   EyeOff,
+  RefreshCw,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,8 @@ import type {
 
 interface VentasProximasTableRowProps {
   notif: NotificacionVentaConId;
+  renovaciones?: number;
+  renovacionesError?: boolean;
   visiblePasswords: ReadonlySet<string>;
   onToggleLeida: ToggleLeidaHandler;
   onCopyToClipboard: CopyToClipboardHandler;
@@ -42,6 +45,8 @@ interface VentasProximasTableRowProps {
 
 export function VentasProximasTableRow({
   notif,
+  renovaciones,
+  renovacionesError,
   visiblePasswords,
   onToggleLeida,
   onCopyToClipboard,
@@ -235,6 +240,16 @@ export function VentasProximasTableRow({
       <TableCell className="px-2 py-2 text-center">
         {getCurrencySymbol(notif.moneda)}
         {notif.precioFinal?.toFixed(2) || '0.00'}
+      </TableCell>
+
+      <TableCell
+        className="px-2 py-2 text-center tabular-nums"
+        title={renovacionesError ? 'No se pudieron cargar las renovaciones' : 'Renovaciones de esta venta, sin contar el pago inicial'}
+      >
+        <span className="inline-flex items-center justify-center gap-1.5">
+          <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <span>{renovaciones ?? '—'}</span>
+        </span>
       </TableCell>
 
       <TableCell className="px-2 py-2 text-center">

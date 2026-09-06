@@ -6,6 +6,7 @@ import type { Servicio, VentaDoc } from '@/types';
 function toPerfilVenta(venta: VentaDoc): PerfilVentaDetalle {
   return {
     ventaId: venta.id || undefined,
+    renovaciones: venta.renovaciones,
     clienteId: venta.clienteId || undefined,
     perfilNumero: venta.perfilNumero ?? null,
     clienteNombre: venta.clienteNombre || undefined,

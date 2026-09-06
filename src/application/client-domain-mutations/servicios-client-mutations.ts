@@ -11,11 +11,14 @@ import {
 import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { Servicio } from '@/types';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 
-export async function createServicioMutation(servicio: Omit<Servicio, 'id' | 'createdAt' | 'updatedAt' | 'perfilesOcupados'>) {
-  const { servicio: created } = await createServicioUseCase(servicio, getActivityLogOptions());
-  await afterServicioCreated(created.id);
-  await invalidateStoreQueries(['servicios', 'categorias', 'ventas', 'pagination']);
+export async function createServicioMutation(servicio: Omit<Servicio, 'id' | 'createdAt' | 'updatedAt' | 'perfilesOcupados'>, idempotencyKey?: string) {
+  const { servicio: created } = await createServicioUseCase(servicio, { ...getActivityLogOptions(), idempotencyKey });
+  return afterCommit(created.id, async () => {
+    await afterServicioCreated(created.id);
+    await invalidateStoreQueries(['servicios', 'categorias', 'ventas', 'pagination']);
+  });
 }
 
 export async function updateServicioMutation(id: string, updates: Partial<Servicio>) {

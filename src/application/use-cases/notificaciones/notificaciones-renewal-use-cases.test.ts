@@ -26,6 +26,8 @@ const workflowReactions = vi.hoisted(() => ({
 const forecasting = vi.hoisted(() => ({
   syncVentaForecastReadModels: vi.fn(),
 }));
+const notifications = vi.hoisted(() => ({ sincronizarUnServicio: vi.fn() }));
+vi.mock('@/modules/notifications', () => notifications);
 
 vi.mock('@/platform/supabase/domain-read-adapters', () => domainReadAdapters);
 vi.mock('@/application/use-cases/servicios/servicios-payment-use-cases', () => servicioPayments);
@@ -164,5 +166,7 @@ describe('notificaciones renewal use-cases', () => {
       expect.objectContaining({ costo: 20, metodoPagoId: 'metodo-1' }),
       expect.objectContaining({ metodoPago: metodosPago[0] }),
     );
+    expect(notifications.sincronizarUnServicio).toHaveBeenCalledWith('servicio-1');
+    expect(workflowReactions.deleteServicioNotificationsStoreWorkflow).not.toHaveBeenCalled();
   });
 });

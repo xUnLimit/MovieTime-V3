@@ -50,6 +50,7 @@ export interface PagoVenta {
 }
 
 export interface VentaReembolsoInput {
+  idempotencyKey?: string;
   ventaId: string;
   monto: number;
   metodoPagoId: string;
@@ -82,6 +83,7 @@ export interface VentaReembolsoResult {
  */
 export interface VentaDoc {
   id: string;
+  renovaciones?: number;             // Live SQL count; excludes the initial period.
   clienteId?: string;
   clienteNombre: string;
   clienteTelefono?: string;           // Denormalizado para notificaciones WhatsApp

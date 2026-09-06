@@ -1,4 +1,5 @@
 import { CYCLE_MONTHS } from '@/platform/constants';
+import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { invalidateDashboardCache } from '@/platform/commands/client-cache';
 import { syncVentaForecastReadModels } from '@/modules/forecasting';
 import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
@@ -40,23 +41,25 @@ export async function renewVentaDetalleWorkflow({
     moneda: input.moneda || metodoPagoSeleccionado?.moneda || venta.moneda,
   }, log);
 
-  void renovacion.pronostico;
-  syncVentaForecastReadModels(id);
-  invalidateDashboardCache({ entity: 'venta', entityId: id });
+  return afterCommit(id, async () => {
+    void renovacion.pronostico;
+    syncVentaForecastReadModels(id);
+    invalidateDashboardCache({ entity: 'venta', entityId: id });
 
-  const { venta: ventaActualizada } = await fetchVentaDetalleQuery(id);
-  deps.refreshPagos();
-  await deps.deleteNotificacionesPorVenta(id);
-  await deps.invalidateNotifications();
-  emitVentaUpdated(id);
+    const { venta: ventaActualizada } = await fetchVentaDetalleQuery(id);
+    await deps.refreshPagos();
+    await deps.deleteNotificacionesPorVenta(id);
+    await deps.invalidateNotifications();
+    emitVentaUpdated(id);
 
-  return {
-    type: 'ventaRenewed',
-    monto: renovacion.monto,
-    syncPaymentMethodFailed: renovacion.syncPaymentMethodFailed,
-    ventaActualizada,
-    whatsappRequested: Boolean(input.notificarWhatsApp),
-  };
+    return {
+      type: 'ventaRenewed',
+      monto: renovacion.monto,
+      syncPaymentMethodFailed: renovacion.syncPaymentMethodFailed,
+      ventaActualizada,
+      whatsappRequested: Boolean(input.notificarWhatsApp),
+    };
+  });
 }
 
 export async function refundVentaDetalleWorkflow({
@@ -76,6 +79,7 @@ export async function refundVentaDetalleWorkflow({
     venta,
     {
       ventaId: venta.id,
+      idempotencyKey: input.idempotencyKey,
       monto: input.monto,
       metodoPagoId: input.metodoPagoId,
       metodoPagoNombre: input.metodoPagoNombre ?? '',
@@ -89,30 +93,32 @@ export async function refundVentaDetalleWorkflow({
     log,
   );
 
-  if (result.serviceProfileDelta) {
-    await deps.updatePerfilOcupado(
-      result.serviceProfileDelta.servicioId,
-      result.serviceProfileDelta.shouldIncrement,
-    );
-  }
+  return afterCommit(result.pagoId, async () => {
+    if (result.serviceProfileDelta) {
+      await deps.updatePerfilOcupado(
+        result.serviceProfileDelta.servicioId,
+        result.serviceProfileDelta.shouldIncrement,
+      );
+    }
 
-  deps.refreshPagos();
-  void result.pronostico;
-  syncVentaForecastReadModels(id);
-  invalidateDashboardCache({ entity: 'venta', entityId: id });
+    await deps.refreshPagos();
+    void result.pronostico;
+    syncVentaForecastReadModels(id);
+    invalidateDashboardCache({ entity: 'venta', entityId: id });
 
-  if (input.cortarServicio) {
-    await deps.deleteNotificacionesPorVenta(id);
-    await deps.invalidateNotifications();
-  }
+    if (input.cortarServicio) {
+      await deps.deleteNotificacionesPorVenta(id);
+      await deps.invalidateNotifications();
+    }
 
-  emitVentaUpdated(id);
+    emitVentaUpdated(id);
 
-  return {
-    type: 'ventaRefunded',
-    cut: input.cortarServicio,
-    ventaActualizada: result.ventaActualizada ?? null,
-  };
+    return {
+      type: 'ventaRefunded',
+      cut: input.cortarServicio,
+      ventaActualizada: result.ventaActualizada ?? null,
+    };
+  });
 }
 
 export async function updateVentaPagoDetalleWorkflow({
