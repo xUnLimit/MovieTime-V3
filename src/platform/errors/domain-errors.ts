@@ -36,3 +36,18 @@ export class InsufficientFundsError extends DomainError {
     this.name = 'InsufficientFundsError';
   }
 }
+
+export class CurrencyRateUnavailableError extends DomainError {
+  constructor(
+    fromCurrency: string,
+    toCurrency: string,
+    context?: Record<string, unknown>
+  ) {
+    super(
+      `No hay una tasa de cambio válida para convertir ${fromCurrency} a ${toCurrency}. Inténtalo nuevamente.`,
+      'CURRENCY_RATE_UNAVAILABLE',
+      { fromCurrency, toCurrency, ...context }
+    );
+    this.name = 'CurrencyRateUnavailableError';
+  }
+}

@@ -25,18 +25,19 @@ function servicio(overrides: Partial<Servicio> & Pick<Servicio, 'id'>): Servicio
 }
 
 function venta(overrides: Partial<VentaDoc> & Pick<VentaDoc, 'servicioId'>): VentaDoc {
+  const { servicioId, ...rest } = overrides;
   return {
-    id: `${overrides.servicioId}-venta`,
+    id: `${servicioId}-venta`,
     clienteNombre: 'Cliente',
     servicioNombre: 'Servicio',
     categoriaId: 'categoria-1',
-    servicioId: overrides.servicioId,
+    servicioId,
     estado: 'activo',
     perfilNumero: 1,
     fechaInicio: new Date(2026, 4, 1),
     fechaFin: new Date(2026, 4, 16),
     cicloPago: 'mensual',
-    ...overrides,
+    ...rest,
   };
 }
 

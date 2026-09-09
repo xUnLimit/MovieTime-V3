@@ -12,6 +12,7 @@ import {
   updateTerceroMutation,
 } from "@/application/client-domain-mutations";
 import { queryKeys } from "@/platform/query-keys";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import {
   createPendingTerceroPaymentMethod,
   getTerceroMetodoPagoMoneda,
@@ -258,7 +259,7 @@ export function useTerceroFormController({
       onSuccess?.();
     } catch (error) {
       toast.error("Error al guardar tercero", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo guardar el tercero."),
       });
     }
   };

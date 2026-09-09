@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { useConfig } from "@/hooks/use-config";
@@ -106,7 +107,7 @@ export function useConfiguracionDialogController({
       await syncOfflineData();
       toast.success('Copia offline actualizada.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la copia offline.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo actualizar la copia offline.'));
     }
   };
 
@@ -123,7 +124,7 @@ export function useConfiguracionDialogController({
         toast.success('Push web desactivada en este dispositivo.');
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la suscripcion push.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo actualizar la suscripcion push.'));
     }
   };
 
@@ -134,7 +135,7 @@ export function useConfiguracionDialogController({
       await refetchConfig();
       toast.success('Configuracion de push ejecutiva actualizada.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la configuracion.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo actualizar la configuracion.'));
     }
   };
 
@@ -169,7 +170,7 @@ export function useConfiguracionDialogController({
       toast.success('Programacion de recordatorios actualizada.');
     } catch (error) {
       setDraftIntervalHours(executivePush.intervalHours);
-      toast.error(error instanceof Error ? error.message : 'No se pudo guardar la programacion.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo guardar la programacion.'));
     } finally {
       setIsSavingExecutiveSchedule(false);
     }
@@ -196,7 +197,7 @@ export function useConfiguracionDialogController({
         entity: 'config',
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo enviar la push de prueba.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo enviar la push de prueba.'));
     } finally {
       setIsSendingTestPush(false);
     }
@@ -213,7 +214,7 @@ export function useConfiguracionDialogController({
       }), executivePush);
       await refetchConfig();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar los bloques.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo actualizar los bloques.'));
     }
   };
   return {

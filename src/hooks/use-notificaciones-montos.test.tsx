@@ -8,7 +8,10 @@ import type { NotificacionVenta } from '@/types/notificaciones';
 import { useNotificacionesMontos } from './use-notificaciones-montos';
 
 const mockUseNotificaciones = vi.fn();
-const mockConvertToUSD = vi.fn(async (amount: number) => amount);
+const mockConvertToUSD = vi.fn(async (amount: number, currency: string) => {
+  void currency;
+  return amount;
+});
 
 vi.mock('@/hooks/use-notificaciones', () => ({
   useNotificaciones: () => mockUseNotificaciones(),

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { BarChart3, ChevronLeft, ChevronRight, Lightbulb, TrendingUp, TrendingDown } from 'lucide-react';
+import { AlertTriangle, BarChart3, ChevronLeft, ChevronRight, Lightbulb, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { usePronosticoFinanciero, type MesPronostico } from '@/hooks/use-pronostico-financiero';
 
 function MesRowSkeleton() {
@@ -60,7 +60,7 @@ function MesRow({ mes }: { mes: MesPronostico }) {
 }
 
 export function PronosticoFinanciero() {
-  const { meses, isLoading } = usePronosticoFinanciero({ endAtCurrentYear: true });
+  const { meses, isLoading, error, retry } = usePronosticoFinanciero({ endAtCurrentYear: true });
   const [paginaActual, setPaginaActual] = useState(0);
   const [animacionFase, setAnimacionFase] = useState<'idle' | 'exit' | 'enter'>('idle');
   const [animacionDireccion, setAnimacionDireccion] = useState<1 | -1>(1);
@@ -164,7 +164,18 @@ export function PronosticoFinanciero() {
       </CardHeader>
 
       <CardContent className="px-4 pt-0 pb-0 flex-1 space-y-2 overflow-y-auto min-h-0">
-        {isLoading ? (
+        {error ? (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-6 text-center">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <p className="text-sm text-muted-foreground">
+              No se puede calcular el pronóstico con una tasa de cambio segura.
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={retry}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Reintentar
+            </Button>
+          </div>
+        ) : isLoading ? (
           <>
             <MesRowSkeleton />
             <MesRowSkeleton />

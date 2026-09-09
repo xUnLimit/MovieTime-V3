@@ -32,9 +32,6 @@ export async function getConfig(): Promise<Configuracion> {
     id: 'global',
     tasasCambio: {
       ...rateMap,
-      USD_PAB: rateMap.USD_PAB ?? 1,
-      USD_EUR: rateMap.USD_EUR ?? 1,
-      USD_NGN: rateMap.USD_NGN ?? 1,
       ultimaActualizacion: lastUpdated,
     } as TasasCambio,
     notificaciones: {

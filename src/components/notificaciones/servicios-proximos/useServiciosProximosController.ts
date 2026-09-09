@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 import { afterCommit } from '@/platform/errors/mutation-committed-error';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { reportError } from '@/platform/observability/logger';
@@ -173,7 +174,7 @@ export function useServiciosProximosController({
       setRenovarDialogOpen(true);
     } catch (error) {
       toast.error('Error al cargar datos', {
-        description: error instanceof Error ? error.message : 'No se pudieron cargar los datos del servicio.',
+        description: getPublicErrorMessage(error, 'No se pudieron cargar los datos del servicio.'),
       });
     } finally {
       setIsLoadingRenovar(false);
@@ -208,7 +209,7 @@ export function useServiciosProximosController({
         return;
       }
       toast.error('Error al registrar la renovación', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo completar la operación del servicio.'),
       });
     }
   };

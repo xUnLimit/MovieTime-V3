@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { formatSyncDate } from '@/modules/pwa/format-sync-date';
 import { usePwaStore } from '@/store/pwaStore';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 
 export function PwaStatusBanner() {
   const { isOnline, lastSyncAt, syncStatus, syncProgress, isOfflineReady, syncOfflineData } = usePwaStore();
@@ -16,7 +17,7 @@ export function PwaStatusBanner() {
       await syncOfflineData();
       toast.success('Copia offline actualizada.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar la copia offline.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo actualizar la copia offline.'));
     }
   };
 

@@ -12,6 +12,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
 import { deleteTerceroMutation } from "@/application/client-domain-mutations";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 import { Tercero } from "@/types";
 import { TodosTercerosTableActions } from "./TodosTercerosTableActions";
@@ -108,7 +109,7 @@ export function TodosTercerosTable({
       onRefresh();
     } catch (error) {
       toast.error(`Error al eliminar ${usuarioToDelete.tipo.toLowerCase()}`, {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo eliminar el tercero."),
       });
     }
   };

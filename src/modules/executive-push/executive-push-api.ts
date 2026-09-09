@@ -13,25 +13,6 @@ function secretsMatch(provided: string | null, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-export async function readExecutivePushRunId(request: Request) {
-  if (request.method === 'GET') {
-    const url = new URL(request.url);
-    return url.searchParams.get('run_id') ?? undefined;
-  }
-
-  try {
-    const body = await request.json() as unknown;
-    if (body && typeof body === 'object' && 'run_id' in body) {
-      const runId = (body as { run_id?: unknown }).run_id;
-      return typeof runId === 'string' && runId.length > 0 ? runId : undefined;
-    }
-  } catch {
-    return undefined;
-  }
-
-  return undefined;
-}
-
 export function isAuthorizedExecutivePushCronRequest(request: Request) {
   if (!env.pushCronSecret) return false;
 
@@ -44,8 +25,8 @@ export function isAuthorizedExecutivePushCronRequest(request: Request) {
   return secretsMatch(cronSecret, env.pushCronSecret) || secretsMatch(bearerSecret, env.pushCronSecret);
 }
 
-export async function sendScheduledExecutivePush(request: Request) {
-  return sendExecutivePushDailySummary({ runId: await readExecutivePushRunId(request) });
+export async function sendScheduledExecutivePush(runId?: string) {
+  return sendExecutivePushDailySummary({ runId });
 }
 
 export async function sendForcedExecutivePush() {

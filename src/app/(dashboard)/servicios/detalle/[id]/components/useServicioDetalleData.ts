@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { reportError } from '@/platform/observability/logger';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { queryKeys } from '@/platform/query-keys';
 import {
   fetchServicioDetalleBundleUseCase,
@@ -105,7 +106,7 @@ export function useServicioDetalleData(id: string): ServicioDetalleData {
     if (!isVentasServicioError) return;
     reportError('ServicioDetalleData', 'Error cargando ventas del servicio', ventasServicioError);
     toast.error('Error cargando ventas del servicio', {
-      description: ventasServicioError instanceof Error ? ventasServicioError.message : undefined,
+      description: getPublicErrorMessage(ventasServicioError, 'No se pudieron cargar las ventas del servicio.'),
     });
   }, [isVentasServicioError, ventasServicioError]);
 

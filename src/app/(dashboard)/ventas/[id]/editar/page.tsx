@@ -13,6 +13,7 @@ import { queryKeys } from '@/platform/query-keys';
 import { getVentaConUltimoPagoUseCase } from '@/application/use-cases/ventas/venta-current-payment-use-cases';
 import { getVentaDetalleUseCase } from '@/application/use-cases/ventas/ventas-query-use-cases';
 import { reportError } from '@/platform/observability/logger';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { isUuid } from '@/platform/utils/safety';
 import { toast } from 'sonner';
 
@@ -53,7 +54,7 @@ function EditarVentaPageContent() {
     if (!isError) return;
     reportError('EditarVentaPage', 'Error cargando venta', error);
     toast.error('Error cargando venta', {
-      description: error instanceof Error ? error.message : undefined,
+      description: getPublicErrorMessage(error, 'No se pudo cargar la venta.'),
     });
   }, [error, isError]);
 

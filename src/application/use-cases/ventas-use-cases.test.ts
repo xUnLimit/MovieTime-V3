@@ -101,7 +101,6 @@ describe('ventas use cases', () => {
 
     const result = await createVentaUseCase({
       ...ventaBase,
-      id: undefined as never,
       pagos: [{ fecha: new Date('2026-05-01T12:00:00.000Z'), total: 10, notas: 'Pago inicial' }],
     }, {
       logContext,
@@ -130,7 +129,6 @@ describe('ventas use cases', () => {
   it('rejects creating a venta when the selected plan data is missing', async () => {
     await expect(createVentaUseCase({
       ...ventaBase,
-      id: undefined as never,
       planId: undefined,
       pagos: [{ fecha: new Date('2026-05-01T12:00:00.000Z'), total: 10 }],
     }, {

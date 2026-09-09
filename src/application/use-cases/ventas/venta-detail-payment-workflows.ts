@@ -69,7 +69,7 @@ export async function refundVentaDetalleWorkflow({
   log,
   venta,
 }: {
-  deps: Pick<VentaDetalleWorkflowDeps, 'deleteNotificacionesPorVenta' | 'invalidateNotifications' | 'refreshPagos' | 'updatePerfilOcupado'>;
+  deps: Pick<VentaDetalleWorkflowDeps, 'deleteNotificacionesPorVenta' | 'inactivateServicio' | 'invalidateNotifications' | 'refreshPagos' | 'updatePerfilOcupado'>;
   id: string;
   input: VentaRefundWorkflowInput;
   log: ActivityLogOptions;
@@ -88,6 +88,7 @@ export async function refundVentaDetalleWorkflow({
       fecha: input.fecha,
       nota: input.nota,
       cortarServicio: input.cortarServicio,
+      inactivarServicio: input.inactivarServicio,
       motivoCorte: input.motivoCorte,
     },
     log,
@@ -99,6 +100,10 @@ export async function refundVentaDetalleWorkflow({
         result.serviceProfileDelta.servicioId,
         result.serviceProfileDelta.shouldIncrement,
       );
+    }
+
+    if (input.inactivarServicio && venta.servicioId) {
+      await deps.inactivateServicio(venta.servicioId, input.motivoCorte ?? 'Reembolso y corte');
     }
 
     await deps.refreshPagos();
@@ -116,6 +121,7 @@ export async function refundVentaDetalleWorkflow({
     return {
       type: 'ventaRefunded',
       cut: input.cortarServicio,
+      serviceInactivated: Boolean(input.inactivarServicio),
       ventaActualizada: result.ventaActualizada ?? null,
     };
   });

@@ -1,32 +1,23 @@
-import { NextResponse } from 'next/server';
-
 import { getExecutivePushSummaryForEndpoint } from '@/modules/executive-push/executive-push-delivery';
+import { pushEndpointSchema } from '@/modules/pwa/push-api-contracts';
+import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/platform/server/api-response';
+import { parseJsonRequest } from '@/platform/server/json-request';
 import { requireAuthenticatedAdmin } from '@/platform/server/request-auth';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
+  const requestId = createRequestId();
   try {
     const { user } = await requireAuthenticatedAdmin(request);
-    const payload = await request.json();
-    const endpoint = String(payload.endpoint ?? '');
-    if (!endpoint) {
-      return NextResponse.json({ error: 'Endpoint is required.' }, { status: 400 });
+    const parsed = await parseJsonRequest(request, pushEndpointSchema, 4 * 1024);
+    if (!parsed.success) {
+      return apiFailure(parsed.status, parsed.code, parsed.message, requestId, parsed.fieldErrors);
     }
 
-    const summary = await getExecutivePushSummaryForEndpoint(endpoint, user.id);
-    return NextResponse.json(summary);
+    const summary = await getExecutivePushSummaryForEndpoint(parsed.data.endpoint, user.id);
+    return apiSuccess(summary, requestId);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized';
-    if (message === 'Unauthorized') {
-      return NextResponse.json({ error: message }, { status: 401 });
-    }
-    if (message === 'Forbidden') {
-      return NextResponse.json({ error: message }, { status: 403 });
-    }
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return apiErrorResponse('PushPendingRoute', requestId, error);
   }
 }

@@ -11,8 +11,6 @@ interface ErrorPageProps {
 }
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
-  const details = error.message || 'Un error inesperado ocurrió.';
-
   useEffect(() => {
     reportError('DashboardError', 'Dashboard error boundary caught', error);
   }, [error]);
@@ -24,7 +22,9 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
         </div>
         <h1 className="text-xl font-semibold">Algo salió mal</h1>
-        <p className="text-sm text-muted-foreground">{details}</p>
+        <p className="text-sm text-muted-foreground">
+          No se pudo cargar esta sección. Inténtalo nuevamente.
+        </p>
         {error.digest && (
           <p className="text-xs text-muted-foreground">Código: {error.digest}</p>
         )}

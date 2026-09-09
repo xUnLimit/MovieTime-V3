@@ -60,6 +60,7 @@ export interface VentaReembolsoInput {
   nota?: string;
   destinoReembolso: string;
   cortarServicio: boolean;
+  inactivarServicio?: boolean;
   motivoCorte?: string;
 }
 

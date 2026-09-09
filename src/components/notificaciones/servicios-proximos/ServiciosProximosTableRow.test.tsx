@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ServiciosProximosTableRow } from './ServiciosProximosTableRow';
-import type { NotificacionServicioConId } from './types';
+import type { NotificacionServicioConId, ServicioNotificationAction } from './types';
 
 const notification = {
   id: 'notif-servicio-1',
@@ -35,7 +35,7 @@ function renderRow({
   onSeguimiento = vi.fn(),
 }: {
   notif?: NotificacionServicioConId;
-  onSeguimiento?: ReturnType<typeof vi.fn>;
+  onSeguimiento?: ServicioNotificationAction;
 } = {}) {
   render(
     <table>

@@ -2,6 +2,7 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 import { toast } from "sonner";
 
 import { reportError } from "@/platform/observability/logger";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import type { Categoria, Plan, TipoPlanConfig } from "@/types";
 
 import {
@@ -99,7 +100,7 @@ export function useCategoriaFormSubmit({
           ? "Error al crear la categoria"
           : "Error al actualizar la categoria";
       toast.error(message, {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo guardar la categoría."),
       });
       reportError("CategoriaFormSubmit", message, error);
     }

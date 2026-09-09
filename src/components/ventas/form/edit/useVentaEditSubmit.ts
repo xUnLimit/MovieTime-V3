@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 
 import { invalidateDashboardCache } from '@/platform/commands/client-cache';
 import { reportError } from '@/platform/observability/logger';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { updateVentaWithLatestPagoUseCase } from '@/application/use-cases/ventas/ventas-payment-use-cases';
 import type { Categoria, MetodoPago, Servicio, Tercero, VentaDoc } from '@/types';
 
@@ -95,7 +96,7 @@ export function useVentaEditSubmit({
     } catch (error) {
       reportError('VentaEditSubmit', 'Error actualizando venta', error);
       toast.error('Error al actualizar la venta', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo actualizar la venta.'),
       });
     }
   };

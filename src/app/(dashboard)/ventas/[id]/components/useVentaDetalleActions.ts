@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 
 import { reportError } from '@/platform/observability/logger';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { queryKeys } from '@/platform/query-keys';
 import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import {
@@ -26,6 +27,7 @@ type UseVentaDetalleActionsParams = {
   ensureDialogDependencies: () => Promise<void>;
   getTemplateByTipo: (tipo: TemplateMensaje['tipo']) => TemplateMensaje | undefined;
   id: string;
+  inactivateServicio: (servicioId: string, motivoCorte: string) => Promise<void>;
   metodosPago: MetodoPago[];
   onDeleted: () => void;
   queryClient: QueryClient;
@@ -42,6 +44,7 @@ export function useVentaDetalleActions({
   ensureDialogDependencies,
   getTemplateByTipo,
   id,
+  inactivateServicio,
   metodosPago,
   onDeleted,
   queryClient,
@@ -91,7 +94,7 @@ export function useVentaDetalleActions({
     } catch (error) {
       reportError('VentaDetalleActions', 'Error eliminando venta', error);
       toast.error('Error eliminando venta', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo eliminar la venta.'),
       });
     }
   };
@@ -156,6 +159,7 @@ export function useVentaDetalleActions({
         {
           deps: {
             deleteNotificacionesPorVenta,
+            inactivateServicio,
             invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
             refreshPagos,
             updatePerfilOcupado,
@@ -173,7 +177,13 @@ export function useVentaDetalleActions({
 
       setReembolsoDialogOpen(false);
 
-      toast.success(outcome.type === 'ventaRefunded' && outcome.cut ? 'Venta reembolsada y cortada' : 'Reembolso registrado');
+      toast.success(
+        outcome.type === 'ventaRefunded' && outcome.serviceInactivated
+          ? 'Venta reembolsada, cortada y servicio inactivado'
+          : outcome.type === 'ventaRefunded' && outcome.cut
+            ? 'Venta reembolsada y cortada'
+            : 'Reembolso registrado'
+      );
     } catch (error) {
       reportError('VentaDetalleActions', 'Error registrando reembolso', error);
       if (notifyCommittedMutation(error)) {
@@ -181,7 +191,7 @@ export function useVentaDetalleActions({
         return;
       }
       toast.error('Error al registrar reembolso', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo completar la operación de la venta.'),
       });
     }
   };

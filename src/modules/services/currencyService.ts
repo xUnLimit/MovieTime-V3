@@ -1,279 +1,244 @@
+import { CurrencyRateUnavailableError } from '@/platform/errors/domain-errors';
+import { createLogger, type Logger } from '@/platform/observability/logger';
 import { supabase } from '@/platform/supabase/client';
-import { createLogger } from '@/platform/observability/logger';
 import {
   API_BASE_URL,
-  FALLBACK_RATES,
+  getCurrencyCacheAgeHours,
+  isCurrencyCacheUsable,
   isCurrencyCacheValid,
   normalizeUsdRates,
   type CachedRates,
   type ExchangeRateAPIResponse,
 } from './currency-rates';
 
-const log = createLogger('CurrencyService');
+type CurrencyServiceDependencies = {
+  now: () => Date;
+  fetchRates: () => Promise<CachedRates>;
+  readCache: () => Promise<CachedRates | null>;
+  writeCache: (rates: CachedRates) => Promise<void>;
+  logger: Logger;
+};
 
-// ===========================
-// CURRENCY SERVICE CLASS
-// ===========================
+const defaultLogger = createLogger('CurrencyService');
 
-class CurrencyService {
-  private memoryCache: CachedRates | null = null;
+async function fetchRatesFromApi(): Promise<CachedRates> {
+  const response = await fetch(`${API_BASE_URL}/latest/USD`);
+  if (!response.ok) throw new Error(`Exchange-rate API failed with status ${response.status}`);
 
-  constructor() {
-    // No API key required for open.er-api.com public endpoint
+  const data = await response.json() as ExchangeRateAPIResponse;
+  if (data.result !== 'success' || !data.rates || typeof data.rates !== 'object') {
+    throw new Error('Exchange-rate API returned an invalid payload');
   }
 
-  /**
-   * Get exchange rate between two currencies
-   * @param fromCurrency - Source currency code (e.g., 'TRY', 'ARS')
-   * @param toCurrency - Target currency code (default: 'USD')
-   * @returns Exchange rate
-   */
-  async getExchangeRate(fromCurrency: string, toCurrency: string = 'USD'): Promise<number> {
-    // Same currency - no conversion needed
-    if (fromCurrency === toCurrency) {
-      return 1.0;
-    }
+  if (!Number.isFinite(data.time_last_update_unix) || data.time_last_update_unix <= 0) {
+    throw new Error('Exchange-rate API returned an invalid update timestamp');
+  }
+  const lastUpdated = new Date(data.time_last_update_unix * 1000);
+  if (Number.isNaN(lastUpdated.getTime())) {
+    throw new Error('Exchange-rate API returned an invalid update timestamp');
+  }
+
+  const rates = normalizeUsdRates(data);
+  if (Object.keys(rates).length === 0) throw new Error('Exchange-rate API returned no valid rates');
+  return {
+    rates,
+    lastUpdated,
+    source: 'open.er-api.com',
+    apiVersion: 'v6',
+  };
+}
+
+async function readRatesFromSupabase(): Promise<CachedRates | null> {
+  const { data, error } = await supabase
+    .from('exchange_rates')
+    .select('currency_pair,rate,source,last_updated')
+    .like('currency_pair', 'USD_%');
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) return null;
+
+  const rates: Record<string, number> = {};
+  let lastUpdated = new Date(0);
+  let source = 'supabase';
+  for (const row of data) {
+    const rate = Number(row.rate);
+    if (Number.isFinite(rate) && rate > 0) rates[row.currency_pair.toUpperCase()] = rate;
+    const updatedAt = new Date(row.last_updated);
+    if (updatedAt > lastUpdated) lastUpdated = updatedAt;
+    if (row.source) source = row.source;
+  }
+  return Object.keys(rates).length > 0
+    ? { rates, lastUpdated, source, apiVersion: 'v6' }
+    : null;
+}
+
+async function writeRatesToSupabase(cachedRates: CachedRates): Promise<void> {
+  const rows = Object.entries(cachedRates.rates).map(([currencyPair, rate]) => ({
+    currency_pair: currencyPair,
+    rate,
+    source: cachedRates.source,
+    last_updated: cachedRates.lastUpdated.toISOString(),
+  }));
+  const { error } = await supabase.from('exchange_rates').upsert(rows, { onConflict: 'currency_pair' });
+  if (error) throw new Error(error.message);
+}
+
+export class CurrencyService {
+  private memoryCache: CachedRates | null = null;
+  private readonly deps: CurrencyServiceDependencies;
+
+  constructor(deps: Partial<CurrencyServiceDependencies> = {}) {
+    this.deps = {
+      now: () => new Date(),
+      fetchRates: fetchRatesFromApi,
+      readCache: readRatesFromSupabase,
+      writeCache: writeRatesToSupabase,
+      logger: defaultLogger,
+      ...deps,
+    };
+  }
+
+  async getExchangeRate(fromCurrency: string, toCurrency = 'USD'): Promise<number> {
+    const from = fromCurrency.trim().toUpperCase();
+    const to = toCurrency.trim().toUpperCase();
+    if (from === to) return 1;
+
+    const cachedRates = await this.getRates(from, to);
+    const rate = this.resolveRate(cachedRates, from, to);
+    if (rate !== null) return rate;
 
     try {
-      const cachedRates = await this.getRates();
-
-      if (!cachedRates || !cachedRates.rates) {
-        log.error('No rates available, degrading to 1.0', { fromCurrency, toCurrency, fallback: 1.0 });
-        return 1.0;
-      }
-
-      // Convert from source currency to USD first
-      let amountInUSD = 1.0;
-      if (fromCurrency !== 'USD') {
-        const fromRateKey = `USD_${fromCurrency.toUpperCase()}`;
-        const fromRate = cachedRates.rates[fromRateKey];
-
-        if (!fromRate) {
-          log.error('Rate not found for source currency, degrading to 1.0', { fromCurrency, fallback: 1.0 });
-          return 1.0;
-        }
-
-        amountInUSD = 1.0 / fromRate;
-      }
-
-      // Convert from USD to target currency
-      if (toCurrency === 'USD') {
-        return amountInUSD;
-      }
-
-      const toRateKey = `USD_${toCurrency.toUpperCase()}`;
-      const toRate = cachedRates.rates[toRateKey];
-
-      if (!toRate) {
-        log.error('Rate not found for target currency, degrading to 1.0', { toCurrency, fallback: 1.0 });
-        return 1.0;
-      }
-
-      return amountInUSD * toRate;
+      await this.refreshExchangeRates();
+      const refreshedRate = this.resolveRate(this.memoryCache, from, to);
+      if (refreshedRate !== null) return refreshedRate;
     } catch (error) {
-      log.error('Error getting exchange rate, degrading to 1.0', { fromCurrency, toCurrency, fallback: 1.0, error });
-      return 1.0;
-    }
-  }
-
-  /**
-   * Convert amount to USD
-   * @param amount - Amount in source currency
-   * @param fromCurrency - Source currency code
-   * @returns Amount in USD
-   */
-  async convertToUSD(amount: number, fromCurrency: string = 'USD'): Promise<number> {
-    if (fromCurrency === 'USD') {
-      return amount;
+      this.deps.logger.warn('Could not refresh a missing currency pair', { from, to, error });
     }
 
-    const rate = await this.getExchangeRate(fromCurrency, 'USD');
-    return amount * rate;
+    throw this.unavailable(from, to, cachedRates, 'missing_currency_pair');
   }
 
-  /**
-   * Get exchange rates (from memory cache, Supabase cache, or API)
-   * @returns Cached rates or null if unavailable
-   */
-  private async getRates(): Promise<CachedRates | null> {
-    // Check memory cache first
-    if (this.memoryCache && isCurrencyCacheValid(this.memoryCache.lastUpdated)) {
+  async convertToUSD(amount: number, fromCurrency = 'USD'): Promise<number> {
+    if (amount === 0) return 0;
+    if (fromCurrency.trim().toUpperCase() === 'USD') return amount;
+    return amount * await this.getExchangeRate(fromCurrency, 'USD');
+  }
+
+  private async getRates(from: string, to: string): Promise<CachedRates> {
+    const now = this.deps.now();
+    if (this.memoryCache && isCurrencyCacheValid(this.memoryCache.lastUpdated, now)) {
       return this.memoryCache;
     }
 
-    // Check Supabase cache
-    const supabaseCache = await this.getCachedRates();
-
-    if (supabaseCache && isCurrencyCacheValid(supabaseCache.lastUpdated)) {
-      this.memoryCache = supabaseCache;
-      return supabaseCache;
+    let stored: CachedRates | null = null;
+    try {
+      stored = await this.deps.readCache();
+      if (stored && isCurrencyCacheValid(stored.lastUpdated, now)) {
+        this.memoryCache = stored;
+        return stored;
+      }
+    } catch (error) {
+      this.deps.logger.warn('Could not read cached exchange rates', { error });
     }
 
     try {
       await this.refreshExchangeRates();
-      return this.memoryCache;
+      if (this.memoryCache) return this.memoryCache;
     } catch (error) {
-      // Use stale cache if available
-      if (supabaseCache) {
-        log.warn('Failed to refresh rates, using STALE cached rates', {
-          lastUpdated: supabaseCache.lastUpdated, error,
+      const stale = this.newestCache(this.memoryCache, stored);
+      if (stale && isCurrencyCacheUsable(stale.lastUpdated, now)) {
+        this.memoryCache = stale;
+        this.deps.logger.warn('Using stale exchange rates after refresh failure', {
+          source: stale.source,
+          ageHours: getCurrencyCacheAgeHours(stale.lastUpdated, now),
+          error,
         });
-        this.memoryCache = supabaseCache;
-        return supabaseCache;
+        return stale;
       }
-
-      log.error('Failed to refresh rates and no cache available, using FALLBACK rates', { error });
-      this.memoryCache = FALLBACK_RATES;
-      return FALLBACK_RATES;
+      throw this.unavailable(from, to, stale, 'refresh_failed', error);
     }
+
+    throw this.unavailable(from, to, stored, 'no_rates_available');
   }
 
-  /**
-   * Fetch fresh rates from API and cache in Supabase
-   */
+  private newestCache(first: CachedRates | null, second: CachedRates | null) {
+    if (!first) return second;
+    if (!second) return first;
+    return first.lastUpdated >= second.lastUpdated ? first : second;
+  }
+
+  private resolveRate(cached: CachedRates | null, from: string, to: string): number | null {
+    if (!cached) return null;
+    const fromRate = from === 'USD' ? 1 : cached.rates[`USD_${from}`];
+    const toRate = to === 'USD' ? 1 : cached.rates[`USD_${to}`];
+    if (!Number.isFinite(fromRate) || !Number.isFinite(toRate) || fromRate <= 0 || toRate <= 0) {
+      return null;
+    }
+    return toRate / fromRate;
+  }
+
+  private unavailable(
+    from: string,
+    to: string,
+    cached: CachedRates | null,
+    reason: string,
+    cause?: unknown
+  ) {
+    const error = new CurrencyRateUnavailableError(from, to, {
+      reason,
+      source: cached?.source,
+      lastUpdated: cached?.lastUpdated.toISOString(),
+      ageHours: cached ? getCurrencyCacheAgeHours(cached.lastUpdated, this.deps.now()) : undefined,
+      cause,
+    });
+    this.deps.logger.error('Currency conversion blocked because no valid rate is available', {
+      error,
+      context: error.context,
+    });
+    return error;
+  }
+
   async refreshExchangeRates(): Promise<void> {
+    const rates = await this.deps.fetchRates();
+    if (!isCurrencyCacheUsable(rates.lastUpdated, this.deps.now())) {
+      throw new Error('Exchange-rate API returned rates older than the maximum allowed age');
+    }
+    this.memoryCache = rates;
     try {
-      const response = await fetch(`${API_BASE_URL}/latest/USD`);
-
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data: ExchangeRateAPIResponse = await response.json();
-
-      if (data.result !== 'success') {
-        throw new Error(`API returned error: ${data.result}`);
-      }
-
-      // Validate that rates exists
-      if (!data.rates || typeof data.rates !== 'object') {
-        throw new Error('API response missing rates');
-      }
-
-      const cachedRates: CachedRates = {
-        rates: normalizeUsdRates(data),
-        lastUpdated: new Date(),
-        source: 'open.er-api.com',
-        apiVersion: 'v6'
-      };
-
-      // Keep fresh rates usable even if persisting the cache fails.
-      this.memoryCache = cachedRates;
-
-      try {
-        await this.saveRatesToCache(cachedRates);
-      } catch (cacheError) {
-        log.warn('Fresh rates loaded but could not be persisted to Supabase', { error: cacheError });
-      }
+      await this.deps.writeCache(rates);
     } catch (error) {
-      throw error;
+      this.deps.logger.warn('Fresh rates loaded but could not be persisted', { error });
     }
   }
 
-  /**
-   * Get cached rates from Supabase
-   */
-  private async getCachedRates(): Promise<CachedRates | null> {
+  async getLastRateUpdate(): Promise<Date | null> {
     try {
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .select('currency_pair,rate,source,last_updated')
-        .like('currency_pair', 'USD_%');
-
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) {
-        return null;
-      }
-
-      const rates: Record<string, number> = {};
-      let lastUpdated = new Date(0);
-      let source = 'supabase';
-
-      for (const row of data) {
-        rates[row.currency_pair] = Number(row.rate);
-        const updatedAt = new Date(row.last_updated);
-        if (updatedAt > lastUpdated) lastUpdated = updatedAt;
-        if (row.source) source = row.source;
-      }
-
-      return {
-        rates,
-        lastUpdated,
-        source,
-        apiVersion: 'v6'
-      };
+      return (await this.deps.readCache())?.lastUpdated ?? null;
     } catch (error) {
-      log.warn('Error reading cached rates from Supabase', { error });
+      this.deps.logger.warn('Could not read the last exchange-rate update', { error });
       return null;
     }
   }
 
-  /**
-   * Save rates to Supabase cache
-   */
-  private async saveRatesToCache(cachedRates: CachedRates): Promise<void> {
-    try {
-      const rows = Object.entries(cachedRates.rates).map(([key, rate]) => {
-        return {
-          currency_pair: key,
-          rate,
-          source: cachedRates.source,
-          last_updated: cachedRates.lastUpdated.toISOString(),
-        };
-      });
-
-      const { error } = await supabase
-        .from('exchange_rates')
-        .upsert(rows, { onConflict: 'currency_pair' });
-      if (error) throw new Error(error.message);
-    } catch (error) {
-      log.warn('Error saving rates to Supabase', { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Get last rate update timestamp
-   * @returns Date of last update or null if no cache
-   */
-  async getLastRateUpdate(): Promise<Date | null> {
-    const cachedRates = await this.getCachedRates();
-    return cachedRates ? cachedRates.lastUpdated : null;
-  }
-
-  /**
-   * Pre-load rates into memory cache. Call once before batch sync conversions.
-   * After this resolves, convertToUSDSync() can be used without await.
-   */
   async ensureRatesLoaded(): Promise<void> {
-    await this.getRates();
+    await this.getRates('UNKNOWN', 'USD');
   }
 
-  /**
-   * Synchronous USD conversion using memory-cached rates.
-   * MUST call ensureRatesLoaded() first. Falls back to 1.0 if cache is empty.
-   */
-  convertToUSDSync(amount: number, fromCurrency: string = 'USD'): number {
-    if (fromCurrency === 'USD' || !fromCurrency) return amount;
-    if (!this.memoryCache?.rates) return amount;
-
-    const rateKey = `USD_${fromCurrency.toUpperCase()}`;
-    const rate = this.memoryCache.rates[rateKey];
-    if (!rate) return amount;
-
-    return amount / rate;
+  convertToUSDSync(amount: number, fromCurrency = 'USD'): number {
+    const from = fromCurrency.trim().toUpperCase();
+    if (amount === 0) return 0;
+    if (!from || from === 'USD') return amount;
+    const now = this.deps.now();
+    if (!this.memoryCache || !isCurrencyCacheUsable(this.memoryCache.lastUpdated, now)) {
+      throw this.unavailable(from, 'USD', this.memoryCache, 'sync_cache_unavailable');
+    }
+    const rate = this.resolveRate(this.memoryCache, from, 'USD');
+    if (rate === null) throw this.unavailable(from, 'USD', this.memoryCache, 'missing_currency_pair');
+    return amount * rate;
   }
 
-  /**
-   * Clear memory cache (useful for testing)
-   */
   clearMemoryCache(): void {
     this.memoryCache = null;
   }
 }
-
-// ===========================
-// SINGLETON INSTANCE
-// ===========================
 
 export const currencyService = new CurrencyService();

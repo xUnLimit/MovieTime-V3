@@ -126,9 +126,9 @@ describe("venta-create-controller-helpers", () => {
       clienteNombre: "Ana Perez",
       servicioId: "servicio-1",
       totalVenta: 21,
-      ventaId: inputs[1].ventaId,
+      ventaId: inputs[1]!.ventaId,
     });
-    expect(inputs[0].pagos[0]).toMatchObject({
+    expect(inputs[0]!.pagos?.[0]).toMatchObject({
       descripcion: "Pago inicial",
       metodoPagoNombre: "Yappy",
       total: 9,

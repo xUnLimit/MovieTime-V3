@@ -16,6 +16,7 @@ import { getTerceroMetodoPagoMoneda, getTerceroMetodoPagoNombre, isPendingTercer
 import type { MetodoPago, VentaDoc } from '@/types';
 
 import type { VentaReembolsoConfirm } from './types';
+import { calculateSuggestedRefundForDate, parseRefundDate } from './venta-refund-helpers';
 
 interface VentaReembolsoDialogProps {
   open: boolean;
@@ -51,7 +52,13 @@ export function VentaReembolsoDialog({
   const [fecha, setFecha] = useState(toDateInputValue(new Date()));
   const [nota, setNota] = useState('');
   const [motivoCorte, setMotivoCorte] = useState('');
+  const [inactivarServicio, setInactivarServicio] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const montoSugeridoFecha = useMemo(
+    () => calculateSuggestedRefundForDate(venta, fecha),
+    [fecha, venta],
+  );
 
   const metodosDisponibles = useMemo(
     () => metodosPago
@@ -64,30 +71,40 @@ export function VentaReembolsoDialog({
   const currencySymbol = getCurrencySymbol(moneda);
   const requiereMotivo = accion === 'reembolso-corte';
   const montoNumber = Number(monto);
+  const refundDate = parseRefundDate(fecha);
   const canSubmit =
     Number.isFinite(montoNumber) &&
     montoNumber > 0 &&
     !!metodoPagoId &&
     destinoReembolso.trim().length > 0 &&
-    !!fecha &&
+    refundDate !== null &&
     (!requiereMotivo || motivoCorte.trim().length > 0);
 
   useEffect(() => {
     if (!open) return;
+    const initialDate = toDateInputValue(new Date());
     setStep('accion');
     setAccion('reembolso');
-    setMonto(montoSugerido > 0 ? montoSugerido.toFixed(2) : '');
+    const initialSuggestion = calculateSuggestedRefundForDate(venta, initialDate) || montoSugerido;
+    setMonto(initialSuggestion > 0 ? initialSuggestion.toFixed(2) : '');
     setMetodoPagoId(
       venta.metodoPagoId && !isPendingTerceroPaymentMethodId(venta.metodoPagoId)
         ? venta.metodoPagoId
         : ''
     );
     setDestinoReembolso('');
-    setFecha(toDateInputValue(new Date()));
+    setFecha(initialDate);
     setNota('');
     setMotivoCorte('');
+    setInactivarServicio(false);
     setIsSubmitting(false);
-  }, [open, montoSugerido, venta.metodoPagoId]);
+  }, [open, montoSugerido, venta]);
+
+  const handleDateChange = (value: string) => {
+    setFecha(value);
+    const suggestion = calculateSuggestedRefundForDate(venta, value);
+    setMonto(suggestion > 0 ? suggestion.toFixed(2) : '');
+  };
 
   const handleClose = () => {
     if (!isSubmitting) onOpenChange(false);
@@ -99,15 +116,16 @@ export function VentaReembolsoDialog({
     setIsSubmitting(true);
     try {
       await onConfirm({
-        idempotencyKey: intent.current.keyFor([venta.id, montoNumber, metodoPagoId, destinoReembolso, moneda, fecha, nota, requiereMotivo, motivoCorte]),
+        idempotencyKey: intent.current.keyFor([venta.id, montoNumber, metodoPagoId, destinoReembolso, moneda, fecha, nota, requiereMotivo, inactivarServicio, motivoCorte]),
         monto: montoNumber,
         metodoPagoId,
         metodoPagoNombre: getTerceroMetodoPagoNombre(metodoPagoId, metodoSeleccionado?.nombre),
         destinoReembolso: destinoReembolso.trim(),
         moneda,
-        fecha: new Date(`${fecha}T00:00:00`),
+        fecha: refundDate as Date,
         nota: nota.trim(),
         cortarServicio: requiereMotivo,
+        inactivarServicio: requiereMotivo && inactivarServicio,
         motivoCorte: motivoCorte.trim(),
       });
     } finally {
@@ -139,7 +157,9 @@ export function VentaReembolsoDialog({
             </div>
             <div className="flex gap-2">
               <span className="w-16 shrink-0 text-muted-foreground">Sugerido</span>
-              <span className="font-medium">{getCurrencySymbol(venta.moneda || 'USD')} {montoSugerido.toFixed(2)}</span>
+              <span className="font-medium" data-testid="refund-suggested-amount">
+                {getCurrencySymbol(venta.moneda || 'USD')} {montoSugeridoFecha.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
@@ -179,15 +199,28 @@ export function VentaReembolsoDialog({
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
                       <Scissors className="h-3.5 w-3.5 text-orange-600" />
-                      <span className="text-sm font-medium">Reembolsar y cortar servicio</span>
+                      <span className="text-sm font-medium">Reembolsar y cortar</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Registra el reembolso, inactiva la venta y libera el perfil.</p>
+                    <p className="text-xs text-muted-foreground">Registra el reembolso y permite elegir el alcance del corte.</p>
                   </div>
                 </label>
               </RadioGroup>
             </div>
           ) : (
             <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="refund-date">Fecha efectiva del reembolso</Label>
+                <Input
+                  id="refund-date"
+                  type="date"
+                  value={fecha}
+                  onChange={(event) => handleDateChange(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Al cambiar la fecha se recalculan el monto sugerido y el monto a reembolsar.
+                </p>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="refund-amount">Monto a reembolsar</Label>
                 <div className="relative">
@@ -231,11 +264,6 @@ export function VentaReembolsoDialog({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="refund-date">Fecha</Label>
-                <Input id="refund-date" type="date" value={fecha} onChange={(event) => setFecha(event.target.value)} />
-              </div>
-
-              <div className="grid gap-2">
                 <Label htmlFor="refund-note">Nota</Label>
                 <Textarea
                   id="refund-note"
@@ -246,14 +274,39 @@ export function VentaReembolsoDialog({
               </div>
 
               {requiereMotivo ? (
-                <div className="grid gap-2">
-                  <Label htmlFor="cut-reason">Motivo de corte</Label>
-                  <Textarea
-                    id="cut-reason"
-                    value={motivoCorte}
-                    onChange={(event) => setMotivoCorte(event.target.value)}
-                    placeholder="Motivo por el que se corta la venta..."
-                  />
+                <div className="grid gap-4 rounded-lg border border-orange-500/30 bg-orange-500/5 p-3">
+                  <div className="grid gap-2">
+                    <Label>Alcance del corte</Label>
+                    <RadioGroup
+                      value={inactivarServicio ? 'venta-servicio' : 'venta'}
+                      onValueChange={(value) => setInactivarServicio(value === 'venta-servicio')}
+                      className="space-y-2"
+                    >
+                      <label htmlFor="cut-sale-only" className="flex cursor-pointer items-start gap-3 rounded-md border bg-background p-3">
+                        <RadioGroupItem id="cut-sale-only" value="venta" className="mt-0.5" />
+                        <span>
+                          <span className="block text-sm font-medium">Cortar solo la venta</span>
+                          <span className="block text-xs text-muted-foreground">Inactiva esta venta y libera el perfil. El servicio permanece activo.</span>
+                        </span>
+                      </label>
+                      <label htmlFor="cut-sale-service" className="flex cursor-pointer items-start gap-3 rounded-md border bg-background p-3">
+                        <RadioGroupItem id="cut-sale-service" value="venta-servicio" className="mt-0.5" disabled={!venta.servicioId} />
+                        <span>
+                          <span className="block text-sm font-medium">Cortar venta e inactivar servicio</span>
+                          <span className="block text-xs text-muted-foreground">También inactiva la cuenta de servicio completa y afecta sus demás perfiles.</span>
+                        </span>
+                      </label>
+                    </RadioGroup>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="cut-reason">Motivo de corte</Label>
+                    <Textarea
+                      id="cut-reason"
+                      value={motivoCorte}
+                      onChange={(event) => setMotivoCorte(event.target.value)}
+                      placeholder="Motivo por el que se realiza el corte..."
+                    />
+                  </div>
                 </div>
               ) : null}
             </div>

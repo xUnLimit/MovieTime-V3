@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { PagoDialogProps } from './types';
 
 import {
   getCicloPagoMonths,
@@ -29,7 +30,7 @@ describe('pago dialog helpers', () => {
         precioFinal: 10.555,
         fechaFin: new Date('2026-05-30T00:00:00.000Z'),
       },
-    } as never;
+    } as PagoDialogProps;
 
     expect(getDefaultMetodoPagoId(renewProps)).toBe('');
     expect(getDefaultCosto(renewProps)).toBe(10.56);
@@ -43,7 +44,7 @@ describe('pago dialog helpers', () => {
         precioFinal: 10,
         fechaFin: new Date('2026-05-30T00:00:00.000Z'),
       },
-    } as never;
+    } as PagoDialogProps;
 
     expect(getDefaultMetodoPagoId(editProps)).toBe('metodo-1');
     expect(getDefaultCosto(editProps)).toBe(0);

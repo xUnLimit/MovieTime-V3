@@ -1,6 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 
 import { createUserRequestClient } from './supabase-server';
+import { ForbiddenError, UnauthorizedError } from './api-errors';
 
 type AuthenticatedAdmin = {
   user: User;
@@ -9,13 +10,13 @@ type AuthenticatedAdmin = {
 export async function requireAuthenticatedAdmin(request: Request): Promise<AuthenticatedAdmin> {
   const authorization = request.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) {
-    throw new Error('Unauthorized');
+    throw new UnauthorizedError();
   }
 
   const userClient = createUserRequestClient(authorization);
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) {
-    throw new Error('Unauthorized');
+    throw new UnauthorizedError();
   }
 
   const { data: profile, error: profileError } = await userClient
@@ -25,11 +26,11 @@ export async function requireAuthenticatedAdmin(request: Request): Promise<Authe
     .maybeSingle();
 
   if (profileError || !profile?.active) {
-    throw new Error('Forbidden');
+    throw new ForbiddenError();
   }
 
   if (profile.role !== 'admin') {
-    throw new Error('Forbidden');
+    throw new ForbiddenError();
   }
 
   return { user: userData.user };

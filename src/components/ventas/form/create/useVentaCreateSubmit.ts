@@ -7,6 +7,7 @@ import { MutationCommittedError } from '@/platform/errors/mutation-committed-err
 import type { VentaItem } from '@/features/ventas/ventas-form-shared';
 import { syncTerceroMetodoPagoUseCase } from '@/application/use-cases/terceros/tercero-metodo-pago-use-cases';
 import { reportError } from '@/platform/observability/logger';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import type { Tercero, VentaDoc } from '@/types';
 
 import {
@@ -170,7 +171,7 @@ export function useVentaCreateSubmit({
       toast.error('Error al guardar la venta', {
         description: completed.current.size > 0
           ? 'Parte del lote ya se guardo. Reintenta sin cambiar los datos para completar las ventas pendientes sin duplicarlas.'
-          : error instanceof Error ? error.message : undefined,
+          : getPublicErrorMessage(error, 'No se pudo guardar la venta.'),
       });
     } finally {
       submitting.current = false;

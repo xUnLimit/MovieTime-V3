@@ -30,9 +30,9 @@ export interface ActivityLog {
 
 // Configuration Types
 export interface TasasCambio {
-  USD_PAB: number;
-  USD_EUR: number;
-  USD_NGN: number;
+  USD_PAB?: number;
+  USD_EUR?: number;
+  USD_NGN?: number;
   ultimaActualizacion: Date;
 }
 

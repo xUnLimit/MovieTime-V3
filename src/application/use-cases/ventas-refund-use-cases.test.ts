@@ -131,6 +131,7 @@ describe('ventas refund use cases', () => {
       nota: 'Reembolso parcial',
       destinoReembolso: 'Banco General 123',
       cortarServicio: true,
+      inactivarServicio: true,
       motivoCorte: 'Cliente solicito corte',
     }, {
       logContext,
@@ -149,6 +150,7 @@ describe('ventas refund use cases', () => {
       accion: 'reembolso',
       entidad: 'venta',
       entidadId: ventaBase.id,
+      metadata: expect.objectContaining({ inactivarServicio: true }),
     }));
     expect(result).toEqual(expect.objectContaining({
       pagoId: 'pago-reembolso',
@@ -183,6 +185,23 @@ describe('ventas refund use cases', () => {
     }, {
       logContext,
     })).rejects.toThrow('El reembolso supera el saldo disponible de la venta.');
+
+    expect(ventasRepository.createVentaRefund).not.toHaveBeenCalled();
+  });
+
+  it('does not allow inactivating a service without also cutting the venta', async () => {
+    await expect(createVentaRefundUseCase(ventaBase, {
+      ventaId: ventaBase.id,
+      monto: 5,
+      metodoPagoId: 'method-1',
+      moneda: 'USD',
+      fecha: new Date('2026-05-15T00:00:00.000Z'),
+      destinoReembolso: 'Cuenta del cliente',
+      cortarServicio: false,
+      inactivarServicio: true,
+    }, { logContext })).rejects.toThrow(
+      'Para inactivar el servicio también debes cortar la venta.'
+    );
 
     expect(ventasRepository.createVentaRefund).not.toHaveBeenCalled();
   });

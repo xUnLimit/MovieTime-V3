@@ -21,6 +21,8 @@ interface UsePronosticoFinancieroOptions {
 interface UsePronosticoFinancieroResult {
   meses: MesPronostico[];
   isLoading: boolean;
+  error: unknown;
+  retry: () => void;
 }
 
 const EMPTY_VENTAS_PRONOSTICO: VentaPronostico[] = [];
@@ -36,7 +38,7 @@ export function usePronosticoFinanciero(
   const servicios = stats?.serviciosPronostico ?? EMPTY_SERVICIOS_PRONOSTICO;
   const signature = buildPronosticoSignature({ ventas, servicios });
 
-  const { data: meses = [], isLoading, isFetching } = useQuery({
+  const { data: meses = [], isLoading, isFetching, error, refetch } = useQuery({
     queryKey: queryKeys.dashboard.pronostico(signature, monthsCount, endAtCurrentYear),
     queryFn: async () => {
       if (ventas.length === 0 && servicios.length === 0) {
@@ -54,5 +56,10 @@ export function usePronosticoFinanciero(
     retry: false,
   });
 
-  return { meses, isLoading: statsLoading || isLoading || isFetching };
+  return {
+    meses,
+    isLoading: statsLoading || isLoading || isFetching,
+    error,
+    retry: () => { void refetch(); },
+  };
 }

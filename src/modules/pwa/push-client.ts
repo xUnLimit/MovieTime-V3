@@ -1,6 +1,7 @@
 'use client';
 
 import { env } from '@/platform/config';
+import { readApiResponse } from '@/platform/api/client';
 import { supabase } from '@/platform/supabase/client';
 
 function base64UrlToUint8Array(value: string) {
@@ -49,11 +50,7 @@ export async function triggerExecutivePushTest(): Promise<ExecutivePushTestResul
       Authorization: `Bearer ${token}`,
     },
   });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(typeof body.error === 'string' ? body.error : 'No se pudo enviar la push de prueba.');
-  }
-  return body as ExecutivePushTestResult;
+  return readApiResponse<ExecutivePushTestResult>(response);
 }
 
 export async function registerPushSubscription() {
@@ -100,10 +97,7 @@ export async function registerPushSubscription() {
     }),
   });
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: 'No se pudo registrar la suscripcion push.' }));
-    throw new Error(typeof body.error === 'string' ? body.error : 'No se pudo registrar la suscripcion push.');
-  }
+  await readApiResponse<{ subscribed: true }>(response);
 
   return subscription;
 }
@@ -125,10 +119,7 @@ export async function unregisterPushSubscription() {
     body: JSON.stringify({ endpoint: subscription.endpoint }),
   });
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: 'No se pudo desactivar la suscripcion push.' }));
-    throw new Error(typeof body.error === 'string' ? body.error : 'No se pudo desactivar la suscripcion push.');
-  }
+  await readApiResponse<{ subscribed: false }>(response);
 
   await subscription.unsubscribe();
 }

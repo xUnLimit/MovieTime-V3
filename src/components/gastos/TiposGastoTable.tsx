@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Edit, MoreHorizontal, Power, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Column, DataTable } from '@/components/shared/DataTable';
 import { Badge } from '@/components/ui/badge';
@@ -93,7 +94,7 @@ export function TiposGastoTable({
       });
     } catch (error) {
       toast.error('Error al actualizar tipo de gasto', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo actualizar el tipo de gasto.'),
       });
     }
   };
@@ -110,7 +111,7 @@ export function TiposGastoTable({
       setTipoToDelete(null);
     } catch (error) {
       toast.error('Error al eliminar tipo de gasto', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo eliminar el tipo de gasto.'),
       });
     } finally {
       setIsDeleting(false);

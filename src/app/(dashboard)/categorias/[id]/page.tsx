@@ -14,6 +14,7 @@ import { useCategoriaDetail } from '@/hooks/use-entity-detail';
 import { deleteCategoriaMutation } from '@/application/client-domain-mutations';
 import { formatearFechaHora } from '@/platform/utils/calculations';
 import { isUuid } from '@/platform/utils/safety';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { Plan } from '@/types';
 import { CategoriaDetailPlanCard } from './CategoriaDetailPlanCard';
 import { getTipoCategoriaLabel, getTipoLabel } from './categoria-detail-helpers';
@@ -34,7 +35,7 @@ function VerCategoriaPageContent() {
         toast.success('Categoría eliminada', { description: 'La categoría ha sido eliminada correctamente.' });
         router.push('/categorias');
       } catch (error) {
-        toast.error('Error al eliminar categoría', { description: error instanceof Error ? error.message : undefined });
+        toast.error('Error al eliminar categoría', { description: getPublicErrorMessage(error, 'No se pudo eliminar la categoría.') });
       }
     }
   };

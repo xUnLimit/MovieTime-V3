@@ -43,6 +43,12 @@ export async function createVentaRefundUseCase(
   if (input.cortarServicio && !motivoCorte) {
     throw new ValidationError('El motivo de corte es obligatorio.');
   }
+  if (input.inactivarServicio && !input.cortarServicio) {
+    throw new ValidationError('Para inactivar el servicio también debes cortar la venta.');
+  }
+  if (input.inactivarServicio && !venta.servicioId) {
+    throw new ValidationError('La venta no tiene un servicio asociado para inactivar.');
+  }
 
   const moneda = input.moneda || venta.moneda || 'USD';
   const { usd, rate } = await getUsdValues(monto, moneda);
@@ -100,6 +106,7 @@ export async function createVentaRefundUseCase(
         destinoReembolso,
         fecha: toDateOnly(input.fecha),
         cortarServicio: input.cortarServicio,
+        inactivarServicio: Boolean(input.inactivarServicio),
         motivoCorte: motivoCorte || null,
         nota: notaReembolso || null,
         origen: 'createVentaRefundUseCase',

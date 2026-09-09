@@ -17,25 +17,28 @@ export interface ExchangeRateAPIResponse {
   rates: Record<string, number>;
 }
 
-export const CACHE_TTL_HOURS = 24;
+export const FRESH_RATE_MAX_AGE_HOURS = 24;
+export const STALE_RATE_MAX_AGE_HOURS = 72;
 export const API_BASE_URL = "https://open.er-api.com/v6";
-export const FALLBACK_RATES: CachedRates = {
-  rates: { USD_USD: 1 },
-  lastUpdated: new Date(0),
-  source: "fallback",
-  apiVersion: "v6",
-};
 
-export function isCurrencyCacheValid(lastUpdated: Date): boolean {
-  const ageMs = Date.now() - lastUpdated.getTime();
-  const ageHours = ageMs / (1000 * 60 * 60);
-  return ageHours < CACHE_TTL_HOURS;
+export function getCurrencyCacheAgeHours(lastUpdated: Date, now = new Date()): number {
+  return (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60);
+}
+
+export function isCurrencyCacheValid(lastUpdated: Date, now = new Date()): boolean {
+  const ageHours = getCurrencyCacheAgeHours(lastUpdated, now);
+  return ageHours >= 0 && ageHours <= FRESH_RATE_MAX_AGE_HOURS;
+}
+
+export function isCurrencyCacheUsable(lastUpdated: Date, now = new Date()): boolean {
+  const ageHours = getCurrencyCacheAgeHours(lastUpdated, now);
+  return ageHours >= 0 && ageHours <= STALE_RATE_MAX_AGE_HOURS;
 }
 
 export function normalizeUsdRates(data: ExchangeRateAPIResponse): Record<string, number> {
   const rates: Record<string, number> = {};
   Object.entries(data.rates).forEach(([currency, rate]) => {
-    rates[`USD_${currency}`] = rate;
+    if (Number.isFinite(rate) && rate > 0) rates[`USD_${currency.toUpperCase()}`] = rate;
   });
   return rates;
 }

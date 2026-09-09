@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { queryKeys } from '@/platform/query-keys';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { deleteServicioDetalleWorkflow } from '@/application/use-cases/servicios/servicio-detail-use-cases';
 
 type ServicioDeleteActionParams = {
@@ -56,7 +57,7 @@ export function useServicioDeleteAction({
       onDeleted();
     } catch (error) {
       toast.error('Error al eliminar servicio', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo eliminar el servicio.'),
       });
     }
   };

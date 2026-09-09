@@ -9,6 +9,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
 import { deleteMetodoPagoMutation } from '@/application/client-domain-mutations';
 import { isUuid } from '@/platform/utils/safety';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import {
   MetodoPagoAdditionalInfo,
   MetodoPagoBasicInfo,
@@ -34,7 +35,7 @@ function VerMetodoPagoPageContent() {
         toast.success('Método de pago eliminado', { description: 'El método de pago ha sido eliminado correctamente.' });
         router.push('/metodos-pago');
       } catch (error) {
-        toast.error('Error al eliminar método de pago', { description: error instanceof Error ? error.message : undefined });
+        toast.error('Error al eliminar método de pago', { description: getPublicErrorMessage(error, 'No se pudo eliminar el método de pago.') });
       }
     }
   };

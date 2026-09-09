@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from 'sonner';
 import { Eye, EyeOff, WifiOff } from 'lucide-react';
 import { hasOfflineAuthUser } from '@/modules/pwa/offline-auth';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -76,7 +77,7 @@ export default function LoginPage() {
       toast.success('Modo lectura offline activo');
       router.replace('/dashboard');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo entrar en modo offline.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo entrar en modo offline.'));
     }
   }, [canUseOfflineAccess, isAuthenticated, isHydrated, isOnline, restoreOfflineSession, router]);
 
@@ -93,7 +94,7 @@ export default function LoginPage() {
       toast.success('Inicio de sesión exitoso', { description: 'Bienvenido de vuelta al sistema.' });
       router.push('/dashboard');
     } catch (error) {
-      toast.error('Credenciales inválidas', { description: error instanceof Error ? error.message : undefined });
+      toast.error('Credenciales inválidas', { description: getPublicErrorMessage(error, 'Verifica tus credenciales e inténtalo de nuevo.') });
     }
   };
 
@@ -103,7 +104,7 @@ export default function LoginPage() {
       toast.success('Modo lectura offline activo');
       router.push('/dashboard');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo entrar en modo offline.');
+      toast.error(getPublicErrorMessage(error, 'No se pudo entrar en modo offline.'));
     }
   };
 

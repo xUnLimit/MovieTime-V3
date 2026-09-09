@@ -66,6 +66,7 @@ interno privado.
 
 ```bash
 npm run lint
+npm run typecheck
 npm test -- --run
 npm run test:coverage
 npm run build

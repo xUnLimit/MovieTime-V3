@@ -37,7 +37,7 @@ import { useServicioFormSubmit } from './useServicioFormSubmit';
 const categoria: Categoria = {
   id: 'categoria-1',
   nombre: 'Spotify',
-  tipo: 'servicio',
+  tipo: 'cliente',
   tipoCategoria: 'plataforma_streaming',
   activo: true,
   createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -46,17 +46,23 @@ const categoria: Categoria = {
     {
       id: 'plan-1',
       nombre: 'Individual',
-      precio: 10,
-      perfiles: 1,
-      activo: true,
     },
   ],
+  totalServicios: 1,
+  serviciosActivos: 1,
+  perfilesDisponiblesTotal: 0,
+  ventasTotales: 0,
+  ingresosTotales: 0,
+  gastosTotal: 10,
 };
 
 const metodoPago: MetodoPago = {
   id: 'metodo-1',
   nombre: 'Banco',
   moneda: 'USD',
+  pais: 'PA',
+  titular: 'MovieTime',
+  identificador: 'cuenta-1',
   activo: true,
   tipo: 'banco',
   createdAt: new Date('2026-01-01T00:00:00Z'),

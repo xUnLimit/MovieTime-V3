@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Check, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { Gasto, TipoGasto } from '@/types';
 import {
   createGastoMutation,
@@ -133,7 +134,7 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: Ga
       onOpenChange(false);
     } catch (error) {
       toast.error(gasto ? 'Error al actualizar gasto' : 'Error al registrar gasto', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo guardar el gasto.'),
       });
     }
   };

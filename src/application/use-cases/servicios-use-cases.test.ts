@@ -149,7 +149,12 @@ beforeEach(() => {
   vi.mocked(updateServicio).mockResolvedValue(undefined);
   vi.mocked(updateServicioPaymentAndPeriod).mockResolvedValue(undefined);
   vi.mocked(financialPayments.registerRenewalServicioPayment).mockResolvedValue(undefined);
-  vi.mocked(syncServicioDependencias).mockResolvedValue(undefined);
+  vi.mocked(syncServicioDependencias).mockResolvedValue({
+    ventasActualizadas: 0,
+    ventaIds: [],
+    cacheInvalidations: [],
+    notificationRefresh: true,
+  });
   vi.mocked(convertToUSD).mockResolvedValue(10);
   vi.mocked(getServicioById).mockResolvedValue({
     ...servicio,
@@ -170,6 +175,7 @@ describe('createServicioUseCase', () => {
       contrasena: 'secret',
       perfilesDisponibles: 4,
       costoServicio: 10,
+      gastosTotal: 0,
       moneda: 'USD',
       cicloPago: 'mensual',
       fechaInicio: new Date('2026-05-01T00:00:00Z'),
@@ -177,6 +183,7 @@ describe('createServicioUseCase', () => {
       metodoPagoId: 'metodo-1',
       activo: true,
       renovacionAutomatica: false,
+      createdBy: 'user-1',
     }, {
       logContext: { usuarioId: 'user-1', usuarioEmail: 'user@example.com' },
       recordActivityLog,

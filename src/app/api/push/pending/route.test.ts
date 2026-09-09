@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ForbiddenError, UnauthorizedError } from '@/platform/server/api-errors';
 
 const authMock = vi.hoisted(() => vi.fn());
 const summaryMock = vi.hoisted(() => vi.fn());
@@ -15,10 +16,11 @@ import { POST } from './route';
 
 describe('/api/push/pending', () => {
   it('requires an authenticated owner before resolving a push endpoint', async () => {
-    authMock.mockRejectedValueOnce(new Error('Unauthorized'));
+    authMock.mockRejectedValueOnce(new UnauthorizedError());
 
     const response = await POST(new Request('https://example.com/api/push/pending', {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
     }));
 
@@ -27,10 +29,11 @@ describe('/api/push/pending', () => {
   });
 
   it('forbids non-admin authenticated users', async () => {
-    authMock.mockRejectedValueOnce(new Error('Forbidden'));
+    authMock.mockRejectedValueOnce(new ForbiddenError());
 
     const response = await POST(new Request('https://example.com/api/push/pending', {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
     }));
 
@@ -43,6 +46,7 @@ describe('/api/push/pending', () => {
 
     const response = await POST(new Request('https://example.com/api/push/pending', {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({}),
     }));
 
@@ -64,10 +68,12 @@ describe('/api/push/pending', () => {
 
     const response = await POST(new Request('https://example.com/api/push/pending', {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
     }));
 
     expect(response.status).toBe(200);
+    await expect(response.clone().json()).resolves.toMatchObject({ ok: true, data: { title: 'Recordatorio' } });
     expect(summaryMock).toHaveBeenCalledWith('https://push.example/sub', 'user-1');
   });
 });

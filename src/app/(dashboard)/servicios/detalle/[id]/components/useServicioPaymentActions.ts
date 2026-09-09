@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 
 import { reportError } from "@/platform/observability/logger";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { queryKeys } from "@/platform/query-keys";
 import {
   deleteServicioPagoDetalleWorkflow,
@@ -83,7 +84,7 @@ export function useServicioPaymentActions({
     } catch (error) {
       reportError("ServicioPaymentActions", "Error al actualizar pago", error);
       toast.error("Error al actualizar pago", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo actualizar el pago."),
       });
     }
   };
@@ -117,7 +118,7 @@ export function useServicioPaymentActions({
     } catch (error) {
       reportError("ServicioPaymentActions", "Error al eliminar renovacion", error);
       toast.error("Error al eliminar renovacion", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo eliminar el pago."),
       });
     }
   };
@@ -152,7 +153,7 @@ export function useServicioPaymentActions({
         return;
       }
       toast.error("Error al registrar la renovacion", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo renovar el servicio."),
       });
     }
   };

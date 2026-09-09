@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
 import { deleteTerceroMutation } from '@/application/client-domain-mutations';
 import { isUuid } from '@/platform/utils/safety';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 
 function TerceroDetallesPageContent() {
   const params = useParams();
@@ -84,7 +85,7 @@ function TerceroDetallesPageContent() {
       toast.success(`${usuario?.tipo === 'revendedor' ? 'Revendedor' : 'Cliente'} eliminado`, { description: 'El tercero ha sido eliminado correctamente del sistema.' });
       router.push('/terceros');
     } catch (error) {
-      toast.error('Error al eliminar tercero', { description: error instanceof Error ? error.message : undefined });
+      toast.error('Error al eliminar tercero', { description: getPublicErrorMessage(error, 'No se pudo eliminar el tercero.') });
     }
   };
 

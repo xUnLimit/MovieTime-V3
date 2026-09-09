@@ -14,6 +14,7 @@ import {
 } from '@/application/client-domain-mutations';
 import { queryKeys } from '@/platform/query-keys';
 import { toast } from 'sonner';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 
 interface TemplateEditorProps {
   templates: TemplateMensaje[];
@@ -112,7 +113,7 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
       await navigator.clipboard.writeText(placeholder);
       toast.success('Placeholder copiado', { description: 'El placeholder ha sido copiado al portapapeles.' });
     } catch (error) {
-      toast.error('Error al copiar', { description: error instanceof Error ? error.message : undefined });
+      toast.error('Error al copiar', { description: getPublicErrorMessage(error, 'No se pudo copiar el mensaje.') });
     }
   };
 
@@ -151,7 +152,7 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
         toast.success('Plantilla creada', { description: 'La nueva plantilla de mensaje ha sido creada correctamente.' });
       }
     } catch (error) {
-      toast.error('Error al guardar plantilla', { description: error instanceof Error ? error.message : undefined });
+      toast.error('Error al guardar plantilla', { description: getPublicErrorMessage(error, 'No se pudo guardar la plantilla.') });
     }
   };
 

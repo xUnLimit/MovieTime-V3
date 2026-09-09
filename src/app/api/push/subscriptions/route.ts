@@ -1,51 +1,45 @@
-import { NextResponse } from 'next/server';
-
-import { createServiceRoleClient } from '@/platform/server/supabase-server';
+import { pushEndpointSchema, pushSubscriptionSchema } from '@/modules/pwa/push-api-contracts';
+import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/platform/server/api-response';
+import { parseJsonRequest } from '@/platform/server/json-request';
 import { requireAuthenticatedAdmin } from '@/platform/server/request-auth';
+import { createServiceRoleClient } from '@/platform/server/supabase-server';
 
 export async function POST(request: Request) {
+  const requestId = createRequestId();
   try {
     const { user } = await requireAuthenticatedAdmin(request);
-    const payload = await request.json();
-    const endpoint = String(payload.endpoint ?? '');
-    const p256dh = String(payload.p256dh ?? '');
-    const auth = String(payload.auth ?? '');
-
-    if (!endpoint || !p256dh || !auth) {
-      return NextResponse.json({ error: 'Invalid subscription payload.' }, { status: 400 });
+    const parsed = await parseJsonRequest(request, pushSubscriptionSchema, 8 * 1024);
+    if (!parsed.success) {
+      return apiFailure(parsed.status, parsed.code, parsed.message, requestId, parsed.fieldErrors);
     }
 
     const client = createServiceRoleClient();
+    const { endpoint, p256dh, auth, platform, userAgent } = parsed.data;
     const { error } = await client.from('push_subscriptions').upsert({
       user_id: user.id,
       endpoint,
       p256dh,
       auth,
-      platform: String(payload.platform ?? 'unknown'),
-      user_agent: String(payload.userAgent ?? ''),
+      platform,
+      user_agent: userAgent,
       last_seen_at: new Date().toISOString(),
       enabled: true,
     }, { onConflict: 'endpoint' });
+    if (error) throw error;
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true });
+    return apiSuccess({ subscribed: true }, requestId);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized';
-    const status = message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return apiErrorResponse('PushSubscriptionsPostRoute', requestId, error);
   }
 }
 
 export async function DELETE(request: Request) {
+  const requestId = createRequestId();
   try {
     const { user } = await requireAuthenticatedAdmin(request);
-    const payload = await request.json();
-    const endpoint = String(payload.endpoint ?? '');
-    if (!endpoint) {
-      return NextResponse.json({ error: 'Endpoint is required.' }, { status: 400 });
+    const parsed = await parseJsonRequest(request, pushEndpointSchema, 4 * 1024);
+    if (!parsed.success) {
+      return apiFailure(parsed.status, parsed.code, parsed.message, requestId, parsed.fieldErrors);
     }
 
     const client = createServiceRoleClient();
@@ -53,16 +47,11 @@ export async function DELETE(request: Request) {
       .from('push_subscriptions')
       .update({ enabled: false, updated_at: new Date().toISOString() })
       .eq('user_id', user.id)
-      .eq('endpoint', endpoint);
+      .eq('endpoint', parsed.data.endpoint);
+    if (error) throw error;
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true });
+    return apiSuccess({ subscribed: false }, requestId);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized';
-    const status = message === 'Unauthorized' ? 401 : message === 'Forbidden' ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return apiErrorResponse('PushSubscriptionsDeleteRoute', requestId, error);
   }
 }

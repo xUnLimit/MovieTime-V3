@@ -23,8 +23,8 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
             <h1 className="text-xl font-semibold">Error crítico</h1>
-            <p className="text-sm text-gray-500">
-              {error.message || 'Un error inesperado ocurrió al cargar la aplicación.'}
+                        <p className="text-sm text-gray-500">
+              No se pudo cargar la aplicación. Inténtalo nuevamente.
             </p>
             {error.digest && (
               <p className="text-xs text-gray-400">Código: {error.digest}</p>

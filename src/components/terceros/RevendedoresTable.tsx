@@ -12,6 +12,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
 import { deleteTerceroMutation } from "@/application/client-domain-mutations";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import type { Tercero } from "@/types";
 import { RevendedoresTableActions } from "./RevendedoresTableActions";
 import { TodosTercerosTableToolbar } from "./TodosTercerosTableToolbar";
@@ -90,7 +91,7 @@ export function RevendedoresTable({
       onRefresh();
     } catch (error) {
       toast.error("Error al eliminar revendedor", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo eliminar el revendedor."),
       });
     }
   };

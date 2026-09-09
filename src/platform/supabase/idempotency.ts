@@ -10,7 +10,9 @@ export function createIdempotencyKey(): string {
   });
 }
 
-export function withIdempotencyKey<T extends { p_idempotency_key?: string | null }>(payload: T): T {
+export function withIdempotencyKey<T extends object>(
+  payload: T & { p_idempotency_key?: string | null }
+): T & { p_idempotency_key: string } {
   return {
     ...payload,
     p_idempotency_key: payload.p_idempotency_key ?? createIdempotencyKey(),

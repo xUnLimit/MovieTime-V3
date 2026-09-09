@@ -8,6 +8,7 @@ import { ModuleErrorBoundary } from "@/components/shared/ModuleErrorBoundary";
 import { PagoDialog, type EnrichedPagoDialogFormData } from "@/components/shared/PagoDialog";
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 import { afterCommit } from '@/platform/errors/mutation-committed-error';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { queryKeys } from "@/platform/query-keys";
 import { getActivityLogOptions } from "@/platform/activity/activity-log-adapter";
 import { applyNotificationQueryReactions } from "@/application/store-reactions/notification-query-reactions";
@@ -85,7 +86,7 @@ function ReposoPageContent() {
       setSelectedServicio(null);
     } catch (error) {
       toast.error("Error al activar servicio", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo activar el servicio."),
       });
     } finally {
       setIsActivating(false);
@@ -117,7 +118,7 @@ function ReposoPageContent() {
         return;
       }
       toast.error("Error al activar y renovar", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo renovar el servicio."),
       });
     }
   };
@@ -142,7 +143,7 @@ function ReposoPageContent() {
       setSelectedServicio(null);
     } catch (error) {
       toast.error("Error al eliminar servicio", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo eliminar el servicio."),
       });
     }
   };

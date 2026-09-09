@@ -1,5 +1,6 @@
 import { addMonths, differenceInCalendarDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CurrencyRateUnavailableError } from '@/platform/errors/domain-errors';
 type CicloPago = 'mensual' | 'trimestral' | 'semestral' | 'anual';
 type EstadoSuscripcion = 'activa' | 'suspendida' | 'inactiva' | 'vencida';
 
@@ -49,13 +50,12 @@ export function calcularMontoRestante(
 export function calcularMontoSinConsumir(
   fechaInicio: Date,
   fechaFin: Date,
-  montoTotal: number
+  montoTotal: number,
+  fechaCalculo: Date = new Date()
 ): number {
-  const hoy = new Date();
-
   // Calcular días usando differenceInCalendarDays (días completos)
   const totalDias = Math.max(differenceInCalendarDays(fechaFin, fechaInicio), 0);
-  const diasRestantes = Math.max(differenceInCalendarDays(fechaFin, hoy), 0);
+  const diasRestantes = Math.max(differenceInCalendarDays(fechaFin, fechaCalculo), 0);
 
   if (totalDias === 0) return 0;
   if (diasRestantes <= 0) return 0;
@@ -157,22 +157,30 @@ export function convertirMoneda(
   monedaDestino: string,
   tasas: Record<string, number>
 ): number {
+  if (monto === 0) return 0;
   if (monedaOrigen === monedaDestino) return monto;
+
+  const requireRate = (currency: string): number => {
+    const rate = tasas[`USD_${currency}`];
+    if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0) {
+      throw new CurrencyRateUnavailableError(monedaOrigen, monedaDestino, {
+        reason: 'invalid_provided_rate',
+        currency,
+      });
+    }
+    return rate;
+  };
 
   // Convertir primero a USD si no es USD
   let montoUSD = monto;
   if (monedaOrigen !== 'USD') {
-    const tasaKey = `USD_${monedaOrigen}`;
-    const tasa = tasas[tasaKey] || 1;
-    montoUSD = monto / tasa;
+    montoUSD = monto / requireRate(monedaOrigen);
   }
 
   // Convertir de USD a moneda destino
   if (monedaDestino === 'USD') return montoUSD;
 
-  const tasaKey = `USD_${monedaDestino}`;
-  const tasa = tasas[tasaKey] || 1;
-  return montoUSD * tasa;
+  return montoUSD * requireRate(monedaDestino);
 }
 
 /**

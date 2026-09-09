@@ -25,6 +25,7 @@ export interface VentaReembolsoFormData {
   fecha: Date;
   nota?: string;
   cortarServicio: boolean;
+  inactivarServicio: boolean;
   motivoCorte?: string;
 }
 

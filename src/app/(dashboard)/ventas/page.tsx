@@ -15,6 +15,7 @@ import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useServerPagination } from '@/hooks/useServerPagination';
 import { deleteVentaMutation } from '@/application/client-domain-mutations';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { subscribeToVentaListReactions } from '@/platform/events/cache-reactions';
 import { reportError } from '@/platform/observability/logger';
 import { queryKeys } from '@/platform/query-keys';
@@ -104,7 +105,7 @@ function VentasPageContent() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.ventas.counts() });
     } catch (error) {
       reportError('VentasPage', 'Error eliminando venta', error);
-      toast.error('Error eliminando venta', { description: error instanceof Error ? error.message : undefined });
+      toast.error('Error eliminando venta', { description: getPublicErrorMessage(error, 'No se pudo eliminar la venta.') });
     }
   };
 

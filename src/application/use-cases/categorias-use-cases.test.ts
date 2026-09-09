@@ -58,8 +58,8 @@ describe('createCategoriaUseCase', () => {
     const createdRow = {
       id: 'categoria-1',
       nombre: 'Netflix',
-      tipo: 'cliente',
-      tipo_categoria: 'plataforma_streaming',
+      tipo: 'cliente' as const,
+      tipo_categoria: 'plataforma_streaming' as const,
       notas: 'Nota de creación',
       activo: true,
       created_at: '2026-01-01T00:00:00Z',

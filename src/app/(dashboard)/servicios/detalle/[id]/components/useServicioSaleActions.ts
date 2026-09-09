@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { queryKeys } from "@/platform/query-keys";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { getActivityLogOptions } from "@/platform/activity/activity-log-adapter";
 import {
   cutVentaFromServicioDetalleWorkflow,
@@ -61,7 +62,7 @@ export function useServicioSaleActions({
       setCutVentaDialogOpen(true);
     } catch (error) {
       toast.error("No se pudo cargar la venta", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo cargar la venta."),
       });
     }
   };
@@ -73,7 +74,7 @@ export function useServicioSaleActions({
       setTransferVentaDialogOpen(true);
     } catch (error) {
       toast.error("No se pudo preparar la transferencia", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo preparar la venta."),
       });
     }
   };
@@ -105,7 +106,7 @@ export function useServicioSaleActions({
       });
     } catch (error) {
       toast.error("Error al cortar la venta", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo cortar la venta."),
       });
     } finally {
       setIsSaleActionSubmitting(false);
@@ -173,7 +174,7 @@ export function useServicioSaleActions({
       });
     } catch (error) {
       toast.error("Error al transferir la venta", {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo transferir la venta."),
       });
     } finally {
       setIsSaleActionSubmitting(false);

@@ -35,6 +35,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 npm install
 npm run dev
 npm run lint
+npm run typecheck
 npm test -- --run
 npm run test:coverage
 npm run build
@@ -72,7 +73,7 @@ Directorios principales:
 
 `.github/workflows/quality.yml` ejecuta los gates de calidad en cada Pull Request y push a `main`:
 
-- **Job `quality`** (siempre): `secrets:scan` (sobre los archivos cambiados vs la rama base), `lint`, `test:coverage` y `build`. No requiere credenciales: `src/config/env.ts` omite la validacion estricta durante `next build` (detecta la fase de build via `NEXT_PHASE`), asi que el build compila sin variables. La validacion estricta de entorno corre en runtime real.
+- **Job `quality`** (siempre): `secrets:scan` (sobre los archivos cambiados vs la rama base), `lint`, `typecheck`, `test:coverage` y `build`. `typecheck` valida tanto la aplicación como las pruebas. No requiere credenciales: `src/config/env.ts` omite la validacion estricta durante `next build` (detecta la fase de build via `NEXT_PHASE`), asi que el build compila sin variables. La validacion estricta de entorno corre en runtime real.
 - **Job `supabase-validation`** (condicional): corre `migrate:validate` contra Supabase. Solo se ejecuta si los *secrets* del repo estan configurados; si no, se omite con un aviso en vez de fallar (util para forks).
 
 Secrets opcionales del repositorio (Settings -> Secrets and variables -> Actions) para activar la validacion Supabase:

@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { usePagosVenta } from '@/hooks/use-pagos-venta';
 import { useTemplates } from '@/hooks/use-templates';
 import { reportError } from '@/platform/observability/logger';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { queryKeys } from '@/platform/query-keys';
 import {
   buildVentaPaymentRows,
@@ -29,7 +30,12 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { deleteNotificacionesPorVenta, deleteVenta, updatePerfilOcupado } = useVentaDetalleStoreDependencies();
+  const {
+    deleteNotificacionesPorVenta,
+    deleteVenta,
+    inactivateServicio,
+    updatePerfilOcupado,
+  } = useVentaDetalleStoreDependencies();
   const { data: templates = [] } = useTemplates();
   const getTemplateByTipo = useCallback(
     (tipo: TemplateMensaje['tipo']) =>
@@ -80,8 +86,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
 
     reportError('VentaDetalle', 'Error cargando venta', ventaDetalleQuery.error);
     toast.error('Error cargando venta', {
-      description:
-        ventaDetalleQuery.error instanceof Error ? ventaDetalleQuery.error.message : undefined,
+      description: getPublicErrorMessage(ventaDetalleQuery.error, 'No se pudo cargar la venta.'),
     });
   }, [ventaDetalleQuery.error]);
 
@@ -152,6 +157,7 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     ensureDialogDependencies,
     getTemplateByTipo,
     id,
+    inactivateServicio,
     metodosPago,
     onDeleted: () => router.push('/ventas'),
     queryClient,

@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Check, Edit, ListFilter, MoreHorizontal, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { Column, DataTable } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
@@ -134,7 +135,7 @@ export function GastosTable({
       setGastoToDelete(null);
     } catch (error) {
       toast.error('Error al eliminar gasto', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo eliminar el gasto.'),
       });
     } finally {
       setIsDeleting(false);

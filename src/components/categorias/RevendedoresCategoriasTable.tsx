@@ -16,6 +16,7 @@ import {
 import { Search, MoreHorizontal, Eye, Edit, Trash2, Check, ListFilter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { deleteCategoriaMutation } from "@/application/client-domain-mutations";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -78,7 +79,7 @@ export function RevendedoresCategoriasTable({
         });
       } catch (error) {
         toast.error("Error al eliminar categoría", {
-          description: error instanceof Error ? error.message : undefined,
+          description: getPublicErrorMessage(error, "No se pudo eliminar la categoría."),
         });
       }
     }

@@ -25,7 +25,7 @@ describe('useVentasStore', () => {
 
   it('keeps only UI state and does not expose remote mutation APIs', async () => {
     const { useVentasStore } = await import('./ventasStore');
-    const state = useVentasStore.getState() as Record<string, unknown>;
+    const state = useVentasStore.getState() as unknown as Record<string, unknown>;
 
     expect(state.ventas).toBeUndefined();
     expect(state.fetchVentas).toBeUndefined();

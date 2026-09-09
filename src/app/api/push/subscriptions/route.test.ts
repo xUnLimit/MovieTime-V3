@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { UnauthorizedError } from '@/platform/server/api-errors';
 
 const authMock = vi.hoisted(() => vi.fn());
 const upsertMock = vi.hoisted(() => vi.fn());
@@ -20,10 +21,11 @@ import { DELETE, POST } from './route';
 
 describe('/api/push/subscriptions', () => {
   it('requires an authenticated admin before creating subscriptions', async () => {
-    authMock.mockRejectedValueOnce(new Error('Unauthorized'));
+    authMock.mockRejectedValueOnce(new UnauthorizedError());
 
     const response = await POST(new Request('https://example.com/api/push/subscriptions', {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
     }));
 
@@ -36,11 +38,66 @@ describe('/api/push/subscriptions', () => {
 
     const response = await POST(new Request('https://example.com/api/push/subscriptions', {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
     }));
 
     expect(response.status).toBe(400);
     expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('requires JSON and rejects oversized or unknown input before service-role access', async () => {
+    authMock.mockResolvedValue({ user: { id: 'user-1' } });
+
+    const wrongType = await POST(new Request('https://example.com/api/push/subscriptions', {
+      method: 'POST',
+      body: '{}',
+    }));
+    const oversized = await POST(new Request('https://example.com/api/push/subscriptions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-length': '9000' },
+      body: '{}',
+    }));
+    const unknownField = await POST(new Request('https://example.com/api/push/subscriptions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        endpoint: 'https://push.example/sub',
+        p256dh: 'p256dh_key_1234567890',
+        auth: 'auth_key_1234567890',
+        secretExtra: 'must-not-pass',
+      }),
+    }));
+
+    expect(wrongType.status).toBe(400);
+    expect(oversized.status).toBe(413);
+    expect(unknownField.status).toBe(400);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('does not expose Supabase errors and correlates the response', async () => {
+    authMock.mockResolvedValueOnce({ user: { id: 'user-1' } });
+    fromMock.mockReturnValueOnce({ upsert: upsertMock });
+    upsertMock.mockResolvedValueOnce({ error: new Error('relation push_subscriptions is unavailable') });
+
+    const response = await POST(new Request('https://example.com/api/push/subscriptions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        endpoint: 'https://push.example/sub',
+        p256dh: 'p256dh_key_1234567890',
+        auth: 'auth_key_1234567890',
+      }),
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toEqual({
+      code: 'INTERNAL_ERROR',
+      message: 'No se pudo completar la solicitud.',
+    });
+    expect(JSON.stringify(body)).not.toContain('push_subscriptions is unavailable');
+    expect(response.headers.get('x-request-id')).toBe(body.requestId);
   });
 
   it('upserts subscriptions with the authenticated user id', async () => {
@@ -50,10 +107,11 @@ describe('/api/push/subscriptions', () => {
 
     const response = await POST(new Request('https://example.com/api/push/subscriptions', {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         endpoint: 'https://push.example/sub',
-        p256dh: 'key',
-        auth: 'auth-secret',
+        p256dh: 'p256dh_key_1234567890',
+        auth: 'auth_key_1234567890',
         platform: 'web',
         userAgent: 'agent',
       }),
@@ -65,8 +123,8 @@ describe('/api/push/subscriptions', () => {
       expect.objectContaining({
         user_id: 'user-1',
         endpoint: 'https://push.example/sub',
-        p256dh: 'key',
-        auth: 'auth-secret',
+        p256dh: 'p256dh_key_1234567890',
+        auth: 'auth_key_1234567890',
         enabled: true,
       }),
       { onConflict: 'endpoint' },
@@ -83,6 +141,7 @@ describe('/api/push/subscriptions', () => {
 
     const response = await DELETE(new Request('https://example.com/api/push/subscriptions', {
       method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
     }));
 

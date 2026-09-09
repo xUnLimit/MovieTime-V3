@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { TipoGasto } from '@/types';
 import {
   createTipoGastoMutation,
@@ -99,7 +100,7 @@ export function TipoGastoDialog({ open, onOpenChange, tipoGasto, onSaved }: Tipo
       onOpenChange(false);
     } catch (error) {
       toast.error(tipoGasto ? 'Error al actualizar tipo de gasto' : 'Error al crear tipo de gasto', {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, 'No se pudo guardar el tipo de gasto.'),
       });
     }
   };

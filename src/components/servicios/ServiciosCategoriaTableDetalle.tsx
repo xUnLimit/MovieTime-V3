@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { deleteServicioMutation } from "@/application/client-domain-mutations";
 import { queryKeys } from "@/platform/query-keys";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import type { Servicio } from "@/types";
 import { ServiciosCategoriaTableDetalleActions } from "./ServiciosCategoriaTableDetalleActions";
 import { ServiciosCategoriaTableDetalleToolbar } from "./ServiciosCategoriaTableDetalleToolbar";
@@ -113,7 +114,7 @@ export const ServiciosCategoriaTableDetalle = memo(
         setServicioToDelete(null);
       } catch (error) {
         toast.error("Error al eliminar servicio", {
-          description: error instanceof Error ? error.message : undefined,
+          description: getPublicErrorMessage(error, "No se pudo eliminar el servicio."),
         });
       }
     };

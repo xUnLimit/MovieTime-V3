@@ -8,6 +8,7 @@ export interface VentaDetalleQueryData {
 export type VentaDetalleWorkflowDeps = {
   deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
   deleteVenta: (ventaId: string, servicioId?: string, perfilNumero?: number | null, deletePagos?: boolean) => Promise<void>;
+  inactivateServicio: (servicioId: string, motivoCorte: string) => Promise<void>;
   invalidateNotifications: () => Promise<unknown>;
   refreshPagos: () => Promise<unknown> | unknown;
   updatePerfilOcupado: (servicioId: string, shouldIncrement: boolean) => Promise<void>;
@@ -40,6 +41,7 @@ export type VentaRefundWorkflowInput = {
   fecha: Date;
   nota?: string;
   cortarServicio: boolean;
+  inactivarServicio?: boolean;
   motivoCorte?: string;
 };
 
@@ -55,6 +57,7 @@ export type VentaDetalleWorkflowOutcome =
   | {
       type: 'ventaRefunded';
       cut: boolean;
+      serviceInactivated: boolean;
       ventaActualizada: VentaDoc | null;
     }
   | {

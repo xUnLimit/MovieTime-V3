@@ -30,7 +30,7 @@ export function DashboardErrorFallback({ error, reset }: DashboardErrorFallbackP
           Ha ocurrido un error inesperado. Por favor, intenta recargar la página.
         </p>
 
-        {error && (
+        {process.env.NODE_ENV === 'development' && error && (
           <details className="text-sm">
             <summary className="cursor-pointer font-medium mb-2">Detalles del error</summary>
             <pre className="bg-muted p-3 rounded-md overflow-auto text-xs">

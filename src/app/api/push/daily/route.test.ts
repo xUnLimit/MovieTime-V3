@@ -54,14 +54,13 @@ describe('/api/push/daily', () => {
     const body = await response.json();
 
     expect(response.status).toBe(502);
-    expect(body).toEqual({
+    expect(body).toMatchObject({
       ok: false,
-      sent: 0,
-      disabled: 1,
-      failed: 1,
-      skipped: 'no_successful_deliveries',
-      pushDate: '2026-05-09',
+      error: {
+        code: 'NO_SUCCESSFUL_DELIVERIES',
+      },
     });
+    expect(body.requestId).toEqual(expect.any(String));
   });
 });
 

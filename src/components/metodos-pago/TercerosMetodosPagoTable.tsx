@@ -16,6 +16,7 @@ import {
 import { Check, Globe2, Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { deleteMetodoPagoMutation } from "@/application/client-domain-mutations";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -77,7 +78,7 @@ export function TercerosMetodosPagoTable({
         toast.success("Método de pago eliminado");
       } catch (error) {
         toast.error("Error al eliminar método de pago", {
-          description: error instanceof Error ? error.message : undefined,
+          description: getPublicErrorMessage(error, "No se pudo eliminar el método de pago."),
         });
       }
     }

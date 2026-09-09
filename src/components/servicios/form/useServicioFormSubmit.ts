@@ -7,6 +7,7 @@ import type { UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
+import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 
 import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
 import { reportError } from "@/platform/observability/logger";
@@ -205,7 +206,7 @@ export function useServicioFormSubmit({
         servicio?.id
           ? "Error al actualizar el servicio"
           : "Error al crear el servicio",
-        { description: error instanceof Error ? error.message : undefined },
+        { description: getPublicErrorMessage(error, 'No se pudo guardar el servicio.') },
       );
       reportError("ServicioFormSubmit", "Error guardando servicio", error);
     } finally {

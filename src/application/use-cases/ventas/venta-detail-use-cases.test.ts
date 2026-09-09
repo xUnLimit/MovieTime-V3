@@ -83,6 +83,7 @@ describe('venta detail workflows', () => {
     await expect(refundVentaDetalleWorkflow({
       deps: {
         deleteNotificacionesPorVenta: vi.fn(), invalidateNotifications: vi.fn(), refreshPagos: vi.fn(),
+        inactivateServicio: vi.fn(),
         updatePerfilOcupado: vi.fn().mockRejectedValue(new Error('refresh failed')),
       },
       id: venta.id,
@@ -118,6 +119,7 @@ describe('venta detail workflows', () => {
   it('renews a venta and returns an explicit outcome', async () => {
     const deps = {
       deleteNotificacionesPorVenta: vi.fn().mockResolvedValue(undefined),
+      inactivateServicio: vi.fn().mockResolvedValue(undefined),
       invalidateNotifications: vi.fn().mockResolvedValue(undefined),
       refreshPagos: vi.fn(),
     };
@@ -163,6 +165,7 @@ describe('venta detail workflows', () => {
   it('refunds and cuts a venta while updating service profile through the seam', async () => {
     const deps = {
       deleteNotificacionesPorVenta: vi.fn().mockResolvedValue(undefined),
+      inactivateServicio: vi.fn().mockResolvedValue(undefined),
       invalidateNotifications: vi.fn().mockResolvedValue(undefined),
       refreshPagos: vi.fn(),
       updatePerfilOcupado: vi.fn().mockResolvedValue(undefined),
@@ -188,10 +191,48 @@ describe('venta detail workflows', () => {
       venta,
     });
 
-    expect(outcome).toMatchObject({ type: 'ventaRefunded', cut: true });
+    expect(outcome).toMatchObject({ type: 'ventaRefunded', cut: true, serviceInactivated: false });
     expect(deps.updatePerfilOcupado).toHaveBeenCalledWith('servicio-1', false);
     expect(deps.deleteNotificacionesPorVenta).toHaveBeenCalledWith('venta-1');
     expect(deps.invalidateNotifications).toHaveBeenCalledTimes(1);
+  });
+
+  it('can also inactivate the complete service after cutting the venta', async () => {
+    const deps = {
+      deleteNotificacionesPorVenta: vi.fn().mockResolvedValue(undefined),
+      inactivateServicio: vi.fn().mockResolvedValue(undefined),
+      invalidateNotifications: vi.fn().mockResolvedValue(undefined),
+      refreshPagos: vi.fn(),
+      updatePerfilOcupado: vi.fn().mockResolvedValue(undefined),
+    };
+    ventaRefunds.createVentaRefundUseCase.mockResolvedValue({
+      serviceProfileDelta: { servicioId: 'servicio-1', shouldIncrement: false },
+      ventaActualizada: { ...venta, estado: 'inactivo' },
+      pronostico: null,
+    });
+
+    const outcome = await refundVentaDetalleWorkflow({
+      deps,
+      id: 'venta-1',
+      input: {
+        monto: 5,
+        metodoPagoId: 'metodo-1',
+        destinoReembolso: 'cliente',
+        fecha: new Date('2026-05-15T00:00:00.000Z'),
+        cortarServicio: true,
+        inactivarServicio: true,
+        motivoCorte: 'Cuenta cerrada',
+      },
+      log: testLog,
+      venta,
+    });
+
+    expect(deps.inactivateServicio).toHaveBeenCalledWith('servicio-1', 'Cuenta cerrada');
+    expect(outcome).toMatchObject({
+      type: 'ventaRefunded',
+      cut: true,
+      serviceInactivated: true,
+    });
   });
 
   it('updates a venta payment and returns refreshed venta data', async () => {

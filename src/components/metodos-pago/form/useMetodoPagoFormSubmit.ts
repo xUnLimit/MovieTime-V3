@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { reportError } from "@/platform/observability/logger";
+import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { queryKeys } from "@/platform/query-keys";
 import type { MetodoPago } from "@/types";
 
@@ -70,7 +71,7 @@ export function useMetodoPagoFormSubmit({
           ? "Error al crear el metodo de pago"
           : "Error al actualizar el metodo de pago";
       toast.error(message, {
-        description: error instanceof Error ? error.message : undefined,
+        description: getPublicErrorMessage(error, "No se pudo guardar el método de pago."),
       });
       reportError("MetodoPagoFormSubmit", message, error);
     }
