@@ -8,6 +8,7 @@ module.exports = {
   ci: {
     collect: {
       numberOfRuns: 3,
+      puppeteerScript: './scripts/lighthouse-vercel-auth.cjs',
       settings: {
         chromeFlags: '--no-sandbox --headless',
         extraHeaders: {
