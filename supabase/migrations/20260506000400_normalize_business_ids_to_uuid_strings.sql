@@ -228,18 +228,29 @@ BEGIN
       ('ventas', 'servicio_id', 'servicios')
     ) AS updates(table_name, column_name, entity_name)
   LOOP
-    EXECUTE format(
-      'UPDATE public.%1$I t
-       SET %2$I = m.new_id::text
-       FROM public.uuid_id_map m
-       WHERE m.entity_name = %3$L
-         AND t.%2$I IS NOT NULL
-         AND t.%2$I = m.old_id
-         AND t.%2$I <> m.new_id::text',
-      r.table_name,
-      r.column_name,
-      r.entity_name
-    );
+    -- Some snapshot columns were introduced by later migrations. Keeping the
+    -- list complete is useful for upgraded databases, while this guard makes
+    -- the historical chain reproducible from an empty database as well.
+    IF EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = r.table_name
+        AND column_name = r.column_name
+    ) THEN
+      EXECUTE format(
+        'UPDATE public.%1$I t
+         SET %2$I = m.new_id::text
+         FROM public.uuid_id_map m
+         WHERE m.entity_name = %3$L
+           AND t.%2$I IS NOT NULL
+           AND t.%2$I = m.old_id
+           AND t.%2$I <> m.new_id::text',
+        r.table_name,
+        r.column_name,
+        r.entity_name
+      );
+    END IF;
   END LOOP;
 END $$;
 

@@ -92,7 +92,7 @@ export function ServicioSummaryCards({
                 texto = `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
               } else {
                 badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
-                texto = `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
+                texto = `${dias} días restantes`;
               }
               return (
                 <div className="flex items-start gap-2">

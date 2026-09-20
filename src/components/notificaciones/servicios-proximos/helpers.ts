@@ -63,7 +63,7 @@ export function getEstadoBadge(
     variant: resaltada
       ? 'border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
       : 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',
-    text: `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`,
+    text: `${diasRestantes} días restantes`,
   };
 }
 

@@ -228,7 +228,7 @@ export function ServicioProfilesSection({
                             badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
                           } else {
                             badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
-                            badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
+                            badgeText = `${diasRestantes} días restantes`;
                           }
                           return (
                             <div className="flex items-center gap-2">

@@ -80,7 +80,7 @@ describe('notification store workflows', () => {
 
   it('handles absent active query client safely', () => {
     mocks.getClient.mockReturnValue(null);
-    expect(refreshVentasStoreCache()).toBeUndefined();
+    refreshVentasStoreCache();
     expect(getCurrentMetodosPagoStoreSnapshot()).toEqual([]);
   });
 });

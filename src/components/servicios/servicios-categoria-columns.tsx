@@ -62,7 +62,7 @@ function getEstadoBadge(dias: number): { className: string; text: string } {
   return {
     className:
       "border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
-    text: `${dias} dia${dias > 1 ? "s" : ""} restante${dias > 1 ? "s" : ""}`,
+    text: `${dias} dias restantes`,
   };
 }
 

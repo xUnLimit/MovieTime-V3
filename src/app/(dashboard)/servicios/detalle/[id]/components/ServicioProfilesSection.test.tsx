@@ -10,6 +10,7 @@ describe('service profile renewal count', () => {
   it.each([0, 4, undefined])('shows the sale renewal count %s with its icon in the expanded profile', (renovaciones) => {
     const { result } = renderHook(() => useServicioProfiles(servicio, [{
       ventaId: 'sale-1', perfilNumero: 1, clienteNombre: 'Cliente', renovaciones,
+      fechaFin: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
     }]));
     render(<ServicioProfilesSection
       servicio={servicio} visiblePerfiles={result.current.visiblePerfiles} expandedProfileNumber={1}
@@ -26,5 +27,6 @@ describe('service profile renewal count', () => {
     expect(grid.children[3]).toBe(column);
     expect(grid.classList.contains('lg:grid-cols-4')).toBe(true);
     expect(screen.getAllByText('Renovaciones:')).toHaveLength(1);
+    expect(screen.getByText(/días restantes$/)).not.toBeNull();
   });
 });

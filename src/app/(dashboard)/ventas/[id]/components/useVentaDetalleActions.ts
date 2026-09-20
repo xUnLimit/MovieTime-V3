@@ -125,7 +125,7 @@ export function useVentaDetalleActions({
       if (outcome.type === 'ventaRenewed') setVentaData(outcome.ventaActualizada);
       setRenovarDialogOpen(false);
 
-      if (outcome.type === 'ventaRenewed' && outcome.whatsappRequested && venta) {
+      if (outcome.type === 'ventaRenewed' && outcome.whatsappRequested) {
         showVentaRenovadaWhatsAppToast({
           data,
           monto: outcome.monto,
