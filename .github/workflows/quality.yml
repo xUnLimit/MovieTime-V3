@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  actions: read
   contents: read
   security-events: write
 
@@ -115,15 +116,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: github/codeql-action/init@ed1a0fa18ac745d017ca370dd4ef08bba3b4f504 # v3
+      - uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
         with:
           languages: javascript-typescript
           queries: security-and-quality
-      - uses: github/codeql-action/analyze@ed1a0fa18ac745d017ca370dd4ef08bba3b4f504 # v3
-      - name: Block open CodeQL alerts on main
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        with:
+          output: codeql-results
+          upload: never
+      - name: Block every CodeQL finding
+        shell: bash
         run: |
-          count="$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&ref=refs/heads/main&per_page=100" --jq 'length')"
-          test "$count" -eq 0 || { echo "Open CodeQL alerts: $count"; exit 1; }
+          count="$(jq -s '[.[].runs[]?.results[]?] | length' codeql-results/*.sarif)"
+          test "$count" -eq 0 || { echo "CodeQL findings: $count"; exit 1; }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: codeql-sarif
+          path: codeql-results/
+          retention-days: 30
