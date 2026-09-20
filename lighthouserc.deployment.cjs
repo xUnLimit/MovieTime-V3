@@ -9,8 +9,8 @@ module.exports = {
     collect: {
       numberOfRuns: 3,
       puppeteerScript: './scripts/lighthouse-vercel-auth.cjs',
+      puppeteerLaunchOptions: { args: ['--no-sandbox'] },
       settings: {
-        chromeFlags: '--no-sandbox --headless',
         extraHeaders: {
           'x-vercel-protection-bypass': bypassSecret,
         },

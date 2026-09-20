@@ -100,13 +100,18 @@ jobs:
           configPath: ./lighthouserc.deployment.cjs
           uploadArtifacts: true
       - name: Promote exact staged deployment
-        run: npx --yes vercel@59.23.2 promote '${{ steps.deploy.outputs.url }}' --token '${{ secrets.VERCEL_TOKEN }}'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes vercel@59.23.2 promote '${{ steps.deploy.outputs.url }}' --scope "$VERCEL_ORG_ID" --token '${{ secrets.VERCEL_TOKEN }}'
       - name: Verify production or roll back
         shell: bash
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.PRODUCTION_URL }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           if ! npm run test:e2e; then
-            npx --yes vercel@59.23.2 rollback --token '${{ secrets.VERCEL_TOKEN }}'
+            npx --yes vercel@59.23.2 rollback --scope "$VERCEL_ORG_ID" --token '${{ secrets.VERCEL_TOKEN }}'
             exit 1
           fi
