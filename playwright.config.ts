@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const vercelAutomationBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -9,6 +11,12 @@ export default defineConfig({
   reporter: process.env.CI ? [['html', { open: 'never' }], ['github']] : 'list',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000',
+    extraHTTPHeaders: vercelAutomationBypass
+      ? {
+          'x-vercel-protection-bypass': vercelAutomationBypass,
+          'x-vercel-set-bypass-cookie': 'true',
+        }
+      : undefined,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

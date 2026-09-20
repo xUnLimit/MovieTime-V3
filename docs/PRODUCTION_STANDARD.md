@@ -32,7 +32,7 @@ Un release es elegible solo cuando `npm run release:check` y todos los jobs de G
 5. Vercel promueve exactamente esa URL.
 6. Se verifica `PRODUCTION_URL`. Si falla, se ejecuta `vercel rollback` y el workflow termina en rojo.
 
-En Vercel debe desactivarse la asignacion automatica del dominio productivo. Los secrets requeridos en el environment `production` de GitHub son `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID`, `SUPABASE_DB_PASSWORD`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY`. `PRODUCTION_URL` se configura como variable del environment.
+En Vercel debe desactivarse la asignacion automatica del dominio productivo. Los secrets requeridos en el environment `production` de GitHub son `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID`, `SUPABASE_DB_PASSWORD`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `PUSH_CRON_SECRET` y `SUPABASE_SERVICE_ROLE_KEY`. `PRODUCTION_URL` se configura como variable del environment. El workflow obtiene temporalmente desde Vercel el bypass de automatizacion, lo enmascara y lo envia solo como header desde los controles de CI; no lo persiste en GitHub ni lo incluye en URLs, logs o artefactos.
 
 ## Operacion
 
