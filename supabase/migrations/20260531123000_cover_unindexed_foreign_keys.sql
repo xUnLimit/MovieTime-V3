@@ -12,5 +12,22 @@
 CREATE INDEX IF NOT EXISTS idx_config_executive_push_updated_by
   ON public.config (executive_push_updated_by);
 
-CREATE INDEX IF NOT EXISTS idx_notificaciones_venta_metodo_pago_id
-  ON public.notificaciones_venta (metodo_pago_id);
+-- The notification payment-method column was introduced later in the historical
+-- migration chain (20260823150000). Existing environments already had it when
+-- this index migration was created, but a clean replay does not. Only create
+-- the index here when the column is present; the later migration creates the
+-- same index after adding the column for clean databases.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'notificaciones_venta'
+      AND column_name = 'metodo_pago_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_notificaciones_venta_metodo_pago_id
+      ON public.notificaciones_venta (metodo_pago_id);
+  END IF;
+END;
+$$;
