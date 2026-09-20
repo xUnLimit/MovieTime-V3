@@ -13,15 +13,16 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: ['e2e/**', 'node_modules/**', '.next/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       thresholds: {
-        statements: 45,
-        branches: 36,
-        functions: 42,
-        lines: 48,
+        statements: 80,
+        branches: 70,
+        functions: 80,
+        lines: 80,
         'src/modules/payments/**': {
           statements: 85,
           branches: 65,

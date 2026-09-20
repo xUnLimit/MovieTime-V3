@@ -17,6 +17,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['192.168.60.9', '127.0.0.1', 'localhost'],
   compress: true,
   poweredByHeader: false,
   skipTrailingSlashRedirect: true,

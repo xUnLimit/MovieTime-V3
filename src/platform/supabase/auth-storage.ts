@@ -73,12 +73,12 @@ function getLegacyCookieParts(cookies: Map<string, string>, storageKey: string) 
     return [{ name: storageKey, value: wholeValue }];
   }
 
-  const escapedKey = storageKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const chunkPattern = new RegExp(`^${escapedKey}\\.(\\d+)$`);
+  const chunkPrefix = `${storageKey}.`;
   const chunks = [...cookies.entries()]
     .map(([name, value]) => {
-      const match = name.match(chunkPattern);
-      return match ? { name, value, index: Number(match[1]) } : null;
+      if (!name.startsWith(chunkPrefix)) return null;
+      const suffix = name.slice(chunkPrefix.length);
+      return /^\d+$/.test(suffix) ? { name, value, index: Number(suffix) } : null;
     })
     .filter((chunk): chunk is { name: string; value: string; index: number } => chunk !== null)
     .sort((left, right) => left.index - right.index);
@@ -184,11 +184,11 @@ export function clearLegacyAuthCookies(
   cookieDocument: CookieDocument = document,
   secure = typeof location !== 'undefined' && location.protocol === 'https:'
 ): void {
-  const escapedKey = storageKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const cookiePattern = new RegExp(`^${escapedKey}(?:\\.\\d+)?$`);
+  const cookiePrefix = `${storageKey}.`;
   const cookies = parseCookies(cookieDocument.cookie);
   for (const name of cookies.keys()) {
-    if (cookiePattern.test(name)) {
+    const suffix = name.startsWith(cookiePrefix) ? name.slice(cookiePrefix.length) : '';
+    if (name === storageKey || /^\d+$/.test(suffix)) {
       expireCookie(name, cookieDocument, secure);
     }
   }

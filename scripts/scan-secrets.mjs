@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
+const scanAllTrackedFiles = process.argv.includes('--all');
+
 const secretPatterns = [
   {
     name: 'private key block',
@@ -57,6 +59,17 @@ function getWorkingTreeFiles() {
     .filter((path) => !ignoredPaths.some((ignored) => ignored.test(path.replaceAll('\\', '/'))));
 }
 
+function getAllTrackedFiles() {
+  const tracked = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' });
+  const untracked = execFileSync('git', ['ls-files', '--others', '--exclude-standard', '-z'], {
+    encoding: 'utf8',
+  });
+  return [...new Set([...tracked.split('\0'), ...untracked.split('\0')])]
+    .map((path) => path.trim())
+    .filter(Boolean)
+    .filter((path) => !ignoredPaths.some((ignored) => ignored.test(path.replaceAll('\\', '/'))));
+}
+
 function getStagedContent(path) {
   try {
     return execFileSync('git', ['show', `:${path}`], {
@@ -83,7 +96,9 @@ function scanContent(scope, file, content) {
 
   const lines = content.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
+    // Supabase config uses quoted env(NAME) references; those are indirections,
+    // not embedded values, and must not be reported as credentials.
+    const line = lines[index].replace(/["']env\([A-Z0-9_]+\)["']/g, "''");
     for (const { name, pattern } of secretPatterns) {
       if (pattern.test(line)) {
         findings.push(`${scope}:${file}:${index + 1} possible ${name}`);
@@ -92,12 +107,18 @@ function scanContent(scope, file, content) {
   }
 }
 
-for (const file of getStagedFiles()) {
-  scanContent('staged', file, getStagedContent(file));
-}
+if (scanAllTrackedFiles) {
+  for (const file of getAllTrackedFiles()) {
+    scanContent('tracked', file, getWorkingTreeContent(file));
+  }
+} else {
+  for (const file of getStagedFiles()) {
+    scanContent('staged', file, getStagedContent(file));
+  }
 
-for (const file of getWorkingTreeFiles()) {
-  scanContent('working-tree', file, getWorkingTreeContent(file));
+  for (const file of getWorkingTreeFiles()) {
+    scanContent('working-tree', file, getWorkingTreeContent(file));
+  }
 }
 
 if (findings.length > 0) {

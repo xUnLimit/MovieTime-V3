@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
+const fromMock = vi.hoisted(() => vi.fn());
+vi.mock('@/platform/supabase/client', () => ({ supabase: { from: fromMock } }));
+
 import { CurrencyRateUnavailableError } from '@/platform/errors/domain-errors';
 import type { Logger } from '@/platform/observability/logger';
 import type { CachedRates } from './currency-rates';
@@ -46,6 +49,14 @@ function createService(options: {
     logger: createLogger(),
   });
   return { service, readCache, fetchRates, writeCache };
+}
+
+function cacheReadResult(data: unknown, error: { message: string } | null = null) {
+  return {
+    select: vi.fn().mockReturnValue({
+      like: vi.fn().mockResolvedValue({ data, error }),
+    }),
+  };
 }
 
 describe('CurrencyService', () => {
@@ -116,5 +127,101 @@ describe('CurrencyService', () => {
   it('blocks synchronous conversion until valid rates are loaded', () => {
     const { service } = createService();
     expect(() => service.convertToUSDSync(100, 'EUR')).toThrow(CurrencyRateUnavailableError);
+  });
+
+  it('converts directly, across two non-USD currencies and synchronously', async () => {
+    const { service } = createService({ cached: rates(1, { USD_EUR: 2, USD_MXN: 20 }) });
+    await expect(service.convertToUSD(10, ' USD ')).resolves.toBe(10);
+    await expect(service.getExchangeRate('EUR', 'MXN')).resolves.toBe(10);
+    expect(service.convertToUSDSync(10, 'EUR')).toBe(5);
+    expect(service.convertToUSDSync(0, 'EUR')).toBe(0);
+    expect(service.convertToUSDSync(10, ' ')).toBe(10);
+    service.clearMemoryCache();
+    expect(() => service.convertToUSDSync(10, 'EUR')).toThrow(CurrencyRateUnavailableError);
+  });
+
+  it('loads rates eagerly and reports the last stored update', async () => {
+    const cached = rates(1);
+    const { service } = createService({ cached });
+    await expect(service.ensureRatesLoaded()).resolves.toBeUndefined();
+    await expect(service.getLastRateUpdate()).resolves.toEqual(cached.lastUpdated);
+  });
+
+  it('returns null when the last-update cache read fails', async () => {
+    const logger = createLogger();
+    const service = new CurrencyService({
+      now: () => NOW,
+      readCache: vi.fn().mockRejectedValue(new Error('db')),
+      logger,
+    });
+    await expect(service.getLastRateUpdate()).resolves.toBeNull();
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it('continues to the API after a cache read failure', async () => {
+    const logger = createLogger();
+    const service = new CurrencyService({
+      now: () => NOW,
+      readCache: vi.fn().mockRejectedValue(new Error('db')),
+      fetchRates: vi.fn().mockResolvedValue(rates(0)),
+      writeCache: vi.fn().mockResolvedValue(undefined),
+      logger,
+    });
+    await expect(service.convertToUSD(10, 'EUR')).resolves.toBe(5);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it('rejects an API result older than the usable cache window', async () => {
+    const { service } = createService({ fresh: rates(80) });
+    await expect(service.refreshExchangeRates()).rejects.toThrow('older than');
+  });
+
+  it('uses the default Supabase cache adapter and normalizes valid rows', async () => {
+    fromMock.mockReset().mockReturnValue(cacheReadResult([
+      { currency_pair: 'usd_eur', rate: '2', source: 'db', last_updated: NOW.toISOString() },
+      { currency_pair: 'USD_BAD', rate: '-1', source: null, last_updated: '2020-01-01T00:00:00Z' },
+    ]));
+    const service = new CurrencyService({ now: () => NOW });
+    await expect(service.convertToUSD(10, 'EUR')).resolves.toBe(5);
+  });
+
+  it('falls back to the API and persists rates with the default adapters', async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockReset()
+      .mockReturnValueOnce(cacheReadResult([]))
+      .mockReturnValueOnce({ upsert });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      result: 'success', time_last_update_unix: Math.floor(NOW.getTime() / 1000), rates: { USD: 1, EUR: 2 },
+    }), { status: 200 }));
+    const service = new CurrencyService({ now: () => NOW });
+    await expect(service.convertToUSD(10, 'EUR')).resolves.toBe(5);
+    expect(upsert).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ currency_pair: 'USD_EUR', rate: 2 }),
+    ]), { onConflict: 'currency_pair' });
+    fetchMock.mockRestore();
+  });
+
+  it.each([
+    [new Response('', { status: 503 }), 'status 503'],
+    [new Response(JSON.stringify({ result: 'error' }), { status: 200 }), 'invalid payload'],
+    [new Response(JSON.stringify({ result: 'success', rates: { EUR: 2 }, time_last_update_unix: 0 }), { status: 200 }), 'timestamp'],
+    [new Response(JSON.stringify({ result: 'success', rates: { EUR: -1 }, time_last_update_unix: 1 }), { status: 200 }), 'no valid rates'],
+  ])('rejects malformed default API responses containing %s', async (response, message) => {
+    fromMock.mockReset().mockReturnValue(cacheReadResult([]));
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
+    const service = new CurrencyService({ now: () => NOW });
+    await expect(service.refreshExchangeRates()).rejects.toThrow(message);
+    fetchMock.mockRestore();
+  });
+
+  it('propagates default Supabase read and write errors', async () => {
+    fromMock.mockReset().mockReturnValueOnce(cacheReadResult(null, { message: 'leer' }));
+    const readService = new CurrencyService({ now: () => NOW });
+    await expect(readService.getLastRateUpdate()).resolves.toBeNull();
+
+    const upsert = vi.fn().mockResolvedValue({ error: { message: 'guardar' } });
+    fromMock.mockReset().mockReturnValue({ upsert });
+    const service = new CurrencyService({ now: () => NOW, fetchRates: vi.fn().mockResolvedValue(rates(0)) });
+    await expect(service.refreshExchangeRates()).resolves.toBeUndefined();
   });
 });

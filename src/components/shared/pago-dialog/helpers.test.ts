@@ -3,11 +3,15 @@ import type { PagoDialogProps } from './types';
 
 import {
   getCicloPagoMonths,
+  getCicloPagoLabel,
+  getCiclosDisponibles,
   getDefaultCosto,
   getDefaultMetodoPagoId,
   getPagoDialogPresentation,
   getPagoDialogResetValues,
   getPagoDialogTargetKey,
+  getPagoDialogCopy,
+  getPrecioPorCiclo,
   hasServicioPagoChanges,
   buildVentaPreviewMessage,
 } from './helpers';
@@ -228,5 +232,129 @@ describe('pago dialog helpers', () => {
       dialogContentClassName: 'sm:max-w-[760px]',
       notasLabel: 'Nota del pago',
     }));
+  });
+
+  it.each([
+    ['mensual', 'Mensual'], ['trimestral', 'Trimestral'], ['semestral', 'Semestral'],
+    ['anual', 'Anual'], [undefined, 'Seleccionar ciclo'], ['otro', 'Seleccionar ciclo'],
+  ])('labels billing cycle %s', (cycle, label) => {
+    expect(getCicloPagoLabel(cycle)).toBe(label);
+  });
+
+  it('filters available cycles and prices by plan type', () => {
+    const plans = [
+      { id: 'p1', cicloPago: 'mensual', tipoPlan: 'basic', precio: 10 },
+      { id: 'p2', cicloPago: 'anual', tipoPlan: 'premium', precio: 100 },
+      { id: 'p3', cicloPago: 'mensual', tipoPlan: 'premium', precio: 12 },
+    ] as never[];
+    expect(getCiclosDisponibles()).toEqual(['mensual', 'trimestral', 'semestral', 'anual']);
+    expect(getCiclosDisponibles([], 'basic')).toEqual(['mensual', 'trimestral', 'semestral', 'anual']);
+    expect(getCiclosDisponibles(plans, 'premium')).toEqual(['mensual', 'anual']);
+    expect(getCiclosDisponibles(plans)).toEqual(['mensual', 'anual']);
+    expect(getPrecioPorCiclo(undefined, plans)).toBeNull();
+    expect(getPrecioPorCiclo('mensual')).toBeNull();
+    expect(getPrecioPorCiclo('mensual', plans, 'premium')).toBe(12);
+    expect(getPrecioPorCiclo('trimestral', plans)).toBeNull();
+  });
+
+  it('resolves service defaults for renew and edit modes', () => {
+    const service = { id: 's1', nombre: 'Netflix', metodoPagoId: 'm1', costoServicio: 12.345 };
+    expect(getDefaultMetodoPagoId({ ...baseProps, context: 'servicio', mode: 'renew', servicio: service } as never)).toBe('m1');
+    expect(getDefaultCosto({ ...baseProps, context: 'servicio', mode: 'renew', servicio: service } as never)).toBe(12.35);
+    expect(getDefaultCosto({ ...baseProps, context: 'servicio', mode: 'edit', servicio: service } as never)).toBe(0);
+    expect(getDefaultMetodoPagoId({
+      ...baseProps, context: 'servicio', mode: 'edit', servicio: service, pago: { metodoPagoId: 'm2' },
+    } as never)).toBe('m2');
+    expect(getDefaultMetodoPagoId({
+      ...baseProps, context: 'servicio', mode: 'edit', servicio: service, pago: { metodoPagoId: '' },
+    } as never)).toBe('');
+  });
+
+  it('builds fallback target keys for sales and services', () => {
+    expect(getPagoDialogTargetKey({
+      ...baseProps, context: 'venta', mode: 'edit', venta: {}, pago: null,
+    } as never)).toBe('venta:edit:venta:nuevo-pago');
+    expect(getPagoDialogTargetKey({
+      ...baseProps, context: 'venta', mode: 'renew', venta: { clienteNombre: 'Ana' },
+    } as never)).toBe('venta:renew:Ana:renovacion');
+    expect(getPagoDialogTargetKey({
+      ...baseProps, context: 'servicio', mode: 'edit', servicio: { nombre: 'Netflix' }, pago: null,
+    } as never)).toBe('servicio:edit:Netflix:nuevo-pago');
+    expect(getPagoDialogTargetKey({
+      ...baseProps, context: 'servicio', mode: 'renew', servicio: {},
+    } as never)).toBe('servicio:renew:servicio:renovacion');
+  });
+
+  it('builds sale edit reset values with and without a payment', () => {
+    const venta = { metodoPagoId: '', precioFinal: 10 };
+    expect(getPagoDialogResetValues({
+      ...baseProps, context: 'venta', mode: 'edit', venta, pago: null,
+    } as never)).toEqual(expect.objectContaining({ metodoPagoId: 'pendiente', costo: 0, descuento: 0, notas: '' }));
+    const values = getPagoDialogResetValues({
+      ...baseProps, context: 'venta', mode: 'edit', venta,
+      pago: { cicloPago: '', metodoPagoId: '', precio: 10.555, descuento: undefined, notas: undefined },
+    } as never);
+    expect(values).toEqual(expect.objectContaining({
+      periodoRenovacion: '', metodoPagoId: 'pendiente', costo: 10.56, descuento: 0, notas: '',
+    }));
+    expect(values?.fechaInicio).toBeInstanceOf(Date);
+    expect(values?.fechaVencimiento).toBeInstanceOf(Date);
+  });
+
+  it('builds service edit and renew reset values with fallbacks', () => {
+    const servicio = {
+      id: 's1', nombre: 'Netflix', cicloPago: 'mensual', metodoPagoId: '', costoServicio: 8.555,
+      fechaVencimiento: undefined, notas: 'servicio', renovacionAutomatica: undefined,
+    };
+    expect(getPagoDialogResetValues({
+      ...baseProps, context: 'servicio', mode: 'edit', servicio,
+      pago: { cicloPago: '', metodoPagoId: '', monto: 5.555, fechaInicio: '2026-01-01', fechaVencimiento: '2026-02-01' },
+    } as never)).toEqual(expect.objectContaining({
+      periodoRenovacion: 'mensual', metodoPagoId: '', costo: 5.56, notas: 'servicio', renovacionAutomatica: false,
+    }));
+    expect(getPagoDialogResetValues({
+      ...baseProps, context: 'servicio', mode: 'renew', servicio,
+    } as never)).toEqual(expect.objectContaining({
+      metodoPagoId: '', costo: 8.56, notas: 'servicio', renovacionAutomatica: false,
+    }));
+  });
+
+  it('detects every individual service payment change and missing payment', () => {
+    const pago = {
+      cicloPago: 'mensual', metodoPagoId: 'm1', monto: 10,
+      fechaInicio: new Date('2026-01-01'), fechaVencimiento: new Date('2026-02-01'), notas: 'n',
+    } as never;
+    const base = {
+      pago, periodoValue: 'mensual', metodoPagoIdValue: 'm1', costoValue: 10,
+      fechaInicioValue: new Date('2026-01-01'), fechaVencimientoValue: new Date('2026-02-01'), notasValue: 'n',
+    };
+    expect(hasServicioPagoChanges({ ...base, pago: null })).toBe(false);
+    expect(hasServicioPagoChanges({ ...base, metodoPagoIdValue: 'm2' })).toBe(true);
+    expect(hasServicioPagoChanges({ ...base, costoValue: 11 })).toBe(true);
+    expect(hasServicioPagoChanges({ ...base, fechaInicioValue: new Date('2026-01-02') })).toBe(true);
+    expect(hasServicioPagoChanges({ ...base, fechaVencimientoValue: new Date('2026-02-02') })).toBe(true);
+    expect(hasServicioPagoChanges({ ...base, notasValue: 'otra' })).toBe(true);
+  });
+
+  it('covers preview guards and message fallbacks', () => {
+    const base = { isVenta: true, isEdit: false, notificarWhatsAppValue: true, costoValue: Number.NaN };
+    expect(buildVentaPreviewMessage({ ...base, notificarWhatsAppValue: false })).toBe('');
+    expect(buildVentaPreviewMessage({ ...base, isEdit: true })).toBe('');
+    const message = buildVentaPreviewMessage({
+      ...base,
+      template: { contenido: '{cliente} {servicio} {categoria} {perfil} {correo} {contrasena} {codigo} {monto}', activo: true } as never,
+      descuentoValue: Number.NaN,
+    });
+    expect(message).toContain('Cliente');
+    expect(message).toContain('Servicio');
+  });
+
+  it.each([
+    [true, true, 'Editar Pago'], [true, false, 'Renovar Venta: Ana'],
+    [false, true, 'Editar pago del servicio: Netflix'], [false, false, 'Renovar Servicio: Netflix'],
+  ])('builds dialog copy for venta=%s edit=%s', (isVenta, isEdit, title) => {
+    expect(getPagoDialogCopy({
+      isVenta, isEdit, ventaClienteNombre: 'Ana', servicioNombre: 'Netflix', pagoDescripcion: undefined,
+    }).title).toBe(title);
   });
 });

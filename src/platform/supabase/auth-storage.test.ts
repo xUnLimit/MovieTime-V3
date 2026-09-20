@@ -121,7 +121,7 @@ describe('legacy Supabase cookie migration', () => {
     const encoded = `base64-${toBase64Url(SESSION_JSON)}`;
     const midpoint = Math.ceil(encoded.length / 2);
     const { document: cookieDocument, writes } = createCookieDocument(
-      `${AUTH_KEY}.0=${encoded.slice(0, midpoint)}; ${AUTH_KEY}.1=${encoded.slice(midpoint)}`
+      `unrelated=value; ${AUTH_KEY}.0=${encoded.slice(0, midpoint)}; ${AUTH_KEY}.1=${encoded.slice(midpoint)}`
     );
 
     const migrated = migrateLegacyAuthCookies({

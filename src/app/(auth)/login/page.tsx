@@ -118,7 +118,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-sm shadow-sm">
         <CardHeader className="space-y-1 text-center pb-4">
-          <CardTitle className="text-xl font-semibold">Bienvenido</CardTitle>
+          <CardTitle className="text-xl font-semibold">
+            <h1>Bienvenido</h1>
+          </CardTitle>
           <CardDescription className="text-sm">
             Inicia sesión con tu correo y contraseña
           </CardDescription>
@@ -167,6 +169,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />

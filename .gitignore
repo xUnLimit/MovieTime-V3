@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+/sbom.cdx.json
 
 # next.js
 /.next/

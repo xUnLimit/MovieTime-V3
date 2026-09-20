@@ -14,6 +14,7 @@ Cada tema tiene **un solo lugar** (sin duplicar reglas entre documentos):
 - **UI: reglas y convenciones** → [Design system](DESIGN_SYSTEM.md).
 - **Performance y error boundaries** → [Performance optimizations](PERFORMANCE_OPTIMIZATIONS.md).
 - **Estado/auditoria del proyecto** → [Auditoria arquitectonica profunda verificada (2026-05-30)](2026-05-30-auditoria-arquitectonica-profunda-verificada.md).
+- **Criterios obligatorios de release** → [Estandar de produccion](PRODUCTION_STANDARD.md).
 
 ## Decisiones protegidas por ADR
 

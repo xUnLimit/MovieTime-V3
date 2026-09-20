@@ -1,107 +1,129 @@
 name: quality
 
-# Gates de calidad versionados (auditoria 2026-05-30, Fase 0 #A: CI/CD).
-# Antes, lint/test/build/migrate solo corrian a mano en local: nada impedia
-# que un PR con tests rotos llegara a main. Este workflow los ejecuta en cada
-# PR y push a main.
-
 on:
   pull_request:
   push:
     branches: [main]
 
-# Cancela ejecuciones previas del mismo ref para no malgastar minutos.
 concurrency:
   group: quality-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   quality:
-    name: lint + test + build
+    name: security + types + tests + build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          # Necesario para que el secret scan pueda diffear contra la rama base.
           fetch-depth: 0
-
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Secret scan (archivos cambiados vs base)
-        run: |
-          # scan-secrets.mjs revisa archivos staged + working-tree. En un checkout
-          # limpio de CI no hay nada staged, asi que stageamos el diff contra la
-          # base del PR (o el commit anterior en push) para que tenga algo que revisar.
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="origin/${{ github.base_ref }}"
-          else
-            BASE="${{ github.event.before }}"
-          fi
-          git fetch origin "${{ github.base_ref || 'main' }}" --depth=1 || true
-          if git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-            git diff --name-only --diff-filter=ACMR "$BASE"...HEAD -z | xargs -0 -r git add -N
-          fi
-          npm run secrets:scan
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck application + tests
+      - run: npm ci
+      - name: Secret scan (complete repository)
+        run: npm run secrets:scan:all
+      - name: Dependency policy
+        run: npm run security:audit:prod && npm run security:audit:all
+      - name: Static analysis and lint
+        run: npm run security:static
+      - name: Typecheck application and tests
         run: npm run typecheck
-
-      - name: Tests + coverage
-        run: npm run test:coverage
-
-      - name: Build
-        run: npm run build
+      - name: Migration safety
+        run: npm run migrate:lint
         env:
-          # src/config/env.ts NO valida estricto durante `next build` (detecta la fase de
-          # build via NEXT_PHASE): el build no necesita credenciales de runtime, asi que
-          # NO hacen falta placeholders. Si los secrets reales estan configurados se usan;
-          # si no, el build compila igual y la validacion estricta corre en runtime real.
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          MIGRATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - name: Tests and coverage
+        run: npm run test:coverage
+      - name: Changed-code coverage
+        run: npm run coverage:diff
+        env:
+          COVERAGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - name: Production build
+        run: npm run build:verify
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Browser smoke, accessibility and performance budgets
+        run: npm run test:browser
+      - name: Generate CycloneDX SBOM
+        run: npm run sbom
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-evidence
+          path: |
+            sbom.cdx.json
+            coverage/
+            playwright-report/
+          retention-days: 30
 
-  supabase-validation:
-    name: supabase migrate:validate
+  lighthouse:
+    name: lighthouse budgets
     runs-on: ubuntu-latest
-    # Solo corre cuando los secrets de Supabase estan configurados en el repo.
-    # Si no lo estan (forks, contribuidores externos), se omite en vez de fallar.
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Check Supabase secrets
-        id: check
-        run: |
-          if [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ] && [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Supabase secrets no configurados; se omite migrate:validate."
-          fi
-
-      - uses: actions/setup-node@v4
-        if: steps.check.outputs.configured == 'true'
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
-
-      - name: Install dependencies
-        if: steps.check.outputs.configured == 'true'
-        run: npm ci
-
-      - name: Validate Supabase migrations + data + security
-        if: steps.check.outputs.configured == 'true'
-        run: npm run migrate:validate
+      - run: npm ci
+      - run: npm run build:verify
+      - uses: treosh/lighthouse-ci-action@512cc908a55bfb0ad231facca52adf3d3a651df4 # v12
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NODE_ENV: production
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key-placeholder-000000000
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ci-vapid-public-placeholder-00000
+          VAPID_PRIVATE_KEY: ci-vapid-private-placeholder-0000
+          PUSH_CRON_SECRET: ci-cron-secret-placeholder
+          SUPABASE_SERVICE_ROLE_KEY: ci-service-role-placeholder-0000
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+
+  database:
+    name: migrations from zero
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Start clean local Supabase and apply every migration
+        run: npx --no-install supabase start
+      - name: Validate local database invariants
+        shell: bash
+        run: |
+          npx --no-install supabase status -o env > supabase-status.env
+          set -a
+          source supabase-status.env
+          set +a
+          NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
+          NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          npm run migrate:validate
+
+  codeql:
+    name: codeql
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: github/codeql-action/init@ed1a0fa18ac745d017ca370dd4ef08bba3b4f504 # v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@ed1a0fa18ac745d017ca370dd4ef08bba3b4f504 # v3
+      - name: Block open CodeQL alerts on main
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          count="$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&ref=refs/heads/main&per_page=100" --jq 'length')"
+          test "$count" -eq 0 || { echo "Open CodeQL alerts: $count"; exit 1; }

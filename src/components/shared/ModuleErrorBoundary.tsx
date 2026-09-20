@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { ErrorBoundary } from './ErrorBoundary';
 import { AlertTriangle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,12 +56,11 @@ export function ModuleErrorBoundary({
           >
             Recargar página
           </Button>
-          <Button
-            onClick={() => (window.location.href = '/dashboard')}
-            variant="default"
-          >
-            <Home className="mr-2 h-4 w-4" />
-            Ir al Dashboard
+          <Button variant="default" asChild>
+            <Link href="/dashboard">
+              <Home className="mr-2 h-4 w-4" />
+              Ir al Dashboard
+            </Link>
           </Button>
         </div>
       </div>

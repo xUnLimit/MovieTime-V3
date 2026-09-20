@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const aggregateRpcMock = vi.hoisted(() => vi.fn());
 const updateEqMock = vi.hoisted(() => vi.fn());
 const updateMock = vi.hoisted(() => vi.fn(() => ({ eq: updateEqMock })));
-const fromMock = vi.hoisted(() => vi.fn(() => ({ update: updateMock })));
+const fromMock = vi.hoisted(() => vi.fn<(table: string) => unknown>(() => ({ update: updateMock })));
+const offlineMock = vi.hoisted(() => vi.fn().mockResolvedValue(false));
+const readOfflineMock = vi.hoisted(() => vi.fn());
+const coreMocks = vi.hoisted(() => ({ getById: vi.fn(), getCount: vi.fn(), remove: vi.fn() }));
 
 vi.mock('./client', () => ({
   supabase: {
@@ -17,18 +20,40 @@ vi.mock('./notifications-rpc-adapter', () => ({
 
 vi.mock('@/modules/pwa/offline-copy', () => ({
   assertOnlineMutation: vi.fn(),
-  readOfflineCollection: vi.fn(),
-  shouldUseOfflineRead: vi.fn().mockResolvedValue(false),
+  readOfflineCollection: readOfflineMock,
+  shouldUseOfflineRead: offlineMock,
 }));
 
 vi.mock('./record-core', () => ({
-  getById: vi.fn(),
-  getCount: vi.fn(),
-  remove: vi.fn(),
+  getById: coreMocks.getById,
+  getCount: coreMocks.getCount,
+  remove: coreMocks.remove,
   logCacheHit: vi.fn(),
 }));
 
-import { createNotification, updateNotification } from './notifications-repository';
+import {
+  countNotificaciones,
+  createNotificacion,
+  createNotification,
+  getNotificacionById,
+  queryNotificaciones,
+  queryNotifications,
+  removeNotificacion,
+  updateNotificacion,
+  updateNotification,
+} from './notifications-repository';
+
+function readQuery(result: { data: unknown[] | null; error: Error | null }) {
+  const chain = {
+    select: vi.fn(), eq: vi.fn(), neq: vi.fn(), lt: vi.fn(), lte: vi.fn(),
+    gt: vi.fn(), gte: vi.fn(), in: vi.fn(),
+    then: (resolve: (value: typeof result) => unknown) => Promise.resolve(resolve(result)),
+  };
+  for (const method of ['select', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in'] as const) {
+    chain[method].mockReturnValue(chain);
+  }
+  return chain;
+}
 
 const ventaPayload = {
   entidad: 'venta',
@@ -50,8 +75,108 @@ const ventaPayload = {
 describe('notifications repository aggregate writes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fromMock.mockReset().mockImplementation(() => ({ update: updateMock }));
+    offlineMock.mockReset().mockResolvedValue(false);
     aggregateRpcMock.mockResolvedValue('notification-1');
     updateEqMock.mockResolvedValue({ error: null });
+  });
+
+  it('delegates public facade operations', async () => {
+    coreMocks.getById.mockResolvedValue({ id: 'n1' });
+    coreMocks.getCount.mockResolvedValue(3);
+    coreMocks.remove.mockResolvedValue(undefined);
+    readOfflineMock.mockResolvedValue([]);
+    offlineMock.mockResolvedValue(true);
+    expect(await getNotificacionById('n1')).toEqual({ id: 'n1' });
+    expect(await queryNotificaciones()).toEqual([]);
+    expect(await countNotificaciones()).toBe(3);
+    expect(await createNotificacion(ventaPayload)).toBe('notification-1');
+    await updateNotificacion('n1', { leida: true });
+    await removeNotificacion('n1');
+    expect(coreMocks.remove).toHaveBeenCalledWith('notificaciones', 'n1');
+  });
+
+  it('sorts offline notifications by real and missing creation dates', async () => {
+    offlineMock.mockResolvedValue(true);
+    readOfflineMock.mockResolvedValue([
+      { id: 'old', createdAt: new Date(2026, 0, 1) },
+      { id: 'missing' },
+      { id: 'new', createdAt: new Date(2026, 1, 1) },
+    ]);
+    expect((await queryNotifications<Record<string, unknown>>([])).map((item) => item.id))
+      .toEqual(['new', 'old', 'missing']);
+  });
+
+  it('queries all notification views, applies all filters and maps entity details', async () => {
+    const venta = readQuery({ data: [{
+      entidad: 'venta', id: 'v', created_at: '2026-03-01T00:00:00Z',
+      cliente_nombre_snapshot: 'Ana', servicio_nombre_snapshot: 'Netflix',
+    }], error: null });
+    const servicio = readQuery({ data: [{
+      entidad: 'servicio', id: 's', created_at: '2026-02-01T00:00:00Z',
+      servicio_nombre_snapshot: 'Max', renovacion_automatica_snapshot: true,
+    }], error: null });
+    const reposo = readQuery({ data: [{
+      entidad: 'reposo', id: 'r', created_at: '2026-01-01T00:00:00Z',
+      servicio_nombre_snapshot: 'Prime', dias_reposo_snapshot: 5,
+    }], error: null });
+    fromMock.mockReturnValueOnce(venta).mockReturnValueOnce(servicio).mockReturnValueOnce(reposo);
+    const filters = ['==', '!=', '<', '<=', '>', '>=', 'in'].map((operator) => ({
+      field: 'diasRestantes',
+      operator: operator as '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in',
+      value: operator === 'in' ? [1, 2] : 2,
+    }));
+    const rows = await queryNotifications<Record<string, unknown>>(filters);
+    expect(rows.map((row) => row.id)).toEqual(['v', 's', 'r']);
+    expect(rows[0]).toEqual(expect.objectContaining({ clienteNombre: 'Ana', estado: 'activo' }));
+    expect(rows[1]).toEqual(expect.objectContaining({ servicioNombre: 'Max', renovacionAutomatica: true }));
+    expect(rows[2]).toEqual(expect.objectContaining({ servicioNombre: 'Prime', diasReposo: 5 }));
+    for (const method of ['eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in'] as const) {
+      expect(venta[method]).toHaveBeenCalled();
+    }
+  });
+
+  it('filters to a single entity view and propagates query errors', async () => {
+    const one = readQuery({ data: null, error: null });
+    fromMock.mockReturnValueOnce(one);
+    expect(await queryNotifications([{ field: 'entidad', operator: '==', value: 'venta' }])).toEqual([]);
+    expect(fromMock).toHaveBeenCalledTimes(1);
+    fromMock.mockReturnValueOnce(readQuery({ data: null, error: new Error('vista') }));
+    await expect(queryNotifications([{ field: 'entidad', operator: '==', value: 'venta' }]))
+      .rejects.toThrow('vista');
+  });
+
+  it('validates unsupported, missing and malformed detail values', async () => {
+    await expect(createNotification({ entidad: 'otro' })).rejects.toThrow('no soportada');
+    await expect(createNotification({ entidad: 'venta' })).rejects.toThrow('ventaId es requerido');
+    await expect(createNotification({ entidad: 'servicio', servicioId: '  ' })).rejects.toThrow('servicioId es requerido');
+    await expect(createNotification({ entidad: 'reposo', servicioId: 's1', diasReposo: Number.NaN }))
+      .rejects.toThrow('valor numerico invalido');
+    await expect(createNotification({ entidad: 'servicio', servicioId: 's1', renovacionAutomatica: 'si' }))
+      .rejects.toThrow('valor booleano invalido');
+  });
+
+  it('normalizes nullable detail fields and defaults in the base payload', async () => {
+    await createNotification({
+      entidad: 'venta', ventaId: ' v1 ', mensaje: 123, diasRestantes: '4',
+      clienteNombre: null, clienteTelefono: ' ', precioFinal: '', metodoPago: 'Efectivo',
+    });
+    expect(aggregateRpcMock).toHaveBeenCalledWith(expect.objectContaining({
+      p_base: expect.objectContaining({
+        entidad: 'venta', tipo: 'sistema', prioridad: 'media', titulo: '', mensaje: '123', dias_restantes: 4,
+      }),
+      p_detail: expect.objectContaining({
+        venta_id: 'v1', cliente_nombre_snapshot: '', cliente_telefono_snapshot: null,
+        precio_final_snapshot: null, metodo_pago_nombre_snapshot: 'Efectivo',
+      }),
+    }));
+  });
+
+  it('supports a no-op base update and propagates update failures', async () => {
+    await updateNotification('n1', {});
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ updated_at: expect.any(String) }));
+    updateEqMock.mockResolvedValueOnce({ error: { message: 'actualizar' } });
+    await expect(updateNotification('n1', { titulo: 'X' })).rejects.toThrow('actualizar');
   });
 
   it('creates a venta base and detail with one atomic RPC call', async () => {

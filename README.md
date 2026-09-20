@@ -40,7 +40,15 @@ npm test -- --run
 npm run test:coverage
 npm run build
 npm run migrate:validate
+npm run quality:fast
+npm run quality:full
 ```
+
+`quality:fast` es el ciclo local de desarrollo. `quality:full` es la definicion
+obligatoria de terminado y agrega auditorias de dependencias, SAST, cobertura
+del diff, build y pruebas Playwright de smoke, accesibilidad y rendimiento.
+Las reglas completas estan en [`AGENTS.md`](AGENTS.md) y el criterio de release
+en [`docs/PRODUCTION_STANDARD.md`](docs/PRODUCTION_STANDARD.md).
 
 ## Arquitectura
 
@@ -73,20 +81,20 @@ Directorios principales:
 
 `.github/workflows/quality.yml` ejecuta los gates de calidad en cada Pull Request y push a `main`:
 
-- **Job `quality`** (siempre): `secrets:scan` (sobre los archivos cambiados vs la rama base), `lint`, `typecheck`, `test:coverage` y `build`. `typecheck` valida tanto la aplicación como las pruebas. No requiere credenciales: `src/config/env.ts` omite la validacion estricta durante `next build` (detecta la fase de build via `NEXT_PHASE`), asi que el build compila sin variables. La validacion estricta de entorno corre en runtime real.
-- **Job `supabase-validation`** (condicional): corre `migrate:validate` contra Supabase. Solo se ejecuta si los *secrets* del repo estan configurados; si no, se omite con un aviso en vez de fallar (util para forks).
+- **Job `quality`:** secretos de todo el repositorio, dependencias sin advisories,
+  SAST/lint sin warnings, tipos, seguridad de migraciones, cobertura global y
+  del diff, build, Playwright y SBOM.
+- **Job `lighthouse`:** presupuestos de rendimiento, accesibilidad y buenas
+  practicas sobre la pagina de login.
+- **Job `database`:** Supabase limpio, todas las migraciones e invariantes de
+  datos y seguridad RLS/RPC.
+- **Job `codeql`:** analisis JavaScript/TypeScript y bloqueo de alertas abiertas.
 
-Secrets opcionales del repositorio (Settings -> Secrets and variables -> Actions) para activar la validacion Supabase:
-
-| Secret | Uso |
-|--------|-----|
-| `SUPABASE_SERVICE_ROLE_KEY` | `migrate:validate` (server only) |
-| `NEXT_PUBLIC_SUPABASE_URL` | `migrate:validate` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `migrate:validate` |
-
-> Recomendado: marcar el job `quality` como *required status check* en la proteccion de la rama `main` para impedir merges con gates en rojo.
->
-> **Vercel:** el build de Vercel (Production y Preview) tambien compila sin variables, pero la app en runtime SI las necesita. Configura las variables de entorno del proyecto para los entornos **Production y Preview** en el dashboard de Vercel.
+Cuando todos pasan en `main`, `deploy-production.yml` aplica migraciones
+forward-only, crea un deployment staged de Vercel, lo valida, lo promueve y
+revierte el frontend si la verificacion posterior falla. Configura el environment
+`production`, sus secrets y `PRODUCTION_URL` como indica el estandar. Desactiva
+en Vercel la asignacion automatica del dominio: solo CI puede promover versiones.
 
 ## Validacion
 

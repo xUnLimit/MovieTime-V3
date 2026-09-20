@@ -36,8 +36,7 @@ function formatItemsList(names: string[]) {
 function replaceAllPlaceholders(text: string, values: Record<string, string>) {
   let next = text;
   Object.entries(values).forEach(([key, value]) => {
-    const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    next = next.replace(new RegExp(escaped, "g"), value);
+    next = next.replaceAll(key, value);
   });
   return next;
 }

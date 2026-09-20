@@ -1,0 +1,60 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test } from '@playwright/test';
+
+test('@smoke exposes a minimal health endpoint with production headers', async ({ request }) => {
+  const response = await request.get('/api/health');
+
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual({ status: 'ok' });
+  expect(response.headers()['cache-control']).toContain('no-store');
+  expect(response.headers()['strict-transport-security']).toContain('max-age=63072000');
+  expect(response.headers()['x-frame-options']).toBe('DENY');
+  expect(response.headers()['x-content-type-options']).toBe('nosniff');
+  expect(response.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+  expect(response.headers()['permissions-policy']).toContain('camera=()');
+});
+
+test('@smoke rejects a protected API without authentication', async ({ request }) => {
+  const response = await request.post('/api/push/pending', {
+    data: { endpoint: 'https://push.example/subscription' },
+  });
+
+  expect(response.status()).toBe(401);
+});
+
+test('@smoke redirects an anonymous dashboard visitor to login', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+  await page.goto('/dashboard');
+  await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Bienvenido' })).toBeVisible();
+});
+
+test('@a11y login has no serious or critical accessibility violations', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Bienvenido' })).toBeVisible();
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  const blocking = results.violations.filter(({ impact }) => impact === 'serious' || impact === 'critical');
+  expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+});
+
+test('@performance login meets the local navigation budget', async ({ page }) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Bienvenido' })).toBeVisible();
+
+  const timing = await page.evaluate(() => {
+    const [navigation] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    return {
+      domContentLoaded: navigation.domContentLoadedEventEnd - navigation.startTime,
+      load: navigation.loadEventEnd - navigation.startTime,
+    };
+  });
+
+  expect(timing.domContentLoaded).toBeLessThanOrEqual(2_500);
+  expect(timing.load).toBeLessThanOrEqual(4_000);
+});

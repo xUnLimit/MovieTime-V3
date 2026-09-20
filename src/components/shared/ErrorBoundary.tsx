@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -98,12 +99,8 @@ export class ErrorBoundary extends Component<Props, State> {
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Intentar nuevamente
                 </Button>
-                <Button
-                  onClick={() => window.location.href = '/dashboard'}
-                  variant="default"
-                  className="flex-1"
-                >
-                  Ir al Dashboard
+                <Button variant="default" className="flex-1" asChild>
+                  <Link href="/dashboard">Ir al Dashboard</Link>
                 </Button>
               </div>
             </CardContent>

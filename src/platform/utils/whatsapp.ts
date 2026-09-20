@@ -46,7 +46,7 @@ export function replacePlaceholders(
   let message = template;
 
   Object.entries(placeholders).forEach(([key, value]) => {
-    message = message.replace(new RegExp(key, 'g'), value);
+    message = message.replaceAll(key, value);
   });
 
   return message;

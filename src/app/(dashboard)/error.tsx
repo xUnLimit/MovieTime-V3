@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { reportError } from '@/platform/observability/logger';
@@ -29,9 +30,11 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           <p className="text-xs text-muted-foreground">Código: {error.digest}</p>
         )}
         <div className="flex gap-3 mt-2">
-          <Button variant="outline" onClick={() => window.location.href = '/'}>
-            <Home className="h-4 w-4 mr-2" />
-            Dashboard
+          <Button variant="outline" asChild>
+            <Link href="/">
+              <Home className="h-4 w-4 mr-2" />
+              Dashboard
+            </Link>
           </Button>
           <Button onClick={reset}>
             <RefreshCw className="h-4 w-4 mr-2" />
