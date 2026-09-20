@@ -12,7 +12,6 @@ module.exports = {
         chromeFlags: '--no-sandbox --headless',
         extraHeaders: {
           'x-vercel-protection-bypass': bypassSecret,
-          'x-vercel-set-bypass-cookie': 'true',
         },
       },
     },

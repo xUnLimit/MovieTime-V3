@@ -14,6 +14,18 @@ test('@smoke exposes a minimal health endpoint with production headers', async (
   expect(response.headers()['permissions-policy']).toContain('camera=()');
 });
 
+test('@smoke serves the web app manifest without a redirect loop', async ({ request }) => {
+  const response = await request.get('/manifest.webmanifest');
+  const manifest = await response.json();
+
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('application/manifest+json');
+  expect(manifest).toMatchObject({
+    name: expect.any(String),
+    start_url: '/dashboard',
+  });
+});
+
 test('@smoke rejects a protected API without authentication', async ({ request }) => {
   const response = await request.post('/api/push/pending', {
     data: { endpoint: 'https://push.example/subscription' },
