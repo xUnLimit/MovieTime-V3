@@ -60,23 +60,18 @@ async function getDeployment(reference) {
   return deployment;
 }
 
-async function waitForAliasRequest(expectedDeploymentId, expectedType) {
+async function waitForProductionDeployment(expectedDeploymentId, operation) {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
 
   while (Date.now() < deadline) {
     const project = await getProject();
-    const request = project.lastAliasRequest;
-
-    if (request?.toDeploymentId === expectedDeploymentId && request.type === expectedType) {
-      if (request.jobStatus === 'succeeded') return;
-      if (request.jobStatus === 'failed' || request.jobStatus === 'skipped') {
-        throw new Error(`Vercel ${expectedType} finished with status ${request.jobStatus}`);
-      }
-    }
+    if (project.targets?.production?.id === expectedDeploymentId) return;
     await delay(POLL_INTERVAL_MS);
   }
 
-  throw new Error(`Vercel ${expectedType} did not finish within ${POLL_TIMEOUT_MS / 1_000} seconds`);
+  throw new Error(
+    `Vercel ${operation} did not point production to ${expectedDeploymentId} within ${POLL_TIMEOUT_MS / 1_000} seconds`,
+  );
 }
 
 async function promote(reference) {
@@ -94,17 +89,23 @@ async function promote(reference) {
     `/v10/projects/${encodeURIComponent(projectId)}/promote/${encodeURIComponent(deployment.id)}`,
     { method: 'POST', body: '{}' },
   );
-  await waitForAliasRequest(deployment.id, 'promote');
+  await waitForProductionDeployment(deployment.id, 'promote');
   console.log(`Promoted deployment ${deployment.id}`);
 }
 
 async function rollback(reference) {
-  const deployment = await getDeployment(reference);
+  const [project, deployment] = await Promise.all([getProject(), getDeployment(reference)]);
+
+  if (project.targets?.production?.id === deployment.id) {
+    console.log(`Deployment ${deployment.id} is already serving production`);
+    return;
+  }
+
   await vercelRequest(
-    `/v9/projects/${encodeURIComponent(projectId)}/rollback/${encodeURIComponent(deployment.id)}`,
+    `/v1/projects/${encodeURIComponent(projectId)}/rollback/${encodeURIComponent(deployment.id)}`,
     { method: 'POST', body: '{}' },
   );
-  await waitForAliasRequest(deployment.id, 'rollback');
+  await waitForProductionDeployment(deployment.id, 'rollback');
   console.log(`Rolled back to deployment ${deployment.id}`);
 }
 
