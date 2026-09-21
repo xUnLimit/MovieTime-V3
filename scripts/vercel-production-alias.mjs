@@ -1,4 +1,3 @@
-import { appendFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const API_ORIGIN = 'https://api.vercel.com';
@@ -43,6 +42,11 @@ async function getProject() {
   return vercelRequest(`/v9/projects/${encodeURIComponent(projectId)}`);
 }
 
+function assertDeploymentId(value) {
+  if (!/^dpl_[A-Za-z0-9]+$/.test(value)) throw new Error('Invalid Vercel deployment ID');
+  return value;
+}
+
 async function getDeployment(reference) {
   const normalized = reference.startsWith('http') ? new URL(reference).hostname : reference;
   const deployment = await vercelRequest(`/v13/deployments/${encodeURIComponent(normalized)}`);
@@ -75,17 +79,11 @@ async function waitForAliasRequest(expectedDeploymentId, expectedType) {
   throw new Error(`Vercel ${expectedType} did not finish within ${POLL_TIMEOUT_MS / 1_000} seconds`);
 }
 
-async function publishPreviousDeploymentId(deploymentId) {
-  const outputPath = process.env.GITHUB_OUTPUT;
-  if (outputPath) await appendFile(outputPath, `previous_deployment_id=${deploymentId}\n`, 'utf8');
-}
-
 async function promote(reference) {
   const [project, deployment] = await Promise.all([getProject(), getDeployment(reference)]);
   const previousDeploymentId = project.targets?.production?.id;
 
   if (!previousDeploymentId) throw new Error('Current production deployment could not be determined');
-  await publishPreviousDeploymentId(previousDeploymentId);
 
   if (previousDeploymentId === deployment.id) {
     console.log(`Deployment ${deployment.id} is already serving production`);
@@ -111,9 +109,15 @@ async function rollback(reference) {
 }
 
 const [action, reference] = process.argv.slice(2);
-if (!reference || !['promote', 'rollback'].includes(action)) {
-  throw new Error('Usage: node scripts/vercel-production-alias.mjs <promote|rollback> <deployment>');
+if (action === 'current') {
+  const project = await getProject();
+  console.log(assertDeploymentId(project.targets?.production?.id ?? ''));
+} else if (!reference || !['promote', 'rollback'].includes(action)) {
+  throw new Error(
+    'Usage: node scripts/vercel-production-alias.mjs current | <promote|rollback> <deployment>',
+  );
+} else if (action === 'promote') {
+  await promote(reference);
+} else {
+  await rollback(reference);
 }
-
-if (action === 'promote') await promote(reference);
-else await rollback(reference);
