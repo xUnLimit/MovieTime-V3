@@ -20,11 +20,12 @@ import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
 import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
+import type { VentaDialogDependenciesResult } from './venta-dialog-dependencies';
 
 type UseVentaDetalleActionsParams = {
   deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
   deleteVenta: (ventaId: string, servicioId?: string, perfilNumero?: number | null, deletePagos?: boolean) => Promise<void>;
-  ensureDialogDependencies: () => Promise<void>;
+  ensureDialogDependencies: () => Promise<VentaDialogDependenciesResult>;
   getTemplateByTipo: (tipo: TemplateMensaje['tipo']) => TemplateMensaje | undefined;
   id: string;
   inactivateServicio: (servicioId: string, motivoCorte: string) => Promise<void>;
@@ -62,14 +63,29 @@ export function useVentaDetalleActions({
   const [pagoToEdit, setPagoToEdit] = useState<VentaPago | null>(null);
   const [pagoToDelete, setPagoToDelete] = useState<VentaPago | null>(null);
 
+  const preparePaymentDialog = async () => {
+    const result = await ensureDialogDependencies();
+    if (result.status === 'ready') return true;
+
+    toast.error(
+      result.status === 'empty'
+        ? 'No hay metodos de pago disponibles'
+        : 'No se pudieron cargar los metodos de pago',
+      {
+        description: result.status === 'empty'
+          ? 'Activa o registra un metodo de pago para terceros antes de continuar.'
+          : 'Comprueba tu conexion e intenta nuevamente.',
+      },
+    );
+    return false;
+  };
+
   const handleOpenRenovar = async () => {
-    await ensureDialogDependencies();
-    setRenovarDialogOpen(true);
+    if (await preparePaymentDialog()) setRenovarDialogOpen(true);
   };
 
   const handleOpenReembolso = async () => {
-    await ensureDialogDependencies();
-    setReembolsoDialogOpen(true);
+    if (await preparePaymentDialog()) setReembolsoDialogOpen(true);
   };
 
   const handleDelete = async (deletePagos: boolean) => {
@@ -147,7 +163,7 @@ export function useVentaDetalleActions({
   };
 
   const handleEditarPago = async (pago: VentaPago) => {
-    await ensureDialogDependencies();
+    if (!await preparePaymentDialog()) return;
     setPagoToEdit(pago);
     setEditarPagoDialogOpen(true);
   };

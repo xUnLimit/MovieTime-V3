@@ -1,4 +1,4 @@
-const CACHE_NAME = 'movietime-pwa-v7';
+const CACHE_NAME = 'movietime-pwa-v8';
 const NEXT_ASSET_PREFIX = '/_next/';
 const API_PREFIX = '/api/';
 const APP_SHELL = [
@@ -82,7 +82,7 @@ self.addEventListener('fetch', (event) => {
           const cachedPath = await caches.match(url.pathname);
           const offlineFallback = await caches.match('/offline');
           const rootShell = await caches.match('/');
-          return cached || cachedPath || offlineFallback || rootShell;
+          return cached || cachedPath || offlineFallback || rootShell || createOfflineResponse();
         })
     );
     return;
@@ -103,6 +103,19 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+function createOfflineResponse() {
+  return new Response(
+    '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sin conexion</title></head><body><main><h1>Sin conexion</h1><p>No se pudo cargar esta pagina. Comprueba tu conexion e intenta nuevamente.</p></main></body></html>',
+    {
+      status: 503,
+      headers: {
+        'cache-control': 'no-store',
+        'content-type': 'text/html; charset=utf-8',
+      },
+    }
+  );
+}
 
 function isNextAppRouterRequest(request, url) {
   const accept = request.headers.get('accept') || '';

@@ -25,6 +25,7 @@ import type { TemplateMensaje, VentaDoc } from '@/types';
 import type { VentaDetalleViewModel } from './types';
 import { useVentaDetalleActions } from './useVentaDetalleActions';
 import { useVentaDetalleStoreDependencies } from './venta-detalle-store-dependencies';
+import { ensureVentaDialogDependencies } from './venta-dialog-dependencies';
 
 export function useVentaDetalle(id: string): VentaDetalleViewModel {
   const router = useRouter();
@@ -111,24 +112,13 @@ export function useVentaDetalle(id: string): VentaDetalleViewModel {
     [venta, pagosVenta, loadingPagos],
   );
 
-  const ensureDialogDependencies = async () => {
-    try {
-      await Promise.all([
-        queryClient.ensureQueryData({
-          queryKey: queryKeys.metodosPago.tercerosWithPending(),
-          queryFn: fetchMetodosPagoTercerosWithPendingQuery,
-        }),
-        venta?.categoriaId
-          ? queryClient.ensureQueryData({
-              queryKey: queryKeys.categorias.detail(venta.categoriaId),
-              queryFn: () => fetchCategoriaPlanesQuery(venta.categoriaId),
-            })
-          : Promise.resolve([]),
-      ]);
-    } catch (error) {
-      reportError('VentaDetalle', 'Error cargando metodos de pago y planes', error);
-    }
-  };
+  const ensureDialogDependencies = useCallback(
+    () => ensureVentaDialogDependencies({
+      categoriaId: venta?.categoriaId,
+      queryClient,
+    }),
+    [queryClient, venta?.categoriaId],
+  );
 
   const {
     deleteDialogOpen,

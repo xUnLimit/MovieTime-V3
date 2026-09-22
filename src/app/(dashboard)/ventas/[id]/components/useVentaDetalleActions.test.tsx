@@ -49,7 +49,7 @@ function renderActions(overrides: Record<string, unknown> = {}) {
   const params = {
     deleteNotificacionesPorVenta: vi.fn(),
     deleteVenta: vi.fn(),
-    ensureDialogDependencies: vi.fn(),
+    ensureDialogDependencies: vi.fn().mockResolvedValue({ status: 'ready' }),
     getTemplateByTipo: vi.fn().mockReturnValue({ id: 'template-1' }),
     id: 'venta-1',
     inactivateServicio: vi.fn(),
@@ -134,6 +134,26 @@ describe('useVentaDetalleActions', () => {
     expect(mocks.toastSuccess).toHaveBeenCalledWith('Venta eliminada', expect.objectContaining({
       description: expect.stringContaining('registros de pago'),
     }));
+  });
+
+  it.each([
+    ['empty', 'No hay metodos de pago disponibles'],
+    ['unavailable', 'No se pudieron cargar los metodos de pago'],
+  ])('keeps payment dialogs closed when dependencies are %s', async (status, message) => {
+    const { result } = renderActions({
+      ensureDialogDependencies: vi.fn().mockResolvedValue({ status }),
+    });
+
+    await act(async () => {
+      await result.current.handleOpenRenovar();
+      await result.current.handleOpenReembolso();
+      await result.current.handleEditarPago({ id: 'pago-1' } as never);
+    });
+
+    expect(result.current.renovarDialogOpen).toBe(false);
+    expect(result.current.reembolsoDialogOpen).toBe(false);
+    expect(result.current.editarPagoDialogOpen).toBe(false);
+    expect(mocks.toastError).toHaveBeenCalledWith(message, expect.any(Object));
   });
 
   it('registers a refund and updates the current sale', async () => {

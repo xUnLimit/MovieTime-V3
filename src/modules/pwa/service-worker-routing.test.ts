@@ -4,7 +4,13 @@ import vm from 'node:vm';
 
 import { describe, expect, it, vi } from 'vitest';
 
-function loadServiceWorkerFetchHandler() {
+function loadServiceWorkerFetchHandler({
+  fetchResult = Promise.resolve(new Response(null, { status: 204 })),
+  matchResult,
+}: {
+  fetchResult?: Promise<Response>;
+  matchResult?: Response;
+} = {}) {
   const listeners = new Map<string, EventListener>();
   const script = readFileSync(join(process.cwd(), 'public', 'sw.js'), 'utf8');
   const serviceWorkerScope = {
@@ -24,7 +30,7 @@ function loadServiceWorkerFetchHandler() {
   };
   const cache = {
     put: vi.fn(),
-    match: vi.fn().mockResolvedValue(undefined),
+    match: vi.fn().mockResolvedValue(matchResult),
   };
 
   vm.runInNewContext(script, {
@@ -32,11 +38,12 @@ function loadServiceWorkerFetchHandler() {
     caches: {
       delete: vi.fn(),
       keys: vi.fn(),
-      match: vi.fn().mockResolvedValue(undefined),
+      match: vi.fn().mockResolvedValue(matchResult),
       open: vi.fn().mockResolvedValue(cache),
     },
-    fetch: vi.fn().mockResolvedValue(new Response(null, { status: 204 })),
+    fetch: vi.fn(() => fetchResult),
     Promise,
+    Response,
     URL,
   });
 
@@ -64,5 +71,52 @@ describe('service worker routing', () => {
     fetchHandler(event as unknown as Event);
 
     expect(event.respondWith).not.toHaveBeenCalled();
+  });
+
+  it('always returns a Response when a navigation fails without a cached fallback', async () => {
+    const fetchHandler = loadServiceWorkerFetchHandler({
+      fetchResult: Promise.reject(new TypeError('Network unavailable')),
+    });
+    let responsePromise: Promise<Response> | undefined;
+    const event = {
+      request: {
+        headers: new Headers(),
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://app.movietime.test/ventas/venta-1',
+      },
+      respondWith: vi.fn((promise: Promise<Response>) => {
+        responsePromise = promise;
+      }),
+    };
+
+    fetchHandler(event as unknown as Event);
+
+    await expect(responsePromise).resolves.toEqual(expect.any(Response));
+    await expect(responsePromise).resolves.toMatchObject({ status: 503 });
+  });
+
+  it('uses the cached navigation fallback when the network fails', async () => {
+    const cachedResponse = new Response('cached', { status: 200 });
+    const fetchHandler = loadServiceWorkerFetchHandler({
+      fetchResult: Promise.reject(new TypeError('Network unavailable')),
+      matchResult: cachedResponse,
+    });
+    let responsePromise: Promise<Response> | undefined;
+    const event = {
+      request: {
+        headers: new Headers(),
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://app.movietime.test/ventas/venta-1',
+      },
+      respondWith: vi.fn((promise: Promise<Response>) => {
+        responsePromise = promise;
+      }),
+    };
+
+    fetchHandler(event as unknown as Event);
+
+    await expect(responsePromise).resolves.toBe(cachedResponse);
   });
 });
