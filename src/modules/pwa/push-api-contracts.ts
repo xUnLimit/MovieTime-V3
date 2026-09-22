@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/platform/validation/zod';
 
 const endpoint = z.string().max(2048).url().refine(
   (value) => new URL(value).protocol === 'https:',

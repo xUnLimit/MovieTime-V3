@@ -14,6 +14,7 @@ Solo la revision actualmente desplegada desde `main` recibe correcciones. Las ve
 - Tooling: cero advisories sin excepcion. Una excepcion solo puede cubrir dependencias que no llegan al artefacto, debe vivir en `security-audit-exceptions.json` y vencer en 30 dias o menos.
 - Una vulnerabilidad critica se contiene de inmediato; una alta se corrige antes del siguiente release. No se despliega mientras cualquiera permanezca abierta.
 - Los secretos confirmados se revocan y rotan; eliminarlos del Git actual no reemplaza la rotacion ni la limpieza del historial.
+- La CSP de produccion no admite `unsafe-eval`. Zod se consume mediante `@/platform/validation/zod` en modo `jitless`, y ESLint bloquea imports directos que omitan esa configuracion.
 
 ## Respuesta a incidentes
 

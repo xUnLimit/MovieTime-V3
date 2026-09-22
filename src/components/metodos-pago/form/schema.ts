@@ -1,4 +1,4 @@
-import * as z from "zod";
+import { z } from "@/platform/validation/zod";
 
 export const metodoPagoSchemaComplete = z
   .object({

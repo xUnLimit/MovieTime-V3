@@ -20,6 +20,17 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "zod",
+              message: "Import Zod through @/platform/validation/zod so CSP-safe jitless mode is configured first.",
+            },
+          ],
+        },
+      ],
       // React Hook Form watch() is incompatible with React Compiler - this is expected
       "react-hooks/incompatible-library": "off",
       // This heuristic reports every dynamic property access and is not actionable.
@@ -37,6 +48,12 @@ const eslintConfig = defineConfig([
     rules: {
       // These files only read fixed paths or paths enumerated by Git/the test fixture.
       "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
+    files: ["src/platform/validation/zod.ts"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
 ]);

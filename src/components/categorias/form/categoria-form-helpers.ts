@@ -1,4 +1,4 @@
-import * as z from "zod";
+import { z } from "@/platform/validation/zod";
 
 import type { Categoria, Plan, TipoPlanConfig } from "@/types";
 

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/platform/validation/zod';
 import { describe, expect, it } from 'vitest';
 
 import { parseJsonRequest } from './json-request';

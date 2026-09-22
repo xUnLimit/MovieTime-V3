@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/platform/validation/zod';
 
 const isProduction = process.env.NODE_ENV === 'production';
 

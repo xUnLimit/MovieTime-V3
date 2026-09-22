@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { z } from '@/platform/validation/zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Check, ChevronDown } from 'lucide-react';

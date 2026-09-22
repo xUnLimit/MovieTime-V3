@@ -1,6 +1,17 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+type CspViolation = {
+  blockedUri: string;
+  directive: string;
+};
+
+declare global {
+  interface Window {
+    __cspViolations?: CspViolation[];
+  }
+}
+
 test('@smoke exposes a minimal health endpoint with production headers', async ({ request }) => {
   const response = await request.get('/api/health');
 
@@ -24,6 +35,30 @@ test('@smoke serves the web app manifest without a redirect loop', async ({ requ
     name: expect.any(String),
     start_url: '/dashboard',
   });
+});
+
+test('@smoke does not attempt CSP-blocked dynamic code evaluation', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__cspViolations = [];
+    document.addEventListener('securitypolicyviolation', (event) => {
+      window.__cspViolations?.push({
+        blockedUri: event.blockedURI,
+        directive: event.effectiveDirective,
+      });
+    });
+  });
+
+  await page.goto('/login');
+  await page.waitForLoadState('networkidle');
+
+  const dynamicEvaluationViolations = await page.evaluate(() =>
+    (window.__cspViolations ?? []).filter(
+      ({ blockedUri, directive }) =>
+        directive === 'script-src' && (blockedUri === 'eval' || blockedUri === 'inline'),
+    ),
+  );
+
+  expect(dynamicEvaluationViolations).toEqual([]);
 });
 
 test('@smoke rejects a protected API without authentication', async ({ request }) => {

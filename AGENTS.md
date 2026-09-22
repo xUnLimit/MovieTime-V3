@@ -22,6 +22,7 @@ Este archivo es la fuente canonica para personas y agentes de IA. `CLAUDE.md` y 
 - No registres contrasenas, tokens, cookies, headers de autorizacion ni datos personales completos. Usa el logger central, que aplica redaccion.
 - No devuelvas detalles SQL, stack traces ni mensajes internos al cliente. Usa errores publicos tipados.
 - No uses `eval`, `new Function`, HTML sin sanitizar, comandos construidos con entrada, regex dinamicas no acotadas ni rutas de archivo no validadas.
+- Importa Zod exclusivamente desde `@/platform/validation/zod`; el adaptador activa `jitless` antes de crear esquemas para respetar la CSP sin `unsafe-eval`.
 - Toda dependencia nueva necesita una razon concreta y debe pasar `security:audit:prod` y `security:audit:all`.
 - Los avisos conocidos en dependencias ejecutables deben ser cero. El arbol completo debe estar libre de avisos salvo una excepcion temporal valida de tooling.
 

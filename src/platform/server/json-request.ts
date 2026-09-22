@@ -1,4 +1,4 @@
-import type { ZodType } from 'zod';
+import type { ZodType } from '@/platform/validation/zod';
 
 export type ParsedJson<T> =
   | { success: true; data: T }

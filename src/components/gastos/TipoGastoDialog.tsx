@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { z } from '@/platform/validation/zod';
 import { toast } from 'sonner';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { TipoGasto } from '@/types';

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/platform/validation/zod';
 
 export const ventaEditSchema = z.object({
   clienteId: z.string().min(1, 'Seleccione un cliente'),
