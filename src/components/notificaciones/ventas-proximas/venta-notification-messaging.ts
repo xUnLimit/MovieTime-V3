@@ -34,8 +34,7 @@ function openVentaWhatsappMessage(
     return;
   }
 
-  const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`;
-  window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  openWhatsApp('', mensaje);
   toast.warning(
     'Teléfono del cliente no disponible. Selecciona el contacto manualmente.',
   );

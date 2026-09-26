@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
 import { deleteTerceroMutation } from "@/application/client-domain-mutations";
 import { getPublicErrorMessage } from "@/platform/errors/public-errors";
+import { openWhatsApp } from "@/platform/utils/whatsapp";
 import type { Tercero } from "@/types";
 import { RevendedoresTableActions } from "./RevendedoresTableActions";
 import { TodosTercerosTableToolbar } from "./TodosTercerosTableToolbar";
@@ -97,8 +98,7 @@ export function RevendedoresTable({
   };
 
   const handleWhatsApp = useCallback((revendedor: Tercero) => {
-    const phone = revendedor.telefono.replace(/\D/g, "");
-    window.open(`https://wa.me/${phone}`, "_blank");
+    openWhatsApp(revendedor.telefono);
   }, []);
 
   const columns = useMemo(

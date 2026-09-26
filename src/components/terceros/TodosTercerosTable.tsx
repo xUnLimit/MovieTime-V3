@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
 import { deleteTerceroMutation } from "@/application/client-domain-mutations";
 import { getPublicErrorMessage } from "@/platform/errors/public-errors";
+import { openWhatsApp } from "@/platform/utils/whatsapp";
 import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 import { Tercero } from "@/types";
 import { TodosTercerosTableActions } from "./TodosTercerosTableActions";
@@ -115,8 +116,7 @@ export function TodosTercerosTable({
   };
 
   const handleWhatsApp = useCallback((usuario: TerceroDisplay) => {
-    const phone = usuario.telefono.replace(/\D/g, "");
-    window.open(`https://web.whatsapp.com/send?phone=${phone}`, "_blank");
+    openWhatsApp(usuario.telefono);
   }, []);
 
   const columns = useMemo(

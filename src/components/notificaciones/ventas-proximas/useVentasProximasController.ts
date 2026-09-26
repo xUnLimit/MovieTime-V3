@@ -10,6 +10,7 @@ import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { useTemplates } from '@/hooks/use-templates';
 import { reportError } from '@/platform/observability/logger';
+import { openWhatsApp } from '@/platform/utils/whatsapp';
 import {
   toggleNotificationHighlightedStoreCache,
   toggleNotificationReadStoreCache,
@@ -331,16 +332,7 @@ function showVentaRenewalOutcome({
     duration: Infinity,
     action: {
       label: 'Enviar WhatsApp',
-      onClick: () => {
-        const base = whatsappMessage.phone
-          ? `https://web.whatsapp.com/send?phone=${whatsappMessage.phone}&text=`
-          : 'https://web.whatsapp.com/send?text=';
-        window.open(
-          base + encodeURIComponent(whatsappMessage.message),
-          '_blank',
-          'noopener,noreferrer',
-        );
-      },
+      onClick: () => openWhatsApp(whatsappMessage.phone, whatsappMessage.message),
     },
     actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
   });

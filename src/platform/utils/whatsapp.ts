@@ -52,26 +52,39 @@ export function replacePlaceholders(
   return message;
 }
 
-/**
- * Genera un link de WhatsApp con mensaje preformateado
- */
+type WhatsAppDevice = Pick<Navigator, 'userAgent' | 'platform' | 'maxTouchPoints'>;
+
+export function isMobileWhatsAppDevice(device?: WhatsAppDevice): boolean {
+  if (!device) return false;
+
+  return /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(device.userAgent)
+    || (device.platform === 'MacIntel' && device.maxTouchPoints > 1);
+}
+
+/** Genera un enlace universal en móviles/tabletas y WhatsApp Web en computadoras. */
 export function generateWhatsAppLink(
   phoneNumber: string,
-  message: string
+  message = '',
+  device: WhatsAppDevice | undefined = typeof navigator === 'undefined' ? undefined : navigator,
 ): string {
-  // Limpiar número de teléfono (solo dígitos y +)
-  const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
+  const cleanPhone = phoneNumber.replace(/\D/g, '');
+  const mobile = isMobileWhatsAppDevice(device);
+  const base = mobile
+    ? `https://wa.me/${cleanPhone}`
+    : 'https://web.whatsapp.com/send';
+  const params = new URLSearchParams();
 
-  // Codificar mensaje para URL
-  const encodedMessage = encodeURIComponent(message);
+  if (!mobile && cleanPhone) params.set('phone', cleanPhone);
+  if (message) params.set('text', message);
 
-  return `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`;
+  const query = params.toString().replace(/\+/g, '%20');
+  return query ? `${base}?${query}` : base;
 }
 
 /**
  * Abre WhatsApp en una nueva ventana
  */
-export function openWhatsApp(phoneNumber: string, message: string): void {
+export function openWhatsApp(phoneNumber: string, message = ''): void {
   const link = generateWhatsAppLink(phoneNumber, message);
   window.open(link, '_blank', 'noopener,noreferrer');
 }

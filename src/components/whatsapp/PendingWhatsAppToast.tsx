@@ -3,14 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
+import { openWhatsApp } from '@/platform/utils/whatsapp';
 import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
-
-function buildWhatsAppUrl(phone: string, message: string) {
-  const base = phone
-    ? `https://web.whatsapp.com/send?phone=${phone}&text=`
-    : 'https://web.whatsapp.com/send?text=';
-  return base + encodeURIComponent(message);
-}
 
 export function PendingWhatsAppToast() {
   const pending = useWhatsAppToastStore((state) => state.pending);
@@ -49,11 +43,7 @@ export function PendingWhatsAppToast() {
       ? {
           label: 'Enviar WhatsApp',
           onClick: () => {
-            window.open(
-              buildWhatsAppUrl(pending.phone, pending.message),
-              '_blank',
-              'noopener,noreferrer'
-            );
+            openWhatsApp(pending.phone, pending.message);
             clearPending(pending.id);
           },
         }

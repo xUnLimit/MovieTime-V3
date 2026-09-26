@@ -11,6 +11,7 @@ import {
   updateVentaMutation,
 } from "@/application/client-domain-mutations";
 import { reportError } from "@/platform/observability/logger";
+import { openWhatsApp } from "@/platform/utils/whatsapp";
 import { queryKeys } from "@/platform/query-keys";
 import { fetchServiciosByIdsUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 import type { Tercero } from "@/types";
@@ -63,8 +64,7 @@ export function useTerceroDetailsController(usuario: Tercero) {
   }>({ open: false, modo: "activar", venta: null });
 
   const handleWhatsApp = () => {
-    const phone = usuario.telefono.replace(/\D/g, "");
-    window.open(`https://web.whatsapp.com/send?phone=${phone}`, "_blank");
+    openWhatsApp(usuario.telefono);
   };
 
   const handleCopy = async (value: string, label?: string) => {

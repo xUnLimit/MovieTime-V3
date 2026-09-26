@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { generarMensajeVenta } from '@/platform/utils/whatsapp';
+import { generarMensajeVenta, openWhatsApp } from '@/platform/utils/whatsapp';
 import type { TemplateMensaje, VentaDoc } from '@/types';
 
 export function showVentaRenovadaWhatsAppToast({
@@ -38,20 +38,11 @@ export function showVentaRenovadaWhatsAppToast({
       fechaVencimiento: data.fechaVencimiento,
       monto,
     });
-    const phone = venta.clienteTelefono
-      ? venta.clienteTelefono.replace(/[^\d+]/g, '')
-      : '';
-
     toast.success('Venta renovada exitosamente', {
       duration: Infinity,
       action: {
         label: 'Enviar WhatsApp',
-        onClick: () => {
-          const base = phone
-            ? `https://web.whatsapp.com/send?phone=${phone}&text=`
-            : 'https://web.whatsapp.com/send?text=';
-          window.open(base + encodeURIComponent(mensaje), '_blank', 'noopener,noreferrer');
-        },
+        onClick: () => openWhatsApp(venta.clienteTelefono || '', mensaje),
       },
       actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
     });
