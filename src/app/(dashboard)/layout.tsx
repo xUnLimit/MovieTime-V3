@@ -84,28 +84,23 @@ export default function DashboardLayout({
 
         {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Mobile top bar — fixed para cubrir el border-r del sidebar en la safe area */}
-          <div
-            className="fixed top-0 left-0 right-0 flex items-center px-4 bg-sidebar md:hidden z-[66]"
+          {/* Mobile top bar stays in the flex flow so iOS renders text at native resolution. */}
+          <header
+            className="relative z-[66] flex shrink-0 items-center bg-sidebar px-[16px] md:hidden"
             style={{
-              height: 'calc(3.5rem + env(safe-area-inset-top))',
+              height: 'calc(56px + env(safe-area-inset-top))',
               paddingTop: 'env(safe-area-inset-top)',
             }}
           >
             <button
               onClick={openMobileSidebar}
-              className="flex items-center justify-center h-9 w-9 rounded-lg text-foreground hover:bg-muted transition-colors"
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted"
               aria-label="Abrir menú"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-[20px] w-[20px]" />
             </button>
-            <span className="ml-3 text-base font-semibold">MovieTime PTY</span>
-          </div>
-          {/* Espaciador para compensar el top bar fixed */}
-          <div
-            className="md:hidden flex-shrink-0"
-            style={{ height: 'calc(3.5rem + env(safe-area-inset-top))' }}
-          />
+            <span className="ml-[12px] text-[16px] leading-[24px] font-semibold">MovieTime PTY</span>
+          </header>
 
           {/* Main */}
           <main
