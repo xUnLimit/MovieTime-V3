@@ -37,7 +37,7 @@ test('@smoke serves the web app manifest without a redirect loop', async ({ requ
   });
 });
 
-test('@smoke preserves the mobile zoom policy on login and operational routes', async ({ request }) => {
+test('@smoke allows zoom on login and preserves the operational viewport', async ({ request }) => {
   const login = await request.get('/login');
   const dashboard = await request.get('/dashboard');
   const viewportTag = (html: string) => html.match(/<meta name="viewport"[^>]*>/)?.[0] ?? '';
@@ -45,8 +45,8 @@ test('@smoke preserves the mobile zoom policy on login and operational routes', 
   expect(login.status()).toBe(200);
   expect(dashboard.status()).toBe(200);
   expect(viewportTag(await login.text())).toContain('initial-scale=1');
-  expect(viewportTag(await login.text())).toContain('maximum-scale=1');
-  expect(viewportTag(await login.text())).toContain('user-scalable=no');
+  expect(viewportTag(await login.text())).toContain('maximum-scale=5');
+  expect(viewportTag(await login.text())).toContain('user-scalable=yes');
   expect(viewportTag(await dashboard.text())).toContain('maximum-scale=1');
   expect(viewportTag(await dashboard.text())).toContain('user-scalable=no');
 });

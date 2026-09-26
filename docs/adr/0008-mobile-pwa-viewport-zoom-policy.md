@@ -11,7 +11,7 @@ Las auditorias web generales suelen recomendar permitir zoom del navegador por a
 
 ## Decision
 
-Mantener el viewport movil con `maximumScale: 1` y `userScalable: false` de forma intencional para preservar una experiencia app-like en la PWA interna.
+Mantener el viewport movil con `maximumScale: 1` y `userScalable: false` en los flujos operativos para preservar una experiencia app-like en la PWA interna. La pantalla de acceso permite zoom (`maximumScale: 5` y `userScalable: true`) para cumplir el presupuesto de accesibilidad de Lighthouse.
 
 Esta decision no elimina la responsabilidad de accesibilidad. La compensacion esperada es mantener:
 
@@ -23,7 +23,7 @@ Esta decision no elimina la responsabilidad de accesibilidad. La compensacion es
 
 ## Consequences
 
-- Futuras auditorias no deben reportar el bloqueo de zoom como deuda accidental; es una decision de producto.
+- Las auditorias de los flujos operativos pueden reportar el bloqueo de zoom; es una limitacion de accesibilidad conocida y una decision de producto documentada.
 - Si MovieTime pasa a ser un producto publico, multi-cliente, o requiere compliance WCAG formal, este ADR debe reabrirse y probablemente quitar `maximumScale`/`userScalable`.
 - Los cambios de UI movil deben evaluarse con mas rigor, porque el usuario no puede compensar un layout denso usando zoom del navegador.
 
