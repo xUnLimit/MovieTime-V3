@@ -37,6 +37,20 @@ test('@smoke serves the web app manifest without a redirect loop', async ({ requ
   });
 });
 
+test('@smoke preserves the mobile zoom policy on login and operational routes', async ({ request }) => {
+  const login = await request.get('/login');
+  const dashboard = await request.get('/dashboard');
+  const viewportTag = (html: string) => html.match(/<meta name="viewport"[^>]*>/)?.[0] ?? '';
+
+  expect(login.status()).toBe(200);
+  expect(dashboard.status()).toBe(200);
+  expect(viewportTag(await login.text())).toContain('initial-scale=1');
+  expect(viewportTag(await login.text())).toContain('maximum-scale=1');
+  expect(viewportTag(await login.text())).toContain('user-scalable=no');
+  expect(viewportTag(await dashboard.text())).toContain('maximum-scale=1');
+  expect(viewportTag(await dashboard.text())).toContain('user-scalable=no');
+});
+
 test('@smoke does not attempt CSP-blocked dynamic code evaluation', async ({ page }) => {
   await page.addInitScript(() => {
     window.__cspViolations = [];

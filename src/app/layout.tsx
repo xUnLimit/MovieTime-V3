@@ -39,6 +39,9 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   width: 'device-width',
   initialScale: 1,
+  // ADR-0008: PWA interna app-like; compensar con UI legible y tap targets amplios.
+  maximumScale: 1,
+  userScalable: false,
   interactiveWidget: 'resizes-content',
 };
 
