@@ -84,7 +84,7 @@ export default function DashboardLayout({
 
         {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Mobile top bar stays in the flex flow so iOS renders text at native resolution. */}
+          {/* Account for the top safe area in full-screen mobile layouts. */}
           <header
             className="relative z-[66] flex shrink-0 items-center bg-sidebar px-[16px] md:hidden"
             style={{

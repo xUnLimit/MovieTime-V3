@@ -34,7 +34,18 @@ test('@smoke serves the web app manifest without a redirect loop', async ({ requ
   expect(manifest).toMatchObject({
     name: expect.any(String),
     start_url: '/dashboard',
+    display: 'standalone',
   });
+});
+
+test('@smoke keeps the iOS status bar separate from the web app header', async ({ request }) => {
+  const response = await request.get('/dashboard');
+  const html = await response.text();
+
+  expect(response.status()).toBe(200);
+  expect(html).toContain('name="mobile-web-app-capable" content="yes"');
+  expect(html).toContain('name="apple-mobile-web-app-status-bar-style" content="black"');
+  expect(html).not.toContain('name="apple-mobile-web-app-status-bar-style" content="black-translucent"');
 });
 
 test('@smoke allows zoom on login and preserves the operational viewport', async ({ request }) => {
