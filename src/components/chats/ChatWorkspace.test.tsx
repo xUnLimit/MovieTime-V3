@@ -247,4 +247,67 @@ describe('ChatWorkspace', () => {
     expect(state.markRead).not.toHaveBeenCalled();
   });
 
+  it('sends reply buttons from the composer, quoting the selected message', async () => {
+    state.messages = [{ id: 'm1', waMessageId: 'wamid-1', direction: 'inbound', kind: 'text', textBody: 'Quiero renovar', templateName: null, occurredAt: NOW.toISOString(), status: 'received', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} }];
+    state.sendMutate.mockImplementation((_input, options) => options.onSuccess({ sendStatus: 'accepted' }));
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Responder' }));
+    await user.click(screen.getByRole('button', { name: 'Botones o lista' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Texto del mensaje'), '¿Cómo quieres pagar?');
+    await user.type(within(dialog).getByLabelText('Botón 1'), 'Yappy');
+    await user.click(within(dialog).getByRole('button', { name: 'Agregar botón' }));
+    await user.type(within(dialog).getByLabelText('Botón 2'), 'Efectivo');
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar' }));
+    expect(state.sendMutate).toHaveBeenCalledWith(expect.objectContaining({ message: {
+      kind: 'buttons', body: '¿Cómo quieres pagar?', buttons: [{ id: 'btn-1', title: 'Yappy' }, { id: 'btn-2', title: 'Efectivo' }], replyTo: 'wamid-1',
+    } }), expect.any(Object));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText(/Respondiendo a/)).toBeNull();
+  });
+
+  it('validates and sends a list message', async () => {
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.click(screen.getByRole('button', { name: 'Botones o lista' }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('radio', { name: /Lista/ }));
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar' }));
+    expect(within(dialog).getByRole('alert').textContent).toBe('Escribe el texto del mensaje.');
+    expect(state.sendMutate).not.toHaveBeenCalled();
+    await user.type(within(dialog).getByLabelText('Texto del mensaje'), 'Elige tu plan');
+    await user.type(within(dialog).getByLabelText('Opción 1'), 'Netflix 1 mes');
+    await user.type(within(dialog).getByLabelText('Descripción de la opción 1'), '$4.50');
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar' }));
+    expect(state.sendMutate).toHaveBeenCalledWith(expect.objectContaining({ message: {
+      kind: 'list', body: 'Elige tu plan', buttonLabel: 'Ver opciones', rows: [{ id: 'row-1', title: 'Netflix 1 mes', description: '$4.50' }],
+    } }), expect.any(Object));
+  });
+
+  it('shows sent buttons in the bubble and retries a failed interactive message', async () => {
+    state.messages = [{ id: 'i1', waMessageId: null, direction: 'outbound', kind: 'interactive', textBody: '¿Cómo quieres pagar?', templateName: null, occurredAt: NOW.toISOString(), status: 'failed', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: { buttons: [{ id: 'btn-1', title: 'Yappy' }] } }];
+    const user = userEvent.setup();
+    renderWorkspace();
+    expect(within(screen.getByLabelText('Botones del mensaje')).getByText('Yappy')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Reintentar' }));
+    expect(state.sendMutate).toHaveBeenCalledWith(expect.objectContaining({ message: {
+      kind: 'buttons', body: '¿Cómo quieres pagar?', buttons: [{ id: 'btn-1', title: 'Yappy' }],
+    } }), expect.any(Object));
+  });
+
+  it('shows a sent list with its options', () => {
+    state.messages = [{ id: 'l1', waMessageId: 'wa-l1', direction: 'outbound', kind: 'interactive', textBody: 'Elige tu plan', templateName: null, occurredAt: NOW.toISOString(), status: 'delivered', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: { buttonLabel: 'Ver planes', rows: [{ id: 'row-1', title: 'Netflix', description: '$4.50' }] } }];
+    renderWorkspace();
+    const options = screen.getByLabelText('Opciones de la lista');
+    expect(within(options).getByText('Ver planes')).toBeTruthy();
+    expect(within(options).getByText('• Netflix — $4.50')).toBeTruthy();
+  });
+
+  it('hides buttons and lists when the 24-hour window is closed', () => {
+    renderWorkspace(closed);
+    expect(screen.queryByRole('button', { name: 'Botones o lista' })).toBeNull();
+  });
 });

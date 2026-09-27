@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, useEffect, useLayoutEffect, useRef, useImperativeHandle, useState } from 'react';
-import { FileText, Lock, Mic, Paperclip, SendHorizontal, Square, X, Zap } from 'lucide-react';
+import { FileText, ListChecks, Lock, Mic, Paperclip, SendHorizontal, Square, X, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -19,6 +19,8 @@ import type { WhatsAppUploadResult } from '@/application/use-cases/whatsapp-chat
 import { useUploadWhatsAppMedia } from '@/hooks/use-whatsapp-chat';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import type { ServiceWindow } from './chat-format';
+import type { InteractiveSendMessage } from './chat-interactive';
+import { InteractiveMessageDialog } from './InteractiveMessageDialog';
 
 export type QuickReply = { tipo: TemplateMensaje['tipo']; label: string };
 
@@ -35,6 +37,7 @@ type ChatComposerProps = {
   replyTarget?: { waMessageId: string; preview: string } | null;
   onCancelReply?: () => void;
   onSendMedia?: (upload: WhatsAppUploadResult, caption: string, onDone: () => void) => void;
+  onSendInteractive?: (message: InteractiveSendMessage, onDone: () => void) => void;
 };
 
 const MAX_TEXTAREA_PX = 168;
@@ -53,7 +56,7 @@ const AUDIO_EXTENSIONS: Record<string, string> = {
 };
 
 export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerProps>(function ChatComposer(
-  { draft, serviceWindow, isSending, quickReplies, quickReplyContext, onDraftChange, onSend, onQuickReply, onOpenTemplates, replyTarget, onCancelReply, onSendMedia },
+  { draft, serviceWindow, isSending, quickReplies, quickReplyContext, onDraftChange, onSend, onQuickReply, onOpenTemplates, replyTarget, onCancelReply, onSendMedia, onSendInteractive },
   ref
 ) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -66,6 +69,7 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [interactive, setInteractive] = useState({ open: false, key: 0 });
   const uploadMedia = useUploadWhatsAppMedia();
   useImperativeHandle<HTMLTextAreaElement | null, HTMLTextAreaElement | null>(ref, () => textareaRef.current, []);
 
@@ -228,6 +232,7 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
 
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf,audio/*" className="sr-only" aria-label="Seleccionar archivo" onChange={(event) => { const file = event.target.files?.[0]; if (file) selectFile(file); }} />
       <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Adjuntar archivo" onClick={() => fileRef.current?.click()}><Paperclip className="h-5 w-5" /></Button>
+      {onSendInteractive ? <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Botones o lista" onClick={() => setInteractive((current) => ({ open: true, key: current.key + 1 }))}><ListChecks className="h-5 w-5" /></Button> : null}
       {recording ? <div className="flex items-center gap-1 text-xs tabular-nums"><span>{Math.floor(recordSeconds / 60)}:{String(recordSeconds % 60).padStart(2, '0')}</span><Button type="button" size="icon" variant="ghost" aria-label="Cancelar grabación" onClick={() => stopRecording(false)}><X className="h-4 w-4" /></Button><Button type="button" size="icon" variant="ghost" aria-label="Detener grabación" onClick={() => stopRecording(true)}><Square className="h-4 w-4" /></Button></div> : <Button type="button" size="icon" variant="ghost" className="h-10 w-10 shrink-0" aria-label="Grabar audio" onClick={() => void startRecording()}><Mic className="h-5 w-5" /></Button>}
 
       <div className="min-w-0 flex-1">
@@ -260,6 +265,9 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
         <SendHorizontal className="h-5 w-5" aria-hidden />
       </Button>
       </div>
+      {onSendInteractive ? <InteractiveMessageDialog key={interactive.key} open={interactive.open} isSending={isSending}
+        onOpenChange={(open) => setInteractive((current) => ({ ...current, open }))}
+        onSend={(message) => onSendInteractive(message, () => setInteractive((current) => ({ ...current, open: false })))} /> : null}
     </form>
   );
 });

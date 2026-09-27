@@ -128,7 +128,10 @@ function optimisticMessage(input: SendInput): WhatsAppChatMessage {
     waMessageId: null,
     contextWaMessageId: message.kind === 'reaction' ? message.targetWaMessageId : 'replyTo' in message ? message.replyTo ?? null : null,
     reactionEmoji: message.kind === 'reaction' ? message.emoji : null,
-    payload: message.kind === 'location' ? { location: message.location } : message.kind === 'contacts' ? { contacts: message.contacts } : {},
+    payload: message.kind === 'location' ? { location: message.location }
+      : message.kind === 'contacts' ? { contacts: message.contacts }
+        : message.kind === 'buttons' ? { buttons: message.buttons }
+          : message.kind === 'list' ? { buttonLabel: message.buttonLabel, rows: message.rows } : {},
   };
 }
 

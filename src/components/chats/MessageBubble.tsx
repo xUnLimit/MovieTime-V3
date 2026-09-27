@@ -1,10 +1,11 @@
-import { AlertCircle, Check, CheckCheck, Clock3, Ellipsis, FileText } from 'lucide-react';
+import { AlertCircle, Check, CheckCheck, Clock3, Ellipsis, FileText, List } from 'lucide-react';
 
 import type { WhatsAppChatMessage } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/platform/utils/cn';
 import { CHAT_TEMPLATES, QUICK_REACTIONS, messagePreview, statusLabel } from './chat-format';
+import { isInteractiveKind, readInteractiveOptions } from './chat-interactive';
 import type { MessageReactions } from './chat-reactions';
 import { MessageAttachment } from './MessageAttachment';
 import { WhatsAppText } from './WhatsAppText';
@@ -51,6 +52,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
   const longitude = location && typeof location === 'object' && 'longitude' in location ? location.longitude : null;
   const locationName = location && typeof location === 'object' && 'name' in location && typeof location.name === 'string' ? location.name : 'Ubicación compartida';
   const contacts = Array.isArray(message.payload?.contacts) ? message.payload.contacts : [];
+  const interactive = outbound && isInteractiveKind(message.kind) ? readInteractiveOptions(message.payload) : null;
   const retryAvailable = failed && outbound && (canRetry?.(message) ?? Boolean(message.textBody || message.mediaId));
 
   return (
@@ -93,6 +95,16 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
             return <p key={`${contact.phone}-${index}`}>{contact.name} · {contact.phone}</p>;
           })}</div>
         ) : text ? <p className="whitespace-pre-wrap break-words"><WhatsAppText text={text} /></p> : null}
+        {interactive ? (
+          <div className="mt-1.5 space-y-1" aria-label={interactive.type === 'buttons' ? 'Botones del mensaje' : 'Opciones de la lista'}>
+            {interactive.type === 'buttons'
+              ? interactive.buttons.map((button) => <div key={button.id} className="rounded-md bg-black/10 px-2 py-1 text-center text-[13px] font-medium">{button.title}</div>)
+              : <>
+                  <div className="flex items-center justify-center gap-1 rounded-md bg-black/10 px-2 py-1 text-[13px] font-medium"><List className="h-3.5 w-3.5" aria-hidden />{interactive.buttonLabel}</div>
+                  <ul className="space-y-0.5 text-[12px] opacity-80">{interactive.rows.map((row) => <li key={row.id}>• {row.title}{row.description ? ` — ${row.description}` : ''}</li>)}</ul>
+                </>}
+          </div>
+        ) : null}
         <p
           className={cn(
             'mt-0.5 flex items-center justify-end gap-1 text-[11px] tabular-nums',

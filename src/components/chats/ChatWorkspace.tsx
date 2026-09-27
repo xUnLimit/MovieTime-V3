@@ -23,6 +23,7 @@ import { readChatDraft, writeChatDraft } from '@/modules/whatsapp/chat-drafts';
 import { ChatComposer, type QuickReply } from './ChatComposer';
 import { ChatHeader } from './ChatHeader';
 import { getServiceWindow, messagePreview, type ChatTemplate } from './chat-format';
+import { rebuildInteractiveMessage } from './chat-interactive';
 import { searchMessages } from './chat-search';
 import { buildMetaTemplateParams, quickRepliesFrom, suggestMetaTemplate } from './chat-templates';
 import { CustomerPanel, sortVentasForChat } from './CustomerPanel';
@@ -84,7 +85,8 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   };
 
   const canRetry = (message: WhatsAppChatMessage) => (message.kind === 'text' && Boolean(message.textBody))
-    || (['image', 'document', 'audio'].includes(message.kind) && Boolean(message.mediaId && message.mediaMimeType));
+    || (['image', 'document', 'audio'].includes(message.kind) && Boolean(message.mediaId && message.mediaMimeType))
+    || rebuildInteractiveMessage(message) !== null;
 
   const sendExtra = (to: string, message: WhatsAppSendMessage, onDone?: () => void) => {
     sendMessage.mutate({ to, message, idempotencyKey: crypto.randomUUID() }, {
@@ -97,7 +99,10 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   };
 
   const retryMessage = (message: WhatsAppChatMessage) => {
-    if (message.kind === 'text' && message.textBody) {
+    const interactive = rebuildInteractiveMessage(message);
+    if (interactive) {
+      sendExtra(waId, interactive);
+    } else if (message.kind === 'text' && message.textBody) {
       sendExtra(waId, { kind: 'text', text: message.textBody, replyTo: message.contextWaMessageId ?? undefined });
     } else if ((message.kind === 'image' || message.kind === 'document' || message.kind === 'audio') && message.mediaId && message.mediaMimeType) {
       sendExtra(waId, { kind: message.kind, mediaId: message.mediaId, mimeType: message.mediaMimeType, filename: message.mediaFilename ?? undefined, caption: message.textBody ?? undefined, replyTo: message.contextWaMessageId ?? undefined });
@@ -220,6 +225,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
             const kind = upload.mimeType.startsWith('image/') ? 'image' : upload.mimeType.startsWith('audio/') ? 'audio' : 'document';
             sendExtra(waId, { kind, mediaId: upload.mediaId, mimeType: upload.mimeType, filename: upload.filename, caption: caption || undefined, replyTo: replyTarget?.waMessageId }, () => { onDone(); setReplyTarget(null); });
           }}
+          onSendInteractive={(message, onDone) => sendExtra(waId, { ...message, ...(replyTarget ? { replyTo: replyTarget.waMessageId } : {}) }, () => { onDone(); setReplyTarget(null); })}
           onQuickReply={applyQuickReply}
           onOpenTemplates={() => openTemplates()}
         />
