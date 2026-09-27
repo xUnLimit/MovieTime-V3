@@ -130,3 +130,48 @@ test('@performance login meets the local navigation budget', async ({ page }) =>
   expect(timing.domContentLoaded).toBeLessThanOrEqual(2_500);
   expect(timing.load).toBeLessThanOrEqual(4_000);
 });
+
+test('@smoke serves the public privacy policy without authentication', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+  await page.goto('/privacidad');
+  await expect(page).toHaveURL(/\/privacidad$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Política de privacidad' })).toBeVisible();
+});
+
+test('@smoke rejects unsigned WhatsApp webhook deliveries', async ({ request }) => {
+  const response = await request.post('/api/whatsapp/webhook', {
+    data: { object: 'whatsapp_business_account', entry: [] },
+  });
+
+  expect([401, 503]).toContain(response.status());
+});
+
+test('@a11y privacy policy has no serious or critical accessibility violations', async ({ page }) => {
+  await page.goto('/privacidad');
+  await expect(page.getByRole('heading', { level: 1, name: 'Política de privacidad' })).toBeVisible();
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  const blocking = results.violations.filter(({ impact }) => impact === 'serious' || impact === 'critical');
+  expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([]);
+});
+
+test('@performance privacy policy meets the local navigation budget', async ({ page }) => {
+  await page.goto('/privacidad');
+  await expect(page.getByRole('heading', { level: 1, name: 'Política de privacidad' })).toBeVisible();
+
+  const timing = await page.evaluate(() => {
+    const [navigation] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    return {
+      domContentLoaded: navigation.domContentLoadedEventEnd - navigation.startTime,
+      load: navigation.loadEventEnd - navigation.startTime,
+    };
+  });
+
+  expect(timing.domContentLoaded).toBeLessThanOrEqual(2_500);
+  expect(timing.load).toBeLessThanOrEqual(4_000);
+});

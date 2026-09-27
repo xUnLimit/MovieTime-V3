@@ -4,6 +4,7 @@ export type ApiErrorCode =
   | 'INVALID_REQUEST'
   | 'PAYLOAD_TOO_LARGE'
   | 'NO_SUCCESSFUL_DELIVERIES'
+  | 'NOT_CONFIGURED'
   | 'INTERNAL_ERROR';
 
 export type ApiSuccess<T> = {

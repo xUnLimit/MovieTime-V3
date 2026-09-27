@@ -37,6 +37,10 @@ const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: isProduction
     ? z.string().trim().min(20)
     : z.string().optional(),
+  // WhatsApp Cloud API: opcionales hasta activar la integracion; el webhook
+  // rechaza solicitudes mientras falten.
+  WHATSAPP_VERIFY_TOKEN: z.string().trim().min(16).optional(),
+  WHATSAPP_APP_SECRET: z.string().trim().min(16).optional(),
 }).superRefine((value, ctx) => {
   if (!isProduction) return;
   const cronSecret = value.PUSH_CRON_SECRET || value.CRON_SECRET;
@@ -105,6 +109,12 @@ export const env = {
     : 'CRON_SECRET' in serverEnv && typeof serverEnv.CRON_SECRET === 'string'
       ? serverEnv.CRON_SECRET
       : '',
+  whatsappVerifyToken: 'WHATSAPP_VERIFY_TOKEN' in serverEnv && typeof serverEnv.WHATSAPP_VERIFY_TOKEN === 'string'
+    ? serverEnv.WHATSAPP_VERIFY_TOKEN
+    : '',
+  whatsappAppSecret: 'WHATSAPP_APP_SECRET' in serverEnv && typeof serverEnv.WHATSAPP_APP_SECRET === 'string'
+    ? serverEnv.WHATSAPP_APP_SECRET
+    : '',
 
   // Environment
   isDevelopment: process.env.NODE_ENV === 'development',

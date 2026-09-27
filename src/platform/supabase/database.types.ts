@@ -2109,6 +2109,78 @@ export type Database = {
           },
         ]
       }
+      whatsapp_inbound_messages: {
+        Row: {
+          contact_name: string | null
+          from_wa_id: string
+          id: string
+          message_type: string
+          phone_number_id: string
+          processed_at: string | null
+          received_at: string
+          sent_at: string
+          text_body: string | null
+          wa_message_id: string
+        }
+        Insert: {
+          contact_name?: string | null
+          from_wa_id: string
+          id?: string
+          message_type: string
+          phone_number_id: string
+          processed_at?: string | null
+          received_at?: string
+          sent_at: string
+          text_body?: string | null
+          wa_message_id: string
+        }
+        Update: {
+          contact_name?: string | null
+          from_wa_id?: string
+          id?: string
+          message_type?: string
+          phone_number_id?: string
+          processed_at?: string | null
+          received_at?: string
+          sent_at?: string
+          text_body?: string | null
+          wa_message_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_message_statuses: {
+        Row: {
+          error_code: number | null
+          error_title: string | null
+          id: string
+          received_at: string
+          recipient_wa_id: string
+          status: string
+          status_at: string
+          wa_message_id: string
+        }
+        Insert: {
+          error_code?: number | null
+          error_title?: string | null
+          id?: string
+          received_at?: string
+          recipient_wa_id: string
+          status: string
+          status_at: string
+          wa_message_id: string
+        }
+        Update: {
+          error_code?: number | null
+          error_title?: string | null
+          id?: string
+          received_at?: string
+          recipient_wa_id?: string
+          status?: string
+          status_at?: string
+          wa_message_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_categoria_counters: {
