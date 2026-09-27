@@ -34,6 +34,17 @@ describe('Yappy detection migration', () => {
   });
   it('keeps final states immutable and never invokes the renewal RPC', () => {
     expect(sql).toContain("IF v_payment.match_status IN ('registrado', 'descartado') THEN RAISE EXCEPTION 'payment already resolved'");
-    expect(sql).not.toContain('create_venta_payment');
+    expect(sql).not.toMatch(/create_venta_payment\s*\(/);
+  });
+  it('approves only the admin reconciliation RPCs in the security audit', () => {
+    const audit = readFileSync(join(process.cwd(), 'supabase/migrations/20260927223000_approve_yappy_admin_rpcs.sql'), 'utf8');
+    expect(audit).toContain('CREATE OR REPLACE FUNCTION public.run_security_audit_validations');
+    const allowed = audit.slice(audit.indexOf('allowed_authenticated_security_definer'), audit.indexOf('required_authenticated_rpcs'));
+    expect(allowed).toContain("('resolve_yappy_payment')");
+    expect(allowed).toContain("('dismiss_yappy_payment')");
+    for (const fn of ['match_yappy_payment', 'ingest_yappy_payment', 'record_invalid_yappy_mail', 'claim_yappy_mail_sync', 'trigger_yappy_sync']) {
+      expect(allowed).not.toContain(fn);
+    }
+    expect(audit).toContain("('yappy_mail_sync_state'), ('yappy_mail_messages'), ('yappy_payments')");
   });
 });
