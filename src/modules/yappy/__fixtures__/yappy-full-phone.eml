@@ -1,0 +1,119 @@
+Authentication-Results: mx.google.com; dkim=pass header.i=@yappy.com.pa; spf=pass smtp.mailfrom=bounce@amazonses.com; dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=yappy.com.pa
+From: notificaciones@yappy.com.pa
+To: owner@gmail.com
+Subject: =?UTF-8?Q?=C2=A1Te_enviaron_por_Yappy!_=F0=9F=92=B8?=
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Message-ID: <fixture-full-phone@email.amazonses.com>
+Date: Sun, 27 Sep 2026 21:03:43 +0000
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org=
+/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang=3D"en">
+<head>
+=09<title></title>
+=09<meta charset=3D"utf-8" />
+=09<style>
+=09=09* { box-sizing: border-box; }
+=09=09body { margin: 0; padding: 0; }
+=09</style>
+</head>
+<body style=3D"background-color: #FFFFFF;">
+=09<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presenta=
+tion" width=3D"100%">
+=09=09<tbody><tr><td>
+=09=09=09<table align=3D"center" role=3D"presentation" width=3D"100%"><tbody=
+><tr><td>
+=09=09=09=09<div align=3D"center" style=3D"line-height:10px"><img alt=3D"Ya=
+ppy-logo" src=3D"https://publicimage.yappy.cloud/common/notifications/logo/=
+yappy-landscape.png" title=3D"Yappy-logo" width=3D"161" /></div>
+=09=09=09</td></tr></tbody></table>
+=09=09=09<table align=3D"center" role=3D"presentation" width=3D"100%"><tbody=
+><tr><td style=3D"text-align:center;">
+=09=09=09=09<h1 style=3D"margin: 0; color: #ffffff;">
+=09=09=09=09=09<strong>Te enviaron por =
+Yappy</strong>
+=09=09=09=09</h1>
+=09=09=09=09<h2 style=3D"margin: 0; color: #ffffff;">
+=09=09=09=09=09<strong>$0.02 </strong><=
+img src=3D"https://publicimage.yappy.cloud/common/notifications/buttons/Ico=
+Check.png" width=3D"32" height=3D"32" alt=3D"" />
+=09=09=09=09</h2>
+=09=09=09</td></tr></tbody></table>
+=09=09=09<table align=3D"center" role=3D"presentation" width=3D"100%">
+=09=09=09=09<tr><td style=3D"text-align:center;">
+=09=09=09=09=09<div style=3D"font-family: sans-serif">
+=09=09=09=09=09=09<div style=3D"font-size: 14px;">
+=09=09=09=09=09=09<p style=3D"margin: 0;">
+=09=09=09=09=09=09=09<span style=3D"font-size=
+:18px;">Enviado
+=09=09=09=09=09=09=09=09por</span>
+=09=09=09=09=09=09</p>
+=09=09=09=09=09=09<br>
+=09=09=09=09=09=09<p style=3D"margin: 0; font-size: 24px;">
+=09=09=09=09=09=09=09<strong>Cliente</strong><s=
+trong>
+=09=09=09=09=09=09=09=09Prueba</strong>
+=09=09=09=09=09=09</p>
+=09=09=09=09=09=09<br>
+=09=09=09=09=09=09<p style=3D"margin: 0; font-size: 18px;">
+=09=09=09=09=09=09=09<img src=3D"https://publ=
+icimage.yappy.cloud/common/notifications/buttons/ico-cellphone.png"
+=09=09=09=09=09=09=09=09width=3D"16" height=
+=3D"16" alt=3D"" /><strong
+=09=09=09=09=09=09=09=09style=3D"margin-left:=
+ 2px;">60001234</strong>
+=09=09=09=09=09=09</p>
+=09=09=09=09=09=09</div>
+=09=09=09=09=09</div>
+=09=09=09=09</td></tr>
+=09=09=09</table>
+=09=09=09<!-- grid de fecha, comentario y confirmac=
+ion  -->
+=09=09=09<table class=3D"text_block" role=3D"presentation" style=3D"display:=
+ grid; width: 95%;" width=3D"100%">
+=09=09=09=09<tr><td><div style=3D"font-family: sans-serif"><div style=3D"font-=
+size: 16px;"></div></div></td></tr>
+=09=09=09=09<tr style=3D"display: inline-table; width: 100%;">
+=09=09=09=09=09<td align=3D"left" width=3D"300px" style=3D"color: #6F7583;">
+=09=09=09=09=09=09Fecha</td>
+=09=09=09=09=09<td align=3D"right" width=3D"300px" style=3D"color: #444C5E;">
+=09=09=09=09=09=09<strong>27 sept 2026 04:03 p.=C2=
+=A0m.</strong>
+=09=09=09=09=09</td>
+=09=09=09=09=09<td width=3D"20"><img src=3D"https://publicimage.yappy.cloud/c=
+ommon/notifications/buttons/ico-calendar.png" width=3D"24" height=3D"24" al=
+t=3D"" /></td>
+=09=09=09=09</tr>
+=09=09=09=09<tr style=3D"display: inline-table; width: 100%;">
+=09=09=09=09=09<td align=3D"left" width=3D"300px" style=3D"color: #6F7583;">
+=09=09=09=09=09=09Mensaje</td>
+=09=09=09=09=09<td align=3D"right" width=3D"300px" style=3D"color: #444C5E;">
+=09=09=09=09=09=09<strong style=3D"display: block;"></strong>
+=09=09=09=09=09</td>
+=09=09=09=09=09<td width=3D"20"><img src=3D"https://publicimage.yappy.cloud/c=
+ommon/notifications/buttons/ico-chat.png" width=3D"24" height=3D"24" alt=3D=
+"" /></td>
+=09=09=09=09</tr>
+=09=09=09=09<tr style=3D"display: inline-table; width: 100%;">
+=09=09=09=09=09<td align=3D"left" width=3D"300px" style=3D"color: #6F7583;">
+=09=09=09=09=09=09Confirmaci=C3=B3n</td>
+=09=09=09=09=09<td align=3D"right" width=3D"300px" style=3D"color: #444C5E;">
+=09=09=09=09=09=09<strong>TESTX-10000001</strong>
+=09=09=09=09=09</td>
+=09=09=09=09=09<td width=3D"20"><img src=3D"https://publicimage.yappy.cloud/c=
+ommon/notifications/buttons/ico-confirmation.png" width=3D"24" height=3D"24=
+" alt=3D"" /></td>
+=09=09=09=09</tr>
+=09=09=09</table>
+=09=09=09<p style=3D"margin: 0; text-align:center;">
+=09=09=09=09Estamos aqu=C3=AD para ayudarte. Visita nuestra secci=C3=B3n de <=
+br> <a href=3D"https://www.yappy.com.pa/personas/preguntas-frecuentes/"><str=
+ong>preguntas frecuentes</strong></a> para m=C3=A1s informaci=C3=B3n.</p>
+=09=09=09<p style=3D"margin: 0;">Copyright =C2=A9 2025 Yappy. Todos los dere=
+chos reservados.</p>
+=09=09</td></tr></tbody>
+=09</table>
+</body>
+</html>

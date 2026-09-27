@@ -1,4 +1,4 @@
-export const YAPPY_PARSER_VERSION = 1;
+export const YAPPY_PARSER_VERSION = 2;
 
 export type ParsedYappyMail =
   | { ok: true; payment: { amount: number; confirmationCode: string; payerNameShort: string; payerPhoneLast4: string; paidAt: string } }
@@ -8,6 +8,29 @@ const monthNumbers: Record<string, number> = {
   ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6,
   jul: 7, ago: 8, sep: 9, sept: 9, set: 9, oct: 10, nov: 11, dic: 12,
 };
+
+const maskedPhone = /^\*{2,}\s*[-–‑]?\s*(\d{4})$/;
+function fullPhoneLast4(value: string): string | null {
+  if (!/^[\d\s+\-‑]+$/.test(value)) return null;
+  const digits = value.replace(/\D/g, '');
+  const local = digits.length === 11 && digits.startsWith('507') ? digits.slice(3) : digits;
+  return local.length === 8 ? local.slice(4) : null;
+}
+
+// Yappy masks the payer's phone (****-0268) unless the payer is a saved
+// contact, in which case it shows the full number next to the phone icon.
+// The confirmation code also carries 8 digits, so a full number is only
+// trusted on the phone-icon line.
+function findPayerPhoneLast4(text: string): string | null {
+  const iconLines = [...text.matchAll(/ico-cellphone[^\]\n]*\]\s*([^\n]*)/gi)];
+  if (iconLines.length > 1) return null;
+  if (iconLines.length === 1) {
+    const value = iconLines[0][1].trim();
+    return value.match(maskedPhone)?.[1] ?? fullPhoneLast4(value);
+  }
+  const masked = [...text.matchAll(/\*{4}\s*[-–‑]?\s*(\d{4})\b/g)];
+  return masked.length === 1 ? masked[0][1] : null;
+}
 
 export function parseYappyMail(source: string): ParsedYappyMail {
   if (source.length > 65_536) return { ok: false, reason: 'monto' };
@@ -19,8 +42,8 @@ export function parseYappyMail(source: string): ParsedYappyMail {
     integerGroups.slice(1).some((group) => group.length !== 3))) return { ok: false, reason: 'monto' };
   const confirmations = [...text.matchAll(/Confirmaci[oó]n\s+([A-Z0-9]+-[A-Z0-9]+)/gi)];
   if (confirmations.length !== 1) return { ok: false, reason: 'confirmacion' };
-  const phones = [...text.matchAll(/\*{4}\s*[-–]?\s*(\d{4})\b/g)];
-  if (phones.length !== 1) return { ok: false, reason: 'telefono' };
+  const payerPhoneLast4 = findPayerPhoneLast4(text);
+  if (!payerPhoneLast4) return { ok: false, reason: 'telefono' };
   const names = [...text.matchAll(/Enviado\s+por\s*\n\s*([^\n]+)\s*\n/gi)];
   if (names.length !== 1 || !names[0][1].trim()) return { ok: false, reason: 'nombre' };
   const dates = [...text.matchAll(/Fecha\s+(\d{1,2})\s+([a-záéíóú]+)\s+(\d{4})\s+(\d{1,2}):(\d{2})\s*([ap])\s*\.?\s*m\.?/gi)];
@@ -43,7 +66,7 @@ export function parseYappyMail(source: string): ParsedYappyMail {
     amount,
     confirmationCode: confirmations[0][1].trim().toUpperCase(),
     payerNameShort: names[0][1].trim(),
-    payerPhoneLast4: phones[0][1],
+    payerPhoneLast4,
     paidAt: new Date(local.getTime() + 5 * 60 * 60_000).toISOString(),
   } };
 }
