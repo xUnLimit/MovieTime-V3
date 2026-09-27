@@ -2109,6 +2109,75 @@ export type Database = {
           },
         ]
       }
+      whatsapp_conversation_reads: {
+        Row: {
+          last_read_at: string
+          updated_at: string
+          wa_id: string
+        }
+        Insert: {
+          last_read_at: string
+          updated_at?: string
+          wa_id: string
+        }
+        Update: {
+          last_read_at?: string
+          updated_at?: string
+          wa_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_outbound_messages: {
+        Row: {
+          created_at: string
+          error_code: number | null
+          error_title: string | null
+          id: string
+          idempotency_key: string
+          message_kind: string
+          send_status: string
+          sent_by: string | null
+          template_name: string | null
+          template_params: Json
+          text_body: string | null
+          to_wa_id: string
+          updated_at: string
+          wa_message_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_code?: number | null
+          error_title?: string | null
+          id?: string
+          idempotency_key: string
+          message_kind: string
+          send_status?: string
+          sent_by?: string | null
+          template_name?: string | null
+          template_params?: Json
+          text_body?: string | null
+          to_wa_id: string
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: number | null
+          error_title?: string | null
+          id?: string
+          idempotency_key?: string
+          message_kind?: string
+          send_status?: string
+          sent_by?: string | null
+          template_name?: string | null
+          template_params?: Json
+          text_body?: string | null
+          to_wa_id?: string
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_inbound_messages: {
         Row: {
           contact_name: string | null
@@ -3543,6 +3612,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_whatsapp_conversations: {
+        Row: {
+          contact_name: string | null
+          last_direction: string | null
+          last_inbound_at: string | null
+          last_message_at: string | null
+          last_preview: string | null
+          tercero_id: string | null
+          tercero_nombre: string | null
+          unread_count: number | null
+          wa_id: string | null
+        }
+        Relationships: []
+      }
+      v_whatsapp_messages: {
+        Row: {
+          direction: string | null
+          id: string | null
+          message_kind: string | null
+          occurred_at: string | null
+          status: string | null
+          template_name: string | null
+          text_body: string | null
+          wa_id: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {

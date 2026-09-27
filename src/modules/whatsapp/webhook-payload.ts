@@ -2,6 +2,10 @@ import { z } from '@/platform/validation/zod';
 
 const MAX_TEXT_LENGTH = 4096;
 
+// Meta entrega mensajes en "messages" y, si la app lo suscribe, los estados de
+// entrega en "message_statuses"; ambos usan la misma forma de valor.
+const INBOX_FIELDS = new Set(['messages', 'message_statuses']);
+
 const envelopeSchema = z.object({
   object: z.literal('whatsapp_business_account'),
   entry: z.array(
@@ -36,6 +40,8 @@ const messagesValueSchema = z.object({
       timestamp: unixSecondsSchema,
       type: z.string().min(1).max(64),
       text: z.object({ body: z.string() }).optional(),
+      // Toque de un boton de respuesta rapida de una plantilla.
+      button: z.object({ text: z.string() }).optional(),
     })
   ).max(100).optional(),
   statuses: z.array(
@@ -93,7 +99,7 @@ export function parseWebhookPayload(payload: unknown): ParsedWebhook {
   for (const entry of envelope.data.entry) {
     for (const change of entry.changes) {
       // Otros campos suscritos (p. ej. estado de plantillas) no alimentan la bandeja.
-      if (change.field !== 'messages') {
+      if (!INBOX_FIELDS.has(change.field)) {
         batch.skippedChanges += 1;
         continue;
       }
@@ -114,7 +120,7 @@ export function parseWebhookPayload(payload: unknown): ParsedWebhook {
           fromWaId: message.from,
           contactName: names.get(message.from) ?? null,
           messageType: message.type,
-          textBody: message.text ? message.text.body.slice(0, MAX_TEXT_LENGTH) : null,
+          textBody: (message.text?.body ?? message.button?.text ?? null)?.slice(0, MAX_TEXT_LENGTH) ?? null,
           sentAt: toIso(message.timestamp),
         });
       }

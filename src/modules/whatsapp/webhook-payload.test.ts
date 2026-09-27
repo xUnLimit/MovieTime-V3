@@ -65,6 +65,26 @@ describe('parseWebhookPayload', () => {
     expect(result.batch.messages[1].textBody).toHaveLength(4096);
   });
 
+  it('keeps the label of a tapped template quick reply as the message text', () => {
+    const result = parseWebhookPayload(envelope([{
+      field: 'messages',
+      value: {
+        messaging_product: 'whatsapp',
+        metadata,
+        messages: [{
+          id: 'wamid.BTN',
+          from: '50760000000',
+          timestamp: '1790000000',
+          type: 'button',
+          button: { text: 'Ya pagué', payload: 'Ya pagué' },
+        }],
+      },
+    }]));
+
+    if (!result.success) throw new Error('expected success');
+    expect(result.batch.messages[0]).toMatchObject({ messageType: 'button', textBody: 'Ya pagué' });
+  });
+
   it('normalizes delivery statuses including the first error', () => {
     const result = parseWebhookPayload(envelope([{
       field: 'messages',
@@ -89,6 +109,21 @@ describe('parseWebhookPayload', () => {
       expect.objectContaining({ waMessageId: 'wamid.OUT1', status: 'delivered', errorCode: null, errorTitle: null }),
       expect.objectContaining({ waMessageId: 'wamid.OUT2', status: 'failed', errorCode: 131026, errorTitle: 'Message undeliverable' }),
     ]);
+  });
+
+  it('reads delivery statuses sent under the message_statuses field', () => {
+    const result = parseWebhookPayload(envelope([{
+      field: 'message_statuses',
+      value: {
+        messaging_product: 'whatsapp',
+        metadata,
+        statuses: [{ id: 'wamid.OUT3', status: 'read', timestamp: '1790000009', recipient_id: '50760000000' }],
+      },
+    }]));
+
+    if (!result.success) throw new Error('expected success');
+    expect(result.batch.statuses).toEqual([expect.objectContaining({ waMessageId: 'wamid.OUT3', status: 'read' })]);
+    expect(result.batch.skippedChanges).toBe(0);
   });
 
   it('skips other subscribed fields and malformed message changes', () => {

@@ -5,6 +5,7 @@ import {
   FileText,
   Folder,
   LayoutDashboard,
+  MessageCircle,
   MessageSquare,
   Pause,
   ShoppingCart,
@@ -26,6 +27,7 @@ export type SidebarNavSection = {
 };
 
 const adminOnlyPaths = [
+  '/chats',
   '/gastos',
   '/editor-mensajes',
   '/categorias',
@@ -72,6 +74,11 @@ const navigationSections: SidebarNavSection[] = [
   {
     label: 'Seguimiento',
     items: [
+      {
+        name: 'Chats',
+        href: '/chats',
+        icon: MessageCircle,
+      },
       {
         name: 'Notificaciones',
         href: '/notificaciones',

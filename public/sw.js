@@ -153,6 +153,17 @@ self.addEventListener('notificationclick', (event) => {
 async function handlePushEvent(event) {
   try {
     const payload = eventDataToJson(event);
+    if (payload.kind === 'whatsapp_message') {
+      await self.registration.showNotification(String(payload.title || 'WhatsApp'), {
+        body: String(payload.body || 'Nuevo mensaje'),
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: 'whatsapp-message',
+        renotify: true,
+        data: { url: toSameOriginPath(payload.destination, '/chats') },
+      });
+      return;
+    }
     if (!Array.isArray(payload.blocks) || payload.blocks.length === 0) {
       return;
     }
@@ -174,6 +185,13 @@ async function handlePushEvent(event) {
       data: { url: '/dashboard' },
     });
   }
+}
+
+// Solo se navega a rutas internas: un destino externo o malformado vuelve al valor por defecto.
+function toSameOriginPath(destination, fallback) {
+  return typeof destination === 'string' && destination.startsWith('/') && !destination.startsWith('//')
+    ? destination
+    : fallback;
 }
 
 function eventDataToJson(event) {

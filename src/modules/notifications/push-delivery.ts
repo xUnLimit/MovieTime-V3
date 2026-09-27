@@ -79,9 +79,32 @@ export function toPushDeliveryFailure(
   };
 }
 
+// Aviso push simple (titulo, cuerpo y destino) para eventos que no son el
+// resumen ejecutivo, como un mensaje nuevo de WhatsApp.
+export type PushNotificationPayload = {
+  kind: 'whatsapp_message';
+  title: string;
+  body: string;
+  destination: string;
+};
+
+export async function sendPushNotification(
+  subscription: Pick<PushSubscriptionRecord, 'endpoint' | 'p256dh' | 'auth'>,
+  payload: PushNotificationPayload,
+) {
+  await deliverPush(subscription, payload);
+}
+
 export async function sendExecutivePushPing(
   subscription: Pick<PushSubscriptionRecord, 'endpoint' | 'p256dh' | 'auth'>,
   payload: ExecutivePushSummaryPayload,
+) {
+  await deliverPush(subscription, payload);
+}
+
+async function deliverPush(
+  subscription: Pick<PushSubscriptionRecord, 'endpoint' | 'p256dh' | 'auth'>,
+  payload: ExecutivePushSummaryPayload | PushNotificationPayload,
 ) {
   configureVapid();
   await webPush.sendNotification(

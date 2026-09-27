@@ -5,6 +5,7 @@ export type ApiErrorCode =
   | 'PAYLOAD_TOO_LARGE'
   | 'NO_SUCCESSFUL_DELIVERIES'
   | 'NOT_CONFIGURED'
+  | 'WHATSAPP_WINDOW_CLOSED'
   | 'INTERNAL_ERROR';
 
 export type ApiSuccess<T> = {

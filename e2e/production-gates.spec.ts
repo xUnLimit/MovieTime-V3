@@ -175,3 +175,11 @@ test('@performance privacy policy meets the local navigation budget', async ({ p
   expect(timing.domContentLoaded).toBeLessThanOrEqual(2_500);
   expect(timing.load).toBeLessThanOrEqual(4_000);
 });
+
+test('@smoke rejects WhatsApp sends without an admin session', async ({ request }) => {
+  const response = await request.post('/api/whatsapp/messages', {
+    data: { idempotencyKey: '5b0f3c3e-8d8f-4c55-9a4b-3c9f1a2b7d10', to: '50760000000', message: { kind: 'text', text: 'Hola' } },
+  });
+
+  expect(response.status()).toBe(401);
+});

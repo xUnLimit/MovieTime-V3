@@ -41,6 +41,8 @@ const serverEnvSchema = z.object({
   // rechaza solicitudes mientras falten.
   WHATSAPP_VERIFY_TOKEN: z.string().trim().min(16).optional(),
   WHATSAPP_APP_SECRET: z.string().trim().min(16).optional(),
+  WHATSAPP_ACCESS_TOKEN: z.string().trim().min(20).optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().trim().regex(/^\d{1,32}$/).optional(),
 }).superRefine((value, ctx) => {
   if (!isProduction) return;
   const cronSecret = value.PUSH_CRON_SECRET || value.CRON_SECRET;
@@ -115,6 +117,14 @@ export const env = {
   whatsappAppSecret: 'WHATSAPP_APP_SECRET' in serverEnv && typeof serverEnv.WHATSAPP_APP_SECRET === 'string'
     ? serverEnv.WHATSAPP_APP_SECRET
     : '',
+  whatsappAccessToken: 'WHATSAPP_ACCESS_TOKEN' in serverEnv && typeof serverEnv.WHATSAPP_ACCESS_TOKEN === 'string'
+    ? serverEnv.WHATSAPP_ACCESS_TOKEN
+    : '',
+  // Identificador publico del numero +507 6533-1751 en la Cloud API (no es un
+  // secreto); la variable de entorno permite cambiar de numero sin desplegar.
+  whatsappPhoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID' in serverEnv && typeof serverEnv.WHATSAPP_PHONE_NUMBER_ID === 'string'
+    ? serverEnv.WHATSAPP_PHONE_NUMBER_ID
+    : '1324513647414207',
 
   // Environment
   isDevelopment: process.env.NODE_ENV === 'development',

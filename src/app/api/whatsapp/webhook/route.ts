@@ -1,7 +1,10 @@
+import { after } from 'next/server';
+
 import { env } from '@/platform/config';
 import { createLogger } from '@/platform/observability/logger';
 import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/platform/server/api-response';
 import { z } from '@/platform/validation/zod';
+import { notifyWhatsAppMessages } from '@/modules/notifications/whatsapp-message-push';
 import { storeWebhookBatch } from '@/modules/whatsapp/webhook-inbox';
 import { parseWebhookPayload } from '@/modules/whatsapp/webhook-payload';
 import { isValidVerifyToken, isValidWebhookSignature } from '@/modules/whatsapp/webhook-signature';
@@ -77,6 +80,17 @@ export async function POST(request: Request) {
   try {
     // Un error de almacenamiento devuelve 500 para que Meta reintente la entrega.
     const stored = await storeWebhookBatch(parsed.batch);
+    const { messages } = parsed.batch;
+    if (messages.length > 0) {
+      // El aviso push corre despues de responder para no retrasar a Meta.
+      after(async () => {
+        try {
+          await notifyWhatsAppMessages(messages);
+        } catch (error) {
+          logger.warn('WhatsApp message push could not be sent', { requestId, error });
+        }
+      });
+    }
     return apiSuccess(stored, requestId);
   } catch (error) {
     return apiErrorResponse('WhatsAppWebhookRoute', requestId, error);

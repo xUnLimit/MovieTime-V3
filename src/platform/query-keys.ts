@@ -106,6 +106,11 @@ export const queryKeys = {
   featureFlags: {
     all: ['feature-flags'] as const,
   },
+  whatsapp: {
+    all: ['whatsapp'] as const,
+    conversations: () => [...queryKeys.whatsapp.all, 'conversations'] as const,
+    messages: (waId: string) => [...queryKeys.whatsapp.all, 'messages', waId] as const,
+  },
   notificaciones: {
     all: ['notificaciones'] as const,
     lists: () => [...queryKeys.notificaciones.all, 'list'] as const,
