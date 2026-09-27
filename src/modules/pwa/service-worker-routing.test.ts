@@ -7,9 +7,11 @@ import { describe, expect, it, vi } from 'vitest';
 function loadServiceWorkerFetchHandler({
   fetchResult = Promise.resolve(new Response(null, { status: 204 })),
   matchResult,
+  matchRejection,
 }: {
   fetchResult?: Promise<Response>;
   matchResult?: Response;
+  matchRejection?: Error;
 } = {}) {
   const listeners = new Map<string, EventListener>();
   const script = readFileSync(join(process.cwd(), 'public', 'sw.js'), 'utf8');
@@ -32,13 +34,16 @@ function loadServiceWorkerFetchHandler({
     put: vi.fn(),
     match: vi.fn().mockResolvedValue(matchResult),
   };
+  const cachesMatch = matchRejection
+    ? vi.fn().mockRejectedValue(matchRejection)
+    : vi.fn().mockResolvedValue(matchResult);
 
   vm.runInNewContext(script, {
     self: serviceWorkerScope,
     caches: {
       delete: vi.fn(),
       keys: vi.fn(),
-      match: vi.fn().mockResolvedValue(matchResult),
+      match: cachesMatch,
       open: vi.fn().mockResolvedValue(cache),
     },
     fetch: vi.fn(() => fetchResult),
@@ -118,5 +123,53 @@ describe('service worker routing', () => {
     fetchHandler(event as unknown as Event);
 
     await expect(responsePromise).resolves.toBe(cachedResponse);
+  });
+
+  it('falls back to the offline response when the network fails and cache lookup throws', async () => {
+    const fetchHandler = loadServiceWorkerFetchHandler({
+      fetchResult: Promise.reject(new TypeError('Network unavailable')),
+      matchRejection: new Error('Cache storage unavailable'),
+    });
+    let responsePromise: Promise<Response> | undefined;
+    const event = {
+      request: {
+        headers: new Headers(),
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://app.movietime.test/chats?wa=1234567890',
+      },
+      respondWith: vi.fn((promise: Promise<Response>) => {
+        responsePromise = promise;
+      }),
+    };
+
+    fetchHandler(event as unknown as Event);
+
+    await expect(responsePromise).resolves.toEqual(expect.any(Response));
+    await expect(responsePromise).resolves.toMatchObject({ status: 503 });
+  });
+
+  it('falls back to the network when cache lookup throws for a non-navigation request', async () => {
+    const networkResponse = new Response('asset', { status: 200 });
+    const fetchHandler = loadServiceWorkerFetchHandler({
+      fetchResult: Promise.resolve(networkResponse),
+      matchRejection: new Error('Cache storage unavailable'),
+    });
+    let responsePromise: Promise<Response> | undefined;
+    const event = {
+      request: {
+        headers: new Headers(),
+        method: 'GET',
+        mode: 'no-cors',
+        url: 'https://app.movietime.test/icon-192.png',
+      },
+      respondWith: vi.fn((promise: Promise<Response>) => {
+        responsePromise = promise;
+      }),
+    };
+
+    fetchHandler(event as unknown as Event);
+
+    await expect(responsePromise).resolves.toBe(networkResponse);
   });
 });

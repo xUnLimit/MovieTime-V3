@@ -1,4 +1,4 @@
-const CACHE_NAME = 'movietime-pwa-v8';
+const CACHE_NAME = 'movietime-pwa-v9';
 const NEXT_ASSET_PREFIX = '/_next/';
 const API_PREFIX = '/api/';
 const APP_SHELL = [
@@ -78,29 +78,35 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(async () => {
-          const cached = await caches.match(request);
-          const cachedPath = await caches.match(url.pathname);
-          const offlineFallback = await caches.match('/offline');
-          const rootShell = await caches.match('/');
-          return cached || cachedPath || offlineFallback || rootShell || createOfflineResponse();
+          try {
+            const cached = await caches.match(request);
+            const cachedPath = await caches.match(url.pathname);
+            const offlineFallback = await caches.match('/offline');
+            const rootShell = await caches.match('/');
+            return cached || cachedPath || offlineFallback || rootShell || createOfflineResponse();
+          } catch {
+            return createOfflineResponse();
+          }
         })
     );
     return;
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    caches.match(request)
+      .catch(() => undefined)
+      .then((cached) => {
+        const network = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          })
+          .catch(() => cached);
+        return cached || network;
+      })
   );
 });
 
