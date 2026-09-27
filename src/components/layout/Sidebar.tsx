@@ -12,6 +12,7 @@ import { useSidebarState } from '@/hooks/use-sidebar';
 import { useAuthStore } from '@/store/authStore';
 import { UserMenu } from './UserMenu';
 import { getSidebarNavigationSections } from './sidebar-navigation';
+import { useWhatsAppUnreadChats } from '@/hooks/use-whatsapp-chat';
 import { useSidebarThemeTransition } from './useSidebarThemeTransition';
 
 interface SidebarProps {
@@ -33,6 +34,8 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
     theme,
     themeButtonRef,
   });
+
+  const unreadChats = useWhatsAppUnreadChats(user?.role === 'admin');
 
   const filteredSections = useMemo(() => {
     return getSidebarNavigationSections(user?.role);
@@ -146,6 +149,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
               {section.items.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
+                const badge = item.href === '/chats' && unreadChats > 0 ? String(unreadChats) : item.badge;
 
                 return (
                   <Link
@@ -164,6 +168,9 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
                     {/* Icono - Posición ABSOLUTA FIJA */}
                     <div className="absolute left-0 w-11 h-9 flex items-center justify-center">
                       <Icon className={cn("h-4 w-4", isActive && "text-primary")} />
+                      {badge && !isMobile && collapsed ? (
+                        <span aria-hidden className="absolute right-2.5 top-2 h-2 w-2 rounded-full bg-primary" />
+                      ) : null}
                     </div>
 
                     {/* Texto - Posición ABSOLUTA FIJA */}
@@ -177,9 +184,12 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
                     >
                       {item.name}
                       {/* Badge (si existe) */}
-                      {item.badge && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-orange-500 text-white rounded">
-                          {item.badge}
+                      {badge && (
+                        <span
+                          className="px-1.5 py-0.5 text-[10px] font-semibold bg-orange-500 text-white rounded tabular-nums"
+                          aria-label={item.href === '/chats' ? `${badge} chats sin leer` : undefined}
+                        >
+                          {badge}
                         </span>
                       )}
                     </span>

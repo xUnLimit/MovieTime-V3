@@ -47,7 +47,10 @@ describe('chat format helpers', () => {
     expect(messagePreview('text', 'Hola', null)).toBe('Hola');
     expect(messagePreview('template', null, 'vence_hoy')).toBe('Plantilla: Vence hoy');
     expect(messagePreview('template', null, 'otra')).toBe('Plantilla: otra');
-    expect(messagePreview('image', null, null)).toBe('📷 Imagen');
-    expect(messagePreview('reaction', null, null)).toBe('Mensaje no compatible');
+    expect(messagePreview('image', null, null)).toBe('Imagen');
+    expect(messagePreview('reaction', null, null)).toBe('Reaccionó');
+    expect(messagePreview('interactive', null, null)).toBe('Mensaje interactivo');
+    expect(messagePreview('location', null, null)).toBe('Ubicación');
+    expect(messagePreview('contacts', null, null)).toBe('Contacto');
   });
 });

@@ -2129,6 +2129,11 @@ export type Database = {
       }
       whatsapp_outbound_messages: {
         Row: {
+          context_wa_message_id: string | null
+          media_filename: string | null
+          media_id: string | null
+          media_mime_type: string | null
+          payload: Json
           created_at: string
           error_code: number | null
           error_title: string | null
@@ -2145,6 +2150,11 @@ export type Database = {
           wa_message_id: string | null
         }
         Insert: {
+          context_wa_message_id?: string | null
+          media_filename?: string | null
+          media_id?: string | null
+          media_mime_type?: string | null
+          payload?: Json
           created_at?: string
           error_code?: number | null
           error_title?: string | null
@@ -2161,6 +2171,11 @@ export type Database = {
           wa_message_id?: string | null
         }
         Update: {
+          context_wa_message_id?: string | null
+          media_filename?: string | null
+          media_id?: string | null
+          media_mime_type?: string | null
+          payload?: Json
           created_at?: string
           error_code?: number | null
           error_title?: string | null
@@ -2180,7 +2195,13 @@ export type Database = {
       }
       whatsapp_inbound_messages: {
         Row: {
+          context_wa_message_id: string | null
+          payload: Json
+          reaction_emoji: string | null
           contact_name: string | null
+          media_filename: string | null
+          media_id: string | null
+          media_mime_type: string | null
           from_wa_id: string
           id: string
           message_type: string
@@ -2192,7 +2213,13 @@ export type Database = {
           wa_message_id: string
         }
         Insert: {
+          context_wa_message_id?: string | null
+          payload?: Json
+          reaction_emoji?: string | null
           contact_name?: string | null
+          media_filename?: string | null
+          media_id?: string | null
+          media_mime_type?: string | null
           from_wa_id: string
           id?: string
           message_type: string
@@ -2204,7 +2231,13 @@ export type Database = {
           wa_message_id: string
         }
         Update: {
+          context_wa_message_id?: string | null
+          payload?: Json
+          reaction_emoji?: string | null
           contact_name?: string | null
+          media_filename?: string | null
+          media_id?: string | null
+          media_mime_type?: string | null
           from_wa_id?: string
           id?: string
           message_type?: string
@@ -3620,6 +3653,7 @@ export type Database = {
           last_inbound_at: string | null
           last_message_at: string | null
           last_preview: string | null
+          proxima_fecha_fin: string | null
           tercero_id: string | null
           tercero_nombre: string | null
           unread_count: number | null
@@ -3629,8 +3663,16 @@ export type Database = {
       }
       v_whatsapp_messages: {
         Row: {
+          context_wa_message_id: string | null
+          payload: Json | null
+          reaction_emoji: string | null
+          template_params: Json | null
+          wa_message_id: string | null
           direction: string | null
           id: string | null
+          media_filename: string | null
+          media_id: string | null
+          media_mime_type: string | null
           message_kind: string | null
           occurred_at: string | null
           status: string | null

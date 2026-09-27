@@ -21,6 +21,7 @@ describe('sendCloudApiMessage', () => {
     expect(init.headers).toMatchObject({ Authorization: `Bearer ${config.accessToken}` });
     expect(JSON.parse(init.body)).toEqual({
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       to: '50760000000',
       type: 'text',
       text: { body: 'Hola', preview_url: false },

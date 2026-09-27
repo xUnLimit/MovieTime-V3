@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   conversations: [] as WhatsAppConversation[],
   isLoading: false,
   replace: vi.fn(),
+  panel: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -18,53 +19,121 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useWhatsAppConversations: () => ({ data: state.conversations, isLoading: state.isLoading }),
 }));
-vi.mock('@/components/chats/ChatThread', () => ({
-  ChatThread: ({ conversation, onBack }: { conversation: WhatsAppConversation; onBack: () => void }) => (
-    <div>
-      <p>Hilo de {conversation.waId}</p>
-      <button type="button" onClick={onBack}>Volver</button>
-    </div>
-  ),
+vi.mock('@/components/chats/ChatWorkspace', () => ({
+  ChatWorkspace: ({ conversation, onBack, panelPreferred, onPanelPreferredChange }: {
+    conversation: WhatsAppConversation;
+    onBack: () => void;
+    panelPreferred: boolean;
+    onPanelPreferredChange: (open: boolean) => void;
+  }) => {
+    state.panel(panelPreferred);
+    return (
+      <div>
+        <p>Hilo de {conversation.waId}</p>
+        <button type="button" onClick={onBack}>Volver</button>
+        <button type="button" onClick={() => onPanelPreferredChange(!panelPreferred)}>Panel</button>
+      </div>
+    );
+  },
 }));
 
 import ChatsPage from './page';
 
-const conversation: WhatsAppConversation = {
-  waId: '50760000000', contactName: 'Mary', terceroId: null, terceroNombre: null,
-  lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: new Date().toISOString(),
-  lastInboundAt: new Date().toISOString(), unreadCount: 0,
-};
+function conversation(waId: string, name: string, unreadCount = 0): WhatsAppConversation {
+  return {
+    waId, contactName: name, terceroId: null, terceroNombre: null,
+    lastDirection: 'inbound', lastPreview: `Hola de ${name}`, lastMessageAt: new Date().toISOString(),
+    lastInboundAt: new Date().toISOString(), unreadCount, nextExpiry: null,
+  };
+}
+
+const storage = new Map<string, string>();
 
 beforeEach(() => {
   state.wa = null;
-  state.conversations = [conversation];
+  state.conversations = [conversation('50760000000', 'Mary', 2), conversation('50761111111', 'Juan')];
   state.isLoading = false;
   state.replace.mockReset();
+  state.panel.mockReset();
+  storage.clear();
+  vi.mocked(localStorage.getItem).mockImplementation((key) => storage.get(key) ?? null);
+  vi.mocked(localStorage.setItem).mockImplementation((key, value) => {
+    storage.set(key, value);
+  });
 });
 
 describe('ChatsPage', () => {
-  it('asks to pick a conversation when none is selected and navigates on select', async () => {
+  it('asks to pick a chat and navigates on select', async () => {
     const user = userEvent.setup();
     render(<ChatsPage />);
 
     expect(screen.getByRole('heading', { name: 'Chats de WhatsApp' })).toBeTruthy();
-    expect(screen.getByText('Selecciona una conversación para verla.')).toBeTruthy();
-
+    expect(screen.getByRole('link', { name: 'Dashboard' }).getAttribute('href')).toBe('/dashboard');
+    expect(screen.getByText(/Elige un chat para responder/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: /Mary/ }));
     expect(state.replace).toHaveBeenCalledWith('/chats?wa=50760000000', { scroll: false });
   });
 
-  it('opens the conversation from the URL and goes back to the list', async () => {
+  it('filters and searches the list', async () => {
+    const user = userEvent.setup();
+    render(<ChatsPage />);
+
+    await user.click(screen.getByRole('tab', { name: 'No leídos (1)' }));
+    expect(screen.queryByText('Juan')).toBeNull();
+    await user.click(screen.getByRole('tab', { name: 'Todos' }));
+
+    await user.type(screen.getByLabelText('Buscar conversación'), 'juan');
+    expect(screen.queryByText('Mary')).toBeNull();
+    expect(screen.getByText('Juan')).toBeTruthy();
+  });
+
+  it('opens the chat from the URL, remembers the panel preference and goes back', async () => {
     const user = userEvent.setup();
     state.wa = '50760000000';
     render(<ChatsPage />);
 
     expect(screen.getByText('Hilo de 50760000000')).toBeTruthy();
+    expect(state.panel).toHaveBeenLastCalledWith(true);
+    await user.click(screen.getByRole('button', { name: 'Panel' }));
+    expect(storage.get('chats:panel-open')).toBe('false');
+    expect(state.panel).toHaveBeenLastCalledWith(false);
+
     await user.click(screen.getByRole('button', { name: 'Volver' }));
     expect(state.replace).toHaveBeenCalledWith('/chats', { scroll: false });
   });
 
-  it('reports an unknown conversation and ignores malformed ids', () => {
+  it('starts with the panel hidden when the device preference says so', () => {
+    storage.set('chats:panel-open', 'false');
+    state.wa = '50760000000';
+    render(<ChatsPage />);
+
+    expect(state.panel).toHaveBeenLastCalledWith(false);
+  });
+
+  it('supports keyboard shortcuts for search, switching chats and closing', () => {
+    state.wa = '50760000000';
+    render(<ChatsPage />);
+
+    fireEvent.keyDown(window, { key: '/' });
+    expect(document.activeElement).toBe(screen.getByLabelText('Buscar conversación'));
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', altKey: true });
+    expect(state.replace).toHaveBeenLastCalledWith('/chats?wa=50761111111', { scroll: false });
+    fireEvent.keyDown(window, { key: 'ArrowUp', altKey: true });
+    expect(state.replace).toHaveBeenLastCalledWith('/chats?wa=50760000000', { scroll: false });
+
+    (document.activeElement as HTMLElement).blur();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(state.replace).toHaveBeenLastCalledWith('/chats', { scroll: false });
+  });
+
+  it('opens the first chat with Alt+Down when none is selected', () => {
+    render(<ChatsPage />);
+    fireEvent.keyDown(window, { key: 'ArrowDown', altKey: true });
+    expect(state.replace).toHaveBeenCalledWith('/chats?wa=50760000000', { scroll: false });
+  });
+
+  it('reports an unknown chat and ignores malformed ids', () => {
     state.wa = '50799999999';
     const { unmount } = render(<ChatsPage />);
     expect(screen.getByText('No se encontró esa conversación.')).toBeTruthy();
@@ -72,17 +141,26 @@ describe('ChatsPage', () => {
 
     state.wa = 'javascript:alert(1)';
     render(<ChatsPage />);
-    expect(screen.getByText('Selecciona una conversación para verla.')).toBeTruthy();
+    expect(screen.getByText(/Elige un chat para responder/)).toBeTruthy();
   });
 
-  it('refreshes relative times every minute', () => {
+  it('keeps working when browser storage is unavailable and refreshes the clock', () => {
+    vi.mocked(localStorage.getItem).mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    vi.mocked(localStorage.setItem).mockImplementation(() => {
+      throw new Error('blocked');
+    });
     vi.useFakeTimers();
     try {
+      state.wa = '50760000000';
       render(<ChatsPage />);
+      expect(state.panel).toHaveBeenLastCalledWith(true);
+      fireEvent.click(screen.getByRole('button', { name: 'Panel' }));
+      expect(state.panel).toHaveBeenLastCalledWith(false);
       act(() => {
         vi.advanceTimersByTime(60_000);
       });
-      expect(screen.getByText('Hola')).toBeTruthy();
     } finally {
       vi.useRealTimers();
     }

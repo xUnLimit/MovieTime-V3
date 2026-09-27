@@ -16,9 +16,11 @@ vi.mock('@/platform/supabase/auth', async (importOriginal) => ({
 }));
 
 import { InvalidAuthSessionError } from '@/platform/supabase/auth';
+import { readChatDraft, writeChatDraft } from '@/modules/whatsapp/chat-drafts';
 
 import {
   TerminalAuthError,
+  clearLocalSessionUseCase,
   getCurrentSessionUseCase,
   loadActiveProfileUseCase,
 } from './auth-use-cases';
@@ -33,10 +35,34 @@ const activeUser: User = {
   updatedAt: new Date('2026-01-02T00:00:00.000Z'),
 };
 
+// Storage en memoria real (con length/key), a diferencia del mock global del
+// proyecto que no implementa esas dos propiedades.
+function fakeStorage(): Storage {
+  const store = new Map<string, string>();
+  return {
+    get length() { return store.size; },
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => { store.set(key, value); },
+    removeItem: (key: string) => { store.delete(key); },
+    clear: () => store.clear(),
+  };
+}
+
 describe('auth use cases', () => {
   beforeEach(() => {
     authMocks.getCurrentProfile.mockReset();
     authMocks.getCurrentSession.mockReset();
+  });
+
+  it('clears chat drafts (which may hold a filled-in service password) on logout', () => {
+    vi.stubGlobal('localStorage', fakeStorage());
+    writeChatDraft('507', 'Clave: clave-demo');
+
+    clearLocalSessionUseCase();
+
+    expect(readChatDraft('507')).toBe('');
+    vi.unstubAllGlobals();
   });
 
   it('returns the current persisted session', async () => {

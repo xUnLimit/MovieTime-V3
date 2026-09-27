@@ -40,9 +40,12 @@ describe('parseWebhookPayload', () => {
           messageType: 'text',
           textBody: 'Hola, quiero Netflix',
           sentAt: new Date(1790000000 * 1000).toISOString(),
+          mediaId: null, mediaMimeType: null, mediaFilename: null,
+          contextWaMessageId: null, reactionEmoji: null, payload: {},
         }],
         statuses: [],
         skippedChanges: 0,
+        skippedItems: 0,
       },
     });
   });
@@ -85,6 +88,31 @@ describe('parseWebhookPayload', () => {
     expect(result.batch.messages[0]).toMatchObject({ messageType: 'button', textBody: 'Ya pagué' });
   });
 
+  it('keeps media ids, types, file names and captions for attachments', () => {
+    const result = parseWebhookPayload(envelope([{
+      field: 'messages',
+      value: {
+        messaging_product: 'whatsapp',
+        metadata,
+        messages: [
+          { id: 'wamid.IMG2', from: '50760000000', timestamp: '1790000000', type: 'image',
+            image: { id: '1234567890', mime_type: 'image/jpeg', caption: 'Comprobante' } },
+          { id: 'wamid.DOC', from: '50760000000', timestamp: '1790000001', type: 'document',
+            document: { id: '555', mime_type: 'application/pdf', filename: 'recibo.pdf' } },
+          { id: 'wamid.BAD', from: '50760000000', timestamp: '1790000002', type: 'audio', audio: { id: '../etc' } },
+        ],
+      },
+    }]));
+
+    if (!result.success) throw new Error('expected success');
+    expect(result.batch.messages).toEqual([
+      expect.objectContaining({ messageType: 'image', textBody: 'Comprobante', mediaId: '1234567890', mediaMimeType: 'image/jpeg', mediaFilename: null }),
+      expect.objectContaining({ messageType: 'document', textBody: null, mediaId: '555', mediaMimeType: 'application/pdf', mediaFilename: 'recibo.pdf' }),
+    ]);
+    expect(result.batch.skippedChanges).toBe(0);
+    expect(result.batch.skippedItems).toBe(1);
+  });
+
   it('normalizes delivery statuses including the first error', () => {
     const result = parseWebhookPayload(envelope([{
       field: 'messages',
@@ -111,6 +139,24 @@ describe('parseWebhookPayload', () => {
     ]);
   });
 
+  it('drops only the malformed status and keeps the rest', () => {
+    const result = parseWebhookPayload(envelope([{
+      field: 'message_statuses',
+      value: {
+        messaging_product: 'whatsapp',
+        metadata,
+        statuses: [
+          { id: 'wamid.OK', status: 'sent', timestamp: '1790000009', recipient_id: '50760000000' },
+          { id: 'wamid.BAD', status: 'teleported', timestamp: '1790000009', recipient_id: '50760000000' },
+        ],
+      },
+    }]));
+
+    if (!result.success) throw new Error('expected success');
+    expect(result.batch.statuses.map((status) => status.waMessageId)).toEqual(['wamid.OK']);
+    expect(result.batch.skippedItems).toBe(1);
+  });
+
   it('reads delivery statuses sent under the message_statuses field', () => {
     const result = parseWebhookPayload(envelope([{
       field: 'message_statuses',
@@ -132,7 +178,7 @@ describe('parseWebhookPayload', () => {
       { field: 'messages', value: { messaging_product: 'whatsapp', metadata: { phone_number_id: 'not-a-number' } } },
     ]));
 
-    expect(result).toEqual({ success: true, batch: { messages: [], statuses: [], skippedChanges: 2 } });
+    expect(result).toEqual({ success: true, batch: { messages: [], statuses: [], skippedChanges: 2, skippedItems: 0 } });
   });
 
   it.each([

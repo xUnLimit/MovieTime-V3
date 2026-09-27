@@ -4,23 +4,35 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const useCases = vi.hoisted(() => ({
+  fetchVentaMessageContextUseCase: vi.fn(),
   fetchWhatsAppConversationsUseCase: vi.fn(),
+  fetchWhatsAppMediaUseCase: vi.fn(),
   fetchWhatsAppMessagesUseCase: vi.fn(),
   markWhatsAppConversationReadUseCase: vi.fn(),
+  markWhatsAppConversationUnreadUseCase: vi.fn(),
   sendWhatsAppMessageUseCase: vi.fn(),
+  uploadWhatsAppMediaUseCase: vi.fn(),
 }));
 
 vi.mock('@/application/use-cases/whatsapp-chat-use-cases', () => useCases);
 
+let lastClient: QueryClient;
+
 import {
   useMarkWhatsAppConversationRead,
+  useMarkWhatsAppConversationUnread,
+  useVentaMessageContext,
+  useWhatsAppUnreadChats,
   useSendWhatsAppMessage,
+  useWhatsAppMedia,
   useWhatsAppConversations,
   useWhatsAppMessages,
+  useUploadWhatsAppMedia,
 } from './use-whatsapp-chat';
 
 function createWrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  lastClient = client;
   const invalidate = vi.spyOn(client, 'invalidateQueries');
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -33,6 +45,14 @@ beforeEach(() => {
 });
 
 describe('WhatsApp chat hooks', () => {
+  it('uploads selected media through the use case', async () => {
+    useCases.uploadWhatsAppMediaUseCase.mockResolvedValue({ mediaId: 'media-1', mimeType: 'image/png', filename: 'foto.png' });
+    const { wrapper } = createWrapper();
+    const file = new File(['x'], 'foto.png', { type: 'image/png' });
+    const { result } = renderHook(() => useUploadWhatsAppMedia(), { wrapper });
+    expect(await result.current.mutateAsync({ file, filename: file.name })).toMatchObject({ mediaId: 'media-1' });
+    expect(useCases.uploadWhatsAppMediaUseCase).toHaveBeenCalledWith(file, 'foto.png');
+  });
   it('loads conversations', async () => {
     useCases.fetchWhatsAppConversationsUseCase.mockResolvedValue([{ waId: '507' }]);
     const { wrapper } = createWrapper();
@@ -79,4 +99,145 @@ describe('WhatsApp chat hooks', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['whatsapp', 'messages', '507'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['whatsapp', 'conversations'] });
   });
+
+  it('downloads media only when enabled and exposes a revocable blob url', async () => {
+    const createObjectURL = vi.fn(() => 'blob:local');
+    const revokeObjectURL = vi.fn();
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    useCases.fetchWhatsAppMediaUseCase.mockResolvedValue(new Blob(['x']));
+    const { wrapper } = createWrapper();
+
+    const idle = renderHook(() => useWhatsAppMedia('123', false), { wrapper });
+    expect(idle.result.current.objectUrl).toBeNull();
+    expect(useCases.fetchWhatsAppMediaUseCase).not.toHaveBeenCalled();
+
+    const { result, unmount } = renderHook(() => useWhatsAppMedia('123', true), { wrapper });
+    await waitFor(() => expect(result.current.objectUrl).toBe('blob:local'));
+    unmount();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:local');
+  });
+
+  it('reports media download errors', async () => {
+    useCases.fetchWhatsAppMediaUseCase.mockRejectedValue(new Error('404'));
+    const { wrapper } = createWrapper();
+
+    const { result } = renderHook(() => useWhatsAppMedia('999', true), { wrapper });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it('counts chats with unread messages only for admins', async () => {
+    useCases.fetchWhatsAppConversationsUseCase.mockResolvedValue([
+      { waId: '1', unreadCount: 2 }, { waId: '2', unreadCount: 0 }, { waId: '3', unreadCount: 1 },
+    ]);
+    const { wrapper } = createWrapper();
+
+    const admin = renderHook(() => useWhatsAppUnreadChats(true), { wrapper });
+    await waitFor(() => expect(admin.result.current).toBe(2));
+
+    const other = renderHook(() => useWhatsAppUnreadChats(false), { wrapper: createWrapper().wrapper });
+    expect(other.result.current).toBe(0);
+  });
+
+  it('loads the sale context only when a sale is chosen', async () => {
+    useCases.fetchVentaMessageContextUseCase.mockResolvedValue({ categoriaNombre: 'Netflix' });
+    const { wrapper } = createWrapper();
+
+    const idle = renderHook(() => useVentaMessageContext(null), { wrapper });
+    expect(idle.result.current.fetchStatus).toBe('idle');
+
+    const { result } = renderHook(() => useVentaMessageContext('v1'), { wrapper });
+    await waitFor(() => expect(result.current.data).toEqual({ categoriaNombre: 'Netflix' }));
+    expect(useCases.fetchVentaMessageContextUseCase).toHaveBeenCalledWith('v1');
+  });
+
+  it('marks a conversation unread and refreshes the list', async () => {
+    useCases.markWhatsAppConversationUnreadUseCase.mockResolvedValue(undefined);
+    const { wrapper, invalidate } = createWrapper();
+    const { result } = renderHook(() => useMarkWhatsAppConversationUnread(), { wrapper });
+
+    result.current.mutate({ waId: '507', lastInboundAt: '2026-09-27T12:00:00Z' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(useCases.markWhatsAppConversationUnreadUseCase).toHaveBeenCalledWith('507', '2026-09-27T12:00:00Z');
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['whatsapp', 'conversations'] });
+  });
+
+  it('shows the message instantly while sending and removes it if sending fails', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    useCases.sendWhatsAppMessageUseCase.mockImplementation(() => new Promise((_resolve, rejectFn) => {
+      fail = rejectFn;
+    }));
+    const { wrapper } = createWrapper();
+    lastClient.setQueryData(['whatsapp', 'messages', '507'], [{ id: 'old' }]);
+    const { result } = renderHook(() => useSendWhatsAppMessage(), { wrapper });
+
+    result.current.mutate({ to: '507', message: { kind: 'template', templateName: 'vence_hoy', params: [] }, idempotencyKey: 'k1' });
+
+    await waitFor(() => expect(lastClient.getQueryData<Array<{ id: string }>>(['whatsapp', 'messages', '507'])).toHaveLength(2));
+    expect(lastClient.getQueryData<Array<Record<string, unknown>>>(['whatsapp', 'messages', '507'])?.[1]).toMatchObject({
+      id: 'pending-k1', direction: 'outbound', status: 'pending', templateName: 'vence_hoy', textBody: null,
+    });
+
+    fail(new Error('offline'));
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(lastClient.getQueryData<Array<{ id: string }>>(['whatsapp', 'messages', '507'])?.map((item) => item.id)).not.toContain('pending-k1');
+  });
+
+  it('shows attachment metadata and captions while a media send is pending', async () => {
+    useCases.sendWhatsAppMessageUseCase.mockImplementation(() => new Promise(() => undefined));
+    const { wrapper } = createWrapper();
+    const { result } = renderHook(() => useSendWhatsAppMessage(), { wrapper });
+    result.current.mutate({ to: '507', message: { kind: 'document', mediaId: 'media-1', mimeType: 'application/pdf', filename: 'nota.pdf', caption: 'Adjunto', replyTo: 'wa-parent' }, idempotencyKey: 'media-attempt' });
+    await waitFor(() => expect(lastClient.getQueryData<Array<Record<string, unknown>>>(['whatsapp', 'messages', '507'])?.[0]).toMatchObject({
+      kind: 'document', textBody: 'Adjunto', mediaId: 'media-1', mediaMimeType: 'application/pdf', mediaFilename: 'nota.pdf', contextWaMessageId: 'wa-parent',
+    }));
+  });
+
+  it('shows reaction and location details in optimistic messages', async () => {
+    useCases.sendWhatsAppMessageUseCase.mockImplementation(() => new Promise(() => undefined));
+    const { wrapper } = createWrapper();
+    const { result } = renderHook(() => useSendWhatsAppMessage(), { wrapper });
+    result.current.mutate({ to: '507', message: { kind: 'reaction', targetWaMessageId: 'wa-target', emoji: '👍' }, idempotencyKey: 'reaction-attempt' });
+    result.current.mutate({ to: '507', message: { kind: 'location', location: { latitude: 8.9, longitude: -79.5 } }, idempotencyKey: 'location-attempt' });
+    await waitFor(() => expect(lastClient.getQueryData<Array<Record<string, unknown>>>(['whatsapp', 'messages', '507'])).toHaveLength(2));
+    expect(lastClient.getQueryData<Array<Record<string, unknown>>>(['whatsapp', 'messages', '507'])).toEqual([
+      expect.objectContaining({ kind: 'reaction', reactionEmoji: '👍', contextWaMessageId: 'wa-target' }),
+      expect.objectContaining({ kind: 'location', payload: { location: { latitude: 8.9, longitude: -79.5 } } }),
+    ]);
+  });
+
+
+  it('shows the chat as unread right away and keeps it if the server fails', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    useCases.markWhatsAppConversationUnreadUseCase.mockImplementation(() => new Promise((_resolve, rejectFn) => {
+      fail = rejectFn;
+    }));
+    useCases.fetchWhatsAppConversationsUseCase.mockResolvedValue([]);
+    const { wrapper } = createWrapper();
+    lastClient.setQueryData(['whatsapp', 'conversations'], [
+      { waId: '507', unreadCount: 0 },
+      { waId: '508', unreadCount: 3 },
+    ]);
+    const { result } = renderHook(() => useMarkWhatsAppConversationUnread(), { wrapper });
+
+    result.current.mutate({ waId: '507', lastInboundAt: '2026-09-27T12:00:00Z' });
+
+    await waitFor(() => expect(lastClient.getQueryData<Array<{ waId: string; unreadCount: number }>>(['whatsapp', 'conversations']))
+      .toEqual([{ waId: '507', unreadCount: 1 }, { waId: '508', unreadCount: 3 }]));
+    fail(new Error('offline'));
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it('ignores the optimistic update when the list is not loaded yet', async () => {
+    useCases.markWhatsAppConversationUnreadUseCase.mockResolvedValue(undefined);
+    const { wrapper } = createWrapper();
+    const { result } = renderHook(() => useMarkWhatsAppConversationUnread(), { wrapper });
+
+    result.current.mutate({ waId: '507', lastInboundAt: '2026-09-27T12:00:00Z' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(lastClient.getQueryData(['whatsapp', 'conversations'])).toBeUndefined();
+  });
+
 });

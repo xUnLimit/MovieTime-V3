@@ -110,6 +110,8 @@ export const queryKeys = {
     all: ['whatsapp'] as const,
     conversations: () => [...queryKeys.whatsapp.all, 'conversations'] as const,
     messages: (waId: string) => [...queryKeys.whatsapp.all, 'messages', waId] as const,
+    media: (mediaId: string) => [...queryKeys.whatsapp.all, 'media', mediaId] as const,
+    ventaContext: (ventaId: string) => [...queryKeys.whatsapp.all, 'venta-context', ventaId] as const,
   },
   notificaciones: {
     all: ['notificaciones'] as const,

@@ -19,6 +19,7 @@ function buildContentSecurityPolicy(nonce: string): string {
     "frame-ancestors 'none'",
     "object-src 'none'",
     "img-src 'self' data: blob:",
+    "media-src 'self' blob:",
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
     "style-src-elem 'self' 'unsafe-inline'",

@@ -1,4 +1,5 @@
 import { CloudApiError, type OutboundPayload } from './cloud-api-client';
+import { requiresOpenWindow } from './outbound-payload';
 import { hasValidTemplateParams } from './template-catalog';
 
 // Ventana de atencion de Meta: el texto libre solo se entrega si el cliente
@@ -70,12 +71,12 @@ export async function sendOutboundMessage(
   const previous = await replay(store, message.idempotencyKey);
   if (previous) return previous;
 
-  if (message.payload.kind === 'text') {
-    if (!isWindowOpen(await store.lastInboundAt(message.toWaId), now())) {
-      throw new CustomerWindowClosedError();
+  if (message.payload.kind === 'template') {
+    if (!hasValidTemplateParams(message.payload.templateName, message.payload.params)) {
+      throw new InvalidTemplateParamsError();
     }
-  } else if (!hasValidTemplateParams(message.payload.templateName, message.payload.params)) {
-    throw new InvalidTemplateParamsError();
+  } else if (requiresOpenWindow(message.payload) && !isWindowOpen(await store.lastInboundAt(message.toWaId), now())) {
+    throw new CustomerWindowClosedError();
   }
 
   const pending = await store.insertPending(message);

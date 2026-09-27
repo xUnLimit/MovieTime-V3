@@ -1,0 +1,212 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
+import type { VentaTerceroDoc } from '@/hooks/use-ventas-tercero';
+import { ChatHeader } from './ChatHeader';
+import { CustomerPanel, sortVentasForChat } from './CustomerPanel';
+import { TemplateSendDialog } from './TemplateSendDialog';
+
+const NOW = new Date(2026, 8, 27, 15, 30);
+
+const conversation: WhatsAppConversation = {
+  waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
+  lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: NOW.toISOString(),
+  lastInboundAt: new Date(2026, 8, 27, 14, 0).toISOString(), unreadCount: 0, nextExpiry: '2026-09-27',
+};
+
+function venta(id: string, fechaFin: Date | null, overrides: Partial<VentaTerceroDoc> = {}): VentaTerceroDoc {
+  return {
+    id, clienteId: 't1', categoriaId: 'c', categoriaNombre: `Servicio ${id}`, servicioId: 's', servicioNombre: 'Cuenta 01',
+    servicioCorreo: 'x', perfilNumero: 2, cicloPago: 'mensual', fechaInicio: null, fechaFin, precio: 4.5, precioFinal: 4.5,
+    estado: 'activo', moneda: 'USD', ...overrides,
+  };
+}
+
+const replies = [
+  { tipo: 'notificacion_regular' as const, label: 'Recordatorio de pago' },
+  { tipo: 'suscripcion' as const, label: 'Datos de acceso' },
+  { tipo: 'cancelacion' as const, label: 'Corte de servicio' },
+];
+
+describe('ChatHeader', () => {
+  it('shows the contact, the service window and the chat actions', async () => {
+    const user = userEvent.setup();
+    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn() };
+    render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen {...handlers} />);
+
+    expect(screen.getByText('Ventana 23 h')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Ver ficha de María Pérez' }));
+    await user.click(screen.getByRole('button', { name: 'Ocultar ficha del cliente' }));
+    expect(handlers.onTogglePanel).toHaveBeenCalledTimes(2);
+
+    await user.click(screen.getByRole('button', { name: 'Volver a la lista' }));
+    expect(handlers.onBack).toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    expect(screen.getByRole('menuitem', { name: /Abrir cliente/ }).getAttribute('href')).toBe('/terceros/t1');
+    await user.click(screen.getByRole('menuitem', { name: /Marcar como no leído/ }));
+    expect(handlers.onMarkUnread).toHaveBeenCalled();
+  });
+
+  it('shows a closed window and hides client links for unregistered numbers', async () => {
+    const user = userEvent.setup();
+    render(
+      <ChatHeader
+        conversation={{ ...conversation, terceroId: null, terceroNombre: null, lastInboundAt: null }}
+        serviceWindow={{ open: false }}
+        panelOpen={false}
+        onBack={vi.fn()}
+        onTogglePanel={vi.fn()}
+        onMarkUnread={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Ventana cerrada')).toBeTruthy();
+    expect(screen.getByText(/No registrado/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    expect(screen.queryByRole('menuitem', { name: /Abrir cliente/ })).toBeNull();
+  });
+});
+
+describe('CustomerPanel', () => {
+  function renderPanel(overrides: Partial<Parameters<typeof CustomerPanel>[0]> = {}) {
+    const props = {
+      conversation,
+      serviceWindow: { open: true as const, hoursLeft: 20 },
+      activas: [venta('a', new Date(2026, 8, 27)), venta('b', new Date(2026, 9, 20), { perfilNumero: null })],
+      ventasLoading: false,
+      selectedVentaId: 'a',
+      quickReplies: replies,
+      now: NOW,
+      onSelectVenta: vi.fn(),
+      onQuickReply: vi.fn(),
+      onOpenTemplate: vi.fn(),
+      onClose: vi.fn(),
+      ...overrides,
+    };
+    render(<CustomerPanel {...props} />);
+    return props;
+  }
+
+  it('lists active sales with urgency and fills messages for the selected one', async () => {
+    const user = userEvent.setup();
+    const props = renderPanel();
+
+    expect(screen.getByText('Vence hoy')).toBeTruthy();
+    expect(screen.getByText('Vence en 23 días')).toBeTruthy();
+    expect(screen.getByText('Perfil 2')).toBeTruthy();
+    expect(screen.getByText('Cuenta 01')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: /Servicio a/ }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('link', { name: 'Ver venta' }).getAttribute('href')).toBe('/ventas/a');
+
+    await user.click(screen.getByRole('radio', { name: /Servicio b/ }));
+    expect(props.onSelectVenta).toHaveBeenCalledWith('b');
+
+    await user.click(screen.getByRole('button', { name: 'Datos de acceso' }));
+    expect(props.onQuickReply).toHaveBeenCalledWith('suscripcion');
+    expect(screen.queryByRole('button', { name: 'Corte de servicio' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar ficha' }));
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it('suggests the matching Meta template when the window is closed', async () => {
+    const user = userEvent.setup();
+    const props = renderPanel({ serviceWindow: { open: false } });
+
+    await user.click(screen.getByRole('button', { name: /Plantilla: Vence hoy/ }));
+    expect(props.onOpenTemplate).toHaveBeenCalledWith('vence_hoy');
+  });
+
+  it('describes overdue, undated and missing sales', () => {
+    const { unmount } = render(
+      <CustomerPanel
+        conversation={conversation}
+        serviceWindow={{ open: true, hoursLeft: 1 }}
+        activas={[venta('late', new Date(2026, 8, 25)), venta('soon', new Date(2026, 8, 28)), venta('none', null)]}
+        ventasLoading={false}
+        selectedVentaId={null}
+        quickReplies={replies}
+        now={NOW}
+        onSelectVenta={vi.fn()}
+        onQuickReply={vi.fn()}
+        onOpenTemplate={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Venció hace 2 días')).toBeTruthy();
+    expect(screen.getByText('Vence en 1 día')).toBeTruthy();
+    expect(screen.getByText('Sin vencimiento')).toBeTruthy();
+    unmount();
+
+    renderPanel({ activas: [], selectedVentaId: null });
+    expect(screen.getByText('No tiene servicios activos.')).toBeTruthy();
+  });
+
+  it('offers to register unknown numbers with the phone and name pre-filled', () => {
+    renderPanel({ conversation: { ...conversation, terceroId: null, terceroNombre: null }, activas: [], selectedVentaId: null });
+
+    const link = screen.getByRole('link', { name: /Registrar cliente/ });
+    const url = new URL(link.getAttribute('href') ?? '', 'https://example.com');
+    expect(url.pathname).toBe('/terceros/crear');
+    expect(url.searchParams.get('telefono')).toBe('+507 6000-0000');
+    expect(url.searchParams.get('nombre')).toBe('Mary');
+    expect(url.searchParams.get('volver')).toBe('/chats?wa=50760000000');
+  });
+
+  it('shows placeholders while sales load', () => {
+    renderPanel({ ventasLoading: true, activas: [] });
+    expect(screen.queryByText('No tiene servicios activos.')).toBeNull();
+  });
+
+  it('orders active sales by nearest expiry and drops inactive ones', () => {
+    const sorted = sortVentasForChat([
+      venta('late', new Date(2026, 9, 1)),
+      venta('off', new Date(2026, 8, 1), { estado: 'inactivo' }),
+      venta('none', null),
+      venta('soon', new Date(2026, 8, 28)),
+    ]);
+    expect(sorted.map((item) => item.id)).toEqual(['soon', 'late', 'none']);
+  });
+});
+
+describe('TemplateSendDialog', () => {
+  it('opens with the suggested template filled and previews the final message', async () => {
+    const user = userEvent.setup();
+    const onSend = vi.fn();
+    const paramsFor = vi.fn((name: string) => (name === 'vence_hoy' ? ['Netflix', '30/09', '$4.50'] : ['Hola, María', 'Netflix', '30/09', '$4.50']));
+    render(
+      <TemplateSendDialog open initialTemplate="vence_hoy" paramsFor={paramsFor} contextLabel="Netflix" isSending={false} onOpenChange={vi.fn()} onSend={onSend} />
+    );
+
+    expect(screen.getByText(/Datos tomados de Netflix/)).toBeTruthy();
+    expect(screen.getByText(/Recordatorio de renovación - Netflix/)).toBeTruthy();
+    await user.clear(screen.getByLabelText('Monto'));
+    await user.type(screen.getByLabelText('Monto'), '$5.00');
+    await user.click(screen.getByRole('button', { name: 'Enviar plantilla' }));
+
+    expect(onSend).toHaveBeenCalledWith('vence_hoy', ['Netflix', '30/09', '$5.00']);
+  });
+
+  it('blocks sending until every value is filled and can be cancelled', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    render(
+      <TemplateSendDialog open initialTemplate="recordatorio_vencimiento" paramsFor={() => ['Hola', '', '', '']} contextLabel={null} isSending={false} onOpenChange={onOpenChange} onSend={vi.fn()} />
+    );
+
+    expect(screen.getByText(/Si eliges una venta/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Enviar plantilla' }) as HTMLButtonElement).disabled).toBe(true);
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('shows progress while sending', () => {
+    render(
+      <TemplateSendDialog open initialTemplate="vence_hoy" paramsFor={() => ['a', 'b', 'c']} contextLabel={null} isSending onOpenChange={vi.fn()} onSend={vi.fn()} />
+    );
+    expect(screen.getByRole('button', { name: 'Enviando...' })).toBeTruthy();
+  });
+});

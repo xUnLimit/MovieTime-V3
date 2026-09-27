@@ -23,6 +23,7 @@ import {
   listWhatsAppConversations,
   listWhatsAppMessages,
   markWhatsAppConversationRead,
+  markWhatsAppConversationUnread,
 } from './whatsapp-chat-repository';
 
 beforeEach(() => {
@@ -36,9 +37,10 @@ describe('whatsapp chat repository', () => {
       {
         wa_id: '507', contact_name: 'Mary', tercero_id: 't1', tercero_nombre: 'María', last_direction: 'outbound',
         last_preview: 'Hola', last_message_at: '2026-09-27T12:00:00Z', last_inbound_at: null, unread_count: 3,
+        proxima_fecha_fin: '2026-09-30',
       },
       { wa_id: '508', contact_name: null, tercero_id: null, tercero_nombre: null, last_direction: 'inbound',
-        last_preview: null, last_message_at: '2026-09-27T11:00:00Z', last_inbound_at: '2026-09-27T11:00:00Z', unread_count: null },
+        last_preview: null, last_message_at: '2026-09-27T11:00:00Z', last_inbound_at: '2026-09-27T11:00:00Z', unread_count: null, proxima_fecha_fin: null },
       { wa_id: null, last_message_at: '2026-09-27T10:00:00Z' },
     ];
 
@@ -46,10 +48,12 @@ describe('whatsapp chat repository', () => {
       {
         waId: '507', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María', lastDirection: 'outbound',
         lastPreview: 'Hola', lastMessageAt: '2026-09-27T12:00:00Z', lastInboundAt: null, unreadCount: 3,
+        nextExpiry: '2026-09-30',
       },
       {
         waId: '508', contactName: null, terceroId: null, terceroNombre: null, lastDirection: 'inbound',
         lastPreview: '', lastMessageAt: '2026-09-27T11:00:00Z', lastInboundAt: '2026-09-27T11:00:00Z', unreadCount: 0,
+        nextExpiry: null,
       },
     ]);
     expect(calls).toContainEqual({ method: 'from', args: ['v_whatsapp_conversations'] });
@@ -92,4 +96,14 @@ describe('whatsapp chat repository', () => {
     result.value.error = new Error('denied');
     await expect(markWhatsAppConversationRead('507', 'x')).rejects.toThrow('denied');
   });
+
+  it('marks a conversation unread by moving the marker just before the last inbound message', async () => {
+    await markWhatsAppConversationUnread('507', '2026-09-27T12:00:00.000Z');
+
+    expect(calls).toContainEqual({
+      method: 'upsert',
+      args: [{ wa_id: '507', last_read_at: '2026-09-27T11:59:59.999Z' }, { onConflict: 'wa_id' }],
+    });
+  });
+
 });

@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 import type { MetodoPago, Tercero } from "@/types";
 
-import { useTerceroFormController } from "./useTerceroFormController";
+import { useTerceroFormController, type TerceroValoresIniciales } from "./useTerceroFormController";
 
 interface TerceroFormProps {
   usuario?: Tercero | null;
@@ -25,6 +25,7 @@ interface TerceroFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   isPage?: boolean;
+  valoresIniciales?: TerceroValoresIniciales;
 }
 
 export function TerceroForm({
@@ -34,6 +35,7 @@ export function TerceroForm({
   onSuccess,
   onCancel,
   isPage = false,
+  valoresIniciales,
 }: TerceroFormProps) {
   const {
     activeTab,
@@ -56,6 +58,7 @@ export function TerceroForm({
     tipoInicial,
     metodosPago,
     onSuccess,
+    valoresIniciales,
   });
   return (
     <form

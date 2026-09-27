@@ -26,6 +26,12 @@ export async function storeWebhookBatch(
           message_type: message.messageType,
           text_body: message.textBody,
           sent_at: message.sentAt,
+          media_id: message.mediaId,
+          media_mime_type: message.mediaMimeType,
+          media_filename: message.mediaFilename,
+          context_wa_message_id: message.contextWaMessageId,
+          reaction_emoji: message.reactionEmoji,
+          payload: message.payload,
         })),
         { onConflict: 'wa_message_id', ignoreDuplicates: true }
       );

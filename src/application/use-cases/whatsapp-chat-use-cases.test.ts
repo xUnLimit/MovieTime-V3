@@ -3,28 +3,42 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const deps = vi.hoisted(() => ({
   assertOnlineMutation: vi.fn(),
   postWhatsAppMessage: vi.fn(),
+  postMarkConversationRead: vi.fn(),
+  uploadWhatsAppMedia: vi.fn(),
+  fetchWhatsAppMedia: vi.fn(),
   getCurrentSession: vi.fn(),
   createIdempotencyKey: vi.fn(() => 'generated-key'),
   listWhatsAppConversations: vi.fn(),
   listWhatsAppMessages: vi.fn(),
-  markWhatsAppConversationRead: vi.fn(),
+  markWhatsAppConversationUnread: vi.fn(),
+  fetchVentaDetalleQuery: vi.fn(),
 }));
 
 vi.mock('@/modules/pwa/offline-copy', () => ({ assertOnlineMutation: deps.assertOnlineMutation }));
-vi.mock('@/platform/api/whatsapp-messages-client', () => ({ postWhatsAppMessage: deps.postWhatsAppMessage }));
+vi.mock('@/platform/api/whatsapp-messages-client', () => ({
+  postWhatsAppMessage: deps.postWhatsAppMessage,
+  postMarkConversationRead: deps.postMarkConversationRead,
+  uploadWhatsAppMedia: deps.uploadWhatsAppMedia,
+  fetchWhatsAppMedia: deps.fetchWhatsAppMedia,
+}));
 vi.mock('@/platform/supabase/auth', () => ({ getCurrentSession: deps.getCurrentSession }));
 vi.mock('@/platform/supabase/idempotency', () => ({ createIdempotencyKey: deps.createIdempotencyKey }));
 vi.mock('@/platform/supabase/whatsapp-chat-repository', () => ({
   listWhatsAppConversations: deps.listWhatsAppConversations,
   listWhatsAppMessages: deps.listWhatsAppMessages,
-  markWhatsAppConversationRead: deps.markWhatsAppConversationRead,
+  markWhatsAppConversationUnread: deps.markWhatsAppConversationUnread,
 }));
+vi.mock('./ventas/venta-detail-query-use-cases', () => ({ fetchVentaDetalleQuery: deps.fetchVentaDetalleQuery }));
 
 import {
+  fetchVentaMessageContextUseCase,
   fetchWhatsAppConversationsUseCase,
+  fetchWhatsAppMediaUseCase,
   fetchWhatsAppMessagesUseCase,
   markWhatsAppConversationReadUseCase,
+  markWhatsAppConversationUnreadUseCase,
   sendWhatsAppMessageUseCase,
+  uploadWhatsAppMediaUseCase,
 } from './whatsapp-chat-use-cases';
 
 beforeEach(() => {
@@ -43,12 +57,29 @@ describe('WhatsApp chat use cases', () => {
     expect(deps.listWhatsAppMessages).toHaveBeenCalledWith('507');
   });
 
-  it('requires a connection before marking a conversation read', async () => {
+  it('marks a conversation read through the server, with the session token', async () => {
     await markWhatsAppConversationReadUseCase('507', '2026-09-27T12:00:00Z');
-    expect(deps.markWhatsAppConversationRead).toHaveBeenCalledWith('507', '2026-09-27T12:00:00Z');
+    expect(deps.postMarkConversationRead).toHaveBeenCalledWith('session-access', '507', '2026-09-27T12:00:00Z');
 
     deps.assertOnlineMutation.mockImplementation(() => { throw new Error('offline'); });
     await expect(markWhatsAppConversationReadUseCase('507', 'x')).rejects.toThrow('offline');
+
+    deps.assertOnlineMutation.mockImplementation(() => undefined);
+    deps.getCurrentSession.mockResolvedValueOnce(null);
+    await expect(markWhatsAppConversationReadUseCase('507', 'x'))
+      .rejects.toThrow('No hay una sesión activa para marcar la conversación como leída.');
+  });
+
+  it('uploads a file with the session token', async () => {
+    deps.uploadWhatsAppMedia.mockResolvedValue({ mediaId: 'm1', mimeType: 'image/jpeg', filename: 'foto.jpg' });
+
+    await expect(uploadWhatsAppMediaUseCase('blob' as unknown as Blob, 'foto.jpg')).resolves.toEqual({
+      mediaId: 'm1', mimeType: 'image/jpeg', filename: 'foto.jpg',
+    });
+    expect(deps.uploadWhatsAppMedia).toHaveBeenCalledWith('session-access', 'blob', 'foto.jpg');
+
+    deps.assertOnlineMutation.mockImplementation(() => { throw new Error('offline'); });
+    await expect(uploadWhatsAppMediaUseCase('blob' as unknown as Blob, 'foto.jpg')).rejects.toThrow('offline');
   });
 
   it('sends with the session token and the caller idempotency key', async () => {
@@ -76,4 +107,54 @@ describe('WhatsApp chat use cases', () => {
     await expect(sendWhatsAppMessageUseCase({ to: '507', message: { kind: 'text', text: 'x' } })).rejects.toThrow('offline');
     expect(deps.postWhatsAppMessage).not.toHaveBeenCalled();
   });
+
+  it('downloads attachments with the session token', async () => {
+    deps.fetchWhatsAppMedia.mockResolvedValue('blob');
+
+    await expect(fetchWhatsAppMediaUseCase('123')).resolves.toBe('blob');
+    expect(deps.fetchWhatsAppMedia).toHaveBeenCalledWith('session-access', '123');
+
+    deps.getCurrentSession.mockResolvedValueOnce(null);
+    await expect(fetchWhatsAppMediaUseCase('123')).rejects.toThrow('No hay una sesión activa para ver archivos.');
+  });
+
+  it('marks a conversation unread only when online', async () => {
+    await markWhatsAppConversationUnreadUseCase('507', '2026-09-27T12:00:00Z');
+    expect(deps.markWhatsAppConversationUnread).toHaveBeenCalledWith('507', '2026-09-27T12:00:00Z');
+
+    deps.assertOnlineMutation.mockImplementation(() => {
+      throw new Error('offline');
+    });
+    await expect(markWhatsAppConversationUnreadUseCase('507', 'x')).rejects.toThrow('offline');
+  });
+
+  it('builds the message context from the sale detail', async () => {
+    deps.fetchVentaDetalleQuery.mockResolvedValueOnce({
+      venta: {
+        clienteNombre: 'María Pérez', categoriaNombre: 'Netflix', servicioNombre: 'Netflix 01', perfilNombre: 'María',
+        servicioCorreo: 'c@example.com', servicioContrasena: '', codigo: '12', fechaFin: new Date(2026, 8, 30), precioFinal: 5, precio: 6,
+      },
+      servicioContrasena: 'clave-servicio',
+    });
+
+    await expect(fetchVentaMessageContextUseCase('v1')).resolves.toEqual({
+      clienteNombre: 'María Pérez', categoriaNombre: 'Netflix', servicioNombre: 'Netflix 01', perfilNombre: 'María',
+      correo: 'c@example.com', contrasena: 'clave-servicio', codigo: '12', fechaVencimiento: new Date(2026, 8, 30), monto: 5,
+    });
+    expect(deps.fetchVentaDetalleQuery).toHaveBeenCalledWith('v1');
+  });
+
+  it('falls back to defaults for sparse sales and returns null when missing', async () => {
+    deps.fetchVentaDetalleQuery.mockResolvedValueOnce({ venta: { clienteNombre: 'Juan', servicioNombre: 'Disney 02', precio: 3 }, servicioContrasena: '' });
+    await expect(fetchVentaMessageContextUseCase('v2')).resolves.toMatchObject({
+      categoriaNombre: 'Disney 02', perfilNombre: '', correo: '', codigo: '', fechaVencimiento: null, monto: 3,
+    });
+
+    deps.fetchVentaDetalleQuery.mockResolvedValueOnce({ venta: { clienteNombre: 'X', servicioNombre: 'Y' }, servicioContrasena: '' });
+    await expect(fetchVentaMessageContextUseCase('v3')).resolves.toMatchObject({ monto: 0 });
+
+    deps.fetchVentaDetalleQuery.mockResolvedValueOnce({ venta: null, servicioContrasena: '' });
+    await expect(fetchVentaMessageContextUseCase('missing')).resolves.toBeNull();
+  });
+
 });

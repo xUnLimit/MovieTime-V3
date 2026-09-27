@@ -10,16 +10,24 @@ export type WhatsAppConversation = {
   lastMessageAt: string;
   lastInboundAt: string | null;
   unreadCount: number;
+  nextExpiry: string | null;
 };
 
 export type WhatsAppChatMessage = {
   id: string;
+  waMessageId: string | null;
   direction: 'inbound' | 'outbound';
   kind: string;
   textBody: string | null;
   templateName: string | null;
   occurredAt: string;
   status: string;
+  mediaId: string | null;
+  mediaMimeType: string | null;
+  mediaFilename: string | null;
+  contextWaMessageId: string | null;
+  reactionEmoji: string | null;
+  payload: Record<string, unknown>;
 };
 
 const CONVERSATION_LIMIT = 200;
@@ -45,6 +53,7 @@ export async function listWhatsAppConversations(): Promise<WhatsAppConversation[
       lastMessageAt: row.last_message_at,
       lastInboundAt: row.last_inbound_at,
       unreadCount: row.unread_count ?? 0,
+      nextExpiry: row.proxima_fecha_fin,
     }];
   });
 }
@@ -63,12 +72,19 @@ export async function listWhatsAppMessages(waId: string, limit = 200): Promise<W
       if (!row.id || !row.occurred_at) return [];
       return [{
         id: row.id,
+        waMessageId: row.wa_message_id,
         direction: row.direction === 'outbound' ? 'outbound' : 'inbound',
         kind: row.message_kind ?? 'text',
         textBody: row.text_body,
         templateName: row.template_name,
         occurredAt: row.occurred_at,
         status: row.status ?? 'pending',
+        mediaId: row.media_id,
+        mediaMimeType: row.media_mime_type,
+        mediaFilename: row.media_filename,
+        contextWaMessageId: row.context_wa_message_id,
+        reactionEmoji: row.reaction_emoji,
+        payload: (row.payload as Record<string, unknown> | null) ?? {},
       } satisfies WhatsAppChatMessage];
     })
     .reverse();
@@ -79,4 +95,10 @@ export async function markWhatsAppConversationRead(waId: string, readAt: string)
     .from('whatsapp_conversation_reads')
     .upsert({ wa_id: waId, last_read_at: readAt }, { onConflict: 'wa_id' });
   if (error) throw error;
+}
+
+// Marca como no leido moviendo la marca justo antes del ultimo mensaje recibido.
+export async function markWhatsAppConversationUnread(waId: string, lastInboundAt: string): Promise<void> {
+  const readAt = new Date(new Date(lastInboundAt).getTime() - 1).toISOString();
+  await markWhatsAppConversationRead(waId, readAt);
 }

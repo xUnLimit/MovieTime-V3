@@ -59,13 +59,22 @@ interface UseTerceroFormControllerParams {
   tipoInicial: "cliente" | "revendedor";
   metodosPago: MetodoPago[];
   onSuccess?: () => void;
+  valoresIniciales?: TerceroValoresIniciales;
 }
+
+// Datos sugeridos al crear un tercero desde otro flujo (p. ej. un chat de WhatsApp).
+export type TerceroValoresIniciales = {
+  nombre?: string;
+  apellido?: string;
+  telefono?: string;
+};
 
 export function useTerceroFormController({
   usuario,
   tipoInicial,
   metodosPago,
   onSuccess,
+  valoresIniciales,
 }: UseTerceroFormControllerParams) {
   const queryClient = useQueryClient();
   const pendienteOption = useMemo<MetodoPago>(
@@ -178,15 +187,15 @@ export function useTerceroFormController({
       });
     } else {
       reset({
-        nombre: "",
-        apellido: "",
+        nombre: valoresIniciales?.nombre ?? "",
+        apellido: valoresIniciales?.apellido ?? "",
         tipoTercero: tipoInicial as "cliente" | "revendedor",
-        telefono: "",
+        telefono: valoresIniciales?.telefono ?? "",
         metodoPagoId: PENDING_TERCERO_PAYMENT_ID,
         notas: "",
       });
     }
-  }, [usuario, tipoInicial, reset]);
+  }, [usuario, tipoInicial, reset, valoresIniciales]);
 
   const handleNext = async () => {
     // Validar campos de la pestaña personal

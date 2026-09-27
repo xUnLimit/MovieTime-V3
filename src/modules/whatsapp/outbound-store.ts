@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
 import type { NewOutboundMessage, OutboundRecord, OutboundStatus, OutboundStore } from './outbound-messages';
+import { storedKind, storedText } from './outbound-payload';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
@@ -47,15 +48,34 @@ export function createOutboundStore(client: ServiceClient = createServiceRoleCli
 
     async insertPending(message: NewOutboundMessage) {
       const { payload } = message;
+      const hasMedia = payload.kind === 'image' || payload.kind === 'document' || payload.kind === 'audio';
+      const contextWaMessageId = 'replyTo' in payload
+        ? payload.replyTo ?? null
+        : payload.kind === 'reaction' ? payload.targetWaMessageId : null;
       const { data, error } = await client
         .from('whatsapp_outbound_messages')
         .insert({
           idempotency_key: message.idempotencyKey,
           to_wa_id: message.toWaId,
-          message_kind: payload.kind,
-          text_body: payload.kind === 'text' ? payload.text : null,
+          message_kind: storedKind(payload),
+          text_body: storedText(payload),
           template_name: payload.kind === 'template' ? payload.templateName : null,
           template_params: payload.kind === 'template' ? payload.params : [],
+          context_wa_message_id: contextWaMessageId,
+          media_id: hasMedia ? payload.mediaId : null,
+          media_mime_type: hasMedia ? payload.mimeType : null,
+          media_filename: hasMedia ? payload.filename ?? null : null,
+          payload: payload.kind === 'reaction'
+            ? { emoji: payload.emoji }
+            : payload.kind === 'buttons'
+              ? { buttons: payload.buttons }
+              : payload.kind === 'list'
+                ? { buttonLabel: payload.buttonLabel, rows: payload.rows }
+                : payload.kind === 'location'
+                  ? { location: payload.location }
+                  : payload.kind === 'contacts'
+                    ? { contacts: payload.contacts }
+                    : {},
           sent_by: message.sentBy,
         })
         .select(RECORD_COLUMNS)

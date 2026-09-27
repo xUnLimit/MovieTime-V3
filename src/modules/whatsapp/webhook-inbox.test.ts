@@ -29,6 +29,12 @@ const batch: WebhookBatch = {
     messageType: 'text',
     textBody: 'Hola',
     sentAt: '2026-09-27T12:00:00.000Z',
+    mediaId: '998877',
+    mediaMimeType: 'image/jpeg',
+    mediaFilename: null,
+    contextWaMessageId: null,
+    reactionEmoji: null,
+    payload: {},
   }],
   statuses: [{
     waMessageId: 'wamid.OUT',
@@ -39,6 +45,7 @@ const batch: WebhookBatch = {
     errorTitle: null,
   }],
   skippedChanges: 0,
+  skippedItems: 0,
 };
 
 describe('storeWebhookBatch', () => {
@@ -57,6 +64,12 @@ describe('storeWebhookBatch', () => {
           message_type: 'text',
           text_body: 'Hola',
           sent_at: '2026-09-27T12:00:00.000Z',
+          media_id: '998877',
+          media_mime_type: 'image/jpeg',
+          media_filename: null,
+          context_wa_message_id: null,
+          reaction_emoji: null,
+          payload: {},
         }],
         options: { onConflict: 'wa_message_id', ignoreDuplicates: true },
       },
@@ -78,7 +91,7 @@ describe('storeWebhookBatch', () => {
   it('does not touch the database for an empty batch', async () => {
     const { client, upserts } = fakeClient();
 
-    await expect(storeWebhookBatch({ messages: [], statuses: [], skippedChanges: 1 }, client))
+    await expect(storeWebhookBatch({ messages: [], statuses: [], skippedChanges: 1, skippedItems: 0 }, client))
       .resolves.toEqual({ messages: 0, statuses: 0 });
     expect(upserts).toEqual([]);
   });

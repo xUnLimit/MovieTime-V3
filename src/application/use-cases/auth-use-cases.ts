@@ -7,6 +7,7 @@ import {
   signIn,
   signOut,
 } from '@/platform/supabase/auth';
+import { clearAllChatDrafts } from '@/modules/whatsapp/chat-drafts';
 import type { User } from '@/types';
 export { AUTH_REMEMBER_KEY } from '@/platform/supabase/auth-storage';
 
@@ -29,6 +30,9 @@ export function signOutUseCase() {
 
 export function clearLocalSessionUseCase() {
   clearLocalSession();
+  // Un borrador de chat puede llevar una contrasena de servicio ya llena; no
+  // debe sobrevivir a un cierre de sesion en un navegador compartido.
+  clearAllChatDrafts();
 }
 
 export function getCurrentSessionUseCase() {

@@ -73,8 +73,12 @@ export async function POST(request: Request) {
     return apiFailure(400, 'INVALID_REQUEST', 'Evento de WhatsApp no reconocido.', requestId);
   }
 
-  if (parsed.batch.skippedChanges > 0) {
-    logger.info('Skipped WhatsApp webhook changes', { requestId, skipped: parsed.batch.skippedChanges });
+  if (parsed.batch.skippedChanges > 0 || parsed.batch.skippedItems > 0) {
+    logger.info('Skipped WhatsApp webhook content', {
+      requestId,
+      skippedChanges: parsed.batch.skippedChanges,
+      skippedItems: parsed.batch.skippedItems,
+    });
   }
 
   try {
