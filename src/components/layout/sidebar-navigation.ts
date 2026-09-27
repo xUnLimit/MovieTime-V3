@@ -28,6 +28,7 @@ export type SidebarNavSection = {
 
 const adminOnlyPaths = [
   '/chats',
+  '/pagos-yappy',
   '/gastos',
   '/editor-mensajes',
   '/categorias',
@@ -78,6 +79,11 @@ const navigationSections: SidebarNavSection[] = [
         name: 'Chats',
         href: '/chats',
         icon: MessageCircle,
+      },
+      {
+        name: 'Pagos Yappy',
+        href: '/pagos-yappy',
+        icon: Wallet,
       },
       {
         name: 'Notificaciones',

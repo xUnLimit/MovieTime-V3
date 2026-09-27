@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      yappy_mail_sync_state: {
+        Row: { id: boolean; mailbox: string; uid_validity: number | null; last_uid: number; last_synced_at: string | null; last_error_code: string | null; sync_locked_until: string | null; updated_at: string }
+        Insert: { id?: boolean; mailbox?: string; uid_validity?: number | null; last_uid?: number; last_synced_at?: string | null; last_error_code?: string | null; sync_locked_until?: string | null; updated_at?: string }
+        Update: { id?: boolean; mailbox?: string; uid_validity?: number | null; last_uid?: number; last_synced_at?: string | null; last_error_code?: string | null; sync_locked_until?: string | null; updated_at?: string }
+        Relationships: []
+      }
+      yappy_mail_messages: {
+        Row: { id: string; uid_validity: number; imap_uid: number; internet_message_id: string | null; received_at: string; from_address: string; subject: string | null; dmarc_pass: boolean | null; parser_version: number; status: string; failure_reason: string | null; created_at: string }
+        Insert: { id?: string; uid_validity: number; imap_uid: number; internet_message_id?: string | null; received_at: string; from_address: string; subject?: string | null; dmarc_pass?: boolean | null; parser_version?: number; status: string; failure_reason?: string | null; created_at?: string }
+        Update: { id?: string; uid_validity?: number; imap_uid?: number; internet_message_id?: string | null; received_at?: string; from_address?: string; subject?: string | null; dmarc_pass?: boolean | null; parser_version?: number; status?: string; failure_reason?: string | null; created_at?: string }
+        Relationships: []
+      }
+      yappy_payments: {
+        Row: { id: string; confirmation_code: string; amount: number; currency: string; payer_name_short: string; payer_phone_last4: string; paid_at: string; mail_message_id: string; match_status: string; candidate_venta_ids: string[]; matched_venta_id: string | null; resolved_by: string | null; resolved_at: string | null; resolution_note: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; confirmation_code: string; amount: number; currency?: string; payer_name_short: string; payer_phone_last4: string; paid_at: string; mail_message_id: string; match_status?: string; candidate_venta_ids?: string[]; matched_venta_id?: string | null; resolved_by?: string | null; resolved_at?: string | null; resolution_note?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; confirmation_code?: string; amount?: number; currency?: string; payer_name_short?: string; payer_phone_last4?: string; paid_at?: string; mail_message_id?: string; match_status?: string; candidate_venta_ids?: string[]; matched_venta_id?: string | null; resolved_by?: string | null; resolved_at?: string | null; resolution_note?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       activity_log: {
         Row: {
           accion: Database["public"]["Enums"]["accion_log_enum"]
@@ -2285,6 +2303,14 @@ export type Database = {
       }
     }
     Views: {
+      v_yappy_candidate_ventas: {
+        Row: { id: string | null; cliente: string | null; servicio: string | null; perfil_numero: number | null; perfil_nombre: string | null; fecha_fin: string | null; total_original: number | null; moneda_original: string | null }
+        Relationships: []
+      }
+      v_yappy_mail_sync_status: {
+        Row: { mailbox: string | null; status: string | null; last_synced_at: string | null; last_error_code: string | null }
+        Relationships: []
+      }
       v_categoria_counters: {
         Row: {
           categoria_id: string | null
@@ -3684,6 +3710,13 @@ export type Database = {
       }
     }
     Functions: {
+      ingest_yappy_payment: { Args: { p_uid_validity: number; p_imap_uid: number; p_internet_message_id: string | null; p_received_at: string; p_subject: string | null; p_dmarc_pass: boolean | null; p_parser_version: number; p_confirmation_code: string; p_amount: number; p_payer_name_short: string; p_payer_phone_last4: string; p_paid_at: string; p_reject_reason?: string | null }; Returns: { outcome: string; payment_id: string | null; match_status: string | null }[] }
+      record_invalid_yappy_mail: { Args: { p_uid_validity: number; p_imap_uid: number; p_received_at: string; p_parser_version: number; p_failure_reason: string }; Returns: undefined }
+      claim_yappy_mail_sync: { Args: never; Returns: boolean }
+      match_yappy_payment: { Args: { p_payment_id: string }; Returns: string }
+      resolve_yappy_payment: { Args: { p_payment_id: string; p_venta_id: string; p_note?: string | null }; Returns: string }
+      dismiss_yappy_payment: { Args: { p_payment_id: string; p_note: string }; Returns: string }
+      trigger_yappy_sync: { Args: never; Returns: number }
       assert_notification_integrity: {
         Args: { p_notification_id: string }
         Returns: undefined
