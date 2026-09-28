@@ -38,6 +38,29 @@ test('@smoke serves the web app manifest without a redirect loop', async ({ requ
   });
 });
 
+test('@smoke serves the chat stylesheet used by the current interface', async ({ request }) => {
+  const page = await request.get('/chats');
+  expect(page.status()).toBe(200);
+
+  const html = await page.text();
+  const stylesheets = html.split('<link').slice(1)
+    .map((fragment) => fragment.split('>')[0])
+    .filter((tag) => tag.includes('rel="stylesheet"'))
+    .map((tag) => tag.split('href="')[1]?.split('"')[0])
+    .filter((href): href is string => Boolean(href?.includes('.css')));
+  expect(stylesheets.length).toBeGreaterThan(0);
+
+  const css = (await Promise.all(stylesheets.map(async (href) => {
+    const response = await request.get(href);
+    expect(response.status()).toBe(200);
+    return response.text();
+  }))).join('\n');
+
+  expect(css.includes('.chats-surface'), 'Faltan los estilos del contenedor de Chats').toBe(true);
+  expect(css.includes('.bg-chat-bubble-in'), 'Falta el fondo de los mensajes recibidos').toBe(true);
+  expect(css.includes('.bg-chat-bubble-out'), 'Falta el fondo de los mensajes enviados').toBe(true);
+});
+
 test('@smoke keeps the iOS status bar separate from the web app header', async ({ request }) => {
   const response = await request.get('/dashboard');
   const html = await response.text();

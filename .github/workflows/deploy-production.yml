@@ -87,7 +87,7 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: echo "url=$(npx --yes vercel@59.23.2 --prod --skip-domain --yes --token '${{ secrets.VERCEL_TOKEN }}')" >> "$GITHUB_OUTPUT"
+        run: echo "url=$(npx --yes vercel@59.23.2 --prod --skip-domain --force --yes --token '${{ secrets.VERCEL_TOKEN }}')" >> "$GITHUB_OUTPUT"
       - name: Install Chromium
         run: npx --no-install playwright install --with-deps chromium
       - name: Validate staged deployment
