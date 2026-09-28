@@ -6,7 +6,6 @@ import { useAuthStore } from '@/store/authStore';
 import { AuthRecoveryState } from '@/components/auth/AuthRecoveryState';
 import { shouldRedirectToLogin } from '@/components/auth/auth-routing';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { PwaStatusBanner } from '@/components/pwa/PwaStatusBanner';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallback';
 import { sincronizarNotificaciones } from '@/modules/notifications';
@@ -111,7 +110,6 @@ export default function DashboardLayout({
             }}
           >
             <div className="h-full min-w-0 overflow-x-hidden p-3 sm:p-4 md:p-6">
-              <PwaStatusBanner />
               {children}
             </div>
           </main>

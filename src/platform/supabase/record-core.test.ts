@@ -2,10 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
-  offline: vi.fn(),
-  readOffline: vi.fn(),
-  readOfflineById: vi.fn(),
-  assertOnline: vi.fn(),
   mapReadRow: vi.fn((collection: string, row: unknown) => ({ collection, row })),
   enrichTerceros: vi.fn(async <T>(rows: T[]) => rows.map((row) => ({ ...row, enriched: 'tercero' }))),
   enrichCategorias: vi.fn(async <T>(rows: T[]) => rows.map((row) => ({ ...row, enriched: 'categoria' }))),
@@ -14,12 +10,6 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  shouldUseOfflineRead: mocks.offline,
-  readOfflineCollection: mocks.readOffline,
-  readOfflineCollectionById: mocks.readOfflineById,
-  assertOnlineMutation: mocks.assertOnline,
-}));
 vi.mock('./read-models', () => ({
   mapReadRow: mocks.mapReadRow,
   enrichTerceros: mocks.enrichTerceros,
@@ -59,8 +49,6 @@ function builder(result: Result = { data: [], error: null }) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.from.mockReset();
-  mocks.offline.mockReset();
-  mocks.offline.mockResolvedValue(false);
 });
 
 describe('record-core reads', () => {
@@ -86,17 +74,6 @@ describe('record-core reads', () => {
     expect(await getAll('config')).toEqual([]);
     expect(await getById('config', 'missing')).toBeNull();
     await expect(getAll('config')).rejects.toThrow('lectura');
-  });
-
-  it('uses the offline copy when appropriate', async () => {
-    mocks.offline.mockResolvedValue(true);
-    mocks.readOffline.mockResolvedValue([{ id: 'offline' }]);
-    mocks.readOfflineById.mockResolvedValue({ id: 'one' });
-    expect(await getAll('config')).toEqual([{ id: 'offline' }]);
-    expect(await queryDocuments('config', [{ field: 'activo', operator: '==', value: true }]))
-      .toEqual([{ id: 'offline' }]);
-    expect(await getById('config', 'one')).toEqual({ id: 'one' });
-    expect(await getCount('config')).toBe(1);
   });
 
   it('applies every supported filter and normalizes mapped fields', async () => {
@@ -152,7 +129,6 @@ describe('record-core writes and views', () => {
     mocks.insertRaw.mockResolvedValue('new-id');
     expect(await create('config', { clave: 'x' })).toBe('new-id');
     expect(await createRaw('config', { clave: 'raw' })).toBe('new-id');
-    expect(mocks.assertOnline).toHaveBeenCalledTimes(3);
     expect(mocks.normalizeWrite).toHaveBeenCalledWith('config', { clave: 'x' }, 'insert');
   });
 

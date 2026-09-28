@@ -1773,6 +1773,38 @@ export type Database = {
           },
         ]
       }
+      chat_saved_stickers: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          media_id: string
+          mime_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          media_id: string
+          mime_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          media_id?: string
+          mime_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_saved_stickers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       templates: {
         Row: {
           activo: boolean
@@ -3730,6 +3762,7 @@ export type Database = {
       }
       v_whatsapp_conversations: {
         Row: {
+          categorias_activas: string[] | null
           contact_name: string | null
           last_direction: string | null
           last_inbound_at: string | null

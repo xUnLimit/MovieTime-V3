@@ -1,5 +1,3 @@
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
-
 import { executeIdempotentRpc } from './idempotent-rpc';
 import { typedRpcClient, type RpcResult } from './rpc-client';
 
@@ -56,13 +54,11 @@ const ventaPaymentRpcClient = typedRpcClient<CreateVentaPaymentRpcClient>();
 export async function createServicioPaymentRpc(
   payload: CreateServicioPaymentPayload
 ): Promise<string> {
-  assertOnlineMutation();
   return executeIdempotentRpc('create_servicio_payment', payload, (request) =>
     servicioPaymentRpcClient.rpc('create_servicio_payment', request));
 }
 
 export async function createVentaPaymentRpc(payload: CreateVentaPaymentPayload): Promise<string> {
-  assertOnlineMutation();
   return executeIdempotentRpc('create_venta_payment', payload, (request) =>
     ventaPaymentRpcClient.rpc('create_venta_payment', request));
 }

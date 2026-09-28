@@ -1,17 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpcMock = vi.hoisted(() => vi.fn());
-const assertOnlineMutationMock = vi.hoisted(() => vi.fn());
 
 vi.mock('./client', () => ({
   supabase: {
     rpc: rpcMock,
     auth: { getSession: async () => ({ data: { session: { user: { id: 'test-user' } } }, error: null }) },
   },
-}));
-
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  assertOnlineMutation: assertOnlineMutationMock,
 }));
 
 import {
@@ -69,8 +64,6 @@ describe('createServicioPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: 'pago-servicio-1', error: null });
 
     await expect(createServicioPaymentRpc(servicioPaymentPayload)).resolves.toBe('pago-servicio-1');
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('create_servicio_payment', servicioPaymentPayload);
   });
 
@@ -98,8 +91,6 @@ describe('createVentaPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: 'pago-venta-1', error: null });
 
     await expect(createVentaPaymentRpc(ventaPaymentPayload)).resolves.toBe('pago-venta-1');
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('create_venta_payment', ventaPaymentPayload);
   });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AuthRecoveryState } from '@/components/auth/AuthRecoveryState';
@@ -11,8 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, WifiOff } from 'lucide-react';
-import { hasOfflineAuthUser } from '@/modules/pwa/offline-auth';
+import { Eye, EyeOff } from 'lucide-react';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 
 export default function LoginPage() {
@@ -24,17 +23,15 @@ export default function LoginPage() {
     isLoading,
     login,
     logout,
-    restoreOfflineSession,
     retryAuth,
   } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
+  );
   const [showPassword, setShowPassword] = useState(false);
-  const offlineRestoreAttemptedRef = useRef(false);
-  const [isOnline, setIsOnline] = useState(true);
-  const [canUseOfflineAccess, setCanUseOfflineAccess] = useState(false);
 
   useEffect(() => {
     // Si ya está autenticado, redirigir al dashboard
@@ -42,44 +39,6 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   }, [isAuthenticated, isHydrated, router]);
-
-  useEffect(() => {
-    const updateOfflineState = () => {
-      setRememberMe(localStorage.getItem(AUTH_REMEMBER_KEY) === 'true');
-      setIsOnline(navigator.onLine);
-      setCanUseOfflineAccess(hasOfflineAuthUser());
-    };
-
-    updateOfflineState();
-    window.addEventListener('online', updateOfflineState);
-    window.addEventListener('offline', updateOfflineState);
-
-    return () => {
-      window.removeEventListener('online', updateOfflineState);
-      window.removeEventListener('offline', updateOfflineState);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (
-      !isHydrated ||
-      isAuthenticated ||
-      isOnline ||
-      !canUseOfflineAccess ||
-      offlineRestoreAttemptedRef.current
-    ) {
-      return;
-    }
-
-    offlineRestoreAttemptedRef.current = true;
-    try {
-      restoreOfflineSession();
-      toast.success('Modo lectura offline activo');
-      router.replace('/dashboard');
-    } catch (error) {
-      toast.error(getPublicErrorMessage(error, 'No se pudo entrar en modo offline.'));
-    }
-  }, [canUseOfflineAccess, isAuthenticated, isHydrated, isOnline, restoreOfflineSession, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,16 +54,6 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error) {
       toast.error('Credenciales inválidas', { description: getPublicErrorMessage(error, 'Verifica tus credenciales e inténtalo de nuevo.') });
-    }
-  };
-
-  const handleOfflineAccess = () => {
-    try {
-      restoreOfflineSession();
-      toast.success('Modo lectura offline activo');
-      router.push('/dashboard');
-    } catch (error) {
-      toast.error(getPublicErrorMessage(error, 'No se pudo entrar en modo offline.'));
     }
   };
 
@@ -126,14 +75,6 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
-          {!isOnline ? (
-            <div className="mb-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-              <div className="flex items-start gap-2">
-                <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Sin conexion. El inicio con contrasena necesita internet.</span>
-              </div>
-            </div>
-          ) : null}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-normal">
@@ -197,20 +138,10 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || !isOnline}
+              disabled={isLoading}
             >
               {isLoading ? 'Iniciando Sesión...' : 'Iniciar Sesión'}
             </Button>
-            {!isOnline && canUseOfflineAccess ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleOfflineAccess}
-              >
-                Entrar en modo lectura offline
-              </Button>
-            ) : null}
           </form>
         </CardContent>
       </Card>

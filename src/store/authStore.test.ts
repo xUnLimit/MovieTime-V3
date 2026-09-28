@@ -20,14 +20,6 @@ vi.mock('@/application/use-cases/auth-use-cases', async (importOriginal) => {
   };
 });
 
-vi.mock('@/modules/pwa/offline-auth', () => ({
-  clearOfflineAuthUser: vi.fn(),
-  getOfflineAuthDecision: vi.fn(() => 'clear'),
-  loadOfflineAuthUser: vi.fn(() => null),
-  saveOfflineAuthUser: vi.fn(),
-  setOfflineAuthSessionActive: vi.fn(),
-}));
-
 vi.mock('@/platform/utils/safety', () => ({
   logAsyncSideEffectError: vi.fn(),
 }));

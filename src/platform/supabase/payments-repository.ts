@@ -1,6 +1,5 @@
 import { toDateOnly, toIso } from './dates';
 import { convertToUSD } from '@/modules/payments';
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import {
   createServicioPaymentRpc,
   createVentaPaymentRpc,
@@ -50,7 +49,6 @@ export type CreatePagoVentaInput = {
 };
 
 export async function createPagoServicio(payload: CreatePagoServicioInput): Promise<string> {
-  assertOnlineMutation();
   const servicioId = String(payload.servicioId ?? '');
   if (!servicioId) throw new Error('servicioId es requerido para pagos_servicio');
 
@@ -78,7 +76,6 @@ export async function createPagoServicio(payload: CreatePagoServicioInput): Prom
 }
 
 export async function createPagoVenta(payload: CreatePagoVentaInput): Promise<string> {
-  assertOnlineMutation();
   const ventaId = String(payload.ventaId ?? '');
   if (!ventaId) throw new Error('ventaId es requerido para pagos_venta');
 

@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
 import type { Json } from '@/platform/supabase/database.types';
-import { getOfflineDashboardHome, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
 import {
   getDashboardChurnStatsRpc,
   getDashboardHomeRpc,
@@ -51,10 +50,6 @@ function createEmptyStats(): DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  if (await shouldUseOfflineRead()) {
-    return (await getOfflineDashboardHome())?.stats ?? createEmptyStats();
-  }
-
   const statsResult = await getDashboardStatsSnapshotRpc();
 
   if (!statsResult) return createEmptyStats();
@@ -68,11 +63,6 @@ export async function getDashboardChurnStats(): Promise<ChurnStats> {
 }
 
 export async function getDashboardHome(): Promise<DashboardHome> {
-  if (await shouldUseOfflineRead()) {
-    const offline = await getOfflineDashboardHome();
-    if (offline) return offline;
-  }
-
   const data = await getDashboardHomeRpc();
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return {

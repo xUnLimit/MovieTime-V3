@@ -11,8 +11,6 @@ import {
 import { readField, normalizeFilterValue } from './filters';
 import { mapReadRow, enrichCategorias, enrichTerceros } from './read-models';
 import { insertRawRow, normalizeWritePayload } from './write-utils';
-import { readOfflineCollection, readOfflineCollectionById, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 
 export { ENTITIES };
 export type { CollectionName, QueryFilter };
@@ -39,10 +37,6 @@ export function logCacheHit(collectionName: string) {
 }
 
 export async function getAll<T>(collectionName: CollectionName): Promise<T[]> {
-  if (await shouldUseOfflineRead()) {
-    return readOfflineCollection<T>(collectionName);
-  }
-
   const entity = readEntity(collectionName);
   const { data, error } = await supabase.from(entity as never).select('*');
   if (error) throw new Error(error.message);
@@ -51,10 +45,6 @@ export async function getAll<T>(collectionName: CollectionName): Promise<T[]> {
 }
 
 export async function getById<T>(collectionName: CollectionName, id: string): Promise<T | null> {
-  if (await shouldUseOfflineRead()) {
-    return readOfflineCollectionById<T>(collectionName, id);
-  }
-
   const entity = readEntity(collectionName);
   const { data, error } = await supabase
     .from(entity as never)
@@ -73,10 +63,6 @@ export async function queryDocuments<T>(
   collectionName: CollectionName,
   filters: QueryFilter[] = []
 ): Promise<T[]> {
-  if (await shouldUseOfflineRead()) {
-    return readOfflineCollection<T>(collectionName, filters);
-  }
-
   const entity = readEntity(collectionName);
   let query = asQuery<{ data: unknown[] | null; error: Error | null }>(
     supabase.from(entity as never).select('*'),
@@ -94,11 +80,6 @@ export async function getCount(
   collectionName: CollectionName,
   filters: QueryFilter[] = []
 ): Promise<number> {
-  if (await shouldUseOfflineRead()) {
-    const rows = await readOfflineCollection(collectionName, filters);
-    return rows.length;
-  }
-
   const entity = readEntity(collectionName);
   let query = asQuery<{ count: number | null; error: Error | null }>(
     supabase.from(entity as never).select('*', { count: 'exact', head: true }),
@@ -115,7 +96,6 @@ export async function create<T extends Record<string, unknown>>(
   collectionName: CollectionName,
   payload: Omit<T, 'id'>
 ): Promise<string> {
-  assertOnlineMutation();
   return createRaw(collectionName, normalizeWritePayload(collectionName, payload as Record<string, unknown>, 'insert'));
 }
 
@@ -123,7 +103,6 @@ export async function createRaw(
   collectionName: CollectionName,
   payload: Record<string, unknown>
 ): Promise<string> {
-  assertOnlineMutation();
   return insertRawRow(writeTable(collectionName), payload);
 }
 
@@ -132,8 +111,6 @@ export async function update<T extends Record<string, unknown>>(
   id: string,
   payload: Partial<T>
 ): Promise<void> {
-  assertOnlineMutation();
-
   const table = writeTable(collectionName);
   const snake = normalizeWritePayload(collectionName, payload as Record<string, unknown>, 'update');
   if (Object.keys(snake).length === 0) return;
@@ -150,7 +127,6 @@ export async function update<T extends Record<string, unknown>>(
  * especificos via archiveRecord(); este adapter generico no decide que entidad se archiva.
  */
 export async function remove(collectionName: CollectionName, id: string): Promise<void> {
-  assertOnlineMutation();
   const table = writeTable(collectionName);
   const { error } = await supabase.from(table as never).delete().eq('id', id);
   if (error) throw new Error(error.message);
@@ -165,7 +141,6 @@ export async function archiveRecord(
   id: string,
   motivo = 'Eliminado desde la app',
 ): Promise<void> {
-  assertOnlineMutation();
   const table = writeTable(collectionName);
   const { error } = await supabase
     .from(table as never)

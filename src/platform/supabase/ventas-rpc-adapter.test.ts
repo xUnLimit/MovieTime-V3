@@ -1,17 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpcMock = vi.hoisted(() => vi.fn());
-const assertOnlineMutationMock = vi.hoisted(() => vi.fn());
 
 vi.mock('./client', () => ({
   supabase: {
     rpc: rpcMock,
     auth: { getSession: async () => ({ data: { session: { user: { id: 'test-user' } } }, error: null }) },
   },
-}));
-
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  assertOnlineMutation: assertOnlineMutationMock,
 }));
 
 import {
@@ -94,8 +89,6 @@ describe('createVentaWithInitialPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: 'venta-1', error: null });
 
     await expect(createVentaWithInitialPaymentRpc(payload)).resolves.toBe('venta-1');
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('create_venta_with_initial_payment', payload);
   });
 
@@ -123,8 +116,6 @@ describe('createVentaRefundRpc', () => {
     rpcMock.mockResolvedValue({ data: 'pago-1', error: null });
 
     await expect(createVentaRefundRpc(refundPayload)).resolves.toBe('pago-1');
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('create_venta_refund', refundPayload);
   });
 
@@ -153,8 +144,6 @@ describe('deleteVentaWithPaymentsRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: null });
 
     await expect(deleteVentaWithPaymentsRpc(payload)).resolves.toBeUndefined();
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('delete_venta_with_payments', payload);
   });
 
@@ -177,8 +166,6 @@ describe('deleteVentaPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: null });
 
     await expect(deleteVentaPaymentRpc(payload)).resolves.toBeUndefined();
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('delete_venta_payment_and_empty_period', payload);
   });
 
@@ -198,8 +185,6 @@ describe('updateVentaPaymentAndPeriodRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: null });
 
     await expect(updateVentaPaymentAndPeriodRpc(updatePaymentPayload)).resolves.toBeUndefined();
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('update_venta_payment_and_period', updatePaymentPayload);
   });
 

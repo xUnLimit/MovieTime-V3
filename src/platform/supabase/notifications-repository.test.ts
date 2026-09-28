@@ -4,8 +4,6 @@ const aggregateRpcMock = vi.hoisted(() => vi.fn());
 const updateEqMock = vi.hoisted(() => vi.fn());
 const updateMock = vi.hoisted(() => vi.fn(() => ({ eq: updateEqMock })));
 const fromMock = vi.hoisted(() => vi.fn<(table: string) => unknown>(() => ({ update: updateMock })));
-const offlineMock = vi.hoisted(() => vi.fn().mockResolvedValue(false));
-const readOfflineMock = vi.hoisted(() => vi.fn());
 const coreMocks = vi.hoisted(() => ({ getById: vi.fn(), getCount: vi.fn(), remove: vi.fn() }));
 
 vi.mock('./client', () => ({
@@ -16,12 +14,6 @@ vi.mock('./client', () => ({
 
 vi.mock('./notifications-rpc-adapter', () => ({
   upsertNotificationAggregateRpc: aggregateRpcMock,
-}));
-
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  assertOnlineMutation: vi.fn(),
-  readOfflineCollection: readOfflineMock,
-  shouldUseOfflineRead: offlineMock,
 }));
 
 vi.mock('./record-core', () => ({
@@ -76,7 +68,6 @@ describe('notifications repository aggregate writes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     fromMock.mockReset().mockImplementation(() => ({ update: updateMock }));
-    offlineMock.mockReset().mockResolvedValue(false);
     aggregateRpcMock.mockResolvedValue('notification-1');
     updateEqMock.mockResolvedValue({ error: null });
   });
@@ -85,8 +76,10 @@ describe('notifications repository aggregate writes', () => {
     coreMocks.getById.mockResolvedValue({ id: 'n1' });
     coreMocks.getCount.mockResolvedValue(3);
     coreMocks.remove.mockResolvedValue(undefined);
-    readOfflineMock.mockResolvedValue([]);
-    offlineMock.mockResolvedValue(true);
+    fromMock
+      .mockReturnValueOnce(readQuery({ data: [], error: null }))
+      .mockReturnValueOnce(readQuery({ data: [], error: null }))
+      .mockReturnValueOnce(readQuery({ data: [], error: null }));
     expect(await getNotificacionById('n1')).toEqual({ id: 'n1' });
     expect(await queryNotificaciones()).toEqual([]);
     expect(await countNotificaciones()).toBe(3);
@@ -94,17 +87,6 @@ describe('notifications repository aggregate writes', () => {
     await updateNotificacion('n1', { leida: true });
     await removeNotificacion('n1');
     expect(coreMocks.remove).toHaveBeenCalledWith('notificaciones', 'n1');
-  });
-
-  it('sorts offline notifications by real and missing creation dates', async () => {
-    offlineMock.mockResolvedValue(true);
-    readOfflineMock.mockResolvedValue([
-      { id: 'old', createdAt: new Date(2026, 0, 1) },
-      { id: 'missing' },
-      { id: 'new', createdAt: new Date(2026, 1, 1) },
-    ]);
-    expect((await queryNotifications<Record<string, unknown>>([])).map((item) => item.id))
-      .toEqual(['new', 'old', 'missing']);
   });
 
   it('queries all notification views, applies all filters and maps entity details', async () => {

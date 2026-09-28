@@ -1,4 +1,3 @@
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import {
   fetchWhatsAppMedia,
   postMarkConversationRead,
@@ -48,24 +47,20 @@ export async function fetchWhatsAppMediaUseCase(mediaId: string): Promise<Blob> 
 // Pasa por el servidor (no un write directo) para avisarle tambien a Meta y
 // mostrar los ✓✓ azules en el telefono del cliente.
 export async function markWhatsAppConversationReadUseCase(waId: string, readAt: string) {
-  assertOnlineMutation();
   const accessToken = await requireAccessToken('marcar la conversación como leída');
   await postMarkConversationRead(accessToken, waId, readAt);
 }
 
 export async function markWhatsAppConversationUnreadUseCase(waId: string, lastInboundAt: string) {
-  assertOnlineMutation();
   await markWhatsAppConversationUnread(waId, lastInboundAt);
 }
 
 // Solo oculta el mensaje en esta bandeja; el cliente lo sigue viendo en su WhatsApp.
 export async function hideWhatsAppMessageUseCase(messageId: string, direction: 'inbound' | 'outbound') {
-  assertOnlineMutation();
   await hideWhatsAppMessage(messageId, direction);
 }
 
 export async function uploadWhatsAppMediaUseCase(file: Blob, filename: string): Promise<WhatsAppUploadResult> {
-  assertOnlineMutation();
   const accessToken = await requireAccessToken('subir un archivo');
   return uploadWhatsAppMedia(accessToken, file, filename);
 }
@@ -95,7 +90,6 @@ export async function sendWhatsAppMessageUseCase(input: {
   message: WhatsAppSendMessage;
   idempotencyKey?: string;
 }): Promise<WhatsAppSendResult> {
-  assertOnlineMutation();
   const accessToken = await requireAccessToken('enviar mensajes');
   return postWhatsAppMessage(accessToken, {
     idempotencyKey: input.idempotencyKey ?? createIdempotencyKey(),

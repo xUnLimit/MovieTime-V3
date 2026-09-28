@@ -11,8 +11,6 @@ import { supabase } from './client';
 import { ENTITIES, type QueryFilter } from './entities';
 import type { Json } from './database.types';
 import type { Categoria, Plan, TipoPlanConfig } from '@/types';
-import { readOfflineCollection, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import {
   deleteCategoriaRpc,
   getCategoriasCountsRpc,
@@ -45,23 +43,10 @@ type CategoriaRow = {
 };
 
 export async function getCategoriasFull(): Promise<Categoria[]> {
-  if (await shouldUseOfflineRead()) {
-    return readOfflineCollection<Categoria>(ENTITIES.CATEGORIAS);
-  }
-
   return jsonCategorias(await getCategoriasFullRpc());
 }
 
 export async function getCategoriasCounts() {
-  if (await shouldUseOfflineRead()) {
-    const categorias = await readOfflineCollection<Categoria>(ENTITIES.CATEGORIAS);
-    return {
-      totalCategorias: categorias.length,
-      categoriasClientes: categorias.filter((categoria) => categoria.tipo === 'cliente').length,
-      categoriasRevendedores: categorias.filter((categoria) => categoria.tipo === 'revendedor').length,
-    };
-  }
-
   const data = await getCategoriasCountsRpc();
   const counts = data && typeof data === 'object' && !Array.isArray(data)
     ? data as Record<string, unknown>
@@ -77,7 +62,6 @@ export async function getCategoriasCounts() {
 export async function createCategoriaRecord(
   categoria: Pick<Categoria, 'nombre' | 'tipo' | 'tipoCategoria' | 'notas' | 'activo'>
 ) {
-  assertOnlineMutation();
   const { data, error } = await supabase
     .from('categorias')
     .insert({
@@ -95,7 +79,6 @@ export async function createCategoriaRecord(
 }
 
 export async function updateCategoriaRecord(id: string, updates: Partial<Categoria>) {
-  assertOnlineMutation();
   const { data, error } = await supabase
     .from('categorias')
     .update({
@@ -195,7 +178,6 @@ export async function buildCategorias(categoriasRows: CategoriaRow[]): Promise<C
 }
 
 export async function upsertCategoriaPlanes(categoriaId: string, tiposPlanes: TipoPlanConfig[], planes: Plan[]) {
-  assertOnlineMutation();
   await deactivateMissingCategoriaPlanes(categoriaId, tiposPlanes, planes);
 
   if (tiposPlanes.length > 0) {

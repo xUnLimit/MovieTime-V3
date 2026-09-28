@@ -1,17 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpcMock = vi.hoisted(() => vi.fn());
-const assertOnlineMutationMock = vi.hoisted(() => vi.fn());
 
 vi.mock('./client', () => ({
   supabase: {
     rpc: rpcMock,
     auth: { getSession: async () => ({ data: { session: { user: { id: 'test-user' } } }, error: null }) },
   },
-}));
-
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  assertOnlineMutation: assertOnlineMutationMock,
 }));
 
 import {
@@ -76,8 +71,6 @@ describe('createServicioWithInitialPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: 'servicio-1', error: null });
 
     await expect(createServicioWithInitialPaymentRpc(payload)).resolves.toBe('servicio-1');
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('create_servicio_with_initial_payment', payload);
   });
 
@@ -106,8 +99,6 @@ describe('deleteServicioWithPaymentsRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: null });
 
     await expect(deleteServicioWithPaymentsRpc(payload)).resolves.toBeUndefined();
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('delete_servicio_with_payments', payload);
   });
 
@@ -130,8 +121,6 @@ describe('deleteServicioPaymentRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: null });
 
     await expect(deleteServicioPaymentRpc(payload)).resolves.toBeUndefined();
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('delete_servicio_payment_and_empty_period', payload);
   });
 
@@ -151,8 +140,6 @@ describe('updateServicioPaymentAndPeriodRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: null });
 
     await expect(updateServicioPaymentAndPeriodRpc(updatePaymentPayload)).resolves.toBeUndefined();
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith(
       'update_servicio_payment_and_period',
       updatePaymentPayload

@@ -1,4 +1,3 @@
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import { assertRpcStringId } from '@/platform/utils/safety';
 
 import { supabase } from './client';
@@ -36,7 +35,6 @@ export class NotificationAggregateRpcError extends Error {
 export async function upsertNotificationAggregateRpc(
   payload: NotificationAggregateRpcPayload,
 ): Promise<string> {
-  assertOnlineMutation();
   const { data, error } = await supabase.rpc('upsert_notification_aggregate', payload);
   if (error) throw new NotificationAggregateRpcError(error);
   return assertRpcStringId(data, 'upsert_notification_aggregate');

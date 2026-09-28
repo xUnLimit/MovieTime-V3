@@ -26,19 +26,11 @@ async function unregisterDevelopmentServiceWorkers() {
 
 export function PwaBootstrap() {
   const {
-    hydrateOfflineState,
     isSupported,
     setInstalled,
     setNetworkStatus,
     setNotificationPermission,
   } = usePwaStore();
-
-  useEffect(() => {
-    safeAsyncSideEffect(hydrateOfflineState(), {
-      operation: 'hydrateOfflineState',
-      entity: 'pwa',
-    });
-  }, [hydrateOfflineState]);
 
   useEffect(() => {
     if (!isSupported || typeof navigator === 'undefined') return;

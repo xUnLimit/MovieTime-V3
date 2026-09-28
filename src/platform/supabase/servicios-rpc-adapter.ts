@@ -1,4 +1,3 @@
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import type { Database } from '@/platform/supabase/database.types';
 
 import { executeIdempotentRpc } from './idempotent-rpc';
@@ -91,7 +90,6 @@ const updateServicioPaymentAndPeriodRpcClient =
 export async function createServicioWithInitialPaymentRpc(
   payload: CreateServicioWithInitialPaymentPayload
 ): Promise<string> {
-  assertOnlineMutation();
   return executeIdempotentRpc('create_servicio_with_initial_payment', payload, (request) =>
     servicioInitialPaymentRpcClient.rpc('create_servicio_with_initial_payment', request));
 }
@@ -99,7 +97,6 @@ export async function createServicioWithInitialPaymentRpc(
 export async function deleteServicioWithPaymentsRpc(
   payload: DeleteServicioWithPaymentsPayload
 ): Promise<void> {
-  assertOnlineMutation();
   const { error } = await deleteServicioWithPaymentsRpcClient.rpc(
     'delete_servicio_with_payments',
     payload
@@ -110,7 +107,6 @@ export async function deleteServicioWithPaymentsRpc(
 export async function deleteServicioPaymentRpc(
   payload: DeleteServicioPaymentPayload
 ): Promise<void> {
-  assertOnlineMutation();
   const { error } = await deleteServicioPaymentRpcClient.rpc(
     'delete_servicio_payment_and_empty_period',
     payload
@@ -121,7 +117,6 @@ export async function deleteServicioPaymentRpc(
 export async function updateServicioPaymentAndPeriodRpc(
   payload: UpdateServicioPaymentAndPeriodPayload
 ): Promise<void> {
-  assertOnlineMutation();
   const { error } = await updateServicioPaymentAndPeriodRpcClient.rpc(
     'update_servicio_payment_and_period',
     payload

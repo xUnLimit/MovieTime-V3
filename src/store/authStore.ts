@@ -11,13 +11,6 @@ import {
   signInUseCase,
   signOutUseCase,
 } from '@/application/use-cases/auth-use-cases';
-import {
-  clearOfflineAuthUser,
-  getOfflineAuthDecision,
-  loadOfflineAuthUser,
-  saveOfflineAuthUser,
-  setOfflineAuthSessionActive,
-} from '@/modules/pwa/offline-auth';
 import { logAsyncSideEffectError } from '@/platform/utils/safety';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
@@ -35,7 +28,6 @@ function clearAllAuthStorage() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('auth-storage');
   sessionStorage.removeItem('auth-storage');
-  clearOfflineAuthUser();
 }
 
 function clearDashboardToastSessionState() {
@@ -43,38 +35,7 @@ function clearDashboardToastSessionState() {
   sessionStorage.removeItem(DASHBOARD_TOAST_SESSION_KEY);
 }
 
-function isBrowserOnline() {
-  if (typeof navigator === 'undefined') return true;
-  return navigator.onLine;
-}
-
 type AuthSetter = (partial: Partial<AuthState>) => void;
-
-/**
- * Intenta preservar la sesion offline en memoria cuando no se puede validar el perfil
- * (sin conexion). Devuelve true si manejo el estado (preserve/keep), false si se debe limpiar.
- * Centraliza la decision que antes estaba duplicada en ambas ramas de onAuthStateChange.
- */
-function tryPreserveOfflineSession(set: AuthSetter): boolean {
-  const current = useAuthStore.getState();
-  const offlineUser = current.user ?? loadOfflineAuthUser();
-  const decision = getOfflineAuthDecision({
-    isOnline: isBrowserOnline(),
-    hasPersistedUser: Boolean(offlineUser),
-  });
-
-  if (decision === 'clear') return false;
-
-  set({
-    user: offlineUser,
-    isAuthenticated: decision === 'preserve',
-    isLoading: false,
-    isHydrated: true,
-    authRecoveryError: null,
-  });
-  setOfflineAuthSessionActive(decision === 'preserve');
-  return true;
-}
 
 interface AuthState {
   user: User | null;
@@ -85,7 +46,6 @@ interface AuthState {
 
   // Actions
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
-  restoreOfflineSession: () => void;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   checkAuth: () => void;
@@ -155,8 +115,6 @@ async function loadProfileForSession(
     const user = await loadActiveProfileUseCase();
     if (revision !== authRevision) return;
 
-    saveOfflineAuthUser(user);
-    setOfflineAuthSessionActive(false);
     set({
       user,
       isAuthenticated: true,
@@ -205,7 +163,6 @@ function handleAuthEvent(set: AuthSetter, event: AuthChangeEvent, session: Sessi
   cancelProfileRetry();
 
   if (!session) {
-    if (event !== 'SIGNED_OUT' && tryPreserveOfflineSession(set)) return;
     setSignedOutState(set);
     return;
   }
@@ -270,9 +227,6 @@ export const useAuthStore = create<AuthState>()(
             session = await signInUseCase(email, password);
             const user = await loadActiveProfileUseCase();
 
-            saveOfflineAuthUser(user);
-            setOfflineAuthSessionActive(false);
-
             set({
               user,
               isAuthenticated: true,
@@ -312,26 +266,6 @@ export const useAuthStore = create<AuthState>()(
             const message = error instanceof Error ? error.message : 'Error al iniciar sesion';
             throw new Error(message);
           }
-        },
-
-        restoreOfflineSession: () => {
-          if (isBrowserOnline()) {
-            throw new Error('El acceso offline solo aplica cuando no hay conexion.');
-          }
-
-          const user = loadOfflineAuthUser();
-          if (!user) {
-            throw new Error('Este dispositivo no tiene un usuario offline guardado. Inicia sesion con internet primero.');
-          }
-
-          set({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-            isHydrated: true,
-            authRecoveryError: null,
-          });
-          setOfflineAuthSessionActive(true);
         },
 
         logout: async () => {

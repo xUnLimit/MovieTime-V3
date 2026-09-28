@@ -1,13 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  from: vi.fn(), offline: vi.fn(), getOffline: vi.fn(), assertOnline: vi.fn(),
+  from: vi.fn(),
 }));
 vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  shouldUseOfflineRead: mocks.offline, getOfflineConfig: mocks.getOffline,
-  assertOnlineMutation: mocks.assertOnline,
-}));
 
 import {
   getConfig, updateExecutivePushSettings, updateNotificationLeadDays,
@@ -44,18 +40,9 @@ const config = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.from.mockReset();
-  mocks.offline.mockReset().mockResolvedValue(false);
 });
 
 describe('config repository', () => {
-  it('returns an available offline config without querying Supabase', async () => {
-    const offline = { id: 'global' };
-    mocks.offline.mockResolvedValue(true);
-    mocks.getOffline.mockResolvedValue(offline);
-    expect(await getConfig()).toBe(offline);
-    expect(mocks.from).not.toHaveBeenCalled();
-  });
-
   it('maps database config, rates and complete executive settings', async () => {
     mocks.from
       .mockReturnValueOnce(readQuery({ data: config, error: null }))
@@ -74,9 +61,7 @@ describe('config repository', () => {
     expect(result.tasasCambio.ultimaActualizacion).toEqual(new Date('2026-01-03T00:00:00Z'));
   });
 
-  it('uses executive defaults and continues online when offline config is absent', async () => {
-    mocks.offline.mockResolvedValue(true);
-    mocks.getOffline.mockResolvedValue(null);
+  it('uses executive defaults when settings are missing', async () => {
     const sparse = { ...config,
       executive_push_enabled: null, executive_push_send_time: null, executive_push_window_start: null,
       executive_push_window_end: null, executive_push_interval_hours: null, executive_push_timezone: null,
@@ -129,7 +114,6 @@ describe('config repository', () => {
     expect(hour.update).toHaveBeenCalledWith({ hora_envio: 10 });
     expect(prefix.update).toHaveBeenCalledWith({ whatsapp_prefijo: '+34' });
     expect(executive.update).toHaveBeenCalledWith({ executive_push_enabled: false });
-    expect(mocks.assertOnline).toHaveBeenCalledTimes(5);
   });
 
   it('propagates config update errors', async () => {

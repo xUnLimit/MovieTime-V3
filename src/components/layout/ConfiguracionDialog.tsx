@@ -10,7 +10,6 @@ import {
 import {
   DashboardViewSection,
   DevicePushSection,
-  OfflineSection,
 } from './ConfiguracionDialogBasicSections';
 import { ExecutivePushSection } from './ConfiguracionDialogExecutiveSection';
 import { useConfiguracionDialogController } from './useConfiguracionDialogController';
@@ -29,7 +28,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
         <DialogHeader className="shrink-0 border-b bg-background px-6 pb-4 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:pt-6">
           <DialogTitle>Configuracion</DialogTitle>
           <DialogDescription>
-            Ajustes del dashboard, modo offline y push ejecutivas.
+            Ajustes del dashboard y push ejecutivas.
           </DialogDescription>
         </DialogHeader>
 
@@ -38,15 +37,6 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
             availableYears={controller.availableYears}
             selectedYear={controller.selectedYear}
             setSelectedYear={controller.setSelectedYear}
-          />
-          <OfflineSection
-            handleOfflineRefresh={controller.handleOfflineRefresh}
-            isInstalled={controller.isInstalled}
-            isOfflineReady={controller.isOfflineReady}
-            isOnline={controller.isOnline}
-            lastSyncAt={controller.lastSyncAt}
-            syncProgress={controller.syncProgress}
-            syncStatus={controller.syncStatus}
           />
           <DevicePushSection
             handlePushSubscriptionToggle={controller.handlePushSubscriptionToggle}

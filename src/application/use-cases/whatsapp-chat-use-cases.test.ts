@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const deps = vi.hoisted(() => ({
-  assertOnlineMutation: vi.fn(),
   postWhatsAppMessage: vi.fn(),
   postMarkConversationRead: vi.fn(),
   uploadWhatsAppMedia: vi.fn(),
@@ -15,7 +14,6 @@ const deps = vi.hoisted(() => ({
   fetchVentaDetalleQuery: vi.fn(),
 }));
 
-vi.mock('@/modules/pwa/offline-copy', () => ({ assertOnlineMutation: deps.assertOnlineMutation }));
 vi.mock('@/platform/api/whatsapp-messages-client', () => ({
   postWhatsAppMessage: deps.postWhatsAppMessage,
   postMarkConversationRead: deps.postMarkConversationRead,
@@ -46,7 +44,6 @@ import {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  deps.assertOnlineMutation.mockImplementation(() => undefined);
   deps.getCurrentSession.mockResolvedValue({ access_token: 'session-access' });
 });
 
@@ -64,10 +61,6 @@ describe('WhatsApp chat use cases', () => {
     await markWhatsAppConversationReadUseCase('507', '2026-09-27T12:00:00Z');
     expect(deps.postMarkConversationRead).toHaveBeenCalledWith('session-access', '507', '2026-09-27T12:00:00Z');
 
-    deps.assertOnlineMutation.mockImplementation(() => { throw new Error('offline'); });
-    await expect(markWhatsAppConversationReadUseCase('507', 'x')).rejects.toThrow('offline');
-
-    deps.assertOnlineMutation.mockImplementation(() => undefined);
     deps.getCurrentSession.mockResolvedValueOnce(null);
     await expect(markWhatsAppConversationReadUseCase('507', 'x'))
       .rejects.toThrow('No hay una sesión activa para marcar la conversación como leída.');
@@ -80,9 +73,6 @@ describe('WhatsApp chat use cases', () => {
       mediaId: 'm1', mimeType: 'image/jpeg', filename: 'foto.jpg',
     });
     expect(deps.uploadWhatsAppMedia).toHaveBeenCalledWith('session-access', 'blob', 'foto.jpg');
-
-    deps.assertOnlineMutation.mockImplementation(() => { throw new Error('offline'); });
-    await expect(uploadWhatsAppMediaUseCase('blob' as unknown as Blob, 'foto.jpg')).rejects.toThrow('offline');
   });
 
   it('sends with the session token and the caller idempotency key', async () => {
@@ -101,13 +91,10 @@ describe('WhatsApp chat use cases', () => {
     expect(deps.postWhatsAppMessage).toHaveBeenCalledWith('session-access', expect.objectContaining({ idempotencyKey: 'generated-key' }));
   });
 
-  it('refuses to send offline or without a session', async () => {
+  it('refuses to send without a session', async () => {
     deps.getCurrentSession.mockResolvedValueOnce(null);
     await expect(sendWhatsAppMessageUseCase({ to: '507', message: { kind: 'text', text: 'x' } }))
       .rejects.toThrow('No hay una sesión activa');
-
-    deps.assertOnlineMutation.mockImplementation(() => { throw new Error('offline'); });
-    await expect(sendWhatsAppMessageUseCase({ to: '507', message: { kind: 'text', text: 'x' } })).rejects.toThrow('offline');
     expect(deps.postWhatsAppMessage).not.toHaveBeenCalled();
   });
 
@@ -121,22 +108,14 @@ describe('WhatsApp chat use cases', () => {
     await expect(fetchWhatsAppMediaUseCase('123')).rejects.toThrow('No hay una sesión activa para ver archivos.');
   });
 
-  it('marks a conversation unread only when online', async () => {
+  it('marks a conversation unread', async () => {
     await markWhatsAppConversationUnreadUseCase('507', '2026-09-27T12:00:00Z');
     expect(deps.markWhatsAppConversationUnread).toHaveBeenCalledWith('507', '2026-09-27T12:00:00Z');
-
-    deps.assertOnlineMutation.mockImplementation(() => {
-      throw new Error('offline');
-    });
-    await expect(markWhatsAppConversationUnreadUseCase('507', 'x')).rejects.toThrow('offline');
   });
 
-  it('hides a message from the inbox only, and only when online', async () => {
+  it('hides a message from the inbox only', async () => {
     await hideWhatsAppMessageUseCase('m1', 'inbound');
     expect(deps.hideWhatsAppMessage).toHaveBeenCalledWith('m1', 'inbound');
-
-    deps.assertOnlineMutation.mockImplementation(() => { throw new Error('offline'); });
-    await expect(hideWhatsAppMessageUseCase('m1', 'outbound')).rejects.toThrow('offline');
   });
 
   it('builds the message context from the sale detail', async () => {

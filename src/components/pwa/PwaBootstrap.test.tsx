@@ -9,7 +9,6 @@ vi.mock('@/platform/config', () => ({
 }));
 
 const pwaStoreMocks = vi.hoisted(() => ({
-  hydrateOfflineState: vi.fn(),
   setInstalled: vi.fn(),
   setNetworkStatus: vi.fn(),
   setNotificationPermission: vi.fn(),
@@ -17,7 +16,6 @@ const pwaStoreMocks = vi.hoisted(() => ({
 
 vi.mock('@/store/pwaStore', () => ({
   usePwaStore: () => ({
-    hydrateOfflineState: pwaStoreMocks.hydrateOfflineState,
     isSupported: true,
     setInstalled: pwaStoreMocks.setInstalled,
     setNetworkStatus: pwaStoreMocks.setNetworkStatus,
@@ -35,7 +33,6 @@ describe('PwaBootstrap', () => {
   const cachesDelete = vi.fn();
 
   beforeEach(() => {
-    pwaStoreMocks.hydrateOfflineState.mockReset().mockResolvedValue(undefined);
     pwaStoreMocks.setInstalled.mockReset();
     pwaStoreMocks.setNetworkStatus.mockReset();
     pwaStoreMocks.setNotificationPermission.mockReset();

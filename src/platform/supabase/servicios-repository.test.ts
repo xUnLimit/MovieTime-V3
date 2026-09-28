@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(), getAll: vi.fn(), getById: vi.fn(), query: vi.fn(), count: vi.fn(),
-  create: vi.fn(), update: vi.fn(), archive: vi.fn(), assertOnline: vi.fn(),
+  create: vi.fn(), update: vi.fn(), archive: vi.fn(),
   deleteAll: vi.fn(), createInitial: vi.fn(), deletePayment: vi.fn(), updatePayment: vi.fn(),
 }));
 vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
@@ -11,7 +11,6 @@ vi.mock('./record-core', () => ({
   getCount: mocks.count, create: mocks.create, update: mocks.update,
   archiveRecord: mocks.archive, logCacheHit: vi.fn(),
 }));
-vi.mock('@/modules/pwa/offline-copy', () => ({ assertOnlineMutation: mocks.assertOnline }));
 vi.mock('./servicios-rpc-adapter', () => ({
   deleteServicioWithPaymentsRpc: mocks.deleteAll,
   createServicioWithInitialPaymentRpc: mocks.createInitial,

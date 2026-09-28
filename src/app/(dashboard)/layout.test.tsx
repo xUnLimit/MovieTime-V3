@@ -18,7 +18,6 @@ vi.mock('@/components/layout/Sidebar', () => ({
     <aside data-testid="sidebar" data-open={mobileOpen} />
   ),
 }));
-vi.mock('@/components/pwa/PwaStatusBanner', () => ({ PwaStatusBanner: () => null }));
 vi.mock('@/components/shared/ErrorBoundary', () => ({
   ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
 }));

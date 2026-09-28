@@ -2,7 +2,6 @@ import { supabase } from './client';
 import { ENTITIES, type CollectionName } from './entities';
 import { readField, normalizeFilterValue } from './filters';
 import type { Database } from './database.types';
-import { getOfflinePaginated, shouldUseOfflineRead, readOfflineCollection } from '@/modules/pwa/offline-copy';
 import { mapPaginatedRow, reviveDates, toCamelCaseObject } from './pagination-mappers';
 import type { FilterOption } from '@/types/pagination';
 export type { FilterOption } from '@/types/pagination';
@@ -60,10 +59,6 @@ export async function getPaginated<T>(
   collectionName: string,
   options: PaginationOptions
 ): Promise<PaginatedResult<T>> {
-  if (await shouldUseOfflineRead()) {
-    return getOfflinePaginated<T>(collectionName as CollectionName, options);
-  }
-
   const {
     pageSize,
     orderByField = 'createdAt',
@@ -108,11 +103,6 @@ export async function getCount(
   collectionName: string,
   filters: FilterOption[] = []
 ): Promise<number> {
-  if (await shouldUseOfflineRead()) {
-    const rows = await readOfflineCollection(collectionName as CollectionName, filters as never);
-    return rows.length;
-  }
-
   const entity = READ_ENTITY_BY_COLLECTION[collectionName] ?? collectionName;
   let query = supabase
     .from(entity as never)

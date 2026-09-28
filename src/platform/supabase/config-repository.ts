@@ -1,16 +1,9 @@
 import { supabase } from './client';
 import type { Configuracion, TasasCambio } from '@/types';
-import { getOfflineConfig, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 
 const CONFIG_DOC_ID = 'global';
 
 export async function getConfig(): Promise<Configuracion> {
-  if (await shouldUseOfflineRead()) {
-    const offline = await getOfflineConfig();
-    if (offline) return offline;
-  }
-
   const [{ data: config, error: configError }, { data: rates, error: ratesError }] = await Promise.all([
     supabase.from('config').select('*').eq('id', CONFIG_DOC_ID).single(),
     supabase.from('exchange_rates').select('*'),
@@ -71,7 +64,6 @@ export async function getConfig(): Promise<Configuracion> {
 }
 
 export async function upsertExchangeRates(tasasUpdates: Partial<TasasCambio>) {
-  assertOnlineMutation();
   const rows = Object.entries(tasasUpdates)
     .filter(([key, value]) => key !== 'ultimaActualizacion' && typeof value === 'number')
     .map(([currencyPair, rate]) => ({
@@ -88,17 +80,14 @@ export async function upsertExchangeRates(tasasUpdates: Partial<TasasCambio>) {
 }
 
 export async function updateNotificationLeadDays(diasAnticipacion: number) {
-  assertOnlineMutation();
   await updateConfig({ notificaciones_dias_anticipacion: diasAnticipacion });
 }
 
 export async function updateNotificationSendHour(horaEnvio: number) {
-  assertOnlineMutation();
   await updateConfig({ hora_envio: horaEnvio });
 }
 
 export async function updateWhatsappPrefix(prefijo: string) {
-  assertOnlineMutation();
   await updateConfig({ whatsapp_prefijo: prefijo });
 }
 
@@ -116,7 +105,6 @@ export async function updateExecutivePushSettings(payload: {
   executive_push_last_sent_date?: string | null;
   executive_push_last_sent_slot?: string | null;
 }) {
-  assertOnlineMutation();
   await updateConfig(payload);
 }
 

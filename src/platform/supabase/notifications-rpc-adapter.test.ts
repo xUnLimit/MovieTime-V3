@@ -1,16 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpcMock = vi.hoisted(() => vi.fn());
-const assertOnlineMutationMock = vi.hoisted(() => vi.fn());
 
 vi.mock('./client', () => ({
   supabase: {
     rpc: rpcMock,
   },
-}));
-
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  assertOnlineMutation: assertOnlineMutationMock,
 }));
 
 import {
@@ -49,8 +44,6 @@ describe('upsertNotificationAggregateRpc', () => {
     rpcMock.mockResolvedValue({ data: 'notification-existing', error: null });
 
     await expect(upsertNotificationAggregateRpc(payload)).resolves.toBe('notification-existing');
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('upsert_notification_aggregate', payload);
   });

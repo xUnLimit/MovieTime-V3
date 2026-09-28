@@ -4,8 +4,6 @@ import { reviveDates, toNullableDateOnly } from './dates';
 import { snakeField } from './filters';
 import { ENTITIES, type PublicViewName, type QueryBuilder, type QueryFilter } from './entities';
 import type { Json } from './database.types';
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
-import { readOfflineCollection, shouldUseOfflineRead } from '@/modules/pwa/offline-copy';
 import { upsertNotificationAggregateRpc } from './notifications-rpc-adapter';
 import {
   getById as coreGetById,
@@ -30,17 +28,6 @@ export const updateNotificacion = <T extends Record<string, unknown>>(id: string
 export const removeNotificacion = (id: string) => coreRemove(ENTITIES.NOTIFICACIONES, id);
 
 export async function queryNotifications<T>(filters: QueryFilter[]): Promise<T[]> {
-  if (await shouldUseOfflineRead()) {
-    const rows = await readOfflineCollection<T>(ENTITIES.NOTIFICACIONES, filters);
-    return rows.sort((a, b) => {
-      const left = (a as Record<string, unknown>).createdAt;
-      const right = (b as Record<string, unknown>).createdAt;
-      const leftTime = left instanceof Date ? left.getTime() : 0;
-      const rightTime = right instanceof Date ? right.getTime() : 0;
-      return rightTime - leftTime;
-    });
-  }
-
   const entidad = filters.find((filter) => filter.field === 'entidad' && filter.operator === '==')
     ?.value as string | undefined;
   const entities = entidad ? notificationViewsFor(entidad) : notificationViewsFor();
@@ -95,7 +82,6 @@ export async function updateNotification(id: string, payload: Record<string, unk
     return;
   }
 
-  assertOnlineMutation();
   const base = normalizeNotificationBasePayload(payload);
   if (Object.keys(base).length > 0) {
     const { error } = await supabase.from('notificaciones').update(base as never).eq('id', id);

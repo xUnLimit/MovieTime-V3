@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(), getAll: vi.fn(), getById: vi.fn(), query: vi.fn(), count: vi.fn(),
-  create: vi.fn(), update: vi.fn(), offline: vi.fn(), readOffline: vi.fn(), assertOnline: vi.fn(),
+  create: vi.fn(), update: vi.fn(),
   deleteRpc: vi.fn(), countsRpc: vi.fn(), fullRpc: vi.fn(),
 }));
 
@@ -10,10 +10,6 @@ vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
 vi.mock('./record-core', () => ({
   getAll: mocks.getAll, getById: mocks.getById, queryDocuments: mocks.query,
   getCount: mocks.count, create: mocks.create, update: mocks.update, logCacheHit: vi.fn(),
-}));
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  shouldUseOfflineRead: mocks.offline, readOfflineCollection: mocks.readOffline,
-  assertOnlineMutation: mocks.assertOnline,
 }));
 vi.mock('./categorias-rpc-adapter', () => ({
   deleteCategoriaRpc: mocks.deleteRpc,
@@ -54,7 +50,6 @@ const categoryRow = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.from.mockReset();
-  mocks.offline.mockReset().mockResolvedValue(false);
 });
 
 describe('category repository facades', () => {
@@ -72,17 +67,6 @@ describe('category repository facades', () => {
     expect(await createCategoria({ nombre: 'Nueva' })).toBe('new');
     await updateCategoria('c1', { nombre: 'Editada' });
     expect(mocks.update).toHaveBeenCalledWith('categorias', 'c1', { nombre: 'Editada' });
-  });
-
-  it('uses and summarizes the offline category copy', async () => {
-    mocks.offline.mockResolvedValue(true);
-    mocks.readOffline.mockResolvedValue([
-      { id: '1', tipo: 'cliente' }, { id: '2', tipo: 'revendedor' }, { id: '3', tipo: 'cliente' },
-    ]);
-    expect(await getCategoriasFull()).toHaveLength(3);
-    expect(await getCategoriasCounts()).toEqual({
-      totalCategorias: 3, categoriasClientes: 2, categoriasRevendedores: 1,
-    });
   });
 
   it('normalizes full RPC JSON and invalid values', async () => {
@@ -132,7 +116,6 @@ describe('category repository facades', () => {
       nombre: 'Nueva', tipo: 'revendedor', tipoCategoria: 'otros', notas: 'n', activo: false,
     })).toEqual({ id: 'c1', nombre: 'Nueva' });
     await deleteCategoriaRecord('c1');
-    expect(mocks.assertOnline).toHaveBeenCalledTimes(2);
     expect(mocks.deleteRpc).toHaveBeenCalledWith('c1');
     expect(updateQuery.update).toHaveBeenCalledWith({
       nombre: 'Nueva', tipo: 'revendedor', tipo_categoria: 'otros', notas: 'n', activo: false,
@@ -207,7 +190,6 @@ describe('category aggregation and plans', () => {
     expect(deactivateTypes.in).toHaveBeenCalledWith('id', ['old-type']);
     expect(upsertTypes.upsert).toHaveBeenCalled();
     expect(upsertPlans.upsert).toHaveBeenCalled();
-    expect(mocks.assertOnline).toHaveBeenCalled();
   });
 
   it('does no writes when no existing or requested plans exist', async () => {

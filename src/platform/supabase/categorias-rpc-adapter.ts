@@ -1,4 +1,3 @@
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import type { Json } from '@/platform/supabase/database.types';
 
 import { typedRpcClient } from './rpc-client';
@@ -40,7 +39,6 @@ export async function getCategoriasCountsRpc(): Promise<Json | null> {
 }
 
 export async function deleteCategoriaRpc(categoriaId: string): Promise<void> {
-  assertOnlineMutation();
   const { error } = await deleteCategoriaRpcClient.rpc('delete_categoria', {
     p_categoria_id: categoriaId,
   });

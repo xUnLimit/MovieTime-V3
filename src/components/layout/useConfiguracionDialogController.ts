@@ -43,14 +43,8 @@ export function useConfiguracionDialogController({
     isInstalled,
     isOnline,
     isPushSupported,
-    isOfflineReady,
-    lastSyncAt,
-    syncStatus,
-    syncProgress,
     notificationPermission,
-    hydrateOfflineState,
     setNotificationPermission,
-    syncOfflineData,
   } = usePwaStore();
 
   const [pushSubscribed, setPushSubscribed] = useState(false);
@@ -66,10 +60,6 @@ export function useConfiguracionDialogController({
       operation: 'fetchConfig',
       entity: 'config',
     });
-    safeAsyncSideEffect(hydrateOfflineState(), {
-      operation: 'hydrateOfflineState',
-      entity: 'pwa',
-    });
     safeAsyncSideEffect(
       getPushSubscriptionStatus().then((status) => {
         setPushSubscribed(status.subscribed);
@@ -77,7 +67,7 @@ export function useConfiguracionDialogController({
       }),
       { operation: 'getPushSubscriptionStatus', entity: 'pwa' },
     );
-  }, [open, refetchConfig, hydrateOfflineState, setNotificationPermission]);
+  }, [open, refetchConfig, setNotificationPermission]);
 
   const availableYears = useMemo(() => {
     return getAvailableDashboardYears(stats?.ingresosPorMes);
@@ -101,15 +91,6 @@ export function useConfiguracionDialogController({
       setDraftIntervalHours(executivePush.intervalHours);
     }
   }, [executivePush?.windowStart, executivePush?.windowEnd, executivePush?.intervalHours]);
-
-  const handleOfflineRefresh = async () => {
-    try {
-      await syncOfflineData();
-      toast.success('Copia offline actualizada.');
-    } catch (error) {
-      toast.error(getPublicErrorMessage(error, 'No se pudo actualizar la copia offline.'));
-    }
-  };
 
   const handlePushSubscriptionToggle = async (enabled: boolean) => {
     try {
@@ -224,10 +205,6 @@ export function useConfiguracionDialogController({
     isInstalled,
     isOnline,
     isPushSupported,
-    isOfflineReady,
-    lastSyncAt,
-    syncStatus,
-    syncProgress,
     notificationPermission,
     pushSubscribed,
     isSavingExecutiveSchedule,
@@ -241,7 +218,6 @@ export function useConfiguracionDialogController({
     executivePush,
     executivePushConfigReady,
     executivePushStatus,
-    handleOfflineRefresh,
     handlePushSubscriptionToggle,
     handleExecutivePushToggle,
     handleScheduleCommit,

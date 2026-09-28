@@ -1,16 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpcMock = vi.hoisted(() => vi.fn());
-const assertOnlineMutationMock = vi.hoisted(() => vi.fn());
 
 vi.mock('./client', () => ({
   supabase: {
     rpc: rpcMock,
   },
-}));
-
-vi.mock('@/modules/pwa/offline-copy', () => ({
-  assertOnlineMutation: assertOnlineMutationMock,
 }));
 
 import {
@@ -70,8 +65,6 @@ describe('deleteCategoriaRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: null });
 
     await expect(deleteCategoriaRpc('categoria-1')).resolves.toBeUndefined();
-
-    expect(assertOnlineMutationMock).toHaveBeenCalledTimes(1);
     expect(rpcMock).toHaveBeenCalledWith('delete_categoria', {
       p_categoria_id: 'categoria-1',
     });

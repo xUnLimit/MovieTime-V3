@@ -12,7 +12,6 @@ import { supabase } from './client';
 import { timestampToDate, toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
 import { assertRecordId } from '@/platform/utils/safety';
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import {
   createPagoVenta as createPagoVentaRecord,
   type CreatePagoVentaInput,
@@ -90,7 +89,6 @@ export async function updateLatestVentaPeriodo(
   ventaId: string,
   payload: VentaPeriodoUpdate
 ): Promise<void> {
-  assertOnlineMutation();
   const { data: latestPeriod, error: selectError } = await supabase
     .from('venta_periodos')
     .select('id')
@@ -109,7 +107,6 @@ export async function updateVentaPeriodoById(
   periodoId: string,
   payload: VentaPeriodoUpdate
 ): Promise<void> {
-  assertOnlineMutation();
   const updatePayload: Record<string, unknown> = {
     fecha_inicio: toDateOnly(payload.fechaInicio),
     fecha_fin: toDateOnly(payload.fechaVencimiento),
@@ -144,7 +141,6 @@ export async function updateVentaPaymentAndPeriod(
     notas?: string | null;
   }
 ): Promise<void> {
-  assertOnlineMutation();
   await updateVentaPaymentAndPeriodRpc({
     p_pago_id: pagoId,
     p_fecha_inicio: toDateOnly(payload.fechaInicio),

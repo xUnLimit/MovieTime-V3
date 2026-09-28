@@ -5,7 +5,6 @@ const createServicioPaymentRpc = vi.hoisted(() => vi.fn());
 const createVentaPaymentRpc = vi.hoisted(() => vi.fn());
 
 vi.mock('@/modules/payments', () => ({ convertToUSD }));
-vi.mock('@/modules/pwa/offline-copy', () => ({ assertOnlineMutation: vi.fn() }));
 vi.mock('./payments-rpc-adapter', () => ({ createServicioPaymentRpc, createVentaPaymentRpc }));
 
 import { createPagoServicio, createPagoVenta } from './payments-repository';

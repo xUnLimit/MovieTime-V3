@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const offlineRead = vi.hoisted(() => ({
-  getOfflineDashboardHome: vi.fn(),
-  shouldUseOfflineRead: vi.fn(),
-}));
-
 const dashboardRpc = vi.hoisted(() => ({
   getDashboardChurnStatsRpc: vi.fn(),
   getDashboardHomeRpc: vi.fn(),
@@ -12,7 +7,6 @@ const dashboardRpc = vi.hoisted(() => ({
   getDashboardStatsLiveRpc: vi.fn(),
 }));
 
-vi.mock('@/modules/pwa/offline-copy', () => offlineRead);
 vi.mock('@/platform/supabase/dashboard-rpc-adapter', () => dashboardRpc);
 
 import {
@@ -26,8 +20,6 @@ import {
 describe('dashboard-read-models', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    offlineRead.shouldUseOfflineRead.mockResolvedValue(false);
-    offlineRead.getOfflineDashboardHome.mockResolvedValue(null);
     dashboardRpc.getDashboardChurnStatsRpc.mockResolvedValue(null);
     dashboardRpc.getDashboardStatsSnapshotRpc.mockResolvedValue(null);
     dashboardRpc.getDashboardStatsLiveRpc.mockResolvedValue(null);
@@ -39,35 +31,6 @@ describe('dashboard-read-models', () => {
 
     expect(getMesKeyFromDate(date)).toBe('2026-05');
     expect(getDiaKeyFromDate(date)).toBe('2026-05-23');
-  });
-
-  it('returns offline dashboard stats when offline reads are active', async () => {
-    offlineRead.shouldUseOfflineRead.mockResolvedValue(true);
-    offlineRead.getOfflineDashboardHome.mockResolvedValue({
-      stats: {
-        gastosTotal: 3,
-        ingresosTotal: 7,
-        tercerosPorMes: [],
-        tercerosPorDia: [],
-        ingresosPorMes: [],
-        ingresosPorDia: [],
-        ingresosPorCategoria: [],
-        ingresosCategoriasPorMes: [],
-        ventasPronostico: [],
-        serviciosPronostico: [],
-        churnStats: {
-          kpis: { clientesActivos: 1, clientesInactivos: 0, tasaChurnMesActual: 0 },
-          porMes: [],
-        },
-      },
-      counts: { ventasActivas: 1, totalClientes: 1, totalRevendedores: 0 },
-      recentActivity: [],
-    });
-
-    await expect(getDashboardStats()).resolves.toMatchObject({
-      gastosTotal: 3,
-      ingresosTotal: 7,
-    });
   });
 
   it('maps snapshot stats with embedded churn payload', async () => {

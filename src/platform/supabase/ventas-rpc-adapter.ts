@@ -1,4 +1,3 @@
-import { assertOnlineMutation } from '@/modules/pwa/offline-copy';
 import type { Database } from '@/platform/supabase/database.types';
 
 import { executeIdempotentRpc } from './idempotent-rpc';
@@ -109,13 +108,11 @@ const updateVentaPaymentAndPeriodRpcClient =
 export async function createVentaWithInitialPaymentRpc(
   payload: CreateVentaWithInitialPaymentPayload
 ): Promise<string> {
-  assertOnlineMutation();
   return executeIdempotentRpc('create_venta_with_initial_payment', payload, (request) =>
     ventaInitialPaymentRpcClient.rpc('create_venta_with_initial_payment', request));
 }
 
 export async function createVentaRefundRpc(payload: CreateVentaRefundPayload): Promise<string> {
-  assertOnlineMutation();
   return executeIdempotentRpc('create_venta_refund', payload, (request) =>
     ventaRefundRpcClient.rpc('create_venta_refund', request));
 }
@@ -123,13 +120,11 @@ export async function createVentaRefundRpc(payload: CreateVentaRefundPayload): P
 export async function deleteVentaWithPaymentsRpc(
   payload: DeleteVentaWithPaymentsPayload
 ): Promise<void> {
-  assertOnlineMutation();
   const { error } = await deleteVentaWithPaymentsRpcClient.rpc('delete_venta_with_payments', payload);
   if (error) throw new Error(error.message);
 }
 
 export async function deleteVentaPaymentRpc(payload: DeleteVentaPaymentPayload): Promise<void> {
-  assertOnlineMutation();
   const { error } = await deleteVentaPaymentRpcClient.rpc(
     'delete_venta_payment_and_empty_period',
     payload
@@ -140,7 +135,6 @@ export async function deleteVentaPaymentRpc(payload: DeleteVentaPaymentPayload):
 export async function updateVentaPaymentAndPeriodRpc(
   payload: UpdateVentaPaymentAndPeriodPayload
 ): Promise<void> {
-  assertOnlineMutation();
   const { error } = await updateVentaPaymentAndPeriodRpcClient.rpc(
     'update_venta_payment_and_period',
     payload
