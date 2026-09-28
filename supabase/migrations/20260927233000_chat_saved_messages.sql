@@ -10,9 +10,19 @@ DECLARE
   item JSONB;
   item_title TEXT;
   seen_titles TEXT[] := ARRAY[]::TEXT[];
+  max_title_length INTEGER;
+  max_description_length INTEGER;
 BEGIN
   IF jsonb_typeof(payload) <> 'array' THEN RETURN FALSE; END IF;
   IF message_kind = 'text' THEN RETURN jsonb_array_length(payload) = 0; END IF;
+
+  IF message_kind = 'buttons' THEN
+    max_title_length := 20;
+    max_description_length := 0;
+  ELSE
+    max_title_length := 24;
+    max_description_length := 72;
+  END IF;
 
   FOR item IN SELECT jsonb_array_elements(payload) LOOP
     IF jsonb_typeof(item) <> 'object'
@@ -21,9 +31,9 @@ BEGIN
       RETURN FALSE;
     END IF;
     item_title := btrim(item ->> 'title');
-    IF char_length(item_title) NOT BETWEEN 1 AND CASE WHEN message_kind = 'buttons' THEN 20 ELSE 24 END
+    IF char_length(item_title) NOT BETWEEN 1 AND max_title_length
       OR lower(item_title) = ANY(seen_titles)
-      OR char_length(item ->> 'description') > CASE WHEN message_kind = 'buttons' THEN 0 ELSE 72 END THEN
+      OR char_length(item ->> 'description') > max_description_length THEN
       RETURN FALSE;
     END IF;
     seen_titles := array_append(seen_titles, lower(item_title));
