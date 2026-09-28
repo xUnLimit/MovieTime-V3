@@ -6,6 +6,13 @@ import {
 } from '@/platform/supabase/templates-repository';
 import type { TemplateMensaje } from '@/types';
 
+// Sin plantilla de Meta vinculada no hay nada que mapear: el mapa queda vacio.
+export function normalizeMetaLink<T extends Partial<TemplateMensaje>>(template: T): T {
+  if (template.metaTemplateName === undefined) return template;
+  const name = template.metaTemplateName?.trim() || null;
+  return { ...template, metaTemplateName: name, metaParamMap: name ? (template.metaParamMap ?? []) : [] };
+}
+
 export function fetchTemplatesUseCase() {
   return getTemplates<TemplateMensaje>();
 }
@@ -13,7 +20,7 @@ export function fetchTemplatesUseCase() {
 export async function createTemplateUseCase(
   templateData: Omit<TemplateMensaje, 'id' | 'createdAt' | 'updatedAt'>,
 ) {
-  const id = await createTemplate(templateData as Omit<TemplateMensaje, 'id'>);
+  const id = await createTemplate(normalizeMetaLink(templateData) as Omit<TemplateMensaje, 'id'>);
   return {
     ...templateData,
     id,
@@ -26,7 +33,7 @@ export async function updateTemplateUseCase(
   id: string,
   updates: Partial<TemplateMensaje>,
 ) {
-  await updateTemplate(id, updates);
+  await updateTemplate(id, normalizeMetaLink(updates));
 }
 
 export async function deleteTemplateUseCase(id: string) {

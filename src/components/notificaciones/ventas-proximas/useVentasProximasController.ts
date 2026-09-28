@@ -1,16 +1,11 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
-import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
-import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
-import { useTemplates } from '@/hooks/use-templates';
 import { reportError } from '@/platform/observability/logger';
-import { openWhatsApp } from '@/platform/utils/whatsapp';
 import {
   toggleNotificationHighlightedStoreCache,
   toggleNotificationReadStoreCache,
@@ -18,30 +13,16 @@ import {
 import { applyNotificationQueryReactions } from '@/application/store-reactions/notification-query-reactions';
 import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { cutVentaFromNotificationUseCase } from '@/application/use-cases/notificaciones/notificaciones-actions-use-cases';
-import {
-  confirmVentaRenewalFromNotificationUseCase as confirmVentaRenewal,
-  loadVentaRenewalOptionsUseCase as loadVentaRenewalOptions,
-} from '@/application/use-cases/notificaciones/notificaciones-renewal-use-cases';
 import { setVentaPaymentPromiseUseCase } from '@/application/use-cases/notificaciones/notificaciones-store-use-cases';
-import type { MetodoPago, TemplateMensaje } from '@/types';
-import type { Plan } from '@/types/categorias';
 
 import type { NotificacionVentaConId } from './types';
-import {
-  notifyVentaCancellation,
-  notifyVentaExpiration,
-} from './venta-notification-messaging';
+import { useVentasProximasNotices } from './useVentasProximasNotices';
+import { useVentasProximasRenewal } from './useVentasProximasRenewal';
 import { useVentasProximasPagination } from './useVentasProximasPagination';
 
 export function useVentasProximasController() {
   const queryClient = useQueryClient();
   const { data: notificaciones = [] } = useNotificaciones();
-  const { data: templates = [] } = useTemplates();
-  const getTemplateByTipo = useCallback(
-    (tipo: TemplateMensaje['tipo']) =>
-      templates.find((template) => template.tipo === tipo && template.activo),
-    [templates],
-  );
   const {
     estadoFilter,
     handleEstadoFilterChange,
@@ -59,20 +40,11 @@ export function useVentasProximasController() {
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(
     new Set(),
   );
-  const [isLoadingRenovar, setIsLoadingRenovar] = useState(false);
-  const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [accionesDialogOpen, setAccionesDialogOpen] = useState(false);
   const [promesaDialogOpen, setPromesaDialogOpen] = useState(false);
   const [notificarDialogOpen, setNotificarDialogOpen] = useState(false);
   const [notifSeleccionada, setNotifSeleccionada] =
     useState<NotificacionVentaConId | null>(null);
-  const [metodosPagoTerceros, setMetodosPagoTerceros] = useState<MetodoPago[]>(
-    [],
-  );
-  const [categoriaPlanes, setCategoriaPlanes] = useState<Plan[]>([]);
-  const [servicioTipoSeleccionado, setServicioTipoSeleccionado] = useState<
-    string | undefined
-  >();
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -110,94 +82,9 @@ export function useVentasProximasController() {
     await refreshNotificationCaches();
   };
 
-  const handleNotificar = (notif: NotificacionVentaConId) => {
-    const tipoTemplate =
-      notif.diasRestantes <= 0 ? 'dia_pago' : 'notificacion_regular';
-    const template = getTemplateByTipo(tipoTemplate);
+  const { handleNotificar, handleCancelar, bulk } = useVentasProximasNotices({ ventasNotificaciones, paginatedNotificaciones });
+  const renewal = useVentasProximasRenewal({ notifSeleccionada, setNotifSeleccionada, refreshNotificationCaches });
 
-    if (!template) {
-      toast.error(
-        `Template de ${tipoTemplate === 'dia_pago' ? 'día de pago' : 'notificación regular'} no encontrado`,
-      );
-      return false;
-    }
-
-    try {
-      notifyVentaExpiration(notif, template);
-      return true;
-    } catch (error) {
-      reportError('VentasProximas', 'Error generando mensaje WhatsApp', error);
-      toast.error('Error generando mensaje de WhatsApp');
-      return false;
-    }
-  };
-
-  const handleCancelar = (notif: NotificacionVentaConId) => {
-    const template = getTemplateByTipo('cancelacion');
-
-    if (!template) {
-      toast.error('Template de cancelación no encontrado');
-      return false;
-    }
-
-    try {
-      notifyVentaCancellation(notif, template);
-      return true;
-    } catch (error) {
-      reportError('VentasProximas', 'Error generando mensaje de cancelacion', error);
-      toast.error('Error generando mensaje de cancelación');
-      return false;
-    }
-  };
-
-  const handleRenovar = async (notif: NotificacionVentaConId) => {
-    if (isLoadingRenovar) return;
-    setIsLoadingRenovar(true);
-    setNotifSeleccionada(notif);
-    setCategoriaPlanes([]);
-    setServicioTipoSeleccionado(undefined);
-    try {
-      const renewalOptions = await loadVentaRenewalOptions(notif);
-      setCategoriaPlanes(renewalOptions.categoriaPlanes);
-      setServicioTipoSeleccionado(renewalOptions.servicioTipoSeleccionado);
-      setMetodosPagoTerceros(renewalOptions.metodosPagoTerceros);
-      setRenovarDialogOpen(true);
-    } finally {
-      setIsLoadingRenovar(false);
-    }
-  };
-  const handleConfirmRenovacion = async (
-    data: EnrichedPagoDialogFormData,
-  ) => {
-    if (!notifSeleccionada) return;
-
-    try {
-      const outcome = await confirmVentaRenewal({
-        data,
-        log: getActivityLogOptions(),
-        notif: notifSeleccionada,
-        refreshNotificationCaches,
-      });
-      await afterCommit(notifSeleccionada.ventaId, () => applyNotificationQueryReactions(queryClient, outcome));
-      if (outcome.warnings.includes('sync_payment_method_failed')) {
-        toast.warning('Venta renovada con advertencia', {
-          description:
-            'La renovacion se guardo, pero no se pudo actualizar el metodo de pago en terceros.',
-        });
-      }
-      showVentaRenewalOutcome(outcome);
-      setRenovarDialogOpen(false);
-      setNotifSeleccionada(null);
-    } catch (error) {
-      reportError('VentasProximas', 'Error renovando venta', error);
-      if (notifyCommittedMutation(error)) {
-        setRenovarDialogOpen(false);
-        setNotifSeleccionada(null);
-        return;
-      }
-      toast.error('Error al renovar la venta');
-    }
-  };
   const handleOpenNotificar = (notif: NotificacionVentaConId) => {
     setNotifSeleccionada(notif);
     setNotificarDialogOpen(true);
@@ -279,11 +166,12 @@ export function useVentasProximasController() {
 
   return {
     accionesDialogOpen,
-    categoriaPlanes,
+    bulk,
+    categoriaPlanes: renewal.categoriaPlanes,
     estadoFilter,
     handleAcciones,
     handleCancelar,
-    handleConfirmRenovacion,
+    handleConfirmRenovacion: renewal.handleConfirmRenovacion,
     handleCortarFromModal,
     handleSeguimiento,
     handleEstadoFilterChange,
@@ -295,45 +183,27 @@ export function useVentasProximasController() {
     handleNextPage,
     handleNotificar,
     handlePreviousPage,
-    handleRenovar,
+    handleRenovar: renewal.handleRenovar,
     handleSearchChange,
     handleToggleLeida,
     itemsPerPage,
-    metodosPagoTerceros,
+    metodosPagoTerceros: renewal.metodosPagoTerceros,
     notifSeleccionada,
     paginatedNotificaciones,
     notificarDialogOpen,
     promesaDialogOpen,
-    renovarDialogOpen,
+    renovarDialogOpen: renewal.renovarDialogOpen,
     safeCurrentPage,
     searchQuery,
-    servicioTipoSeleccionado,
+    servicioTipoSeleccionado: renewal.servicioTipoSeleccionado,
     setAccionesDialogOpen,
     setNotificarDialogOpen,
     setPromesaDialogOpen,
-    setRenovarDialogOpen,
+    setRenovarDialogOpen: renewal.setRenovarDialogOpen,
     togglePasswordVisibility,
     totalPages,
     ventasNotificaciones,
     visiblePasswords,
     copyToClipboard,
   };
-}
-
-function showVentaRenewalOutcome({
-  whatsappMessage,
-}: Awaited<ReturnType<typeof confirmVentaRenewal>>) {
-  if (!whatsappMessage) {
-    toast.success('Venta renovada exitosamente');
-    return;
-  }
-
-  toast.success('Venta renovada exitosamente', {
-    duration: Infinity,
-    action: {
-      label: 'Enviar WhatsApp',
-      onClick: () => openWhatsApp(whatsappMessage.phone, whatsappMessage.message),
-    },
-    actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
-  });
 }

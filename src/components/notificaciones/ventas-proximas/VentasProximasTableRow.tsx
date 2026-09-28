@@ -11,6 +11,8 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { VentaNoticeState } from '@/application/use-cases/whatsapp-notices-use-cases';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { getCurrencySymbol } from '@/platform/constants';
 import { getPaymentPromiseDisplay } from '@/application/use-cases/notificaciones/payment-promise';
@@ -20,6 +22,7 @@ import {
   getBellIconColor,
   getEstadoBadge,
 } from './helpers';
+import { noticeBadgeInfo } from './notice-helpers';
 import { VentasProximasActionsMenu } from './VentasProximasActionsMenu';
 import type {
   CopyToClipboardHandler,
@@ -32,6 +35,9 @@ interface VentasProximasTableRowProps {
   notif: NotificacionVentaConId;
   renovaciones?: number;
   renovacionesError?: boolean;
+  noticeState?: VentaNoticeState;
+  selected?: boolean;
+  onSelectedChange?: (notifId: string, selected: boolean) => void;
   visiblePasswords: ReadonlySet<string>;
   onToggleLeida: ToggleLeidaHandler;
   onCopyToClipboard: CopyToClipboardHandler;
@@ -47,6 +53,9 @@ export function VentasProximasTableRow({
   notif,
   renovaciones,
   renovacionesError,
+  noticeState,
+  selected = false,
+  onSelectedChange,
   visiblePasswords,
   onToggleLeida,
   onCopyToClipboard,
@@ -59,6 +68,7 @@ export function VentasProximasTableRow({
 }: VentasProximasTableRowProps) {
   const bellColors = getBellIconColor(notif.diasRestantes);
   const estadoBadge = getEstadoBadge(notif.diasRestantes, notif.resaltada);
+  const noticeBadge = noticeBadgeInfo(noticeState);
   const isPasswordVisible = visiblePasswords.has(notif.id);
   const promiseDisplay = notif.fechaPrometidaPago
     ? getPaymentPromiseDisplay(notif.fechaPrometidaPago)
@@ -82,6 +92,15 @@ export function VentasProximasTableRow({
 
   return (
     <TableRow className={`border-b transition-colors hover:bg-muted/50 ${rowToneClass}`}>
+      {onSelectedChange ? (
+        <TableCell className="w-[40px] px-2 py-2 text-center">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(value) => onSelectedChange(notif.id, value === true)}
+            aria-label={`Seleccionar ${notif.clienteNombre}`}
+          />
+        </TableCell>
+      ) : null}
       <TableCell className="px-2 py-2 text-center">
         <Button
           variant="ghost"
@@ -264,6 +283,20 @@ export function VentasProximasTableRow({
           ) : null}
           {displayedStatus.text}
         </Badge>
+        {(noticeBadge || noticeState?.noContinuar) ? (
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+            {noticeBadge ? (
+              <Badge variant="outline" className={`font-normal ${noticeBadge.className}`} title="Estado del último aviso por WhatsApp">
+                {noticeBadge.label}{noticeBadge.dateLabel ? ` · ${noticeBadge.dateLabel}` : ''}
+              </Badge>
+            ) : null}
+            {noticeState?.noContinuar ? (
+              <Badge variant="outline" className="border-red-500/60 bg-red-100 font-normal text-red-700 dark:bg-red-500/20 dark:text-red-300">
+                No desea continuar
+              </Badge>
+            ) : null}
+          </div>
+        ) : null}
       </TableCell>
 
       <TableCell className="px-2 py-2 text-center">

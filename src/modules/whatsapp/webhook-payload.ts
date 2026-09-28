@@ -75,7 +75,7 @@ const messageSchema = z.object({
   type: z.string().min(1).max(64),
   text: z.object({ body: z.string() }).optional(),
   // Toque de un boton de respuesta rapida de una plantilla.
-  button: z.object({ text: z.string() }).optional(),
+  button: z.object({ text: z.string().max(256), payload: z.string().min(1).max(256).optional() }).optional(),
   image: mediaSchema.optional(),
   audio: mediaSchema.optional(),
   video: mediaSchema.optional(),
@@ -185,6 +185,9 @@ export function parseWebhookPayload(payload: unknown): ParsedWebhook {
         const interactivePayload = interactiveReply
           ? { type: message.interactive?.button_reply ? 'button_reply' : 'list_reply', id: interactiveReply.id, title: interactiveReply.title }
           : null;
+        const templateButtonPayload = message.type === 'button' && message.button?.payload
+          ? { type: 'template_button', payload: message.button.payload, text: message.button.text }
+          : null;
         const contactsPayload = message.contacts && message.contacts.length > 0
           ? { contacts: message.contacts.map((contact) => ({ name: contact.name?.formatted_name ?? '', phone: contact.phones?.[0]?.phone ?? '' })) }
           : null;
@@ -201,7 +204,7 @@ export function parseWebhookPayload(payload: unknown): ParsedWebhook {
           mediaFilename: media?.filename ?? null,
           contextWaMessageId: message.context?.id ?? null,
           reactionEmoji: message.reaction?.emoji ?? null,
-          payload: interactivePayload ?? contactsPayload ?? (message.location ? { location: message.location } : {}),
+          payload: templateButtonPayload ?? interactivePayload ?? contactsPayload ?? (message.location ? { location: message.location } : {}),
         });
       }
 

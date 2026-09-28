@@ -58,7 +58,7 @@ export function createOutboundStore(client: ServiceClient = createServiceRoleCli
           idempotency_key: message.idempotencyKey,
           to_wa_id: message.toWaId,
           message_kind: storedKind(payload),
-          text_body: storedText(payload),
+          text_body: message.storedTextBody ?? storedText(payload),
           template_name: payload.kind === 'template' ? payload.templateName : null,
           template_params: payload.kind === 'template' ? payload.params : [],
           context_wa_message_id: contextWaMessageId,
@@ -67,6 +67,8 @@ export function createOutboundStore(client: ServiceClient = createServiceRoleCli
           media_filename: hasMedia && 'filename' in payload ? payload.filename ?? null : null,
           payload: payload.kind === 'reaction'
             ? { emoji: payload.emoji }
+            : payload.kind === 'template'
+              ? { buttonPayloads: payload.buttonPayloads ?? [] }
             : payload.kind === 'buttons'
               ? { buttons: payload.buttons }
               : payload.kind === 'list'

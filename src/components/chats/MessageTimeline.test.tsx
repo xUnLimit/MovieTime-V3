@@ -62,7 +62,7 @@ describe('MessageTimeline', () => {
 
     expect(screen.getByText('Hoy')).toBeTruthy();
     expect(screen.getByText('Hola').tagName).toBe('STRONG');
-    expect(screen.getByText('Vence hoy')).toBeTruthy();
+    expect(screen.getByText('vence_hoy')).toBeTruthy();
     expect(screen.getByText('Plantilla')).toBeTruthy();
     expect(screen.getByLabelText('Leído')).toBeTruthy();
     expect(screen.getByLabelText('Enviando')).toBeTruthy();

@@ -34,6 +34,19 @@ function fakeClient(results: Record<string, Result>) {
 const row = { id: 'out-1', send_status: 'accepted', wa_message_id: 'wamid.OUT', error_title: null };
 
 describe('createOutboundStore', () => {
+  it('stores a redacted credential body while leaving the send payload intact', async () => {
+    const { client, calls } = fakeClient({ whatsapp_outbound_messages: { data: row } });
+    const message = {
+      idempotencyKey: 'k3', toWaId: '50760000000', sentBy: null,
+      payload: { kind: 'text' as const, text: 'Clave vigente: secreto-del-test' },
+      storedTextBody: '[Credenciales enviadas]',
+    };
+    await createOutboundStore(client).insertPending(message);
+    const insert = calls.find((call) => call.method === 'insert')?.args[0];
+    expect(insert).toMatchObject({ text_body: '[Credenciales enviadas]', sent_by: null, payload: {} });
+    expect(JSON.stringify(insert)).not.toContain('secreto-del-test');
+    expect(message.payload.text).toContain('secreto-del-test');
+  });
   it('maps an existing idempotency key to a record', async () => {
     const { client, calls } = fakeClient({ whatsapp_outbound_messages: { data: row } });
 
@@ -64,13 +77,14 @@ describe('createOutboundStore', () => {
     await store.insertPending({ idempotencyKey: 'k1', toWaId: '507', payload: { kind: 'text', text: 'Hola' }, sentBy: 'u1' });
     await store.insertPending({
       idempotencyKey: 'k2', toWaId: '507', sentBy: 'u1',
-      payload: { kind: 'template', templateName: 'vence_hoy', params: ['a', 'b', 'c'] },
+      payload: { kind: 'template', templateName: 'vence_hoy', params: ['a', 'b', 'c'], buttonPayloads: ['RENOVAR:id'] },
     });
 
     const inserts = calls.filter((call) => call.method === 'insert').map((call) => call.args[0]);
     expect(inserts).toEqual([
       expect.objectContaining({ message_kind: 'text', text_body: 'Hola', template_name: null, template_params: [], sent_by: 'u1' }),
-      expect.objectContaining({ message_kind: 'template', text_body: null, template_name: 'vence_hoy', template_params: ['a', 'b', 'c'] }),
+      expect.objectContaining({ message_kind: 'template', text_body: null, template_name: 'vence_hoy',
+        template_params: ['a', 'b', 'c'], payload: { buttonPayloads: ['RENOVAR:id'] } }),
     ]);
   });
 

@@ -110,7 +110,11 @@ export const queryKeys = {
     all: ['whatsapp'] as const,
     savedMessages: () => [...queryKeys.whatsapp.all, 'saved-messages'] as const,
     savedStickers: () => [...queryKeys.whatsapp.all, 'saved-stickers'] as const,
+    metaTemplates: () => [...queryKeys.whatsapp.all, 'meta-templates'] as const,
+    autoRuns: () => [...queryKeys.whatsapp.all, 'auto-runs'] as const,
     conversations: () => [...queryKeys.whatsapp.all, 'conversations'] as const,
+    noticeStatus: (ventaIds?: readonly string[]) =>
+      [...queryKeys.whatsapp.all, 'notice-status', ...(ventaIds ? [ventaIds] : [])] as const,
     messages: (waId: string) => [...queryKeys.whatsapp.all, 'messages', waId] as const,
     media: (mediaId: string) => [...queryKeys.whatsapp.all, 'media', mediaId] as const,
     ventaContext: (ventaId: string) => [...queryKeys.whatsapp.all, 'venta-context', ventaId] as const,

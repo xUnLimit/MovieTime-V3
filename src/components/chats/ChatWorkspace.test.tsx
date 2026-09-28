@@ -16,6 +16,8 @@ const state = vi.hoisted(() => ({
   mediaListener: null as (() => void) | null,
   messages: [] as WhatsAppChatMessage[],
   mediaObjectUrl: null as string | null,
+  tipos: [] as unknown[],
+  metas: [] as unknown[],
 }));
 const toastError = vi.hoisted(() => vi.fn());
 
@@ -28,6 +30,10 @@ vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useVentaMessageContext: (ventaId: string | null) => ({ data: ventaId ? state.context : null }),
   useUploadWhatsAppMedia: () => ({ mutateAsync: vi.fn() }),
   useWhatsAppMedia: () => ({ objectUrl: state.mediaObjectUrl, isLoading: false, isError: false }),
+}));
+vi.mock('@/hooks/use-templates', () => ({
+  useTemplates: () => ({ data: state.tipos }),
+  useMetaTemplates: () => ({ data: state.metas }),
 }));
 vi.mock('@/hooks/use-chat-saved-stickers', () => ({
   useChatSavedStickers: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
@@ -86,6 +92,14 @@ beforeEach(() => {
     clienteNombre: 'María Pérez', categoriaNombre: 'Netflix', servicioNombre: 'Netflix 01', perfilNombre: 'María',
     correo: 'c@example.com', contrasena: 'clave-demo', codigo: '', fechaVencimiento: new Date(2026, 8, 27), monto: 4.5,
   };
+  state.tipos = [{
+    id: 'tpl-dia', nombre: 'Día de pago', tipo: 'dia_pago', contenido: '', placeholders: [], activo: true,
+    metaTemplateName: 'aviso_vence_hoy', metaParamMap: ['servicios', 'vencimiento', 'monto_total'],
+  }];
+  state.metas = [{
+    id: 'm1', name: 'aviso_vence_hoy', language: 'es', status: 'APPROVED', category: 'UTILITY',
+    body: 'Vence hoy {{1}} el {{2}} por {{3}}', header: null, footer: null, buttons: [], paramCount: 3, retired: false, syncedAt: '2026-09-28T10:00:00Z',
+  }];
   state.wide = false;
   state.mediaListener = null;
   state.messages = [];
@@ -207,11 +221,20 @@ describe('ChatWorkspace', () => {
 
     expect(state.sendMutate).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: { kind: 'template', templateName: 'vence_hoy', params: ['Netflix', '27 de septiembre de 2026', '$4.50'] },
+        message: { kind: 'template', templateName: 'aviso_vence_hoy', params: ['Netflix', '27 de septiembre de 2026', '$4.50'] },
       }),
       expect.any(Object)
     );
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('lists no template when none is approved and linked', async () => {
+    const user = userEvent.setup();
+    state.metas = [];
+    renderWorkspace(closed);
+
+    await user.click(screen.getByRole('button', { name: 'Enviar plantilla' }));
+    expect(within(screen.getByRole('dialog')).getByText(/No hay plantillas de Meta aprobadas/)).toBeTruthy();
   });
 
   it('marks the chat unread and returns to the list', async () => {

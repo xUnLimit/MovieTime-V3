@@ -63,8 +63,22 @@ export interface ExecutivePushSettings {
   lastSentSlot?: string | null;
 }
 
+/** Corrida diaria del envio automatico de avisos por WhatsApp. */
+export interface AutoNoticeRun {
+  id: string;
+  runDate: string;
+  status: 'running' | 'done' | 'failed';
+  sent: number;
+  failed: number;
+  skipped: number;
+  alreadySent: number;
+}
+
 export interface ConfiguracionWhatsApp {
   prefijoTelefono: string;
+  autoEnabled: boolean;
+  autoDailyCap: number;
+  autoSendHour: number;
 }
 
 export interface Configuracion {
@@ -119,7 +133,9 @@ export type TipoTemplate =
   | 'suscripcion'
   | 'cancelacion'
   | 'actualizacion_credenciales'
-  | 'transferencia_servicio';
+  | 'transferencia_servicio'
+  | 'datos_pago'
+  | 'despedida';
 
 export interface TemplateMensaje {
   id: string;
@@ -128,6 +144,10 @@ export interface TemplateMensaje {
   contenido: string;
   placeholders: string[];
   activo: boolean;
+  /** Plantilla de Meta vinculada (opcional); su texto vive en whatsapp_meta_templates. */
+  metaTemplateName?: string | null;
+  /** Dato del mensaje (message-data) para cada {{n}} de la plantilla de Meta. */
+  metaParamMap?: string[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -13,6 +13,8 @@ import type { ServicioFormData } from "@/features/servicios/servicio-form-schema
 import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import { updateServicioPagoUseCase } from "@/application/use-cases/servicios/servicios-payment-use-cases";
+import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
+import { offerApiAccessNotice } from "@/components/shared/offer-api-access-notice";
 import { getVentasActivasParaCredenciales } from "@/application/use-cases/servicios/servicio-credential-notification-use-case";
 import {
   changedCredentialsCount,
@@ -33,13 +35,14 @@ import {
 } from "./servicio-form-helpers";
 
 type ServicioPayload = ReturnType<typeof buildServicioFormPayload>;
-type CredentialMessages = ReturnType<typeof buildCredentialUpdateWhatsAppMessages>;
 
 interface UseServicioFormSubmitParams {
   categorias: Categoria[];
   createServicio: (servicio: ServicioPayload, idempotencyKey?: string) => Promise<void>;
   credentialTemplateContent?: string;
-  enqueueWhatsAppMessages: (messages: CredentialMessages) => void;
+  /** Plantilla de Meta vinculada al tipo; habilita "Enviar por WhatsApp API". */
+  credentialMetaTemplateName?: string | null;
+  enqueueWhatsAppMessages: (messages: Array<Omit<PendingWhatsAppToast, "id">>) => void;
   metodosPago: MetodoPago[];
   onSaved: () => void;
   perfilesOcupadosReal: number;
@@ -56,6 +59,7 @@ export function useServicioFormSubmit({
   categorias,
   createServicio,
   credentialTemplateContent,
+  credentialMetaTemplateName,
   enqueueWhatsAppMessages,
   metodosPago,
   onSaved,
@@ -165,13 +169,21 @@ export function useServicioFormSubmit({
               ventas: ventasActivas,
             });
 
-            enqueueWhatsAppMessages(messages);
-            toast.info("Notificaciones preparadas", {
-              description: `${ventasActivas.length} cliente${
-                ventasActivas.length !== 1 ? "s" : ""
-              } pendiente${ventasActivas.length !== 1 ? "s" : ""} por WhatsApp.`,
-              duration: 3000,
-            });
+            const description = `${ventasActivas.length} cliente${
+              ventasActivas.length !== 1 ? "s" : ""
+            } pendiente${ventasActivas.length !== 1 ? "s" : ""} por WhatsApp.`;
+            if (credentialMetaTemplateName) {
+              offerApiAccessNotice({
+                tipo: "actualizacion_credenciales",
+                items: messages.map((message) => ({ ventaId: message.id, message })),
+                enqueueWhatsAppMessages,
+                title: "Notificar cambio de credenciales",
+                description,
+              });
+            } else {
+              enqueueWhatsAppMessages(messages);
+              toast.info("Notificaciones preparadas", { description, duration: 3000 });
+            }
           } else {
             toast.info("Credenciales actualizadas", {
               description:

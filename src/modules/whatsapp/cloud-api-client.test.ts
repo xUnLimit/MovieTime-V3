@@ -59,6 +59,17 @@ describe('sendCloudApiMessage', () => {
     expect(JSON.parse(fetchImpl.mock.calls[0][1].body).template.components).toEqual([]);
   });
 
+  it('sends quick reply payloads at their button indexes', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, { messages: [{ id: 'wamid.BUTTON' }] }));
+    await sendCloudApiMessage(config, '50760000000', { kind: 'template', templateName: 'aviso_vence_hoy',
+      params: ['Hola Ana'], buttonPayloads: ['RENOVAR:id', 'NO_CONTINUAR:id'] }, fetchImpl);
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body).template.components).toEqual([
+      { type: 'body', parameters: [{ type: 'text', text: 'Hola Ana' }] },
+      { type: 'button', sub_type: 'quick_reply', index: '0', parameters: [{ type: 'payload', payload: 'RENOVAR:id' }] },
+      { type: 'button', sub_type: 'quick_reply', index: '1', parameters: [{ type: 'payload', payload: 'NO_CONTINUAR:id' }] },
+    ]);
+  });
+
   it('maps a Graph error to a controlled error with the Meta code and user title', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(400, {
       error: { code: 131047, message: 'Re-engagement message', error_user_title: 'Mensaje fuera de ventana' },

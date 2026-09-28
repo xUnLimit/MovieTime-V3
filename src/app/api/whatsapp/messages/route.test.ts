@@ -10,13 +10,14 @@ const env = vi.hoisted(() => ({ whatsappAccessToken: '', whatsappPhoneNumberId: 
 vi.mock('@/platform/config', () => ({ env }));
 vi.mock('@/platform/server/request-auth', () => ({ requireAuthenticatedAdmin }));
 vi.mock('@/modules/whatsapp/outbound-store', () => ({ createOutboundStore: () => ({}) }));
+vi.mock('@/modules/whatsapp/template-catalog', () => ({ createTemplateCatalog: () => ({}) }));
 vi.mock('@/modules/whatsapp/cloud-api-client', () => ({ sendCloudApiMessage }));
 vi.mock('@/modules/whatsapp/outbound-messages', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/modules/whatsapp/outbound-messages')>()),
   sendOutboundMessage,
 }));
 
-import { CustomerWindowClosedError, InvalidTemplateParamsError } from '@/modules/whatsapp/outbound-messages';
+import { CustomerWindowClosedError, InvalidTemplateParamsError, TemplateNotApprovedError } from '@/modules/whatsapp/outbound-messages';
 import { POST } from './route';
 
 const KEY = '5b0f3c3e-8d8f-4c55-9a4b-3c9f1a2b7d10';
@@ -48,7 +49,7 @@ describe('POST /api/whatsapp/messages', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(sendOutboundMessage).toHaveBeenCalledWith(
       { idempotencyKey: KEY, toWaId: '50760000000', payload: { kind: 'text', text: 'Hola' }, sentBy: 'admin-1' },
-      expect.objectContaining({ store: expect.any(Object), send: expect.any(Function) })
+      expect.objectContaining({ store: expect.any(Object), catalog: expect.any(Object), send: expect.any(Function) })
     );
   });
 
@@ -88,7 +89,7 @@ describe('POST /api/whatsapp/messages', () => {
     ['a non UUID idempotency key', { idempotencyKey: 'x', to: '50760000000', message: { kind: 'text', text: 'Hola' } }],
     ['a malformed number', { idempotencyKey: KEY, to: '+507 6000', message: { kind: 'text', text: 'Hola' } }],
     ['an empty text', { idempotencyKey: KEY, to: '50760000000', message: { kind: 'text', text: '   ' } }],
-    ['an unknown template', { idempotencyKey: KEY, to: '50760000000', message: { kind: 'template', templateName: 'promo', params: [] } }],
+    ['an invalid template name', { idempotencyKey: KEY, to: '50760000000', message: { kind: 'template', templateName: 'Promo!', params: [] } }],
     ['a template value with line breaks', {
       idempotencyKey: KEY, to: '50760000000',
       message: { kind: 'template', templateName: 'vence_hoy', params: ['Net\nflix', 'a', 'b'] },
@@ -118,6 +119,13 @@ describe('POST /api/whatsapp/messages', () => {
       message: { kind: 'template', templateName: 'vence_hoy', params: ['Netflix'] },
     }));
 
+    expect(response.status).toBe(400);
+  });
+
+  it('rejects a template absent from the approved cache', async () => {
+    sendOutboundMessage.mockRejectedValueOnce(new TemplateNotApprovedError());
+    const response = await POST(post({ idempotencyKey: KEY, to: '50760000000',
+      message: { kind: 'template', templateName: 'promo', params: [] } }));
     expect(response.status).toBe(400);
   });
 

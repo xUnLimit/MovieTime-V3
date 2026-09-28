@@ -82,7 +82,7 @@ export function toPushDeliveryFailure(
 // Aviso push simple (titulo, cuerpo y destino) para eventos que no son el
 // resumen ejecutivo, como un mensaje nuevo de WhatsApp.
 export type PushNotificationPayload = {
-  kind: 'whatsapp_message' | 'push_test';
+  kind: 'whatsapp_message' | 'whatsapp_notice' | 'push_test';
   title: string;
   body: string;
   destination: string;

@@ -3,9 +3,11 @@ import {
   updateExecutivePushSettings,
   updateNotificationLeadDays,
   updateNotificationSendHour,
+  updateWhatsappAutoSettings,
   updateWhatsappPrefix,
   upsertExchangeRates,
 } from '@/platform/supabase/config-repository';
+import { listRecentAutoNoticeRuns } from '@/platform/supabase/auto-notice-runs-repository';
 import type { ExecutivePushSettings, TasasCambio } from '@/types';
 
 function sameArray(left: readonly string[] | undefined, right: readonly string[] | undefined) {
@@ -67,4 +69,19 @@ export function updateExecutivePushUseCase(
       ? { executive_push_last_sent_at: null, executive_push_last_sent_date: null, executive_push_last_sent_slot: null }
       : {}),
   });
+}
+
+export type WhatsAppAutoUpdate = { enabled?: boolean; dailyCap?: number; horaEnvio?: number };
+
+export function updateWhatsAppAutoUseCase(updates: WhatsAppAutoUpdate) {
+  return updateWhatsappAutoSettings({
+    whatsapp_auto_enabled: updates.enabled,
+    whatsapp_auto_daily_cap:
+      updates.dailyCap === undefined ? undefined : Math.min(1000, Math.max(1, Math.trunc(updates.dailyCap))),
+    hora_envio: updates.horaEnvio === undefined ? undefined : Math.min(23, Math.max(0, Math.trunc(updates.horaEnvio))),
+  });
+}
+
+export function listAutoNoticeRunsUseCase() {
+  return listRecentAutoNoticeRuns(7);
 }

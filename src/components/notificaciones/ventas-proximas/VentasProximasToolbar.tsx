@@ -1,4 +1,4 @@
-import { Activity, Check, Search } from 'lucide-react';
+import { Activity, Check, MessageSquare, Search } from 'lucide-react';
 
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,10 @@ interface VentasProximasToolbarProps {
   estadoFilter: string;
   onSearchChange: (value: string) => void;
   onEstadoFilterChange: (value: string) => void;
+  selectedCount?: number;
+  isNotifying?: boolean;
+  onNotifySelected?: () => void;
+  onClearSelection?: () => void;
 }
 
 export function VentasProximasToolbar({
@@ -24,6 +28,10 @@ export function VentasProximasToolbar({
   estadoFilter,
   onSearchChange,
   onEstadoFilterChange,
+  selectedCount = 0,
+  isNotifying = false,
+  onNotifySelected,
+  onClearSelection,
 }: VentasProximasToolbarProps) {
   const labelActual =
     ESTADO_FILTER_OPTIONS.find((option) => option.value === estadoFilter)
@@ -63,6 +71,18 @@ export function VentasProximasToolbar({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {selectedCount > 0 && onNotifySelected ? (
+        <div className="flex items-center gap-2">
+          <Button type="button" disabled={isNotifying} onClick={onNotifySelected} className="gap-2">
+            <MessageSquare className="h-4 w-4" />
+            {isNotifying ? 'Enviando...' : `Notificar seleccionados (${selectedCount})`}
+          </Button>
+          <Button type="button" variant="ghost" disabled={isNotifying} onClick={onClearSelection}>
+            Limpiar
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

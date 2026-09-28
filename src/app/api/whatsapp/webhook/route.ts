@@ -4,7 +4,14 @@ import { env } from '@/platform/config';
 import { createLogger } from '@/platform/observability/logger';
 import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/platform/server/api-response';
 import { z } from '@/platform/validation/zod';
+import { handleNoticeReply } from '@/application/use-cases/notice-reply-use-case';
+import { createNoticeReplyStore } from '@/modules/messaging/notice-reply-store';
+import { createNoticeStore } from '@/modules/messaging/notice-store';
 import { notifyWhatsAppMessages } from '@/modules/notifications/whatsapp-message-push';
+import { sendCloudApiMessage } from '@/modules/whatsapp/cloud-api-client';
+import { sendOutboundMessage } from '@/modules/whatsapp/outbound-messages';
+import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
+import { createTemplateCatalog } from '@/modules/whatsapp/template-catalog';
 import { storeWebhookBatch } from '@/modules/whatsapp/webhook-inbox';
 import { parseWebhookPayload } from '@/modules/whatsapp/webhook-payload';
 import { isValidVerifyToken, isValidWebhookSignature } from '@/modules/whatsapp/webhook-signature';
@@ -88,6 +95,26 @@ export async function POST(request: Request) {
     if (messages.length > 0) {
       // El aviso push corre despues de responder para no retrasar a Meta.
       after(async () => {
+        if (env.whatsappAccessToken && env.whatsappPhoneNumberId) {
+          const config = { accessToken: env.whatsappAccessToken, phoneNumberId: env.whatsappPhoneNumberId };
+          const catalog = createTemplateCatalog();
+          const outboundStore = createOutboundStore();
+          for (const message of messages) {
+            try {
+              const result = await handleNoticeReply(message, {
+                replies: createNoticeReplyStore(), notices: createNoticeStore(),
+                send: (outbound) => sendOutboundMessage(outbound, {
+                  store: outboundStore, catalog,
+                  send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload),
+                }),
+              });
+              if (result === 'failed') logger.warn('WhatsApp notice reply action failed', { requestId });
+            } catch {
+              // Never log the inbound payload or rendered credentials.
+              logger.warn('WhatsApp notice reply could not be processed', { requestId });
+            }
+          }
+        }
         try {
           await notifyWhatsAppMessages(messages);
         } catch (error) {

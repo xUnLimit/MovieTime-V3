@@ -2,6 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { offerApiAccessNotice } from "@/components/shared/offer-api-access-notice";
 import { queryKeys } from "@/platform/query-keys";
 import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { getActivityLogOptions } from "@/platform/activity/activity-log-adapter";
@@ -26,7 +27,7 @@ type ServicioSaleActionsParams = {
   deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
   refetchServicios: () => Promise<unknown>;
   refetchTemplates: () => Promise<unknown>;
-  getTemplateByTipo: (tipo: TipoTemplate) => { contenido?: string } | undefined;
+  getTemplateByTipo: (tipo: TipoTemplate) => { contenido?: string; metaTemplateName?: string | null } | undefined;
   queryClient: QueryClient;
   updatePerfilOcupado: (servicioId: string, shouldIncrement: boolean) => Promise<void>;
   setVentasServicio: Dispatch<
@@ -149,15 +150,24 @@ export function useServicioSaleActions({
       if (notificarWhatsApp && outcome.type === "servicioVentaTransferred") {
         const template = getTemplateByTipo("transferencia_servicio");
 
-        enqueueWhatsAppMessages([
-          buildTransferWhatsAppToast({
-            selectedActionVenta,
-            targetServicio: targetServicioDoc,
-            templateContenido: template?.contenido,
-            tercero: outcome.tercero ?? undefined,
-            updatedVentaForMessage,
-          }),
-        ]);
+        const transferToast = buildTransferWhatsAppToast({
+          selectedActionVenta,
+          targetServicio: targetServicioDoc,
+          templateContenido: template?.contenido,
+          tercero: outcome.tercero ?? undefined,
+          updatedVentaForMessage,
+        });
+        if (template?.metaTemplateName) {
+          offerApiAccessNotice({
+            tipo: "transferencia_servicio",
+            items: [{ ventaId: selectedActionVenta.id, message: transferToast }],
+            enqueueWhatsAppMessages,
+            title: "Notificar transferencia",
+            description: `${selectedActionVenta.clienteNombre} recibira los datos de ${targetServicioDoc.nombre}.`,
+          });
+        } else {
+          enqueueWhatsAppMessages([transferToast]);
+        }
       }
 
       if (outcome.type === "servicioVentaTransferred") {

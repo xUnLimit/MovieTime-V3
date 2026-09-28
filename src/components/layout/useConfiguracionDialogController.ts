@@ -23,6 +23,7 @@ import { safeAsyncSideEffect } from "@/platform/utils/safety";
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardFilterStore } from "@/store/dashboardFilterStore";
 import { usePwaStore } from "@/store/pwaStore";
+import { useWhatsAppAutoSettings } from "./useWhatsAppAutoSettings";
 import {
   getAvailableDashboardYears,
   getExecutivePushStatus,
@@ -45,6 +46,7 @@ export function useConfiguracionDialogController({
     setNotificationPermission,
   } = usePwaStore();
 
+  const whatsappAuto = useWhatsAppAutoSettings(open);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [isSavingExecutiveSchedule, setIsSavingExecutiveSchedule] = useState(false);
   const [draftWindowStart, setDraftWindowStart] = useState('');
@@ -182,6 +184,7 @@ export function useConfiguracionDialogController({
     }
   };
   return {
+    whatsappAuto,
     selectedYear,
     setSelectedYear,
     availableYears,

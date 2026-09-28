@@ -5,34 +5,6 @@ import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
-// Textos registrados en Meta; solo se usan para la vista previa antes de enviar.
-export const CHAT_TEMPLATES = [
-  {
-    name: 'recordatorio_vencimiento',
-    label: 'Recordatorio de pago',
-    params: ['Saludo y nombre', 'Servicio', 'Fecha de vencimiento', 'Monto'],
-    body: '⏳ *Recordatorio de pago*\n\n{{1}}. Te escribimos solamente para recordarte que el pago de tu suscripción a *{{2}}* está próximo a vencer.\n\n📅 *Fecha de vencimiento:* {{3}}\n💵 *Monto:* {{4}}\n\n💳 Puedes realizar tu pago desde antes para asegurar la continuidad del servicio o hacerlo el día de vencimiento.\n\n🕒 Si necesitas más tiempo, notifícanos antes del vencimiento para evitar la desconexión automática.\n\n❌ Si no deseas continuar con el servicio, por favor infórmanos. Si no recibimos respuesta, entenderemos que no deseas seguir y procederemos con la suspensión del acceso y la eliminación del perfil.\n\n¡Gracias por tu confianza y preferirnos!\n\n*— MovieTime PTY*',
-  },
-  {
-    name: 'vence_hoy',
-    label: 'Vence hoy',
-    params: ['Servicio', 'Fecha de vencimiento', 'Monto'],
-    body: '⚠️ *Recordatorio de renovación - {{1}}*\n\n📅 *Fecha de vencimiento:* {{2}}\n💵 *Monto:* {{3}}\n\n❌ Si no deseas continuar con el servicio, por favor infórmanos.\n\n✅ Si deseas continuar con el servicio, puedes realizar el pago al siguiente Yappy:\nAllan Ordoñez\n6769-4145\n\n❗ Si no recibimos ningún tipo de respuesta antes de finalizar el día, entenderemos que no deseas continuar y procederemos con la suspensión del servicio y eliminación del perfil.\n\n¡Gracias por tu confianza y por preferirnos! Quedamos atentos a tu respuesta.\n\n*— MovieTime PTY*',
-  },
-  {
-    name: 'servicio_suspendido',
-    label: 'Corte de servicio',
-    params: ['Saludo y nombre', 'Servicio', 'Fecha de vencimiento', 'Monto'],
-    body: '❗ *Corte de servicio*\n\n{{1}}. Debido a que no hemos recibido respuesta de su parte, su acceso a la plataforma de *{{2}}* será suspendido en breve.\n\n📅 *Fecha de vencimiento:* {{3}}\n💵 *Monto:* {{4}}\n\nPara continuar disfrutando del servicio, te invitamos a realizar el pago correspondiente y enviarnos el comprobante. Una vez recibido, reactivaremos tu acceso lo más pronto posible.\n\n¡Gracias por tu confianza y por preferirnos! 😊\n\n*— MovieTime PTY*',
-  },
-] as const;
-
-export function renderTemplatePreview(body: string, params: readonly string[]) {
-  return body.replace(/\{\{(\d)\}\}/g, (match, index: string) => params[Number(index) - 1]?.trim() || match);
-}
-
-export type ChatTemplate = (typeof CHAT_TEMPLATES)[number];
-
 export function conversationTitle(conversation: Pick<WhatsAppConversation, 'terceroNombre' | 'contactName' | 'waId'>) {
   return conversation.terceroNombre || conversation.contactName || formatWaId(conversation.waId);
 }
@@ -93,10 +65,7 @@ export const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'
 
 export function messagePreview(kind: string, textBody: string | null, templateName: string | null) {
   if (textBody) return textBody;
-  if (templateName) {
-    const template = CHAT_TEMPLATES.find((item) => item.name === templateName);
-    return `Plantilla: ${template?.label ?? templateName}`;
-  }
+  if (templateName) return `Plantilla: ${templateName}`;
   return KIND_PREVIEWS[kind] ?? 'Mensaje no compatible';
 }
 

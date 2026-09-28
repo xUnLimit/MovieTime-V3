@@ -1,151 +1,87 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Copy, Calendar, DollarSign, Mail, Lock, User } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { TemplateMensaje, TipoTemplate } from '@/types';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useMetaTemplates, useSyncMetaTemplates } from '@/hooks/use-templates';
+import { validateParamMap } from '@/modules/messaging/meta-template-mapping';
 import {
   createTemplateMutation,
   updateTemplateMutation,
 } from '@/application/client-domain-mutations';
-import { queryKeys } from '@/platform/query-keys';
-import { toast } from 'sonner';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
+import { queryKeys } from '@/platform/query-keys';
+import type { TemplateMensaje, TipoTemplate } from '@/types';
+import { PLACEHOLDERS, TEMPLATE_TIPOS } from './editor-constants';
+import { MetaTemplateSection } from './MetaTemplateSection';
+import { PlaceholdersCard } from './PlaceholdersCard';
+import { TemplatePreview } from './TemplatePreview';
+import { useTemplateDraft } from './useTemplateDraft';
 
 interface TemplateEditorProps {
   templates: TemplateMensaje[];
   onTemplateSaved?: () => void | Promise<void>;
 }
 
-type EditorDraft = {
-  tipo: TipoTemplate;
-  templateId: string | null;
-  templateContenido: string;
-  contenido: string;
-  dirty: boolean;
-};
-
-const TIPO_TEMPLATES: { value: TipoTemplate; label: string }[] = [
-  { value: 'notificacion_regular', label: 'Notificación Regular' },
-  { value: 'dia_pago', label: 'Notificación Día de Pago' },
-  { value: 'renovacion', label: 'Notificación de Renovación' },
-  { value: 'suscripcion', label: 'Notificación de Suscripción' },
-  { value: 'cancelacion', label: 'Cancelación de Servicio' },
-  { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales' },
-  { value: 'transferencia_servicio', label: 'Transferencia de Servicio' },
-];
-
-const PLACEHOLDERS = [
-  { key: '{saludo}', description: 'El saludo (Buenos días, tardes, etc.)', icon: User },
-  { key: '{cliente}', description: 'El nombre completo del cliente', icon: User },
-  { key: '{nombre_cliente}', description: 'El primer nombre del cliente', icon: User },
-  { key: '{{#items}}\n...\n{{/items}}', description: 'Bloque repetible por item (escribe el contenido en el medio)', icon: Calendar },
-  { key: '{items}', description: 'Lista de servicios en formato: *A*, *B* y *C*', icon: Calendar },
-  { key: '{servicio}', description: 'El nombre del servicio', icon: Calendar },
-  { key: '{categoria}', description: 'La categoría del servicio', icon: Calendar },
-  { key: '{perfil_nombre}', description: 'El nombre del perfil', icon: User },
-  { key: '{correo}', description: 'El correo electrónico del servicio', icon: Mail },
-  { key: '{contrasena}', description: 'La contraseña del servicio', icon: Lock },
-  { key: '{codigo}', description: 'El código de la venta', icon: Lock },
-  { key: '{credenciales_cambiadas}', description: 'Resumen de los datos que cambiaron', icon: Lock },
-  { key: '{cambio_correo}', description: 'Línea solo para cambio de correo', icon: Mail },
-  { key: '{cambio_contrasena}', description: 'Línea solo para cambio de contraseña', icon: Lock },
-  { key: '{vencimiento}', description: 'La fecha de vencimiento', icon: Calendar },
-  { key: '{monto}', description: 'El monto a pagar', icon: DollarSign },
-];
-
 export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorProps) {
   const queryClient = useQueryClient();
   const [selectedTipo, setSelectedTipo] = useState<TipoTemplate>('notificacion_regular');
+  const { data: metaTemplates = [], isLoading: metaLoading } = useMetaTemplates();
+  const syncMeta = useSyncMetaTemplates();
 
-  const currentTemplate = useMemo(() => {
-    return templates.find((t) => t.tipo === selectedTipo) || null;
-  }, [selectedTipo, templates]);
+  const currentTemplate = useMemo(
+    () => templates.find((t) => t.tipo === selectedTipo) || null,
+    [selectedTipo, templates],
+  );
+  const { fields, patch } = useTemplateDraft(selectedTipo, currentTemplate);
+  const { contenido, metaTemplateName, metaParamMap } = fields;
 
-  const templateId = currentTemplate?.id ?? null;
-  const templateContenido = currentTemplate?.contenido ?? '';
-  const [editorDraft, setEditorDraft] = useState<EditorDraft>({
-    tipo: selectedTipo,
-    templateId: null,
-    templateContenido: '',
-    contenido: '',
-    dirty: false,
-  });
+  const linkedMeta = metaTemplateName
+    ? metaTemplates.find((item) => item.name === metaTemplateName && !item.retired) ?? null
+    : null;
+  const mapError = validateParamMap(metaParamMap, linkedMeta);
 
-  let draft = editorDraft;
-  const templateChanged =
-    draft.tipo !== selectedTipo ||
-    draft.templateId !== templateId ||
-    draft.templateContenido !== templateContenido;
-
-  if (templateChanged) {
-    const nextContenido =
-      draft.tipo !== selectedTipo || !draft.dirty
-        ? templateContenido
-        : draft.contenido;
-
-    draft = {
-      tipo: selectedTipo,
-      templateId,
-      templateContenido,
-      contenido: nextContenido,
-      dirty: nextContenido !== templateContenido,
-    };
-    setEditorDraft(draft);
-  }
-
-  const contenido = draft.contenido;
-
-  const setContenido = (nextContenido: string) => {
-    setEditorDraft((currentDraft) => ({
-      ...currentDraft,
-      contenido: nextContenido,
-      dirty: nextContenido !== currentDraft.templateContenido,
-    }));
-  };
-
-  const handleCopyPlaceholder = async (placeholder: string) => {
-    try {
-      await navigator.clipboard.writeText(placeholder);
-      toast.success('Placeholder copiado', { description: 'El placeholder ha sido copiado al portapapeles.' });
-    } catch (error) {
-      toast.error('Error al copiar', { description: getPublicErrorMessage(error, 'No se pudo copiar el mensaje.') });
-    }
+  const handleSync = () => {
+    syncMeta.mutate(undefined, {
+      onSuccess: ({ count }) => toast.success('Plantillas sincronizadas', { description: `Se actualizaron ${count} plantillas desde Meta.` }),
+      onError: (error) => toast.error('No se pudo sincronizar', { description: getPublicErrorMessage(error, 'No se pudo sincronizar con Meta.') }),
+    });
   };
 
   const handleSave = async () => {
+    if (mapError) {
+      toast.error('Revisa la plantilla de Meta', { description: mapError });
+      return;
+    }
     try {
-      // Detect placeholders in content
       const detectedPlaceholders = PLACEHOLDERS
         .map((p) => p.key)
         .filter((placeholder) => contenido.includes(placeholder));
+      const metaLink = { metaTemplateName, metaParamMap };
 
       if (currentTemplate) {
-        // Update existing template
         await updateTemplateMutation(
           currentTemplate.id,
-          {
-            contenido,
-            placeholders: detectedPlaceholders,
-          },
+          { contenido, placeholders: detectedPlaceholders, ...metaLink },
           currentTemplate,
         );
         await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
         await onTemplateSaved?.();
         toast.success('Plantilla actualizada', { description: 'Los cambios en la plantilla han sido guardados correctamente.' });
       } else {
-        // Create new template
-        const tipoLabel = TIPO_TEMPLATES.find((t) => t.value === selectedTipo)?.label || selectedTipo;
+        const tipoLabel = TEMPLATE_TIPOS.find((t) => t.value === selectedTipo)?.label || selectedTipo;
         await createTemplateMutation({
           nombre: tipoLabel,
           tipo: selectedTipo,
           contenido,
           placeholders: detectedPlaceholders,
           activo: true,
+          ...metaLink,
         });
         await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
         await onTemplateSaved?.();
@@ -161,7 +97,7 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
       <Tabs value={selectedTipo} onValueChange={(value) => setSelectedTipo(value as TipoTemplate)}>
         <div className="tabs-scroll-shell -mx-1 px-1">
           <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
-            {TIPO_TEMPLATES.map((tipo) => (
+            {TEMPLATE_TIPOS.map((tipo) => (
               <TabsTrigger
                 key={tipo.value}
                 value={tipo.value}
@@ -173,82 +109,53 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
           </TabsList>
         </div>
 
-        {TIPO_TEMPLATES.map((tipo) => (
+        {TEMPLATE_TIPOS.map((tipo) => (
           <TabsContent key={tipo.value} value={tipo.value} className="min-w-0 space-y-4">
             <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
-              {/* Editor Section */}
-              <Card className="min-w-0 space-y-3 p-5 lg:col-span-2">
-                <div>
-                  <h2 className="text-lg font-semibold">Plantilla de {tipo.label}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Edita el mensaje para notificar sobre vencimientos próximos.
-                  </p>
-                </div>
+              <div className="min-w-0 space-y-6 lg:col-span-2">
+                <Card className="min-w-0 space-y-3 p-5">
+                  <div>
+                    <h2 className="text-lg font-semibold">Plantilla de {tipo.label}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Texto libre del mensaje. Se envía por wa.me o por la API con la ventana de 24 h abierta.
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Contenido del Mensaje</label>
-                  <div className="relative">
+                  <div className="space-y-2">
+                    <label htmlFor="template-contenido" className="text-sm font-medium">Contenido del Mensaje</label>
                     <Textarea
+                      id="template-contenido"
                       value={contenido}
-                      onChange={(e) => setContenido(e.target.value)}
+                      onChange={(e) => patch({ contenido: e.target.value })}
                       placeholder="Escribe aquí el contenido del mensaje..."
                       className="h-[320px] text-sm leading-normal resize-none"
                     />
                   </div>
-                </div>
 
-                <div className="flex justify-end">
-                  <Button onClick={handleSave} size="sm">
-                    Guardar Plantilla
-                  </Button>
-                </div>
-              </Card>
+                  <MetaTemplateSection
+                    templates={metaTemplates}
+                    linkedName={metaTemplateName}
+                    paramMap={metaParamMap}
+                    mapError={mapError}
+                    isLoading={metaLoading}
+                    isSyncing={syncMeta.isPending}
+                    onSync={handleSync}
+                    onChange={(name, map) => patch({ metaTemplateName: name, metaParamMap: map })}
+                  />
 
-              {/* Placeholders Section */}
-              <Card className="p-5">
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-lg font-semibold">Placeholders Disponibles</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Usa estos placeholders en tu mensaje. Serán reemplazados por los valores reales.
-                    </p>
+                  <div className="flex justify-end">
+                    <Button onClick={handleSave} size="sm" disabled={Boolean(mapError)}>
+                      Guardar Plantilla
+                    </Button>
                   </div>
+                </Card>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {PLACEHOLDERS.map((placeholder) => {
-                      const Icon = placeholder.icon;
-                      return (
-                        <div
-                          key={placeholder.key}
-                          className="p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-start gap-2 flex-1 min-w-0">
-                              <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <code className="text-xs font-semibold block text-foreground">
-                                  <span className="break-all">{placeholder.key}</span>
-                                </code>
-                                <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
-                                  {placeholder.description}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleCopyPlaceholder(placeholder.key)}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </Card>
+                <Card className="p-5">
+                  <TemplatePreview contenido={contenido} meta={linkedMeta} paramMap={metaParamMap} />
+                </Card>
+              </div>
+
+              <PlaceholdersCard />
             </div>
           </TabsContent>
         ))}

@@ -7,6 +7,8 @@ import {
 } from '@/components/ui/table';
 
 import { VentasProximasTableRow } from './VentasProximasTableRow';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useVentaNoticeStatus } from '@/hooks/use-whatsapp-notices';
 import { useVentaRenewalCounts } from '@/hooks/use-venta-renewal-counts';
 import type {
   CopyToClipboardHandler,
@@ -26,6 +28,9 @@ interface VentasProximasTableContentProps {
   onRenovar: VentaNotificationAction;
   onPaymentPromise: VentaNotificationAction;
   onSeguimiento: VentaNotificationAction;
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelected?: (notifId: string, selected: boolean) => void;
+  onToggleAllSelected?: (selected: boolean) => void;
 }
 
 export function VentasProximasTableContent({
@@ -39,13 +44,29 @@ export function VentasProximasTableContent({
   onRenovar,
   onPaymentPromise,
   onSeguimiento,
+  selectedIds,
+  onToggleSelected,
+  onToggleAllSelected,
 }: VentasProximasTableContentProps) {
-  const renewalCounts = useVentaRenewalCounts(notificaciones.map(notif => notif.ventaId));
+  const ventaIds = notificaciones.map(notif => notif.ventaId);
+  const renewalCounts = useVentaRenewalCounts(ventaIds);
+  const noticeStatus = useVentaNoticeStatus(ventaIds);
+  const allSelected = notificaciones.length > 0 && notificaciones.every((notif) => selectedIds?.has(notif.id));
+  const someSelected = !allSelected && notificaciones.some((notif) => selectedIds?.has(notif.id));
   return (
     <div className="notification-table-scroll-shell rounded-md border">
       <Table className="table-scroll-content min-w-[1540px] xl:min-w-full">
         <TableHeader>
           <TableRow className="border-b hover:bg-muted/50">
+            {onToggleSelected ? (
+              <TableHead className="h-10 w-[40px] px-2 text-center">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                  onCheckedChange={(value) => onToggleAllSelected?.(value === true)}
+                  aria-label="Seleccionar todos los de esta página"
+                />
+              </TableHead>
+            ) : null}
               <TableHead className="h-10 w-[56px] px-2 text-center text-muted-foreground">
                 Tipo
               </TableHead>
@@ -95,6 +116,9 @@ export function VentasProximasTableContent({
               notif={notif}
               renovaciones={renewalCounts.data?.[notif.ventaId]}
               renovacionesError={renewalCounts.isError}
+              noticeState={noticeStatus.data?.[notif.ventaId]}
+              selected={selectedIds?.has(notif.id) ?? false}
+              onSelectedChange={onToggleSelected}
               visiblePasswords={visiblePasswords}
               onToggleLeida={onToggleLeida}
               onCopyToClipboard={onCopyToClipboard}

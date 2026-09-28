@@ -1,20 +1,33 @@
-// Plantillas aprobadas en Meta (cuenta MovieTime PTY). El numero de parametros
-// debe coincidir con los {{n}} del cuerpo registrado; Meta rechaza el envio si no.
+import { createServiceRoleClient } from '@/platform/server/supabase-server';
+import { z } from '@/platform/validation/zod';
+
 export const WHATSAPP_TEMPLATE_LANGUAGE = 'es';
 
-export const WHATSAPP_TEMPLATES = {
-  recordatorio_vencimiento: { paramCount: 4 },
-  vence_hoy: { paramCount: 3 },
-  servicio_suspendido: { paramCount: 4 },
-} as const;
+export type ApprovedTemplate = {
+  paramCount: number;
+  buttons: { type: string; text: string }[];
+};
 
-export type WhatsAppTemplateName = keyof typeof WHATSAPP_TEMPLATES;
+export type TemplateCatalog = {
+  getApproved(name: string, language: string): Promise<ApprovedTemplate | null>;
+};
 
-export const WHATSAPP_TEMPLATE_NAMES = Object.keys(WHATSAPP_TEMPLATES) as [
-  WhatsAppTemplateName,
-  ...WhatsAppTemplateName[],
-];
+type ServiceClient = ReturnType<typeof createServiceRoleClient>;
+const cachedButtonsSchema = z.array(z.object({ type: z.string(), text: z.string() }));
 
-export function hasValidTemplateParams(name: WhatsAppTemplateName, params: readonly string[]): boolean {
-  return params.length === WHATSAPP_TEMPLATES[name].paramCount;
+export function createTemplateCatalog(client: ServiceClient = createServiceRoleClient()): TemplateCatalog {
+  return {
+    async getApproved(name, language) {
+      const { data, error } = await client.from('whatsapp_meta_templates')
+        .select('param_count,buttons')
+        .eq('name', name)
+        .eq('language', language)
+        .eq('status', 'APPROVED')
+        .eq('retired', false)
+        .maybeSingle();
+      if (error) throw new Error(`WhatsApp template catalog lookup failed: ${error.code ?? 'unknown'}`);
+      if (!data) return null;
+      return { paramCount: data.param_count, buttons: cachedButtonsSchema.parse(data.buttons) };
+    },
+  };
 }

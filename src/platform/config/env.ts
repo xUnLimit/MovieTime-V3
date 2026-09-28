@@ -42,10 +42,12 @@ const serverEnvSchema = z.object({
   WHATSAPP_VERIFY_TOKEN: z.string().trim().min(16).optional(),
   WHATSAPP_APP_SECRET: z.string().trim().min(16).optional(),
   WHATSAPP_ACCESS_TOKEN: z.string().trim().min(20).optional(),
+  WHATSAPP_WABA_ID: z.string().trim().regex(/^\d{1,32}$/).optional(),
   WHATSAPP_PHONE_NUMBER_ID: z.string().trim().regex(/^\d{1,32}$/).optional(),
   YAPPY_IMAP_USER: z.email().optional(),
   YAPPY_IMAP_PASSWORD: z.string().min(1).optional(),
   YAPPY_SYNC_SECRET: z.string().trim().min(16).optional(),
+  WHATSAPP_AUTO_NOTICES_SECRET: z.string().trim().min(16).optional(),
 }).superRefine((value, ctx) => {
   if (!isProduction) return;
   const cronSecret = value.PUSH_CRON_SECRET || value.CRON_SECRET;
@@ -123,9 +125,14 @@ export const env = {
   whatsappAccessToken: 'WHATSAPP_ACCESS_TOKEN' in serverEnv && typeof serverEnv.WHATSAPP_ACCESS_TOKEN === 'string'
     ? serverEnv.WHATSAPP_ACCESS_TOKEN
     : '',
+  whatsappWabaId: 'WHATSAPP_WABA_ID' in serverEnv && typeof serverEnv.WHATSAPP_WABA_ID === 'string'
+    ? serverEnv.WHATSAPP_WABA_ID
+    : '',
   yappyImapUser: 'YAPPY_IMAP_USER' in serverEnv && typeof serverEnv.YAPPY_IMAP_USER === 'string' ? serverEnv.YAPPY_IMAP_USER : '',
   yappyImapPassword: 'YAPPY_IMAP_PASSWORD' in serverEnv && typeof serverEnv.YAPPY_IMAP_PASSWORD === 'string' ? serverEnv.YAPPY_IMAP_PASSWORD : '',
   yappySyncSecret: 'YAPPY_SYNC_SECRET' in serverEnv && typeof serverEnv.YAPPY_SYNC_SECRET === 'string' ? serverEnv.YAPPY_SYNC_SECRET : '',
+  whatsappAutoNoticesSecret: 'WHATSAPP_AUTO_NOTICES_SECRET' in serverEnv
+    && typeof serverEnv.WHATSAPP_AUTO_NOTICES_SECRET === 'string' ? serverEnv.WHATSAPP_AUTO_NOTICES_SECRET : '',
   // Identificador publico del numero +507 6533-1751 en la Cloud API (no es un
   // secreto); la variable de entorno permite cambiar de numero sin desplegar.
   whatsappPhoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID' in serverEnv && typeof serverEnv.WHATSAPP_PHONE_NUMBER_ID === 'string'

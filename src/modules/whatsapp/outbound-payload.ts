@@ -1,4 +1,4 @@
-import { WHATSAPP_TEMPLATE_LANGUAGE, type WhatsAppTemplateName } from './template-catalog';
+import { WHATSAPP_TEMPLATE_LANGUAGE } from './template-catalog';
 
 export type InteractiveButton = { id: string; title: string };
 export type InteractiveRow = { id: string; title: string; description?: string };
@@ -9,7 +9,7 @@ export type SharedLocation = { latitude: number; longitude: number; name?: strin
 // ventana de 24 h cerrada; el resto exige que el cliente haya escrito antes.
 export type OutboundPayload =
   | { kind: 'text'; text: string; replyTo?: string }
-  | { kind: 'template'; templateName: WhatsAppTemplateName; params: string[] }
+  | { kind: 'template'; templateName: string; params: string[]; buttonPayloads?: string[] }
   | { kind: 'image' | 'document' | 'audio'; mediaId: string; mimeType: string; filename?: string; caption?: string; replyTo?: string }
   | { kind: 'sticker'; mediaId: string; mimeType: string; replyTo?: string }
   | { kind: 'reaction'; targetWaMessageId: string; emoji: string }
@@ -79,9 +79,13 @@ export function toCloudApiBody(to: string, payload: OutboundPayload) {
         template: {
           name: payload.templateName,
           language: { code: WHATSAPP_TEMPLATE_LANGUAGE },
-          components: payload.params.length === 0
-            ? []
-            : [{ type: 'body', parameters: payload.params.map((text) => ({ type: 'text', text })) }],
+          components: [
+            ...(payload.params.length === 0 ? [] : [{ type: 'body', parameters: payload.params.map((text) => ({ type: 'text', text })) }]),
+            ...(payload.buttonPayloads ?? []).map((buttonPayload, index) => ({
+              type: 'button', sub_type: 'quick_reply', index: String(index),
+              parameters: [{ type: 'payload', payload: buttonPayload }],
+            })),
+          ],
         },
       };
     case 'image':

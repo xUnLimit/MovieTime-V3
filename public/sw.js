@@ -42,16 +42,17 @@ self.addEventListener('notificationclick', (event) => {
 async function handlePushEvent(event) {
   try {
     const payload = eventDataToJson(event);
-    if (payload.kind === 'whatsapp_message' || payload.kind === 'push_test') {
+    if (payload.kind === 'whatsapp_message' || payload.kind === 'whatsapp_notice' || payload.kind === 'push_test') {
       await self.registration.showNotification(String(payload.title || 'MovieTime PTY'), {
         body: String(payload.body || 'Nuevo mensaje'),
         icon: '/icon-192.png',
         badge: '/icon-192.png',
         tag: payload.kind === 'whatsapp_message'
           ? `whatsapp-message:${toSameOriginPath(payload.destination, '/chats')}`
-          : 'push_test',
+          : payload.kind === 'whatsapp_notice' ? 'whatsapp-notice' : 'push_test',
         renotify: true,
-        data: { url: toSameOriginPath(payload.destination, payload.kind === 'whatsapp_message' ? '/chats' : '/dashboard') },
+        data: { url: toSameOriginPath(payload.destination, payload.kind === 'whatsapp_message'
+          ? '/chats' : payload.kind === 'whatsapp_notice' ? '/notificaciones' : '/dashboard') },
       });
       return;
     }

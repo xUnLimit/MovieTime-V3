@@ -1,5 +1,4 @@
 import { z } from '@/platform/validation/zod';
-import { WHATSAPP_TEMPLATE_NAMES } from './template-catalog';
 
 // Un valor de plantilla no puede tener saltos de linea, tabulaciones ni mas de
 // cuatro espacios seguidos: Meta rechaza el envio en esos casos.
@@ -39,8 +38,9 @@ export const sendWhatsAppMessageSchema = z.object({
     z.object({ kind: z.literal('text'), text: z.string().trim().min(1).max(4096), replyTo: waMessageIdSchema.optional() }),
     z.object({
       kind: z.literal('template'),
-      templateName: z.enum(WHATSAPP_TEMPLATE_NAMES),
+      templateName: z.string().regex(/^[a-z0-9_]{1,512}$/),
       params: z.array(templateParamSchema).max(10),
+      buttonPayloads: z.array(z.string().min(1).max(256)).max(3).optional(),
     }),
     z.object({
       kind: z.enum(['image', 'document', 'audio']),

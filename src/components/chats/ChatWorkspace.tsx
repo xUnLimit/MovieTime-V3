@@ -15,15 +15,17 @@ import {
   useWhatsAppMessages,
 } from '@/hooks/use-whatsapp-chat';
 import { useSaveChatSticker } from '@/hooks/use-chat-saved-stickers';
+import { useMetaTemplates, useTemplates } from '@/hooks/use-templates';
+import type { TipoTemplate } from '@/types';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { cn } from '@/platform/utils/cn';
 import { readChatDraft, writeChatDraft } from '@/modules/whatsapp/chat-drafts';
 import { ChatComposer } from './ChatComposer';
 import { ChatHeader } from './ChatHeader';
-import { getServiceWindow, messagePreview, type ChatTemplate } from './chat-format';
+import { getServiceWindow, messagePreview } from './chat-format';
 import { rebuildInteractiveMessage } from './chat-interactive';
 import { searchMessages } from './chat-search';
-import { buildMetaTemplateParams, suggestMetaTemplate } from './chat-templates';
+import { buildMetaTemplateParams, buildTemplateOptions, suggestTipoByDueDate } from './chat-templates';
 import { CustomerPanel, sortVentasForChat } from './CustomerPanel';
 import { ImageLightbox } from './ImageLightbox';
 import { MessageTimeline } from './MessageTimeline';
@@ -51,6 +53,10 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   const hideMessage = useHideWhatsAppMessage(waId);
   const saveSticker = useSaveChatSticker();
 
+  const { data: tipoTemplates = [] } = useTemplates();
+  const { data: metaTemplates = [] } = useMetaTemplates();
+  const templateOptions = useMemo(() => buildTemplateOptions(tipoTemplates, metaTemplates), [tipoTemplates, metaTemplates]);
+
   const activas = useMemo(() => sortVentasForChat(ventas), [ventas]);
   const [chosenVentaId, setChosenVentaId] = useState<string | null>(null);
   const selectedVenta = activas.find((venta) => venta.id === chosenVentaId) ?? activas[0] ?? null;
@@ -67,8 +73,8 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   const shownMatchIndex = matchIds.length ? Math.min(activeMatchIndex, matchIds.length - 1) : 0;
   const [panelOverlay, setPanelOverlay] = useState(false);
   const [wideWorkspace, setWideWorkspace] = useState(false);
-  const [templateDialog, setTemplateDialog] = useState<{ open: boolean; name: ChatTemplate['name']; key: number }>({
-    open: false, name: 'recordatorio_vencimiento', key: 0,
+  const [templateDialog, setTemplateDialog] = useState<{ open: boolean; tipo: TipoTemplate; key: number }>({
+    open: false, tipo: 'notificacion_regular', key: 0,
   });
   // Una clave por intento: si la red falla y se reintenta, el servidor devuelve
   // el mismo envio en lugar de mandarle el mensaje dos veces al cliente.
@@ -150,10 +156,10 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
     );
   };
 
-  const openTemplates = (name?: ChatTemplate['name']) => {
+  const openTemplates = (tipo?: TipoTemplate) => {
     setTemplateDialog((current) => ({
       open: true,
-      name: name ?? suggestMetaTemplate(ventaContext?.fechaVencimiento ?? selectedVenta?.fechaFin ?? null, now),
+      tipo: tipo ?? suggestTipoByDueDate(ventaContext?.fechaVencimiento ?? selectedVenta?.fechaFin ?? null, now),
       key: current.key + 1,
     }));
   };
@@ -251,6 +257,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           onSendSticker={(sticker, onDone) => sendExtra(waId, { kind: 'sticker', mediaId: sticker.mediaId, mimeType: sticker.mimeType, replyTo: replyTarget?.waMessageId }, () => { onDone(); setReplyTarget(null); })}
           onOpenTemplates={() => openTemplates()}
           conversation={conversation}
+          ventaContext={ventaContext}
         />
       </div>
 
@@ -264,8 +271,9 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
       <TemplateSendDialog
         key={templateDialog.key}
         open={templateDialog.open}
-        initialTemplate={templateDialog.name}
-        paramsFor={(name) => buildMetaTemplateParams(name, ventaContext, fallbackName)}
+        options={templateOptions}
+        initialTipo={templateDialog.tipo}
+        paramsFor={(option) => buildMetaTemplateParams(option.tipo, ventaContext, fallbackName)}
         contextLabel={ventaContext ? contextLabel : null}
         isSending={sendMessage.isPending}
         onOpenChange={(open) => setTemplateDialog((current) => ({ ...current, open }))}

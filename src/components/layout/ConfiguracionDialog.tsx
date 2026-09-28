@@ -12,6 +12,7 @@ import {
   DevicePushSection,
 } from './ConfiguracionDialogBasicSections';
 import { ExecutivePushSection } from './ConfiguracionDialogExecutiveSection';
+import { WhatsAppAutoSection } from './ConfiguracionDialogWhatsAppAutoSection';
 import { useConfiguracionDialogController } from './useConfiguracionDialogController';
 
 interface ConfiguracionDialogProps {
@@ -61,6 +62,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
             setDraftWindowEnd={controller.setDraftWindowEnd}
             setDraftWindowStart={controller.setDraftWindowStart}
           />
+          <WhatsAppAutoSection settings={controller.whatsappAuto} />
         </div>
       </DialogContent>
     </Dialog>

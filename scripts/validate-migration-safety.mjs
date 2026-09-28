@@ -5,7 +5,11 @@ const base = process.env.MIGRATION_BASE?.trim();
 const args = base && !/^0+$/.test(base)
   ? ['diff', '--name-only', '--diff-filter=ACMR', `${base}...HEAD`, '--', 'supabase/migrations/*.sql']
   : ['diff', '--name-only', '--diff-filter=ACMR', 'HEAD', '--', 'supabase/migrations/*.sql'];
-const files = execFileSync('git', args, { encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
+const trackedChanges = execFileSync('git', args, { encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
+const untrackedChanges = execFileSync('git',
+  ['ls-files', '--others', '--exclude-standard', '--', 'supabase/migrations/*.sql'],
+  { encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
+const files = [...new Set([...trackedChanges, ...untrackedChanges])];
 const forbidden = [
   { name: 'DROP TABLE', pattern: /\bDROP\s+TABLE\b/i },
   { name: 'DROP COLUMN', pattern: /\bDROP\s+COLUMN\b/i },

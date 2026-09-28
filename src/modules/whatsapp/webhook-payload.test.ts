@@ -12,6 +12,31 @@ function envelope(changes: Array<{ field: string; value: unknown }>) {
 const metadata = { display_phone_number: '50765331751', phone_number_id: '1324513647414207' };
 
 describe('parseWebhookPayload', () => {
+  it('captures a template quick reply payload and its context', () => {
+    const result = parseWebhookPayload(envelope([{
+      field: 'messages', value: { messaging_product: 'whatsapp', metadata,
+        messages: [{ id: 'wamid.REPLY', from: '50760000000', timestamp: '1790000000',
+          type: 'button', button: { text: 'Quiero renovar', payload: 'RENOVAR:123e4567-e89b-12d3-a456-426614174000' },
+          context: { id: 'wamid.NOTICE' } }],
+      },
+    }]));
+    if (!result.success) throw new Error('expected success');
+    expect(result.batch.messages[0]).toMatchObject({
+      messageType: 'button', textBody: 'Quiero renovar', contextWaMessageId: 'wamid.NOTICE',
+      payload: { type: 'template_button', payload: 'RENOVAR:123e4567-e89b-12d3-a456-426614174000', text: 'Quiero renovar' },
+    });
+  });
+
+  it('still stores a button label when Meta omits its payload', () => {
+    const result = parseWebhookPayload(envelope([{
+      field: 'messages', value: { messaging_product: 'whatsapp', metadata,
+        messages: [{ id: 'wamid.LABEL', from: '50760000000', timestamp: '1790000000',
+          type: 'button', button: { text: 'Respuesta' } }],
+      },
+    }]));
+    if (!result.success) throw new Error('expected success');
+    expect(result.batch.messages[0]).toMatchObject({ textBody: 'Respuesta', payload: {} });
+  });
   it('normalizes an inbound text message with the contact name', () => {
     const result = parseWebhookPayload(envelope([{
       field: 'messages',

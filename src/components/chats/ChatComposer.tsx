@@ -14,9 +14,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { WhatsAppConversation, WhatsAppUploadResult } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { useUploadWhatsAppMedia } from '@/hooks/use-whatsapp-chat';
-import { useChatSavedMessages } from '@/hooks/use-chat-saved-messages';
 import type { SavedSticker } from '@/application/use-cases/chat-saved-sticker-use-cases';
 import type { SavedMessage } from '@/modules/whatsapp/saved-messages';
+import type { VentaMessageContext } from '@/platform/utils/whatsapp-template-render';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { cn } from '@/platform/utils/cn';
 import { ChatActionsDialog } from './ChatActionsDialog';
@@ -26,6 +26,8 @@ import { AUDIO_EXTENSIONS, AUDIO_RECORDING_PREFERENCE } from './chat-audio-forma
 import { InteractiveMessageDialog } from './InteractiveMessageDialog';
 import { SavedMessagesDialog } from './SavedMessagesDialog';
 import { SlashSuggestions } from './SlashSuggestions';
+import type { SlashItem } from './chat-slash';
+import { useSlashItems } from './useSlashItems';
 import { StickerPickerDialog } from './StickerPickerDialog';
 
 type ChatComposerProps = {
@@ -41,6 +43,7 @@ type ChatComposerProps = {
   onSendInteractive?: (message: InteractiveSendMessage, onDone: () => void) => void;
   onSendSticker?: (sticker: SavedSticker, onDone: () => void) => void;
   conversation?: WhatsAppConversation;
+  ventaContext?: VentaMessageContext | null;
 };
 
 const MAX_TEXTAREA_PX = 160;
@@ -50,7 +53,7 @@ const MAX_MEDIA_BYTES = 4 * 1024 * 1024;
 type PendingMedia = { file: File; previewUrl: string | null };
 
 export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerProps>(function ChatComposer(
-  { draft, serviceWindow, isSending, onDraftChange, onSend, onOpenTemplates, replyTarget, onCancelReply, onSendMedia, onSendInteractive, onSendSticker, conversation },
+  { draft, serviceWindow, isSending, onDraftChange, onSend, onOpenTemplates, replyTarget, onCancelReply, onSendMedia, onSendInteractive, onSendSticker, conversation, ventaContext = null },
   ref
 ) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -71,18 +74,8 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
   const uploadMedia = useUploadWhatsAppMedia();
   useImperativeHandle<HTMLTextAreaElement | null, HTMLTextAreaElement | null>(ref, () => textareaRef.current, []);
 
-  // Solo "/palabra" sin espacios activa el popup: una barra en medio de una
-  // frase (p. ej. una URL) sigue siendo texto normal.
-  const slashMatch = /^\/(\S*)$/.exec(draft);
-  const { data: savedMessages = [] } = useChatSavedMessages(slashMatch !== null);
-  const slashSuggestions = slashMatch
-    ? (() => {
-        const term = slashMatch[1].toLocaleLowerCase('es');
-        return term ? savedMessages.filter((message) => message.title.toLocaleLowerCase('es').includes(term)) : savedMessages;
-      })()
-    : [];
-
-  const slashTerm = slashMatch?.[1] ?? null;
+  const fallbackName = conversation?.terceroNombre || conversation?.contactName || '';
+  const { items: slashSuggestions, term: slashTerm } = useSlashItems(draft, ventaContext, fallbackName);
   useEffect(() => setSlashActiveIndex(0), [slashTerm]);
 
   // El cuadro crece con el texto hasta un maximo, como en WhatsApp.
@@ -192,6 +185,12 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
     }
   };
 
+  const applySlashItem = (item: SlashItem) => {
+    if (item.kind === 'saved') { applySavedMessage(item.message); return; }
+    onDraftChange(item.body);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  };
+
   const applySavedMessage = (message: SavedMessage) => {
     setSavedMessagesOpen(false);
     if (message.kind === 'text') {
@@ -242,10 +241,10 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
     >
       {slashSuggestions.length > 0 ? (
         <SlashSuggestions
-          messages={slashSuggestions}
+          items={slashSuggestions}
           activeIndex={slashActiveIndex}
           onHover={setSlashActiveIndex}
-          onSelect={applySavedMessage}
+          onSelect={applySlashItem}
         />
       ) : null}
       {replyTarget ? <div className="mb-[11px] flex items-center justify-between gap-3 rounded-lg bg-chat-selected py-1 pl-[13px] pr-1 text-[12px] text-chat-accent-strong"><span className="truncate">Respondiendo a: {replyTarget.preview}</span><button type="button" className={TOOL_ICON_SMALL} aria-label="Cancelar respuesta" onClick={onCancelReply}><X className="h-[15px] w-[15px]" /></button></div> : null}
@@ -317,7 +316,7 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
               if (event.key === 'Escape') { event.preventDefault(); onDraftChange(''); return; }
               if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                 event.preventDefault();
-                applySavedMessage(slashSuggestions[slashActiveIndex]);
+                applySlashItem(slashSuggestions[slashActiveIndex]);
                 return;
               }
             }

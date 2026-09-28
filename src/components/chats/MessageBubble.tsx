@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/platform/utils/cn';
-import { CHAT_TEMPLATES, QUICK_REACTIONS, messagePreview, statusLabel } from './chat-format';
+import { QUICK_REACTIONS, messagePreview, statusLabel } from './chat-format';
 import { isInteractiveKind, readInteractiveOptions } from './chat-interactive';
 import type { MessageReactions } from './chat-reactions';
 import { MessageAttachment } from './MessageAttachment';
@@ -55,9 +55,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
   const [reactMenuOpen, setReactMenuOpen] = useState(false);
   const outbound = message.direction === 'outbound';
   const failed = message.status === 'failed';
-  const templateLabel = message.templateName
-    ? CHAT_TEMPLATES.find((item) => item.name === message.templateName)?.label ?? message.templateName
-    : null;
+  const templateLabel = message.templateName;
   const text = message.mediaId && !message.textBody
     ? null
     : templateLabel ?? messagePreview(message.kind, message.textBody, null);

@@ -1,18 +1,31 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { hasValidTemplateParams, WHATSAPP_TEMPLATE_NAMES } from './template-catalog';
+import { createTemplateCatalog } from './template-catalog';
 
 describe('template catalog', () => {
-  it('lists the templates approved for the account', () => {
-    expect(WHATSAPP_TEMPLATE_NAMES).toEqual(['recordatorio_vencimiento', 'vence_hoy', 'servicio_suspendido']);
+  it('reads only approved nonretired templates by name and language', async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: { param_count: 4, buttons: [{ type: 'QUICK_REPLY', text: 'Renovar' }] }, error: null });
+    const eq = vi.fn().mockReturnThis();
+    const client = { from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq, maybeSingle }) }) };
+    const catalog = createTemplateCatalog(client as never);
+    await expect(catalog.getApproved('aviso_vencimiento', 'es')).resolves.toEqual({
+      paramCount: 4, buttons: [{ type: 'QUICK_REPLY', text: 'Renovar' }],
+    });
+    expect(eq.mock.calls).toEqual([
+      ['name', 'aviso_vencimiento'], ['language', 'es'], ['status', 'APPROVED'], ['retired', false],
+    ]);
   });
 
-  it.each([
-    ['recordatorio_vencimiento', 4],
-    ['vence_hoy', 3],
-    ['servicio_suspendido', 4],
-  ] as const)('requires exactly the registered parameters for %s', (name, count) => {
-    expect(hasValidTemplateParams(name, Array.from({ length: count }, () => 'x'))).toBe(true);
-    expect(hasValidTemplateParams(name, Array.from({ length: count - 1 }, () => 'x'))).toBe(false);
+  it('returns null when no approved row exists', async () => {
+    const query = { eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    const client = { from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(query) }) };
+    await expect(createTemplateCatalog(client as never).getApproved('unknown', 'es')).resolves.toBeNull();
+  });
+
+  it('fails closed when the cache lookup fails', async () => {
+    const query = { eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { code: 'DB_ERROR' } }) };
+    const client = { from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(query) }) };
+    await expect(createTemplateCatalog(client as never).getApproved('aviso', 'es'))
+      .rejects.toThrow('DB_ERROR');
   });
 });

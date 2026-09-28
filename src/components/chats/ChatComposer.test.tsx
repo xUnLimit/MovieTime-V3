@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const upload = vi.hoisted(() => vi.fn());
 const toastError = vi.hoisted(() => vi.fn());
-const saved = vi.hoisted(() => ({ messages: [] as unknown[] }));
+const saved = vi.hoisted(() => ({ messages: [] as unknown[], tipos: [] as unknown[] }));
+vi.mock('@/hooks/use-templates', () => ({ useTemplates: () => ({ data: saved.tipos }) }));
 vi.mock('@/hooks/use-whatsapp-chat', () => ({ useUploadWhatsAppMedia: () => ({ mutateAsync: upload }) }));
 vi.mock('@/hooks/use-chat-saved-messages', () => ({
   useChatSavedMessages: () => ({ data: saved.messages, isLoading: false, isError: false, refetch: vi.fn() }),
@@ -191,6 +192,34 @@ describe('ChatComposer', () => {
     expect(screen.queryByRole('listbox', { name: 'Respuestas rápidas' })).toBeNull();
     expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('Hola, bienvenido');
     saved.messages = [];
+  });
+
+  it('lists editor types under "Mensajes del sistema" and inserts the text rendered with the venta', async () => {
+    const user = userEvent.setup();
+    saved.tipos = [
+      { id: 't1', nombre: 'x', tipo: 'dia_pago', contenido: 'Hola {nombre_cliente}, tu {categoria} vence hoy', placeholders: [], activo: true },
+      { id: 't2', nombre: 'y', tipo: 'despedida', contenido: 'Adios', placeholders: [], activo: false },
+    ];
+    const ventaContext = { clienteNombre: 'Ana Perez', categoriaNombre: 'Netflix', servicioNombre: 'Netflix', perfilNombre: 'P1', correo: 'a@b.c', contrasena: 'pw', codigo: '', monto: 5, fechaVencimiento: new Date(2026, 8, 30) };
+    render(<ControlledComposer ventaContext={ventaContext} />);
+
+    await user.type(screen.getByLabelText('Mensaje'), '/');
+    const listbox = screen.getByRole('listbox', { name: 'Respuestas rápidas' });
+    expect(within(listbox).getByText('Mensajes del sistema')).toBeTruthy();
+    expect(within(listbox).queryByText('Despedida')).toBeNull();
+    await user.click(within(listbox).getByText('Notificación Día de Pago'));
+    expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('Hola Ana, tu Netflix vence hoy');
+    saved.tipos = [];
+  });
+
+  it('renders editor types with the name only and keeps other placeholders when there is no venta', async () => {
+    const user = userEvent.setup();
+    saved.tipos = [{ id: 't1', nombre: 'x', tipo: 'dia_pago', contenido: 'Hola {nombre_cliente}, vence {vencimiento}', placeholders: [], activo: true }];
+    render(<ControlledComposer conversation={{ terceroNombre: 'Luis Gomez', contactName: 'L' } as never} />);
+
+    await user.type(screen.getByLabelText('Mensaje'), '/dia{Enter}');
+    expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('Hola Luis, vence {vencimiento}');
+    saved.tipos = [];
   });
 
   it('does not open suggestions for a slash used mid-sentence', async () => {

@@ -72,6 +72,17 @@ describe('push service worker', () => {
     }));
   });
 
+  it('shows admin notice alerts and opens notifications', async () => {
+    const { listeners, showNotification } = await loadServiceWorker();
+    await dispatchWorkerEvent(listeners.get('push')!, {
+      kind: 'whatsapp_notice', title: 'Avisos de WhatsApp',
+      body: 'Un cliente no desea continuar', destination: '/notificaciones',
+    });
+    expect(showNotification).toHaveBeenCalledWith('Avisos de WhatsApp', expect.objectContaining({
+      tag: 'whatsapp-notice', data: { url: '/notificaciones' },
+    }));
+  });
+
   it('removes retired offline caches when the new worker activates', async () => {
     const { listeners, claim, deleteCache } = await loadServiceWorker();
     await dispatchWorkerEvent(listeners.get('activate')!);

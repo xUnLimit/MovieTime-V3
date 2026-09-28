@@ -58,6 +58,9 @@ export async function getConfig(): Promise<Configuracion> {
     },
     whatsapp: {
       prefijoTelefono: config.whatsapp_prefijo,
+      autoEnabled: config.whatsapp_auto_enabled ?? false,
+      autoDailyCap: config.whatsapp_auto_daily_cap ?? 200,
+      autoSendHour: config.hora_envio,
     },
     updatedAt: new Date(config.updated_at),
   };
@@ -91,6 +94,14 @@ export async function updateWhatsappPrefix(prefijo: string) {
   await updateConfig({ whatsapp_prefijo: prefijo });
 }
 
+export async function updateWhatsappAutoSettings(payload: {
+  whatsapp_auto_enabled?: boolean;
+  whatsapp_auto_daily_cap?: number;
+  hora_envio?: number;
+}) {
+  await updateConfig(payload);
+}
+
 export async function updateExecutivePushSettings(payload: {
   executive_push_enabled?: boolean;
   executive_push_send_time?: string;
@@ -112,6 +123,8 @@ async function updateConfig(payload: {
   notificaciones_dias_anticipacion?: number;
   hora_envio?: number;
   whatsapp_prefijo?: string;
+  whatsapp_auto_enabled?: boolean;
+  whatsapp_auto_daily_cap?: number;
   executive_push_enabled?: boolean;
   executive_push_send_time?: string;
   executive_push_window_start?: string;

@@ -200,6 +200,7 @@ export function useServicioFormController({
     categorias,
     createServicio: createServicioMutation,
     credentialTemplateContent: credentialTemplate?.contenido,
+    credentialMetaTemplateName: credentialTemplate?.metaTemplateName,
     enqueueWhatsAppMessages,
     metodosPago,
     onSaved: () => router.push(returnTo),

@@ -7,9 +7,11 @@ import { sendWhatsAppMessageSchema } from '@/modules/whatsapp/outbound-contracts
 import {
   CustomerWindowClosedError,
   InvalidTemplateParamsError,
+  TemplateNotApprovedError,
   sendOutboundMessage,
 } from '@/modules/whatsapp/outbound-messages';
 import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
+import { createTemplateCatalog } from '@/modules/whatsapp/template-catalog';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,7 +34,7 @@ export async function POST(request: Request) {
     const config = { accessToken: env.whatsappAccessToken, phoneNumberId: env.whatsappPhoneNumberId };
     const result = await sendOutboundMessage(
       { idempotencyKey, toWaId: to, payload: message, sentBy: user.id },
-      { store: createOutboundStore(), send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload) }
+      { store: createOutboundStore(), catalog: createTemplateCatalog(), send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload) }
     );
 
     return apiSuccess(result, requestId);
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
         requestId
       );
     }
-    if (error instanceof InvalidTemplateParamsError) {
+    if (error instanceof InvalidTemplateParamsError || error instanceof TemplateNotApprovedError) {
       return apiFailure(400, 'INVALID_REQUEST', 'Los datos de la plantilla no son válidos.', requestId);
     }
     return apiErrorResponse('WhatsAppMessagesRoute', requestId, error);

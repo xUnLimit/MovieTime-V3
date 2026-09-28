@@ -6,6 +6,7 @@ import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat
 import type { VentaTerceroDoc } from '@/hooks/use-ventas-tercero';
 import { ChatHeader } from './ChatHeader';
 import { CustomerPanel, sortVentasForChat } from './CustomerPanel';
+import type { TemplateOption } from './chat-templates';
 import { TemplateSendDialog } from './TemplateSendDialog';
 
 const NOW = new Date(2026, 8, 27, 15, 30);
@@ -132,8 +133,8 @@ describe('CustomerPanel', () => {
     const user = userEvent.setup();
     const props = renderPanel({ serviceWindow: { open: false } });
 
-    await user.click(screen.getByRole('button', { name: /Plantilla: Vence hoy/ }));
-    expect(props.onOpenTemplate).toHaveBeenCalledWith('vence_hoy');
+    await user.click(screen.getByRole('button', { name: /Plantilla: Notificación Día de Pago/ }));
+    expect(props.onOpenTemplate).toHaveBeenCalledWith('dia_pago');
   });
 
   it('describes overdue, undated and missing sales', () => {
@@ -186,30 +187,49 @@ describe('CustomerPanel', () => {
   });
 });
 
+function option(tipoKey: string, name: string, body: string, map: string[], buttons: Array<{ type: string; text: string }> = []): TemplateOption {
+  return {
+    tipo: {
+      id: tipoKey, nombre: tipoKey, tipo: tipoKey as TemplateOption['tipo']['tipo'], contenido: '', placeholders: [], activo: true,
+      metaTemplateName: name, metaParamMap: map, createdAt: NOW, updatedAt: NOW,
+    },
+    meta: {
+      id: name, name, language: 'es', status: 'APPROVED', category: 'UTILITY', body, header: null, footer: 'MovieTime PTY',
+      buttons, paramCount: map.length, retired: false, syncedAt: NOW.toISOString(),
+    },
+  };
+}
+
+const OPTIONS = [
+  option('notificacion_regular', 'aviso_vencimiento', 'Hola {{1}}, vence {{2}} por {{3}}', ['saludo_nombre', 'vencimiento', 'monto_total']),
+  option('dia_pago', 'aviso_vence_hoy', 'Vence hoy *{{1}}* por {{2}}', ['servicios', 'monto_total'], [{ type: 'QUICK_REPLY', text: 'Quiero renovar' }]),
+];
+
 describe('TemplateSendDialog', () => {
-  it('opens with the suggested template filled and previews the final message', async () => {
+  const baseProps = { open: true, options: OPTIONS, contextLabel: null, isSending: false, onOpenChange: vi.fn() };
+
+  it('opens with the suggested tipo filled and previews the cached body', async () => {
     const user = userEvent.setup();
     const onSend = vi.fn();
-    const paramsFor = vi.fn((name: string) => (name === 'vence_hoy' ? ['Netflix', '30/09', '$4.50'] : ['Hola, María', 'Netflix', '30/09', '$4.50']));
-    render(
-      <TemplateSendDialog open initialTemplate="vence_hoy" paramsFor={paramsFor} contextLabel="Netflix" isSending={false} onOpenChange={vi.fn()} onSend={onSend} />
-    );
+    const paramsFor = vi.fn((item: TemplateOption) => (item.meta.name === 'aviso_vence_hoy' ? ['Netflix', '$4.50'] : ['Hola, María', '30/09', '$4.50']));
+    render(<TemplateSendDialog {...baseProps} contextLabel="Netflix" initialTipo="dia_pago" paramsFor={paramsFor} onSend={onSend} />);
 
     expect(screen.getByText(/Datos tomados de Netflix/)).toBeTruthy();
-    expect(screen.getByText(/Recordatorio de renovación - Netflix/)).toBeTruthy();
-    await user.clear(screen.getByLabelText('Monto'));
-    await user.type(screen.getByLabelText('Monto'), '$5.00');
+    expect(screen.getAllByText(/aviso_vence_hoy/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Netflix', { selector: 'strong' })).toBeTruthy();
+    expect(screen.getByText('Quiero renovar')).toBeTruthy();
+    expect(screen.getByText('MovieTime PTY')).toBeTruthy();
+    await user.clear(screen.getByLabelText('Monto total'));
+    await user.type(screen.getByLabelText('Monto total'), '$5.00');
     await user.click(screen.getByRole('button', { name: 'Enviar plantilla' }));
 
-    expect(onSend).toHaveBeenCalledWith('vence_hoy', ['Netflix', '30/09', '$5.00']);
+    expect(onSend).toHaveBeenCalledWith('aviso_vence_hoy', ['Netflix', '$5.00']);
   });
 
   it('blocks sending until every value is filled and can be cancelled', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    render(
-      <TemplateSendDialog open initialTemplate="recordatorio_vencimiento" paramsFor={() => ['Hola', '', '', '']} contextLabel={null} isSending={false} onOpenChange={onOpenChange} onSend={vi.fn()} />
-    );
+    render(<TemplateSendDialog {...baseProps} onOpenChange={onOpenChange} initialTipo="notificacion_regular" paramsFor={() => ['Hola', '', '']} onSend={vi.fn()} />);
 
     expect(screen.getByText(/Si eliges una venta/)).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Enviar plantilla' }) as HTMLButtonElement).disabled).toBe(true);
@@ -217,10 +237,19 @@ describe('TemplateSendDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('falls back to the first option when the suggested tipo has no approved template', () => {
+    render(<TemplateSendDialog {...baseProps} initialTipo="cancelacion" paramsFor={() => ['a', 'b', 'c']} onSend={vi.fn()} />);
+    expect(screen.getAllByText(/aviso_vencimiento/).length).toBeGreaterThan(0);
+  });
+
+  it('explains how to link templates when none is approved', () => {
+    render(<TemplateSendDialog {...baseProps} options={[]} initialTipo="dia_pago" paramsFor={() => []} onSend={vi.fn()} />);
+    expect(screen.getByText(/No hay plantillas de Meta aprobadas/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Enviar plantilla' })).toBeNull();
+  });
+
   it('shows progress while sending', () => {
-    render(
-      <TemplateSendDialog open initialTemplate="vence_hoy" paramsFor={() => ['a', 'b', 'c']} contextLabel={null} isSending onOpenChange={vi.fn()} onSend={vi.fn()} />
-    );
+    render(<TemplateSendDialog {...baseProps} isSending initialTipo="dia_pago" paramsFor={() => ['a', 'b']} onSend={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'Enviando...' })).toBeTruthy();
   });
 });

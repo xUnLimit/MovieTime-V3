@@ -47,8 +47,7 @@ describe('chat format helpers', () => {
 
   it('previews text, templates and media messages', () => {
     expect(messagePreview('text', 'Hola', null)).toBe('Hola');
-    expect(messagePreview('template', null, 'vence_hoy')).toBe('Plantilla: Vence hoy');
-    expect(messagePreview('template', null, 'otra')).toBe('Plantilla: otra');
+    expect(messagePreview('template', null, 'aviso_vence_hoy')).toBe('Plantilla: aviso_vence_hoy');
     expect(messagePreview('image', null, null)).toBe('Imagen');
     expect(messagePreview('reaction', null, null)).toBe('Reaccionó');
     expect(messagePreview('interactive', null, null)).toBe('Mensaje interactivo');

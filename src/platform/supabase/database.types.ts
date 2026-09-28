@@ -137,6 +137,8 @@ export type Database = {
       }
       config: {
         Row: {
+          whatsapp_auto_enabled: boolean
+          whatsapp_auto_daily_cap: number
           executive_push_block_order: Json
           executive_push_enabled: boolean
           executive_push_interval_hours: number
@@ -156,6 +158,8 @@ export type Database = {
           whatsapp_prefijo: string
         }
         Insert: {
+          whatsapp_auto_enabled?: boolean
+          whatsapp_auto_daily_cap?: number
           executive_push_block_order?: Json
           executive_push_enabled?: boolean
           executive_push_interval_hours?: number
@@ -175,6 +179,8 @@ export type Database = {
           whatsapp_prefijo?: string
         }
         Update: {
+          whatsapp_auto_enabled?: boolean
+          whatsapp_auto_daily_cap?: number
           executive_push_block_order?: Json
           executive_push_enabled?: boolean
           executive_push_interval_hours?: number
@@ -1811,6 +1817,8 @@ export type Database = {
           contenido: string
           created_at: string
           id: string
+          meta_param_map: Json
+          meta_template_name: string | null
           nombre: string
           tipo: Database["public"]["Enums"]["tipo_template_enum"]
           updated_at: string
@@ -1820,6 +1828,8 @@ export type Database = {
           contenido: string
           created_at?: string
           id?: string
+          meta_param_map?: Json
+          meta_template_name?: string | null
           nombre: string
           tipo: Database["public"]["Enums"]["tipo_template_enum"]
           updated_at?: string
@@ -1829,6 +1839,8 @@ export type Database = {
           contenido?: string
           created_at?: string
           id?: string
+          meta_param_map?: Json
+          meta_template_name?: string | null
           nombre?: string
           tipo?: Database["public"]["Enums"]["tipo_template_enum"]
           updated_at?: string
@@ -2057,6 +2069,8 @@ export type Database = {
       }
       ventas: {
         Row: {
+          respuesta_cliente: string | null
+          respuesta_cliente_at: string | null
           archivado_at: string | null
           archivado_by: string | null
           categoria_id: string
@@ -2077,6 +2091,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          respuesta_cliente?: string | null
+          respuesta_cliente_at?: string | null
           archivado_at?: string | null
           archivado_by?: string | null
           categoria_id: string
@@ -2097,6 +2113,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          respuesta_cliente?: string | null
+          respuesta_cliente_at?: string | null
           archivado_at?: string | null
           archivado_by?: string | null
           categoria_id?: string
@@ -2218,6 +2236,240 @@ export type Database = {
           last_read_at?: string
           updated_at?: string
           wa_id?: string
+        }
+        Relationships: []
+      }
+      auto_notice_runs: {
+        Row: {
+          id: string
+          run_date: string
+          started_at: string
+          finished_at: string | null
+          status: string
+          sent: number
+          failed: number
+          skipped: number
+          already_sent: number
+          details: Json
+        }
+        Insert: {
+          id?: string
+          run_date: string
+          started_at?: string
+          finished_at?: string | null
+          status?: string
+          sent?: number
+          failed?: number
+          skipped?: number
+          already_sent?: number
+          details?: Json
+        }
+        Update: {
+          id?: string
+          run_date?: string
+          started_at?: string
+          finished_at?: string | null
+          status?: string
+          sent?: number
+          failed?: number
+          skipped?: number
+          already_sent?: number
+          details?: Json
+        }
+        Relationships: []
+      }
+      whatsapp_notices: {
+        Row: {
+          id: string
+          dedupe_key: string
+          tipo: Database["public"]["Enums"]["tipo_template_enum"]
+          tercero_id: string
+          wa_id: string
+          channel: string
+          meta_template_name: string | null
+          fecha_vencimiento: string | null
+          origin: string
+          status: string
+          skip_reason: string | null
+          idempotency_key: string
+          outbound_message_id: string | null
+          wa_message_id: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          dedupe_key: string
+          tipo: Database["public"]["Enums"]["tipo_template_enum"]
+          tercero_id: string
+          wa_id: string
+          channel: string
+          meta_template_name?: string | null
+          fecha_vencimiento?: string | null
+          origin: string
+          status?: string
+          skip_reason?: string | null
+          idempotency_key: string
+          outbound_message_id?: string | null
+          wa_message_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          dedupe_key?: string
+          tipo?: Database["public"]["Enums"]["tipo_template_enum"]
+          tercero_id?: string
+          wa_id?: string
+          channel?: string
+          meta_template_name?: string | null
+          fecha_vencimiento?: string | null
+          origin?: string
+          status?: string
+          skip_reason?: string | null
+          idempotency_key?: string
+          outbound_message_id?: string | null
+          wa_message_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_notices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_notices_outbound_message_id_fkey"
+            columns: ["outbound_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_outbound_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_notices_tercero_id_fkey"
+            columns: ["tercero_id"]
+            isOneToOne: false
+            referencedRelation: "terceros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_notice_ventas: {
+        Row: {
+          notice_id: string
+          venta_id: string
+        }
+        Insert: {
+          notice_id: string
+          venta_id: string
+        }
+        Update: {
+          notice_id?: string
+          venta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_notice_ventas_notice_id_fkey"
+            columns: ["notice_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_notices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_notice_ventas_venta_id_fkey"
+            columns: ["venta_id"]
+            isOneToOne: false
+            referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_notice_replies: {
+        Row: {
+          id: number
+          notice_id: string
+          action: string
+          inbound_wa_message_id: string
+          handled_at: string
+          result: string
+        }
+        Insert: {
+          id?: number
+          notice_id: string
+          action: string
+          inbound_wa_message_id: string
+          handled_at?: string
+          result?: string
+        }
+        Update: {
+          id?: number
+          notice_id?: string
+          action?: string
+          inbound_wa_message_id?: string
+          handled_at?: string
+          result?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_notice_replies_notice_id_fkey"
+            columns: ["notice_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_notices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_meta_templates: {
+        Row: {
+          id: string
+          name: string
+          language: string
+          status: string
+          category: string
+          body: string
+          header: string | null
+          footer: string | null
+          buttons: Json
+          param_count: number
+          meta_template_id: string
+          retired: boolean
+          synced_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          language: string
+          status: string
+          category: string
+          body: string
+          header?: string | null
+          footer?: string | null
+          buttons?: Json
+          param_count: number
+          meta_template_id: string
+          retired?: boolean
+          synced_at: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          language?: string
+          status?: string
+          category?: string
+          body?: string
+          header?: string | null
+          footer?: string | null
+          buttons?: Json
+          param_count?: number
+          meta_template_id?: string
+          retired?: boolean
+          synced_at?: string
         }
         Relationships: []
       }
@@ -3607,6 +3859,18 @@ export type Database = {
           },
         ]
       }
+      v_venta_whatsapp_notice_status: {
+        Row: {
+          venta_id: string | null
+          notice_id: string | null
+          tipo: Database["public"]["Enums"]["tipo_template_enum"] | null
+          origin: string | null
+          notice_status: string | null
+          delivery_status: string | null
+          created_at: string | null
+        }
+        Relationships: []
+      }
       v_ventas_full: {
         Row: {
           archivado_at: string | null
@@ -3799,6 +4063,7 @@ export type Database = {
       }
     }
     Functions: {
+      trigger_auto_notices: { Args: never; Returns: number }
       ingest_yappy_payment: { Args: { p_uid_validity: number; p_imap_uid: number; p_internet_message_id: string | null; p_received_at: string; p_subject: string | null; p_dmarc_pass: boolean | null; p_parser_version: number; p_confirmation_code: string; p_amount: number; p_payer_name_short: string; p_payer_phone_last4: string; p_paid_at: string; p_reject_reason?: string | null }; Returns: { outcome: string; payment_id: string | null; match_status: string | null }[] }
       record_invalid_yappy_mail: { Args: { p_uid_validity: number; p_imap_uid: number; p_received_at: string; p_parser_version: number; p_failure_reason: string }; Returns: undefined }
       claim_yappy_mail_sync: { Args: never; Returns: boolean }
@@ -4198,6 +4463,22 @@ export type Database = {
         }[]
       }
       is_authenticated: { Args: never; Returns: boolean }
+      reserve_whatsapp_notice: {
+        Args: {
+          p_dedupe_key: string
+          p_tipo: Database["public"]["Enums"]["tipo_template_enum"]
+          p_tercero_id: string
+          p_wa_id: string
+          p_channel: string
+          p_meta_template_name: string | null
+          p_fecha_vencimiento: string | null
+          p_origin: string
+          p_idempotency_key: string
+          p_created_by: string | null
+          p_venta_ids: string[]
+        }
+        Returns: Database["public"]["Tables"]["whatsapp_notices"]["Row"]
+      }
       refresh_dashboard_stats_snapshot: {
         Args: { p_force?: boolean }
         Returns: boolean
@@ -4291,6 +4572,8 @@ export type Database = {
         | "cancelacion"
         | "actualizacion_credenciales"
         | "transferencia_servicio"
+        | "datos_pago"
+        | "despedida"
       venta_estado_enum: "activo" | "inactivo"
     }
     CompositeTypes: {
@@ -4463,6 +4746,8 @@ export const Constants = {
         "cancelacion",
         "actualizacion_credenciales",
         "transferencia_servicio",
+        "datos_pago",
+        "despedida",
       ],
       venta_estado_enum: ["activo", "inactivo"],
     },

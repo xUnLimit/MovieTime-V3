@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { WhatsAppChatMessage, WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
-import { avatarHue, initialsFor, renderTemplatePreview } from './chat-format';
-import { buildMetaTemplateParams, suggestMetaTemplate } from './chat-templates';
+import type { MetaTemplateInfo } from '@/modules/messaging/meta-template-mapping';
+import type { TemplateMensaje } from '@/types';
+import { avatarHue, initialsFor } from './chat-format';
+import { buildMetaTemplateParams, buildTemplateOptions, suggestTipoByDueDate } from './chat-templates';
 import { buildTimeline, dayLabel } from './chat-timeline';
 import {
   activeConversationCategories,
@@ -123,28 +125,51 @@ describe('chat timeline', () => {
 });
 
 describe('chat templates', () => {
-  it('fills Meta template values from the sale', () => {
-    expect(buildMetaTemplateParams('recordatorio_vencimiento', context, 'X', 'Buenas tardes'))
+  const map = ['saludo_nombre', 'servicios', 'vencimiento', 'monto_total'];
+
+  it('fills the Meta params of a tipo from the sale using its map', () => {
+    expect(buildMetaTemplateParams({ metaParamMap: map }, context, 'X', 'Buenas tardes'))
       .toEqual(['Buenas tardes, María', 'Netflix', '30 de septiembre de 2026', '$4.50']);
-    expect(buildMetaTemplateParams('vence_hoy', context, 'X', 'Buenas tardes'))
-      .toEqual(['Netflix', '30 de septiembre de 2026', '$4.50']);
+    expect(buildMetaTemplateParams({ metaParamMap: ['servicios', 'nombre_cliente'] }, context, 'X', 'Buenas tardes'))
+      .toEqual(['Netflix', 'María']);
   });
 
-  it('only pre-fills the greeting without a sale', () => {
-    expect(buildMetaTemplateParams('servicio_suspendido', null, 'Allan Ordoñez', 'Buenos días'))
+  it('only pre-fills the name-based values without a sale', () => {
+    expect(buildMetaTemplateParams({ metaParamMap: map }, null, 'Allan Ordoñez', 'Buenos días'))
       .toEqual(['Buenos días, Allan', '', '', '']);
-    expect(buildMetaTemplateParams('vence_hoy', null, '', 'Buenos días')).toEqual(['', '', '']);
+    expect(buildMetaTemplateParams({ metaParamMap: ['servicios'] }, null, '', 'Buenos días')).toEqual(['']);
+    expect(buildMetaTemplateParams({}, context, 'X', 'Buenos días')).toEqual([]);
   });
 
-  it('suggests the template that matches the due date', () => {
-    expect(suggestMetaTemplate(null, NOW)).toBe('recordatorio_vencimiento');
-    expect(suggestMetaTemplate(new Date(2026, 8, 30), NOW)).toBe('recordatorio_vencimiento');
-    expect(suggestMetaTemplate(new Date(2026, 8, 27, 1), NOW)).toBe('vence_hoy');
-    expect(suggestMetaTemplate(new Date(2026, 8, 20), NOW)).toBe('servicio_suspendido');
+  it('suggests the tipo by due date', () => {
+    expect(suggestTipoByDueDate(null, NOW)).toBe('notificacion_regular');
+    expect(suggestTipoByDueDate(new Date(2026, 8, 30), NOW)).toBe('notificacion_regular');
+    expect(suggestTipoByDueDate(new Date(2026, 8, 27, 1), NOW)).toBe('dia_pago');
+    expect(suggestTipoByDueDate(new Date(2026, 8, 20), NOW)).toBe('cancelacion');
   });
 
-  it('previews Meta template bodies and keeps missing values visible', () => {
-    expect(renderTemplatePreview('Hola {{1}}, vence {{2}}', ['María', ' '])).toBe('Hola María, vence {{2}}');
+  it('offers only active tipos linked to an approved, non-retired Meta template, in editor order', () => {
+    const tipo = (tipoKey: string, overrides: Partial<TemplateMensaje> = {}): TemplateMensaje => ({
+      id: tipoKey, nombre: tipoKey, tipo: tipoKey as TemplateMensaje['tipo'], contenido: '', placeholders: [], activo: true,
+      metaTemplateName: 'aviso', metaParamMap: [], createdAt: NOW, updatedAt: NOW, ...overrides,
+    });
+    const meta = (name: string, overrides: Partial<MetaTemplateInfo> = {}): MetaTemplateInfo => ({
+      id: name, name, language: 'es', status: 'APPROVED', category: 'UTILITY', body: 'Hola', header: null, footer: null,
+      buttons: [], paramCount: 0, retired: false, syncedAt: NOW.toISOString(), ...overrides,
+    });
+    const options = buildTemplateOptions(
+      [
+        tipo('cancelacion', { metaTemplateName: 'corte' }),
+        tipo('dia_pago'),
+        tipo('despedida', { metaTemplateName: null }),
+        tipo('renovacion', { metaTemplateName: 'pendiente' }),
+        tipo('suscripcion', { metaTemplateName: 'viejo' }),
+        tipo('notificacion_regular', { activo: false }),
+      ],
+      [meta('aviso'), meta('corte'), meta('pendiente', { status: 'PENDING' }), meta('viejo', { retired: true })],
+    );
+    expect(options.map((item) => item.tipo.tipo)).toEqual(['dia_pago', 'cancelacion']);
+    expect(options[1]?.meta.name).toBe('corte');
   });
 });
 

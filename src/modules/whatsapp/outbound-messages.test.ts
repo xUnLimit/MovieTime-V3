@@ -4,6 +4,7 @@ import { CloudApiError } from './cloud-api-client';
 import {
   CustomerWindowClosedError,
   InvalidTemplateParamsError,
+  TemplateNotApprovedError,
   isWindowOpen,
   sendOutboundMessage,
   type NewOutboundMessage,
@@ -12,6 +13,7 @@ import {
 
 const NOW = new Date('2026-09-27T12:00:00.000Z');
 const now = () => NOW;
+const catalog = { getApproved: vi.fn().mockResolvedValue({ paramCount: 3, buttons: [] }) };
 
 function fakeStore(overrides: Partial<OutboundStore> = {}) {
   return {
@@ -53,7 +55,7 @@ describe('sendOutboundMessage', () => {
     const store = fakeStore();
     const send = vi.fn().mockResolvedValue({ waMessageId: 'wamid.OUT' });
 
-    await expect(sendOutboundMessage(textMessage, { store, send, now })).resolves.toEqual({
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send, now })).resolves.toEqual({
       id: 'out-1', sendStatus: 'accepted', waMessageId: 'wamid.OUT', errorTitle: null, replayed: false,
     });
     expect(store.insertPending).toHaveBeenCalledWith(textMessage);
@@ -67,7 +69,7 @@ describe('sendOutboundMessage', () => {
     });
     const send = vi.fn();
 
-    await expect(sendOutboundMessage(textMessage, { store, send, now }))
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send, now }))
       .resolves.toMatchObject({ id: 'out-0', replayed: true });
     expect(send).not.toHaveBeenCalled();
     expect(store.insertPending).not.toHaveBeenCalled();
@@ -77,7 +79,7 @@ describe('sendOutboundMessage', () => {
     const store = fakeStore({ lastInboundAt: vi.fn().mockResolvedValue('2026-09-25T12:00:00.000Z') });
     const send = vi.fn();
 
-    await expect(sendOutboundMessage(textMessage, { store, send, now })).rejects.toBeInstanceOf(CustomerWindowClosedError);
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send, now })).rejects.toBeInstanceOf(CustomerWindowClosedError);
     expect(store.insertPending).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
   });
@@ -86,7 +88,7 @@ describe('sendOutboundMessage', () => {
     const store = fakeStore({ lastInboundAt: vi.fn().mockResolvedValue(null) });
     const send = vi.fn().mockResolvedValue({ waMessageId: 'wamid.TPL' });
 
-    await expect(sendOutboundMessage(templateMessage, { store, send, now }))
+    await expect(sendOutboundMessage(templateMessage, { store, catalog, send, now }))
       .resolves.toMatchObject({ sendStatus: 'accepted', waMessageId: 'wamid.TPL' });
     expect(store.lastInboundAt).not.toHaveBeenCalled();
   });
@@ -95,25 +97,57 @@ describe('sendOutboundMessage', () => {
     const store = fakeStore();
     const wrong: NewOutboundMessage = { ...templateMessage, payload: { kind: 'template', templateName: 'vence_hoy', params: ['Netflix'] } };
 
-    await expect(sendOutboundMessage(wrong, { store, send: vi.fn(), now })).rejects.toBeInstanceOf(InvalidTemplateParamsError);
+    await expect(sendOutboundMessage(wrong, { store, catalog, send: vi.fn(), now })).rejects.toBeInstanceOf(InvalidTemplateParamsError);
     expect(store.insertPending).not.toHaveBeenCalled();
+  });
+
+  it('rejects templates absent from the approved cache', async () => {
+    const store = fakeStore();
+    const missingCatalog = { getApproved: vi.fn().mockResolvedValue(null) };
+    await expect(sendOutboundMessage(templateMessage, { store, catalog: missingCatalog, send: vi.fn(), now }))
+      .rejects.toBeInstanceOf(TemplateNotApprovedError);
+    expect(store.insertPending).not.toHaveBeenCalled();
+  });
+
+  it('checks quick reply payloads against the cached buttons', async () => {
+    const store = fakeStore();
+    const buttonCatalog = { getApproved: vi.fn().mockResolvedValue({
+      paramCount: 3, buttons: [{ type: 'QUICK_REPLY', text: 'Renovar' }],
+    }) };
+    await expect(sendOutboundMessage(templateMessage, { store, catalog: buttonCatalog, send: vi.fn(), now }))
+      .rejects.toBeInstanceOf(InvalidTemplateParamsError);
+    const message: NewOutboundMessage = { ...templateMessage, payload: {
+      kind: 'template', templateName: 'vence_hoy', params: ['Netflix', '27/09/2026', '$4.50'], buttonPayloads: ['RENOVAR:id'],
+    } };
+    await expect(sendOutboundMessage(message, { store, catalog: buttonCatalog,
+      send: vi.fn().mockResolvedValue({ waMessageId: 'wamid.BUTTON' }), now }))
+      .resolves.toMatchObject({ sendStatus: 'accepted' });
   });
 
   it('records a Cloud API rejection as a failed message', async () => {
     const store = fakeStore();
     const send = vi.fn().mockRejectedValue(new CloudApiError(131026, 'Message undeliverable'));
 
-    await expect(sendOutboundMessage(textMessage, { store, send, now })).resolves.toEqual({
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send, now })).resolves.toEqual({
       id: 'out-1', sendStatus: 'failed', waMessageId: null, errorTitle: 'Message undeliverable', replayed: false,
     });
     expect(store.markFailed).toHaveBeenCalledWith('out-1', 131026, 'Message undeliverable');
+  });
+
+  it('does not persist an external error title for a sensitive send', async () => {
+    const store = fakeStore();
+    const send = vi.fn().mockRejectedValue(new CloudApiError(131026, 'sensitive echo from provider'));
+    const result = await sendOutboundMessage({ ...textMessage, storedTextBody: '[Credenciales enviadas]' },
+      { store, catalog, send, now });
+    expect(result.errorTitle).toBe('Sensitive WhatsApp message failed');
+    expect(store.markFailed).toHaveBeenCalledWith('out-1', 131026, 'Sensitive WhatsApp message failed');
   });
 
   it('marks unexpected failures and rethrows them', async () => {
     const store = fakeStore();
     const send = vi.fn().mockRejectedValue(new Error('boom'));
 
-    await expect(sendOutboundMessage(textMessage, { store, send, now })).rejects.toThrow('boom');
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send, now })).rejects.toThrow('boom');
     expect(store.markFailed).toHaveBeenCalledWith('out-1', null, 'Unexpected send failure');
   });
 
@@ -124,7 +158,7 @@ describe('sendOutboundMessage', () => {
     const store = fakeStore({ findByIdempotencyKey, insertPending: vi.fn().mockResolvedValue(null) });
     const send = vi.fn();
 
-    await expect(sendOutboundMessage(textMessage, { store, send, now }))
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send, now }))
       .resolves.toMatchObject({ id: 'out-9', replayed: true });
     expect(send).not.toHaveBeenCalled();
   });
@@ -132,7 +166,7 @@ describe('sendOutboundMessage', () => {
   it('fails loudly if a reserved key vanishes', async () => {
     const store = fakeStore({ insertPending: vi.fn().mockResolvedValue(null) });
 
-    await expect(sendOutboundMessage(textMessage, { store, send: vi.fn(), now }))
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send: vi.fn(), now }))
       .rejects.toThrow('Outbound message reservation disappeared.');
   });
 
@@ -140,6 +174,6 @@ describe('sendOutboundMessage', () => {
     const store = fakeStore({ lastInboundAt: vi.fn().mockResolvedValue(new Date().toISOString()) });
     const send = vi.fn().mockResolvedValue({ waMessageId: 'wamid.NOW' });
 
-    await expect(sendOutboundMessage(textMessage, { store, send })).resolves.toMatchObject({ sendStatus: 'accepted' });
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send })).resolves.toMatchObject({ sendStatus: 'accepted' });
   });
 });

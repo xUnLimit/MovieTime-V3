@@ -7,7 +7,7 @@ vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
 
 import {
   getConfig, updateExecutivePushSettings, updateNotificationLeadDays,
-  updateNotificationSendHour, updateWhatsappPrefix, upsertExchangeRates,
+  updateNotificationSendHour, updateWhatsappPrefix, updateWhatsappAutoSettings, upsertExchangeRates,
 } from './config-repository';
 
 function readQuery(result: { data: unknown; error: { message: string } | null }) {
@@ -29,6 +29,7 @@ function writeQuery(error: { message: string } | null = null) {
 
 const config = {
   updated_at: '2026-01-01T00:00:00Z', notificaciones_dias_anticipacion: 3, hora_envio: 8,
+  whatsapp_auto_enabled: true, whatsapp_auto_daily_cap: 150,
   whatsapp_prefijo: '+507', executive_push_enabled: true, executive_push_send_time: '09:00',
   executive_push_window_start: '07:00', executive_push_window_end: '21:00',
   executive_push_interval_hours: 6, executive_push_timezone: 'America/Panama',
@@ -55,7 +56,8 @@ describe('config repository', () => {
     const result = await getConfig();
     expect(result).toEqual(expect.objectContaining({
       id: 'global', tasasCambio: expect.objectContaining({ USD_EUR: 2, USD_MXN: 20 }),
-      notificaciones: { diasAntes: [3], horaEnvio: 8 }, whatsapp: { prefijoTelefono: '+507' },
+      notificaciones: { diasAntes: [3], horaEnvio: 8 },
+      whatsapp: { prefijoTelefono: '+507', autoEnabled: true, autoDailyCap: 150, autoSendHour: 8 },
       executivePush: expect.objectContaining({ enabled: true, sendTime: '09:00', windowStart: '07:00', intervalHours: 6 }),
     }));
     expect(result.tasasCambio.ultimaActualizacion).toEqual(new Date('2026-01-03T00:00:00Z'));
@@ -119,5 +121,12 @@ describe('config repository', () => {
   it('propagates config update errors', async () => {
     mocks.from.mockReturnValue(writeQuery({ message: 'actualizar' }));
     await expect(updateWhatsappPrefix('+1')).rejects.toThrow('actualizar');
+  });
+
+  it('writes the automatic WhatsApp settings using the existing integer send hour', async () => {
+    const write = writeQuery();
+    mocks.from.mockReturnValue(write);
+    await updateWhatsappAutoSettings({ whatsapp_auto_enabled: true, whatsapp_auto_daily_cap: 200, hora_envio: 9 });
+    expect(write.update).toHaveBeenCalledWith({ whatsapp_auto_enabled: true, whatsapp_auto_daily_cap: 200, hora_envio: 9 });
   });
 });

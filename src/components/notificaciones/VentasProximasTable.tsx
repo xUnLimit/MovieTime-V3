@@ -8,6 +8,7 @@
 
 import { Card } from '@/components/ui/card';
 
+import { BulkNoticeSummaryDialog } from './ventas-proximas/BulkNoticeSummaryDialog';
 import { VentasProximasDialogs } from './ventas-proximas/VentasProximasDialogs';
 import { VentasProximasPagination } from './ventas-proximas/VentasProximasPagination';
 import { VentasProximasTableContent } from './ventas-proximas/VentasProximasTableContent';
@@ -25,6 +26,10 @@ export function VentasProximasTable() {
         estadoFilter={controller.estadoFilter}
         onSearchChange={controller.handleSearchChange}
         onEstadoFilterChange={controller.handleEstadoFilterChange}
+        selectedCount={controller.bulk.selectedCount}
+        isNotifying={controller.bulk.isSending}
+        onNotifySelected={controller.bulk.notifySelected}
+        onClearSelection={controller.bulk.clearSelection}
       />
 
       {controller.ventasNotificaciones.length === 0 ? (
@@ -46,6 +51,9 @@ export function VentasProximasTable() {
             onRenovar={controller.handleRenovar}
             onPaymentPromise={controller.handlePaymentPromise}
             onSeguimiento={controller.handleSeguimiento}
+            selectedIds={controller.bulk.selectedIds}
+            onToggleSelected={controller.bulk.toggleSelected}
+            onToggleAllSelected={controller.bulk.toggleAllOnPage}
           />
 
           <VentasProximasPagination
@@ -58,6 +66,12 @@ export function VentasProximasTable() {
           />
         </div>
       )}
+
+      <BulkNoticeSummaryDialog
+        results={controller.bulk.results}
+        onOpenWhatsApp={controller.bulk.openResultWhatsApp}
+        onClose={controller.bulk.closeSummary}
+      />
 
       <VentasProximasDialogs
         notifSeleccionada={controller.notifSeleccionada}

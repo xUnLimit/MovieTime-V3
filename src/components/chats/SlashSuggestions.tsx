@@ -2,25 +2,32 @@
 
 import { Zap } from 'lucide-react';
 
-import type { SavedMessage } from '@/modules/whatsapp/saved-messages';
 import { cn } from '@/platform/utils/cn';
+import type { SlashItem } from './chat-slash';
 
 type Props = {
-  messages: SavedMessage[];
+  items: SlashItem[];
   activeIndex: number;
   onHover: (index: number) => void;
-  onSelect: (message: SavedMessage) => void;
+  onSelect: (item: SlashItem) => void;
 };
 
-const KIND_LABELS: Record<SavedMessage['kind'], string> = {
-  text: 'Texto', buttons: 'Botones', list: 'Lista',
-};
+const KIND_LABELS = { text: 'Texto', buttons: 'Botones', list: 'Lista' } as const;
+
+function preview(item: SlashItem): string {
+  return item.kind === 'saved' ? item.message.body : item.body;
+}
+
+function tag(item: SlashItem): string {
+  return item.kind === 'saved' ? KIND_LABELS[item.message.kind] : 'Sistema';
+}
 
 // Popup tipo Slack: aparece al escribir "/" en el composer, filtrado por lo
 // que sigue. La navegación con flechas/Enter/Escape vive en ChatComposer para
 // no robarle el foco al textarea.
-export function SlashSuggestions({ messages, activeIndex, onHover, onSelect }: Props) {
-  if (messages.length === 0) return null;
+export function SlashSuggestions({ items, activeIndex, onHover, onSelect }: Props) {
+  if (items.length === 0) return null;
+  const firstSystem = items.findIndex((item) => item.kind === 'system');
 
   return (
     <div
@@ -32,21 +39,24 @@ export function SlashSuggestions({ messages, activeIndex, onHover, onSelect }: P
         <Zap className="mr-1.5 inline h-3 w-3 -translate-y-px" aria-hidden />Respuestas rápidas
       </p>
       <ul>
-        {messages.map((message, index) => (
-          <li key={message.id}>
+        {items.map((item, index) => (
+          <li key={item.id}>
+            {index === firstSystem ? (
+              <p role="presentation" className="border-y border-chat-line-soft bg-chat-raised px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-chat-muted">Mensajes del sistema</p>
+            ) : null}
             <button
               type="button"
               role="option"
               aria-selected={index === activeIndex}
               onMouseEnter={() => onHover(index)}
-              onClick={() => onSelect(message)}
+              onClick={() => onSelect(item)}
               className={cn('flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left focus-visible:outline-none', index === activeIndex ? 'bg-chat-selected' : 'hover:bg-chat-hover')}
             >
               <span className="flex w-full items-center justify-between gap-2">
-                <span className="truncate text-[13px] font-semibold text-chat-ink">{message.title}</span>
-                <span className="shrink-0 text-[10px] text-chat-muted">{KIND_LABELS[message.kind]}</span>
+                <span className="truncate text-[13px] font-semibold text-chat-ink">{item.title}</span>
+                <span className="shrink-0 text-[10px] text-chat-muted">{tag(item)}</span>
               </span>
-              <span className="line-clamp-1 text-[12px] text-chat-muted">{message.body}</span>
+              <span className="line-clamp-1 text-[12px] text-chat-muted">{preview(item)}</span>
             </button>
           </li>
         ))}

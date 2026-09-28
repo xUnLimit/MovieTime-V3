@@ -8,8 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { VentaTerceroDoc } from '@/hooks/use-ventas-tercero';
 import { cn } from '@/platform/utils/cn';
 import { ChatAvatar } from './ChatAvatar';
-import { CHAT_TEMPLATES, conversationTitle, formatWaId, type ChatTemplate, type ServiceWindow } from './chat-format';
-import { suggestMetaTemplate } from './chat-templates';
+import { conversationTitle, formatWaId, type ServiceWindow } from './chat-format';
+import { suggestTipoByDueDate } from './chat-templates';
+import { tipoLabel } from '@/modules/messaging/template-tipos';
+import type { TipoTemplate } from '@/types';
 import { daysUntil } from './conversation-filters';
 
 type CustomerPanelProps = {
@@ -20,7 +22,7 @@ type CustomerPanelProps = {
   selectedVentaId: string | null;
   now: Date;
   onSelectVenta: (ventaId: string) => void;
-  onOpenTemplate: (name: ChatTemplate['name']) => void;
+  onOpenTemplate: (tipo: TipoTemplate) => void;
   onClose: () => void;
 };
 
@@ -56,8 +58,8 @@ export function CustomerPanel(props: CustomerPanelProps) {
   } = props;
   const selected = activas.find((venta) => venta.id === selectedVentaId) ?? null;
   const title = conversationTitle(conversation);
-  const suggested = suggestMetaTemplate(selected?.fechaFin ?? null, now);
-  const suggestedLabel = CHAT_TEMPLATES.find((item) => item.name === suggested)?.label ?? suggested;
+  const suggested = suggestTipoByDueDate(selected?.fechaFin ?? null, now);
+  const suggestedLabel = tipoLabel(suggested);
 
   return (
     <aside aria-label="Ficha del cliente" className="flex h-full min-h-0 flex-col bg-chat-surface text-chat-ink">
