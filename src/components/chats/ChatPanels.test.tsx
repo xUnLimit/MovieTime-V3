@@ -133,7 +133,7 @@ describe('CustomerPanel', () => {
     const user = userEvent.setup();
     const props = renderPanel({ serviceWindow: { open: false } });
 
-    await user.click(screen.getByRole('button', { name: /Plantilla: Notificación Día de Pago/ }));
+    await user.click(screen.getByRole('button', { name: /Plantilla: Aviso de vencimiento/ }));
     expect(props.onOpenTemplate).toHaveBeenCalledWith('dia_pago');
   });
 

@@ -15,9 +15,13 @@ describe('template Meta link', () => {
 
   it('clears the map when no Meta template is linked', () => {
     expect(normalizeMetaLink({ metaTemplateName: '  ', metaParamMap: ['servicios'] }))
-      .toEqual({ metaTemplateName: null, metaParamMap: [] });
+      .toEqual({ metaTemplateName: null, metaParamMap: [], metaButtonActions: [] });
     expect(normalizeMetaLink({ metaTemplateName: 'aviso', metaParamMap: ['servicios'] }))
-      .toEqual({ metaTemplateName: 'aviso', metaParamMap: ['servicios'] });
+      .toEqual({ metaTemplateName: 'aviso', metaParamMap: ['servicios'], metaButtonActions: [] });
+    expect(normalizeMetaLink({ metaTemplateName: null, metaParamMap: ['a'], metaButtonActions: ['RENOVAR'] }))
+      .toEqual({ metaTemplateName: null, metaParamMap: [], metaButtonActions: [] });
+    expect(normalizeMetaLink({ metaTemplateName: 'aviso', metaButtonActions: ['RENOVAR'] }).metaButtonActions)
+      .toEqual(['RENOVAR']);
   });
 
   it('leaves writes untouched when the link is not part of them', () => {
@@ -26,11 +30,11 @@ describe('template Meta link', () => {
   });
 
   it('persists link fields on update and create', async () => {
-    await updateTemplateUseCase('t1', { contenido: 'x', metaTemplateName: 'aviso', metaParamMap: ['a'] });
-    expect(repo.update).toHaveBeenCalledWith('t1', { contenido: 'x', metaTemplateName: 'aviso', metaParamMap: ['a'] });
+    await updateTemplateUseCase('t1', { contenido: 'x', metaTemplateName: 'aviso', metaParamMap: ['a'], metaButtonActions: ['RENOVAR'] });
+    expect(repo.update).toHaveBeenCalledWith('t1', { contenido: 'x', metaTemplateName: 'aviso', metaParamMap: ['a'], metaButtonActions: ['RENOVAR'] });
 
     repo.create.mockResolvedValue('new');
     await createTemplateUseCase({ nombre: 'N', tipo: 'despedida', contenido: 'Adiós', placeholders: [], activo: true, metaTemplateName: null });
-    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'despedida', metaTemplateName: null, metaParamMap: [] }));
+    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'despedida', metaTemplateName: null, metaParamMap: [], metaButtonActions: [] }));
   });
 });

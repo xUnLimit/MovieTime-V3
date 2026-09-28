@@ -22,6 +22,6 @@ describe('buildSlashItems', () => {
 
   it('filters ignoring accents and case on both groups', () => {
     const items = buildSlashItems({ ...base, term: 'DIA', tipos: [tipo({}), tipo({ id: 'x', tipo: 'despedida' })] });
-    expect(items.map((i) => i.title)).toEqual(['Día libre', 'Notificación Día de Pago']);
+    expect(items.map((i) => i.title)).toEqual(['Día libre']);
   });
 });

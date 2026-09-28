@@ -4,7 +4,8 @@ import type { Database } from '@/platform/supabase/database.types';
 import { normalizePanamaWaId, type NoticeVenta } from './message-data';
 
 export type NoticeTipo = Database['public']['Enums']['tipo_template_enum'];
-export type NoticeTemplate = { contenido: string; metaTemplateName: string | null; metaParamMap: string[] };
+export type NoticeTemplate = { contenido: string; metaTemplateName: string | null; metaParamMap: string[];
+  metaButtonActions: ('RENOVAR' | 'NO_CONTINUAR' | 'DATOS' | 'NINGUNA')[] };
 export type NoticeRecord = Database['public']['Tables']['whatsapp_notices']['Row'];
 export type NoticeReservation = {
   dedupeKey: string; tipo: NoticeTipo; terceroId: string; waId: string;
@@ -24,6 +25,7 @@ export type NoticeStore = {
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 const paramMapSchema = z.array(z.string());
+const buttonActionsSchema = z.array(z.enum(['RENOVAR', 'NO_CONTINUAR', 'DATOS', 'NINGUNA']));
 function check(error: { code?: string } | null, action: string): void {
   if (error) throw new Error(`Notice store ${action} failed: ${error.code ?? 'unknown'}`);
 }
@@ -79,10 +81,12 @@ export function createNoticeStore(client: ServiceClient = createServiceRoleClien
     },
     async loadTemplate(tipo) {
       const { data, error } = await client.from('templates')
-        .select('contenido,meta_template_name,meta_param_map').eq('tipo', tipo).eq('activo', true).maybeSingle();
+        .select('contenido,meta_template_name,meta_param_map,meta_button_actions')
+        .eq('tipo', tipo).eq('activo', true).maybeSingle();
       check(error, 'load template');
       return data ? { contenido: data.contenido, metaTemplateName: data.meta_template_name,
-        metaParamMap: paramMapSchema.parse(data.meta_param_map) } : null;
+        metaParamMap: paramMapSchema.parse(data.meta_param_map),
+        metaButtonActions: buttonActionsSchema.parse(data.meta_button_actions) } : null;
     },
     async isAmbiguousPhone(waId, terceroId) {
       const { data, error } = await client.from('terceros').select('id,telefono').eq('active', true);

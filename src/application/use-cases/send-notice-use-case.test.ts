@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NoticeVenta } from '@/modules/messaging/message-data';
-import type { NoticeRecord, NoticeStore } from '@/modules/messaging/notice-store';
+import type { NoticeRecord, NoticeStore, NoticeTemplate } from '@/modules/messaging/notice-store';
 import type { TemplateCatalog } from '@/modules/whatsapp/template-catalog';
 import { sendNotice, type SendNoticeDeps } from './send-notice-use-case';
 
@@ -32,9 +32,10 @@ let send: SendNoticeDeps['send'];
 beforeEach(() => {
   sales = [venta()];
   store = {
-    loadVentas: vi.fn(async () => sales), loadTemplate: vi.fn(async () => ({
+    loadVentas: vi.fn(async () => sales), loadTemplate: vi.fn(async (): Promise<NoticeTemplate> => ({
       contenido: 'Hola {cliente}: {servicio}', metaTemplateName: 'aviso_vence_hoy',
       metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento', 'monto_total'],
+      metaButtonActions: [],
     })),
     isAmbiguousPhone: vi.fn(async () => false), lastInboundAt: vi.fn(async () => null),
     reserve: vi.fn(async (input) => record(input.idempotencyKey)), finish: vi.fn(async () => undefined),
@@ -55,6 +56,49 @@ describe('sendNotice', () => {
       kind: 'template', buttonPayloads: [`RENOVAR:${NOTICE_ID}`, `NO_CONTINUAR:${NOTICE_ID}`],
     }) }));
     expect(store.finish).toHaveBeenCalledWith(NOTICE_ID, 'accepted', ID2, 'wamid.1');
+  });
+  it('maps emoji buttons "✅ Continuar" / "❌ No continuar" to renew and decline actions', async () => {
+    vi.mocked(catalog.getApproved).mockResolvedValueOnce({ paramCount: 4,
+      buttons: [{ type: 'QUICK_REPLY', text: '✅ Continuar' }, { type: 'QUICK_REPLY', text: '❌ No continuar' }] });
+    await sendNotice(input, { store, catalog, send });
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({
+      buttonPayloads: [`RENOVAR:${NOTICE_ID}`, `NO_CONTINUAR:${NOTICE_ID}`],
+    }) }));
+  });
+  it('uses configured actions in catalog button order regardless of button text', async () => {
+    vi.mocked(store.loadTemplate).mockResolvedValueOnce({
+      contenido: 'Hola {cliente}', metaTemplateName: 'aviso_vence_hoy',
+      metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento', 'monto_total'],
+      metaButtonActions: ['NO_CONTINUAR', 'RENOVAR'],
+    });
+    vi.mocked(catalog.getApproved).mockResolvedValueOnce({ paramCount: 4,
+      buttons: [{ type: 'QUICK_REPLY', text: 'Opción A' }, { type: 'QUICK_REPLY', text: 'Opción B' }] });
+    await sendNotice(input, { store, catalog, send });
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({
+      buttonPayloads: [`NO_CONTINUAR:${NOTICE_ID}`, `RENOVAR:${NOTICE_ID}`],
+    }) }));
+  });
+  it('emits an ignored BTN payload for NINGUNA', async () => {
+    vi.mocked(store.loadTemplate).mockResolvedValueOnce({
+      contenido: 'Hola {cliente}', metaTemplateName: 'aviso_vence_hoy',
+      metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento', 'monto_total'],
+      metaButtonActions: ['RENOVAR', 'NINGUNA'],
+    });
+    await sendNotice(input, { store, catalog, send });
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({
+      buttonPayloads: [`RENOVAR:${NOTICE_ID}`, `BTN1:${NOTICE_ID}`],
+    }) }));
+  });
+  it('falls back to button text for an unconfigured position', async () => {
+    vi.mocked(store.loadTemplate).mockResolvedValueOnce({
+      contenido: 'Hola {cliente}', metaTemplateName: 'aviso_vence_hoy',
+      metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento', 'monto_total'],
+      metaButtonActions: ['RENOVAR'],
+    });
+    await sendNotice(input, { store, catalog, send });
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({
+      buttonPayloads: [`RENOVAR:${NOTICE_ID}`, `NO_CONTINUAR:${NOTICE_ID}`],
+    }) }));
   });
   it('skips ineligible and ambiguous phones without sending', async () => {
     sales = [venta({ enReposo: true }), venta({ ventaId: ID2, telefono: '6000-0001' })];

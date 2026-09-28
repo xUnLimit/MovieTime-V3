@@ -117,12 +117,12 @@ describe('NotifyVentaDialog', () => {
     expect(props.onNotify).not.toHaveBeenCalled();
   });
 
-  it('uses notificacion_regular before the due date and cancelacion for cancellation', async () => {
+  it('uses dia_pago before the due date and cancelacion for cancellation', async () => {
     mocks.mutateAsync.mockResolvedValue([]);
     const user = userEvent.setup();
     renderDialog({ notification: { ...notification, diasRestantes: 3 } });
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
-    expect(mocks.mutateAsync).toHaveBeenLastCalledWith({ tipo: 'notificacion_regular', ventaIds: ['venta-1'] });
+    expect(mocks.mutateAsync).toHaveBeenLastCalledWith({ tipo: 'dia_pago', ventaIds: ['venta-1'] });
     await user.click(screen.getByLabelText('Cancelación'));
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
     expect(mocks.mutateAsync).toHaveBeenLastCalledWith({ tipo: 'cancelacion', ventaIds: ['venta-1'] });

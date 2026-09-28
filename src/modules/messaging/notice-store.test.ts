@@ -78,10 +78,18 @@ describe('notice store Supabase adapter', () => {
       fechaVencimiento: null, promesaPagoHasta: null, respuestaCliente: null }]);
     expect(calls.some((call) => call.table === 'pagos_venta')).toBe(false);
   });
-  it('reads editor template and rejects malformed parameter maps', async () => {
-    responses.set('templates', { data: { contenido: 'Hola', meta_template_name: 'aviso', meta_param_map: ['saludo_nombre'] }, error: null });
-    expect(await createNoticeStore().loadTemplate('dia_pago')).toEqual({ contenido: 'Hola', metaTemplateName: 'aviso', metaParamMap: ['saludo_nombre'] });
-    responses.set('templates', { data: { contenido: 'Hola', meta_template_name: 'aviso', meta_param_map: { bad: true } }, error: null });
+  it('reads editor template actions and rejects malformed configuration', async () => {
+    responses.set('templates', { data: { contenido: 'Hola', meta_template_name: 'aviso',
+      meta_param_map: ['saludo_nombre'], meta_button_actions: ['RENOVAR', 'NINGUNA'] }, error: null });
+    expect(await createNoticeStore().loadTemplate('dia_pago')).toEqual({ contenido: 'Hola',
+      metaTemplateName: 'aviso', metaParamMap: ['saludo_nombre'], metaButtonActions: ['RENOVAR', 'NINGUNA'] });
+    expect(calls).toContainEqual({ table: 'templates', operation: 'select',
+      args: ['contenido,meta_template_name,meta_param_map,meta_button_actions'] });
+    responses.set('templates', { data: { contenido: 'Hola', meta_template_name: 'aviso',
+      meta_param_map: { bad: true }, meta_button_actions: [] }, error: null });
+    await expect(createNoticeStore().loadTemplate('dia_pago')).rejects.toThrow();
+    responses.set('templates', { data: { contenido: 'Hola', meta_template_name: 'aviso',
+      meta_param_map: [], meta_button_actions: ['INVALID'] }, error: null });
     await expect(createNoticeStore().loadTemplate('dia_pago')).rejects.toThrow();
     responses.set('templates', { data: null, error: null });
     expect(await createNoticeStore().loadTemplate('dia_pago')).toBeNull();

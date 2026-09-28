@@ -1,112 +1,156 @@
-# Plantillas Meta v2 (borradores)
+# Plantillas de WhatsApp (para ajustar)
 
-Se crean en WhatsApp Manager con nombres nuevos; las 3 actuales siguen operativas hasta aprobar estas.
-Todas: categoria UTILITY, idioma `es`. Sin contrasenas ni datos sensibles. Las variables van en una sola linea (maximo 256 caracteres) y nunca al inicio ni al final del cuerpo ni adyacentes.
+Edita los textos directamente en este archivo y avisa cuando termines.
 
-Variables comunes: `{{1}}` saludo y nombre, `{{2}}` servicios, `{{3}}` vencimiento, `{{4}}` monto total.
+Hay dos clases de plantillas:
 
-## 1. aviso_vencimiento
+- **A. Plantillas de Meta.** Se envían por la API aunque el cliente no haya escrito, y necesitan aprobación de Meta. Las variables son numeradas (`{{1}}`, `{{2}}`…) y cada una ocupa una sola línea.
+- **B. Textos libres del Editor de mensajes.** Se envían por wa.me, o por la API cuando el chat está abierto. Se editan en la app sin aprobación y usan variables con nombre, como `{nombre_cliente}`.
 
-Botones (respuesta rapida): `Quiero renovar` · `No deseo continuar`
+---
 
-Cuerpo:
+## A. Plantillas de Meta (2)
+
+### A1. `recordatorio_pago`
+
+Categoría Utilidad, idioma Spanish (es).
+
+Se usa para "Notificación regular", "Día de pago" y "Cancelación", y también en el envío automático del día de vencimiento.
+
+| Variable | Dato | Ejemplo |
+|---|---|---|
+| `{{1}}` | Saludo y nombre | Buenos días, María |
+| `{{2}}` | Servicios | Netflix y Disney+ |
+| `{{3}}` | Fecha de vencimiento | 5 de octubre de 2026 |
+| `{{4}}` | Monto total | $9.50 |
 
 ```
 ⏳ *Recordatorio de pago*
 
-{{1}}. Te escribimos solamente para recordarte que el pago de tu suscripción a *{{2}}* está próximo a vencer.
+{{1}}. Te escribimos solamente para recordarte que el pago de tu suscripción a *{{2}}* está por finalizar.
 
 📅 *Fecha de vencimiento:* {{3}}
 💵 *Monto:* {{4}}
 
-💳 Puedes realizar tu pago desde antes para asegurar la continuidad del servicio o hacerlo el día de vencimiento.
+Si no recibimos respuesta, procederemos con la suspensión del servicio.
 
-🕒 Si necesitas más tiempo, notifícanos antes del vencimiento para evitar la desconexión automática.
-
-❌ Si no deseas continuar con el servicio, toca el botón "No deseo continuar" o infórmanos. Si no recibimos respuesta, entenderemos que no deseas seguir y procederemos con la suspensión del acceso y la eliminación del perfil.
-
-¡Gracias por tu confianza y preferirnos!
+¡Gracias por tu confianza y por preferirnos!
 
 *— MovieTime PTY*
 ```
 
-Ejemplos: {{1}} `Buenos días, María` · {{2}} `Netflix y Disney+` · {{3}} `5 de octubre de 2026` · {{4}} `$8.50`
+Botones de respuesta rápida: `Continuar` · `No continuar` (Meta no permite emojis en botones)
 
-## 2. aviso_vence_hoy
+Así le llega al cliente:
 
-Botones: `Quiero renovar` · `No deseo continuar`
+> ⏳ *Recordatorio de pago*
+> Buenos días, María. Te recordamos que tu suscripción a *Netflix y Disney+* vence el 5 de octubre de 2026.
+> 💵 *Monto:* $9.50
+> …
+> [Continuar] [No continuar]
 
-Cuerpo:
+### A2. `acceso_actualizado`
 
-```
-⚠️ *Recordatorio de renovación*
+Categoría Utilidad, idioma Spanish (es).
 
-{{1}}. Hoy vence el pago de tu suscripción a *{{2}}*.
+Se usa cuando cambian las credenciales o se transfiere un servicio. No lleva contraseñas: el cliente las recibe al tocar el botón.
 
-📅 *Fecha de vencimiento:* {{3}}
-💵 *Monto:* {{4}}
-
-✅ Si deseas continuar con el servicio, toca "Quiero renovar" y te enviaremos los datos de pago.
-
-❌ Si no deseas continuar, toca "No deseo continuar" o infórmanos.
-
-❗ Si no recibimos ningún tipo de respuesta antes de finalizar el día, entenderemos que no deseas continuar y procederemos con la suspensión del servicio y eliminación del perfil.
-
-¡Gracias por tu confianza y por preferirnos! Quedamos atentos a tu respuesta.
-
-*— MovieTime PTY*
-```
-
-Ejemplos: {{1}} `Buenos días, María` · {{2}} `Netflix` · {{3}} `5 de octubre de 2026` · {{4}} `$5.00`
-
-Nota: el Yappy no va en la plantilla; se envia como texto libre (`datos_pago`) al tocar "Quiero renovar".
-
-## 3. aviso_corte
-
-Botones: `Quiero renovar`
-
-Cuerpo:
-
-```
-❗ *Corte de servicio*
-
-{{1}}. Debido a que no hemos recibido respuesta de su parte, su acceso a la plataforma de *{{2}}* será suspendido en breve.
-
-📅 *Fecha de vencimiento:* {{3}}
-💵 *Monto:* {{4}}
-
-Para continuar disfrutando del servicio, toca "Quiero renovar", realiza el pago correspondiente y envíanos el comprobante. Una vez recibido, reactivaremos tu acceso lo más pronto posible.
-
-¡Gracias por tu confianza y por preferirnos! 😊
-
-*— MovieTime PTY*
-```
-
-Ejemplos: {{1}} `Buenas tardes, María` · {{2}} `Netflix` · {{3}} `5 de octubre de 2026` · {{4}} `$5.00`
-
-## 4. acceso_actualizado
-
-Botones: `Recibir mis datos`
-
-Cuerpo (variables: `{{1}}` saludo y nombre, `{{2}}` servicio):
+| Variable | Dato | Ejemplo |
+|---|---|---|
+| `{{1}}` | Saludo y nombre | Buenos días, María |
+| `{{2}}` | Servicio | Netflix |
 
 ```
 🔐 *Acceso actualizado*
 
 {{1}}. Actualizamos los datos de acceso de tu servicio de *{{2}}*.
 
-Toca el botón "Recibir mis datos" y te enviaremos ahora mismo la información vigente por este chat.
+Toca el botón "Recibir mis datos" y te enviaremos ahora mismo la información.
 
 *— MovieTime PTY*
 ```
 
-Ejemplos: {{1}} `Buenos días, María` · {{2}} `Netflix`
+Botón de respuesta rápida: `Recibir mis datos`
 
-## Textos libres nuevos del editor
+---
 
-Se envian por API con la ventana abierta (o por wa.me). Marcadores del editor entre llaves simples.
+## B. Textos libres del Editor de mensajes
 
-### datos_pago
+Variables disponibles:
+
+- Datos del cliente: `{saludo}`, `{nombre_cliente}`, `{cliente}`
+- Datos del servicio: `{categoria}`, `{servicio}`, `{vencimiento}`, `{monto}`
+- Credenciales: `{correo}`, `{contrasena}`, `{perfil_nombre}`, `{codigo}`
+- Varias ventas: `{items}` y el bloque `{{#items}}…{{/items}}`, que se repite por cada venta
+
+### B1. Notificación regular
+
+Es el respaldo por wa.me de A1, para antes del vencimiento.
+
+```
+⏳ *Recordatorio de pago*
+
+{saludo}, {nombre_cliente}. Te escribimos solamente para recordarte que el pago de tu suscripción a *{categoria}* está próximo a vencer.
+
+📅 *Fecha de vencimiento:* {vencimiento}
+💵 *Monto:* {monto}
+
+💳 Puedes realizar tu pago desde antes para asegurar la continuidad del servicio o hacerlo el día de vencimiento.
+
+🕒 Si necesitas más tiempo, notifícanos antes del vencimiento para evitar la desconexión automática.
+
+❌ Si no deseas continuar con el servicio, por favor infórmanos. Si no recibimos respuesta, entenderemos que no deseas seguir y procederemos con la suspensión del acceso y la eliminación del perfil.
+
+¡Gracias por tu confianza y preferirnos! ✨
+
+*— MovieTime PTY*
+```
+
+### B2. Día de pago
+
+Es el respaldo por wa.me de A1, para el día del vencimiento.
+
+```
+⚠️ *Recordatorio de renovación - {categoria}*
+
+📅 *Fecha de vencimiento:* {vencimiento}
+💵 *Monto:* {monto}
+
+❌ Si no deseas continuar con el servicio, por favor infórmanos.
+
+✅ Si deseas continuar con el servicio, puedes realizar el pago al siguiente Yappy:
+Allan Ordoñez
+6769-4145
+
+❗ Si no recibimos ningún tipo de respuesta antes de finalizar el día, entenderemos que no deseas continuar y procederemos con la suspensión del servicio y eliminación del perfil.
+
+¡Gracias por tu confianza y por preferirnos! Quedamos atentos a tu respuesta 😊
+
+*— MovieTime PTY*
+```
+
+### B3. Cancelación
+
+Es el respaldo por wa.me de A1, para después del vencimiento.
+
+```
+❗*Corte de servicio*
+
+{saludo}, {nombre_cliente}. debido a que no hemos recibido respuesta de su parte, su acceso a la plataforma de *{categoria}* será suspendido en breve.
+
+📅 *Fecha de vencimiento:* {vencimiento}
+💵 *Monto:* {monto}
+
+Para continuar disfrutando del servicio, te invitamos a realizar el pago correspondiente y enviarnos el comprobante. Una vez recibido, reactivaremos tu acceso lo más pronto posible.
+
+¡Gracias por tu confianza y por preferirnos! 😊
+
+*— MovieTime PTY*
+```
+
+### B4. Datos de pago (nuevo)
+
+Se envía automáticamente cuando el cliente toca "Continuar".
 
 ```
 ✅ ¡Gracias por renovar, {nombre_cliente}!
@@ -121,12 +165,99 @@ Una vez realizado, envíanos el comprobante por este chat y confirmaremos tu ren
 *— MovieTime PTY*
 ```
 
-### despedida
+### B5. Despedida (nuevo)
+
+Se envía automáticamente cuando el cliente toca "No continuar".
 
 ```
 {saludo}, {nombre_cliente}. Recibimos tu respuesta y no continuaremos con tu suscripción a *{servicio}*.
 
 Gracias por haber sido parte de MovieTime PTY. Si más adelante quieres volver, aquí estaremos para ayudarte. 😊
+
+*— MovieTime PTY*
+```
+
+### B6. Renovación
+
+Se envía después de registrar el pago de una renovación.
+
+```
+🎉 *¡Renovación exitosa!*
+
+Tu suscripción a *{categoria}* ha sido renovada con éxito.
+
+📅 *Nueva fecha de vencimiento:* {vencimiento}
+
+❓ Si tienes alguna duda o necesitas asistencia, no dudes en escribirnos. ¡Estamos para ayudarte!
+
+¡Gracias por seguir confiando en nosotros! ✨
+
+*— MovieTime PTY*
+```
+
+### B7. Suscripción
+
+Se envía al crear una venta.
+
+```
+🎉 *¡Suscripción activada con éxito!*
+
+Te confirmamos que tu suscripción a {items} ha sido activada correctamente. A continuación, te compartimos los datos de acceso:
+
+{{#items}}
+> {categoria}
+📅 *Fecha de vencimiento:* {vencimiento}
+📧 *Correo:* {correo}
+🔑 *Contraseña:* {contrasena}
+👤 *Perfil:* {perfil_nombre}
+🔒 *PIN:* {codigo}
+{{/items}}
+
+❓ Si tienes alguna pregunta o necesitas asistencia, no dudes en avisarnos. Estamos aquí para ayudarte.
+
+📸 Luego de ingresar y verificar si todo funciona correctamente, por favor compártenos una captura, si es posible.
+
+¡Gracias por confiar en nosotros! ✨
+
+*— MovieTime PTY*
+```
+
+### B8. Actualización de credenciales
+
+Se envía por wa.me, o cuando el cliente toca "Recibir mis datos" en A2.
+
+```
+❗*Actualización de Datos - {categoria}*
+
+{saludo}, {nombre_cliente}. Queremos informarle que, debido a que un cliente ha decidido no continuar con el servicio, hemos realizado ciertos cambios que restringen su acceso.
+
+> {categoria}
+📧 *Correo:* {correo}
+🔑 *Contraseña:* {contrasena}
+👤 *Perfil:* {perfil_nombre}
+🔒 *PIN:* {codigo}
+
+La cuenta sigue siendo la misma, con sus perfiles intactos. Esta acción fue únicamente para retirar el acceso del cliente.
+
+¡Gracias por su confianza y por preferirnos! Agradecemos mucho su comprensión 😊
+
+*— MovieTime PTY*
+```
+
+### B9. Transferencia de servicio
+
+Se envía por wa.me, o cuando el cliente toca "Recibir mis datos" en A2.
+
+```
+❗*Actualización de Datos - {categoria}*
+
+> {categoria}
+📧 *Correo:* {correo}
+🔑 *Contraseña:* {contrasena}
+👤 *Perfil:* {perfil_nombre}
+🔒 *PIN:* {codigo}
+
+¡Gracias por su confianza y por preferirnos! 😊
 
 *— MovieTime PTY*
 ```

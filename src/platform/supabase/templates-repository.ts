@@ -13,6 +13,10 @@ export const removeTemplate = (id: string) => remove(ENTITIES.TEMPLATES, id);
 function normalizeTemplateWrite(payload: Record<string, unknown>) {
   const { placeholders: _placeholders, ...templatePayload } = payload;
   void _placeholders;
+  // meta_button_actions es jsonb (arreglo por indice de boton): nunca se escribe algo que no sea arreglo.
+  if (templatePayload.metaButtonActions !== undefined && !Array.isArray(templatePayload.metaButtonActions)) {
+    templatePayload.metaButtonActions = [];
+  }
   return templatePayload;
 }
 

@@ -35,7 +35,7 @@ describe('useBulkNotice', () => {
     expect([...result.current.selectedIds]).toEqual(['3']);
   });
 
-  it('calls the API once per rule tipo and collects every result', async () => {
+  it('calls the API once with the single rule tipo and collects every result', async () => {
     mocks.mutateAsync.mockImplementation(async ({ ventaIds }: { ventaIds: string[] }) => ventaIds.map((id) => ({
       noticeId: id, clienteNombre: id, ventaIds: [id], status: 'accepted', channel: 'template', waId: '507',
     })));
@@ -43,9 +43,8 @@ describe('useBulkNotice', () => {
     act(() => result.current.toggleAllOnPage(true));
     act(() => result.current.toggleSelected('3', true));
     await act(async () => { await result.current.notifySelected(); });
-    expect(mocks.mutateAsync).toHaveBeenCalledTimes(2);
-    expect(mocks.mutateAsync).toHaveBeenCalledWith({ tipo: 'dia_pago', ventaIds: ['a', 'c'] });
-    expect(mocks.mutateAsync).toHaveBeenCalledWith({ tipo: 'notificacion_regular', ventaIds: ['b'] });
+    expect(mocks.mutateAsync).toHaveBeenCalledTimes(1);
+    expect(mocks.mutateAsync).toHaveBeenCalledWith({ tipo: 'dia_pago', ventaIds: ['a', 'b', 'c'] });
     expect(result.current.results).toHaveLength(3);
     expect(result.current.selectedCount).toBe(0);
   });

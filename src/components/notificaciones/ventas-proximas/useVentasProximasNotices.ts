@@ -25,11 +25,10 @@ export function useVentasProximasNotices({ ventasNotificaciones, paginatedNotifi
   );
 
   const handleNotificar = (notif: NotificacionVentaConId) => {
-    const tipoTemplate = notif.diasRestantes <= 0 ? 'dia_pago' : 'notificacion_regular';
-    const template = getTemplateByTipo(tipoTemplate);
+    const template = getTemplateByTipo('dia_pago');
 
     if (!template) {
-      toast.error(`Template de ${tipoTemplate === 'dia_pago' ? 'día de pago' : 'notificación regular'} no encontrado`);
+      toast.error('Template de aviso de vencimiento no encontrado');
       return false;
     }
 

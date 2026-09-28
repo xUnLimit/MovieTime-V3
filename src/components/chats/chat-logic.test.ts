@@ -142,8 +142,8 @@ describe('chat templates', () => {
   });
 
   it('suggests the tipo by due date', () => {
-    expect(suggestTipoByDueDate(null, NOW)).toBe('notificacion_regular');
-    expect(suggestTipoByDueDate(new Date(2026, 8, 30), NOW)).toBe('notificacion_regular');
+    expect(suggestTipoByDueDate(null, NOW)).toBe('dia_pago');
+    expect(suggestTipoByDueDate(new Date(2026, 8, 30), NOW)).toBe('dia_pago');
     expect(suggestTipoByDueDate(new Date(2026, 8, 27, 1), NOW)).toBe('dia_pago');
     expect(suggestTipoByDueDate(new Date(2026, 8, 20), NOW)).toBe('cancelacion');
   });

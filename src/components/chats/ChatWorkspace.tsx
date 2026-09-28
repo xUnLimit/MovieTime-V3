@@ -74,7 +74,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   const [panelOverlay, setPanelOverlay] = useState(false);
   const [wideWorkspace, setWideWorkspace] = useState(false);
   const [templateDialog, setTemplateDialog] = useState<{ open: boolean; tipo: TipoTemplate; key: number }>({
-    open: false, tipo: 'notificacion_regular', key: 0,
+    open: false, tipo: 'dia_pago', key: 0,
   });
   // Una clave por intento: si la red falla y se reintenta, el servidor devuelve
   // el mismo envio en lugar de mandarle el mensaje dos veces al cliente.

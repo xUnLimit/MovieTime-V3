@@ -62,12 +62,10 @@ export function buildMetaTemplateParams(
 
 // Tipo del editor sugerido segun cuanto falta para el vencimiento.
 export function suggestTipoByDueDate(fechaVencimiento: Date | null, now: Date): TipoTemplate {
-  if (!fechaVencimiento) return 'notificacion_regular';
+  if (!fechaVencimiento) return 'dia_pago';
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const due = new Date(fechaVencimiento.getFullYear(), fechaVencimiento.getMonth(), fechaVencimiento.getDate()).getTime();
-  if (due < today) return 'cancelacion';
-  if (due === today) return 'dia_pago';
-  return 'notificacion_regular';
+  return due < today ? 'cancelacion' : 'dia_pago';
 }
 
 // Tipos activos cuya plantilla de Meta vinculada esta aprobada y vigente, en el orden del editor.

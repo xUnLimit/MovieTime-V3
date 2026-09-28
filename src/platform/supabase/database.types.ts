@@ -1817,6 +1817,7 @@ export type Database = {
           contenido: string
           created_at: string
           id: string
+          meta_button_actions: Json
           meta_param_map: Json
           meta_template_name: string | null
           nombre: string
@@ -1828,6 +1829,7 @@ export type Database = {
           contenido: string
           created_at?: string
           id?: string
+          meta_button_actions?: Json
           meta_param_map?: Json
           meta_template_name?: string | null
           nombre: string
@@ -1839,6 +1841,7 @@ export type Database = {
           contenido?: string
           created_at?: string
           id?: string
+          meta_button_actions?: Json
           meta_param_map?: Json
           meta_template_name?: string | null
           nombre?: string

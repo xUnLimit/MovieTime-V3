@@ -2,7 +2,7 @@
 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DATA_KEY_OPTIONS, resizeParamMap } from '@/modules/messaging/meta-template-mapping';
+import { DATA_KEY_OPTIONS, dataKeyLabel, resizeParamMap } from '@/modules/messaging/meta-template-mapping';
 
 type MetaParamMapEditorProps = {
   paramCount: number;
@@ -11,7 +11,7 @@ type MetaParamMapEditorProps = {
   onChange: (map: string[]) => void;
 };
 
-// Un select por {{n}} de la plantilla de Meta: elige que dato del mensaje va en cada variable.
+// Una fila por {{n}} de la plantilla: "{{1}} → Saludo y nombre".
 export function MetaParamMapEditor({ paramCount, value, error, onChange }: MetaParamMapEditorProps) {
   const setKey = (index: number, key: string) => {
     const next = resizeParamMap(value, paramCount);
@@ -21,16 +21,19 @@ export function MetaParamMapEditor({ paramCount, value, error, onChange }: MetaP
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">Datos de las variables</p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div>
+        <p className="text-sm font-medium">Qué dato va en cada variable</p>
+        <p className="text-xs text-muted-foreground">Meta reemplaza cada {'{{n}}'} por el dato que elijas.</p>
+      </div>
+      <ul className="space-y-2">
         {Array.from({ length: paramCount }, (_, index) => {
           const id = `meta-param-${index + 1}`;
           return (
-            <div key={id} className="space-y-1">
-              <Label htmlFor={id} className="text-xs text-muted-foreground">{`Variable {{${index + 1}}}`}</Label>
+            <li key={id} className="flex items-center gap-2">
+              <Label htmlFor={id} className="w-14 shrink-0 font-mono text-xs text-muted-foreground">{`{{${index + 1}}} →`}</Label>
               <Select value={value[index] || undefined} onValueChange={(key) => setKey(index, key)}>
                 <SelectTrigger id={id} className="w-full" aria-label={`Dato para la variable ${index + 1}`}>
-                  <SelectValue placeholder="Elige un dato" />
+                  <SelectValue placeholder="Elige un dato">{value[index] ? dataKeyLabel(value[index]) : undefined}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {DATA_KEY_OPTIONS.map((option) => (
@@ -38,10 +41,10 @@ export function MetaParamMapEditor({ paramCount, value, error, onChange }: MetaP
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
       {error ? <p role="alert" className="text-xs text-destructive">{error}</p> : null}
     </div>
   );

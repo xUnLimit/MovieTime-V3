@@ -75,3 +75,26 @@ export function paramsFromData(map: readonly string[], data: MessageData): strin
     return typeof raw === 'string' ? raw.replace(/[\r\n\t]+/g, ' ').replace(/ {2,}/g, ' ').trim().slice(0, 256) : '';
   });
 }
+
+const SUGGESTED_MAPS: Record<number, readonly MappableKey[]> = {
+  2: ['saludo_nombre', 'servicios'],
+  4: ['saludo_nombre', 'servicios', 'vencimiento', 'monto_total'],
+};
+
+/** Mapa por defecto al elegir una plantilla: solo para las formas habituales (2 y 4 variables). */
+export function suggestParamMap(paramCount: number): string[] {
+  return [...(SUGGESTED_MAPS[paramCount] ?? [])];
+}
+
+export function isParamMapEmpty(map: readonly string[]): boolean {
+  return map.every((key) => !key);
+}
+
+export type ChannelStatus = 'api' | 'pending' | 'wame';
+
+/** api = vinculada y aprobada; pending = vinculada pero no enviable; wame = sin vinculo. */
+export function channelStatus(linkedName: string | null | undefined, templates: readonly MetaTemplateInfo[]): ChannelStatus {
+  if (!linkedName) return 'wame';
+  const linked = templates.find((item) => item.name === linkedName && !item.retired);
+  return linked?.status === 'APPROVED' ? 'api' : 'pending';
+}

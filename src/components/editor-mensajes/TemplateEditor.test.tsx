@@ -8,8 +8,6 @@ import type { TemplateMensaje } from '@/types';
 
 const state = vi.hoisted(() => ({
   metas: [] as unknown[],
-  sync: vi.fn(),
-  syncPending: false,
   update: vi.fn(),
   create: vi.fn(),
 }));
@@ -28,7 +26,6 @@ vi.mock('@/application/client-domain-mutations', () => ({
 
 vi.mock('@/hooks/use-templates', () => ({
   useMetaTemplates: () => ({ data: state.metas, isLoading: false }),
-  useSyncMetaTemplates: () => ({ mutate: state.sync, isPending: state.syncPending }),
 }));
 
 import { TemplateEditor } from './TemplateEditor';
@@ -50,8 +47,8 @@ function wrap(templates: TemplateMensaje[]) {
 function makeTemplate(overrides: Partial<TemplateMensaje> = {}): TemplateMensaje {
   return {
     id: 'template-1',
-    nombre: 'Notificacion Regular',
-    tipo: 'notificacion_regular',
+    nombre: 'Aviso de vencimiento',
+    tipo: 'dia_pago',
     contenido: 'Hola {nombre_cliente}, tu servicio vence pronto.',
     placeholders: ['{nombre_cliente}'],
     activo: true,
@@ -65,18 +62,27 @@ function makeMeta(overrides: Partial<MetaTemplateInfo> = {}): MetaTemplateInfo {
   return {
     id: 'm1', name: 'aviso_vencimiento', language: 'es', status: 'APPROVED', category: 'UTILITY',
     body: '{{1}}, tu plan de {{2}} vence el {{3}}.', header: null, footer: 'MovieTime PTY',
-    buttons: [{ type: 'QUICK_REPLY', text: 'Quiero renovar' }], paramCount: 3, retired: false,
-    syncedAt: '2026-09-28T10:00:00Z', ...overrides,
+    buttons: [{ type: 'QUICK_REPLY', text: 'Quiero renovar' }, { type: 'QUICK_REPLY', text: 'No deseo continuar' }],
+    paramCount: 3, retired: false, syncedAt: '2026-09-28T10:00:00Z', ...overrides,
   };
+}
+
+const SAVE = { name: 'Guardar' };
+type User = ReturnType<typeof userEvent.setup>;
+
+const tipoButton = (tipo: string) => document.querySelector(`button[data-tipo="${tipo}"]`) as HTMLElement;
+
+async function pickMeta(user: User, name = /aviso_vencimiento/) {
+  await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+  await user.click(screen.getByRole('combobox', { name: 'Plantilla vinculada' }));
+  await user.click(await screen.findByRole('option', { name }));
 }
 
 describe('TemplateEditor', () => {
   beforeEach(() => {
     state.metas = [];
-    state.sync.mockReset();
     state.update.mockReset();
     state.create.mockReset();
-    state.syncPending = false;
     // Radix Select necesita estas APIs de puntero que jsdom no implementa.
     Element.prototype.hasPointerCapture = () => false;
     Element.prototype.setPointerCapture = () => undefined;
@@ -86,9 +92,7 @@ describe('TemplateEditor', () => {
 
   it('fills the selected template content after templates load asynchronously', async () => {
     const { rerender } = render(wrap([]));
-    const textarea = screen.getByRole('textbox');
-
-    expect((textarea as HTMLTextAreaElement).value).toBe('');
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('');
 
     rerender(wrap([makeTemplate()]));
 
@@ -99,97 +103,209 @@ describe('TemplateEditor', () => {
     });
   });
 
-  it('lists every tipo including datos de pago and despedida', () => {
+  it('groups the messages by moment and hides the removed notificacion_regular', () => {
     render(wrap([]));
-    expect(screen.getByRole('tab', { name: 'Datos de pago' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Despedida' })).toBeTruthy();
+    const groups: Record<string, string[]> = {
+      cobros: ['Aviso de vencimiento', 'Corte de servicio'],
+      respuestas: ['Datos de pago', 'Despedida'],
+      ventas: ['Notificación de Suscripción', 'Notificación de Renovación'],
+      cuentas: ['Actualización de Credenciales', 'Transferencia de Servicio'],
+    };
+    for (const [id, labels] of Object.entries(groups)) {
+      const items = within(screen.getByTestId(`group-${id}`)).getAllByRole('button').map((b) => b.textContent ?? '');
+      expect(items).toHaveLength(labels.length);
+      labels.forEach((label, index) => expect(items[index]).toContain(label));
+    }
+    expect(document.querySelectorAll('button[data-tipo]')).toHaveLength(8);
+    expect(tipoButton('notificacion_regular')).toBeNull();
+    expect(screen.getAllByText(/antes y el día que vence/).length).toBeGreaterThan(0);
   });
 
-  it('shows the linked Meta template with status, body, buttons and both previews', () => {
+  it('shows the channel dot: api, pending or wa.me only', () => {
+    state.metas = [makeMeta(), makeMeta({ id: 'm2', name: 'en_revision', status: 'PENDING' })];
+    render(wrap([
+      makeTemplate({ metaTemplateName: 'aviso_vencimiento', metaParamMap: ['a', 'b', 'c'] }),
+      makeTemplate({ id: 't2', tipo: 'cancelacion', metaTemplateName: 'en_revision' }),
+    ]));
+    const dotOf = (tipo: string) => within(tipoButton(tipo)).getByTestId('channel-dot').getAttribute('data-status');
+    expect(dotOf('dia_pago')).toBe('api');
+    expect(dotOf('cancelacion')).toBe('pending');
+    expect(dotOf('despedida')).toBe('wame');
+  });
+
+  it('inserts only the relevant data at the cursor position', async () => {
+    const user = userEvent.setup();
+    render(wrap([makeTemplate({ contenido: 'Hola , bienvenido' })]));
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.setSelectionRange(5, 5);
+
+    await user.click(screen.getByRole('button', { name: /Insertar dato/ }));
+    expect(screen.queryByRole('menuitem', { name: /Contraseña/ })).toBeNull();
+    await user.click(await screen.findByRole('menuitem', { name: /Primer nombre/ }));
+
+    expect(textarea.value).toBe('Hola {nombre_cliente}, bienvenido');
+  });
+
+  it('offers credentials and the items block for subscriptions', async () => {
+    const user = userEvent.setup();
+    render(wrap([]));
+    await user.click(tipoButton('suscripcion'));
+    await user.click(screen.getByRole('button', { name: /Insertar dato/ }));
+    expect(await screen.findByRole('menuitem', { name: /Contraseña/ })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: /Bloque por servicio/ })).toBeTruthy();
+  });
+
+  it('tracks unsaved changes and only enables saving when there is something to save', async () => {
+    const user = userEvent.setup();
+    render(wrap([makeTemplate()]));
+    const save = () => screen.getByRole('button', SAVE) as HTMLButtonElement;
+
+    expect(save().disabled).toBe(true);
+    expect(screen.queryByText('Cambios sin guardar')).toBeNull();
+    await user.type(screen.getByRole('textbox'), '!');
+    expect(screen.getByRole('status').textContent).toBe('Cambios sin guardar');
+    expect(save().disabled).toBe(false);
+  });
+
+  it('asks before switching message with unsaved changes', async () => {
+    const user = userEvent.setup();
+    render(wrap([makeTemplate()]));
+    await user.type(screen.getByRole('textbox'), '!');
+
+    await user.click(tipoButton('cancelacion'));
+    expect(await screen.findByText('Tienes cambios sin guardar')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Seguir editando' }));
+    expect(screen.getByRole('heading', { name: 'Aviso de vencimiento' })).toBeTruthy();
+
+    await user.click(tipoButton('cancelacion'));
+    await user.click(await screen.findByRole('button', { name: 'Descartar y cambiar' }));
+    expect(screen.getByRole('heading', { name: 'Corte de servicio' })).toBeTruthy();
+    expect(screen.queryByText('Cambios sin guardar')).toBeNull();
+  });
+
+  it('shows the linked Meta template with status, body, mapping rows, buttons and the phone preview', async () => {
+    const user = userEvent.setup();
     state.metas = [makeMeta()];
     render(wrap([makeTemplate({
       metaTemplateName: 'aviso_vencimiento',
       metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento'],
     })]));
 
-    const section = screen.getByRole('region', { name: 'Plantilla de Meta' });
-    expect(within(section).getAllByText('APROBADA').length).toBeGreaterThan(0);
-    expect(within(section).getByTestId('meta-body').textContent).toContain('{{1}}, tu plan de {{2}} vence el {{3}}.');
-    expect(within(section).getByRole('list', { name: 'Botones de la plantilla' }).textContent).toContain('Quiero renovar');
-    expect(within(section).getByText(/Última sincronización/)).toBeTruthy();
+    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+    expect(screen.getAllByText('APROBADA').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('meta-body').textContent).toContain('{{1}}, tu plan de {{2}} vence el {{3}}.');
+    expect(screen.getByRole('combobox', { name: 'Dato para la variable 1' }).textContent).toContain('Saludo y nombre');
+    expect(screen.getByRole('list', { name: 'Botones de la plantilla' }).textContent).toContain('Quiero renovar');
 
-    expect(screen.getByTestId('preview-free').textContent).toContain('Hola María');
-    const metaPreview = screen.getByTestId('preview-meta').textContent ?? '';
-    expect(metaPreview).toContain('Buenas tardes, María');
-    expect(metaPreview).toContain('Netflix y Disney+');
-    expect(metaPreview).toContain('Quiero renovar');
+    const preview = screen.getByTestId('preview-bubble');
+    expect(preview.getAttribute('data-mode')).toBe('api');
+    expect(preview.textContent).toContain('Buenas tardes, María');
+    expect(preview.textContent).toContain('Netflix y Disney+');
+    expect(preview.textContent).toContain('No deseo continuar');
+
+    await user.click(screen.getByRole('button', { name: 'wa.me' }));
+    expect(screen.getByTestId('preview-bubble').textContent).toContain('Hola María');
   });
 
-  it('allows a tipo without Meta template and explains it in the preview', () => {
+  it('disables the API preview when no Meta template is linked', () => {
     state.metas = [makeMeta()];
     render(wrap([makeTemplate()]));
-    expect(screen.getByTestId('preview-meta').textContent).toContain('no tiene plantilla de Meta');
-    expect((screen.getByRole('button', { name: 'Guardar Plantilla' }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole('button', { name: 'API' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId('preview-bubble').getAttribute('data-mode')).toBe('wame');
   });
 
-  it('flags a mapping that does not match the variable count and blocks saving', () => {
+  it('flags a mapping that does not match the variable count and blocks saving', async () => {
+    const user = userEvent.setup();
     state.metas = [makeMeta({ paramCount: 3 })];
     render(wrap([makeTemplate({ metaTemplateName: 'aviso_vencimiento', metaParamMap: ['servicios'] })]));
+    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
 
     expect(screen.getByRole('alert').textContent).toContain('La plantilla usa 3 datos y el mapa tiene 1.');
-    expect((screen.getByRole('button', { name: 'Guardar Plantilla' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', SAVE) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('saves the linked Meta template and its parameter map', async () => {
+  it('auto-suggests the mapping and button actions, and saves them', async () => {
     const user = userEvent.setup();
-    state.metas = [makeMeta({ paramCount: 1, body: 'Hola {{1}}' })];
+    state.metas = [makeMeta({ paramCount: 4, body: '{{1}} {{2}} {{3}} {{4}}' })];
     state.update.mockResolvedValue(undefined);
     const template = makeTemplate();
     render(wrap([template]));
 
-    await user.click(screen.getByRole('combobox', { name: 'Plantilla vinculada' }));
-    await user.click(await screen.findByRole('option', { name: /aviso_vencimiento/ }));
-    expect(screen.getByRole('alert').textContent).toContain('Elige un dato para {{1}}.');
-    expect((screen.getByRole('button', { name: 'Guardar Plantilla' }) as HTMLButtonElement).disabled).toBe(true);
-
-    await user.click(screen.getByRole('combobox', { name: 'Dato para la variable 1' }));
-    await user.click(await screen.findByRole('option', { name: 'Saludo y nombre' }));
-    await user.click(screen.getByRole('button', { name: 'Guardar Plantilla' }));
+    await pickMeta(user);
+    ['Saludo y nombre', 'Servicios', 'Vencimiento', 'Monto total'].forEach((label, index) => {
+      expect(screen.getByRole('combobox', { name: `Dato para la variable ${index + 1}` }).textContent).toContain(label);
+    });
+    await user.click(screen.getByRole('button', SAVE));
 
     await waitFor(() => expect(state.update).toHaveBeenCalled());
     expect(state.update).toHaveBeenCalledWith(
       'template-1',
-      expect.objectContaining({ metaTemplateName: 'aviso_vencimiento', metaParamMap: ['saludo_nombre'] }),
+      expect.objectContaining({
+        metaTemplateName: 'aviso_vencimiento',
+        metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento', 'monto_total'],
+        metaButtonActions: ['RENOVAR', 'NO_CONTINUAR'],
+      }),
       template,
     );
   });
 
-  it('creates a tipo without Meta link keeping an empty map', async () => {
+  it('persists edited button actions without touching the mapping', async () => {
+    const user = userEvent.setup();
+    state.metas = [makeMeta({ paramCount: 1, body: 'Hola {{1}}' })];
+    state.update.mockResolvedValue(undefined);
+    const template = makeTemplate({
+      metaTemplateName: 'aviso_vencimiento', metaParamMap: ['nombre_cliente'], metaButtonActions: ['RENOVAR', 'NO_CONTINUAR'],
+    });
+    render(wrap([template]));
+
+    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+    await user.click(screen.getByRole('combobox', { name: 'Qué hace el botón Quiero renovar' }));
+    await user.click(await screen.findByRole('option', { name: 'Nada (lo atiendes en el chat)' }));
+    await user.click(screen.getByRole('button', SAVE));
+
+    await waitFor(() => expect(state.update).toHaveBeenCalled());
+    expect(state.update).toHaveBeenCalledWith(
+      'template-1',
+      expect.objectContaining({ metaParamMap: ['nombre_cliente'], metaButtonActions: ['NINGUNA', 'NO_CONTINUAR'] }),
+      template,
+    );
+  });
+
+  it('requires a data choice for a single variable and clears the link when removed', async () => {
+    const user = userEvent.setup();
+    state.metas = [makeMeta({ paramCount: 1, body: 'Hola {{1}}' })];
+    render(wrap([makeTemplate()]));
+
+    await pickMeta(user);
+    expect(screen.getByRole('alert').textContent).toContain('Elige un dato para {{1}}.');
+    expect((screen.getByRole('button', SAVE) as HTMLButtonElement).disabled).toBe(true);
+
+    await user.click(screen.getByRole('combobox', { name: 'Plantilla vinculada' }));
+    await user.click(await screen.findByRole('option', { name: 'Sin plantilla de Meta' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByText('Solo wa.me').length).toBeGreaterThan(0);
+  });
+
+  it('creates a tipo without Meta link keeping empty map and actions', async () => {
     const user = userEvent.setup();
     state.create.mockResolvedValue(undefined);
     render(wrap([]));
 
     await user.type(screen.getByRole('textbox'), 'Hola');
-    await user.click(screen.getByRole('button', { name: 'Guardar Plantilla' }));
+    await user.click(screen.getByRole('button', SAVE));
 
     await waitFor(() => expect(state.create).toHaveBeenCalled());
     expect(state.create).toHaveBeenCalledWith(expect.objectContaining({
-      tipo: 'notificacion_regular', contenido: 'Hola', metaTemplateName: null, metaParamMap: [],
+      tipo: 'dia_pago', contenido: 'Hola', metaTemplateName: null, metaParamMap: [], metaButtonActions: [],
     }));
   });
 
-  it('syncs with Meta on demand', async () => {
+  it('warns when a linked template is no longer in Meta', async () => {
     const user = userEvent.setup();
-    render(wrap([makeTemplate()]));
-
-    expect(screen.getByText('Aún no se ha sincronizado.')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Sincronizar con Meta' }));
-    expect(state.sync).toHaveBeenCalled();
-  });
-
-  it('warns when a linked template is no longer in Meta', () => {
     state.metas = [makeMeta({ name: 'otra' })];
     render(wrap([makeTemplate({ metaTemplateName: 'borrada', metaParamMap: [] })]));
+    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
     expect(screen.getByRole('alert').textContent).toContain('ya no existe en Meta');
   });
 });

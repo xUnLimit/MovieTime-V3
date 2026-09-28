@@ -12,10 +12,10 @@ const notif = (over: Partial<NotificacionVentaConId>) => ({
 } as NotificacionVentaConId);
 
 describe('notice tipo rules', () => {
-  it('uses dia_pago on or after the due date and regular before', () => {
+  it('always uses dia_pago', () => {
     expect(noticeTipoFor(0)).toBe('dia_pago');
     expect(noticeTipoFor(-2)).toBe('dia_pago');
-    expect(noticeTipoFor(1)).toBe('notificacion_regular');
+    expect(noticeTipoFor(1)).toBe('dia_pago');
   });
 
   it('groups selected ventas by rule tipo', () => {
@@ -25,8 +25,7 @@ describe('notice tipo rules', () => {
       notif({ id: '3', ventaId: 'c', diasRestantes: -1 }),
     ]);
     expect(groups).toEqual([
-      { tipo: 'dia_pago', ventaIds: ['a', 'c'] },
-      { tipo: 'notificacion_regular', ventaIds: ['b'] },
+      { tipo: 'dia_pago', ventaIds: ['a', 'b', 'c'] },
     ]);
   });
 });

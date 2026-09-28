@@ -6,6 +6,7 @@ export type TemplateFields = {
   contenido: string;
   metaTemplateName: string | null;
   metaParamMap: string[];
+  metaButtonActions: string[];
 };
 
 type DraftState = { tipo: TipoTemplate; templateId: string | null; source: TemplateFields; fields: TemplateFields };
@@ -15,14 +16,19 @@ function fieldsOf(template: TemplateMensaje | null): TemplateFields {
     contenido: template?.contenido ?? '',
     metaTemplateName: template?.metaTemplateName ?? null,
     metaParamMap: template?.metaParamMap ?? [],
+    metaButtonActions: template?.metaButtonActions ?? [],
   };
+}
+
+function sameList(a: string[], b: string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
 function same(a: TemplateFields, b: TemplateFields) {
   return a.contenido === b.contenido
     && a.metaTemplateName === b.metaTemplateName
-    && a.metaParamMap.length === b.metaParamMap.length
-    && a.metaParamMap.every((key, index) => key === b.metaParamMap[index]);
+    && sameList(a.metaParamMap, b.metaParamMap)
+    && sameList(a.metaButtonActions, b.metaButtonActions);
 }
 
 /**

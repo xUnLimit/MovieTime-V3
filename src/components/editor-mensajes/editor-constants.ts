@@ -1,22 +1,52 @@
-import { Calendar, DollarSign, Lock, Mail, User, type LucideIcon } from 'lucide-react';
+import type { EditableTipoKey } from '@/modules/messaging/template-tipos';
 
-export { TEMPLATE_TIPOS } from '@/modules/messaging/template-tipos';
+export { TEMPLATE_GROUPS, TEMPLATE_TIPOS, tipoCuando, tipoLabel } from '@/modules/messaging/template-tipos';
 
-export const PLACEHOLDERS: { key: string; description: string; icon: LucideIcon }[] = [
-  { key: '{saludo}', description: 'El saludo (Buenos días, tardes, etc.)', icon: User },
-  { key: '{cliente}', description: 'El nombre completo del cliente', icon: User },
-  { key: '{nombre_cliente}', description: 'El primer nombre del cliente', icon: User },
-  { key: '{{#items}}\n...\n{{/items}}', description: 'Bloque repetible por item (escribe el contenido en el medio)', icon: Calendar },
-  { key: '{items}', description: 'Lista de servicios en formato: *A*, *B* y *C*', icon: Calendar },
-  { key: '{servicio}', description: 'El nombre del servicio', icon: Calendar },
-  { key: '{categoria}', description: 'La categoría del servicio', icon: Calendar },
-  { key: '{perfil_nombre}', description: 'El nombre del perfil', icon: User },
-  { key: '{correo}', description: 'El correo electrónico del servicio', icon: Mail },
-  { key: '{contrasena}', description: 'La contraseña del servicio', icon: Lock },
-  { key: '{codigo}', description: 'El código de la venta', icon: Lock },
-  { key: '{credenciales_cambiadas}', description: 'Resumen de los datos que cambiaron', icon: Lock },
-  { key: '{cambio_correo}', description: 'Línea solo para cambio de correo', icon: Mail },
-  { key: '{cambio_contrasena}', description: 'Línea solo para cambio de contraseña', icon: Lock },
-  { key: '{vencimiento}', description: 'La fecha de vencimiento', icon: Calendar },
-  { key: '{monto}', description: 'El monto a pagar', icon: DollarSign },
+export const ITEMS_BLOCK_KEY = '{{#items}}\n...\n{{/items}}';
+
+export const PLACEHOLDERS: { key: string; label: string; description: string }[] = [
+  { key: '{saludo}', label: 'Saludo', description: 'Buenos días, tardes o noches' },
+  { key: '{cliente}', label: 'Nombre completo', description: 'El nombre completo del cliente' },
+  { key: '{nombre_cliente}', label: 'Primer nombre', description: 'El primer nombre del cliente' },
+  { key: ITEMS_BLOCK_KEY, label: 'Bloque por servicio', description: 'Repite el contenido del medio por cada servicio' },
+  { key: '{items}', label: 'Lista de servicios', description: 'Formato: A, B y C' },
+  { key: '{servicio}', label: 'Servicio', description: 'El nombre del servicio' },
+  { key: '{categoria}', label: 'Categoría', description: 'La categoría del servicio' },
+  { key: '{perfil_nombre}', label: 'Perfil', description: 'El nombre del perfil' },
+  { key: '{correo}', label: 'Correo de la cuenta', description: 'El correo del servicio' },
+  { key: '{contrasena}', label: 'Contraseña', description: 'La contraseña del servicio' },
+  { key: '{codigo}', label: 'Código de venta', description: 'El código de la venta' },
+  { key: '{credenciales_cambiadas}', label: 'Resumen de cambios', description: 'Los datos que cambiaron' },
+  { key: '{cambio_correo}', label: 'Línea de cambio de correo', description: 'Solo si cambió el correo' },
+  { key: '{cambio_contrasena}', label: 'Línea de cambio de contraseña', description: 'Solo si cambió la contraseña' },
+  { key: '{vencimiento}', label: 'Vencimiento', description: 'La fecha de vencimiento' },
+  { key: '{monto}', label: 'Monto', description: 'El monto a pagar' },
 ];
+
+const COBROS = ['{saludo}', '{nombre_cliente}', '{cliente}', '{servicio}', '{categoria}', '{items}', '{vencimiento}', '{monto}'];
+const ACCESO = ['{perfil_nombre}', '{correo}', '{contrasena}', '{codigo}'];
+const CAMBIOS = ['{credenciales_cambiadas}', '{cambio_correo}', '{cambio_contrasena}'];
+
+// Solo los datos que tienen sentido en cada mensaje; el resto solo agrega ruido al elegir.
+export const TIPO_PLACEHOLDERS: Record<EditableTipoKey, readonly string[]> = {
+  dia_pago: COBROS,
+  cancelacion: COBROS,
+  renovacion: COBROS,
+  datos_pago: ['{saludo}', '{nombre_cliente}', '{cliente}', '{items}', '{vencimiento}', '{monto}'],
+  despedida: ['{saludo}', '{nombre_cliente}', '{cliente}', '{items}'],
+  suscripcion: [...COBROS, ITEMS_BLOCK_KEY, ...ACCESO],
+  actualizacion_credenciales: [...COBROS, ...ACCESO, ...CAMBIOS],
+  transferencia_servicio: [...COBROS, ...ACCESO, ...CAMBIOS],
+};
+
+export function placeholdersFor(tipo: EditableTipoKey) {
+  const allowed = new Set(TIPO_PLACEHOLDERS[tipo]);
+  return PLACEHOLDERS.filter((item) => allowed.has(item.key));
+}
+
+/** Inserta texto en la seleccion (o al final) y devuelve el nuevo valor con la posicion del cursor. */
+export function insertAtCursor(value: string, start: number, end: number, text: string) {
+  const from = Math.max(0, Math.min(start, value.length));
+  const to = Math.max(from, Math.min(end, value.length));
+  return { value: value.slice(0, from) + text + value.slice(to), cursor: from + text.length };
+}

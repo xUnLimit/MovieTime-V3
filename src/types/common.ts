@@ -148,6 +148,8 @@ export interface TemplateMensaje {
   metaTemplateName?: string | null;
   /** Dato del mensaje (message-data) para cada {{n}} de la plantilla de Meta. */
   metaParamMap?: string[];
+  /** Accion de cada boton de respuesta rapida (alineada por indice): RENOVAR, NO_CONTINUAR, DATOS o NINGUNA. */
+  metaButtonActions?: string[];
   createdAt: Date;
   updatedAt: Date;
 }

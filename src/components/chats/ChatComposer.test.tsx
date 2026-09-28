@@ -207,7 +207,7 @@ describe('ChatComposer', () => {
     const listbox = screen.getByRole('listbox', { name: 'Respuestas rápidas' });
     expect(within(listbox).getByText('Mensajes del sistema')).toBeTruthy();
     expect(within(listbox).queryByText('Despedida')).toBeNull();
-    await user.click(within(listbox).getByText('Notificación Día de Pago'));
+    await user.click(within(listbox).getByText('Aviso de vencimiento'));
     expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('Hola Ana, tu Netflix vence hoy');
     saved.tipos = [];
   });
@@ -217,7 +217,7 @@ describe('ChatComposer', () => {
     saved.tipos = [{ id: 't1', nombre: 'x', tipo: 'dia_pago', contenido: 'Hola {nombre_cliente}, vence {vencimiento}', placeholders: [], activo: true }];
     render(<ControlledComposer conversation={{ terceroNombre: 'Luis Gomez', contactName: 'L' } as never} />);
 
-    await user.type(screen.getByLabelText('Mensaje'), '/dia{Enter}');
+    await user.type(screen.getByLabelText('Mensaje'), '/aviso{Enter}');
     expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('Hola Luis, vence {vencimiento}');
     saved.tipos = [];
   });

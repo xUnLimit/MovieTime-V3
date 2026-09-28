@@ -45,9 +45,11 @@ function skipReason(venta: NoticeVenta): string {
   return 'promesa_pago';
 }
 function actionFor(text: string, index: number): string {
-  const normalized = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-  if (normalized === 'quiero renovar') return 'RENOVAR';
-  if (normalized === 'no deseo continuar') return 'NO_CONTINUAR';
+  // Ignora acentos, emojis y signos: "\u2705 Continuar" y "Continuar" son el mismo boton.
+  const normalized = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+  if (normalized === 'quiero renovar' || normalized === 'continuar') return 'RENOVAR';
+  if (normalized === 'no deseo continuar' || normalized === 'no continuar') return 'NO_CONTINUAR';
   if (normalized === 'recibir mis datos') return 'DATOS';
   return `BTN${index}`;
 }
@@ -122,7 +124,11 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
       && input.now.getTime() - new Date(record.created_at).getTime() > 10 * 60_000 ? 'pending_may_be_sent' : 'already_pending' };
   }
   if (payload.kind === 'template') {
-    payload = { ...payload, buttonPayloads: buttonTexts.map((button, index) => `${actionFor(button, index)}:${record.id}`) };
+    payload = { ...payload, buttonPayloads: buttonTexts.map((button, index) => {
+      const configured = template.metaButtonActions[index];
+      const action = configured === 'NINGUNA' ? `BTN${index}` : configured ?? actionFor(button, index);
+      return `${action}:${record.id}`;
+    }) };
   }
   let result: OutboundResult;
   try { result = await deps.send({ idempotencyKey, toWaId: waId, payload, sentBy: input.sentBy }); }

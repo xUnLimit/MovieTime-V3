@@ -1,165 +1,144 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { useMetaTemplates, useSyncMetaTemplates } from '@/hooks/use-templates';
-import { validateParamMap } from '@/modules/messaging/meta-template-mapping';
-import {
-  createTemplateMutation,
-  updateTemplateMutation,
-} from '@/application/client-domain-mutations';
-import { getPublicErrorMessage } from '@/platform/errors/public-errors';
-import { queryKeys } from '@/platform/query-keys';
-import type { TemplateMensaje, TipoTemplate } from '@/types';
-import { PLACEHOLDERS, TEMPLATE_TIPOS } from './editor-constants';
-import { MetaTemplateSection } from './MetaTemplateSection';
-import { PlaceholdersCard } from './PlaceholdersCard';
-import { TemplatePreview } from './TemplatePreview';
+import { useMetaTemplates } from '@/hooks/use-templates';
+import { channelStatus, validateParamMap } from '@/modules/messaging/meta-template-mapping';
+import type { EditableTipoKey } from '@/modules/messaging/template-tipos';
+import type { TemplateMensaje } from '@/types';
+import { ApiTab } from './ApiTab';
+import { ChannelChip } from './ChannelStatus';
+import { tipoCuando, tipoLabel } from './editor-constants';
+import { MessageTab } from './MessageTab';
+import { SaveBar } from './SaveBar';
+import { TemplateList } from './TemplateList';
+import { TemplatePreview, type PreviewMode } from './TemplatePreview';
 import { useTemplateDraft } from './useTemplateDraft';
+import { useTemplateSave } from './useTemplateSave';
 
 interface TemplateEditorProps {
   templates: TemplateMensaje[];
   onTemplateSaved?: () => void | Promise<void>;
 }
 
+type InnerTab = 'mensaje' | 'api';
+
 export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorProps) {
-  const queryClient = useQueryClient();
-  const [selectedTipo, setSelectedTipo] = useState<TipoTemplate>('notificacion_regular');
+  const [selectedTipo, setSelectedTipo] = useState<EditableTipoKey>('dia_pago');
+  const [pendingTipo, setPendingTipo] = useState<EditableTipoKey | null>(null);
+  const [innerTab, setInnerTab] = useState<InnerTab>('mensaje');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('wame');
   const { data: metaTemplates = [], isLoading: metaLoading } = useMetaTemplates();
-  const syncMeta = useSyncMetaTemplates();
+  const { save, saving, justSaved, resetSaved } = useTemplateSave();
 
-  const currentTemplate = useMemo(
-    () => templates.find((t) => t.tipo === selectedTipo) || null,
-    [selectedTipo, templates],
-  );
-  const { fields, patch } = useTemplateDraft(selectedTipo, currentTemplate);
-  const { contenido, metaTemplateName, metaParamMap } = fields;
+  const currentTemplate = templates.find((t) => t.tipo === selectedTipo) ?? null;
+  const { fields, dirty, patch } = useTemplateDraft(selectedTipo, currentTemplate);
 
-  const linkedMeta = metaTemplateName
-    ? metaTemplates.find((item) => item.name === metaTemplateName && !item.retired) ?? null
+  const linked = fields.metaTemplateName
+    ? metaTemplates.find((item) => item.name === fields.metaTemplateName && !item.retired) ?? null
     : null;
-  const mapError = validateParamMap(metaParamMap, linkedMeta);
+  const mapError = validateParamMap(fields.metaParamMap, linked);
+  const statusOf = (tipo: EditableTipoKey) =>
+    channelStatus(templates.find((t) => t.tipo === tipo)?.metaTemplateName, metaTemplates);
 
-  const handleSync = () => {
-    syncMeta.mutate(undefined, {
-      onSuccess: ({ count }) => toast.success('Plantillas sincronizadas', { description: `Se actualizaron ${count} plantillas desde Meta.` }),
-      onError: (error) => toast.error('No se pudo sincronizar', { description: getPublicErrorMessage(error, 'No se pudo sincronizar con Meta.') }),
-    });
+  const changeTipo = (tipo: EditableTipoKey) => {
+    if (tipo === selectedTipo) return;
+    if (dirty) setPendingTipo(tipo);
+    else {
+      resetSaved();
+      setSelectedTipo(tipo);
+    }
   };
 
-  const handleSave = async () => {
-    if (mapError) {
-      toast.error('Revisa la plantilla de Meta', { description: mapError });
-      return;
-    }
-    try {
-      const detectedPlaceholders = PLACEHOLDERS
-        .map((p) => p.key)
-        .filter((placeholder) => contenido.includes(placeholder));
-      const metaLink = { metaTemplateName, metaParamMap };
+  const confirmSwitch = () => {
+    if (pendingTipo) setSelectedTipo(pendingTipo);
+    resetSaved();
+    setPendingTipo(null);
+  };
 
-      if (currentTemplate) {
-        await updateTemplateMutation(
-          currentTemplate.id,
-          { contenido, placeholders: detectedPlaceholders, ...metaLink },
-          currentTemplate,
-        );
-        await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
-        await onTemplateSaved?.();
-        toast.success('Plantilla actualizada', { description: 'Los cambios en la plantilla han sido guardados correctamente.' });
-      } else {
-        const tipoLabel = TEMPLATE_TIPOS.find((t) => t.value === selectedTipo)?.label || selectedTipo;
-        await createTemplateMutation({
-          nombre: tipoLabel,
-          tipo: selectedTipo,
-          contenido,
-          placeholders: detectedPlaceholders,
-          activo: true,
-          ...metaLink,
-        });
-        await queryClient.invalidateQueries({ queryKey: queryKeys.templates.all });
-        await onTemplateSaved?.();
-        toast.success('Plantilla creada', { description: 'La nueva plantilla de mensaje ha sido creada correctamente.' });
-      }
-    } catch (error) {
-      toast.error('Error al guardar plantilla', { description: getPublicErrorMessage(error, 'No se pudo guardar la plantilla.') });
-    }
+  const changeInnerTab = (value: string) => {
+    const tab = value as InnerTab;
+    setInnerTab(tab);
+    setPreviewMode(tab === 'api' ? 'api' : 'wame');
   };
 
   return (
-    <div className="min-w-0 overflow-x-hidden">
-      <Tabs value={selectedTipo} onValueChange={(value) => setSelectedTipo(value as TipoTemplate)}>
-        <div className="tabs-scroll-shell -mx-1 px-1">
-          <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
-            {TEMPLATE_TIPOS.map((tipo) => (
-              <TabsTrigger
-                key={tipo.value}
-                value={tipo.value}
-                className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                {tipo.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+    <div className="grid min-w-0 gap-6 md:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[230px_minmax(0,1fr)_320px]">
+      <div className="min-w-0 md:col-start-1 md:row-span-2 md:row-start-1 xl:row-span-1">
+        <TemplateList selected={selectedTipo} statusOf={statusOf} onSelect={changeTipo} />
+      </div>
 
-        {TEMPLATE_TIPOS.map((tipo) => (
-          <TabsContent key={tipo.value} value={tipo.value} className="min-w-0 space-y-4">
-            <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
-              <div className="min-w-0 space-y-6 lg:col-span-2">
-                <Card className="min-w-0 space-y-3 p-5">
-                  <div>
-                    <h2 className="text-lg font-semibold">Plantilla de {tipo.label}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Texto libre del mensaje. Se envía por wa.me o por la API con la ventana de 24 h abierta.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="template-contenido" className="text-sm font-medium">Contenido del Mensaje</label>
-                    <Textarea
-                      id="template-contenido"
-                      value={contenido}
-                      onChange={(e) => patch({ contenido: e.target.value })}
-                      placeholder="Escribe aquí el contenido del mensaje..."
-                      className="h-[320px] text-sm leading-normal resize-none"
-                    />
-                  </div>
-
-                  <MetaTemplateSection
-                    templates={metaTemplates}
-                    linkedName={metaTemplateName}
-                    paramMap={metaParamMap}
-                    mapError={mapError}
-                    isLoading={metaLoading}
-                    isSyncing={syncMeta.isPending}
-                    onSync={handleSync}
-                    onChange={(name, map) => patch({ metaTemplateName: name, metaParamMap: map })}
-                  />
-
-                  <div className="flex justify-end">
-                    <Button onClick={handleSave} size="sm" disabled={Boolean(mapError)}>
-                      Guardar Plantilla
-                    </Button>
-                  </div>
-                </Card>
-
-                <Card className="p-5">
-                  <TemplatePreview contenido={contenido} meta={linkedMeta} paramMap={metaParamMap} />
-                </Card>
-              </div>
-
-              <PlaceholdersCard />
+      <div className="min-w-0 space-y-4 md:col-start-2 md:row-start-1">
+        <Card className="min-w-0 space-y-4 p-5">
+          <header className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold">{tipoLabel(selectedTipo)}</h2>
+              <p className="text-sm text-muted-foreground">Cuándo se envía: {tipoCuando(selectedTipo)}.</p>
             </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+            <ChannelChip status={channelStatus(fields.metaTemplateName, metaTemplates)} />
+          </header>
+
+          <Tabs value={innerTab} onValueChange={changeInnerTab}>
+            <TabsList>
+              <TabsTrigger value="mensaje">Mensaje</TabsTrigger>
+              <TabsTrigger value="api">WhatsApp API</TabsTrigger>
+            </TabsList>
+            <TabsContent value="mensaje" className="pt-3">
+              <MessageTab tipo={selectedTipo} value={fields.contenido} onChange={(contenido) => patch({ contenido })} />
+            </TabsContent>
+            <TabsContent value="api" className="pt-3">
+              <ApiTab templates={metaTemplates} fields={fields} mapError={mapError} isLoading={metaLoading} onChange={patch} />
+            </TabsContent>
+          </Tabs>
+        </Card>
+
+        <SaveBar
+          dirty={dirty}
+          invalid={Boolean(mapError)}
+          saving={saving}
+          justSaved={justSaved && !dirty}
+          onSave={() => save({ tipo: selectedTipo, current: currentTemplate, fields, linked, mapError, onSaved: onTemplateSaved })}
+        />
+      </div>
+
+      <div className="min-w-0 md:col-start-2 md:row-start-2 xl:sticky xl:top-4 xl:col-start-3 xl:row-start-1 xl:self-start">
+        <Card className="p-5">
+          <TemplatePreview
+            contenido={fields.contenido}
+            meta={linked}
+            paramMap={fields.metaParamMap}
+            mode={previewMode}
+            onModeChange={setPreviewMode}
+          />
+        </Card>
+      </div>
+
+      <AlertDialog open={pendingTipo !== null} onOpenChange={(open) => { if (!open) setPendingTipo(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tienes cambios sin guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Si cambias de mensaje ahora, se pierden los cambios de «{tipoLabel(selectedTipo)}».
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Seguir editando</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSwitch}>Descartar y cambiar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

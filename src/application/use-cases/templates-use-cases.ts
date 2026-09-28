@@ -6,11 +6,16 @@ import {
 } from '@/platform/supabase/templates-repository';
 import type { TemplateMensaje } from '@/types';
 
-// Sin plantilla de Meta vinculada no hay nada que mapear: el mapa queda vacio.
+// Sin plantilla de Meta vinculada no hay nada que mapear: mapa y acciones de botones quedan vacios.
 export function normalizeMetaLink<T extends Partial<TemplateMensaje>>(template: T): T {
   if (template.metaTemplateName === undefined) return template;
   const name = template.metaTemplateName?.trim() || null;
-  return { ...template, metaTemplateName: name, metaParamMap: name ? (template.metaParamMap ?? []) : [] };
+  return {
+    ...template,
+    metaTemplateName: name,
+    metaParamMap: name ? (template.metaParamMap ?? []) : [],
+    metaButtonActions: name ? (template.metaButtonActions ?? []) : [],
+  };
 }
 
 export function fetchTemplatesUseCase() {

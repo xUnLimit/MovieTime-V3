@@ -4,11 +4,11 @@ import type { NoticeResult, NoticeTipo } from '@/platform/api/whatsapp-notices-c
 
 import type { NotificacionVentaConId } from './types';
 
-export type RuleTipo = 'dia_pago' | 'notificacion_regular';
+export type RuleTipo = 'dia_pago';
 
-/** Aviso de pago: el dia de pago o vencida usa dia_pago; antes, el regular. */
-export function noticeTipoFor(diasRestantes: number): RuleTipo {
-  return diasRestantes <= 0 ? 'dia_pago' : 'notificacion_regular';
+/** Aviso de pago: un solo tipo ("Aviso de vencimiento") antes y el dia del vencimiento. */
+export function noticeTipoFor(_diasRestantes: number): RuleTipo {
+  return 'dia_pago';
 }
 
 export function groupNotificationsByTipo(notifs: readonly NotificacionVentaConId[]): Array<{ tipo: RuleTipo; ventaIds: string[] }> {
