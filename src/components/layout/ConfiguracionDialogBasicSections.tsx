@@ -1,5 +1,6 @@
-import { Smartphone } from "lucide-react";
+import { BellRing, Smartphone } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -44,12 +45,14 @@ export function DashboardViewSection({
 
 export function DevicePushSection({
   handlePushSubscriptionToggle,
+  handleTestPush,
   isPushSupported,
+  isSendingTestPush,
   notificationPermission,
   pushSubscribed,
 }: Pick<
   ConfiguracionController,
-  "handlePushSubscriptionToggle" | "isPushSupported" | "notificationPermission" | "pushSubscribed"
+  "handlePushSubscriptionToggle" | "handleTestPush" | "isPushSupported" | "isSendingTestPush" | "notificationPermission" | "pushSubscribed"
 >) {
   return (
     <section className="space-y-3 rounded-md border p-4">
@@ -85,6 +88,19 @@ export function DevicePushSection({
           onCheckedChange={handlePushSubscriptionToggle}
         />
       </div>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleTestPush}
+        disabled={!pushSubscribed || !isPushSupported || isSendingTestPush}
+        className="w-full sm:w-auto"
+      >
+        <BellRing className={`mr-2 h-4 w-4 ${isSendingTestPush ? "animate-pulse" : ""}`} />
+        {isSendingTestPush ? "Enviando..." : "Enviar prueba a este dispositivo"}
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        La prueba funciona aunque los recordatorios ejecutivos estén desactivados.
+      </p>
     </section>
   );
 }

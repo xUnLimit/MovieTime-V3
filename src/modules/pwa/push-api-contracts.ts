@@ -15,7 +15,7 @@ export const pushSubscriptionSchema = z.object({
 }).strict();
 
 export const pushEndpointSchema = z.object({ endpoint }).strict();
-export const emptyPushRequestSchema = z.object({}).strict();
+export const pushTestRequestSchema = z.object({ endpoint: endpoint.optional() }).strict();
 
 export const executivePushRunSchema = z.object({
   run_id: z.string().max(128).regex(/^[A-Za-z0-9._:-]+$/).optional(),

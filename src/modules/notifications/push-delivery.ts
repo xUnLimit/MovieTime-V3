@@ -82,7 +82,7 @@ export function toPushDeliveryFailure(
 // Aviso push simple (titulo, cuerpo y destino) para eventos que no son el
 // resumen ejecutivo, como un mensaje nuevo de WhatsApp.
 export type PushNotificationPayload = {
-  kind: 'whatsapp_message';
+  kind: 'whatsapp_message' | 'push_test';
   title: string;
   body: string;
   destination: string;
@@ -107,6 +107,8 @@ async function deliverPush(
   payload: ExecutivePushSummaryPayload | PushNotificationPayload,
 ) {
   configureVapid();
+  const isMessage = payload.kind === 'whatsapp_message';
+  const isDeviceTest = payload.kind === 'push_test';
   await webPush.sendNotification(
     {
       endpoint: subscription.endpoint,
@@ -117,8 +119,8 @@ async function deliverPush(
     },
     JSON.stringify(payload),
     {
-      TTL: 60,
-      urgency: 'normal',
+      TTL: isMessage ? 86_400 : isDeviceTest ? 300 : 60,
+      urgency: isMessage || isDeviceTest ? 'high' : 'normal',
       timeout: PUSH_REQUEST_TIMEOUT_MS,
     },
   );

@@ -22,7 +22,8 @@ function toFieldErrors(issues: Array<{ path: PropertyKey[]; message: string }>) 
 export async function parseJsonRequest<T>(
   request: Request,
   schema: ZodType<T>,
-  maxBytes: number
+  maxBytes: number,
+  options?: { emptyBodyAsObject?: boolean },
 ): Promise<ParsedJson<T>> {
   const contentType = request.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase();
   if (contentType !== 'application/json') {
@@ -62,7 +63,7 @@ export async function parseJsonRequest<T>(
 
   let value: unknown;
   try {
-    value = JSON.parse(text);
+    value = text.length === 0 && options?.emptyBodyAsObject ? {} : JSON.parse(text);
   } catch {
     return { success: false, status: 400, code: 'INVALID_REQUEST', message: 'JSON inválido.' };
   }

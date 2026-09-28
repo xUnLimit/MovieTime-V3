@@ -32,16 +32,21 @@ async function getAuthToken() {
   return data.session.access_token;
 }
 
-export type ExecutivePushTestResult = {
-  ok: boolean;
+export type DevicePushTestResult = {
   sent: number;
   disabled: number;
   failed: number;
-  skipped?: string;
-  pushDate?: string;
 };
 
-export async function triggerExecutivePushTest(): Promise<ExecutivePushTestResult> {
+export async function triggerDevicePushTest(): Promise<DevicePushTestResult> {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Este navegador no soporta push web.');
+  }
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    throw new Error('Este dispositivo no tiene una suscripción push. Actívala antes de enviar la prueba.');
+  }
   const token = await getAuthToken();
   const response = await fetch('/api/push/test', {
     method: 'POST',
@@ -49,8 +54,9 @@ export async function triggerExecutivePushTest(): Promise<ExecutivePushTestResul
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
   });
-  return readApiResponse<ExecutivePushTestResult>(response);
+  return readApiResponse<DevicePushTestResult>(response);
 }
 
 export async function registerPushSubscription() {

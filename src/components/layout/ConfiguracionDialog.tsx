@@ -40,7 +40,9 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
           />
           <DevicePushSection
             handlePushSubscriptionToggle={controller.handlePushSubscriptionToggle}
+            handleTestPush={controller.handleTestPush}
             isPushSupported={controller.isPushSupported}
+            isSendingTestPush={controller.isSendingTestPush}
             notificationPermission={controller.notificationPermission}
             pushSubscribed={controller.pushSubscribed}
           />
@@ -54,9 +56,7 @@ export function ConfiguracionDialog({ open, onOpenChange }: ConfiguracionDialogP
             handleBlockToggle={controller.handleBlockToggle}
             handleExecutivePushToggle={controller.handleExecutivePushToggle}
             handleScheduleCommit={controller.handleScheduleCommit}
-            handleTestPush={controller.handleTestPush}
             isSavingExecutiveSchedule={controller.isSavingExecutiveSchedule}
-            isSendingTestPush={controller.isSendingTestPush}
             setDraftIntervalHours={controller.setDraftIntervalHours}
             setDraftWindowEnd={controller.setDraftWindowEnd}
             setDraftWindowStart={controller.setDraftWindowStart}

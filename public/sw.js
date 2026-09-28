@@ -3,7 +3,17 @@ self.addEventListener('install', () => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys
+        .filter((key) => key.startsWith('movietime-'))
+        .map((key) => caches.delete(key)));
+    } catch {
+      // Cache Storage can be unavailable; push activation must still complete.
+    }
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('push', (event) => {
@@ -32,14 +42,16 @@ self.addEventListener('notificationclick', (event) => {
 async function handlePushEvent(event) {
   try {
     const payload = eventDataToJson(event);
-    if (payload.kind === 'whatsapp_message') {
-      await self.registration.showNotification(String(payload.title || 'WhatsApp'), {
+    if (payload.kind === 'whatsapp_message' || payload.kind === 'push_test') {
+      await self.registration.showNotification(String(payload.title || 'MovieTime PTY'), {
         body: String(payload.body || 'Nuevo mensaje'),
         icon: '/icon-192.png',
         badge: '/icon-192.png',
-        tag: 'whatsapp-message',
+        tag: payload.kind === 'whatsapp_message'
+          ? `whatsapp-message:${toSameOriginPath(payload.destination, '/chats')}`
+          : 'push_test',
         renotify: true,
-        data: { url: toSameOriginPath(payload.destination, '/chats') },
+        data: { url: toSameOriginPath(payload.destination, payload.kind === 'whatsapp_message' ? '/chats' : '/dashboard') },
       });
       return;
     }

@@ -9,7 +9,7 @@ import { useConfig } from "@/hooks/use-config";
 import {
   getPushSubscriptionStatus,
   registerPushSubscription,
-  triggerExecutivePushTest,
+  triggerDevicePushTest,
   unregisterPushSubscription,
 } from "@/modules/pwa/push-client";
 import {
@@ -40,8 +40,6 @@ export function useConfiguracionDialogController({
   const { selectedYear, setSelectedYear } = useDashboardFilterStore();
   const { data: config, refetch: refetchConfig } = useConfig();
   const {
-    isInstalled,
-    isOnline,
     isPushSupported,
     notificationPermission,
     setNotificationPermission,
@@ -158,25 +156,10 @@ export function useConfiguracionDialogController({
   };
 
   const handleTestPush = async () => {
-    if (!executivePush?.enabled) {
-      toast.error('Activa primero los recordatorios ejecutivos.');
-      return;
-    }
     setIsSendingTestPush(true);
     try {
-      const result = await triggerExecutivePushTest();
-      if (result.skipped) {
-        toast.info(`Push omitida: ${result.skipped}.`);
-      } else if (result.sent > 0) {
-        toast.success(`Push de prueba enviada a ${result.sent} dispositivo${result.sent === 1 ? '' : 's'}.`);
-      } else {
-        toast.warning('Push procesada sin entregas. Verifica las suscripciones activas.');
-      }
-      // Refresh config so the "last sent" indicator reflects the test send.
-      safeAsyncSideEffect(refetchConfig(), {
-        operation: 'fetchConfigAfterPushTest',
-        entity: 'config',
-      });
+      await triggerDevicePushTest();
+      toast.success('Prueba push enviada a este dispositivo.');
     } catch (error) {
       toast.error(getPublicErrorMessage(error, 'No se pudo enviar la push de prueba.'));
     } finally {
@@ -202,8 +185,6 @@ export function useConfiguracionDialogController({
     selectedYear,
     setSelectedYear,
     availableYears,
-    isInstalled,
-    isOnline,
     isPushSupported,
     notificationPermission,
     pushSubscribed,

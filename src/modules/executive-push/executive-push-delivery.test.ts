@@ -40,6 +40,7 @@ vi.mock('@/platform/server/supabase-server', () => ({
   }),
 }));
 
+import { sendPushNotification } from '@/modules/notifications/push-delivery';
 import { sendExecutivePushDailySummary } from './executive-push-delivery';
 
 function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: string; dias_restantes: number; leida: boolean }> } = {}) {
@@ -246,5 +247,29 @@ describe('sendExecutivePushDailySummary', () => {
     });
     expect(webPushMocks.sendNotification).not.toHaveBeenCalled();
     expect(supabaseMocks.configUpdateEq).not.toHaveBeenCalled();
+  });
+});
+
+describe('customer chat push delivery', () => {
+  it('keeps an incoming message available through a temporary phone disconnection', async () => {
+    process.env.VAPID_PRIVATE_KEY = vapidTestConfig.privateKey;
+    webPushMocks.sendNotification.mockReset().mockResolvedValue({ statusCode: 201 });
+
+    await sendPushNotification({
+      endpoint: 'https://web.push.apple.com/sub-1',
+      p256dh: 'p256dh-1',
+      auth: 'auth-1',
+    }, {
+      kind: 'whatsapp_message',
+      title: 'WhatsApp: Cliente',
+      body: 'Hola',
+      destination: '/chats?wa=50760000000',
+    });
+
+    expect(webPushMocks.sendNotification).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.stringContaining('"kind":"whatsapp_message"'),
+      { TTL: 86_400, urgency: 'high', timeout: 15000 },
+    );
   });
 });

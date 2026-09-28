@@ -1,6 +1,5 @@
 import { BellRing } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,9 +26,7 @@ export function ExecutivePushSection({
   handleBlockToggle,
   handleExecutivePushToggle,
   handleScheduleCommit,
-  handleTestPush,
   isSavingExecutiveSchedule,
-  isSendingTestPush,
   setDraftIntervalHours,
   setDraftWindowEnd,
   setDraftWindowStart,
@@ -44,9 +41,7 @@ export function ExecutivePushSection({
   | "handleBlockToggle"
   | "handleExecutivePushToggle"
   | "handleScheduleCommit"
-  | "handleTestPush"
   | "isSavingExecutiveSchedule"
-  | "isSendingTestPush"
   | "setDraftIntervalHours"
   | "setDraftWindowEnd"
   | "setDraftWindowStart"
@@ -125,17 +120,6 @@ export function ExecutivePushSection({
       </div>
 
       <ExecutiveBlocks selectedBlocks={executivePush?.selectedBlocks ?? []} onToggle={handleBlockToggle} />
-
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleTestPush}
-        disabled={!executivePush?.enabled || isSendingTestPush}
-        className="w-full sm:w-auto"
-      >
-        <BellRing className={`mr-2 h-4 w-4 ${isSendingTestPush ? "animate-pulse" : ""}`} />
-        {isSendingTestPush ? "Enviando..." : "Enviar prueba ahora"}
-      </Button>
 
       <div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         El cron revisa cada minuto, pero solo envia si hay bloques activos y ya paso el intervalo configurado.
