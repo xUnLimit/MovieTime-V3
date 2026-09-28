@@ -94,7 +94,7 @@ const controllerMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/components/ventas/form/create/useVentasFormController", () => ({
-  useVentasFormController: () => controllerMocks.controller,
+  useVentasFormController: vi.fn(() => controllerMocks.controller),
 }));
 
 vi.mock("@/components/ui/tabs", () => ({
@@ -138,6 +138,7 @@ vi.mock("@/components/ventas/form/VentaFormActions", () => ({
   ),
 }));
 
+import { useVentasFormController } from "@/components/ventas/form/create/useVentasFormController";
 import { VentasForm } from "./VentasForm";
 
 describe("VentasForm", () => {
@@ -165,5 +166,23 @@ describe("VentasForm", () => {
 
     expect(controllerMocks.controller.handleNext).toHaveBeenCalled();
     expect(controllerMocks.controller.router.push).toHaveBeenCalledWith("/ventas");
+  });
+
+  it("passes clienteIdInicial and onSaved through to the controller, embeddable in a dialog", () => {
+    const onSaved = vi.fn();
+    render(<VentasForm clienteIdInicial="tercero-1" onSaved={onSaved} />);
+
+    expect(useVentasFormController).toHaveBeenCalledWith({ clienteIdInicial: "tercero-1", onSaved });
+  });
+
+  it("uses a custom onCancel instead of navigating away when embedded", async () => {
+    const onCancel = vi.fn();
+    const user = userEvent.setup();
+    render(<VentasForm onCancel={onCancel} />);
+
+    await user.click(screen.getByRole("button", { name: "cancel-action" }));
+
+    expect(onCancel).toHaveBeenCalled();
+    expect(controllerMocks.controller.router.push).not.toHaveBeenCalled();
   });
 });

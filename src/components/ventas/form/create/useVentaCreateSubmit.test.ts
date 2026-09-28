@@ -20,6 +20,10 @@ const params = () => ({
   metodoPagoId: 'method', metodoPagoSeleccionado: { nombre: 'Banco', moneda: 'USD' },
   notifyCliente: false, onSaved: vi.fn(), setPendingWhatsApp: vi.fn(), totalFinal: 20, updatePerfilOcupado: vi.fn(),
 });
+const clienteSeleccionado = {
+  id: 'client', nombre: 'María', apellido: 'Pérez', tipo: 'cliente' as const, telefono: '+507 6000-0000',
+  metodoPagoId: 'method', metodoPagoNombre: 'Banco', active: true, createdAt: new Date(), updatedAt: new Date(), createdBy: 'u1',
+};
 
 describe('venta create batch retry', () => {
   it('retries only failed items with the same intent and does not replay saved items', async () => {
@@ -60,5 +64,39 @@ describe('venta create batch retry', () => {
     await act(() => result.current.handleGuardarVenta(event()));
     expect(createVenta).toHaveBeenCalledTimes(3);
     expect(options.onSaved).toHaveBeenCalledOnce();
+  });
+});
+
+describe('notifying the client on save', () => {
+  it('sends the message directly when a chat is already open and skips the pending-WhatsApp toast', async () => {
+    const createVenta = vi.fn().mockResolvedValue(undefined);
+    const sendDirectMessage = vi.fn().mockResolvedValue({ ok: true });
+    const options = { ...params(), notifyCliente: true, editedMessage: 'Tu venta quedó activa', clienteSeleccionado, sendDirectMessage };
+    const { result } = renderHook(() => useVentaCreateSubmit({ ...options, createVenta }));
+    await act(() => result.current.handleGuardarVenta(event()));
+
+    expect(sendDirectMessage).toHaveBeenCalledWith('Tu venta quedó activa');
+    expect(options.setPendingWhatsApp).not.toHaveBeenCalled();
+    expect(options.onSaved).toHaveBeenCalledOnce();
+  });
+
+  it('falls back to the pending-WhatsApp toast when the direct send is not possible (e.g. 24h window closed)', async () => {
+    const createVenta = vi.fn().mockResolvedValue(undefined);
+    const sendDirectMessage = vi.fn().mockResolvedValue({ ok: false, reason: 'La ventana de 24 h está cerrada' });
+    const options = { ...params(), notifyCliente: true, editedMessage: 'Tu venta quedó activa', clienteSeleccionado, sendDirectMessage };
+    const { result } = renderHook(() => useVentaCreateSubmit({ ...options, createVenta }));
+    await act(() => result.current.handleGuardarVenta(event()));
+
+    expect(sendDirectMessage).toHaveBeenCalledOnce();
+    expect(options.setPendingWhatsApp).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tu venta quedó activa' }));
+  });
+
+  it('uses the pending-WhatsApp toast as before when no direct sender is provided', async () => {
+    const createVenta = vi.fn().mockResolvedValue(undefined);
+    const options = { ...params(), notifyCliente: true, editedMessage: 'Tu venta quedó activa', clienteSeleccionado };
+    const { result } = renderHook(() => useVentaCreateSubmit({ ...options, createVenta }));
+    await act(() => result.current.handleGuardarVenta(event()));
+
+    expect(options.setPendingWhatsApp).toHaveBeenCalledWith(expect.objectContaining({ message: 'Tu venta quedó activa' }));
   });
 });

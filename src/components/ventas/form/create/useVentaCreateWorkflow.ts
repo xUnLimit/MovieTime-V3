@@ -69,6 +69,8 @@ interface UseVentaCreateWorkflowParams {
   setTipoPlanId: Dispatch<SetStateAction<string>>;
   setValue: UseFormSetValue<VentaFormData>;
   tipoItem: TipoVentaItem | null;
+  onSaved?: () => void;
+  sendDirectMessage?: (message: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
 }
 
 export function useVentaCreateWorkflow({
@@ -115,6 +117,8 @@ export function useVentaCreateWorkflow({
   setTipoPlanId,
   setValue,
   tipoItem,
+  onSaved,
+  sendDirectMessage,
 }: UseVentaCreateWorkflowParams) {
   const router = useRouter();
   const setPendingWhatsApp = useWhatsAppToastStore((state) => state.setPending);
@@ -170,8 +174,9 @@ export function useVentaCreateWorkflow({
     metodoPagoId,
     metodoPagoSeleccionado,
     notifyCliente,
-    onSaved: () => router.push("/ventas"),
+    onSaved: onSaved ?? (() => router.push("/ventas")),
     setPendingWhatsApp,
+    sendDirectMessage,
     totalFinal,
     updatePerfilOcupado: refreshServicioProfileCountMutation,
   });

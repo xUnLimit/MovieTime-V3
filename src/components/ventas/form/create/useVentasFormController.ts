@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -20,8 +20,20 @@ import {
 } from "@/components/ventas/form/useVentaFormQueries";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useTerceros } from "@/hooks/use-terceros";
+import {
+  isPendingTerceroPaymentMethodId,
+  PENDING_TERCERO_PAYMENT_ID,
+} from "@/platform/utils/terceroMetodoPago";
 
-export function useVentasFormController() {
+export type UseVentasFormControllerParams = {
+  // Preselecciona el cliente al abrir el formulario (p. ej. desde el chat de
+  // WhatsApp, donde ya se sabe que el numero pertenece a este tercero).
+  clienteIdInicial?: string;
+  onSaved?: () => void;
+  sendDirectMessage?: (message: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
+};
+
+export function useVentasFormController({ clienteIdInicial, onSaved, sendDirectMessage }: UseVentasFormControllerParams = {}) {
   const { data: categorias = [] } = useCategoriasFull();
   const { data: terceros = [] } = useTerceros();
 
@@ -52,7 +64,7 @@ export function useVentasFormController() {
   } = useForm<VentaFormData>({
     resolver: zodResolver(ventaSchema),
     defaultValues: {
-      clienteId: "",
+      clienteId: clienteIdInicial ?? "",
       metodoPagoId: "",
       fechaInicio: new Date(),
       fechaFin: addMonths(new Date(), 1),
@@ -117,6 +129,18 @@ export function useVentasFormController() {
     terceros,
     tipoPlanId,
   });
+
+  // Al preseleccionar cliente (p. ej. desde el chat), tambien se adopta su
+  // metodo de pago por defecto, igual que hace la seleccion manual.
+  const prefilledClienteRef = useRef(false);
+  useEffect(() => {
+    if (!clienteIdInicial || prefilledClienteRef.current || !clienteSeleccionado) return;
+    prefilledClienteRef.current = true;
+    const metodoPagoId = isPendingTerceroPaymentMethodId(clienteSeleccionado.metodoPagoId)
+      ? PENDING_TERCERO_PAYMENT_ID
+      : clienteSeleccionado.metodoPagoId;
+    setValue("metodoPagoId", metodoPagoId);
+  }, [clienteIdInicial, clienteSeleccionado, setValue]);
 
   const {
     getSlotsDisponibles,
@@ -184,6 +208,8 @@ export function useVentasFormController() {
     setTipoPlanId,
     setValue,
     tipoItem,
+    onSaved,
+    sendDirectMessage,
   });
 
 

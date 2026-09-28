@@ -40,6 +40,12 @@ type UseVentaCreateSubmitParams = {
     title: string;
     description: string;
   }) => void;
+  // Cuando el formulario se usa embebido en un chat de WhatsApp ya abierto,
+  // permite enviar la notificacion directo por la Cloud API en vez de
+  // abrir WhatsApp Web en una pestana aparte. Si no se provee, o si el
+  // envio directo no aplica (p. ej. ventana de 24h cerrada), se usa el
+  // flujo por defecto (setPendingWhatsApp).
+  sendDirectMessage?: (message: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
   totalFinal: number;
   updatePerfilOcupado: (id: string, shouldIncrement: boolean) => Promise<void>;
 };
@@ -58,6 +64,7 @@ export function useVentaCreateSubmit({
   notifyCliente,
   onSaved,
   setPendingWhatsApp,
+  sendDirectMessage,
   totalFinal,
   updatePerfilOcupado,
 }: UseVentaCreateSubmitParams) {
@@ -147,14 +154,24 @@ export function useVentaCreateSubmit({
         );
       }
       if (notifyCliente && normalizedEstado !== 'inactivo' && editedMessage) {
-        const phoneRaw = clienteSeleccionado?.telefono || '';
-        const phone = phoneRaw.replace(/[^\d+]/g, '');
-        setPendingWhatsApp({
-          phone,
-          message: editedMessage,
-          title: 'Venta registrada',
-          description: 'La venta ha sido guardada correctamente en el sistema.',
-        });
+        const sent = sendDirectMessage ? await sendDirectMessage(editedMessage) : null;
+        if (sent?.ok) {
+          toast.success('Venta registrada', {
+            description: 'La venta se guardó y el mensaje se envió al cliente por WhatsApp.',
+          });
+        } else {
+          if (sent && !sent.ok) {
+            toast.warning('No se pudo enviar el mensaje automáticamente', { description: sent.reason });
+          }
+          const phoneRaw = clienteSeleccionado?.telefono || '';
+          const phone = phoneRaw.replace(/[^\d+]/g, '');
+          setPendingWhatsApp({
+            phone,
+            message: editedMessage,
+            title: 'Venta registrada',
+            description: 'La venta ha sido guardada correctamente en el sistema.',
+          });
+        }
       } else {
         toast.success('Venta registrada', {
           description: 'La venta ha sido guardada correctamente en el sistema.',

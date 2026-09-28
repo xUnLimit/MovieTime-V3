@@ -12,7 +12,17 @@ import {
   PENDING_TERCERO_PAYMENT_ID,
 } from "@/platform/utils/terceroMetodoPago";
 
-export function VentasForm() {
+type VentasFormProps = {
+  // Preselecciona el cliente (p. ej. desde el chat) y permite reemplazar la
+  // navegacion por defecto al guardar/cancelar cuando el formulario se usa
+  // embebido en un dialogo en vez de en su propia pagina.
+  clienteIdInicial?: string;
+  onSaved?: () => void;
+  onCancel?: () => void;
+  sendDirectMessage?: (message: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
+};
+
+export function VentasForm({ clienteIdInicial, onSaved, onCancel, sendDirectMessage }: VentasFormProps = {}) {
   const {
     activeTab,
     setActiveTab,
@@ -97,7 +107,7 @@ export function VentasForm() {
     handleServiciosDropdownWheel,
     handleTabChange,
     scrollServiciosDropdown,
-  } = useVentasFormController();
+  } = useVentasFormController({ clienteIdInicial, onSaved, sendDirectMessage });
   return (
     <form onSubmit={handleGuardarVenta} className="space-y-6" noValidate>
       <Tabs
@@ -256,7 +266,7 @@ export function VentasForm() {
         submitLabel="Guardar venta"
         submitDisabled={saving}
         onPrevious={() => setActiveTab("datos")}
-        onCancel={() => router.push("/ventas")}
+        onCancel={onCancel ?? (() => router.push("/ventas"))}
         onNext={handleNext}
       />
     </form>
