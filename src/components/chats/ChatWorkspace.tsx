@@ -14,6 +14,7 @@ import {
   useVentaMessageContext,
   useWhatsAppMessages,
 } from '@/hooks/use-whatsapp-chat';
+import { useSaveChatSticker } from '@/hooks/use-chat-saved-stickers';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { cn } from '@/platform/utils/cn';
 import { readChatDraft, writeChatDraft } from '@/modules/whatsapp/chat-drafts';
@@ -48,6 +49,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   const { mutate: markRead } = useMarkWhatsAppConversationRead();
   const markUnread = useMarkWhatsAppConversationUnread();
   const hideMessage = useHideWhatsAppMessage(waId);
+  const saveSticker = useSaveChatSticker();
 
   const activas = useMemo(() => sortVentasForChat(ventas), [ventas]);
   const [chosenVentaId, setChosenVentaId] = useState<string | null>(null);
@@ -215,7 +217,14 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           onHide={(message) => hideMessage.mutate({ messageId: message.id, direction: message.direction }, {
             onError: (error) => toast.error(getPublicErrorMessage(error, 'No se pudo eliminar el mensaje. Intenta de nuevo.')),
           })}
-          onOpenImage={(message, objectUrl) => setOpenImage({ message, objectUrl })} />
+          onOpenImage={(message, objectUrl) => setOpenImage({ message, objectUrl })}
+          onSaveSticker={(message) => {
+            if (!message.mediaId || !message.mediaMimeType) return;
+            saveSticker.mutate({ mediaId: message.mediaId, mimeType: message.mediaMimeType }, {
+              onSuccess: () => toast.success('Sticker guardado.'),
+              onError: (error) => toast.error(getPublicErrorMessage(error, 'No se pudo guardar el sticker.')),
+            });
+          }} />
         <ChatComposer
           ref={composerRef}
           draft={draft}
@@ -224,13 +233,24 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           onDraftChange={updateDraft}
           replyTarget={replyTarget}
           onCancelReply={() => setReplyTarget(null)}
-          onSend={() => send({ kind: 'text', text: draft.trim(), ...(replyTarget ? { replyTo: replyTarget.waMessageId } : {}) }, () => { updateDraft(''); setReplyTarget(null); })}
+          onSend={() => {
+            const message: WhatsAppSendMessage = { kind: 'text', text: draft.trim(), ...(replyTarget ? { replyTo: replyTarget.waMessageId } : {}) };
+            updateDraft('');
+            setReplyTarget(null);
+            send(message, () => {});
+          }}
           onSendMedia={(upload: WhatsAppUploadResult, caption, onDone) => {
+            if (upload.mimeType === 'image/webp') {
+              sendExtra(waId, { kind: 'sticker', mediaId: upload.mediaId, mimeType: upload.mimeType, replyTo: replyTarget?.waMessageId }, () => { onDone(); setReplyTarget(null); });
+              return;
+            }
             const kind = upload.mimeType.startsWith('image/') ? 'image' : upload.mimeType.startsWith('audio/') ? 'audio' : 'document';
             sendExtra(waId, { kind, mediaId: upload.mediaId, mimeType: upload.mimeType, filename: upload.filename, caption: caption || undefined, replyTo: replyTarget?.waMessageId }, () => { onDone(); setReplyTarget(null); });
           }}
           onSendInteractive={(message, onDone) => sendExtra(waId, { ...message, ...(replyTarget ? { replyTo: replyTarget.waMessageId } : {}) }, () => { onDone(); setReplyTarget(null); })}
+          onSendSticker={(sticker, onDone) => sendExtra(waId, { kind: 'sticker', mediaId: sticker.mediaId, mimeType: sticker.mimeType, replyTo: replyTarget?.waMessageId }, () => { onDone(); setReplyTarget(null); })}
           onOpenTemplates={() => openTemplates()}
+          conversation={conversation}
         />
       </div>
 
@@ -256,8 +276,12 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
       />
       <ForwardDialog open={Boolean(forwardMessage)} conversations={conversations} onOpenChange={(open) => { if (!open) setForwardMessage(null); }} onForward={(to) => {
         const message = forwardMessage;
-        if (!message || !message.mediaId || !message.mediaMimeType || !['image', 'document', 'audio'].includes(message.kind)) {
+        if (!message || !message.mediaId || !message.mediaMimeType || !['image', 'document', 'audio', 'sticker'].includes(message.kind)) {
           toast.error('Este archivo no se puede reenviar desde la conversación.');
+          return;
+        }
+        if (message.kind === 'sticker') {
+          sendExtra(to, { kind: 'sticker', mediaId: message.mediaId, mimeType: message.mediaMimeType }, () => setForwardMessage(null));
           return;
         }
         const kind = message.kind === 'image' ? 'image' : message.kind === 'audio' ? 'audio' : 'document';

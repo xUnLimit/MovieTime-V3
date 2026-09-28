@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,6 +13,7 @@ vi.mock('@/hooks/use-chat-saved-messages', () => ({
   useDeleteChatMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 vi.mock('sonner', () => ({ toast: { error: toastError } }));
+vi.mock('./ChatActionsDialog', () => ({ ChatActionsDialog: () => null }));
 
 import { ChatComposer } from './ChatComposer';
 
@@ -55,6 +57,23 @@ function renderComposer(overrides: Partial<Parameters<typeof ChatComposer>[0]> =
   };
   render(<ChatComposer {...props} />);
   return props;
+}
+
+// El draft es una prop controlada; para probar el popup de "/" hace falta un
+// wrapper que lo mantenga en estado real, como hace ChatWorkspace en produccion.
+function ControlledComposer(overrides: Partial<Parameters<typeof ChatComposer>[0]> = {}) {
+  const [draft, setDraft] = useState('');
+  return (
+    <ChatComposer
+      draft={draft}
+      serviceWindow={{ open: true, hoursLeft: 20 }}
+      isSending={false}
+      onDraftChange={setDraft}
+      onSend={vi.fn()}
+      onOpenTemplates={vi.fn()}
+      {...overrides}
+    />
+  );
 }
 
 describe('ChatComposer voice notes', () => {
@@ -121,21 +140,65 @@ describe('ChatComposer', () => {
     const user = userEvent.setup();
     saved.messages = [{ id: '11111111-1111-4111-8111-111111111111', title: 'Saludo', kind: 'text', body: 'Hola', buttonLabel: '', options: [] }];
     const props = renderComposer();
-    await user.click(screen.getByRole('button', { name: 'Mensajes guardados' }));
+    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas y acciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mensajes guardados' }));
     await user.click(screen.getByRole('button', { name: 'Usar en chat' }));
     expect(props.onDraftChange).toHaveBeenCalledWith('Hola');
     expect(props.onSend).not.toHaveBeenCalled();
     saved.messages = [];
   });
 
-  it('opens saved interactive content for review before sending', async () => {
+  it('sends saved interactive content right away, without opening the editor', async () => {
     const user = userEvent.setup();
     saved.messages = [{ id: '11111111-1111-4111-8111-111111111111', title: 'Planes', kind: 'list', body: 'Elige un plan', buttonLabel: 'Ver planes', options: [{ title: 'Mensual', description: 'Un mes' }] }];
     const props = renderComposer({ onSendInteractive: vi.fn() });
-    await user.click(screen.getByRole('button', { name: 'Mensajes guardados' }));
+    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas y acciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mensajes guardados' }));
     await user.click(screen.getByRole('button', { name: 'Usar en chat' }));
-    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Texto del mensaje' }).value).toBe('Elige un plan');
-    expect(props.onSendInteractive).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: 'Texto del mensaje' })).toBeNull();
+    expect(props.onSendInteractive).toHaveBeenCalledWith(
+      { kind: 'list', body: 'Elige un plan', buttonLabel: 'Ver planes', rows: [{ id: 'row-1', title: 'Mensual', description: 'Un mes' }] },
+      expect.any(Function)
+    );
+    saved.messages = [];
+  });
+
+  it('shows saved messages as suggestions while typing "/" and filters as more is typed', async () => {
+    const user = userEvent.setup();
+    saved.messages = [
+      { id: '11111111-1111-4111-8111-111111111111', title: 'bienvenida', kind: 'text', body: 'Hola, bienvenido', buttonLabel: '', options: [] },
+      { id: '22222222-2222-4222-8222-222222222222', title: 'pagoRecibido', kind: 'text', body: 'Pago recibido, gracias', buttonLabel: '', options: [] },
+    ];
+    render(<ControlledComposer />);
+
+    await user.type(screen.getByLabelText('Mensaje'), '/');
+    const listbox = screen.getByRole('listbox', { name: 'Respuestas rápidas' });
+    expect(within(listbox).getByText('bienvenida')).toBeTruthy();
+    expect(within(listbox).getByText('pagoRecibido')).toBeTruthy();
+
+    await user.type(screen.getByLabelText('Mensaje'), 'pago');
+    expect(within(listbox).queryByText('bienvenida')).toBeNull();
+    expect(within(listbox).getByText('pagoRecibido')).toBeTruthy();
+    saved.messages = [];
+  });
+
+  it('applies the highlighted suggestion on Enter and clears the composer', async () => {
+    const user = userEvent.setup();
+    saved.messages = [{ id: '11111111-1111-4111-8111-111111111111', title: 'bienvenida', kind: 'text', body: 'Hola, bienvenido', buttonLabel: '', options: [] }];
+    render(<ControlledComposer />);
+
+    await user.type(screen.getByLabelText('Mensaje'), '/bien{Enter}');
+    expect(screen.queryByRole('listbox', { name: 'Respuestas rápidas' })).toBeNull();
+    expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('Hola, bienvenido');
+    saved.messages = [];
+  });
+
+  it('does not open suggestions for a slash used mid-sentence', async () => {
+    saved.messages = [{ id: '11111111-1111-4111-8111-111111111111', title: 'bienvenida', kind: 'text', body: 'Hola', buttonLabel: '', options: [] }];
+    render(<ControlledComposer />);
+
+    await userEvent.setup().type(screen.getByLabelText('Mensaje'), 'revisa https://a.com/b');
+    expect(screen.queryByRole('listbox', { name: 'Respuestas rápidas' })).toBeNull();
     saved.messages = [];
   });
 
@@ -202,10 +265,24 @@ describe('ChatComposer', () => {
     expect(props.onSend).not.toHaveBeenCalled();
   });
 
-  it('shows the shared message library without requiring a sale', () => {
+  it('offers saved messages from the lightning menu without requiring a sale', async () => {
+    const user = userEvent.setup();
     renderComposer();
-    expect(screen.getByRole('button', { name: 'Mensajes guardados' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Respuestas rápidas' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas y acciones' }));
+    expect(screen.getByRole('menuitem', { name: 'Mensajes guardados' })).toBeTruthy();
+  });
+
+  it('only offers Acciones when a conversation is provided', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas y acciones' }));
+    expect(screen.queryByRole('menuitem', { name: 'Acciones' })).toBeNull();
+    await user.keyboard('{Escape}');
+
+    const conversation = { waId: '50760000000', contactName: 'Mary', terceroId: null, terceroNombre: null, lastDirection: 'inbound' as const, lastPreview: '', lastMessageAt: '', lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [] };
+    renderComposer({ conversation });
+    await user.click(screen.getAllByRole('button', { name: 'Respuestas rápidas y acciones' })[1]);
+    expect(screen.getByRole('menuitem', { name: 'Acciones' })).toBeTruthy();
   });
 
   it('keeps slash as ordinary message text', async () => {

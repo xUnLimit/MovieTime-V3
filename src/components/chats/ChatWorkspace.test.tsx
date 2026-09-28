@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   markRead: vi.fn(),
   markUnread: vi.fn(),
   hideMessage: vi.fn(),
+  saveSticker: vi.fn(),
   ventas: [] as unknown[],
   context: null as unknown,
   wide: false,
@@ -28,6 +29,19 @@ vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useUploadWhatsAppMedia: () => ({ mutateAsync: vi.fn() }),
   useWhatsAppMedia: () => ({ objectUrl: state.mediaObjectUrl, isLoading: false, isError: false }),
 }));
+vi.mock('@/hooks/use-chat-saved-stickers', () => ({
+  useChatSavedStickers: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+  useSaveChatSticker: () => ({ mutate: state.saveSticker }),
+  useDeleteChatSticker: () => ({ mutate: vi.fn() }),
+}));
+vi.mock('@/hooks/use-chat-saved-messages', () => ({
+  useChatSavedMessages: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
+}));
+// El dialogo de acciones (registrar cliente / generar venta) reutiliza formularios
+// pesados con su propia cadena de datos; se prueba por separado en su propio test.
+vi.mock('./ChatActionsDialog', () => ({
+  ChatActionsDialog: () => null,
+}));
 vi.mock('@/hooks/use-ventas-tercero', () => ({
   useVentasTercero: () => ({ ventas: state.ventas, isLoading: false }),
 }));
@@ -45,6 +59,7 @@ const open: WhatsAppConversation = {
   waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
   lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: NOW.toISOString(),
   lastInboundAt: new Date(2026, 8, 27, 14, 30).toISOString(), unreadCount: 1, nextExpiry: '2026-09-27',
+  activeCategories: [],
 };
 const closed: WhatsAppConversation = { ...open, lastInboundAt: null, unreadCount: 0 };
 
@@ -155,7 +170,7 @@ describe('ChatWorkspace', () => {
     expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('');
   });
 
-  it('reuses the key on retry and explains rejections', async () => {
+  it('clears the composer right away and reuses the key while retrying the same attempt', async () => {
     const user = userEvent.setup();
     state.sendMutate
       .mockImplementationOnce((_input, options) => options.onError(new Error('offline')))
@@ -163,7 +178,9 @@ describe('ChatWorkspace', () => {
     renderWorkspace();
 
     await user.type(screen.getByLabelText('Mensaje'), 'Hola{Enter}');
-    await user.type(screen.getByLabelText('Mensaje'), '{Enter}');
+    // El cuadro se vacia al instante, sin esperar la respuesta del servidor.
+    expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('');
+    await user.type(screen.getByLabelText('Mensaje'), 'Hola{Enter}');
 
     const [first, second] = state.sendMutate.mock.calls.map(([input]) => input.idempotencyKey);
     expect(first).toBe(second);
@@ -171,11 +188,11 @@ describe('ChatWorkspace', () => {
     expect(toastError).toHaveBeenCalledWith('WhatsApp rechazó el mensaje: Número inválido');
   });
 
-  it('offers saved messages even when the client has no active sale', () => {
+  it('offers saved messages even when the client has no active sale', async () => {
     state.ventas = [];
     renderWorkspace();
-    expect(screen.getByRole('button', { name: 'Mensajes guardados' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Respuestas rápidas' })).toBeNull();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Respuestas rápidas y acciones' }));
+    expect(screen.getByRole('menuitem', { name: 'Mensajes guardados' })).toBeTruthy();
   });
 
   it('opens the suggested Meta template pre-filled when the window is closed', async () => {

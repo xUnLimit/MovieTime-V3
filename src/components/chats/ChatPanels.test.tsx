@@ -14,6 +14,7 @@ const conversation: WhatsAppConversation = {
   waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
   lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: NOW.toISOString(),
   lastInboundAt: new Date(2026, 8, 27, 14, 0).toISOString(), unreadCount: 0, nextExpiry: '2026-09-27',
+  activeCategories: [],
 };
 
 function venta(id: string, fechaFin: Date | null, overrides: Partial<VentaTerceroDoc> = {}): VentaTerceroDoc {

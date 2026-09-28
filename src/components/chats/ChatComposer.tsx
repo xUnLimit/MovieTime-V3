@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, useEffect, useLayoutEffect, useRef, useImperativeHandle, useState } from 'react';
-import { Bookmark, FileText, ListChecks, Lock, Mic, Paperclip, Plus, Send, Square, X } from 'lucide-react';
+import { Bookmark, ClipboardList, FileText, ListChecks, Lock, Mic, Paperclip, Plus, Send, Sticker as StickerIcon, Square, X, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -12,16 +12,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { WhatsAppUploadResult } from '@/application/use-cases/whatsapp-chat-use-cases';
+import type { WhatsAppConversation, WhatsAppUploadResult } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { useUploadWhatsAppMedia } from '@/hooks/use-whatsapp-chat';
+import { useChatSavedMessages } from '@/hooks/use-chat-saved-messages';
+import type { SavedSticker } from '@/application/use-cases/chat-saved-sticker-use-cases';
 import type { SavedMessage } from '@/modules/whatsapp/saved-messages';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { cn } from '@/platform/utils/cn';
+import { ChatActionsDialog } from './ChatActionsDialog';
 import type { ServiceWindow } from './chat-format';
-import type { InteractiveDraft, InteractiveSendMessage } from './chat-interactive';
+import { buildInteractiveMessage, type InteractiveDraft, type InteractiveSendMessage } from './chat-interactive';
 import { AUDIO_EXTENSIONS, AUDIO_RECORDING_PREFERENCE } from './chat-audio-formats';
 import { InteractiveMessageDialog } from './InteractiveMessageDialog';
 import { SavedMessagesDialog } from './SavedMessagesDialog';
+import { SlashSuggestions } from './SlashSuggestions';
+import { StickerPickerDialog } from './StickerPickerDialog';
 
 type ChatComposerProps = {
   draft: string;
@@ -34,6 +39,8 @@ type ChatComposerProps = {
   onCancelReply?: () => void;
   onSendMedia?: (upload: WhatsAppUploadResult, caption: string, onDone: () => void) => void;
   onSendInteractive?: (message: InteractiveSendMessage, onDone: () => void) => void;
+  onSendSticker?: (sticker: SavedSticker, onDone: () => void) => void;
+  conversation?: WhatsAppConversation;
 };
 
 const MAX_TEXTAREA_PX = 160;
@@ -43,7 +50,7 @@ const MAX_MEDIA_BYTES = 4 * 1024 * 1024;
 type PendingMedia = { file: File; previewUrl: string | null };
 
 export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerProps>(function ChatComposer(
-  { draft, serviceWindow, isSending, onDraftChange, onSend, onOpenTemplates, replyTarget, onCancelReply, onSendMedia, onSendInteractive },
+  { draft, serviceWindow, isSending, onDraftChange, onSend, onOpenTemplates, replyTarget, onCancelReply, onSendMedia, onSendInteractive, onSendSticker, conversation },
   ref
 ) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -58,8 +65,25 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
   const [uploading, setUploading] = useState(false);
   const [interactive, setInteractive] = useState<{ open: boolean; key: number; initialDraft?: InteractiveDraft }>({ open: false, key: 0 });
   const [savedMessagesOpen, setSavedMessagesOpen] = useState(false);
+  const [stickersOpen, setStickersOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [slashActiveIndex, setSlashActiveIndex] = useState(0);
   const uploadMedia = useUploadWhatsAppMedia();
   useImperativeHandle<HTMLTextAreaElement | null, HTMLTextAreaElement | null>(ref, () => textareaRef.current, []);
+
+  // Solo "/palabra" sin espacios activa el popup: una barra en medio de una
+  // frase (p. ej. una URL) sigue siendo texto normal.
+  const slashMatch = /^\/(\S*)$/.exec(draft);
+  const { data: savedMessages = [] } = useChatSavedMessages(slashMatch !== null);
+  const slashSuggestions = slashMatch
+    ? (() => {
+        const term = slashMatch[1].toLocaleLowerCase('es');
+        return term ? savedMessages.filter((message) => message.title.toLocaleLowerCase('es').includes(term)) : savedMessages;
+      })()
+    : [];
+
+  const slashTerm = slashMatch?.[1] ?? null;
+  useEffect(() => setSlashActiveIndex(0), [slashTerm]);
 
   // El cuadro crece con el texto hasta un maximo, como en WhatsApp.
   useLayoutEffect(() => {
@@ -127,12 +151,16 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
       recorderRef.current = null;
-      if (keep && chunksRef.current.length) {
-        // El navegador reporta el mime con el codec (p. ej. "audio/webm;codecs=opus");
-        // Meta y el endpoint de subida validan el tipo base, sin ese sufijo.
-        const baseType = (recorder.mimeType || 'audio/webm').split(';', 1)[0].trim().toLowerCase();
-        const extension = AUDIO_EXTENSIONS[baseType] ?? 'webm';
-        selectFile(new File(chunksRef.current, `audio-${Date.now()}.${extension}`, { type: baseType }));
+      if (keep) {
+        if (!chunksRef.current.length) {
+          toast.error('No se pudo grabar el audio. Intenta de nuevo.');
+        } else {
+          // El navegador reporta el mime con el codec (p. ej. "audio/webm;codecs=opus");
+          // Meta y el endpoint de subida validan el tipo base, sin ese sufijo.
+          const baseType = (recorder.mimeType || 'audio/webm').split(';', 1)[0].trim().toLowerCase();
+          const extension = AUDIO_EXTENSIONS[baseType] ?? 'webm';
+          selectFile(new File(chunksRef.current, `audio-${Date.now()}.${extension}`, { type: baseType }));
+        }
       }
       chunksRef.current = [];
     };
@@ -141,6 +169,10 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
   };
 
   const startRecording = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      toast.error('Este navegador no permite grabar audio. Prueba abriendo el sitio directamente en Safari.');
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       // Se prefieren los formatos que WhatsApp acepta de forma nativa; audio/webm
@@ -160,24 +192,18 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
     }
   };
 
-  const useSavedMessage = (message: SavedMessage) => {
+  const applySavedMessage = (message: SavedMessage) => {
     setSavedMessagesOpen(false);
     if (message.kind === 'text') {
       onDraftChange(message.body);
       requestAnimationFrame(() => textareaRef.current?.focus());
       return;
     }
-    const type = message.kind;
-    setInteractive((current) => ({
-      open: true,
-      key: current.key + 1,
-      initialDraft: {
-        type,
-        body: message.body,
-        buttonLabel: message.buttonLabel,
-        options: message.options,
-      },
-    }));
+    onDraftChange('');
+    if (!onSendInteractive) return;
+    const result = buildInteractiveMessage({ type: message.kind, body: message.body, buttonLabel: message.buttonLabel, options: message.options });
+    if (!result.ok) { toast.error(result.error); return; }
+    onSendInteractive(result.message, () => {});
   };
 
   if (!serviceWindow.open) {
@@ -198,7 +224,7 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
           </button>
         </div>
       </div>
-      {savedMessagesOpen ? <SavedMessagesDialog open onOpenChange={setSavedMessagesOpen} onUse={useSavedMessage} canUse={false} /> : null}
+      {savedMessagesOpen ? <SavedMessagesDialog open onOpenChange={setSavedMessagesOpen} onUse={applySavedMessage} canUse={false} /> : null}
       </>
     );
   }
@@ -208,17 +234,25 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
 
   return (
     <form
-      className="border-t border-chat-line bg-chat-surface px-3 pb-[calc(13px+env(safe-area-inset-bottom))] pt-2.5 md:px-[18px] md:pb-[15px] md:pt-[13px]"
+      className="relative border-t border-chat-line bg-chat-surface px-3 pb-[calc(13px+env(safe-area-inset-bottom))] pt-2.5 md:px-[18px] md:pb-[15px] md:pt-[13px]"
       onSubmit={(event) => {
         event.preventDefault();
         if (canSend) onSend();
       }}
     >
+      {slashSuggestions.length > 0 ? (
+        <SlashSuggestions
+          messages={slashSuggestions}
+          activeIndex={slashActiveIndex}
+          onHover={setSlashActiveIndex}
+          onSelect={applySavedMessage}
+        />
+      ) : null}
       {replyTarget ? <div className="mb-[11px] flex items-center justify-between gap-3 rounded-lg bg-chat-selected py-1 pl-[13px] pr-1 text-[12px] text-chat-accent-strong"><span className="truncate">Respondiendo a: {replyTarget.preview}</span><button type="button" className={TOOL_ICON_SMALL} aria-label="Cancelar respuesta" onClick={onCancelReply}><X className="h-[15px] w-[15px]" /></button></div> : null}
       {pendingMedia ? <div className="mb-[11px] flex flex-wrap items-center gap-2 rounded-lg bg-chat-selected p-2 text-[12px] text-chat-accent-strong">
         {pendingMedia.previewUrl ? <Image src={pendingMedia.previewUrl} alt="Vista previa del archivo" width={64} height={64} unoptimized className="h-16 w-16 rounded-md object-cover" /> : <FileText className="h-5 w-5" aria-hidden />}
         <span className="max-w-40 truncate">{pendingMedia.file.name}</span>
-        {!pendingMedia.file.type.startsWith('audio/') ? <input aria-label="Descripción del archivo" value={caption} onChange={(event) => setCaption(event.target.value)} className="min-w-32 flex-1 rounded-lg border border-chat-line bg-chat-raised px-2.5 py-1.5 text-[16px] text-chat-ink outline-none placeholder:text-chat-quiet focus:border-chat-accent sm:text-[13px]" placeholder="Descripción opcional" /> : null}
+        {!pendingMedia.file.type.startsWith('audio/') && pendingMedia.file.type !== 'image/webp' ? <input aria-label="Descripción del archivo" value={caption} onChange={(event) => setCaption(event.target.value)} className="min-w-32 flex-1 rounded-lg border border-chat-line bg-chat-raised px-2.5 py-1.5 text-[16px] text-chat-ink outline-none placeholder:text-chat-quiet focus:border-chat-accent sm:text-[13px]" placeholder="Descripción opcional" /> : null}
         <button type="button" className="rounded-lg px-3 py-2 text-chat-muted transition-colors hover:bg-chat-hover hover:text-chat-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={clearMedia}>Cancelar</button>
         <button type="button" className="rounded-lg bg-chat-accent px-3 py-2 font-bold text-chat-accent-ink transition-colors hover:bg-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-45" disabled={uploading || isSending} onClick={() => void sendMedia()}>Enviar archivo</button>
       </div> : null}
@@ -249,8 +283,22 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
         )}
 
         {!recording ? (
-          <button type="button" className={cn(TOOL_ICON, 'mb-px')} aria-label="Mensajes guardados" title="Mensajes guardados" onClick={() => setSavedMessagesOpen(true)}>
-            <Bookmark className="h-[19px] w-[19px]" strokeWidth={1.6} aria-hidden />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className={cn(TOOL_ICON, 'mb-px data-[state=open]:bg-chat-selected data-[state=open]:text-chat-accent-strong')} aria-label="Respuestas rápidas y acciones" title="Respuestas rápidas y acciones">
+                <Zap className="h-[19px] w-[19px]" strokeWidth={1.8} fill="currentColor" fillOpacity={0.15} aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="top" className="chat-menu w-56">
+              <DropdownMenuItem onSelect={() => setSavedMessagesOpen(true)}><Zap className="mr-2 h-4 w-4" aria-hidden /> Mensajes guardados</DropdownMenuItem>
+              {conversation ? <DropdownMenuItem onSelect={() => setActionsOpen(true)}><ClipboardList className="mr-2 h-4 w-4" aria-hidden /> Acciones</DropdownMenuItem> : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+
+        {!recording && onSendSticker ? (
+          <button type="button" className={cn(TOOL_ICON, 'mb-px')} aria-label="Stickers" title="Stickers" onClick={() => setStickersOpen(true)}>
+            <StickerIcon className="h-[19px] w-[19px]" strokeWidth={1.8} aria-hidden />
           </button>
         ) : null}
 
@@ -263,6 +311,16 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
           }}
           onPaste={(event) => { const image = Array.from(event.clipboardData.files).find((file) => file.type.startsWith('image/')); if (image) { event.preventDefault(); selectFile(image); } }}
           onKeyDown={(event) => {
+            if (slashSuggestions.length > 0) {
+              if (event.key === 'ArrowDown') { event.preventDefault(); setSlashActiveIndex((index) => (index + 1) % slashSuggestions.length); return; }
+              if (event.key === 'ArrowUp') { event.preventDefault(); setSlashActiveIndex((index) => (index - 1 + slashSuggestions.length) % slashSuggestions.length); return; }
+              if (event.key === 'Escape') { event.preventDefault(); onDraftChange(''); return; }
+              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                applySavedMessage(slashSuggestions[slashActiveIndex]);
+                return;
+              }
+            }
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
@@ -288,10 +346,13 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
           <button type="button" className={cn(TOOL_ICON, 'bg-chat-accent text-chat-accent-ink hover:bg-chat-accent-strong')} aria-label="Detener grabación" onClick={() => stopRecording(true)}><Square className="h-4 w-4" /></button>
         ) : null}
       </div>
-      {savedMessagesOpen ? <SavedMessagesDialog open onOpenChange={setSavedMessagesOpen} onUse={useSavedMessage} /> : null}
+      {savedMessagesOpen ? <SavedMessagesDialog open onOpenChange={setSavedMessagesOpen} onUse={applySavedMessage} /> : null}
       {onSendInteractive ? <InteractiveMessageDialog key={interactive.key} open={interactive.open} isSending={isSending} initialDraft={interactive.initialDraft}
         onOpenChange={(open) => setInteractive((current) => ({ ...current, open }))}
         onSend={(message) => onSendInteractive(message, () => setInteractive((current) => ({ ...current, open: false })))} /> : null}
+      {onSendSticker ? <StickerPickerDialog open={stickersOpen} onOpenChange={setStickersOpen}
+        onSelect={(sticker) => onSendSticker(sticker, () => setStickersOpen(false))} /> : null}
+      {conversation ? <ChatActionsDialog open={actionsOpen} onOpenChange={setActionsOpen} conversation={conversation} /> : null}
     </form>
   );
 });
