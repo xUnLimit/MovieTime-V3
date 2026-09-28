@@ -53,7 +53,7 @@ export function NotifyVentaDialog({
   const { data: metaTemplates = [] } = useMetaTemplates();
   const sendNotices = useSendNotices();
 
-  const tipo = choice === 'expiration' ? noticeTipoFor(notification.diasRestantes) : 'cancelacion';
+  const tipo = choice === 'expiration' ? noticeTipoFor() : 'cancelacion';
   const template = templates.find((item) => item.tipo === tipo && item.activo);
   const usesApiTemplate = Boolean(
     template?.metaTemplateName

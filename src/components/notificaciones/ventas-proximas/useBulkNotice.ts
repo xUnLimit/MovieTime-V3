@@ -82,7 +82,7 @@ export function useBulkNotice({ notificaciones, pageNotificaciones, onOpenWhatsA
   const openResultWhatsApp = async (result: NoticeResult) => {
     const notif = selected.find((item) => result.ventaIds.includes(item.ventaId))
       ?? notificaciones.find((item) => result.ventaIds.includes(item.ventaId));
-    const resolved = resolveResultWaMe(result, notificaciones, notif ? getContenido?.(noticeTipoFor(notif.diasRestantes)) : undefined);
+    const resolved = resolveResultWaMe(result, notificaciones, notif ? getContenido?.(noticeTipoFor()) : undefined);
     if (resolved) {
       openWhatsApp(resolved.phone, resolved.text);
       return;

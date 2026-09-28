@@ -7,14 +7,14 @@ import type { NotificacionVentaConId } from './types';
 export type RuleTipo = 'dia_pago';
 
 /** Aviso de pago: un solo tipo ("Aviso de vencimiento") antes y el dia del vencimiento. */
-export function noticeTipoFor(_diasRestantes: number): RuleTipo {
+export function noticeTipoFor(): RuleTipo {
   return 'dia_pago';
 }
 
 export function groupNotificationsByTipo(notifs: readonly NotificacionVentaConId[]): Array<{ tipo: RuleTipo; ventaIds: string[] }> {
   const groups = new Map<RuleTipo, string[]>();
   for (const notif of notifs) {
-    const tipo = noticeTipoFor(notif.diasRestantes);
+    const tipo = noticeTipoFor();
     groups.set(tipo, [...(groups.get(tipo) ?? []), notif.ventaId]);
   }
   return [...groups].map(([tipo, ventaIds]) => ({ tipo, ventaIds: [...new Set(ventaIds)] }));

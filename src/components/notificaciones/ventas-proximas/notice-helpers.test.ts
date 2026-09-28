@@ -13,9 +13,9 @@ const notif = (over: Partial<NotificacionVentaConId>) => ({
 
 describe('notice tipo rules', () => {
   it('always uses dia_pago', () => {
-    expect(noticeTipoFor(0)).toBe('dia_pago');
-    expect(noticeTipoFor(-2)).toBe('dia_pago');
-    expect(noticeTipoFor(1)).toBe('dia_pago');
+    expect(noticeTipoFor()).toBe('dia_pago');
+    expect(noticeTipoFor()).toBe('dia_pago');
+    expect(noticeTipoFor()).toBe('dia_pago');
   });
 
   it('groups selected ventas by rule tipo', () => {
