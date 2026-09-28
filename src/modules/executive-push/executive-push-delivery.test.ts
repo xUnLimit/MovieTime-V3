@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const webPushMocks = vi.hoisted(() => ({
   setVapidDetails: vi.fn(),
@@ -133,6 +133,8 @@ function setupSupabaseMock(options: { ventaNotifications?: Array<{ cliente_id: s
 
 describe('sendExecutivePushDailySummary', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00.000Z'));
     process.env.VAPID_PRIVATE_KEY = vapidTestConfig.privateKey;
     webPushMocks.setVapidDetails.mockReset();
     webPushMocks.sendNotification.mockReset().mockResolvedValue({ statusCode: 201, body: '', headers: {} });
@@ -143,6 +145,10 @@ describe('sendExecutivePushDailySummary', () => {
     supabaseMocks.runUpdateEq.mockReset();
     supabaseMocks.subscriptionUpdateEq.mockReset();
     setupSupabaseMock();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('sends encrypted web push payloads with configured VAPID details', async () => {

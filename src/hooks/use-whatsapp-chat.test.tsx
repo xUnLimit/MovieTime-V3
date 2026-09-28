@@ -8,6 +8,7 @@ const useCases = vi.hoisted(() => ({
   fetchWhatsAppConversationsUseCase: vi.fn(),
   fetchWhatsAppMediaUseCase: vi.fn(),
   fetchWhatsAppMessagesUseCase: vi.fn(),
+  hideWhatsAppMessageUseCase: vi.fn(),
   markWhatsAppConversationReadUseCase: vi.fn(),
   markWhatsAppConversationUnreadUseCase: vi.fn(),
   sendWhatsAppMessageUseCase: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock('@/application/use-cases/whatsapp-chat-use-cases', () => useCases);
 let lastClient: QueryClient;
 
 import {
+  useHideWhatsAppMessage,
   useMarkWhatsAppConversationRead,
   useMarkWhatsAppConversationUnread,
   useVentaMessageContext,
@@ -238,6 +240,39 @@ describe('WhatsApp chat hooks', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(lastClient.getQueryData(['whatsapp', 'conversations'])).toBeUndefined();
+  });
+
+  it('hides a message instantly and refreshes the thread and the list', async () => {
+    useCases.hideWhatsAppMessageUseCase.mockResolvedValue(undefined);
+    const { wrapper, invalidate } = createWrapper();
+    lastClient.setQueryData(['whatsapp', 'messages', '507'], [{ id: 'm1' }, { id: 'm2' }]);
+    const { result } = renderHook(() => useHideWhatsAppMessage('507'), { wrapper });
+
+    result.current.mutate({ messageId: 'm1', direction: 'inbound' });
+
+    await waitFor(() => expect(lastClient.getQueryData<Array<{ id: string }>>(['whatsapp', 'messages', '507']))
+      .toEqual([{ id: 'm2' }]));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(useCases.hideWhatsAppMessageUseCase).toHaveBeenCalledWith('m1', 'inbound');
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['whatsapp', 'messages', '507'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['whatsapp', 'conversations'] });
+  });
+
+  it('restores the message if hiding fails on the server', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    useCases.hideWhatsAppMessageUseCase.mockImplementation(() => new Promise((_resolve, rejectFn) => {
+      fail = rejectFn;
+    }));
+    const { wrapper } = createWrapper();
+    lastClient.setQueryData(['whatsapp', 'messages', '507'], [{ id: 'm1' }]);
+    const { result } = renderHook(() => useHideWhatsAppMessage('507'), { wrapper });
+
+    result.current.mutate({ messageId: 'm1', direction: 'outbound' });
+    await waitFor(() => expect(lastClient.getQueryData(['whatsapp', 'messages', '507'])).toEqual([]));
+
+    fail(new Error('forbidden'));
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(lastClient.getQueryData(['whatsapp', 'messages', '507'])).toEqual([{ id: 'm1' }]);
   });
 
 });

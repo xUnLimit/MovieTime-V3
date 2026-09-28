@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,10 +8,13 @@ const state = vi.hoisted(() => ({
   sendMutate: vi.fn(),
   markRead: vi.fn(),
   markUnread: vi.fn(),
+  hideMessage: vi.fn(),
   ventas: [] as unknown[],
   context: null as unknown,
   wide: false,
+  mediaListener: null as (() => void) | null,
   messages: [] as WhatsAppChatMessage[],
+  mediaObjectUrl: null as string | null,
 }));
 const toastError = vi.hoisted(() => vi.fn());
 
@@ -20,17 +23,10 @@ vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useSendWhatsAppMessage: () => ({ mutate: state.sendMutate, isPending: false }),
   useMarkWhatsAppConversationRead: () => ({ mutate: state.markRead }),
   useMarkWhatsAppConversationUnread: () => ({ mutate: state.markUnread }),
+  useHideWhatsAppMessage: () => ({ mutate: state.hideMessage }),
   useVentaMessageContext: (ventaId: string | null) => ({ data: ventaId ? state.context : null }),
   useUploadWhatsAppMedia: () => ({ mutateAsync: vi.fn() }),
-  useWhatsAppMedia: () => ({ objectUrl: null, isLoading: false, isError: false }),
-}));
-vi.mock('@/hooks/use-templates', () => ({
-  useTemplates: () => ({
-    data: [
-      { id: '1', nombre: 'Día', tipo: 'dia_pago', contenido: '{saludo}, pagar {categoria} {monto}', placeholders: [], activo: true },
-      { id: '2', nombre: 'Datos', tipo: 'suscripcion', contenido: 'Clave: {contrasena}', placeholders: [], activo: true },
-    ],
-  }),
+  useWhatsAppMedia: () => ({ objectUrl: state.mediaObjectUrl, isLoading: false, isError: false }),
 }));
 vi.mock('@/hooks/use-ventas-tercero', () => ({
   useVentasTercero: () => ({ ventas: state.ventas, isLoading: false }),
@@ -68,17 +64,29 @@ beforeEach(() => {
   state.sendMutate.mockReset();
   state.markRead.mockReset();
   state.markUnread.mockReset();
+  state.hideMessage.mockReset();
+  state.mediaObjectUrl = null;
   state.ventas = [venta];
   state.context = {
     clienteNombre: 'María Pérez', categoriaNombre: 'Netflix', servicioNombre: 'Netflix 01', perfilNombre: 'María',
     correo: 'c@example.com', contrasena: 'clave-demo', codigo: '', fechaVencimiento: new Date(2026, 8, 27), monto: 4.5,
   };
   state.wide = false;
+  state.mediaListener = null;
   state.messages = [];
   toastError.mockReset();
+  // Sin esto, un test anterior que deja un borrador guardado (localStorage
+  // sigue siendo el mismo mock entre tests) filtra su valor a los siguientes.
+  vi.mocked(window.localStorage.getItem).mockReset().mockReturnValue(null);
+  vi.mocked(window.localStorage.setItem).mockReset();
+  vi.mocked(window.localStorage.removeItem).mockReset();
   Element.prototype.scrollTo = vi.fn();
   Element.prototype.scrollIntoView = vi.fn();
-  window.matchMedia = vi.fn().mockImplementation(() => ({ matches: state.wide })) as unknown as typeof window.matchMedia;
+  window.matchMedia = vi.fn().mockImplementation(() => ({
+    get matches() { return state.wide; },
+    addEventListener: (_event: string, listener: () => void) => { state.mediaListener = listener; },
+    removeEventListener: () => { state.mediaListener = null; },
+  })) as unknown as typeof window.matchMedia;
 });
 
 describe('ChatWorkspace', () => {
@@ -101,7 +109,7 @@ describe('ChatWorkspace', () => {
     state.messages = [{ id: 'm1', waMessageId: 'wa-m1', direction: 'inbound', kind: 'text', textBody: 'Hola', templateName: null, occurredAt: NOW.toISOString(), status: 'received', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} }];
     const user = userEvent.setup();
     renderWorkspace();
-    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
+    await user.click(screen.getByRole('button', { name: 'Reaccionar al mensaje' }));
     await user.click(screen.getByRole('button', { name: 'Reaccionar 👍' }));
     expect(state.sendMutate).toHaveBeenCalledWith(expect.objectContaining({ message: { kind: 'reaction', targetWaMessageId: 'wa-m1', emoji: '👍' }, idempotencyKey: expect.any(String) }), expect.any(Object));
   });
@@ -124,8 +132,7 @@ describe('ChatWorkspace', () => {
     state.sendMutate.mockImplementation((_input, options) => options.onSuccess({ sendStatus: 'accepted' }));
     const user = userEvent.setup();
     renderWorkspace();
-    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Buscar en la conversación' }));
+    await user.click(screen.getByRole('button', { name: 'Buscar en la conversación' }));
     await user.type(screen.getByLabelText('Buscar en la conversación'), 'hola');
     expect(screen.getByText('1/1')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
@@ -164,23 +171,11 @@ describe('ChatWorkspace', () => {
     expect(toastError).toHaveBeenCalledWith('WhatsApp rechazó el mensaje: Número inválido');
   });
 
-  it('fills an editor message with the sale data from the customer panel', async () => {
-    const user = userEvent.setup();
-    renderWorkspace(open, { panelPreferred: true });
-
-    const panel = screen.getAllByRole('complementary', { name: 'Ficha del cliente' })[0];
-    await user.click(within(panel).getByRole('button', { name: 'Datos de acceso' }));
-
-    expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('Clave: clave-demo');
-  });
-
-  it('asks for a sale when the quick reply has no data', async () => {
-    const user = userEvent.setup();
+  it('offers saved messages even when the client has no active sale', () => {
     state.ventas = [];
     renderWorkspace();
-
-    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas' }));
-    expect(screen.getByRole('menuitem', { name: 'Día de pago' }).getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Mensajes guardados' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Respuestas rápidas' })).toBeNull();
   });
 
   it('opens the suggested Meta template pre-filled when the window is closed', async () => {
@@ -228,8 +223,16 @@ describe('ChatWorkspace', () => {
     expect(props.onPanelPreferredChange).toHaveBeenCalledWith(false);
 
     state.wide = true;
+    act(() => state.mediaListener?.());
     await user.click(screen.getByRole('button', { name: 'Ver ficha de María Pérez' }));
     expect(props.onPanelPreferredChange).toHaveBeenCalledWith(true);
+  });
+
+  it('does not report a hidden customer panel as open on a narrow screen', async () => {
+    const user = userEvent.setup();
+    renderWorkspace(open, { panelPreferred: true });
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    expect(screen.getByRole('menuitem', { name: 'Mostrar ficha del cliente' })).toBeTruthy();
   });
 
   it('does not undo "Marcar como no leído" when the list refreshes while the chat is still open', async () => {
@@ -254,13 +257,14 @@ describe('ChatWorkspace', () => {
     renderWorkspace();
     await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
     await user.click(screen.getByRole('menuitem', { name: 'Responder' }));
-    await user.click(screen.getByRole('button', { name: 'Botones o lista' }));
+    await user.click(screen.getByRole('button', { name: 'Abrir acciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Botones o lista' }));
     const dialog = screen.getByRole('dialog');
     await user.type(within(dialog).getByLabelText('Texto del mensaje'), '¿Cómo quieres pagar?');
-    await user.type(within(dialog).getByLabelText('Botón 1'), 'Yappy');
+    await user.type(within(dialog).getByRole('textbox', { name: 'Botón 1' }), 'Yappy');
     await user.click(within(dialog).getByRole('button', { name: 'Agregar botón' }));
-    await user.type(within(dialog).getByLabelText('Botón 2'), 'Efectivo');
-    await user.click(within(dialog).getByRole('button', { name: 'Enviar' }));
+    await user.type(within(dialog).getByRole('textbox', { name: 'Botón 2' }), 'Efectivo');
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar mensaje' }));
     expect(state.sendMutate).toHaveBeenCalledWith(expect.objectContaining({ message: {
       kind: 'buttons', body: '¿Cómo quieres pagar?', buttons: [{ id: 'btn-1', title: 'Yappy' }, { id: 'btn-2', title: 'Efectivo' }], replyTo: 'wamid-1',
     } }), expect.any(Object));
@@ -271,16 +275,17 @@ describe('ChatWorkspace', () => {
   it('validates and sends a list message', async () => {
     const user = userEvent.setup();
     renderWorkspace();
-    await user.click(screen.getByRole('button', { name: 'Botones o lista' }));
+    await user.click(screen.getByRole('button', { name: 'Abrir acciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Botones o lista' }));
     const dialog = screen.getByRole('dialog');
     await user.click(within(dialog).getByRole('radio', { name: /Lista/ }));
-    await user.click(within(dialog).getByRole('button', { name: 'Enviar' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar mensaje' }));
     expect(within(dialog).getByRole('alert').textContent).toBe('Escribe el texto del mensaje.');
     expect(state.sendMutate).not.toHaveBeenCalled();
     await user.type(within(dialog).getByLabelText('Texto del mensaje'), 'Elige tu plan');
-    await user.type(within(dialog).getByLabelText('Opción 1'), 'Netflix 1 mes');
-    await user.type(within(dialog).getByLabelText('Descripción de la opción 1'), '$4.50');
-    await user.click(within(dialog).getByRole('button', { name: 'Enviar' }));
+    await user.type(within(dialog).getByRole('textbox', { name: 'Opción 1' }), 'Netflix 1 mes');
+    await user.type(within(dialog).getByRole('textbox', { name: 'Descripción de la opción 1' }), '$4.50');
+    await user.click(within(dialog).getByRole('button', { name: 'Enviar mensaje' }));
     expect(state.sendMutate).toHaveBeenCalledWith(expect.objectContaining({ message: {
       kind: 'list', body: 'Elige tu plan', buttonLabel: 'Ver opciones', rows: [{ id: 'row-1', title: 'Netflix 1 mes', description: '$4.50' }],
     } }), expect.any(Object));
@@ -308,6 +313,56 @@ describe('ChatWorkspace', () => {
 
   it('hides buttons and lists when the 24-hour window is closed', () => {
     renderWorkspace(closed);
-    expect(screen.queryByRole('button', { name: 'Botones o lista' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abrir acciones' })).toBeNull();
+  });
+
+  it('hides a message from the inbox after confirming, without contacting WhatsApp', async () => {
+    state.messages = [{ id: 'm1', waMessageId: 'wamid-1', direction: 'inbound', kind: 'text', textBody: 'Hola', templateName: null, occurredAt: NOW.toISOString(), status: 'received', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} }];
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Eliminar' }));
+    expect(screen.getByRole('alertdialog')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Eliminar', hidden: true }));
+    expect(state.hideMessage).toHaveBeenCalledWith({ messageId: 'm1', direction: 'inbound' }, expect.any(Object));
+  });
+
+  it('shows a toast when hiding a message fails on the server', async () => {
+    state.messages = [{ id: 'm1', waMessageId: 'wamid-1', direction: 'inbound', kind: 'text', textBody: 'Hola', templateName: null, occurredAt: NOW.toISOString(), status: 'received', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} }];
+    state.hideMessage.mockImplementation((_input, options) => options.onError(new Error('rpc missing')));
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Eliminar' }));
+    await user.click(screen.getByRole('button', { name: 'Eliminar', hidden: true }));
+    expect(toastError).toHaveBeenCalledWith('No se pudo eliminar el mensaje. Intenta de nuevo.');
+  });
+
+  it('opens an image message in a lightbox instead of a new tab', async () => {
+    state.messages = [{ id: 'img1', waMessageId: 'wa-img1', direction: 'inbound', kind: 'image', textBody: null, templateName: null, occurredAt: NOW.toISOString(), status: 'received', mediaId: 'media-1', mediaMimeType: 'image/jpeg', mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} }];
+    state.mediaObjectUrl = 'blob:image-1';
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.click(screen.getByRole('button', { name: 'Ver imagen en grande' }));
+    expect(screen.getByRole('dialog', { name: 'Imagen del mensaje' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }));
+    expect(screen.queryByRole('dialog', { name: 'Imagen del mensaje' })).toBeNull();
+  });
+
+  it('shows a mic button that switches to send once text is typed', async () => {
+    const user = userEvent.setup();
+    renderWorkspace();
+    expect(screen.getByRole('button', { name: 'Grabar audio' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Enviar mensaje' })).toBeNull();
+    await user.type(screen.getByLabelText('Mensaje'), 'Hola');
+    expect(screen.getByRole('button', { name: 'Enviar mensaje' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Grabar audio' })).toBeNull();
+  });
+
+  it('keeps slash in the composer as message text', async () => {
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.type(screen.getByLabelText('Mensaje'), '/');
+    expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('/');
   });
 });

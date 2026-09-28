@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { WhatsAppChatMessage, WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { avatarHue, initialsFor, renderTemplatePreview } from './chat-format';
-import { buildMetaTemplateParams, quickRepliesFrom, suggestMetaTemplate } from './chat-templates';
+import { buildMetaTemplateParams, suggestMetaTemplate } from './chat-templates';
 import { buildTimeline, dayLabel } from './chat-timeline';
 import {
   countByFilter,
@@ -12,7 +12,6 @@ import {
   matchesSearch,
   parseDateOnly,
 } from './conversation-filters';
-import type { TemplateMensaje } from '@/types';
 
 const NOW = new Date(2026, 8, 27, 15, 30);
 
@@ -124,17 +123,6 @@ describe('chat templates', () => {
     expect(suggestMetaTemplate(new Date(2026, 8, 30), NOW)).toBe('recordatorio_vencimiento');
     expect(suggestMetaTemplate(new Date(2026, 8, 27, 1), NOW)).toBe('vence_hoy');
     expect(suggestMetaTemplate(new Date(2026, 8, 20), NOW)).toBe('servicio_suspendido');
-  });
-
-  it('builds quick replies from active editor templates in a fixed order', () => {
-    const template = (tipo: TemplateMensaje['tipo'], activo = true) =>
-      ({ id: tipo, nombre: tipo, tipo, contenido: `c-${tipo}`, placeholders: [], activo, createdAt: NOW, updatedAt: NOW });
-
-    expect(quickRepliesFrom([template('renovacion'), template('dia_pago'), template('suscripcion', false)]))
-      .toEqual([
-        { tipo: 'dia_pago', label: 'Día de pago', contenido: 'c-dia_pago' },
-        { tipo: 'renovacion', label: 'Renovación exitosa', contenido: 'c-renovacion' },
-      ]);
   });
 
   it('previews Meta template bodies and keeps missing values visible', () => {

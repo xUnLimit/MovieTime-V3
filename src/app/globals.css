@@ -39,6 +39,35 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --font-editorial: "Iowan Old Style", Baskerville, Georgia, serif;
+  --color-chat-canvas: var(--chat-canvas);
+  --color-chat-inbox: var(--chat-inbox);
+  --color-chat-surface: var(--chat-surface);
+  --color-chat-raised: var(--chat-raised);
+  --color-chat-hover: var(--chat-hover);
+  --color-chat-selected: var(--chat-selected);
+  --color-chat-selected-line: var(--chat-selected-line);
+  --color-chat-line: var(--chat-line);
+  --color-chat-line-soft: var(--chat-line-soft);
+  --color-chat-ink: var(--chat-ink);
+  --color-chat-muted: var(--chat-muted);
+  --color-chat-quiet: var(--chat-quiet);
+  --color-chat-accent: var(--chat-accent);
+  --color-chat-accent-strong: var(--chat-accent-strong);
+  --color-chat-accent-ink: var(--chat-accent-ink);
+  --color-chat-accent-soft: var(--chat-accent-soft);
+  --color-chat-accent-line: var(--chat-accent-line);
+  --color-chat-bubble-in: var(--chat-bubble-in);
+  --color-chat-bubble-in-line: var(--chat-bubble-in-line);
+  --color-chat-bubble-out: var(--chat-bubble-out);
+  --color-chat-bubble-out-line: var(--chat-bubble-out-line);
+  --color-chat-bubble-out-ink: var(--chat-bubble-out-ink);
+  --color-chat-bubble-out-meta: var(--chat-bubble-out-meta);
+  --color-chat-open: var(--chat-open);
+  --color-chat-open-ink: var(--chat-open-ink);
+  --color-chat-closed: var(--chat-closed);
+  --color-chat-closed-ink: var(--chat-closed-ink);
+  --color-chat-glow: var(--chat-glow);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -126,6 +155,147 @@
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(0.5 0.03 270);
   --sidebar-ring: oklch(0.5 0.03 270);
+}
+
+/* Bandeja de chats: paleta "violeta" del prototipo (prototypes/chats-nocturno.html).
+   Los tokens viven en :root/.dark para que los menus en portal (fuera de .chats-surface) tambien los usen. */
+:root {
+  --chat-canvas: #f6f4fa;
+  --chat-inbox: #fbfaff;
+  --chat-surface: #ffffff;
+  --chat-raised: #f1eef7;
+  --chat-hover: #f0ecf7;
+  --chat-selected: #ece3fa;
+  --chat-selected-line: #c9b3ec;
+  --chat-line: #e0d9ea;
+  --chat-line-soft: #ece8f3;
+  --chat-ink: #1d1726;
+  --chat-muted: #5b5467;
+  --chat-quiet: #676178;
+  --chat-accent: #6d3fc0;
+  --chat-accent-strong: #5a2fa8;
+  --chat-accent-ink: #ffffff;
+  --chat-accent-soft: #f4eefc;
+  --chat-accent-line: #cdb6ee;
+  --chat-bubble-in: #ffffff;
+  --chat-bubble-in-line: #e2dcec;
+  --chat-bubble-out: #ece2fb;
+  --chat-bubble-out-line: #cdb6ee;
+  --chat-bubble-out-ink: #1d1726;
+  --chat-bubble-out-meta: #5b4a73;
+  --chat-open: #e3f3e7;
+  --chat-open-ink: #1f6b3a;
+  --chat-closed: #f5e6ef;
+  --chat-closed-ink: #8a3563;
+  --chat-glow: #efe8fa;
+  --chat-focus: var(--chat-accent);
+}
+
+.dark {
+  --chat-canvas: #111019;
+  --chat-inbox: #14121b;
+  --chat-surface: #191621;
+  --chat-raised: #201d29;
+  --chat-hover: #24202f;
+  --chat-selected: #2e243d;
+  --chat-selected-line: #674f86;
+  --chat-line: #393444;
+  --chat-line-soft: #2b2835;
+  --chat-ink: #f4f1f8;
+  --chat-muted: #c3becd;
+  --chat-quiet: #aaa5b7;
+  --chat-accent: #c7aaff;
+  --chat-accent-strong: #decaff;
+  --chat-accent-ink: #1b102c;
+  --chat-accent-soft: #2c2338;
+  --chat-accent-line: #71528e;
+  --chat-bubble-in: #292631;
+  --chat-bubble-in-line: #3c3647;
+  --chat-bubble-out: #443056;
+  --chat-bubble-out-line: #775995;
+  --chat-bubble-out-ink: #fbf5ff;
+  --chat-bubble-out-meta: #e3cee9;
+  --chat-open: #203127;
+  --chat-open-ink: #bbe1c5;
+  --chat-closed: #332637;
+  --chat-closed-ink: #e7bed8;
+  --chat-glow: #211b2a;
+  --chat-focus: #d9bdff;
+}
+
+.chats-surface {
+  --ring: var(--chat-focus);
+  color: var(--chat-ink);
+  background-color: var(--chat-canvas);
+}
+
+/* Scrollbar fina y discreta para la bandeja de chats, en vez de la barra
+   ancha por defecto del sistema. */
+.chats-surface * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-line) transparent;
+}
+
+.chats-surface *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.chats-surface *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chats-surface *::-webkit-scrollbar-thumb {
+  background-color: var(--chat-line);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.chats-surface *::-webkit-scrollbar-thumb:hover {
+  background-color: var(--chat-selected-line);
+  background-clip: padding-box;
+}
+
+.chat-menu {
+  --ring: var(--chat-focus);
+  border-color: var(--chat-selected-line);
+  border-radius: 11px;
+  background-color: var(--chat-raised);
+  color: var(--chat-ink);
+  padding: 6px;
+  box-shadow: 0 14px 42px rgb(0 0 0 / 0.45);
+}
+
+.chat-menu [data-slot="dropdown-menu-item"] {
+  border-radius: 7px;
+  padding: 9px 10px;
+  font-size: 12px;
+  color: var(--chat-ink);
+}
+
+.chat-menu [data-slot="dropdown-menu-item"]:focus,
+.chat-menu [data-slot="dropdown-menu-item"][data-highlighted] {
+  background-color: var(--chat-selected);
+  color: var(--chat-ink);
+}
+
+.chat-menu [data-slot="dropdown-menu-item"] svg {
+  color: var(--chat-accent);
+}
+
+.chat-menu [data-slot="dropdown-menu-label"] {
+  padding: 7px 10px 4px;
+  color: var(--chat-quiet);
+}
+
+.chat-menu [data-slot="dropdown-menu-separator"] {
+  background-color: var(--chat-line);
+}
+
+.chats-surface ::selection {
+  background: var(--chat-accent);
+  color: var(--chat-accent-ink);
 }
 
 @layer base {

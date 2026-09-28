@@ -4,11 +4,30 @@ import { describe, expect, it, vi } from 'vitest';
 import type { WhatsAppChatMessage } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { MessageBubble } from './MessageBubble';
 
-vi.mock('./MessageAttachment', () => ({ MessageAttachment: ({ mediaId }: { mediaId: string }) => <span>Adjunto {mediaId}</span> }));
+vi.mock('./MessageAttachment', () => ({
+  MessageAttachment: ({ mediaId, onOpenImage }: { mediaId: string; onOpenImage?: (objectUrl: string) => void }) => (
+    <span>
+      Adjunto {mediaId}
+      {onOpenImage ? <button type="button" onClick={() => onOpenImage('blob:test')}>Abrir imagen de prueba</button> : null}
+    </span>
+  ),
+}));
 
 const base: WhatsAppChatMessage = { id: 'm1', waMessageId: 'wa-1', direction: 'outbound', kind: 'text', textBody: 'Hola', templateName: null, occurredAt: '2026-09-27T12:00:00Z', status: 'sent', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} };
 
 describe('MessageBubble', () => {
+  it.each([
+    ['outbound', false],
+    ['inbound', false],
+    ['outbound', true],
+    ['inbound', true],
+  ] as const)('renders a rounded %s bubble without a detached tail when continued is %s', (direction, continued) => {
+    const { container } = render(<MessageBubble message={{ ...base, direction }} continued={continued} />);
+    const bubble = container.querySelector('[data-message-id] > div');
+    expect(bubble?.classList.contains('rounded-[7.5px]')).toBe(true);
+    expect(container.querySelector('svg[viewBox="0 0 8 13"]')).toBeNull();
+  });
+
   it('shows quotes, grouped reactions and accessible message actions', async () => {
     const onReply = vi.fn();
     const onReact = vi.fn();
@@ -17,9 +36,10 @@ describe('MessageBubble', () => {
     expect(screen.getByText('Mensaje anterior')).toBeTruthy();
     expect(screen.getByText('👍 x2')).toBeTruthy();
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
+    await user.click(screen.getByRole('button', { name: 'Reaccionar al mensaje' }));
     await user.click(screen.getByRole('button', { name: 'Reaccionar 👍' }));
     expect(onReact).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }), '');
+    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
     await user.click(screen.getByRole('menuitem', { name: 'Responder' }));
     expect(onReply).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }));
   });
@@ -36,6 +56,48 @@ describe('MessageBubble', () => {
     await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
     await user.click(screen.getByRole('menuitem', { name: 'Reintentar' }));
     expect(onRetry).toHaveBeenCalled();
+  });
+
+  it('confirms before hiding a message and warns it only hides the inbox', async () => {
+    const onHide = vi.fn();
+    render(<MessageBubble message={base} continued={false} onHide={onHide} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Opciones del mensaje' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Eliminar' }));
+
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog.textContent).toMatch(/WhatsApp no permite revocar mensajes/);
+    expect(onHide).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+    expect(onHide).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }));
+  });
+
+  it('wires onOpenImage into the attachment only for image messages', async () => {
+    const onOpenImage = vi.fn();
+    const { rerender } = render(<MessageBubble message={{ ...base, kind: 'image', mediaId: 'img-1', mediaMimeType: 'image/png' }} continued={false} onOpenImage={onOpenImage} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Abrir imagen de prueba' }));
+    expect(onOpenImage).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }), 'blob:test');
+
+    rerender(<MessageBubble message={{ ...base, kind: 'document', mediaId: 'doc-1', mediaMimeType: 'application/pdf' }} continued={false} onOpenImage={onOpenImage} />);
+    expect(screen.queryByRole('button', { name: 'Abrir imagen de prueba' })).toBeNull();
+  });
+
+  it('shows the time only once on an interactive message with a text body', () => {
+    render(<MessageBubble message={{
+      ...base, kind: 'interactive', textBody: '¿Qué servicio desea adquirir?',
+      payload: { buttons: [{ id: 'b1', title: 'Ver planes' }] },
+    }} continued={false} />);
+    expect(screen.getAllByText(/^\d{2}:\d{2}$/)).toHaveLength(1);
+  });
+
+  it('shows the time only once on a list message with a text body', () => {
+    render(<MessageBubble message={{
+      ...base, kind: 'interactive', textBody: 'Elige tu plan',
+      payload: { buttonLabel: 'Ver opciones', rows: [{ id: 'r1', title: 'Netflix' }] },
+    }} continued={false} />);
+    expect(screen.getAllByText(/^\d{2}:\d{2}$/)).toHaveLength(1);
   });
 
   it('renders maps and shared contact details', () => {

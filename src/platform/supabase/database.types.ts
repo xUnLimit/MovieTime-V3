@@ -1729,6 +1729,50 @@ export type Database = {
           },
         ]
       }
+      chat_saved_messages: {
+        Row: {
+          body: string
+          button_label: string | null
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          options: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          button_label?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind: string
+          options?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          button_label?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          options?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_saved_messages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       templates: {
         Row: {
           activo: boolean
@@ -2165,6 +2209,8 @@ export type Database = {
           text_body: string | null
           to_wa_id: string
           updated_at: string
+          hidden_at: string | null
+          hidden_by: string | null
           wa_message_id: string | null
         }
         Insert: {
@@ -2186,6 +2232,8 @@ export type Database = {
           text_body?: string | null
           to_wa_id: string
           updated_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           wa_message_id?: string | null
         }
         Update: {
@@ -2207,6 +2255,8 @@ export type Database = {
           text_body?: string | null
           to_wa_id?: string
           updated_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           wa_message_id?: string | null
         }
         Relationships: []
@@ -2228,6 +2278,8 @@ export type Database = {
           received_at: string
           sent_at: string
           text_body: string | null
+          hidden_at: string | null
+          hidden_by: string | null
           wa_message_id: string
         }
         Insert: {
@@ -2246,6 +2298,8 @@ export type Database = {
           received_at?: string
           sent_at: string
           text_body?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
           wa_message_id: string
         }
         Update: {
@@ -2264,6 +2318,8 @@ export type Database = {
           received_at?: string
           sent_at?: string
           text_body?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
           wa_message_id?: string
         }
         Relationships: []
@@ -3716,6 +3772,7 @@ export type Database = {
       match_yappy_payment: { Args: { p_payment_id: string }; Returns: string }
       resolve_yappy_payment: { Args: { p_payment_id: string; p_venta_id: string; p_note?: string | null }; Returns: string }
       dismiss_yappy_payment: { Args: { p_payment_id: string; p_note: string }; Returns: string }
+      hide_whatsapp_message: { Args: { p_message_id: string; p_direction: string }; Returns: undefined }
       trigger_yappy_sync: { Args: never; Returns: number }
       assert_notification_integrity: {
         Args: { p_notification_id: string }

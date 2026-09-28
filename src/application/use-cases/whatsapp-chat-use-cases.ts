@@ -11,6 +11,7 @@ import {
 import { getCurrentSession } from '@/platform/supabase/auth';
 import { createIdempotencyKey } from '@/platform/supabase/idempotency';
 import {
+  hideWhatsAppMessage,
   listWhatsAppConversations,
   listWhatsAppMessages,
   markWhatsAppConversationUnread,
@@ -55,6 +56,12 @@ export async function markWhatsAppConversationReadUseCase(waId: string, readAt: 
 export async function markWhatsAppConversationUnreadUseCase(waId: string, lastInboundAt: string) {
   assertOnlineMutation();
   await markWhatsAppConversationUnread(waId, lastInboundAt);
+}
+
+// Solo oculta el mensaje en esta bandeja; el cliente lo sigue viendo en su WhatsApp.
+export async function hideWhatsAppMessageUseCase(messageId: string, direction: 'inbound' | 'outbound') {
+  assertOnlineMutation();
+  await hideWhatsAppMessage(messageId, direction);
 }
 
 export async function uploadWhatsAppMediaUseCase(file: Blob, filename: string): Promise<WhatsAppUploadResult> {

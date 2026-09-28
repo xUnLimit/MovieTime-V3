@@ -1,16 +1,8 @@
 import type { WhatsAppChatMessage, WhatsAppSendMessage } from '@/application/use-cases/whatsapp-chat-use-cases';
+import { INTERACTIVE_LIMITS } from '@/modules/whatsapp/interactive-limits';
 import { z } from '@/platform/validation/zod';
 
-// Límites de WhatsApp Cloud API para mensajes interactivos de respuesta.
-export const INTERACTIVE_LIMITS = {
-  body: 1024,
-  buttonTitle: 20,
-  maxButtons: 3,
-  listLabel: 20,
-  rowTitle: 24,
-  rowDescription: 72,
-  maxRows: 10,
-} as const;
+export { INTERACTIVE_LIMITS };
 
 export type InteractiveType = 'buttons' | 'list';
 export type InteractiveOption = { title: string; description: string };

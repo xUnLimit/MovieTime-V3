@@ -67,7 +67,7 @@ describe('ConversationList', () => {
 
     expect(screen.getByRole('tab', { name: 'No leídos (1)' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Todos' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Todos', 'No leídos1', 'Ventana abierta1', 'Sin registrar1']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Todos3', 'No leídos1', 'Ventana abierta1', 'Sin registrar1']);
     await user.click(screen.getByRole('tab', { name: 'Sin registrar (1)' }));
     expect(props.onFilterChange).toHaveBeenCalledWith('sin_registrar');
 
@@ -87,6 +87,18 @@ describe('ConversationList', () => {
 
     await user.type(screen.getByLabelText('Buscar conversación'), '{Escape}');
     expect(props.onSearchChange).toHaveBeenCalledWith('');
+  });
+
+  it('clears search and resets an empty filtered result', async () => {
+    const user = userEvent.setup();
+    const props = renderList({ visible: [], search: 'desconocido', filter: 'no_leidos' });
+
+    await user.click(screen.getByRole('button', { name: 'Limpiar búsqueda' }));
+    expect(props.onSearchChange).toHaveBeenCalledWith('');
+
+    await user.click(screen.getByRole('button', { name: 'Ver todas las conversaciones' }));
+    expect(props.onSearchChange).toHaveBeenLastCalledWith('');
+    expect(props.onFilterChange).toHaveBeenCalledWith('todos');
   });
 
   it('explains empty, filtered and loading states', () => {

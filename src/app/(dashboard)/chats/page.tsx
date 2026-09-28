@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageCircle } from 'lucide-react';
 
@@ -71,6 +70,7 @@ function ChatsPageContent() {
     [conversations, filter, now, search]
   );
   const selected = conversations.find((conversation) => conversation.waId === selectedWaId) ?? null;
+  const missingConversation = Boolean(selectedWaId && !selected && !isLoading);
 
   const select = useCallback((waId: string | null) => {
     router.replace(waId ? `/chats?wa=${waId}` : '/chats', { scroll: false });
@@ -102,23 +102,23 @@ function ChatsPageContent() {
   }, [select, selectedWaId, visible]);
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-4">
-      {/* En el celular, con un chat abierto, el encabezado se oculta para dar espacio a la conversación. */}
-      <div className={cn('space-y-1', selected && 'hidden md:block')}>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Chats de WhatsApp</h1>
-        <p className="text-sm text-muted-foreground">
-          <Link prefetch={false} href="/dashboard" className="transition-colors hover:text-foreground">Dashboard</Link>
-          {' / '}
-          <span className="text-foreground">Chats</span>
-        </p>
-      </div>
-      <div className="grid min-h-0 flex-1 overflow-hidden rounded-xl border bg-background md:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
+    // El area de chats ocupa todo el contenido, sin el padding del layout, como en el prototipo.
+    <div className="chats-surface -m-3 flex h-[calc(100%+1.5rem)] min-w-0 flex-col sm:-m-4 sm:h-[calc(100%+2rem)] md:-m-6 md:h-[calc(100%+3rem)]">
+      {missingConversation ? <p role="status" className="border-b border-chat-line bg-chat-closed px-4 py-3 text-[13px] text-chat-closed-ink md:hidden">No se encontró esa conversación. Elige otro chat de la lista.</p> : null}
+      <div className="grid min-h-0 flex-1 overflow-hidden md:grid-cols-[minmax(286px,350px)_minmax(0,1fr)]">
         <section
           aria-label="Lista de conversaciones"
-          className={cn('min-h-0 border-r', selected ? 'hidden md:block' : 'block')}
+          className={cn('min-h-0 border-chat-line bg-chat-inbox md:border-r', selected ? 'hidden md:block' : 'block')}
         >
           <ConversationList
             ref={searchRef}
+            header={(
+              <>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-chat-accent">MovieTime PTY</p>
+                <h1 className="mb-1 mt-2 font-editorial text-[34px] font-normal leading-[1.1] tracking-[-0.035em] md:text-[clamp(27px,2.3vw,35px)]">Conversaciones</h1>
+                <p className="mb-5 text-[12px] leading-normal text-chat-muted">La atención, con toda la información a mano.</p>
+              </>
+            )}
             visible={visible}
             totalCount={conversations.length}
             counts={counts}
@@ -133,7 +133,7 @@ function ChatsPageContent() {
           />
         </section>
 
-        <section aria-label="Conversación" className={cn('min-h-0 min-w-0', selected ? 'block' : 'hidden md:block')}>
+        <section aria-label="Conversación" className={cn('min-h-0 min-w-0 bg-chat-canvas', selected ? 'block' : 'hidden md:block')}>
           {selected ? (
             <ChatWorkspace
               key={selected.waId}
@@ -145,10 +145,11 @@ function ChatsPageContent() {
               onBack={() => select(null)}
             />
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/25 p-8 text-center">
-              <MessageCircle className="h-10 w-10 text-muted-foreground/60" aria-hidden />
-              <p className="max-w-sm text-sm text-muted-foreground">
-                {selectedWaId && !isLoading
+            <div className="flex h-full flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_50%_0%,var(--chat-glow)_0,var(--chat-canvas)_60%)] p-8 text-center">
+              <span className="mb-1 flex h-16 w-16 items-center justify-center rounded-2xl border border-chat-accent-line bg-chat-accent-soft text-chat-accent-strong"><MessageCircle className="h-7 w-7" aria-hidden /></span>
+              <h2 className="font-editorial text-[24px] font-normal tracking-[-0.02em]">{missingConversation ? 'Chat no disponible' : 'Selecciona una conversación'}</h2>
+              <p className="max-w-sm text-[13px] leading-relaxed text-chat-muted">
+                {missingConversation
                   ? 'No se encontró esa conversación.'
                   : 'Elige un chat para responder. Con Alt + ↑/↓ cambias de chat y con / buscas.'}
               </p>

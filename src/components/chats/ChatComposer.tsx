@@ -1,38 +1,34 @@
 'use client';
 
 import { forwardRef, useEffect, useLayoutEffect, useRef, useImperativeHandle, useState } from 'react';
-import { FileText, ListChecks, Lock, Mic, Paperclip, SendHorizontal, Square, X, Zap } from 'lucide-react';
+import { Bookmark, FileText, ListChecks, Lock, Mic, Paperclip, Plus, Send, Square, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { TemplateMensaje } from '@/types';
 import type { WhatsAppUploadResult } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { useUploadWhatsAppMedia } from '@/hooks/use-whatsapp-chat';
+import type { SavedMessage } from '@/modules/whatsapp/saved-messages';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
+import { cn } from '@/platform/utils/cn';
 import type { ServiceWindow } from './chat-format';
-import type { InteractiveSendMessage } from './chat-interactive';
+import type { InteractiveDraft, InteractiveSendMessage } from './chat-interactive';
+import { AUDIO_EXTENSIONS, AUDIO_RECORDING_PREFERENCE } from './chat-audio-formats';
 import { InteractiveMessageDialog } from './InteractiveMessageDialog';
-
-export type QuickReply = { tipo: TemplateMensaje['tipo']; label: string };
+import { SavedMessagesDialog } from './SavedMessagesDialog';
 
 type ChatComposerProps = {
   draft: string;
   serviceWindow: ServiceWindow;
   isSending: boolean;
-  quickReplies: QuickReply[];
-  quickReplyContext: string | null;
   onDraftChange: (value: string) => void;
   onSend: () => void;
-  onQuickReply: (tipo: QuickReply['tipo']) => void;
   onOpenTemplates: () => void;
   replyTarget?: { waMessageId: string; preview: string } | null;
   onCancelReply?: () => void;
@@ -40,23 +36,14 @@ type ChatComposerProps = {
   onSendInteractive?: (message: InteractiveSendMessage, onDone: () => void) => void;
 };
 
-const MAX_TEXTAREA_PX = 168;
+const MAX_TEXTAREA_PX = 160;
+const TOOL_ICON = 'grid h-10 w-10 shrink-0 place-items-center rounded-[9px] text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const TOOL_ICON_SMALL = 'grid h-[31px] w-[31px] shrink-0 place-items-center rounded-lg text-chat-accent-strong transition-colors hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const MAX_MEDIA_BYTES = 4 * 1024 * 1024;
 type PendingMedia = { file: File; previewUrl: string | null };
 
-// Formatos de audio que WhatsApp Cloud API acepta, en orden de preferencia;
-// audio/webm no esta en esa lista y solo se usa si el navegador no ofrece otro.
-const AUDIO_RECORDING_PREFERENCE = ['audio/mp4', 'audio/aac', 'audio/mpeg', 'audio/ogg', 'audio/webm'];
-const AUDIO_EXTENSIONS: Record<string, string> = {
-  'audio/mp4': 'm4a',
-  'audio/aac': 'aac',
-  'audio/mpeg': 'mp3',
-  'audio/ogg': 'ogg',
-  'audio/webm': 'webm',
-};
-
 export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerProps>(function ChatComposer(
-  { draft, serviceWindow, isSending, quickReplies, quickReplyContext, onDraftChange, onSend, onQuickReply, onOpenTemplates, replyTarget, onCancelReply, onSendMedia, onSendInteractive },
+  { draft, serviceWindow, isSending, onDraftChange, onSend, onOpenTemplates, replyTarget, onCancelReply, onSendMedia, onSendInteractive },
   ref
 ) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -69,7 +56,8 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [interactive, setInteractive] = useState({ open: false, key: 0 });
+  const [interactive, setInteractive] = useState<{ open: boolean; key: number; initialDraft?: InteractiveDraft }>({ open: false, key: 0 });
+  const [savedMessagesOpen, setSavedMessagesOpen] = useState(false);
   const uploadMedia = useUploadWhatsAppMedia();
   useImperativeHandle<HTMLTextAreaElement | null, HTMLTextAreaElement | null>(ref, () => textareaRef.current, []);
 
@@ -172,74 +160,107 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
     }
   };
 
+  const useSavedMessage = (message: SavedMessage) => {
+    setSavedMessagesOpen(false);
+    if (message.kind === 'text') {
+      onDraftChange(message.body);
+      requestAnimationFrame(() => textareaRef.current?.focus());
+      return;
+    }
+    const type = message.kind;
+    setInteractive((current) => ({
+      open: true,
+      key: current.key + 1,
+      initialDraft: {
+        type,
+        body: message.body,
+        buttonLabel: message.buttonLabel,
+        options: message.options,
+      },
+    }));
+  };
+
   if (!serviceWindow.open) {
     return (
-      <div className="flex flex-col gap-3 border-t bg-background px-4 py-3 sm:flex-row sm:items-center">
-        <p className="flex flex-1 items-start gap-2 text-sm text-muted-foreground">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>El cliente no ha escrito en las últimas 24 horas. WhatsApp solo permite enviarle una plantilla aprobada; cuando responda, podrás escribirle libremente.</span>
+      <>
+      <div className="flex flex-col gap-3 border-t border-chat-line bg-chat-surface px-3 pb-[calc(13px+env(safe-area-inset-bottom))] pt-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 md:px-[18px] md:pb-[15px] md:pt-[13px]">
+        <p className="flex flex-1 items-start gap-2 text-[12px] leading-normal text-chat-muted">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-chat-closed-ink" aria-hidden />
+          <span>
+            <strong className="mb-0.5 block text-[13px] text-chat-ink">Ventana de atención cerrada</strong>
+            El cliente no ha escrito en las últimas 24 horas. WhatsApp solo permite enviarle una plantilla aprobada; cuando responda, podrás escribirle libremente.
+          </span>
         </p>
-        <Button type="button" onClick={onOpenTemplates} className="shrink-0">
-          <FileText className="mr-2 h-4 w-4" aria-hidden /> Enviar plantilla
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button type="button" onClick={() => setSavedMessagesOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-[9px] border border-chat-line px-3.5 py-[11px] text-[12px] font-semibold text-chat-ink hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Bookmark className="h-4 w-4" aria-hidden />Gestionar mensajes</button>
+          <button type="button" onClick={onOpenTemplates} className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[9px] bg-chat-accent px-3.5 py-[11px] text-[12px] font-bold text-chat-accent-ink transition-colors hover:bg-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-chat-surface">
+            <FileText className="h-4 w-4" aria-hidden /> Enviar plantilla
+          </button>
+        </div>
       </div>
+      {savedMessagesOpen ? <SavedMessagesDialog open onOpenChange={setSavedMessagesOpen} onUse={useSavedMessage} canUse={false} /> : null}
+      </>
     );
   }
 
-  const canSend = draft.trim().length > 0 && !isSending;
+  const hasDraft = draft.trim().length > 0;
+  const canSend = hasDraft && !isSending;
 
   return (
     <form
-      className="border-t bg-background px-3 py-2.5"
+      className="border-t border-chat-line bg-chat-surface px-3 pb-[calc(13px+env(safe-area-inset-bottom))] pt-2.5 md:px-[18px] md:pb-[15px] md:pt-[13px]"
       onSubmit={(event) => {
         event.preventDefault();
         if (canSend) onSend();
       }}
     >
-      {replyTarget ? <div className="mb-2 flex items-center justify-between rounded border-l-2 border-primary bg-muted/50 px-3 py-1 text-xs"><span className="truncate">Respondiendo a: {replyTarget.preview}</span><Button type="button" size="icon" variant="ghost" className="h-6 w-6" aria-label="Cancelar respuesta" onClick={onCancelReply}><X className="h-3 w-3" /></Button></div> : null}
-      {pendingMedia ? <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm">
-        {pendingMedia.previewUrl ? <Image src={pendingMedia.previewUrl} alt="Vista previa del archivo" width={64} height={64} unoptimized className="h-16 w-16 rounded object-cover" /> : <FileText className="h-5 w-5" />}
+      {replyTarget ? <div className="mb-[11px] flex items-center justify-between gap-3 rounded-lg bg-chat-selected py-1 pl-[13px] pr-1 text-[12px] text-chat-accent-strong"><span className="truncate">Respondiendo a: {replyTarget.preview}</span><button type="button" className={TOOL_ICON_SMALL} aria-label="Cancelar respuesta" onClick={onCancelReply}><X className="h-[15px] w-[15px]" /></button></div> : null}
+      {pendingMedia ? <div className="mb-[11px] flex flex-wrap items-center gap-2 rounded-lg bg-chat-selected p-2 text-[12px] text-chat-accent-strong">
+        {pendingMedia.previewUrl ? <Image src={pendingMedia.previewUrl} alt="Vista previa del archivo" width={64} height={64} unoptimized className="h-16 w-16 rounded-md object-cover" /> : <FileText className="h-5 w-5" aria-hidden />}
         <span className="max-w-40 truncate">{pendingMedia.file.name}</span>
-        {!pendingMedia.file.type.startsWith('audio/') ? <input aria-label="Descripción del archivo" value={caption} onChange={(event) => setCaption(event.target.value)} className="min-w-32 flex-1 rounded border bg-background px-2 py-1" placeholder="Descripción opcional" /> : null}
-        <Button type="button" size="sm" variant="ghost" onClick={clearMedia}>Cancelar</Button>
-        <Button type="button" size="sm" disabled={uploading || isSending} onClick={() => void sendMedia()}>Enviar archivo</Button>
+        {!pendingMedia.file.type.startsWith('audio/') ? <input aria-label="Descripción del archivo" value={caption} onChange={(event) => setCaption(event.target.value)} className="min-w-32 flex-1 rounded-lg border border-chat-line bg-chat-raised px-2.5 py-1.5 text-[16px] text-chat-ink outline-none placeholder:text-chat-quiet focus:border-chat-accent sm:text-[13px]" placeholder="Descripción opcional" /> : null}
+        <button type="button" className="rounded-lg px-3 py-2 text-chat-muted transition-colors hover:bg-chat-hover hover:text-chat-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={clearMedia}>Cancelar</button>
+        <button type="button" className="rounded-lg bg-chat-accent px-3 py-2 font-bold text-chat-accent-ink transition-colors hover:bg-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-45" disabled={uploading || isSending} onClick={() => void sendMedia()}>Enviar archivo</button>
       </div> : null}
-      <div className="flex items-end gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Respuestas rápidas">
-            <Zap className="h-5 w-5" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" side="top" className="w-72">
-          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-            {quickReplyContext ? `Con los datos de ${quickReplyContext}` : 'Elige una venta en el panel del cliente para llenar los datos'}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {quickReplies.length === 0 ? (
-            <DropdownMenuItem disabled>No hay plantillas activas en el editor</DropdownMenuItem>
-          ) : quickReplies.map((reply) => (
-            <DropdownMenuItem key={reply.tipo} disabled={!quickReplyContext} onSelect={() => onQuickReply(reply.tipo)}>
-              {reply.label}
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={onOpenTemplates}>
-            <FileText className="mr-2 h-4 w-4" aria-hidden /> Plantillas de Meta
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-end gap-1.5">
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf,audio/*" className="sr-only" aria-label="Seleccionar archivo" onChange={(event) => { const file = event.target.files?.[0]; if (file) selectFile(file); }} />
+        {recording ? (
+          <div className="flex h-[42px] items-center gap-1 rounded-[11px] bg-chat-closed pl-3 text-[12px] tabular-nums text-chat-closed-ink">
+            <span className="h-2 w-2 rounded-full bg-current motion-safe:animate-pulse" aria-hidden />
+            <span>{Math.floor(recordSeconds / 60)}:{String(recordSeconds % 60).padStart(2, '0')}</span>
+            <button type="button" className={TOOL_ICON} aria-label="Cancelar grabación" onClick={() => stopRecording(false)}><X className="h-4 w-4" /></button>
+          </div>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className={cn(TOOL_ICON, 'mb-px data-[state=open]:bg-chat-selected data-[state=open]:text-chat-accent-strong')} aria-label="Abrir acciones" title="Adjuntar o usar plantillas">
+                <Plus className="h-[19px] w-[19px]" strokeWidth={1.6} aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="top" className="chat-menu w-64">
+              <DropdownMenuItem onSelect={() => fileRef.current?.click()}><Paperclip className="mr-2 h-4 w-4" aria-hidden /> Adjuntar archivo</DropdownMenuItem>
+              {onSendInteractive ? <DropdownMenuItem onSelect={() => setInteractive((current) => ({ open: true, key: current.key + 1 }))}><ListChecks className="mr-2 h-4 w-4" aria-hidden /> Botones o lista</DropdownMenuItem> : null}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onOpenTemplates}>
+                <FileText className="mr-2 h-4 w-4" aria-hidden /> Plantillas de Meta
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
-      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf,audio/*" className="sr-only" aria-label="Seleccionar archivo" onChange={(event) => { const file = event.target.files?.[0]; if (file) selectFile(file); }} />
-      <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Adjuntar archivo" onClick={() => fileRef.current?.click()}><Paperclip className="h-5 w-5" /></Button>
-      {onSendInteractive ? <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0" aria-label="Botones o lista" onClick={() => setInteractive((current) => ({ open: true, key: current.key + 1 }))}><ListChecks className="h-5 w-5" /></Button> : null}
-      {recording ? <div className="flex items-center gap-1 text-xs tabular-nums"><span>{Math.floor(recordSeconds / 60)}:{String(recordSeconds % 60).padStart(2, '0')}</span><Button type="button" size="icon" variant="ghost" aria-label="Cancelar grabación" onClick={() => stopRecording(false)}><X className="h-4 w-4" /></Button><Button type="button" size="icon" variant="ghost" aria-label="Detener grabación" onClick={() => stopRecording(true)}><Square className="h-4 w-4" /></Button></div> : <Button type="button" size="icon" variant="ghost" className="h-10 w-10 shrink-0" aria-label="Grabar audio" onClick={() => void startRecording()}><Mic className="h-5 w-5" /></Button>}
+        {!recording ? (
+          <button type="button" className={cn(TOOL_ICON, 'mb-px')} aria-label="Mensajes guardados" title="Mensajes guardados" onClick={() => setSavedMessagesOpen(true)}>
+            <Bookmark className="h-[19px] w-[19px]" strokeWidth={1.6} aria-hidden />
+          </button>
+        ) : null}
 
-      <div className="min-w-0 flex-1">
         <textarea
           ref={textareaRef}
           value={draft}
-          onChange={(event) => onDraftChange(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value;
+            onDraftChange(value);
+          }}
           onPaste={(event) => { const image = Array.from(event.clipboardData.files).find((file) => file.type.startsWith('image/')); if (image) { event.preventDefault(); selectFile(image); } }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -251,21 +272,24 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
           aria-label="Mensaje"
           rows={1}
           maxLength={4096}
-          className="block w-full resize-none rounded-2xl border border-input bg-muted/40 px-4 py-2.5 text-[15px] leading-snug outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="block min-h-[42px] min-w-0 flex-1 resize-none rounded-[11px] border border-chat-line bg-chat-raised px-[13px] py-[11px] text-[16px] leading-[1.4] text-chat-ink outline-none transition-colors placeholder:text-chat-quiet focus:border-chat-accent md:text-[14px]"
         />
-      </div>
 
-      <Button
-        type="submit"
-        size="icon"
-        disabled={!canSend}
-        className="h-10 w-10 shrink-0 rounded-full"
-        aria-label="Enviar mensaje"
-      >
-        <SendHorizontal className="h-5 w-5" aria-hidden />
-      </Button>
+        <button
+          type={hasDraft ? 'submit' : 'button'}
+          disabled={hasDraft ? isSending : recording}
+          onClick={hasDraft ? undefined : () => void startRecording()}
+          className="grid h-[42px] min-w-[42px] shrink-0 place-items-center rounded-[10px] bg-chat-accent text-chat-accent-ink transition-[background-color,transform] duration-150 ease-out hover:bg-chat-accent-strong active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-chat-surface disabled:pointer-events-none disabled:opacity-45"
+          aria-label={hasDraft ? 'Enviar mensaje' : 'Grabar audio'}
+        >
+          {hasDraft ? <Send className="h-[19px] w-[19px]" strokeWidth={1.6} aria-hidden /> : <Mic className="h-[19px] w-[19px]" strokeWidth={1.6} aria-hidden />}
+        </button>
+        {recording ? (
+          <button type="button" className={cn(TOOL_ICON, 'bg-chat-accent text-chat-accent-ink hover:bg-chat-accent-strong')} aria-label="Detener grabación" onClick={() => stopRecording(true)}><Square className="h-4 w-4" /></button>
+        ) : null}
       </div>
-      {onSendInteractive ? <InteractiveMessageDialog key={interactive.key} open={interactive.open} isSending={isSending}
+      {savedMessagesOpen ? <SavedMessagesDialog open onOpenChange={setSavedMessagesOpen} onUse={useSavedMessage} /> : null}
+      {onSendInteractive ? <InteractiveMessageDialog key={interactive.key} open={interactive.open} isSending={isSending} initialDraft={interactive.initialDraft}
         onOpenChange={(open) => setInteractive((current) => ({ ...current, open }))}
         onSend={(message) => onSendInteractive(message, () => setInteractive((current) => ({ ...current, open: false })))} /> : null}
     </form>

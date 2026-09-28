@@ -4,7 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const upload = vi.hoisted(() => vi.fn());
 const toastError = vi.hoisted(() => vi.fn());
+const saved = vi.hoisted(() => ({ messages: [] as unknown[] }));
 vi.mock('@/hooks/use-whatsapp-chat', () => ({ useUploadWhatsAppMedia: () => ({ mutateAsync: upload }) }));
+vi.mock('@/hooks/use-chat-saved-messages', () => ({
+  useChatSavedMessages: () => ({ data: saved.messages, isLoading: false, isError: false, refetch: vi.fn() }),
+  useSaveChatMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteChatMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
 vi.mock('sonner', () => ({ toast: { error: toastError } }));
 
 import { ChatComposer } from './ChatComposer';
@@ -42,11 +48,8 @@ function renderComposer(overrides: Partial<Parameters<typeof ChatComposer>[0]> =
     draft: '',
     serviceWindow: { open: true as const, hoursLeft: 20 },
     isSending: false,
-    quickReplies: [{ tipo: 'dia_pago' as const, label: 'Día de pago' }],
-    quickReplyContext: 'Netflix',
     onDraftChange: vi.fn(),
     onSend: vi.fn(),
-    onQuickReply: vi.fn(),
     onOpenTemplates: vi.fn(),
     ...overrides,
   };
@@ -72,6 +75,7 @@ describe('ChatComposer voice notes', () => {
     const user = userEvent.setup();
     renderComposer({ onSendMedia: vi.fn() });
 
+    // Con el borrador vacio, el mismo boton de enviar graba audio (como en WhatsApp).
     await user.click(screen.getByRole('button', { name: 'Grabar audio' }));
     await user.click(screen.getByRole('button', { name: 'Detener grabación' }));
 
@@ -113,6 +117,28 @@ describe('ChatComposer voice notes', () => {
 });
 
 describe('ChatComposer', () => {
+  it('copies a saved text message into the composer for review', async () => {
+    const user = userEvent.setup();
+    saved.messages = [{ id: '11111111-1111-4111-8111-111111111111', title: 'Saludo', kind: 'text', body: 'Hola', buttonLabel: '', options: [] }];
+    const props = renderComposer();
+    await user.click(screen.getByRole('button', { name: 'Mensajes guardados' }));
+    await user.click(screen.getByRole('button', { name: 'Usar en chat' }));
+    expect(props.onDraftChange).toHaveBeenCalledWith('Hola');
+    expect(props.onSend).not.toHaveBeenCalled();
+    saved.messages = [];
+  });
+
+  it('opens saved interactive content for review before sending', async () => {
+    const user = userEvent.setup();
+    saved.messages = [{ id: '11111111-1111-4111-8111-111111111111', title: 'Planes', kind: 'list', body: 'Elige un plan', buttonLabel: 'Ver planes', options: [{ title: 'Mensual', description: 'Un mes' }] }];
+    const props = renderComposer({ onSendInteractive: vi.fn() });
+    await user.click(screen.getByRole('button', { name: 'Mensajes guardados' }));
+    await user.click(screen.getByRole('button', { name: 'Usar en chat' }));
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Texto del mensaje' }).value).toBe('Elige un plan');
+    expect(props.onSendInteractive).not.toHaveBeenCalled();
+    saved.messages = [];
+  });
+
   it('rejects files larger than 4 MB before upload', async () => {
     upload.mockClear();
     toastError.mockClear();
@@ -156,42 +182,58 @@ describe('ChatComposer', () => {
     expect(props.onDraftChange).toHaveBeenCalled();
   });
 
+  it('shows a mic button with an empty draft and switches to send once there is text', async () => {
+    const user = userEvent.setup();
+    const props = renderComposer({ draft: '' });
+
+    expect(screen.getByRole('button', { name: 'Grabar audio' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Enviar mensaje' })).toBeNull();
+
+    await user.type(screen.getByLabelText('Mensaje'), 'Hola');
+    expect(props.onDraftChange).toHaveBeenCalled();
+  });
+
   it('does not send empty drafts or while sending', async () => {
     const user = userEvent.setup();
-    const props = renderComposer({ draft: '   ' });
+    const props = renderComposer({ draft: 'Hola', isSending: true });
 
     expect((screen.getByRole('button', { name: 'Enviar mensaje' }) as HTMLButtonElement).disabled).toBe(true);
     await user.type(screen.getByLabelText('Mensaje'), '{Enter}');
     expect(props.onSend).not.toHaveBeenCalled();
   });
 
-  it('offers quick replies filled from the selected sale and Meta templates', async () => {
-    const user = userEvent.setup();
+  it('shows the shared message library without requiring a sale', () => {
+    renderComposer();
+    expect(screen.getByRole('button', { name: 'Mensajes guardados' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Respuestas rápidas' })).toBeNull();
+  });
+
+  it('keeps slash as ordinary message text', async () => {
     const props = renderComposer();
-
-    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas' }));
-    expect(screen.getByText('Con los datos de Netflix')).toBeTruthy();
-    await user.click(screen.getByRole('menuitem', { name: 'Día de pago' }));
-    expect(props.onQuickReply).toHaveBeenCalledWith('dia_pago');
-
-    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas' }));
-    await user.click(screen.getByRole('menuitem', { name: /Plantillas de Meta/ }));
-    expect(props.onOpenTemplates).toHaveBeenCalled();
+    await userEvent.setup().type(screen.getByLabelText('Mensaje'), '/');
+    expect(props.onDraftChange).toHaveBeenCalledWith('/');
   });
 
-  it('explains when no sale or template is available', async () => {
+  it('groups attach and templates in the actions menu, without a separate recording item', async () => {
     const user = userEvent.setup();
-    renderComposer({ quickReplyContext: null });
-    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas' }));
-    expect(screen.getByText(/Elige una venta/)).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: 'Día de pago' }).getAttribute('aria-disabled')).toBe('true');
+    renderComposer();
+    const fileInput = screen.getByLabelText('Seleccionar archivo') as HTMLInputElement;
+    const pickFile = vi.spyOn(fileInput, 'click');
+
+    await user.click(screen.getByRole('button', { name: 'Abrir acciones' }));
+    expect(screen.queryByRole('menuitem', { name: 'Grabar audio' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Botones o lista' })).toBeNull();
+    await user.click(screen.getByRole('menuitem', { name: 'Adjuntar archivo' }));
+    expect(pickFile).toHaveBeenCalledOnce();
   });
 
-  it('shows an empty quick reply list', async () => {
+  it('offers interactive messages from the actions menu when they can be sent', async () => {
     const user = userEvent.setup();
-    renderComposer({ quickReplies: [] });
-    await user.click(screen.getByRole('button', { name: 'Respuestas rápidas' }));
-    expect(screen.getByText('No hay plantillas activas en el editor')).toBeTruthy();
+    renderComposer({ onSendInteractive: vi.fn() });
+
+    await user.click(screen.getByRole('button', { name: 'Abrir acciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Botones o lista' }));
+    expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
   it('switches to a template notice when the 24 hour window is closed', async () => {
@@ -200,6 +242,7 @@ describe('ChatComposer', () => {
 
     expect(screen.queryByLabelText('Mensaje')).toBeNull();
     expect(screen.getByText(/no ha escrito en las últimas 24 horas/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Gestionar mensajes' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Enviar plantilla' }));
     expect(props.onOpenTemplates).toHaveBeenCalled();
   });

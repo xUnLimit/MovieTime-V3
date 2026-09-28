@@ -11,6 +11,7 @@ const deps = vi.hoisted(() => ({
   listWhatsAppConversations: vi.fn(),
   listWhatsAppMessages: vi.fn(),
   markWhatsAppConversationUnread: vi.fn(),
+  hideWhatsAppMessage: vi.fn(),
   fetchVentaDetalleQuery: vi.fn(),
 }));
 
@@ -27,6 +28,7 @@ vi.mock('@/platform/supabase/whatsapp-chat-repository', () => ({
   listWhatsAppConversations: deps.listWhatsAppConversations,
   listWhatsAppMessages: deps.listWhatsAppMessages,
   markWhatsAppConversationUnread: deps.markWhatsAppConversationUnread,
+  hideWhatsAppMessage: deps.hideWhatsAppMessage,
 }));
 vi.mock('./ventas/venta-detail-query-use-cases', () => ({ fetchVentaDetalleQuery: deps.fetchVentaDetalleQuery }));
 
@@ -35,6 +37,7 @@ import {
   fetchWhatsAppConversationsUseCase,
   fetchWhatsAppMediaUseCase,
   fetchWhatsAppMessagesUseCase,
+  hideWhatsAppMessageUseCase,
   markWhatsAppConversationReadUseCase,
   markWhatsAppConversationUnreadUseCase,
   sendWhatsAppMessageUseCase,
@@ -126,6 +129,14 @@ describe('WhatsApp chat use cases', () => {
       throw new Error('offline');
     });
     await expect(markWhatsAppConversationUnreadUseCase('507', 'x')).rejects.toThrow('offline');
+  });
+
+  it('hides a message from the inbox only, and only when online', async () => {
+    await hideWhatsAppMessageUseCase('m1', 'inbound');
+    expect(deps.hideWhatsAppMessage).toHaveBeenCalledWith('m1', 'inbound');
+
+    deps.assertOnlineMutation.mockImplementation(() => { throw new Error('offline'); });
+    await expect(hideWhatsAppMessageUseCase('m1', 'outbound')).rejects.toThrow('offline');
   });
 
   it('builds the message context from the sale detail', async () => {

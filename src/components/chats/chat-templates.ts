@@ -4,7 +4,6 @@ import {
   greetingFor,
   type VentaMessageContext,
 } from '@/platform/utils/whatsapp-template-render';
-import type { TemplateMensaje } from '@/types';
 import { CHAT_TEMPLATES, type ChatTemplate } from './chat-format';
 
 // Valores de cada plantilla de Meta en el orden de sus {{n}}, a partir de la venta.
@@ -35,32 +34,4 @@ export function suggestMetaTemplate(fechaVencimiento: Date | null, now: Date): C
   if (due < today) return 'servicio_suspendido';
   if (due === today) return 'vence_hoy';
   return 'recordatorio_vencimiento';
-}
-
-export const QUICK_REPLY_ORDER: TemplateMensaje['tipo'][] = [
-  'notificacion_regular',
-  'dia_pago',
-  'renovacion',
-  'suscripcion',
-  'actualizacion_credenciales',
-  'transferencia_servicio',
-  'cancelacion',
-];
-
-export const QUICK_REPLY_LABELS: Record<TemplateMensaje['tipo'], string> = {
-  notificacion_regular: 'Recordatorio de pago',
-  dia_pago: 'Día de pago',
-  renovacion: 'Renovación exitosa',
-  suscripcion: 'Datos de acceso',
-  actualizacion_credenciales: 'Actualización de credenciales',
-  transferencia_servicio: 'Transferencia de servicio',
-  cancelacion: 'Corte de servicio',
-};
-
-// Una respuesta por tipo: la plantilla activa mas reciente del editor.
-export function quickRepliesFrom(templates: readonly TemplateMensaje[]) {
-  return QUICK_REPLY_ORDER.flatMap((tipo) => {
-    const template = templates.find((item) => item.tipo === tipo && item.activo !== false);
-    return template ? [{ tipo, label: QUICK_REPLY_LABELS[tipo], contenido: template.contenido }] : [];
-  });
 }

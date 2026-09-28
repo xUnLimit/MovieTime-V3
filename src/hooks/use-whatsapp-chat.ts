@@ -8,6 +8,7 @@ import {
   fetchWhatsAppConversationsUseCase,
   fetchWhatsAppMediaUseCase,
   fetchWhatsAppMessagesUseCase,
+  hideWhatsAppMessageUseCase,
   markWhatsAppConversationReadUseCase,
   markWhatsAppConversationUnreadUseCase,
   sendWhatsAppMessageUseCase,
@@ -105,6 +106,31 @@ export function useMarkWhatsAppConversationUnread() {
       ));
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.whatsapp.conversations() }),
+  });
+}
+
+// Quita el mensaje de la bandeja al instante; si el servidor falla, la
+// recarga de onSettled lo trae de vuelta.
+export function useHideWhatsAppMessage(waId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId, direction }: { messageId: string; direction: 'inbound' | 'outbound' }) =>
+      hideWhatsAppMessageUseCase(messageId, direction),
+    onMutate: async ({ messageId }) => {
+      const key = queryKeys.whatsapp.messages(waId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<WhatsAppChatMessage[]>(key);
+      queryClient.setQueryData<WhatsAppChatMessage[]>(key, (current = []) =>
+        current.filter((message) => message.id !== messageId));
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.whatsapp.messages(waId), context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.whatsapp.messages(waId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.whatsapp.conversations() });
+    },
   });
 }
 

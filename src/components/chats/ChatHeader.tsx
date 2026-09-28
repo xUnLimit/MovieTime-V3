@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Clock3, EllipsisVertical, Mail, PanelRight, Search, UserRound } from 'lucide-react';
+import { ArrowLeft, Ellipsis, Mail, PanelRight, PanelRightClose, Search, UserRound } from 'lucide-react';
 
 import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,31 +18,35 @@ type ChatHeaderProps = {
   conversation: WhatsAppConversation;
   serviceWindow: ServiceWindow;
   panelOpen: boolean;
+  searchOpen?: boolean;
   onBack: () => void;
   onTogglePanel: () => void;
   onMarkUnread: () => void;
   onToggleSearch?: () => void;
 };
 
-export function ChatHeader({ conversation, serviceWindow, panelOpen, onBack, onTogglePanel, onMarkUnread, onToggleSearch }: ChatHeaderProps) {
+const HEADER_ICON = 'grid h-[35px] w-[35px] shrink-0 place-items-center rounded-[9px] text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 md:w-10';
+const HEADER_ICON_ACTIVE = 'bg-chat-selected text-chat-accent-strong';
+
+export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen = false, onBack, onTogglePanel, onMarkUnread, onToggleSearch }: ChatHeaderProps) {
   const title = conversationTitle(conversation);
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-2 sm:px-3">
-      <Button type="button" variant="ghost" size="icon" className="md:hidden" onClick={onBack} aria-label="Volver a la lista">
-        <ArrowLeft className="h-5 w-5" />
-      </Button>
+    <header className="flex min-h-[68px] shrink-0 items-center gap-[7px] border-b border-chat-line-soft bg-chat-surface px-3 py-2.5 md:min-h-[78px] md:gap-3 md:px-[22px] md:py-[13px]">
+      <button type="button" className={cn(HEADER_ICON, 'md:hidden')} onClick={onBack} aria-label="Volver a la lista">
+        <ArrowLeft className="h-[19px] w-[19px]" strokeWidth={1.6} />
+      </button>
 
       <button
         type="button"
         onClick={onTogglePanel}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-1 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="-ml-1 flex min-w-0 flex-1 items-center gap-2 rounded-[10px] p-1 text-left transition-colors hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3"
         aria-label={`Ver ficha de ${title}`}
       >
         <ChatAvatar name={title} seed={conversation.waId} size="sm" />
         <span className="min-w-0">
-          <span className="block truncate font-semibold leading-tight">{title}</span>
-          <span className="block truncate text-xs text-muted-foreground">
+          <span className="block truncate text-[13px] font-bold leading-tight text-chat-ink md:text-[16px]">{title}</span>
+          <span className="mt-[3px] block truncate text-[10px] tabular-nums text-chat-muted md:text-[12px]">
             {formatWaId(conversation.waId)}
             {conversation.terceroId ? '' : ' · No registrado'}
           </span>
@@ -52,35 +55,32 @@ export function ChatHeader({ conversation, serviceWindow, panelOpen, onBack, onT
 
       <span
         className={cn(
-          'hidden shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:inline-flex',
-          serviceWindow.open ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted text-muted-foreground'
+          'hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-[7px] text-[11px] sm:inline-flex',
+          serviceWindow.open ? 'bg-chat-open text-chat-open-ink' : 'bg-chat-closed text-chat-closed-ink'
         )}
         title="WhatsApp permite texto libre durante 24 h desde el último mensaje del cliente"
       >
-        <Clock3 className="h-3.5 w-3.5" aria-hidden />
-        {serviceWindow.open ? `Ventana ${serviceWindow.hoursLeft} h` : 'Ventana cerrada'}
+        <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+        {serviceWindow.open ? `Ventana abierta · ${serviceWindow.hoursLeft} h` : 'Ventana cerrada'}
       </span>
 
-      <Button
-        type="button"
-        variant={panelOpen ? 'secondary' : 'ghost'}
-        size="icon"
-        className="hidden md:inline-flex"
-        onClick={onTogglePanel}
-        aria-label={panelOpen ? 'Ocultar ficha del cliente' : 'Mostrar ficha del cliente'}
-        aria-pressed={panelOpen}
-      >
-        <PanelRight className="h-5 w-5" />
-      </Button>
+      {onToggleSearch ? (
+        <button type="button" className={cn(HEADER_ICON, searchOpen && HEADER_ICON_ACTIVE)} onClick={onToggleSearch} aria-label={searchOpen ? 'Cerrar búsqueda en la conversación' : 'Buscar en la conversación'} aria-pressed={searchOpen}>
+          <Search className="h-[19px] w-[19px]" strokeWidth={1.6} aria-hidden />
+        </button>
+      ) : null}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" aria-label="Más opciones">
-            <EllipsisVertical className="h-5 w-5" />
-          </Button>
+          <button type="button" className={HEADER_ICON} aria-label="Más opciones">
+            <Ellipsis className="h-[19px] w-[19px]" strokeWidth={1.6} />
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={onToggleSearch}><Search className="mr-2 h-4 w-4" aria-hidden /> Buscar en la conversación</DropdownMenuItem>
+        <DropdownMenuContent align="end" className="chat-menu min-w-[190px]">
+          <DropdownMenuItem onSelect={onTogglePanel}>
+            {panelOpen ? <PanelRightClose className="mr-2 h-4 w-4" aria-hidden /> : <PanelRight className="mr-2 h-4 w-4" aria-hidden />}
+            {panelOpen ? 'Ocultar ficha del cliente' : 'Mostrar ficha del cliente'}
+          </DropdownMenuItem>
           {conversation.terceroId ? (
             <DropdownMenuItem asChild>
               <Link prefetch={false} href={`/terceros/${conversation.terceroId}`}>

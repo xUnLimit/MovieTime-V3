@@ -67,8 +67,8 @@ describe('ChatsPage', () => {
     const user = userEvent.setup();
     render(<ChatsPage />);
 
-    expect(screen.getByRole('heading', { name: 'Chats de WhatsApp' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Dashboard' }).getAttribute('href')).toBe('/dashboard');
+    expect(screen.getByRole('heading', { level: 1, name: 'Conversaciones' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Selecciona una conversación' })).toBeTruthy();
     expect(screen.getByText(/Elige un chat para responder/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: /Mary/ }));
     expect(state.replace).toHaveBeenCalledWith('/chats?wa=50760000000', { scroll: false });
@@ -137,6 +137,7 @@ describe('ChatsPage', () => {
     state.wa = '50799999999';
     const { unmount } = render(<ChatsPage />);
     expect(screen.getByText('No se encontró esa conversación.')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('Elige otro chat de la lista.');
     unmount();
 
     state.wa = 'javascript:alert(1)';

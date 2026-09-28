@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, MessageSquareText } from 'lucide-react';
 
 import type { WhatsAppChatMessage } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,13 +22,15 @@ type MessageTimelineProps = {
   onReact?: (message: WhatsAppChatMessage, emoji: string) => void;
   onForward?: (message: WhatsAppChatMessage) => void;
   onRetry?: (message: WhatsAppChatMessage) => void;
+  onHide?: (message: WhatsAppChatMessage) => void;
+  onOpenImage?: (message: WhatsAppChatMessage, objectUrl: string) => void;
   canRetry?: (message: WhatsAppChatMessage) => boolean;
 };
 
 // Distancia al final (px) dentro de la cual se sigue "pegado" a los mensajes nuevos.
 const STICKY_THRESHOLD = 120;
 
-export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQuery = '', matchIds, activeMatchIndex = 0, onReply, onReact, onForward, onRetry, canRetry }: MessageTimelineProps) {
+export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQuery = '', matchIds, activeMatchIndex = 0, onReply, onReact, onForward, onRetry, onHide, onOpenImage, canRetry }: MessageTimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
   const seenCount = useRef(messages.length);
@@ -97,7 +99,7 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
           setAtBottom(bottom);
           if (bottom) setUnseen(0);
         }}
-        className="h-full overflow-y-auto overscroll-contain bg-muted/25 py-3"
+        className="h-full overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_50%_0%,var(--chat-glow)_0,var(--chat-canvas)_60%)] pb-[22px] pt-[17px] md:pb-[25px] md:pt-[22px]"
       >
         {isLoading ? (
           <div className="space-y-3 px-6 py-4" aria-hidden>
@@ -106,29 +108,31 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
             <Skeleton className="h-8 w-1/3 rounded-2xl" />
           </div>
         ) : visibleMessages.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">Aún no hay mensajes en esta conversación.</p>
+          <div className="flex min-h-full flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+            <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-chat-raised text-chat-quiet"><MessageSquareText className="h-5 w-5" aria-hidden /></span>
+            <p className="text-[14px] font-bold text-chat-ink">Aún no hay mensajes en esta conversación.</p>
+            <p className="max-w-64 text-[13px] text-chat-muted">Los mensajes aparecerán aquí cuando se inicie el chat.</p>
+          </div>
         ) : (
-          <ol aria-label="Mensajes" className="pb-2">
+          <ol aria-label="Mensajes" className="flex min-h-full flex-col justify-end pb-2">
             {items.map((item) => {
               if (item.type === 'day') {
                 return (
                   <li key={item.key} className="sticky top-1 z-10 flex justify-center py-2">
-                    <span className="rounded-lg bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur">
-                      {item.label}
-                    </span>
+                    <span className="rounded-lg bg-chat-raised px-3 py-1 text-[11.5px] font-medium text-chat-muted shadow-sm">{item.label}</span>
                   </li>
                 );
               }
               if (item.type === 'unread') {
                 return (
-                  <li key={item.key} data-unread-divider className="my-2 flex justify-center bg-primary/10 py-1.5">
-                    <span className="text-xs font-medium text-primary">
+                  <li key={item.key} data-unread-divider className="mx-3 my-3 flex justify-center rounded-lg border border-chat-accent-line bg-chat-accent-soft py-1.5 sm:mx-6">
+                    <span className="text-[11px] font-bold text-chat-accent-strong">
                       {item.count === 1 ? '1 mensaje sin leer' : `${item.count} mensajes sin leer`}
                     </span>
                   </li>
                 );
               }
-              return <MessageBubble key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} onReply={onReply} onReact={onReact} onForward={onForward} onRetry={onRetry} canRetry={canRetry} />;
+              return <MessageBubble key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} onReply={onReply} onReact={onReact} onForward={onForward} onRetry={onRetry} onHide={onHide} onOpenImage={onOpenImage} canRetry={canRetry} />;
             })}
           </ol>
         )}
@@ -139,11 +143,11 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
           type="button"
           onClick={() => scrollToBottom('smooth')}
           aria-label={unseen > 0 ? `Ir a ${unseen} mensajes nuevos` : 'Ir al final'}
-          className="absolute bottom-3 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-background text-foreground shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute bottom-3 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-chat-line bg-chat-raised text-chat-ink shadow-[0_14px_42px_rgb(0_0_0/0.35)] transition-[transform,background-color] duration-150 ease-out hover:bg-chat-hover active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowDown className="h-5 w-5" aria-hidden />
           {unseen > 0 ? (
-            <span className="absolute -top-1.5 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
+            <span className="absolute -right-1 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chat-accent px-1 text-[10px] font-extrabold text-chat-accent-ink">
               {unseen}
             </span>
           ) : null}

@@ -24,30 +24,38 @@ function venta(id: string, fechaFin: Date | null, overrides: Partial<VentaTercer
   };
 }
 
-const replies = [
-  { tipo: 'notificacion_regular' as const, label: 'Recordatorio de pago' },
-  { tipo: 'suscripcion' as const, label: 'Datos de acceso' },
-  { tipo: 'cancelacion' as const, label: 'Corte de servicio' },
-];
-
 describe('ChatHeader', () => {
   it('shows the contact, the service window and the chat actions', async () => {
     const user = userEvent.setup();
     const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn() };
     render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen {...handlers} />);
 
-    expect(screen.getByText('Ventana 23 h')).toBeTruthy();
+    expect(screen.getByText('Ventana abierta · 23 h')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Ver ficha de María Pérez' }));
-    await user.click(screen.getByRole('button', { name: 'Ocultar ficha del cliente' }));
-    expect(handlers.onTogglePanel).toHaveBeenCalledTimes(2);
+    expect(handlers.onTogglePanel).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByRole('button', { name: 'Volver a la lista' }));
     expect(handlers.onBack).toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    expect(screen.getByRole('menuitem', { name: 'Ocultar ficha del cliente' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: /Abrir cliente/ }).getAttribute('href')).toBe('/terceros/t1');
     await user.click(screen.getByRole('menuitem', { name: /Marcar como no leído/ }));
     expect(handlers.onMarkUnread).toHaveBeenCalled();
+  });
+
+  it('toggles the customer panel from the overflow menu, with its own label per state', async () => {
+    const user = userEvent.setup();
+    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn() };
+    const { rerender } = render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen={false} {...handlers} />);
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mostrar ficha del cliente' }));
+    expect(handlers.onTogglePanel).toHaveBeenCalledTimes(1);
+
+    rerender(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen {...handlers} />);
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    expect(screen.getByRole('menuitem', { name: 'Ocultar ficha del cliente' })).toBeTruthy();
   });
 
   it('shows a closed window and hides client links for unregistered numbers', async () => {
@@ -68,6 +76,17 @@ describe('ChatHeader', () => {
     await user.click(screen.getByRole('button', { name: 'Más opciones' }));
     expect(screen.queryByRole('menuitem', { name: /Abrir cliente/ })).toBeNull();
   });
+
+  it('keeps conversation search visible and reports its open state', async () => {
+    const user = userEvent.setup();
+    const onToggleSearch = vi.fn();
+    const view = render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} searchOpen={false} onBack={vi.fn()} onTogglePanel={vi.fn()} onMarkUnread={vi.fn()} onToggleSearch={onToggleSearch} />);
+
+    await user.click(screen.getByRole('button', { name: 'Buscar en la conversación' }));
+    expect(onToggleSearch).toHaveBeenCalledOnce();
+    view.rerender(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} searchOpen onBack={vi.fn()} onTogglePanel={vi.fn()} onMarkUnread={vi.fn()} onToggleSearch={onToggleSearch} />);
+    expect(screen.getByRole('button', { name: 'Cerrar búsqueda en la conversación' }).getAttribute('aria-pressed')).toBe('true');
+  });
 });
 
 describe('CustomerPanel', () => {
@@ -78,10 +97,8 @@ describe('CustomerPanel', () => {
       activas: [venta('a', new Date(2026, 8, 27)), venta('b', new Date(2026, 9, 20), { perfilNumero: null })],
       ventasLoading: false,
       selectedVentaId: 'a',
-      quickReplies: replies,
       now: NOW,
       onSelectVenta: vi.fn(),
-      onQuickReply: vi.fn(),
       onOpenTemplate: vi.fn(),
       onClose: vi.fn(),
       ...overrides,
@@ -90,7 +107,7 @@ describe('CustomerPanel', () => {
     return props;
   }
 
-  it('lists active sales with urgency and fills messages for the selected one', async () => {
+  it('lists active sales with urgency and lets the team choose one for Meta templates', async () => {
     const user = userEvent.setup();
     const props = renderPanel();
 
@@ -104,9 +121,7 @@ describe('CustomerPanel', () => {
     await user.click(screen.getByRole('radio', { name: /Servicio b/ }));
     expect(props.onSelectVenta).toHaveBeenCalledWith('b');
 
-    await user.click(screen.getByRole('button', { name: 'Datos de acceso' }));
-    expect(props.onQuickReply).toHaveBeenCalledWith('suscripcion');
-    expect(screen.queryByRole('button', { name: 'Corte de servicio' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Datos de acceso' })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Cerrar ficha' }));
     expect(props.onClose).toHaveBeenCalled();
@@ -128,10 +143,8 @@ describe('CustomerPanel', () => {
         activas={[venta('late', new Date(2026, 8, 25)), venta('soon', new Date(2026, 8, 28)), venta('none', null)]}
         ventasLoading={false}
         selectedVentaId={null}
-        quickReplies={replies}
         now={NOW}
         onSelectVenta={vi.fn()}
-        onQuickReply={vi.fn()}
         onOpenTemplate={vi.fn()}
         onClose={vi.fn()}
       />

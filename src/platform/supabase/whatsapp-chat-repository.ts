@@ -1,3 +1,4 @@
+import { assertUuid } from '@/platform/utils/safety';
 import { supabase } from './client';
 
 export type WhatsAppConversation = {
@@ -101,4 +102,14 @@ export async function markWhatsAppConversationRead(waId: string, readAt: string)
 export async function markWhatsAppConversationUnread(waId: string, lastInboundAt: string): Promise<void> {
   const readAt = new Date(new Date(lastInboundAt).getTime() - 1).toISOString();
   await markWhatsAppConversationRead(waId, readAt);
+}
+
+// Oculta el mensaje solo en esta bandeja: la API de WhatsApp no ofrece forma de
+// revocarlo del telefono del cliente, asi que esto nunca le llega a Meta.
+export async function hideWhatsAppMessage(messageId: string, direction: 'inbound' | 'outbound'): Promise<void> {
+  const { error } = await supabase.rpc('hide_whatsapp_message', {
+    p_message_id: assertUuid(messageId, 'mensaje'),
+    p_direction: direction,
+  });
+  if (error) throw error;
 }

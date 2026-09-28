@@ -15,11 +15,16 @@ vi.mock('./client', () => {
     calls.push({ method: 'upsert', args });
     return { error: result.value.error };
   };
+  builder.rpc = async (...args: unknown[]) => {
+    calls.push({ method: 'rpc', args });
+    return { error: result.value.error };
+  };
   builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result.value).then(resolve);
   return { supabase: builder };
 });
 
 import {
+  hideWhatsAppMessage,
   listWhatsAppConversations,
   listWhatsAppMessages,
   markWhatsAppConversationRead,
@@ -106,4 +111,20 @@ describe('whatsapp chat repository', () => {
     });
   });
 
+  it('hides a message via RPC with a validated UUID and propagates write errors', async () => {
+    const messageId = '11111111-1111-4111-8111-111111111111';
+    await hideWhatsAppMessage(messageId, 'inbound');
+    expect(calls).toContainEqual({
+      method: 'rpc',
+      args: ['hide_whatsapp_message', { p_message_id: messageId, p_direction: 'inbound' }],
+    });
+
+    result.value.error = new Error('forbidden');
+    await expect(hideWhatsAppMessage(messageId, 'outbound')).rejects.toThrow('forbidden');
+  });
+
+  it('rejects a non-UUID message id before calling the RPC', async () => {
+    await expect(hideWhatsAppMessage('not-a-uuid', 'inbound')).rejects.toThrow();
+    expect(calls.some((call) => call.method === 'rpc')).toBe(false);
+  });
 });

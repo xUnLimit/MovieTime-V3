@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>MovieTime PTY · Prototipo de chats</title>
+  <style>
+    :root {
+      --canvas: #0d0c12;
+      --rail: #09080e;
+      --surface: #17151f;
+      --surface-raised: #211e2c;
+      --surface-hover: #2b2738;
+      --line: #393444;
+      --line-soft: #2b2835;
+      --ink: #f4f1f8;
+      --muted: #c3becd;
+      --quiet: #aaa5b7;
+      --accent: #c7aaff;
+      --accent-strong: #decaff;
+      --green: #a9d2b4;
+      --red: #e4a69d;
+      --focus: #d9bdff;
+      font-family: "Aptos", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+      font-size: 15px;
+      color: var(--ink);
+      background: var(--canvas);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-width: 320px; height: 100%; }
+    body { overflow: hidden; }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+    ::selection { background: #a783e5; color: #100b1b; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #514b60; border-radius: 20px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .icon { width: 19px; height: 19px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .icon.small { width: 15px; height: 15px; }
+    .app { display: grid; grid-template-columns: 78px minmax(286px, 350px) minmax(0, 1fr) 306px; height: 100dvh; min-height: 0; background: var(--canvas); }
+    .rail { background: var(--rail); border-right: 1px solid var(--line-soft); display: flex; flex-direction: column; align-items: center; padding: 23px 9px 20px; gap: 31px; }
+    .mark { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #936ec5; border-radius: 14px; color: var(--accent); font-family: "Iowan Old Style", Baskerville, Georgia, serif; font-size: 27px; font-style: italic; line-height: 1; letter-spacing: -.12em; padding-right: 5px; }
+    .rail-link { width: 60px; min-height: 62px; border: 0; border-radius: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; background: #302340; color: var(--accent-strong); font-size: 10px; letter-spacing: .03em; }
+    .rail-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .rail-bottom .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px #a9d2b41e; }
+    .rail-bottom span { color: var(--quiet); font-size: 10px; text-align: center; line-height: 1.35; }
+    .inbox { min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: #14121b; }
+    .inbox-head { padding: 26px 21px 16px; border-bottom: 1px solid var(--line-soft); }
+    .inbox-head .small-heading { color: var(--accent); text-transform: uppercase; letter-spacing: .22em; font-size: 10px; font-weight: 700; }
+    .inbox-head h1 { font-family: "Iowan Old Style", Baskerville, Georgia, serif; font-size: clamp(27px, 2.3vw, 35px); letter-spacing: -.035em; line-height: 1.1; font-weight: 400; margin: 9px 0 4px; }
+    .inbox-head p { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0 0 21px; }
+    .search-shell { height: 43px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 1px solid #4b4558; background: #201d29; border-radius: 11px; color: var(--quiet); }
+    .search-shell:focus-within { border-color: var(--accent); }
+    .search-shell input { width: 100%; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--ink); font-size: 13px; }
+    .search-shell input::placeholder, textarea::placeholder { color: #aaa4b7; opacity: 1; }
+    .search-shell kbd { font-size: 11px; color: var(--quiet); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+    .filters { display: flex; gap: 7px; overflow-x: auto; padding: 15px 0 2px; scrollbar-width: none; }
+    .filters::-webkit-scrollbar { display: none; }
+    .filter { border: 1px solid #433d50; border-radius: 8px; background: transparent; color: var(--muted); white-space: nowrap; min-height: 34px; padding: 0 10px; font-size: 12px; }
+    .filter.active { border-color: #b997ef; color: #1b102c; background: var(--accent); font-weight: 700; }
+    .filter:not(.active):hover { color: var(--ink); background: var(--surface-hover); }
+    .filter-count { margin-left: 4px; opacity: .72; font-variant-numeric: tabular-nums; }
+    .list-meta { display: flex; justify-content: space-between; align-items: center; padding: 15px 21px 8px; color: var(--quiet); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+    .conversation-list { overflow: auto; min-height: 0; flex: 1; padding: 0 9px 12px; }
+    .conversation { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: start; gap: 11px; width: 100%; border: 1px solid transparent; border-radius: 11px; background: transparent; color: inherit; text-align: left; padding: 12px 10px; min-height: 79px; margin: 2px 0; }
+    .conversation:hover { background: #24202f; }
+    .conversation.selected { background: #2e243d; border-color: #674f86; }
+    .avatar { display: grid; place-items: center; border-radius: 50%; width: 40px; height: 40px; background: #574470; color: #f5efff; font-size: 13px; font-weight: 700; letter-spacing: -.03em; }
+    .avatar.alt { background: #67506d; }
+    .avatar.third { background: #48536e; }
+    .conversation-copy { min-width: 0; }
+    .conversation-name { font-size: 14px; font-weight: 700; line-height: 1.25; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conversation-preview { color: var(--muted); display: block; font-size: 13px; line-height: 1.4; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conversation-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; font-size: 11px; color: var(--quiet); font-variant-numeric: tabular-nums; }
+    .unread { display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 50px; background: var(--accent); color: #1c112e; font-weight: 800; font-size: 10px; }
+    .inbox-foot { padding: 14px 21px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; gap: 8px; color: var(--quiet); font-size: 11px; }
+    .inbox-foot .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .thread { display: flex; min-width: 0; min-height: 0; flex-direction: column; background: #111019; }
+    .thread-head { display: flex; align-items: center; gap: 12px; min-height: 78px; padding: 13px 22px; border-bottom: 1px solid var(--line-soft); background: #191621; }
+    .back { display: none !important; }
+    .thread-person { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+    .thread-person .avatar { width: 43px; height: 43px; flex: none; }
+    .thread-person strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px; }
+    .thread-person small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .window-status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border-radius: 6px; background: #203127; color: #bbe1c5; padding: 7px 10px; font-size: 11px; }
+    .window-status.closed { background: #332637; color: #e7bed8; }
+    .window-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .icon-btn { width: 40px; height: 40px; flex: none; border: 0; border-radius: 9px; display: grid; place-items: center; color: var(--muted); background: transparent; }
+    .icon-btn:hover, .icon-btn.active { color: var(--accent-strong); background: #352943; }
+    .thread-find { display: none; align-items: center; gap: 9px; background: #201c29; border-bottom: 1px solid var(--line); padding: 8px 20px; }
+    .thread-find.open { display: flex; }
+    .thread-find input { flex: 1; min-width: 0; background: transparent; color: var(--ink); border: 0; outline: 0; font-size: 13px; }
+    .thread-find span { color: var(--muted); font-size: 11px; min-width: 35px; text-align: center; }
+    .thread-find .icon-btn { width: 31px; height: 31px; }
+    .messages { min-height: 0; flex: 1; overflow: auto; padding: 22px clamp(17px, 3vw, 48px) 25px; background: radial-gradient(circle at 50% 0%, #211b2a 0, #111019 60%); }
+    .message-stack { min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+    .date-divider { display: flex; align-items: center; gap: 16px; margin: 2px 0 25px; color: var(--quiet); font-size: 11px; justify-content: center; }
+    .date-divider::before, .date-divider::after { content: ""; height: 1px; background: var(--line-soft); width: min(100px, 15%); }
+    .message-row { display: flex; gap: 8px; margin-top: 13px; align-items: flex-start; }
+    .message-row.outbound { flex-direction: row-reverse; }
+    .bubble { max-width: min(78%, 540px); border-radius: 12px; background: #292631; border: 1px solid #3c3647; padding: 12px 14px 9px; color: var(--ink); line-height: 1.52; font-size: 14px; overflow-wrap: anywhere; }
+    .outbound .bubble { background: #443056; border-color: #775995; color: #fbf5ff; }
+    .bubble p { white-space: pre-wrap; margin: 0; }
+    .bubble .quote { border-left: 1px solid var(--accent); padding-left: 9px; margin-bottom: 9px; color: #e5d0ff; font-size: 11px; }
+    .bubble-footer { display: flex; justify-content: flex-end; gap: 6px; align-items: center; margin-top: 6px; color: #c8c3d1; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .outbound .bubble-footer { color: #e3cee9; }
+    .message-menu-button { width: 28px; height: 28px; margin-top: 4px; border: 0; border-radius: 7px; background: transparent; color: var(--quiet); opacity: .3; }
+    .message-row:hover .message-menu-button, .message-menu-button:focus-visible { opacity: 1; background: #2a2533; }
+    .message-menu-button .icon { width: 16px; height: 16px; }
+    .reaction { display: inline-block; margin-top: 6px; padding: 3px 7px; border-radius: 8px; border: 1px solid #8669a3; color: #ead7ff; background: #3c2c4c; font-size: 11px; }
+    .attachment { display: flex; align-items: center; gap: 10px; margin: 4px 0; border-radius: 8px; background: #ffffff12; padding: 10px; color: inherit; text-decoration: none; }
+    .attachment .file-icon { width: 32px; height: 35px; display: grid; place-items: center; border-radius: 6px; background: var(--accent); color: #20112f; font-size: 10px; font-weight: 800; }
+    .attachment strong { display: block; font-size: 12px; }
+    .attachment small { color: var(--muted); font-size: 10px; }
+    mark { background: #bc9ae9; color: #1a1028; border-radius: 2px; }
+    .composer { border-top: 1px solid var(--line); padding: 13px 18px 15px; background: #191621; }
+    .reply-banner, .file-banner { display: none; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px 8px 13px; margin: 0 0 11px; border-radius: 8px; background: #30283b; color: #ead8ff; font-size: 12px; }
+    .reply-banner.open, .file-banner.open { display: flex; }
+    .composer-main { display: flex; align-items: flex-end; gap: 8px; }
+    .composer-main textarea { flex: 1; min-width: 0; max-height: 160px; resize: none; min-height: 42px; border: 1px solid #51495e; border-radius: 11px; background: #24202e; color: var(--ink); padding: 11px 13px; line-height: 1.4; font-size: 14px; outline: 0; }
+    .composer-main textarea:focus { border-color: var(--accent); }
+    .send { height: 42px; min-width: 42px; display: grid; place-items: center; border: 0; border-radius: 10px; background: var(--accent); color: #1b102b; }
+    .send:hover:not(:disabled) { background: var(--accent-strong); }
+    .composer-tools { display: flex; justify-content: flex-end; margin-top: 9px; color: var(--quiet); font-size: 11px; }
+    .closed-composer { display: none; align-items: center; justify-content: space-between; gap: 16px; }
+    .closed-composer p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .closed-composer strong { display: block; color: var(--ink); font-size: 13px; margin-bottom: 2px; }
+    .template-send { background: var(--accent); color: #1b102b; border: 0; border-radius: 9px; font-weight: 700; font-size: 12px; padding: 11px 14px; white-space: nowrap; }
+    .composer.is-closed .composer-normal { display: none; }
+    .composer.is-closed .closed-composer { display: flex; }
+    .details { min-width: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: #191720; }
+    .details-head { height: 78px; padding: 0 20px; border-bottom: 1px solid var(--line-soft); display: flex; justify-content: space-between; align-items: center; }
+    .details-head h2 { margin: 0; font-family: "Iowan Old Style", Baskerville, Georgia, serif; font-size: 21px; font-weight: 400; }
+    .details-content { overflow: auto; padding: 22px 20px; }
+    .client-hero { display: flex; align-items: center; gap: 12px; padding-bottom: 21px; border-bottom: 1px solid var(--line); }
+    .client-hero .avatar { width: 51px; height: 51px; font-size: 15px; }
+    .client-hero strong { display: block; font-size: 15px; }
+    .client-hero small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+    .detail-section { padding: 22px 0; border-bottom: 1px solid var(--line); }
+    .detail-section h3 { margin: 0 0 15px; color: var(--quiet); text-transform: uppercase; letter-spacing: .15em; font-size: 10px; font-weight: 700; }
+    .service-name { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .service-name strong { font-size: 15px; }
+    .service-state { color: var(--green); font-size: 11px; }
+    .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+    .service-grid span { display: block; color: var(--quiet); font-size: 11px; margin-bottom: 5px; }
+    .service-grid strong { font-size: 14px; }
+    .due { color: var(--accent-strong); }
+    .detail-action { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 42px; border: 1px solid #71528e; border-radius: 9px; color: var(--accent-strong); background: #2c2338; padding: 0 12px; font-size: 12px; text-align: left; }
+    .detail-action:hover { background: #392b49; }
+    .detail-note { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 0; }
+    .prototype-note { margin-top: 23px; color: var(--quiet); font-size: 11px; line-height: 1.5; }
+    .menu { position: fixed; z-index: 20; min-width: 190px; padding: 6px; border: 1px solid #5c4a70; border-radius: 11px; background: #282231; box-shadow: 0 14px 42px #0009; display: none; }
+    .menu.open { display: block; }
+    .menu button { width: 100%; text-align: left; border: 0; background: transparent; color: var(--ink); border-radius: 7px; padding: 9px 10px; font-size: 12px; display: flex; align-items: center; gap: 9px; }
+    .menu button:hover, .menu button:focus-visible { background: #463554; }
+    .menu button .icon { color: var(--accent); }
+    .menu .menu-label { padding: 7px 10px 4px; color: var(--quiet); text-transform: uppercase; letter-spacing: .1em; font-size: 10px; }
+    .toast { position: fixed; z-index: 30; bottom: 24px; left: 50%; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; border-radius: 9px; background: #ece4f5; color: #20172b; padding: 11px 16px; font-size: 12px; box-shadow: 0 14px 42px #0008; transition: opacity .2s ease-out, transform .2s ease-out; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .list-empty { padding: 40px 20px; color: var(--muted); text-align: center; font-size: 12px; }
+    .list-empty strong { color: var(--ink); display: block; font-size: 14px; margin-bottom: 8px; }
+    .list-empty button { color: var(--accent); background: transparent; border: 0; margin-top: 15px; text-decoration: underline; text-underline-offset: 4px; }
+    .thread-empty { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; }
+    .app.details-hidden { grid-template-columns: 78px minmax(286px, 350px) minmax(0, 1fr); }
+    .app.details-hidden .details { display: none; }
+    @media (max-width: 1250px) {
+      .app, .app.details-hidden { grid-template-columns: 66px minmax(275px, 330px) minmax(0, 1fr); }
+      .rail { padding-left: 3px; padding-right: 3px; }
+      .details { position: fixed; z-index: 15; top: 0; bottom: 0; right: 0; width: min(350px, 90vw); border-left: 1px solid #665378; box-shadow: -18px 0 50px #0008; display: none; }
+      .app:not(.details-hidden) .details { display: flex; }
+    }
+    @media (max-width: 760px) {
+      .app, .app.details-hidden { display: block; height: 100dvh; }
+      .rail { display: none; }
+      .inbox { height: 100dvh; border-right: 0; }
+      .app.show-thread .inbox { display: none; }
+      .thread { display: none; height: 100dvh; }
+      .app.show-thread .thread { display: flex; }
+      .inbox-head { padding-top: calc(20px + env(safe-area-inset-top)); }
+      .inbox-head h1 { font-size: 34px; }
+      .conversation { min-height: 84px; }
+      .thread-head { min-height: 68px; padding: 10px 12px; gap: 7px; }
+      .thread-head .back { display: grid !important; }
+      .thread-person { gap: 8px; }
+      .thread-person .avatar { width: 36px; height: 36px; }
+      .thread-person strong { font-size: 13px; }
+      .thread-person small { font-size: 10px; }
+      .window-status { display: none; }
+      .thread-head .icon-btn { width: 35px; height: 35px; }
+      .messages { padding: 17px 13px 22px; }
+      .bubble { max-width: 85%; }
+      .composer { padding: 10px 12px calc(13px + env(safe-area-inset-bottom)); }
+      .composer-main textarea { font-size: 16px; }
+      .composer-tools { display: none; }
+      .details { width: 100vw; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <svg class="sr-only" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 20l1-4.4A8.5 8.5 0 1 1 20 11.5Z"/><path d="M8 11.5h8"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 11 18-8-6 18-3.4-7.6L3 11Z"/><path d="M11.6 13.4 21 3"/></symbol>
+    <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m8 12.5 5.5-5.5a3 3 0 0 1 4.2 4.2l-7.2 7.2a5 5 0 0 1-7.1-7.1l7.7-7.7"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7M8 12h13"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 14 7-7 7 7"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m5 10 7 7 7-7"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 13h6M9 17h6"/></symbol>
+  </svg>
+  <div class="app details-hidden" id="app">
+    <aside class="rail" aria-label="Marca y sección">
+      <div class="mark" aria-label="MovieTime">Mt</div>
+      <div class="rail-link" aria-current="page"><svg class="icon"><use href="#i-chat"/></svg><span>Chats</span></div>
+      <div class="rail-bottom"><span class="dot"></span><span>Demo local<br>sin conexión</span></div>
+    </aside>
+    <section class="inbox" aria-label="Lista de conversaciones">
+      <div class="inbox-head">
+        <span class="small-heading">MovieTime PTY</span>
+        <h1>Conversaciones</h1>
+        <p>La atención, con toda la información a mano.</p>
+        <label class="search-shell"><svg class="icon"><use href="#i-search"/></svg><span class="sr-only">Buscar conversación</span><input id="conversation-search" type="search" placeholder="Nombre, número o mensaje" autocomplete="off"><kbd>/</kbd></label>
+        <div class="filters" id="filters" role="tablist" aria-label="Filtrar conversaciones"></div>
+      </div>
+      <div class="list-meta"><span>Recientes</span><span id="list-count"></span></div>
+      <div class="conversation-list" id="conversation-list"></div>
+      <div class="inbox-foot"><span class="dot"></span><span>Prototipo interactivo · datos de ejemplo</span></div>
+    </section>
+    <main class="thread" aria-label="Conversación activa">
+      <header class="thread-head">
+        <button class="icon-btn back" id="back-to-list" type="button" aria-label="Volver a conversaciones"><svg class="icon"><use href="#i-arrow-left"/></svg></button>
+        <div class="thread-person"><span class="avatar" id="thread-avatar"></span><div><strong id="thread-name"></strong><small id="thread-phone"></small></div></div>
+        <span class="window-status" id="window-status"><span class="dot"></span><span></span></span>
+        <button class="icon-btn" id="toggle-thread-search" type="button" aria-label="Buscar en esta conversación" title="Buscar en esta conversación"><svg class="icon"><use href="#i-search"/></svg></button>
+        <button class="icon-btn" id="toggle-details" type="button" aria-label="Mostrar ficha del cliente" title="Ficha del cliente"><svg class="icon"><use href="#i-panel"/></svg></button>
+        <button class="icon-btn" id="more-actions" type="button" aria-label="Más acciones" title="Más acciones"><svg class="icon"><use href="#i-more"/></svg></button>
+      </header>
+      <div class="thread-find" id="thread-find"><svg class="icon small"><use href="#i-search"/></svg><label class="sr-only" for="message-search">Buscar mensaje</label><input id="message-search" placeholder="Buscar en los mensajes"><span id="match-count">0/0</span><button class="icon-btn" id="previous-match" type="button" aria-label="Resultado anterior"><svg class="icon small"><use href="#i-up"/></svg></button><button class="icon-btn" id="next-match" type="button" aria-label="Resultado siguiente"><svg class="icon small"><use href="#i-down"/></svg></button><button class="icon-btn" id="close-thread-search" type="button" aria-label="Cerrar búsqueda"><svg class="icon small"><use href="#i-x"/></svg></button></div>
+      <div class="messages" id="messages" role="log" aria-label="Mensajes" aria-live="polite"></div>
+      <div class="composer" id="composer">
+        <div class="composer-normal">
+          <div class="reply-banner" id="reply-banner"><span id="reply-label"></span><button class="icon-btn" id="cancel-reply" type="button" aria-label="Cancelar respuesta"><svg class="icon small"><use href="#i-x"/></svg></button></div>
+          <div class="file-banner" id="file-banner"><span id="file-label"></span><button class="icon-btn" id="cancel-file" type="button" aria-label="Quitar archivo"><svg class="icon small"><use href="#i-x"/></svg></button></div>
+          <form id="send-form"><div class="composer-main"><button class="icon-btn" id="quick-open" type="button" aria-label="Abrir acciones" aria-haspopup="menu" aria-controls="menu" aria-expanded="false" title="Adjuntar o usar plantillas"><svg class="icon"><use href="#i-plus"/></svg></button><label class="sr-only" for="message-input">Mensaje</label><textarea id="message-input" rows="1" maxlength="4096" placeholder="Escribe un mensaje"></textarea><button class="send" id="send-button" type="submit" aria-label="Enviar mensaje"><svg class="icon"><use href="#i-send"/></svg></button></div></form>
+          <input id="file-input" class="sr-only" type="file" accept="image/*,application/pdf,audio/*" aria-label="Seleccionar archivo">
+          <div class="composer-tools"><span>Enter para enviar · Shift + Enter para salto de línea</span></div>
+        </div>
+        <div class="closed-composer"><p><strong>Ventana de atención cerrada</strong>WhatsApp requiere una plantilla aprobada para iniciar una nueva respuesta.</p><button class="template-send" id="closed-template" type="button">Enviar plantilla</button></div>
+      </div>
+    </main>
+    <aside class="details" id="details" aria-label="Ficha del cliente"><div class="details-head"><h2>Ficha del cliente</h2><button class="icon-btn" id="close-details" type="button" aria-label="Cerrar ficha"><svg class="icon"><use href="#i-x"/></svg></button></div><div class="details-content" id="details-content"></div></aside>
+  </div>
+  <div class="menu" id="menu" role="menu"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const seed = [
+      { id: '50760000000', name: 'María Pérez', initials: 'MP', phone: '+507 6000-0000', service: 'Netflix', amount: '$4.50', due: 'Vence hoy', registered: true, open: true, unread: 2, time: '10:42', messages: [
+        { id: 'm1', direction: 'inbound', text: 'Hola, buenos días. ¿Me ayudas con la renovación de Netflix?', time: '10:21' },
+        { id: 'm2', direction: 'outbound', text: '¡Hola, María! Claro. Tu plan vence hoy y el monto es $4.50.', time: '10:24', status: '✓✓' },
+        { id: 'm3', direction: 'inbound', text: 'Ya realicé el pago. Te comparto el comprobante.', time: '10:39' },
+        { id: 'm4', direction: 'inbound', kind: 'file', name: 'comprobante.pdf', size: 'PDF · 248 KB', time: '10:40' },
+        { id: 'm5', direction: 'outbound', text: 'Gracias, lo reviso y te confirmo en unos minutos.', time: '10:41', status: '✓✓' },
+        { id: 'm6', direction: 'inbound', text: 'Perfecto, quedo atenta.', time: '10:42' },
+      ] },
+      { id: '50761111111', name: 'Carlos Mendoza', initials: 'CM', phone: '+507 6111-1111', service: 'Disney+', amount: '$5.00', due: 'Vence en 3 días', registered: true, open: true, unread: 1, time: '09:18', messages: [
+        { id: 'c1', direction: 'inbound', text: 'Buenos días, ¿puedo renovar mi servicio esta semana?', time: '09:16' },
+        { id: 'c2', direction: 'outbound', text: 'Claro, Carlos. Tu servicio vence en 3 días. Si quieres, te envío los datos de pago.', time: '09:17', status: '✓✓' },
+        { id: 'c3', direction: 'inbound', text: 'Perfecto, muchas gracias.', time: '09:18' },
+      ] },
+      { id: '50762222222', name: 'Ana Rodríguez', initials: 'AR', phone: '+507 6222-2222', service: 'Max', amount: '$4.00', due: 'Vence en 8 días', registered: true, open: false, unread: 0, time: 'Ayer', messages: [
+        { id: 'a1', direction: 'inbound', text: '¿Aún tienen disponibilidad para Max?', time: '16:12' },
+        { id: 'a2', direction: 'outbound', text: 'Hola, Ana. Te confirmo la disponibilidad en breve.', time: '16:14', status: '✓✓' },
+      ] },
+      { id: '50763333333', name: 'Javier Torres', initials: 'JT', phone: '+507 6333-3333', service: null, amount: null, due: null, registered: false, open: true, unread: 0, time: 'Ayer', messages: [
+        { id: 'j1', direction: 'inbound', text: 'Hola, quisiera información sobre sus servicios.', time: '14:22' },
+      ] },
+      { id: '50764444444', name: 'Lucía Fernández', initials: 'LF', phone: '+507 6444-4444', service: 'Prime Video', amount: '$3.50', due: 'Vence en 11 días', registered: true, open: true, unread: 0, time: 'Lun', messages: [
+        { id: 'l1', direction: 'inbound', text: 'Gracias por la ayuda.', time: '12:08' },
+        { id: 'l2', direction: 'outbound', text: 'A la orden, Lucía.', time: '12:10', status: '✓✓' },
+      ] },
+    ];
+    const conversations = structuredClone(seed);
+    const state = { selectedId: conversations[0].id, filter: 'all', search: '', messageSearch: '', matchIndex: 0, replyingTo: null, pendingFile: null, detailsOpen: innerWidth > 1250, menuAction: null };
+    const $ = (id) => document.getElementById(id);
+    const icon = (name, small = false) => `<svg class="icon${small ? ' small' : ''}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+    const current = () => conversations.find((item) => item.id === state.selectedId);
+    const preview = (item) => { const last = item.messages.at(-1); return last?.kind === 'file' ? `Archivo: ${last.name}` : (last?.direction === 'outbound' ? 'Tú: ' : '') + (last?.text || 'Aún no hay mensajes'); };
+    const nowTime = () => new Intl.DateTimeFormat('es-PA', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+    let toastTimer;
+    function toast(message) { $('toast').textContent = message; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3000); }
+    function renderFilters() {
+      const filters = [ ['all', 'Todos'], ['unread', 'No leídos'], ['open', 'Ventana abierta'], ['unknown', 'Sin registrar'] ];
+      $('filters').innerHTML = filters.map(([id, label]) => {
+        const count = conversations.filter((item) => id === 'all' || (id === 'unread' && item.unread) || (id === 'open' && item.open) || (id === 'unknown' && !item.registered)).length;
+        return `<button class="filter${state.filter === id ? ' active' : ''}" type="button" role="tab" aria-selected="${state.filter === id}" data-filter="${id}">${label}<span class="filter-count">${count}</span></button>`;
+      }).join('');
+    }
+    function visibleConversations() {
+      const term = state.search.trim().toLocaleLowerCase('es');
+      return conversations.filter((item) => {
+        const matchesFilter = state.filter === 'all' || (state.filter === 'unread' && item.unread) || (state.filter === 'open' && item.open) || (state.filter === 'unknown' && !item.registered);
+        return matchesFilter && (!term || `${item.name} ${item.phone} ${preview(item)}`.toLocaleLowerCase('es').includes(term));
+      });
+    }
+    function renderList() {
+      renderFilters();
+      const visible = visibleConversations();
+      $('list-count').textContent = `${visible.length} de ${conversations.length}`;
+      $('conversation-list').innerHTML = visible.length ? visible.map((item, index) => `<button class="conversation${state.selectedId === item.id ? ' selected' : ''}" type="button" data-id="${item.id}" aria-current="${state.selectedId === item.id ? 'true' : 'false'}"><span class="avatar ${index % 3 === 1 ? 'alt' : index % 3 === 2 ? 'third' : ''}">${escapeHtml(item.initials)}</span><span class="conversation-copy"><span class="conversation-name">${escapeHtml(item.name)}</span><span class="conversation-preview">${escapeHtml(preview(item))}</span></span><span class="conversation-meta"><span>${escapeHtml(item.time)}</span>${item.unread ? `<span class="unread" aria-label="${item.unread} sin leer">${item.unread}</span>` : ''}</span></button>`).join('') : '<div class="list-empty"><strong>Sin conversaciones</strong>No hay chats que coincidan con la búsqueda o el filtro.<br><button type="button" id="reset-filters">Ver todas</button></div>';
+    }
+    function matches() { const term = state.messageSearch.trim().toLocaleLowerCase('es'); return term ? current().messages.filter((message) => (message.text || message.name || '').toLocaleLowerCase('es').includes(term)) : []; }
+    function highlighted(text) {
+      const query = state.messageSearch.trim();
+      if (!query) return escapeHtml(text);
+      const lower = String(text).toLocaleLowerCase('es');
+      const needle = query.toLocaleLowerCase('es');
+      let from = 0, at, output = '';
+      while ((at = lower.indexOf(needle, from)) !== -1) { output += escapeHtml(text.slice(from, at)) + `<mark>${escapeHtml(text.slice(at, at + query.length))}</mark>`; from = at + query.length; }
+      return output + escapeHtml(text.slice(from));
+    }
+    function renderMessages(keepScroll = false) {
+      const box = $('messages');
+      const before = box.scrollTop;
+      const item = current();
+      box.innerHTML = `<div class="message-stack"><div class="date-divider">Hoy</div>` + (item.messages.length ? item.messages.map((message) => {
+        const content = message.kind === 'file' ? `<div class="attachment"><span class="file-icon">${message.name?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'FILE'}</span><span><strong>${highlighted(message.name)}</strong><small>${escapeHtml(message.size || 'Archivo local')}</small></span></div>` : `<p>${highlighted(message.text)}</p>`;
+        const quote = message.quote ? `<div class="quote">${escapeHtml(message.quote)}</div>` : '';
+        return `<div class="message-row ${message.direction === 'outbound' ? 'outbound' : ''}" data-message-id="${message.id}"><div class="bubble">${quote}${content}<div class="bubble-footer"><span>${escapeHtml(message.time)}</span>${message.status ? `<span aria-label="Entregado">${escapeHtml(message.status)}</span>` : ''}</div>${message.reaction ? `<span class="reaction">${escapeHtml(message.reaction)}</span>` : ''}</div><button class="message-menu-button" type="button" data-message-menu="${message.id}" aria-label="Opciones del mensaje" title="Opciones del mensaje">${icon('more')}</button></div>`;
+      }).join('') : '<div class="thread-empty">Aún no hay mensajes en esta conversación.</div>') + '</div>';
+      box.scrollTop = keepScroll ? before : box.scrollHeight;
+      renderMatchCount();
+    }
+    function renderMatchCount() { const found = matches(); state.matchIndex = Math.min(state.matchIndex, Math.max(0, found.length - 1)); $('match-count').textContent = found.length ? `${state.matchIndex + 1}/${found.length}` : '0/0'; $('previous-match').disabled = !found.length; $('next-match').disabled = !found.length; }
+    function jumpMatch(step) { const found = matches(); if (!found.length) return; state.matchIndex = (state.matchIndex + step + found.length) % found.length; renderMatchCount(); document.querySelector(`[data-message-id="${found[state.matchIndex].id}"]`)?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); }
+    function renderDetails() {
+      const item = current();
+      $('details-content').innerHTML = `<div class="client-hero"><span class="avatar">${escapeHtml(item.initials)}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.phone)}</small></div></div><section class="detail-section"><h3>Servicio actual</h3>${item.service ? `<div class="service-name"><strong>${escapeHtml(item.service)}</strong><span class="service-state">Activo</span></div><div class="service-grid"><div><span>Monto</span><strong>${escapeHtml(item.amount)}</strong></div><div><span>Vencimiento</span><strong class="due">${escapeHtml(item.due)}</strong></div></div>` : '<p class="detail-note">Este contacto aún no tiene un servicio asociado.</p>'}</section><section class="detail-section"><h3>Contexto</h3><p class="detail-note">${item.registered ? 'Cliente registrado. Puedes consultar su servicio antes de responder.' : 'Número sin registrar. La ficha se completará cuando lo registres en el sistema.'}</p></section><section class="detail-section"><h3>Acciones rápidas</h3><button class="detail-action" id="reminder-action" type="button">Preparar recordatorio ${icon('send', true)}</button></section><p class="prototype-note">Esta es una demo local con datos ficticios. Las acciones no envían mensajes a WhatsApp ni modifican clientes reales.</p>`;
+    }
+    function renderHeader() {
+      const item = current();
+      $('thread-avatar').textContent = item.initials;
+      $('thread-name').textContent = item.name;
+      $('thread-phone').textContent = item.phone;
+      $('window-status').classList.toggle('closed', !item.open);
+      $('window-status').lastElementChild.textContent = item.open ? 'Ventana abierta' : 'Ventana cerrada';
+      $('composer').classList.toggle('is-closed', !item.open);
+      $('app').classList.toggle('details-hidden', !state.detailsOpen);
+      $('toggle-details').classList.toggle('active', state.detailsOpen);
+      $('toggle-details').setAttribute('aria-label', state.detailsOpen ? 'Ocultar ficha del cliente' : 'Mostrar ficha del cliente');
+    }
+    function selectConversation(id, mobile = true) {
+      if (!conversations.some((item) => item.id === id)) return;
+      state.selectedId = id; state.messageSearch = ''; state.matchIndex = 0; state.replyingTo = null; state.pendingFile = null;
+      $('message-search').value = ''; $('thread-find').classList.remove('open'); $('reply-banner').classList.remove('open'); $('file-banner').classList.remove('open'); $('file-input').value = '';
+      const item = current(); item.unread = 0;
+      if (mobile) $('app').classList.add('show-thread');
+      closeMenu(); renderList(); renderHeader(); renderMessages(); renderDetails(); updateDraft();
+    }
+    function draftKey() { return `movietime-prototype-draft:${state.selectedId}`; }
+    function updateDraft() { try { $('message-input').value = localStorage.getItem(draftKey()) || ''; } catch { $('message-input').value = ''; } resizeTextarea(); }
+    function saveDraft() { try { localStorage.setItem(draftKey(), $('message-input').value); } catch { /* The demo still works without storage. */ } }
+    function resizeTextarea() { const field = $('message-input'); field.style.height = 'auto'; field.style.height = `${Math.min(field.scrollHeight, 160)}px`; }
+    function sendMessage() {
+      const field = $('message-input'); const text = field.value.trim(); const file = state.pendingFile;
+      if (!current().open) return toast('La ventana está cerrada. Usa una plantilla aprobada.');
+      if (!text && !file) return;
+      const quote = state.replyingTo?.text || state.replyingTo?.name || null;
+      const time = nowTime();
+      if (file) current().messages.push({ id: crypto.randomUUID(), direction: 'outbound', kind: 'file', name: file.name, size: `${file.type || 'Archivo'} · ${(file.size / 1024).toFixed(0)} KB`, time, status: '✓', quote });
+      if (text) current().messages.push({ id: crypto.randomUUID(), direction: 'outbound', text, time, status: '✓', quote: file ? null : quote });
+      current().time = time; state.pendingFile = null; state.replyingTo = null; field.value = ''; saveDraft(); resizeTextarea(); $('file-banner').classList.remove('open'); $('reply-banner').classList.remove('open'); $('file-input').value = '';
+      renderList(); renderMessages(); toast('Mensaje añadido a la demo. No se envió a WhatsApp.');
+    }
+    function openMenu(anchor, items) {
+      const menu = $('menu'); menu.innerHTML = items.map((item, index) => item.label ? `<div class="menu-label">${escapeHtml(item.label)}</div>` : `<button type="button" role="menuitem" data-menu-index="${index}">${item.icon ? icon(item.icon, true) : ''}${escapeHtml(item.text)}</button>`).join('');
+      state.menuAction = items;
+      menu.classList.add('open');
+      menu.dataset.anchor = anchor.id;
+      $('quick-open').setAttribute('aria-expanded', String(anchor.id === 'quick-open'));
+      const rect = anchor.getBoundingClientRect();
+      menu.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - menu.offsetWidth - 8))}px`;
+      const openAbove = innerHeight - rect.bottom < menu.offsetHeight + 8 && rect.top > innerHeight - rect.bottom;
+      const menuTop = openAbove ? rect.top - menu.offsetHeight - 8 : rect.bottom + 6;
+      menu.style.top = `${Math.max(8, Math.min(menuTop, innerHeight - menu.offsetHeight - 8))}px`;
+      menu.querySelector('button')?.focus();
+    }
+    function closeMenu() { $('menu').classList.remove('open'); $('menu').removeAttribute('data-anchor'); $('quick-open').setAttribute('aria-expanded', 'false'); state.menuAction = null; }
+    function toggleDetails(open = !state.detailsOpen) { state.detailsOpen = open; renderHeader(); if (open) renderDetails(); }
+    function openMessageSearch() { $('thread-find').classList.add('open'); $('message-search').focus(); }
+    function closeMessageSearch() { $('thread-find').classList.remove('open'); $('message-search').value = ''; state.messageSearch = ''; renderMessages(true); }
+    function fillTemplate(text) { if (!current().open) return toast('La ventana está cerrada. Usa una plantilla aprobada.'); $('message-input').value = text; saveDraft(); resizeTextarea(); $('message-input').focus(); closeMenu(); }
+    function templateItems() { const service = current().service || 'tu servicio'; return [ { label: 'Plantillas' }, { text: 'Volver a acciones', icon: 'arrow-left', action: openComposerMenu }, { text: 'Saludo', action: () => fillTemplate(`Hola, ${current().name.split(' ')[0]}. ¿En qué puedo ayudarte?`) }, { text: 'Recordatorio de pago', action: () => fillTemplate(`Hola, ${current().name.split(' ')[0]}. Te recordamos que ${service} ${current().due?.toLowerCase() || 'está próximo a vencer'}. ¿Necesitas los datos de pago?`) }, { text: 'Confirmación de revisión', action: () => fillTemplate('Gracias por compartir el comprobante. Lo reviso y te confirmo en unos minutos.') } ]; }
+    function openComposerMenu() { openMenu($('quick-open'), [ { label: 'Acciones' }, { text: 'Adjuntar archivo', icon: 'paperclip', action: () => { closeMenu(); $('file-input').click(); } }, { text: 'Plantillas', icon: 'file', action: () => openMenu($('quick-open'), templateItems()) } ]); }
+    $('filters').addEventListener('click', (event) => { const button = event.target.closest('[data-filter]'); if (!button) return; state.filter = button.dataset.filter; renderList(); });
+    $('conversation-search').addEventListener('input', (event) => { state.search = event.target.value; renderList(); });
+    $('conversation-list').addEventListener('click', (event) => { const row = event.target.closest('[data-id]'); if (row) selectConversation(row.dataset.id); else if (event.target.id === 'reset-filters') { state.filter = 'all'; state.search = ''; $('conversation-search').value = ''; renderList(); } });
+    $('back-to-list').addEventListener('click', () => $('app').classList.remove('show-thread'));
+    $('toggle-details').addEventListener('click', () => toggleDetails());
+    $('close-details').addEventListener('click', () => toggleDetails(false));
+    $('toggle-thread-search').addEventListener('click', () => $('thread-find').classList.contains('open') ? closeMessageSearch() : openMessageSearch());
+    $('close-thread-search').addEventListener('click', closeMessageSearch);
+    $('message-search').addEventListener('input', (event) => { state.messageSearch = event.target.value; state.matchIndex = 0; renderMessages(true); jumpMatch(0); });
+    $('previous-match').addEventListener('click', () => jumpMatch(-1));
+    $('next-match').addEventListener('click', () => jumpMatch(1));
+    $('more-actions').addEventListener('click', (event) => openMenu(event.currentTarget, [ { text: 'Marcar como no leído', action: () => { current().unread = Math.max(1, current().unread); renderList(); closeMenu(); toast('Conversación marcada como no leída.'); } }, { text: 'Restablecer demo', action: () => { conversations.splice(0, conversations.length, ...structuredClone(seed)); closeMenu(); selectConversation(conversations[0].id, false); toast('Demo restablecida.'); } } ]));
+    $('messages').addEventListener('click', (event) => { const button = event.target.closest('[data-message-menu]'); if (!button) return; const message = current().messages.find((item) => item.id === button.dataset.messageMenu); if (!message) return; openMenu(button, [ { text: 'Responder', action: () => { state.replyingTo = message; $('reply-label').textContent = `Respondiendo a: ${message.text || message.name}`; $('reply-banner').classList.add('open'); $('message-input').focus(); closeMenu(); } }, { text: 'Copiar', action: async () => { try { await navigator.clipboard.writeText(message.text || message.name); toast('Mensaje copiado.'); } catch { toast('No se pudo copiar en este navegador.'); } closeMenu(); } }, { text: 'Reaccionar con ♡', action: () => { message.reaction = message.reaction ? null : '♡'; renderMessages(true); closeMenu(); } } ]); });
+    $('menu').addEventListener('click', (event) => { const button = event.target.closest('[data-menu-index]'); if (!button) return; state.menuAction?.[Number(button.dataset.menuIndex)]?.action(); });
+    $('menu').addEventListener('keydown', (event) => {
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      const items = [...$('menu').querySelectorAll('[role="menuitem"]')];
+      if (!items.length) return;
+      event.preventDefault();
+      const index = items.indexOf(document.activeElement);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[next].focus();
+    });
+    document.addEventListener('pointerdown', (event) => { if (!$('menu').contains(event.target) && !event.target.closest('#more-actions, #quick-open, [data-message-menu]')) closeMenu(); });
+    $('quick-open').addEventListener('click', () => $('menu').classList.contains('open') && $('menu').dataset.anchor === 'quick-open' ? closeMenu() : openComposerMenu());
+    $('file-input').addEventListener('change', (event) => { const file = event.target.files?.[0]; if (!file) return; if (file.size > 4 * 1024 * 1024) return toast('El archivo no puede superar 4 MB.'); state.pendingFile = file; $('file-label').textContent = `Archivo listo: ${file.name}`; $('file-banner').classList.add('open'); });
+    $('cancel-file').addEventListener('click', () => { state.pendingFile = null; $('file-input').value = ''; $('file-banner').classList.remove('open'); });
+    $('cancel-reply').addEventListener('click', () => { state.replyingTo = null; $('reply-banner').classList.remove('open'); });
+    $('send-form').addEventListener('submit', (event) => { event.preventDefault(); sendMessage(); });
+    $('message-input').addEventListener('input', () => { saveDraft(); resizeTextarea(); });
+    $('message-input').addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); sendMessage(); } });
+    $('closed-template').addEventListener('click', () => { current().messages.push({ id: crypto.randomUUID(), direction: 'outbound', text: `Hola, ${current().name.split(' ')[0]}. Te escribimos sobre tu servicio. Responde cuando puedas para continuar la conversación.`, time: nowTime(), status: '✓' }); renderMessages(); renderList(); toast('Plantilla añadida a la demo. No se envió a WhatsApp.'); });
+    $('details-content').addEventListener('click', (event) => { if (event.target.closest('#reminder-action')) { toggleDetails(false); fillTemplate(`Hola, ${current().name.split(' ')[0]}. Te recordamos que ${current().service || 'tu servicio'} ${current().due?.toLowerCase() || 'está próximo a vencer'}. ¿Necesitas los datos de pago?`); } });
+    document.addEventListener('keydown', (event) => {
+      const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+      if (event.key === '/' && !typing) { event.preventDefault(); $('conversation-search').focus(); }
+      if (event.altKey && ['ArrowDown', 'ArrowUp'].includes(event.key)) { const visible = visibleConversations(); if (!visible.length) return; event.preventDefault(); const currentIndex = visible.findIndex((item) => item.id === state.selectedId); const next = Math.max(0, Math.min(visible.length - 1, currentIndex + (event.key === 'ArrowDown' ? 1 : -1))); selectConversation(visible[next].id, false); }
+      if (event.key === 'Escape') { if ($('menu').classList.contains('open')) { const anchor = $($('menu').dataset.anchor); closeMenu(); anchor?.focus(); } else if (state.detailsOpen && innerWidth <= 1250) toggleDetails(false); else if ($('thread-find').classList.contains('open')) closeMessageSearch(); else $('app').classList.remove('show-thread'); }
+    });
+    let wasMobile = innerWidth <= 760;
+    let wasOverlay = innerWidth <= 1250;
+    addEventListener('resize', () => {
+      const isMobile = innerWidth <= 760;
+      const isOverlay = innerWidth <= 1250;
+      if (isMobile && !wasMobile) $('app').classList.remove('show-thread');
+      if (isOverlay !== wasOverlay) toggleDetails(!isOverlay);
+      wasMobile = isMobile;
+      wasOverlay = isOverlay;
+    });
+    renderList(); renderHeader(); renderMessages(); renderDetails(); updateDraft();
+  </script>
+</body>
+</html>
