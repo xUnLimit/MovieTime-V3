@@ -48,7 +48,7 @@ export function createOutboundStore(client: ServiceClient = createServiceRoleCli
 
     async insertPending(message: NewOutboundMessage) {
       const { payload } = message;
-      const hasMedia = payload.kind === 'image' || payload.kind === 'document' || payload.kind === 'audio';
+      const hasMedia = payload.kind === 'image' || payload.kind === 'document' || payload.kind === 'audio' || payload.kind === 'sticker';
       const contextWaMessageId = 'replyTo' in payload
         ? payload.replyTo ?? null
         : payload.kind === 'reaction' ? payload.targetWaMessageId : null;
@@ -64,7 +64,7 @@ export function createOutboundStore(client: ServiceClient = createServiceRoleCli
           context_wa_message_id: contextWaMessageId,
           media_id: hasMedia ? payload.mediaId : null,
           media_mime_type: hasMedia ? payload.mimeType : null,
-          media_filename: hasMedia ? payload.filename ?? null : null,
+          media_filename: hasMedia && 'filename' in payload ? payload.filename ?? null : null,
           payload: payload.kind === 'reaction'
             ? { emoji: payload.emoji }
             : payload.kind === 'buttons'

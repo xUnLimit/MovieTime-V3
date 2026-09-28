@@ -1,11 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const media = vi.hoisted(() => ({
   state: { objectUrl: null as string | null, isLoading: false, isError: false },
   calls: [] as Array<{ mediaId: string | null; enabled: boolean }>,
 }));
+const observed = vi.hoisted(() => ({ callback: null as IntersectionObserverCallback | null, observe: vi.fn(), disconnect: vi.fn() }));
 
 vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useWhatsAppMedia: (mediaId: string | null, enabled: boolean) => {
@@ -49,9 +50,26 @@ describe('MessageAttachment', () => {
   });
 
   it('shows a placeholder while an image loads', () => {
-    render(<MessageAttachment mediaId="1" kind="sticker" mimeType={null} filename={null} />);
+    render(<MessageAttachment mediaId="1" kind="image" mimeType={null} filename={null} />);
 
     expect(screen.getByText('Cargando...')).toBeTruthy();
+  });
+
+  it('shows a fixed-size sticker that cannot be opened or downloaded', () => {
+    media.state.objectUrl = 'blob:sticker';
+    render(<MessageAttachment mediaId="1" kind="sticker" mimeType="image/webp" filename={null} onOpenImage={vi.fn()} />);
+
+    const image = screen.getByRole('img', { name: 'Sticker' });
+    expect(image.getAttribute('src')).toBe('blob:sticker');
+    expect(image.className).toContain('h-32 w-32');
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('shows a fixed-size placeholder while a sticker loads', () => {
+    render(<MessageAttachment mediaId="1" kind="sticker" mimeType="image/webp" filename={null} />);
+
+    expect(screen.getByRole('status', { name: 'Cargando sticker' }).className).toContain('h-32 w-32');
   });
 
   it('waits for a click before downloading documents and video', async () => {
@@ -117,5 +135,43 @@ describe('MessageAttachment', () => {
     render(<MessageAttachment mediaId="6" kind="image" mimeType="image/png" filename={null} />);
 
     expect(screen.getByText('No se pudo cargar el archivo.')).toBeTruthy();
+  });
+});
+
+// jsdom no trae IntersectionObserver: los tests de arriba corren en su
+// fallback (carga inmediata, la degradacion segura). Este bloque simula el
+// observer real para probar el comportamiento perezoso que ve el navegador.
+describe('MessageAttachment lazy loading', () => {
+  beforeEach(() => {
+    observed.callback = null;
+    observed.observe.mockReset();
+    observed.disconnect.mockReset();
+    vi.stubGlobal('IntersectionObserver', vi.fn(function FakeIntersectionObserver(this: unknown, callback: IntersectionObserverCallback) {
+      observed.callback = callback;
+      return { observe: observed.observe, disconnect: observed.disconnect, unobserve: vi.fn() };
+    }));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('does not request an auto-loading image until it enters the viewport', () => {
+    render(<MessageAttachment mediaId="1" kind="image" mimeType="image/jpeg" filename={null} />);
+
+    expect(media.calls[0]).toEqual({ mediaId: '1', enabled: false });
+    expect(observed.observe).toHaveBeenCalledOnce();
+
+    media.state.objectUrl = 'blob:image';
+    act(() => observed.callback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver));
+
+    expect(media.calls.at(-1)).toEqual({ mediaId: '1', enabled: true });
+  });
+
+  it('still waits for a click on documents even though they are never auto-observed', () => {
+    render(<MessageAttachment mediaId="2" kind="document" mimeType="application/pdf" filename="recibo.pdf" />);
+
+    expect(observed.observe).not.toHaveBeenCalled();
+    expect(media.calls[0]).toEqual({ mediaId: '2', enabled: false });
   });
 });

@@ -7,6 +7,7 @@ import { MessageCircle } from 'lucide-react';
 import { ChatWorkspace } from '@/components/chats/ChatWorkspace';
 import { ConversationList } from '@/components/chats/ConversationList';
 import {
+  activeConversationCategories,
   countByFilter,
   matchesFilter,
   matchesSearch,
@@ -65,6 +66,7 @@ function ChatsPageContent() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   const counts = useMemo(() => countByFilter(conversations, now), [conversations, now]);
+  const categories = useMemo(() => activeConversationCategories(conversations), [conversations]);
   const visible = useMemo(
     () => conversations.filter((item) => matchesFilter(item, filter, now) && matchesSearch(item, search)),
     [conversations, filter, now, search]
@@ -122,6 +124,7 @@ function ChatsPageContent() {
             visible={visible}
             totalCount={conversations.length}
             counts={counts}
+            categories={categories}
             search={search}
             filter={filter}
             selectedWaId={selectedWaId}

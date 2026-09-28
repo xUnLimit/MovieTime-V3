@@ -24,13 +24,14 @@ type MessageTimelineProps = {
   onRetry?: (message: WhatsAppChatMessage) => void;
   onHide?: (message: WhatsAppChatMessage) => void;
   onOpenImage?: (message: WhatsAppChatMessage, objectUrl: string) => void;
+  onSaveSticker?: (message: WhatsAppChatMessage) => void;
   canRetry?: (message: WhatsAppChatMessage) => boolean;
 };
 
 // Distancia al final (px) dentro de la cual se sigue "pegado" a los mensajes nuevos.
 const STICKY_THRESHOLD = 120;
 
-export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQuery = '', matchIds, activeMatchIndex = 0, onReply, onReact, onForward, onRetry, onHide, onOpenImage, canRetry }: MessageTimelineProps) {
+export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQuery = '', matchIds, activeMatchIndex = 0, onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry }: MessageTimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
   const seenCount = useRef(messages.length);
@@ -132,7 +133,7 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
                   </li>
                 );
               }
-              return <MessageBubble key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} onReply={onReply} onReact={onReact} onForward={onForward} onRetry={onRetry} onHide={onHide} onOpenImage={onOpenImage} canRetry={canRetry} />;
+              return <MessageBubble key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} onReply={onReply} onReact={onReact} onForward={onForward} onRetry={onRetry} onHide={onHide} onOpenImage={onOpenImage} onSaveSticker={onSaveSticker} canRetry={canRetry} />;
             })}
           </ol>
         )}

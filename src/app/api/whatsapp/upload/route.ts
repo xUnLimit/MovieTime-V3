@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     return apiSuccess({ mediaId, mimeType, filename: sanitizeFilename(file.name || 'archivo') }, requestId);
   } catch (error) {
     if (error instanceof CloudApiError) {
-      return apiFailure(502, 'INTERNAL_ERROR', 'No se pudo subir el archivo a WhatsApp.', requestId);
+      return apiFailure(502, 'INTERNAL_ERROR', `No se pudo subir el archivo a WhatsApp: ${error.title}`, requestId);
     }
     return apiErrorResponse('WhatsAppUploadRoute', requestId, error);
   }

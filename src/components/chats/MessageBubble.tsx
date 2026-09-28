@@ -33,6 +33,7 @@ type MessageBubbleProps = {
   onRetry?: (message: WhatsAppChatMessage) => void;
   onHide?: (message: WhatsAppChatMessage) => void;
   onOpenImage?: (message: WhatsAppChatMessage, objectUrl: string) => void;
+  onSaveSticker?: (message: WhatsAppChatMessage) => void;
   canRetry?: (message: WhatsAppChatMessage) => boolean;
 };
 
@@ -49,7 +50,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-export function MessageBubble({ message, continued, quotedByWaMessageId = {}, reactions, highlighted, activeMatch, onReply, onReact, onForward, onRetry, onHide, onOpenImage, canRetry }: MessageBubbleProps) {
+export function MessageBubble({ message, continued, quotedByWaMessageId = {}, reactions, highlighted, activeMatch, onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry }: MessageBubbleProps) {
   const [confirmHide, setConfirmHide] = useState(false);
   const [reactMenuOpen, setReactMenuOpen] = useState(false);
   const outbound = message.direction === 'outbound';
@@ -69,6 +70,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
   const interactive = outbound && isInteractiveKind(message.kind) ? readInteractiveOptions(message.payload) : null;
   const retryAvailable = failed && outbound && (canRetry?.(message) ?? Boolean(message.textBody || message.mediaId));
   const isImage = message.kind === 'image' && Boolean(message.mediaId);
+  const isSticker = message.kind === 'sticker' && Boolean(message.mediaId);
 
   const optionsMenu = (
     <DropdownMenu>
@@ -87,10 +89,11 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
       <DropdownMenuContent align={outbound ? 'end' : 'start'} className="chat-menu min-w-[190px]">
         {onReply ? <DropdownMenuItem onSelect={() => onReply(message)} disabled={!message.waMessageId}>Responder</DropdownMenuItem> : null}
         {onForward && message.mediaId ? <DropdownMenuItem onSelect={() => onForward(message)}>Reenviar</DropdownMenuItem> : null}
+        {onSaveSticker && isSticker ? <DropdownMenuItem onSelect={() => onSaveSticker(message)}>Guardar sticker</DropdownMenuItem> : null}
         {onRetry && retryAvailable ? <DropdownMenuItem onSelect={() => onRetry(message)}>Reintentar</DropdownMenuItem> : null}
         {onHide ? (
           <>
-            {(onReply || (onForward && message.mediaId) || (onRetry && retryAvailable)) ? <DropdownMenuSeparator /> : null}
+            {(onReply || (onForward && message.mediaId) || (onSaveSticker && isSticker) || (onRetry && retryAvailable)) ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem variant="destructive" onSelect={() => setConfirmHide(true)}>
               <Trash2 className="mr-2 h-4 w-4" aria-hidden /> Eliminar
             </DropdownMenuItem>
@@ -125,7 +128,8 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
           outbound ? 'bg-chat-bubble-out text-chat-bubble-out-ink' : 'bg-chat-bubble-in text-chat-ink',
           'rounded-[7.5px]',
           failed && 'bg-destructive/15 text-chat-ink ring-1 ring-destructive',
-          highlighted && 'ring-2 ring-chat-accent/60', activeMatch && 'ring-2 ring-chat-accent-strong'
+          highlighted && 'ring-2 ring-chat-accent/60', activeMatch && 'ring-2 ring-chat-accent-strong',
+          (reactions?.mine || reactions?.theirs) && 'mb-3'
         )}
       >
         {quoted ? <div className="mb-[6px] max-w-64 truncate rounded-[4px] border-l-[3px] border-chat-accent bg-black/5 py-1 pl-[7px] pr-2 text-[12.5px] text-chat-accent-strong dark:bg-white/5">{messagePreview(quoted.kind, quoted.textBody, quoted.templateName)}</div> : null}
@@ -158,14 +162,17 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
             return <p key={`${contact.phone}-${index}`}>{contact.name} · {contact.phone}</p>;
           })}</div>
         ) : text && !interactive ? (
-          // El chevron reserva su hueco arriba a la derecha con el padding del
-          // bloque; la hora flota con "float" al final del texto, apoyada abajo
-          // (no centrada en la linea) y separada del contenido por el margen
+          // La hora flota con "float" al final del texto, apoyada abajo (no
+          // centrada en la linea) y separada del contenido por el margen
           // izquierdo. Un mensaje corto la deja en la misma linea; uno largo la
           // empuja a su propia linea al final, siempre en la esquina inferior
           // derecha. Solo aplica cuando el texto es lo ultimo de la burbuja: si
           // despues vienen botones o lista, la hora va una sola vez al final.
+          // El spacer de la izquierda (float en touch, donde el chevron va
+          // siempre visible) reserva su hueco en la primera linea para que no
+          // quede flotando encima del texto de un mensaje corto.
           <p className="whitespace-pre-wrap break-words pr-[6px]">
+            <span className="float-right ml-1 hidden h-[18px] w-[18px] max-md:block" aria-hidden />
             <WhatsAppText text={text} />
             <span
               className={cn(
@@ -204,7 +211,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
         ) : null}
         {/* El chevron flota sobre la esquina superior derecha, sobre el hueco que dejó el spacer del texto. */}
         <div className="absolute right-[6px] top-[6px]">{optionsMenu}</div>
-        {reactions?.mine || reactions?.theirs ? <span className="absolute -bottom-3 right-2 rounded-lg border border-chat-accent-line bg-chat-accent-soft px-[7px] py-[3px] text-[11px] text-chat-accent-strong" aria-label="Reacciones">{reactions.mine && reactions.mine === reactions.theirs ? `${reactions.mine} x2` : [reactions.mine, reactions.theirs].filter(Boolean).join(' ')}</span> : null}
+        {reactions?.mine || reactions?.theirs ? <span className="absolute -bottom-3 right-2 z-[1] flex items-center gap-0.5 whitespace-nowrap rounded-full border border-chat-accent-line bg-chat-accent-soft px-[7px] py-[2px] text-[12px] leading-none text-chat-accent-strong shadow-sm" aria-label="Reacciones">{reactions.mine && reactions.mine === reactions.theirs ? <>{reactions.mine}<span className="text-[10px] tabular-nums opacity-80">x2</span></> : [reactions.mine, reactions.theirs].filter(Boolean).join(' ')}</span> : null}
       </div>
       {/* El emoji vive en la fila, no en la burbuja: queda centrado verticalmente
           respecto a toda la altura del mensaje, sin importar cuantas lineas tenga. */}

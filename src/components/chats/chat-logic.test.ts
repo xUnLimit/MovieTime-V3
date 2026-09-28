@@ -5,6 +5,8 @@ import { avatarHue, initialsFor, renderTemplatePreview } from './chat-format';
 import { buildMetaTemplateParams, suggestMetaTemplate } from './chat-templates';
 import { buildTimeline, dayLabel } from './chat-timeline';
 import {
+  activeConversationCategories,
+  categoryFilterId,
   countByFilter,
   daysUntil,
   isDueSoon,
@@ -20,6 +22,7 @@ function conversation(overrides: Partial<WhatsAppConversation> = {}): WhatsAppCo
     waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
     lastDirection: 'inbound', lastPreview: 'Ya pagué', lastMessageAt: NOW.toISOString(),
     lastInboundAt: new Date(2026, 8, 27, 14, 0).toISOString(), unreadCount: 0, nextExpiry: null,
+    activeCategories: [],
     ...overrides,
   };
 }
@@ -66,6 +69,21 @@ describe('conversation filters', () => {
     expect(matchesFilter(unread, 'sin_registrar', NOW)).toBe(false);
     expect(matchesFilter(unread, 'todos', NOW)).toBe(true);
     expect(countByFilter([unread, unregistered, due], NOW)).toEqual({ todos: 3, no_leidos: 1, ventana_abierta: 2, sin_registrar: 1 });
+  });
+
+  it('auto-tags a client by their active services and filters/counts by category', () => {
+    const netflixOnly = conversation({ waId: '1', activeCategories: ['Netflix'] });
+    const both = conversation({ waId: '2', activeCategories: ['Crunchyroll', 'Netflix'] });
+    const none = conversation({ waId: '3', activeCategories: [] });
+
+    expect(activeConversationCategories([netflixOnly, both, none])).toEqual(['Crunchyroll', 'Netflix']);
+    expect(matchesFilter(netflixOnly, categoryFilterId('Netflix'), NOW)).toBe(true);
+    expect(matchesFilter(both, categoryFilterId('Netflix'), NOW)).toBe(true);
+    expect(matchesFilter(none, categoryFilterId('Netflix'), NOW)).toBe(false);
+    expect(countByFilter([netflixOnly, both, none], NOW)).toMatchObject({
+      'categoria:Netflix': 2,
+      'categoria:Crunchyroll': 1,
+    });
   });
 
   it('searches by name, number digits and last message', () => {

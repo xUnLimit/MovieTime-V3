@@ -11,6 +11,7 @@ export type OutboundPayload =
   | { kind: 'text'; text: string; replyTo?: string }
   | { kind: 'template'; templateName: WhatsAppTemplateName; params: string[] }
   | { kind: 'image' | 'document' | 'audio'; mediaId: string; mimeType: string; filename?: string; caption?: string; replyTo?: string }
+  | { kind: 'sticker'; mediaId: string; mimeType: string; replyTo?: string }
   | { kind: 'reaction'; targetWaMessageId: string; emoji: string }
   | { kind: 'buttons'; body: string; buttons: InteractiveButton[]; replyTo?: string }
   | { kind: 'list'; body: string; buttonLabel: string; rows: InteractiveRow[]; replyTo?: string }
@@ -35,6 +36,8 @@ export function storedText(payload: OutboundPayload): string | null {
     case 'document':
     case 'audio':
       return payload.caption?.trim() || null;
+    case 'sticker':
+      return null;
     case 'buttons':
     case 'list':
       return payload.body;
@@ -85,6 +88,8 @@ export function toCloudApiBody(to: string, payload: OutboundPayload) {
     case 'document':
     case 'audio':
       return withContext({ ...base, type: payload.kind, ...mediaBody(payload) }, payload.replyTo);
+    case 'sticker':
+      return withContext({ ...base, type: 'sticker', sticker: { id: payload.mediaId } }, payload.replyTo);
     case 'reaction':
       return { ...base, type: 'reaction', reaction: { message_id: payload.targetWaMessageId, emoji: payload.emoji } };
     case 'buttons':

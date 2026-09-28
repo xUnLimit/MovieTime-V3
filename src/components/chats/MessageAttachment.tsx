@@ -5,6 +5,7 @@ import { Download, ImageOff, Pause, Play } from 'lucide-react';
 
 import { useWhatsAppMedia } from '@/hooks/use-whatsapp-chat';
 import { cn } from '@/platform/utils/cn';
+import { useInViewOnce } from './use-in-view-once';
 
 type MessageAttachmentProps = {
   mediaId: string;
@@ -142,14 +143,21 @@ function AudioPlayer({ mediaId, objectUrl }: { mediaId: string; objectUrl: strin
   );
 }
 
-// Las imagenes y el audio se cargan al mostrarse (comprobantes de pago y
-// notas de voz suelen revisarse de inmediato); documentos y video se
-// descargan solo cuando el usuario lo pide, para no gastar datos moviles.
+// Las imagenes, stickers y audios se cargan solos, sin que el usuario los
+// toque (comprobantes de pago y notas de voz suelen revisarse de inmediato),
+// pero solo cuando entran al viewport: bajar de golpe todo el historial al
+// abrir el chat pesa en datos moviles, asi que se cargan "perezosamente" a
+// medida que se hacen visibles, igual que WhatsApp. Documentos y video
+// siguen esperando un toque explicito del usuario.
 export function MessageAttachment({ mediaId, kind, mimeType, filename, onOpenImage }: MessageAttachmentProps) {
-  const visual = kind === 'image' || kind === 'sticker';
+  const isSticker = kind === 'sticker';
+  const visual = kind === 'image' || isSticker;
   const isAudio = kind === 'audio';
-  const [requested, setRequested] = useState(visual || isAudio);
-  const { objectUrl, isLoading, isError } = useWhatsAppMedia(mediaId, requested);
+  const autoLoads = visual || isAudio;
+  const { ref, inView } = useInViewOnce<HTMLDivElement>(autoLoads);
+  const [requested, setRequested] = useState(false);
+  const effectiveRequested = requested || (autoLoads && inView);
+  const { objectUrl, isLoading, isError } = useWhatsAppMedia(mediaId, effectiveRequested);
   const label = filename || KIND_LABELS[kind] || 'Archivo';
 
   if (isError) {
@@ -161,14 +169,27 @@ export function MessageAttachment({ mediaId, kind, mimeType, filename, onOpenIma
   }
 
   if (!objectUrl) {
-    if (requested || isLoading) {
+    if (effectiveRequested || isLoading) {
       return isAudio ? (
-        <div className="my-1 flex h-9 w-56 items-center gap-2 text-[12px] text-chat-quiet" role="status">
+        <div ref={ref} className="my-1 flex h-9 w-56 items-center gap-2 text-[12px] text-chat-quiet" role="status">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-chat-raised"><Play className="ml-0.5 h-4 w-4 opacity-40" /></span>
           Cargando audio...
         </div>
+      ) : isSticker ? (
+        <div ref={ref} className="h-32 w-32 rounded-md bg-black/10" role="status" aria-label="Cargando sticker" />
       ) : (
-        <div className="flex h-24 w-40 items-center justify-center rounded-md bg-black/10 text-xs opacity-80">Cargando...</div>
+        <div ref={ref} className="flex h-24 w-40 items-center justify-center rounded-md bg-black/10 text-xs opacity-80">Cargando...</div>
+      );
+    }
+    if (autoLoads) {
+      // Aun no entra al viewport: reserva el mismo hueco que tendria cargando,
+      // para que el chat no salte de tamaño cuando el observer lo dispare.
+      return isAudio ? (
+        <div ref={ref} className="my-1 h-9 w-56" aria-hidden />
+      ) : isSticker ? (
+        <div ref={ref} className="h-32 w-32 rounded-md bg-black/10" aria-hidden />
+      ) : (
+        <div ref={ref} className="h-24 w-40 rounded-md bg-black/10" aria-hidden />
       );
     }
     return (
@@ -182,16 +203,23 @@ export function MessageAttachment({ mediaId, kind, mimeType, filename, onOpenIma
     );
   }
 
+  if (isSticker) {
+    // Los stickers no se abren en grande ni se descargan: se muestran a un
+    // tamaño fijo, igual que en WhatsApp, sin importar la resolucion real del archivo.
+    // eslint-disable-next-line @next/next/no-img-element -- URL blob local, next/image no aplica
+    return <img src={objectUrl} alt="Sticker" className="h-32 w-32 object-contain" />;
+  }
+
   if (visual) {
     return onOpenImage ? (
       <button type="button" onClick={() => onOpenImage(objectUrl)} className="block cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Ver imagen en grande">
         {/* eslint-disable-next-line @next/next/no-img-element -- URL blob local, next/image no aplica */}
-        <img src={objectUrl} alt={kind === 'sticker' ? 'Sticker' : 'Imagen del mensaje'} className="max-h-72 rounded-md object-contain" />
+        <img src={objectUrl} alt="Imagen del mensaje" className="max-h-72 rounded-md object-contain" />
       </button>
     ) : (
       <a href={objectUrl} target="_blank" rel="noopener noreferrer" className="block">
         {/* eslint-disable-next-line @next/next/no-img-element -- URL blob local, next/image no aplica */}
-        <img src={objectUrl} alt={kind === 'sticker' ? 'Sticker' : 'Imagen del mensaje'} className="max-h-72 rounded-md object-contain" />
+        <img src={objectUrl} alt="Imagen del mensaje" className="max-h-72 rounded-md object-contain" />
       </a>
     );
   }

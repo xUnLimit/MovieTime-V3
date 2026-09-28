@@ -298,6 +298,31 @@
   color: var(--chat-accent-ink);
 }
 
+/* Formularios genericos (crear tercero/venta) embebidos en un dialogo del
+   chat: remapea las variables de diseno de la app a los tokens del chat, sin
+   tocar los componentes ni afectar sus paginas reales (/ventas/crear,
+   /terceros/crear), donde estas variables no cambian. Se activa en <body>
+   (ver ChatActionsDialog) para alcanzar tambien los menus en portal. */
+.chat-embedded-form {
+  --background: var(--chat-surface);
+  --foreground: var(--chat-ink);
+  --card: var(--chat-raised);
+  --card-foreground: var(--chat-ink);
+  --popover: var(--chat-raised);
+  --popover-foreground: var(--chat-ink);
+  --primary: var(--chat-accent);
+  --primary-foreground: var(--chat-accent-ink);
+  --secondary: var(--chat-hover);
+  --secondary-foreground: var(--chat-ink);
+  --muted: var(--chat-hover);
+  --muted-foreground: var(--chat-muted);
+  --accent: var(--chat-selected);
+  --accent-foreground: var(--chat-ink);
+  --border: var(--chat-line);
+  --input: var(--chat-line);
+  --ring: var(--chat-focus);
+}
+
 @layer base {
   * {
     @apply border-border;

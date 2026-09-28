@@ -1,14 +1,39 @@
 import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { conversationTitle, getServiceWindow } from './chat-format';
 
-export const CHAT_FILTERS = [
+// Filtros siempre visibles; "ventana_abierta" y las categorias por servicio
+// viven en el desplegable, para no saturar la barra.
+export const CHAT_FIXED_FILTERS = [
   { id: 'todos', label: 'Todos' },
   { id: 'no_leidos', label: 'No leídos' },
-  { id: 'ventana_abierta', label: 'Ventana abierta' },
   { id: 'sin_registrar', label: 'Sin registrar' },
 ] as const;
 
-export type ChatFilter = (typeof CHAT_FILTERS)[number]['id'];
+export const CHAT_MORE_FILTERS = [
+  { id: 'ventana_abierta', label: 'Ventana abierta' },
+] as const;
+
+export type ChatFixedFilter = (typeof CHAT_FIXED_FILTERS)[number]['id'] | (typeof CHAT_MORE_FILTERS)[number]['id'];
+export type ChatCategoryFilter = `categoria:${string}`;
+export type ChatFilter = ChatFixedFilter | ChatCategoryFilter;
+
+export function categoryFilterId(categoryName: string): ChatCategoryFilter {
+  return `categoria:${categoryName}`;
+}
+
+export function categoryFromFilter(filter: ChatFilter): string | null {
+  return filter.startsWith('categoria:') ? filter.slice('categoria:'.length) : null;
+}
+
+// Categorias con al menos un cliente activo en este momento, en orden
+// alfabetico: la etiqueta es automatica, no hay catalogo que mantener a mano.
+export function activeConversationCategories(conversations: readonly WhatsAppConversation[]): string[] {
+  const names = new Set<string>();
+  for (const conversation of conversations) {
+    for (const name of conversation.activeCategories) names.add(name);
+  }
+  return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
+}
 
 // Vencimiento cercano (se marca en la lista): desde hace una semana hasta dentro de tres dias.
 const DUE_SOON_DAYS = 3;
@@ -35,6 +60,8 @@ export function isDueSoon(conversation: Pick<WhatsAppConversation, 'nextExpiry'>
 }
 
 export function matchesFilter(conversation: WhatsAppConversation, filter: ChatFilter, now: Date) {
+  const category = categoryFromFilter(filter);
+  if (category !== null) return conversation.activeCategories.includes(category);
   switch (filter) {
     case 'no_leidos':
       return conversation.unreadCount > 0;
@@ -56,8 +83,13 @@ export function matchesSearch(conversation: WhatsAppConversation, search: string
     || conversation.lastPreview.toLowerCase().includes(term);
 }
 
-export function countByFilter(conversations: readonly WhatsAppConversation[], now: Date) {
+export function countByFilter(conversations: readonly WhatsAppConversation[], now: Date): Record<string, number> {
+  const filters: ChatFilter[] = [
+    ...CHAT_FIXED_FILTERS.map((item) => item.id),
+    ...CHAT_MORE_FILTERS.map((item) => item.id),
+    ...activeConversationCategories(conversations).map(categoryFilterId),
+  ];
   return Object.fromEntries(
-    CHAT_FILTERS.map((filter) => [filter.id, conversations.filter((item) => matchesFilter(item, filter.id, now)).length])
-  ) as Record<ChatFilter, number>;
+    filters.map((filter) => [filter, conversations.filter((item) => matchesFilter(item, filter, now)).length])
+  );
 }

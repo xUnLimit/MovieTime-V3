@@ -16,6 +16,12 @@ vi.mock('./MessageAttachment', () => ({
 const base: WhatsAppChatMessage = { id: 'm1', waMessageId: 'wa-1', direction: 'outbound', kind: 'text', textBody: 'Hola', templateName: null, occurredAt: '2026-09-27T12:00:00Z', status: 'sent', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} };
 
 describe('MessageBubble', () => {
+  it('reserves room for the always-visible mobile menu button so it never overlaps short text', () => {
+    const { container } = render(<MessageBubble message={{ ...base, textBody: 'Test' }} continued={false} />);
+    const spacer = container.querySelector('p span[aria-hidden]');
+    expect(spacer?.className).toContain('float-right');
+  });
+
   it.each([
     ['outbound', false],
     ['inbound', false],
@@ -34,7 +40,7 @@ describe('MessageBubble', () => {
     const quoted = { ...base, id: 'parent', textBody: 'Mensaje anterior' };
     render(<MessageBubble message={{ ...base, contextWaMessageId: 'parent-wa' }} continued={false} quotedByWaMessageId={{ 'parent-wa': quoted }} reactions={{ mine: '👍', theirs: '👍' }} onReply={onReply} onReact={onReact} />);
     expect(screen.getByText('Mensaje anterior')).toBeTruthy();
-    expect(screen.getByText('👍 x2')).toBeTruthy();
+    expect(screen.getByLabelText('Reacciones').textContent).toBe('👍x2');
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Reaccionar al mensaje' }));
     await user.click(screen.getByRole('button', { name: 'Reaccionar 👍' }));

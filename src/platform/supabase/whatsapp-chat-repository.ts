@@ -12,6 +12,7 @@ export type WhatsAppConversation = {
   lastInboundAt: string | null;
   unreadCount: number;
   nextExpiry: string | null;
+  activeCategories: string[];
 };
 
 export type WhatsAppChatMessage = {
@@ -55,6 +56,7 @@ export async function listWhatsAppConversations(): Promise<WhatsAppConversation[
       lastInboundAt: row.last_inbound_at,
       unreadCount: row.unread_count ?? 0,
       nextExpiry: row.proxima_fecha_fin,
+      activeCategories: row.categorias_activas ?? [],
     }];
   });
 }

@@ -139,6 +139,7 @@ type SendInput = { to: string; message: WhatsAppSendMessage; idempotencyKey: str
 function optimisticMessage(input: SendInput): WhatsAppChatMessage {
   const message = input.message;
   const isMedia = message.kind === 'image' || message.kind === 'document' || message.kind === 'audio';
+  const isSticker = message.kind === 'sticker';
   const isInteractive = message.kind === 'buttons' || message.kind === 'list';
   return {
     id: `pending-${input.idempotencyKey}`,
@@ -148,8 +149,8 @@ function optimisticMessage(input: SendInput): WhatsAppChatMessage {
     templateName: input.message.kind === "template" ? input.message.templateName : null,
     occurredAt: new Date().toISOString(),
     status: "pending",
-    mediaId: isMedia ? message.mediaId : null,
-    mediaMimeType: isMedia ? message.mimeType : null,
+    mediaId: isMedia || isSticker ? message.mediaId : null,
+    mediaMimeType: isMedia || isSticker ? message.mimeType : null,
     mediaFilename: isMedia ? message.filename ?? null : null,
     waMessageId: null,
     contextWaMessageId: message.kind === 'reaction' ? message.targetWaMessageId : 'replyTo' in message ? message.replyTo ?? null : null,

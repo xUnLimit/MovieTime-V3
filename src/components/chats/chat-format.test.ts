@@ -34,7 +34,9 @@ describe('chat format helpers', () => {
     expect(getServiceWindow(new Date(2026, 8, 27, 14, 30).toISOString(), NOW)).toEqual({ open: true, hoursLeft: 23 });
     expect(getServiceWindow(new Date(2026, 8, 26, 15, 40).toISOString(), NOW)).toEqual({ open: true, hoursLeft: 1 });
     expect(getServiceWindow(new Date(2026, 8, 26, 15, 30).toISOString(), NOW)).toEqual({ open: false });
-    expect(getServiceWindow(new Date(2026, 8, 28, 15, 30).toISOString(), NOW)).toEqual({ open: false });
+    // Un "ultimo mensaje" en el futuro (reloj del dispositivo desincronizado)
+    // no debe cerrar la ventana: se acota a las 24h completas.
+    expect(getServiceWindow(new Date(2026, 8, 28, 15, 30).toISOString(), NOW)).toEqual({ open: true, hoursLeft: 24 });
   });
 
   it('labels delivery statuses and keeps unknown ones', () => {

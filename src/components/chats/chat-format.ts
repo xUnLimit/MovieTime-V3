@@ -1,4 +1,4 @@
-import { format, isSameDay, isYesterday } from 'date-fns';
+import { format, isSameDay, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
@@ -46,7 +46,7 @@ export function formatWaId(waId: string) {
 export function formatChatTime(iso: string, now: Date) {
   const date = new Date(iso);
   if (isSameDay(date, now)) return format(date, 'HH:mm');
-  if (isYesterday(date)) return 'ayer';
+  if (isSameDay(date, subDays(now, 1))) return 'ayer';
   return format(date, 'dd/MM/yy', { locale: es });
 }
 
@@ -54,8 +54,11 @@ export type ServiceWindow = { open: false } | { open: true; hoursLeft: number };
 
 export function getServiceWindow(lastInboundAt: string | null, now: Date): ServiceWindow {
   if (!lastInboundAt) return { open: false };
-  const remaining = new Date(lastInboundAt).getTime() + WINDOW_MS - now.getTime();
-  if (remaining <= 0 || remaining > WINDOW_MS) return { open: false };
+  // Si el reloj del dispositivo esta desincronizado, "lastInboundAt" puede
+  // quedar en el futuro respecto a "now": la ventana igual esta abierta, asi
+  // que se acota el restante a las 24h completas en vez de cerrarla.
+  const remaining = Math.min(WINDOW_MS, new Date(lastInboundAt).getTime() + WINDOW_MS - now.getTime());
+  if (remaining <= 0) return { open: false };
   return { open: true, hoursLeft: Math.max(1, Math.floor(remaining / (60 * 60 * 1000))) };
 }
 

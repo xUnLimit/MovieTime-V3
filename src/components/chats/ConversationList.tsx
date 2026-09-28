@@ -1,16 +1,24 @@
 'use client';
 
 import { forwardRef, type ReactNode } from 'react';
-import { CalendarClock, MessageCircle, Search, UserPlus, X } from 'lucide-react';
+import { CalendarClock, ChevronDown, MessageCircle, Search, UserPlus, X } from 'lucide-react';
 
 import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/platform/utils/cn';
 import { ChatAvatar } from './ChatAvatar';
 import { conversationTitle, formatChatTime } from './chat-format';
 import {
-  CHAT_FILTERS,
+  categoryFilterId,
+  CHAT_FIXED_FILTERS,
+  CHAT_MORE_FILTERS,
   daysUntil,
   isDueSoon,
   parseDateOnly,
@@ -21,7 +29,8 @@ type ConversationListProps = {
   header?: ReactNode;
   visible: WhatsAppConversation[];
   totalCount: number;
-  counts: Record<ChatFilter, number>;
+  counts: Record<string, number>;
+  categories: string[];
   search: string;
   filter: ChatFilter;
   selectedWaId: string | null;
@@ -43,9 +52,11 @@ function dueLabel(nextExpiry: string | null, now: Date) {
 }
 
 export const ConversationList = forwardRef<HTMLInputElement, ConversationListProps>(function ConversationList(
-  { header, visible, totalCount, counts, search, filter, selectedWaId, isLoading, now, onSearchChange, onFilterChange, onSelect },
+  { header, visible, totalCount, counts, categories, search, filter, selectedWaId, isLoading, now, onSearchChange, onFilterChange, onSelect },
   searchRef
 ) {
+  const moreItems = [...CHAT_MORE_FILTERS, ...categories.map((name) => ({ id: categoryFilterId(name), label: name }))];
+  const activeMoreItem = moreItems.find((item) => item.id === filter) ?? null;
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="border-b border-chat-line-soft px-[21px] pb-4 pt-[26px]">
@@ -73,7 +84,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
           )}
         </div>
         <div className="-mx-1 flex gap-[7px] overflow-x-auto px-1 pb-0.5 pt-[15px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Filtrar conversaciones">
-          {CHAT_FILTERS.map((item) => {
+          {CHAT_FIXED_FILTERS.map((item) => {
             const active = filter === item.id;
             const count = counts[item.id];
             return (
@@ -96,6 +107,38 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
               </button>
             );
           })}
+          {moreItems.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={activeMoreItem ? `${activeMoreItem.label} (más filtros)` : 'Más filtros'}
+                  className={cn(
+                    'inline-flex min-h-[34px] shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border px-2.5 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    activeMoreItem
+                      ? 'border-chat-accent bg-chat-accent font-bold text-chat-accent-ink'
+                      : 'border-chat-line bg-transparent text-chat-muted hover:bg-chat-hover hover:text-chat-ink'
+                  )}
+                >
+                  {activeMoreItem ? activeMoreItem.label : null}
+                  <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="chat-menu w-56">
+                {moreItems.map((item) => {
+                  const count = counts[item.id];
+                  return (
+                    <DropdownMenuItem key={item.id} onSelect={() => onFilterChange(item.id)} className={cn(filter === item.id && 'font-bold text-chat-accent-strong')}>
+                      <span className="flex w-full items-center justify-between gap-2">
+                        {item.label}
+                        {count > 0 ? <span className="tabular-nums text-chat-muted">{count}</span> : null}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </div>
       </div>
 

@@ -12,26 +12,29 @@ const conversations: WhatsAppConversation[] = [
     waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
     lastDirection: 'inbound', lastPreview: 'Ya pagué', lastMessageAt: new Date(2026, 8, 27, 10, 32).toISOString(),
     lastInboundAt: new Date(2026, 8, 27, 10, 32).toISOString(), unreadCount: 2, nextExpiry: '2026-09-27',
+    activeCategories: ['Netflix'],
   },
   {
     waId: '50761111111', contactName: null, terceroId: null, terceroNombre: null,
     lastDirection: 'outbound', lastPreview: 'vence_hoy', lastMessageAt: new Date(2026, 8, 26, 9, 0).toISOString(),
-    lastInboundAt: null, unreadCount: 0, nextExpiry: null,
+    lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [],
   },
   {
     waId: '50762222222', contactName: 'Juan', terceroId: 't2', terceroNombre: 'Juan Gómez',
     lastDirection: 'inbound', lastPreview: 'Gracias', lastMessageAt: new Date(2026, 8, 20, 9, 0).toISOString(),
-    lastInboundAt: null, unreadCount: 0, nextExpiry: '2026-09-26',
+    lastInboundAt: null, unreadCount: 0, nextExpiry: '2026-09-26', activeCategories: ['Crunchyroll'],
   },
 ];
 
-const counts = { todos: 3, no_leidos: 1, ventana_abierta: 1, sin_registrar: 1 };
+const counts = { todos: 3, no_leidos: 1, ventana_abierta: 1, sin_registrar: 1, 'categoria:Netflix': 1, 'categoria:Crunchyroll': 1 };
+const categories = ['Crunchyroll', 'Netflix'];
 
 function renderList(overrides: Partial<Parameters<typeof ConversationList>[0]> = {}) {
   const props = {
     visible: conversations,
     totalCount: conversations.length,
     counts,
+    categories,
     search: '',
     filter: 'todos' as const,
     selectedWaId: '50760000000',
@@ -67,7 +70,7 @@ describe('ConversationList', () => {
 
     expect(screen.getByRole('tab', { name: 'No leídos (1)' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Todos' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Todos3', 'No leídos1', 'Ventana abierta1', 'Sin registrar1']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Todos3', 'No leídos1', 'Sin registrar1']);
     await user.click(screen.getByRole('tab', { name: 'Sin registrar (1)' }));
     expect(props.onFilterChange).toHaveBeenCalledWith('sin_registrar');
 
@@ -76,6 +79,25 @@ describe('ConversationList', () => {
 
     await user.click(screen.getByRole('button', { name: /Juan Gómez/ }));
     expect(props.onSelect).toHaveBeenCalledWith('50762222222');
+  });
+
+  it('moves the window filter and active categories into a dropdown', async () => {
+    const user = userEvent.setup();
+    const props = renderList();
+
+    expect(screen.queryByRole('tab', { name: /Ventana abierta/ })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Más filtros' }));
+    await user.click(screen.getByRole('menuitem', { name: /Ventana abierta/ }));
+    expect(props.onFilterChange).toHaveBeenCalledWith('ventana_abierta');
+
+    await user.click(screen.getByRole('button', { name: 'Más filtros' }));
+    await user.click(screen.getByRole('menuitem', { name: /Netflix/ }));
+    expect(props.onFilterChange).toHaveBeenCalledWith('categoria:Netflix');
+  });
+
+  it('shows the active category on the dropdown trigger itself', () => {
+    renderList({ filter: 'categoria:Netflix' });
+    expect(screen.getByRole('button', { name: 'Netflix (más filtros)' })).toBeTruthy();
   });
 
   it('opens the first result with Enter and clears the search with Escape', async () => {
@@ -126,6 +148,7 @@ function renderListProps(overrides: Partial<Parameters<typeof ConversationList>[
     visible: conversations,
     totalCount: conversations.length,
     counts,
+    categories,
     search: '',
     filter: 'todos' as const,
     selectedWaId: null,

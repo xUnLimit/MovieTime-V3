@@ -4,6 +4,7 @@ export type WhatsAppSendMessage =
   | { kind: 'text'; text: string; replyTo?: string }
   | { kind: 'template'; templateName: string; params: string[] }
   | { kind: 'image' | 'document' | 'audio'; mediaId: string; mimeType: string; filename?: string; caption?: string; replyTo?: string }
+  | { kind: 'sticker'; mediaId: string; mimeType: string; replyTo?: string }
   | { kind: 'reaction'; targetWaMessageId: string; emoji: string }
   | { kind: 'buttons'; body: string; buttons: Array<{ id: string; title: string }>; replyTo?: string }
   | { kind: 'list'; body: string; buttonLabel: string; rows: Array<{ id: string; title: string; description?: string }>; replyTo?: string }

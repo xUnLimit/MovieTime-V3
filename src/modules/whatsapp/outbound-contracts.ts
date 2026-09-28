@@ -50,6 +50,12 @@ export const sendWhatsAppMessageSchema = z.object({
       caption: captionSchema,
       replyTo: waMessageIdSchema.optional(),
     }),
+    z.object({
+      kind: z.literal('sticker'),
+      mediaId: mediaIdSchema,
+      mimeType: z.string().trim().min(1).max(128),
+      replyTo: waMessageIdSchema.optional(),
+    }),
     z.object({ kind: z.literal('reaction'), targetWaMessageId: waMessageIdSchema, emoji: emojiSchema }),
     z.object({
       kind: z.literal('buttons'),
