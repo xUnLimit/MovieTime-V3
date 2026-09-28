@@ -9,6 +9,7 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Read the unmatched production migration
         env:
