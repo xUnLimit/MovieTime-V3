@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const sql = readFileSync(join(process.cwd(), 'supabase', 'migrations', '20260927233000_chat_saved_messages.sql'), 'utf8');
+const sql = readFileSync(join(process.cwd(), 'supabase', 'migrations', '20260928033000_chat_saved_messages.sql'), 'utf8');
 
 describe('shared chat messages migration', () => {
   it('keeps messages independent of sales and limits the interactive shape', () => {
