@@ -106,7 +106,7 @@ function ChatsPageContent() {
 
   return (
     // El area de chats ocupa todo el contenido, sin el padding del layout, como en el prototipo.
-    <div className="chats-surface -m-3 flex h-[calc(100%+1.5rem)] min-w-0 flex-col sm:-m-4 sm:h-[calc(100%+2rem)] md:-m-6 md:h-[calc(100%+3rem)]">
+    <div className="chats-surface -m-3 flex h-[calc(100%+1.5rem)] min-w-0 flex-col sm:-m-4 sm:h-[calc(100%+2rem)] md:-m-5 md:h-[calc(100%+2.5rem)]">
       {missingConversation ? <p role="status" className="border-b border-chat-line bg-chat-closed px-4 py-3 text-sm text-chat-closed-ink md:hidden">No se encontró esa conversación. Elige otro chat de la lista.</p> : null}
       <div className="grid min-h-0 flex-1 overflow-hidden md:grid-cols-[minmax(286px,350px)_minmax(0,1fr)]">
         <section

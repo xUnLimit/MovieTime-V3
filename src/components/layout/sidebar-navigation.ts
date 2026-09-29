@@ -81,6 +81,11 @@ const navigationSections: SidebarNavSection[] = [
     label: 'Seguimiento',
     items: [
       {
+        name: 'Notificaciones',
+        href: '/notificaciones',
+        icon: Bell,
+      },
+      {
         name: 'Chats',
         href: '/chats',
         icon: MessageCircle,
@@ -89,11 +94,6 @@ const navigationSections: SidebarNavSection[] = [
         name: 'Pagos Yappy',
         href: '/pagos-yappy',
         icon: Smartphone,
-      },
-      {
-        name: 'Notificaciones',
-        href: '/notificaciones',
-        icon: Bell,
       },
       {
         name: 'Servicios en Reposo',

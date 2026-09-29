@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, useEffect, useLayoutEffect, useRef, useImperativeHandle, useState } from 'react';
-import { Bookmark, ClipboardList, FileText, ListChecks, Lock, Mic, Paperclip, Plus, Send, Sticker as StickerIcon, Square, X, Zap } from 'lucide-react';
+import { ClipboardList, FileText, ListChecks, Lock, Mic, Paperclip, Plus, Send, Sticker as StickerIcon, Square, X, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -217,13 +217,11 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
           </span>
         </p>
         <div className="flex shrink-0 flex-wrap gap-2">
-          <button type="button" onClick={() => setSavedMessagesOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-md border border-chat-line px-3.5 py-[11px] text-xs font-semibold text-chat-ink hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Bookmark className="h-4 w-4" aria-hidden />Gestionar mensajes</button>
           <button type="button" onClick={onOpenTemplates} className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-chat-accent px-3.5 py-[11px] text-xs font-semibold text-chat-accent-ink transition-colors hover:bg-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-chat-surface">
             <FileText className="h-4 w-4" aria-hidden /> Enviar plantilla
           </button>
         </div>
       </div>
-      {savedMessagesOpen ? <SavedMessagesDialog open onOpenChange={setSavedMessagesOpen} onUse={applySavedMessage} canUse={false} /> : null}
       </>
     );
   }
