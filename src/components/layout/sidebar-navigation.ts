@@ -9,6 +9,7 @@ import {
   MessageCircle,
   MessageSquare,
   Pause,
+  Settings,
   ShoppingCart,
   Smartphone,
   Tv2,
@@ -20,6 +21,8 @@ export type SidebarNavItem = {
   href: string;
   icon: ComponentType<{ className?: string }>;
   badge?: string;
+  /** Existe para migas y rutas activas, pero no se dibuja en el menu lateral (p. ej. Configuracion, que se abre desde el menu de usuario). */
+  hidden?: boolean;
 };
 
 export type SidebarNavSection = {
@@ -35,6 +38,7 @@ const adminOnlyPaths = [
   '/categorias',
   '/metodos-pago',
   '/log-actividad',
+  '/configuracion',
 ];
 
 const navigationSections: SidebarNavSection[] = [
@@ -121,6 +125,12 @@ const navigationSections: SidebarNavSection[] = [
         href: '/editor-mensajes',
         icon: MessageSquare,
       },
+      {
+        name: 'Configuración',
+        href: '/configuracion',
+        icon: Settings,
+        hidden: true,
+      },
     ],
   },
 ];
@@ -131,6 +141,7 @@ export function getSidebarNavigationSections(
   return navigationSections
     .map((section) => {
       const items = section.items.filter((item) => {
+        if (item.hidden) return false;
         if (!adminOnlyPaths.includes(item.href)) return true;
         return userRole === 'admin';
       });

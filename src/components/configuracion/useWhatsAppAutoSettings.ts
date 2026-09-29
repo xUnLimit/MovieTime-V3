@@ -13,13 +13,13 @@ export const AUTO_CAP_MIN = 1;
 export const AUTO_CAP_MAX = 1000;
 
 // Ajustes del envio automatico "Dia de pago" por WhatsApp (interruptor, hora de Panama y tope diario).
-export function useWhatsAppAutoSettings(open: boolean) {
+export function useWhatsAppAutoSettings(enabled: boolean) {
   const { data: config, refetch: refetchConfig } = useConfig();
   const auto = config?.whatsapp;
   const runsQuery = useQuery({
     queryKey: queryKeys.whatsapp.autoRuns(),
     queryFn: listAutoNoticeRunsUseCase,
-    enabled: open,
+    enabled,
   });
   const [draftCap, setDraftCap] = useState('');
   const [isSaving, setIsSaving] = useState(false);

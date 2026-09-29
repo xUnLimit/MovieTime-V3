@@ -29,7 +29,7 @@ export function WhatsAppAutoSection({ settings }: { settings: AutoSettings }) {
   const disabled = !autoConfig || isSaving;
 
   return (
-    <section className="space-y-4 rounded-md border p-4" aria-labelledby="whatsapp-auto-title">
+    <section className="space-y-4 rounded-xl border bg-card p-5" aria-labelledby="whatsapp-auto-title">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 id="whatsapp-auto-title" className="flex items-center gap-2 text-sm font-semibold">

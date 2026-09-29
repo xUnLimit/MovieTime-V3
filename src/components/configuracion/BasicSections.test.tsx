@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { DevicePushSection } from './ConfiguracionDialogBasicSections';
+import { DevicePushSection } from './BasicSections';
 
 describe('DevicePushSection', () => {
   it('lets a subscribed device test push independently of executive reminders', async () => {

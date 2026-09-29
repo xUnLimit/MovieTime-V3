@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { WhatsAppAutoSection, formatRunDate } from './ConfiguracionDialogWhatsAppAutoSection';
+import { WhatsAppAutoSection, formatRunDate } from './WhatsAppAutoSection';
 import type { useWhatsAppAutoSettings } from './useWhatsAppAutoSettings';
 
 type Settings = ReturnType<typeof useWhatsAppAutoSettings>;

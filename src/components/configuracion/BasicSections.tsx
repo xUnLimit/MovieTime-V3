@@ -10,9 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import type { useConfiguracionDialogController } from "./useConfiguracionDialogController";
+import type { useConfiguracionController } from "./useConfiguracionController";
 
-type ConfiguracionController = ReturnType<typeof useConfiguracionDialogController>;
+type ConfiguracionController = ReturnType<typeof useConfiguracionController>;
 
 export function DashboardViewSection({
   availableYears,
@@ -20,7 +20,7 @@ export function DashboardViewSection({
   setSelectedYear,
 }: Pick<ConfiguracionController, "availableYears" | "selectedYear" | "setSelectedYear">) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-3 rounded-xl border bg-card p-5">
       <div>
         <h3 className="text-sm font-semibold">Vista del dashboard</h3>
         <p className="text-xs text-muted-foreground">
@@ -55,7 +55,7 @@ export function DevicePushSection({
   "handlePushSubscriptionToggle" | "handleTestPush" | "isPushSupported" | "isSendingTestPush" | "notificationPermission" | "pushSubscribed"
 >) {
   return (
-    <section className="space-y-3 rounded-md border p-4">
+    <section className="space-y-3 rounded-xl border bg-card p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">Push web en este dispositivo</h3>

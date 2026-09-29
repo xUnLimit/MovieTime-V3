@@ -45,3 +45,12 @@ describe('getSidebarNavigationSections', () => {
     expect(yappy?.icon).not.toBe(metodos?.icon);
   });
 });
+
+describe('Configuracion', () => {
+  it('conserva su miga pero no aparece en el menu lateral', () => {
+    expect(findNavItem('/configuracion')?.name).toBe('Configuración');
+    const names = (role?: string) => getSidebarNavigationSections(role).flatMap((s) => s.items.map((i) => i.name));
+    expect(names('admin')).not.toContain('Configuración');
+    expect(names('vendedor')).not.toContain('Configuración');
+  });
+});

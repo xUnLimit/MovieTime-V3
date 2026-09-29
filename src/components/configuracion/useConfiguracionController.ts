@@ -27,15 +27,9 @@ import { useWhatsAppAutoSettings } from "./useWhatsAppAutoSettings";
 import {
   getAvailableDashboardYears,
   getExecutivePushStatus,
-} from "./configuracion-dialog-controller-helpers";
+} from "./configuracion-controller-helpers";
 
-interface UseConfiguracionDialogControllerParams {
-  open: boolean;
-}
-
-export function useConfiguracionDialogController({
-  open,
-}: UseConfiguracionDialogControllerParams) {
+export function useConfiguracionController() {
   const user = useAuthStore((state) => state.user);
   const { data: stats } = useDashboardStats();
   const { selectedYear, setSelectedYear } = useDashboardFilterStore();
@@ -46,7 +40,7 @@ export function useConfiguracionDialogController({
     setNotificationPermission,
   } = usePwaStore();
 
-  const whatsappAuto = useWhatsAppAutoSettings(open);
+  const whatsappAuto = useWhatsAppAutoSettings(true);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [isSavingExecutiveSchedule, setIsSavingExecutiveSchedule] = useState(false);
   const [draftWindowStart, setDraftWindowStart] = useState('');
@@ -55,7 +49,6 @@ export function useConfiguracionDialogController({
   const [isSendingTestPush, setIsSendingTestPush] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
     safeAsyncSideEffect(refetchConfig(), {
       operation: 'fetchConfig',
       entity: 'config',
@@ -67,7 +60,7 @@ export function useConfiguracionDialogController({
       }),
       { operation: 'getPushSubscriptionStatus', entity: 'pwa' },
     );
-  }, [open, refetchConfig, setNotificationPermission]);
+  }, [refetchConfig, setNotificationPermission]);
 
   const availableYears = useMemo(() => {
     return getAvailableDashboardYears(stats?.ingresosPorMes);

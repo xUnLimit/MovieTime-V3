@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { EXECUTIVE_PUSH_BLOCKS } from "@/modules/pwa/push-constants";
-import type { useConfiguracionDialogController } from "./useConfiguracionDialogController";
+import type { useConfiguracionController } from "./useConfiguracionController";
 
-type ConfiguracionController = ReturnType<typeof useConfiguracionDialogController>;
+type ConfiguracionController = ReturnType<typeof useConfiguracionController>;
 
 export function ExecutivePushSection({
   draftIntervalHours,
@@ -47,7 +47,7 @@ export function ExecutivePushSection({
   | "setDraftWindowStart"
 >) {
   return (
-    <section className="space-y-3 rounded-md border p-4">
+    <section className="space-y-3 rounded-xl border bg-card p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">Recordatorios ejecutivos</h3>
