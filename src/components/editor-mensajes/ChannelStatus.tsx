@@ -4,9 +4,9 @@ import { cn } from '@/platform/utils';
 import type { ChannelStatus as Status } from '@/modules/messaging/meta-template-mapping';
 
 const META: Record<Status, { dot: string; tone: Tone; label: string; hint: string }> = {
-  api: { dot: 'bg-success', tone: 'success', label: 'Por API', hint: 'Plantilla de Meta aprobada' },
-  pending: { dot: 'bg-warning', tone: 'warning', label: 'Meta pendiente', hint: 'Plantilla vinculada, aún no enviable' },
-  wame: { dot: 'bg-muted-foreground/50', tone: 'neutral', label: 'Solo wa.me', hint: 'Sin plantilla de Meta' },
+  api: { dot: 'bg-success', tone: 'success', label: 'Automático', hint: 'Plantilla de Meta aprobada: se envía sola por la API' },
+  pending: { dot: 'bg-warning', tone: 'warning', label: 'En revisión', hint: 'Plantilla vinculada, Meta aún no la aprueba' },
+  wame: { dot: 'bg-muted-foreground/50', tone: 'neutral', label: 'Manual', hint: 'Sin plantilla de Meta: se envía a mano por wa.me' },
 };
 
 export function channelLabel(status: Status) {

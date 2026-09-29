@@ -57,8 +57,8 @@ export function ApiTab({ templates, fields, mapError, isLoading, onChange }: Api
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Es la plantilla aprobada por Meta que se envía por la API de WhatsApp, incluso fuera de la ventana de 24 h.
-        Sin plantilla, el mensaje solo sale por wa.me.
+        Una plantilla aprobada por Meta permite enviar este mensaje automáticamente, incluso fuera de la ventana de 24 h.
+        Sin plantilla, lo envías tú a mano desde wa.me o el chat.
       </p>
 
       <div className="space-y-1">

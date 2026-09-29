@@ -10,14 +10,15 @@ type SaveBarProps = {
   onSave: () => void;
 };
 
+/** Pie fijo de la tarjeta del editor: estado de los cambios y el boton Guardar siempre en el mismo lugar. */
 export function SaveBar({ dirty, invalid, saving, justSaved, onSave }: SaveBarProps) {
-  const status = saving ? 'Guardando...' : dirty ? 'Cambios sin guardar' : justSaved ? 'Todos los cambios guardados' : '';
+  const status = saving ? 'Guardando...' : dirty ? 'Cambios sin guardar' : justSaved ? 'Todos los cambios guardados' : 'Sin cambios';
   return (
-    <div className="sticky bottom-2 z-10 flex items-center justify-between gap-3 rounded-lg border bg-card px-4 py-2.5 shadow-sm">
+    <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t bg-card px-4 py-2">
       <p role="status" aria-live="polite" className={dirty ? 'text-sm font-medium text-warning' : 'text-sm text-muted-foreground'}>
         {status}
       </p>
-      <Button type="button" size="sm" onClick={onSave} disabled={!dirty || invalid || saving}>
+      <Button type="button" onClick={onSave} disabled={!dirty || invalid || saving}>
         Guardar
       </Button>
     </div>

@@ -50,3 +50,14 @@ export function insertAtCursor(value: string, start: number, end: number, text: 
   const to = Math.max(from, Math.min(end, value.length));
   return { value: value.slice(0, from) + text + value.slice(to), cursor: from + text.length };
 }
+
+/** Envuelve la seleccion con una marca de formato de WhatsApp (`*`, `_`, `~`); sin seleccion deja el cursor entre las marcas. */
+export function wrapSelection(value: string, start: number, end: number, mark: string) {
+  const from = Math.max(0, Math.min(start, value.length));
+  const to = Math.max(from, Math.min(end, value.length));
+  return {
+    value: value.slice(0, from) + mark + value.slice(from, to) + mark + value.slice(to),
+    selectionStart: from + mark.length,
+    selectionEnd: to + mark.length,
+  };
+}

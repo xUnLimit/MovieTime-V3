@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -72,8 +72,14 @@ type User = ReturnType<typeof userEvent.setup>;
 
 const tipoButton = (tipo: string) => document.querySelector(`button[data-tipo="${tipo}"]`) as HTMLElement;
 
+// La seccion de API va plegada salvo que el mensaje ya tenga plantilla vinculada.
+async function openApi(user: User) {
+  const toggle = screen.getByRole('button', { name: /Envío automático por WhatsApp API/ });
+  if (toggle.getAttribute('aria-expanded') === 'false') await user.click(toggle);
+}
+
 async function pickMeta(user: User, name = /aviso_vencimiento/) {
-  await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+  await openApi(user);
   await user.click(screen.getByRole('combobox', { name: 'Plantilla vinculada' }));
   await user.click(await screen.findByRole('option', { name }));
 }
@@ -140,20 +146,59 @@ describe('TemplateEditor', () => {
     textarea.focus();
     textarea.setSelectionRange(5, 5);
 
-    await user.click(screen.getByRole('button', { name: /Insertar dato/ }));
-    expect(screen.queryByRole('menuitem', { name: /Contraseña/ })).toBeNull();
-    await user.click(await screen.findByRole('menuitem', { name: /Primer nombre/ }));
+    expect(screen.queryByRole('button', { name: /Contraseña/ })).toBeNull();
+    await user.click(screen.getByRole('button', { name: /Primer nombre/ }));
 
     expect(textarea.value).toBe('Hola {nombre_cliente}, bienvenido');
+  });
+
+  it('formats the selected text with WhatsApp marks from the toolbar', async () => {
+    const user = userEvent.setup();
+    render(wrap([makeTemplate({ contenido: 'Hola mundo' })]));
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.setSelectionRange(5, 10);
+
+    await user.click(screen.getByRole('button', { name: 'Negrita' }));
+
+    expect(textarea.value).toBe('Hola *mundo*');
+  });
+
+  it('keeps the API section folded until a Meta template is linked or the user opens it', async () => {
+    const user = userEvent.setup();
+    render(wrap([makeTemplate()]));
+    const toggle = screen.getByRole('button', { name: /Envío automático por WhatsApp API/ });
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('combobox', { name: 'Plantilla vinculada' })).toBeNull();
+    await user.click(toggle);
+    expect(screen.getByRole('combobox', { name: 'Plantilla vinculada' })).toBeTruthy();
+  });
+
+  it('keeps the phone the same size whatever the message length', () => {
+    render(wrap([makeTemplate()]));
+    const phone = () => screen.getByLabelText('Simulación del celular del cliente').className;
+    const before = phone();
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: ' y un texto muy largo '.repeat(40) } });
+
+    expect(phone()).toBe(before);
+    expect(before).toContain('h-[600px]');
+    expect(before).toContain('w-[300px]');
+  });
+
+  it('shows the message as the client receives it, from MovieTime PTY', () => {
+    render(wrap([makeTemplate()]));
+    expect(within(screen.getByLabelText('Simulación del celular del cliente')).getByText('MovieTime PTY')).toBeTruthy();
+    expect(screen.getByTestId('preview-bubble').textContent).toContain('Hola María');
   });
 
   it('offers credentials and the items block for subscriptions', async () => {
     const user = userEvent.setup();
     render(wrap([]));
     await user.click(tipoButton('suscripcion'));
-    await user.click(screen.getByRole('button', { name: /Insertar dato/ }));
-    expect(await screen.findByRole('menuitem', { name: /Contraseña/ })).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: /Bloque por servicio/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Contraseña/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Bloque por servicio/ })).toBeTruthy();
   });
 
   it('tracks unsaved changes and only enables saving when there is something to save', async () => {
@@ -192,7 +237,7 @@ describe('TemplateEditor', () => {
       metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento'],
     })]));
 
-    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+    await openApi(user);
     expect(screen.getAllByText('APROBADA').length).toBeGreaterThan(0);
     expect(screen.getByTestId('meta-body').textContent).toContain('{{1}}, tu plan de {{2}} vence el {{3}}.');
     expect(screen.getByRole('combobox', { name: 'Dato para la variable 1' }).textContent).toContain('Saludo y nombre');
@@ -204,14 +249,14 @@ describe('TemplateEditor', () => {
     expect(preview.textContent).toContain('Netflix y Disney+');
     expect(preview.textContent).toContain('No deseo continuar');
 
-    await user.click(screen.getByRole('button', { name: 'wa.me' }));
+    await user.click(screen.getByRole('button', { name: 'Manual' }));
     expect(screen.getByTestId('preview-bubble').textContent).toContain('Hola María');
   });
 
   it('disables the API preview when no Meta template is linked', () => {
     state.metas = [makeMeta()];
     render(wrap([makeTemplate()]));
-    expect((screen.getByRole('button', { name: 'API' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Automático' }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByTestId('preview-bubble').getAttribute('data-mode')).toBe('wame');
   });
 
@@ -219,7 +264,7 @@ describe('TemplateEditor', () => {
     const user = userEvent.setup();
     state.metas = [makeMeta({ paramCount: 3 })];
     render(wrap([makeTemplate({ metaTemplateName: 'aviso_vencimiento', metaParamMap: ['servicios'] })]));
-    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+    await openApi(user);
 
     expect(screen.getByRole('alert').textContent).toContain('La plantilla usa 3 datos y el mapa tiene 1.');
     expect((screen.getByRole('button', SAVE) as HTMLButtonElement).disabled).toBe(true);
@@ -259,7 +304,7 @@ describe('TemplateEditor', () => {
     });
     render(wrap([template]));
 
-    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+    await openApi(user);
     await user.click(screen.getByRole('combobox', { name: 'Qué hace el botón Quiero renovar' }));
     await user.click(await screen.findByRole('option', { name: 'Nada (lo atiendes en el chat)' }));
     await user.click(screen.getByRole('button', SAVE));
@@ -284,7 +329,7 @@ describe('TemplateEditor', () => {
     await user.click(screen.getByRole('combobox', { name: 'Plantilla vinculada' }));
     await user.click(await screen.findByRole('option', { name: 'Sin plantilla de Meta' }));
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getAllByText('Solo wa.me').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Manual').length).toBeGreaterThan(0);
   });
 
   it('creates a tipo without Meta link keeping empty map and actions', async () => {
@@ -305,7 +350,7 @@ describe('TemplateEditor', () => {
     const user = userEvent.setup();
     state.metas = [makeMeta({ name: 'otra' })];
     render(wrap([makeTemplate({ metaTemplateName: 'borrada', metaParamMap: [] })]));
-    await user.click(screen.getByRole('tab', { name: 'WhatsApp API' }));
+    await openApi(user);
     expect(screen.getByRole('alert').textContent).toContain('ya no existe en Meta');
   });
 });
