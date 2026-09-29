@@ -44,6 +44,22 @@ export function placeholdersFor(tipo: EditableTipoKey) {
   return PLACEHOLDERS.filter((item) => allowed.has(item.key));
 }
 
+const PLACEHOLDER_GROUPS: readonly { id: string; label: string; keys: readonly string[] }[] = [
+  { id: 'cliente', label: 'Cliente', keys: ['{saludo}', '{nombre_cliente}', '{cliente}'] },
+  { id: 'servicio', label: 'Servicio', keys: [ITEMS_BLOCK_KEY, '{items}', '{servicio}', '{categoria}', '{perfil_nombre}'] },
+  { id: 'cobro', label: 'Cobro', keys: ['{vencimiento}', '{monto}'] },
+  { id: 'acceso', label: 'Acceso', keys: ['{correo}', '{contrasena}', '{codigo}'] },
+  { id: 'cambios', label: 'Cambios', keys: ['{credenciales_cambiadas}', '{cambio_correo}', '{cambio_contrasena}'] },
+];
+
+/** Los datos disponibles para un mensaje, agrupados por tema y sin grupos vacios. */
+export function placeholderGroupsFor(tipo: EditableTipoKey) {
+  const available = new Map(placeholdersFor(tipo).map((item) => [item.key, item]));
+  return PLACEHOLDER_GROUPS
+    .map((group) => ({ id: group.id, label: group.label, items: group.keys.flatMap((key) => available.get(key) ?? []) }))
+    .filter((group) => group.items.length > 0);
+}
+
 /** Inserta texto en la seleccion (o al final) y devuelve el nuevo valor con la posicion del cursor. */
 export function insertAtCursor(value: string, start: number, end: number, text: string) {
   const from = Math.max(0, Math.min(start, value.length));

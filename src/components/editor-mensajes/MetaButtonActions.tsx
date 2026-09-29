@@ -23,15 +23,15 @@ export function MetaButtonActions({ buttons, value, onChange }: MetaButtonAction
   return (
     <div className="space-y-2">
       <div>
-        <p className="text-sm font-medium">Botones de la plantilla</p>
+        <h3 className="text-sm font-medium">Botones de la plantilla</h3>
         <p className="text-xs text-muted-foreground">Elige qué pasa cuando el cliente toca cada botón.</p>
       </div>
       <ul className="space-y-2" aria-label="Botones de la plantilla">
         {buttons.map((button, index) => {
           const id = `meta-button-${index}`;
           return (
-            <li key={`${button.type}-${index}`} className="space-y-1 rounded-md border bg-background p-2">
-              <Label htmlFor={id} className="text-xs font-medium">Botón «{button.text}» · Qué hace este botón</Label>
+            <li key={`${button.type}-${index}`} className="grid grid-cols-[8rem_minmax(0,1fr)] items-center gap-3">
+              <Label htmlFor={id} className="truncate text-xs font-medium" title={button.text}>{button.text}</Label>
               <Select value={actions[index]} onValueChange={(action) => setAction(index, action)}>
                 <SelectTrigger id={id} className="w-full" aria-label={`Qué hace el botón ${button.text}`}>
                   <SelectValue />

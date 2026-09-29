@@ -72,10 +72,10 @@ type User = ReturnType<typeof userEvent.setup>;
 
 const tipoButton = (tipo: string) => document.querySelector(`button[data-tipo="${tipo}"]`) as HTMLElement;
 
-// La seccion de API va plegada salvo que el mensaje ya tenga plantilla vinculada.
+// El editor abre en Automatico solo si el mensaje ya tiene plantilla vinculada; si no, se cambia con el selector.
 async function openApi(user: User) {
-  const toggle = screen.getByRole('button', { name: /Envío automático por WhatsApp API/ });
-  if (toggle.getAttribute('aria-expanded') === 'false') await user.click(toggle);
+  const toggle = screen.getByRole('button', { name: 'Automático' });
+  if (toggle.getAttribute('aria-pressed') === 'false') await user.click(toggle);
 }
 
 async function pickMeta(user: User, name = /aviso_vencimiento/) {
@@ -152,6 +152,14 @@ describe('TemplateEditor', () => {
     expect(textarea.value).toBe('Hola {nombre_cliente}, bienvenido');
   });
 
+  it('lists the data by topic and highlights them inside the text', () => {
+    render(wrap([makeTemplate({ contenido: 'Hola {nombre_cliente}, paga {monto}.' })]));
+    const groups = screen.getByRole('region', { name: 'Datos del cliente' });
+    ['Cliente', 'Servicio', 'Cobro'].forEach((label) => expect(within(groups).getByRole('list', { name: label })).toBeTruthy());
+    const marks = Array.from(document.querySelectorAll('mark')).map((mark) => mark.textContent);
+    expect(marks).toEqual(['{nombre_cliente}', '{monto}']);
+  });
+
   it('formats the selected text with WhatsApp marks from the toolbar', async () => {
     const user = userEvent.setup();
     render(wrap([makeTemplate({ contenido: 'Hola mundo' })]));
@@ -164,15 +172,27 @@ describe('TemplateEditor', () => {
     expect(textarea.value).toBe('Hola *mundo*');
   });
 
-  it('keeps the API section folded until a Meta template is linked or the user opens it', async () => {
+  it('switches between manual and automatic in place, following the linked template by default', async () => {
     const user = userEvent.setup();
     render(wrap([makeTemplate()]));
-    const toggle = screen.getByRole('button', { name: /Envío automático por WhatsApp API/ });
+    const manual = screen.getByRole('button', { name: 'Manual' });
+    const auto = screen.getByRole('button', { name: 'Automático' });
 
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(manual.getAttribute('aria-pressed')).toBe('true');
     expect(screen.queryByRole('combobox', { name: 'Plantilla vinculada' })).toBeNull();
-    await user.click(toggle);
+    await user.click(auto);
+    expect(auto.getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('combobox', { name: 'Plantilla vinculada' })).toBeTruthy();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    await user.click(manual);
+    expect(screen.getByRole('textbox')).toBeTruthy();
+  });
+
+  it('opens in automatic when the message already has a Meta template', () => {
+    state.metas = [makeMeta()];
+    render(wrap([makeTemplate({ metaTemplateName: 'aviso_vencimiento', metaParamMap: ['a', 'b', 'c'] })]));
+    expect(screen.getByRole('button', { name: 'Automático' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('preview-bubble').getAttribute('data-mode')).toBe('api');
   });
 
   it('keeps the phone the same size whatever the message length', () => {
@@ -253,11 +273,16 @@ describe('TemplateEditor', () => {
     expect(screen.getByTestId('preview-bubble').textContent).toContain('Hola María');
   });
 
-  it('disables the API preview when no Meta template is linked', () => {
+  it('asks to link a template when automatic is chosen without one', async () => {
+    const user = userEvent.setup();
     state.metas = [makeMeta()];
     render(wrap([makeTemplate()]));
-    expect((screen.getByRole('button', { name: 'Automático' }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByTestId('preview-bubble').getAttribute('data-mode')).toBe('wame');
+
+    await user.click(screen.getByRole('button', { name: 'Automático' }));
+    expect(screen.getByText('Este mensaje se envía a mano')).toBeTruthy();
+    expect(screen.getByTestId('preview-bubble').getAttribute('data-mode')).toBe('api');
+    expect(screen.getByTestId('preview-bubble').textContent).toContain('Vincula una plantilla');
   });
 
   it('flags a mapping that does not match the variable count and blocks saving', async () => {

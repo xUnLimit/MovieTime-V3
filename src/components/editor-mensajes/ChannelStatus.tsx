@@ -1,12 +1,10 @@
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import type { Tone } from '@/components/shared/tone';
 import { cn } from '@/platform/utils';
 import type { ChannelStatus as Status } from '@/modules/messaging/meta-template-mapping';
 
-const META: Record<Status, { dot: string; tone: Tone; label: string; hint: string }> = {
-  api: { dot: 'bg-success', tone: 'success', label: 'Automático', hint: 'Plantilla de Meta aprobada: se envía sola por la API' },
-  pending: { dot: 'bg-warning', tone: 'warning', label: 'En revisión', hint: 'Plantilla vinculada, Meta aún no la aprueba' },
-  wame: { dot: 'bg-muted-foreground/50', tone: 'neutral', label: 'Manual', hint: 'Sin plantilla de Meta: se envía a mano por wa.me' },
+const META: Record<Status, { dot: string; label: string; hint: string }> = {
+  api: { dot: 'bg-success', label: 'Automático', hint: 'Plantilla de Meta aprobada: se envía sola por la API' },
+  pending: { dot: 'bg-warning', label: 'En revisión', hint: 'Plantilla vinculada, Meta aún no la aprueba' },
+  wame: { dot: 'bg-muted-foreground/50', label: 'Manual', hint: 'Sin plantilla de Meta: se envía a mano por wa.me' },
 };
 
 export function channelLabel(status: Status) {
@@ -22,21 +20,18 @@ export function ChannelDot({ status }: { status: Status }) {
   );
 }
 
-export function ChannelChip({ status }: { status: Status }) {
-  return (
-    <StatusBadge tone={META[status].tone} title={META[status].hint}>
-      {META[status].label}
-    </StatusBadge>
-  );
+/** Punto de estado decorativo (el texto del estado lo da quien lo usa). */
+export function ChannelPip({ status }: { status: Status }) {
+  return <span aria-hidden className={cn('size-2 rounded-full', META[status].dot)} />;
 }
 
 export function ChannelLegend() {
   return (
-    <ul className="space-y-1 px-2 text-xs text-muted-foreground" aria-hidden>
+    <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-hidden>
       {(['api', 'pending', 'wame'] as const).map((status) => (
-        <li key={status} className="flex items-center gap-2">
+        <li key={status} title={META[status].hint} className="flex items-center gap-1.5">
           <span className={cn('size-2 rounded-full', META[status].dot)} />
-          {META[status].hint}
+          {META[status].label}
         </li>
       ))}
     </ul>

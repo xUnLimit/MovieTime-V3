@@ -9,6 +9,7 @@ import type { ChannelStatus } from '@/modules/messaging/meta-template-mapping';
 import type { EditableTipoKey } from '@/modules/messaging/template-tipos';
 import { ChannelDot, ChannelLegend } from './ChannelStatus';
 import { TEMPLATE_GROUPS, tipoCuando, tipoLabel } from './editor-constants';
+import { PanelFooter, PanelHeader } from './PanelFrame';
 
 type TemplateListProps = {
   selected: EditableTipoKey;
@@ -30,7 +31,7 @@ function moveFocus(event: KeyboardEvent<HTMLElement>) {
 export function TemplateList({ selected, statusOf, onSelect }: TemplateListProps) {
   return (
     <>
-      <div className="space-y-1 md:hidden">
+      <div className="space-y-1 p-4 md:hidden">
         <Label htmlFor="template-select" className="text-xs text-muted-foreground">Mensaje</Label>
         <Select value={selected} onValueChange={(value) => onSelect(value as EditableTipoKey)}>
           <SelectTrigger id="template-select" className="w-full" aria-label="Elegir mensaje">
@@ -44,41 +45,44 @@ export function TemplateList({ selected, statusOf, onSelect }: TemplateListProps
         </Select>
       </div>
 
-      <nav aria-label="Mensajes" onKeyDown={moveFocus} className="hidden space-y-3 rounded-xl border bg-card p-2 md:block">
-        {TEMPLATE_GROUPS.map((group) => (
-          <section key={group.id} aria-labelledby={`group-${group.id}`} data-testid={`group-${group.id}`}>
-            <h2 id={`group-${group.id}`} className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {group.label}
-            </h2>
-            <ul className="space-y-0.5">
-              {group.tipos.map((tipo) => {
-                const active = tipo === selected;
-                return (
-                  <li key={tipo}>
-                    <button
-                      type="button"
-                      data-tipo={tipo}
-                      aria-current={active ? 'true' : undefined}
-                      onClick={() => onSelect(tipo)}
-                      className={cn(
-                        'flex w-full items-start gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors',
-                        'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                        active ? 'bg-accent' : 'hover:bg-accent/50',
-                      )}
-                    >
-                      <span className="mt-1.5"><ChannelDot status={statusOf(tipo)} /></span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium leading-tight">{tipoLabel(tipo)}</span>
-                        <span className="block text-xs leading-snug text-muted-foreground">{tipoCuando(tipo)}</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-        <ChannelLegend />
+      <nav aria-label="Mensajes" onKeyDown={moveFocus} className="hidden h-full min-h-0 flex-col bg-muted/30 md:flex">
+        <PanelHeader tone="strong" title="Mensajes" description="Elige cuál editar" />
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pb-2">
+          {TEMPLATE_GROUPS.map((group) => (
+            <section key={group.id} aria-labelledby={`group-${group.id}`} data-testid={`group-${group.id}`}>
+              <h3 id={`group-${group.id}`} className="flex items-center gap-2 px-4 pb-1 pt-3 text-xs font-medium text-muted-foreground after:h-px after:flex-1 after:bg-border">
+                {group.label}
+              </h3>
+              <ul className="space-y-0.5 px-2">
+                {group.tipos.map((tipo) => {
+                  const active = tipo === selected;
+                  return (
+                    <li key={tipo}>
+                      <button
+                        type="button"
+                        data-tipo={tipo}
+                        aria-current={active ? 'true' : undefined}
+                        onClick={() => onSelect(tipo)}
+                        className={cn(
+                          'flex h-12 w-full items-center gap-2.5 rounded-md px-2 text-left transition-colors',
+                          'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                          active ? 'bg-card ring-1 ring-border' : 'hover:bg-card/60',
+                        )}
+                      >
+                        <ChannelDot status={statusOf(tipo)} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium leading-tight">{tipoLabel(tipo)}</span>
+                          <span className="block truncate text-xs leading-snug text-muted-foreground">{tipoCuando(tipo)}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+        <PanelFooter tone="strong"><ChannelLegend /></PanelFooter>
       </nav>
     </>
   );

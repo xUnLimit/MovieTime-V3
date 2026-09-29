@@ -22,7 +22,7 @@ export function MetaParamMapEditor({ paramCount, value, error, onChange }: MetaP
   return (
     <div className="space-y-2">
       <div>
-        <p className="text-sm font-medium">Qué dato va en cada variable</p>
+        <h3 className="text-sm font-medium">Qué dato va en cada variable</h3>
         <p className="text-xs text-muted-foreground">Meta reemplaza cada {'{{n}}'} por el dato que elijas.</p>
       </div>
       <ul className="space-y-2">

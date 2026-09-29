@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { PanelFooter } from './PanelFrame';
 
 type SaveBarProps = {
   dirty: boolean;
@@ -14,13 +15,14 @@ type SaveBarProps = {
 export function SaveBar({ dirty, invalid, saving, justSaved, onSave }: SaveBarProps) {
   const status = saving ? 'Guardando...' : dirty ? 'Cambios sin guardar' : justSaved ? 'Todos los cambios guardados' : 'Sin cambios';
   return (
-    <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t bg-card px-4 py-2">
-      <p role="status" aria-live="polite" className={dirty ? 'text-sm font-medium text-warning' : 'text-sm text-muted-foreground'}>
+    <PanelFooter>
+      <p role="status" aria-live="polite" className={dirty ? 'flex items-center gap-2 text-sm font-medium text-warning' : 'text-sm text-muted-foreground'}>
+        {dirty ? <span aria-hidden className="size-2 rounded-full bg-warning" /> : null}
         {status}
       </p>
       <Button type="button" onClick={onSave} disabled={!dirty || invalid || saving}>
         Guardar
       </Button>
-    </div>
+    </PanelFooter>
   );
 }
