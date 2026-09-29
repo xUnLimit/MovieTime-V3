@@ -348,7 +348,7 @@ describe('ChatComposer', () => {
 
     expect(screen.queryByLabelText('Mensaje')).toBeNull();
     expect(screen.getByText(/no ha escrito en las últimas 24 horas/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Gestionar mensajes' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Gestionar mensajes' })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Enviar plantilla' }));
     expect(props.onOpenTemplates).toHaveBeenCalled();
   });
