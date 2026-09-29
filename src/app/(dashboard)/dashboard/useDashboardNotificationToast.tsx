@@ -6,6 +6,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Bell } from "lucide-react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import { toneText, type Tone } from "@/components/shared/tone";
+import { cn } from "@/platform/utils/cn";
 import type { NotificacionConId } from "@/hooks/use-notificaciones";
 import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
@@ -78,72 +81,41 @@ function buildNotificationDescription(unread: NotificacionConId[]) {
   if (serviciosCount > 0) parts.push(`${serviciosCount} servicio${serviciosCount > 1 ? "s" : ""} por pagar`);
 
   return parts.length > 0
-    ? `Tienes ${parts.join(" y ")} que requieren tu atención.`
-    : `Tienes ${unread.length} alerta${unread.length > 1 ? "s" : ""} importante${unread.length > 1 ? "s" : ""} que requieren tu atención.`;
+    ? `Tienes ${parts.join(" y ")}.`
+    : `Tienes ${unread.length} alerta${unread.length > 1 ? "s" : ""} importante${unread.length > 1 ? "s" : ""}.`;
 }
 
 function showDashboardNotificationToast(unread: NotificacionConId[]) {
-  const isRed = unread.some((n) => n.prioridad === "critica");
+  const tone: Tone = unread.some((n) => n.prioridad === "critica") ? "danger" : "warning";
   const description = buildNotificationDescription(unread);
 
   toast.custom((t) => (
     <div
-      className={[
-        "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg",
-        "transition-all",
-        isRed
-          ? "border-danger-border bg-background"
-          : "border-warning-border bg-background",
-      ].join(" ")}
+      role="status"
+      className={cn(
+        "pointer-events-auto flex w-full items-start gap-3 rounded-xl border bg-card p-4 text-card-foreground shadow-lg",
+        tone === "danger" ? "border-danger-border" : "border-warning-border",
+      )}
     >
-      <div className="grid gap-1">
-        <div className={`text-sm font-semibold flex items-center gap-2 ${isRed ? "text-danger" : "text-warning"}`}>
-          <Bell className="h-5 w-5" />
-          ¡Notificaciones Pendientes!
-        </div>
-        <div className="text-sm opacity-90 text-foreground">
-          {description}
-        </div>
+      <Bell className={cn("mt-0.5 size-4 shrink-0", toneText[tone])} aria-hidden="true" />
+
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold leading-tight tracking-tight">Notificaciones pendientes</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
       </div>
 
-      <Link
-        prefetch={false}
-        href="/notificaciones"
-        onClick={() => toast.dismiss(t)}
-        className={[
-          "inline-flex h-8 shrink-0 items-center justify-center self-center rounded-md border bg-transparent px-3",
-          "text-sm font-medium ring-offset-background transition-colors",
-          "hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-          isRed
-            ? "border-danger-border text-danger hover:bg-danger/15"
-            : "border-warning-border text-warning hover:bg-warning/15",
-        ].join(" ")}
-      >
-        Ver ahora
-        <ArrowRight className="ml-1 h-4 w-4" />
-      </Link>
-
-      <button
-        type="button"
-        onClick={() => toast.dismiss(t)}
-        className={[
-          "absolute right-2 top-2 rounded-md p-1 opacity-0 transition-opacity",
-          "hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
-          isRed
-            ? "text-danger hover:text-danger focus:ring-danger-border"
-            : "text-warning hover:text-warning",
-        ].join(" ")}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-        </svg>
-      </button>
+      <Button asChild variant="outline" size="xs" className="shrink-0 self-center">
+        <Link prefetch={false} href="/notificaciones" onClick={() => toast.dismiss(t)}>
+          Ver ahora
+          <ArrowRight aria-hidden="true" />
+        </Link>
+      </Button>
     </div>
   ), {
     duration: 8000,
     unstyled: true,
     classNames: {
-      toast: "!bg-transparent !border-0 !shadow-none !p-0 !rounded-none !gap-0 !flex-none w-full",
+      toast: "!bg-transparent !border-0 !shadow-none !p-0 !rounded-none !gap-0 !flex-none",
     },
   });
 }

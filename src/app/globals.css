@@ -460,6 +460,42 @@
   }
 }
 
+/*
+ * Avisos (sonner). Sus estilos base no van en una @layer y por eso le ganan a las utilidades de
+ * Tailwind: la apariencia de los toasts se fija aqui, con los tokens semanticos del sistema.
+ */
+[data-sonner-toast][data-styled='true'] {
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  box-shadow: var(--shadow-lg);
+}
+
+[data-sonner-toast][data-styled='true'] [data-icon] {
+  margin: 0.125rem 0 0;
+}
+
+[data-sonner-toast][data-type='success'][data-styled='true'] {
+  border-color: var(--success-border);
+}
+[data-sonner-toast][data-type='error'][data-styled='true'] {
+  border-color: var(--danger-border);
+}
+[data-sonner-toast][data-type='warning'][data-styled='true'] {
+  border-color: var(--warning-border);
+}
+[data-sonner-toast][data-type='info'][data-styled='true'] {
+  border-color: var(--info-border);
+}
+
+[data-sonner-toast][data-type='success'] [data-icon] { color: var(--success); }
+[data-sonner-toast][data-type='error'] [data-icon] { color: var(--danger); }
+[data-sonner-toast][data-type='warning'] [data-icon] { color: var(--warning); }
+[data-sonner-toast][data-type='info'] [data-icon] { color: var(--info); }
+
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) {
     animation: none;
