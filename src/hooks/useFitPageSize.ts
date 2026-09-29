@@ -20,18 +20,17 @@ export function computeFitRows({ available, rowHeight, headerHeight, reserve, mi
 }
 
 /**
- * Evita recargar por diferencias minimas: se conserva el tamano actual si no desborda el alto disponible
- * y sobran como maximo 3 filas; asi cambiar de pestana o de filtro no dispara una recarga extra.
+ * Tamano de pagina a aplicar. El alto de fila es una constante, asi que la medida es estable y no hay
+ * histeresis: si cabe una fila mas, se muestra (todas las tablas llegan a 10 cuando hay espacio).
  */
 export function settleFitRows(current: number | undefined, fit: number): number {
-  if (current !== undefined && current <= fit && current >= fit - 3) return current;
-  return fit;
+  return current === fit ? current : fit;
 }
 
 /** Filas por pagina iniciales, estimadas con el alto de la ventana, para acertar desde la primera carga. */
 export function estimateInitialPageSize(rowHeight = DEFAULT_ROW_HEIGHT, fallback = 10): number {
   if (typeof window === 'undefined' || window.matchMedia?.('(max-width: 767px)').matches) return fallback;
-  return Math.max(5, Math.min(100, Math.floor((window.innerHeight - 460) / rowHeight)));
+  return Math.max(5, Math.min(MAX_ROWS, Math.floor((window.innerHeight - 403) / rowHeight)));
 }
 
 interface UseFitPageSizeOptions {
@@ -46,7 +45,10 @@ interface UseFitPageSizeOptions {
 }
 
 /** Alto de fila que se asume: es una constante por tabla (no se mide) para que el resultado no dependa de los datos cargados. */
-export const DEFAULT_ROW_HEIGHT = 45;
+export const DEFAULT_ROW_HEIGHT = 49;
+
+/** Todas las tablas muestran 10 filas cuando caben; con menos alto, las que quepan (minimo 5). */
+export const MAX_ROWS = 10;
 
 const MOBILE_QUERY = '(max-width: 767px)';
 
@@ -58,9 +60,9 @@ export function useFitPageSize({
   enabled = true,
   rowHeight = DEFAULT_ROW_HEIGHT,
   headerHeight = 36,
-  reserve = 64,
+  reserve = 46,
   minRows = 5,
-  maxRows = 100,
+  maxRows = MAX_ROWS,
   remeasureKey,
 }: UseFitPageSizeOptions = {}) {
   const ref = useRef<HTMLDivElement | null>(null);

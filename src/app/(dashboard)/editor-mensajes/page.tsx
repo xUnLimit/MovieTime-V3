@@ -13,7 +13,6 @@ function EditorMensajesPageContent() {
     <div className="min-w-0 space-y-4">
       <PageHeader
         title="Mensajes de WhatsApp"
-        description="Elige un mensaje, edita su texto y vincula la plantilla de Meta para enviarlo por la API."
         actions={<SyncMetaButton />}
       />
 

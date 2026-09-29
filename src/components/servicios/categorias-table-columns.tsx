@@ -69,7 +69,7 @@ export function createCategoriasColumns(isLoadingVentas: boolean) {
       align: "center",
       hideBelow: "md",
       render: (row) => (
-        <div className="mx-auto min-w-20 space-y-1">
+        <div className="mx-auto flex min-w-28 items-center justify-center gap-2">
           <div className="flex items-center justify-center gap-1">
             <TrendingUp
               className={cn("size-3", row.serviciosActivos > 0 ? "text-success" : "text-muted-foreground")}
@@ -78,7 +78,7 @@ export function createCategoriasColumns(isLoadingVentas: boolean) {
               {row.serviciosActivos} / {row.totalServicios}
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-1.5 w-12 shrink-0 overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-success"
               style={{ width: `${progressPercentage(row.serviciosActivos, row.totalServicios)}%` }}

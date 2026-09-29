@@ -90,7 +90,7 @@ export function PageHeader({ title, description, trail, breadcrumb, backTo, acti
           ) : null}
         </div>
       ) : null}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex min-h-8 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <h1 className="text-xl font-semibold tracking-tight text-balance">{title}</h1>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}

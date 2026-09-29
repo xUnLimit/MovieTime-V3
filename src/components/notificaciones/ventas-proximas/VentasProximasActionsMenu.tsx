@@ -47,7 +47,7 @@ export function VentasProximasActionsMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="size-7"
           aria-label={`Abrir acciones de ${notification.clienteNombre}`}
         >
           <MoreHorizontal className="h-4 w-4" />

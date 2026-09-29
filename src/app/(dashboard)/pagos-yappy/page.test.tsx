@@ -17,7 +17,9 @@ const queryData = vi.hoisted<{ payments: YappyPayment[]; ventas: YappyCandidateV
 const initialPayment = structuredClone(queryData.payments[0]);
 const queryStatus = vi.hoisted(() => ({ loading: false, error: false, connectionError: false, connectionLoading: false,
   ventaError: false, connected: false, actionError: false }));
-const connectedAccount = vi.hoisted<{ mailbox: string; status: string; lastSyncedAt: string; lastErrorCode: string | null }>(() => ({ mailbox: 'owner@gmail.com', status: 'configurado',
+const syncState = vi.hoisted<{ isSuccess: boolean; isError: boolean; data: { errorCode: string | null } | undefined }>(() => ({
+  isSuccess: false, isError: false, data: undefined }));
+const connectedAccount = vi.hoisted<{ mailbox: string; status: string; lastSyncedAt: string | null; lastErrorCode: string | null }>(() => ({ mailbox: 'owner@gmail.com', status: 'configurado',
   lastSyncedAt: '2026-09-27T18:07:00.000Z', lastErrorCode: null }));
 vi.mock('next/link', () => ({ default: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a> }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: (selector: (state: { user: { role: string } }) => unknown) => selector({ user: { role: 'admin' } }) }));
@@ -28,7 +30,7 @@ vi.mock('@/hooks/use-yappy-payments', () => ({
   useYappyVentaSearch: (term: string) => ({ data: term.trim().length >= 2 ? queryData.ventas.filter((venta) =>
     `${venta.cliente} ${venta.servicio} ${venta.id}`.toLowerCase().includes(term.toLowerCase())) : [], isFetching: false, isError: false }),
   useYappyActions: () => ({
-    sync: { mutate: sync, isPending: false, isError: false, isSuccess: false },
+    sync: { mutate: sync, isPending: false, isError: syncState.isError, isSuccess: syncState.isSuccess, data: syncState.data },
     resolve: { mutate: resolve, isPending: false, isError: queryStatus.actionError },
     dismiss: { mutate: dismiss, isPending: false, isError: false },
   }),
@@ -47,6 +49,12 @@ beforeEach(() => {
   queryStatus.ventaError = false;
   queryStatus.connected = false;
   queryStatus.actionError = false;
+  syncState.isSuccess = false;
+  syncState.isError = false;
+  syncState.data = undefined;
+  connectedAccount.status = 'configurado';
+  connectedAccount.lastSyncedAt = '2026-09-27T18:07:00.000Z';
+  connectedAccount.lastErrorCode = null;
   queryData.payments = [structuredClone(initialPayment)];
 });
 
@@ -104,6 +112,33 @@ describe('Yappy review queue', () => {
     render(<YappyPage />);
     expect(screen.getByText('Revisa la contraseña de aplicación de Gmail en Vercel.')).toBeTruthy();
     connectedAccount.lastErrorCode = null;
+  });
+  it('explains that there is no mailbox status yet', () => {
+    render(<YappyPage />);
+    expect(screen.getByText('Aún no hay estado del buzón.')).toBeTruthy();
+    expect(screen.queryByText('Configurado')).toBeNull();
+  });
+  it('flags a mailbox that needs attention and a pending first sync', () => {
+    queryStatus.connected = true;
+    connectedAccount.status = 'error';
+    connectedAccount.lastSyncedAt = null;
+    render(<YappyPage />);
+    expect(screen.getByText('Requiere atención')).toBeTruthy();
+    expect(screen.getByText(/Pendiente/)).toBeTruthy();
+  });
+  it('confirms a finished sync and reports an interrupted one', () => {
+    queryStatus.connected = true;
+    syncState.isSuccess = true;
+    syncState.data = { errorCode: null };
+    const { unmount } = render(<YappyPage />);
+    expect(screen.getByText('Sincronización finalizada.')).toBeTruthy();
+    expect(screen.getByText('Configurado')).toBeTruthy();
+    unmount();
+
+    syncState.data = { errorCode: 'sync_error' };
+    render(<YappyPage />);
+    expect(screen.getByText('La sincronización se interrumpió. Inténtalo de nuevo.')).toBeTruthy();
+    expect(screen.queryByText('Sincronización finalizada.')).toBeNull();
   });
   it('shows loading and errors without exposing internal details', () => {
     queryStatus.loading = true;

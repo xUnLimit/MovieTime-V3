@@ -115,24 +115,22 @@ function PaymentReview({ payment, ventas }: { payment: YappyPayment; ventas: Yap
 function MailboxPanel({ connections, sync }: { connections: ReturnType<typeof useYappyConnections>; sync: ReturnType<typeof useYappyActions>['sync'] }) {
   const connection = connections.data?.[0];
   return (
-    <Card className="gap-0 p-4" aria-label="Buzón Gmail">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground"><Mail aria-hidden className="size-4" /></div>
-        <div className="min-w-0 flex-1 basis-56">
-          <h2 className="text-sm font-semibold">Buzón Gmail</h2>
-          {connections.isLoading ? <p className="text-xs text-muted-foreground">Cargando buzón…</p> : connection ? (
-            <>
-              <p className="text-sm">{maskMailbox(connection.mailbox)}</p>
-              <p className="text-xs text-muted-foreground">Última sincronización: {connection.lastSyncedAt ? panamaDate.format(new Date(connection.lastSyncedAt)) : 'Pendiente'}</p>
-            </>
-          ) : <p className="text-xs text-muted-foreground">Aún no hay estado del buzón.</p>}
-        </div>
-        {connection && <StatusBadge tone={connection.status === 'configurado' ? 'success' : 'warning'}>{connection.status === 'configurado' ? 'Configurado' : 'Requiere atención'}</StatusBadge>}
+    <Card className="gap-0 px-4 py-3" aria-label="Buzón Gmail">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Mail aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+        <h2 className="text-sm font-semibold">Buzón Gmail</h2>
+        {connections.isLoading ? <p className="text-xs text-muted-foreground">Cargando buzón…</p> : connection ? (
+          <>
+            <p className="text-sm">{maskMailbox(connection.mailbox)}</p>
+            <p className="text-xs text-muted-foreground">Última sincronización: {connection.lastSyncedAt ? panamaDate.format(new Date(connection.lastSyncedAt)) : 'Pendiente'}</p>
+          </>
+        ) : <p className="text-xs text-muted-foreground">Aún no hay estado del buzón.</p>}
+        {connection && <StatusBadge className="sm:ml-auto" tone={connection.status === 'configurado' ? 'success' : 'warning'}>{connection.status === 'configurado' ? 'Configurado' : 'Requiere atención'}</StatusBadge>}
       </div>
-      {connection?.lastErrorCode === 'auth_failed' && <p role="alert" className="mt-3 text-sm text-danger">Revisa la contraseña de aplicación de Gmail en Vercel.</p>}
-      {(connections.isError || sync.isError) && <p role="alert" className="mt-3 text-sm text-danger">No se pudo cargar o sincronizar el buzón.</p>}
-      {sync.isSuccess && sync.data?.errorCode === null && <p role="status" className="mt-3 text-sm text-success">Sincronización finalizada.</p>}
-      {sync.data?.errorCode === 'sync_error' && <p role="alert" className="mt-3 text-sm text-danger">La sincronización se interrumpió. Inténtalo de nuevo.</p>}
+      {connection?.lastErrorCode === 'auth_failed' && <p role="alert" className="mt-2 text-sm text-danger">Revisa la contraseña de aplicación de Gmail en Vercel.</p>}
+      {(connections.isError || sync.isError) && <p role="alert" className="mt-2 text-sm text-danger">No se pudo cargar o sincronizar el buzón.</p>}
+      {sync.isSuccess && sync.data?.errorCode === null && <p role="status" className="mt-2 text-sm text-success">Sincronización finalizada.</p>}
+      {sync.data?.errorCode === 'sync_error' && <p role="alert" className="mt-2 text-sm text-danger">La sincronización se interrumpió. Inténtalo de nuevo.</p>}
     </Card>
   );
 }
@@ -193,7 +191,6 @@ function YappyPageContent() {
     <div className="space-y-4">
       <PageHeader
         title="Pagos Yappy detectados"
-        description="Revisa cada aviso y renueva la venta desde su detalle. La detección no registra cobros automáticamente."
         actions={
           <Button disabled={sync.isPending} onClick={() => sync.mutate()}>
             <RefreshCw className={cn(sync.isPending && 'animate-spin')} />
@@ -212,6 +209,7 @@ function YappyPageContent() {
       {(payments.isError || ventas.isError) && <p role="alert" className="text-sm text-danger">No se pudo cargar la cola. Actualiza la página.</p>}
       <TableCard
         title="Cola de pagos"
+        description="Revisa cada aviso y renueva la venta desde su detalle. La detección no registra cobros automáticamente."
         toolbar={
           <TableToolbar>
             <TableSearch value={search} onChange={setSearch} placeholder="Buscar por pagador o confirmación..." />

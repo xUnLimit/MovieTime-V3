@@ -23,7 +23,6 @@ export function VentasProximasTable() {
       <ServerTableCard
         title="Ventas próximas a vencer"
         rowCount={controller.paginatedNotificaciones.length}
-        rowHeight={62}
         pagination={{
           page: controller.safeCurrentPage,
           totalPages: controller.totalPages,

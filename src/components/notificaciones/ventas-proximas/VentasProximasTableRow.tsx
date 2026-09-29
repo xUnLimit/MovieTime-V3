@@ -94,7 +94,7 @@ export function VentasProximasTableRow({
   return (
     <TableRow className={`border-b transition-colors hover:bg-muted/50 ${rowToneClass}`}>
       {onSelectedChange ? (
-        <TableCell className="w-8 px-1 py-2 text-center">
+        <TableCell className="w-10 text-center">
           <Checkbox
             checked={selected}
             onCheckedChange={(value) => onSelectedChange(notif.id, value === true)}
@@ -102,11 +102,11 @@ export function VentasProximasTableRow({
           />
         </TableCell>
       ) : null}
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
         <Button
           variant="ghost"
           size="icon"
-          className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
+          className={`mx-auto size-7 rounded-full transition-all duration-200 ease-in-out ${
             promiseDisplay
               ? promiseOverdue
                 ? 'bg-danger-subtle hover:bg-danger/15'
@@ -146,27 +146,23 @@ export function VentasProximasTableRow({
         </Button>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center font-medium">
+      <TableCell className="text-center font-medium">
         <span className="inline-block max-w-[130px] truncate align-middle max-sm:max-w-24">
           {notif.clienteNombre}
         </span>
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('md')}`}>
-        <div className="mx-auto flex max-w-[130px] flex-col max-sm:max-w-24 items-center gap-0.5">
-          <span className="w-full truncate font-medium">
-            {notif.categoriaNombre}
-          </span>
-          <span className="w-full truncate text-xs text-muted-foreground">
-            {notif.servicioNombre || '-'}
-          </span>
+      <TableCell className={`text-center ${hideBelowClass('md')}`}>
+        <div className="mx-auto max-w-36 leading-tight max-sm:max-w-24" title={notif.servicioNombre || undefined}>
+          <p className="truncate font-medium">{notif.categoriaNombre}</p>
+          {notif.servicioNombre ? <p className="truncate text-xs text-muted-foreground">{notif.servicioNombre}</p> : null}
         </div>
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('2xl')}`}>
+      <TableCell className={`text-center ${hideBelowClass('2xl')}`}>
         {notif.servicioCorreo ? (
           <div className="flex items-center justify-center gap-2">
-            <span className="max-w-[180px] truncate font-medium">
+            <span className="max-w-36 truncate font-medium">
               {notif.servicioCorreo}
             </span>
             <Button
@@ -184,7 +180,7 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className={`w-[160px] px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
+      <TableCell className={`w-32 text-center ${hideBelowClass('3xl')}`}>
         {notif.servicioContrasena ? (
           <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
             <span className="min-w-0 break-all text-center font-medium leading-tight">
@@ -222,16 +218,16 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
-            <span className="inline-block max-w-[100px] truncate font-medium align-middle">
+      <TableCell className={`text-center ${hideBelowClass('3xl')}`}>
+            <span className="inline-block max-w-20 truncate font-medium align-middle">
               {notif.perfilNombre || '-'}
             </span>
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
+      <TableCell className={`text-center ${hideBelowClass('3xl')}`}>
         {notif.codigo ? (
           <div className="flex items-center justify-center gap-2">
-            <span className="inline-block max-w-[72px] truncate font-medium align-middle">
+            <span className="inline-block max-w-14 truncate font-medium align-middle">
               {notif.codigo}
             </span>
             <Button
@@ -249,21 +245,21 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
+      <TableCell className={`text-center ${hideBelowClass('3xl')}`}>
         {notif.fechaInicio ? formatearFecha(new Date(notif.fechaInicio)) : '—'}
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('lg')}`}>
+      <TableCell className={`text-center ${hideBelowClass('lg')}`}>
         {formatearFecha(new Date(notif.fechaFin))}
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('md')}`}>
-        {getCurrencySymbol(notif.moneda)}
-        {notif.precioFinal?.toFixed(2) || '0.00'}
+      <TableCell className={`text-center font-medium whitespace-nowrap ${hideBelowClass('md')}`}>
+        <span className="text-success">{getCurrencySymbol(notif.moneda)}</span>
+        <span className="text-foreground"> {notif.precioFinal?.toFixed(2) || '0.00'}</span>
       </TableCell>
 
       <TableCell
-        className={`px-2 py-2 text-center tabular-nums ${hideBelowClass('3xl')}`}
+        className={`text-center tabular-nums ${hideBelowClass('3xl')}`}
         title={renovacionesError ? 'No se pudieron cargar las renovaciones' : 'Renovaciones de esta venta, sin contar el pago inicial'}
       >
         <span className="inline-flex items-center justify-center gap-1.5">
@@ -272,7 +268,8 @@ export function VentasProximasTableRow({
         </span>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
+        <div className="flex flex-wrap items-center justify-center gap-1">
         <Badge
           variant="outline"
           className={`font-normal gap-1 ${displayedStatus.variant} max-sm:max-w-24 max-sm:whitespace-normal max-sm:text-center`}
@@ -284,23 +281,20 @@ export function VentasProximasTableRow({
           ) : null}
           {displayedStatus.text}
         </Badge>
-        {(noticeBadge || noticeState?.noContinuar) ? (
-          <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
-            {noticeBadge ? (
+        {noticeBadge ? (
               <Badge variant="outline" className={`font-normal ${noticeBadge.className}`} title="Estado del último aviso por WhatsApp">
                 {noticeBadge.label}{noticeBadge.dateLabel ? ` · ${noticeBadge.dateLabel}` : ''}
               </Badge>
-            ) : null}
-            {noticeState?.noContinuar ? (
-              <Badge variant="outline" className="border-danger-border bg-danger-subtle font-normal text-danger">
-                No desea continuar
-              </Badge>
-            ) : null}
-          </div>
         ) : null}
+        {noticeState?.noContinuar ? (
+          <Badge variant="outline" className="border-danger-border bg-danger-subtle font-normal text-danger">
+            No desea continuar
+          </Badge>
+        ) : null}
+        </div>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
         <VentasProximasActionsMenu
           notification={notif}
           onNotificar={onNotificar}

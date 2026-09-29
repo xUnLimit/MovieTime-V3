@@ -37,7 +37,6 @@ export function ServiciosListTable({
     <ServerTableCard
       title={title}
       rowCount={rows.length}
-      rowHeight={54}
       loading={isLoading}
       pagination={{ page, totalPages, hasPrevious, hasMore, onPrevious, onNext, pageSize, onPageSizeChange }}
       toolbar={

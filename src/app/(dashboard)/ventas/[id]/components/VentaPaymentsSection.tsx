@@ -20,8 +20,8 @@ export function VentaPaymentsSection({
   venta,
 }: VentaPaymentsSectionProps) {
   return (
-    <Card className="p-6 space-y-4">
-      <div className="space-y-1">
+    <Card className="gap-0 overflow-hidden py-0">
+      <div className="space-y-1 px-4 pt-4 pb-3">
         <div className="flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
           <h2 className="text-base font-semibold">Historial de Pagos</h2>

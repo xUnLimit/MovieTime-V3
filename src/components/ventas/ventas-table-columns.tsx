@@ -90,7 +90,7 @@ export const ventasTableColumns: Column<VentaRow>[] = [
           )}
         />
         <div>
-          <p className="font-medium">{item.cliente}</p>
+          <p className="whitespace-nowrap font-medium">{item.cliente}</p>
           {item.clienteDetalle ? (
             <p className="text-xs text-muted-foreground">
               {item.clienteDetalle}
@@ -114,11 +114,9 @@ export const ventasTableColumns: Column<VentaRow>[] = [
             item.estado === "inactiva" ? "text-danger" : "text-success",
           )}
         />
-        <div>
-          <p className="font-medium">{item.servicio}</p>
-          <p className="text-xs text-muted-foreground">
-            {item.servicioDetalle}
-          </p>
+        <div className="max-w-64 leading-tight">
+          <p className="truncate font-medium">{item.servicio}</p>
+          <p className="truncate text-xs text-muted-foreground">{item.servicioDetalle}</p>
         </div>
       </div>
     ),

@@ -91,7 +91,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
           key: "fecha",
           header: "Fecha de pago",
           render: (pago) => (
-            <span className="whitespace-nowrap">
+            <span className="leading-tight">
               {pago.fecha ? formatearFecha(new Date(pago.fecha)) : EMPTY_VALUE}
             </span>
           ),
@@ -115,7 +115,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
         },
         {
           key: "cicloPago",
-          header: "Ciclo de facturacion",
+          header: "Ciclo",
           hideBelow: "2xl",
           render: (pago) =>
             pago.estado === "reembolsado" ? EMPTY_VALUE : getCicloPagoLabel(pago.cicloPago),
@@ -125,7 +125,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
           header: "Fecha de inicio",
           hideBelow: "xl",
           render: (pago) => (
-            <span className="whitespace-nowrap">
+            <span className="leading-tight">
               {pago.estado === "reembolsado" || !pago.fechaInicio
                 ? EMPTY_VALUE
                 : formatearFecha(new Date(pago.fechaInicio))}
@@ -137,7 +137,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
           header: "Fecha de fin",
           hideBelow: "xl",
           render: (pago) => (
-            <span className="whitespace-nowrap">
+            <span className="leading-tight">
               {pago.estado === "reembolsado" || !pago.fechaVencimiento
                 ? EMPTY_VALUE
                 : formatearFecha(new Date(pago.fechaVencimiento))}
@@ -150,9 +150,13 @@ export const VentaPagosTable = memo(function VentaPagosTable({
           align: "center",
           hideBelow: "lg",
           render: (pago) =>
-            pago.estado === "reembolsado"
-              ? EMPTY_VALUE
-              : `${getCurrencySymbol(pago.moneda || moneda)} ${pago.precio.toFixed(2)}`,
+            pago.estado === "reembolsado" ? (
+              EMPTY_VALUE
+            ) : (
+              <span className="whitespace-nowrap">
+                <span className="text-success">{getCurrencySymbol(pago.moneda || moneda)}</span> {pago.precio.toFixed(2)}
+              </span>
+            ),
         },
         {
           key: "descuento",
@@ -160,7 +164,7 @@ export const VentaPagosTable = memo(function VentaPagosTable({
           align: "center",
           hideBelow: "2xl",
           render: (pago) => (
-            <span className="text-danger">
+            <span className="whitespace-nowrap text-danger">
               {pago.estado === "reembolsado"
                 ? EMPTY_VALUE
                 : `% ${(pago.descuento > 0 ? pago.descuento : 0).toFixed(2)}`}
@@ -172,9 +176,9 @@ export const VentaPagosTable = memo(function VentaPagosTable({
           header: "Total",
           align: "center",
           render: (pago) => (
-            <span className={cn("font-semibold", pago.estado === "reembolsado" && "text-danger")}>
+            <span className={cn("whitespace-nowrap font-semibold", pago.estado === "reembolsado" && "text-danger")}>
               {pago.estado === "reembolsado" ? "-" : ""}
-              {getCurrencySymbol(pago.moneda || moneda)} {pago.total.toFixed(2)}
+              <span className={pago.estado === "reembolsado" ? undefined : "text-success"}>{getCurrencySymbol(pago.moneda || moneda)}</span> {pago.total.toFixed(2)}
             </span>
           ),
         },

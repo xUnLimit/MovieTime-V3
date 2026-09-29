@@ -32,7 +32,6 @@ export function ServiciosProximosTable({
       <ServerTableCard
         title={title}
         rowCount={controller.paginatedNotificaciones.length}
-        rowHeight={56}
         pagination={{
           page: controller.safeCurrentPage,
           totalPages: controller.totalPages,

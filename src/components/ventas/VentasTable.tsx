@@ -87,7 +87,6 @@ export function VentasTable({
     <ServerTableCard
       title={title}
       rowCount={filteredRows.length}
-      rowHeight={54}
       loading={isLoading}
       pagination={
         showPagination

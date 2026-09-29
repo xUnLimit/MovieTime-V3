@@ -59,7 +59,7 @@ export function VentasProximasTableContent({
         <TableHeader>
           <TableRow className="border-b hover:bg-muted/50">
             {onToggleSelected ? (
-              <TableHead className="h-10 w-8 px-1 text-center">
+              <TableHead className="w-8 text-center">
                 <Checkbox
                   checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                   onCheckedChange={(value) => onToggleAllSelected?.(value === true)}
@@ -67,43 +67,43 @@ export function VentasProximasTableContent({
                 />
               </TableHead>
             ) : null}
-              <TableHead className="h-10 w-12 px-1 text-center text-muted-foreground">
+              <TableHead className="w-12 text-center text-muted-foreground">
                 Tipo
               </TableHead>
-              <TableHead className="h-10 px-2 text-center text-muted-foreground">
+              <TableHead className="text-center text-muted-foreground">
                 Cliente
               </TableHead>
-              <TableHead className={`h-10 min-w-[130px] px-2 text-center text-muted-foreground ${hideBelowClass('md')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('md')}`}>
                 Categoría
               </TableHead>
-              <TableHead className={`h-10 min-w-[200px] px-2 text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
                 Email
               </TableHead>
-              <TableHead className={`h-10 min-w-[160px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Contraseña
               </TableHead>
-              <TableHead className={`h-10 min-w-[100px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Perfil
               </TableHead>
-              <TableHead className={`h-10 min-w-[90px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Código
               </TableHead>
-              <TableHead className={`h-10 min-w-[130px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Fecha de Inicio
               </TableHead>
-              <TableHead className={`h-10 min-w-[145px] px-2 text-center text-muted-foreground ${hideBelowClass('lg')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('lg')}`}>
                 Fecha de Vencimiento
               </TableHead>
-              <TableHead className={`h-10 min-w-[80px] px-2 text-center text-muted-foreground ${hideBelowClass('md')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('md')}`}>
                 Monto
               </TableHead>
-              <TableHead className={`h-10 min-w-[120px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Renovaciones
               </TableHead>
-              <TableHead className="h-10 px-2 text-center text-muted-foreground">
+              <TableHead className="text-center text-muted-foreground">
                 Estado
               </TableHead>
-              <TableHead className="h-10 px-1 text-center text-muted-foreground sm:px-2">
+              <TableHead className="text-center text-muted-foreground">
                 Acciones
               </TableHead>
           </TableRow>

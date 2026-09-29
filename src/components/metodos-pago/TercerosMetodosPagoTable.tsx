@@ -108,16 +108,9 @@ export function TercerosMetodosPagoTable({
         const alias = item.alias?.trim();
 
         return (
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate font-medium">{item.banco || item.nombre}</span>
-            <span
-              className={`truncate text-xs leading-tight text-muted-foreground ${
-                alias ? "" : "invisible"
-              }`}
-              aria-hidden={!alias}
-            >
-              {alias || "\u00a0"}
-            </span>
+          <div className="min-w-0 max-w-64 leading-tight">
+            <p className="truncate font-medium">{item.banco || item.nombre}</p>
+            {alias ? <p className="truncate text-xs text-muted-foreground">{alias}</p> : null}
           </div>
         );
       },
@@ -179,7 +172,6 @@ export function TercerosMetodosPagoTable({
           <DataTable
             bare
             autoPageSize
-            rowHeight={54}
             pagination
             data={filteredMetodos}
             columns={columns}

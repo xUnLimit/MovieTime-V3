@@ -40,31 +40,31 @@ export function ServiciosProximosTableContent({
     <Table>
           <TableHeader>
             <TableRow className="border-b hover:bg-muted/50">
-              <TableHead className="h-10 w-[56px] px-2 text-center text-muted-foreground">
+              <TableHead className="w-[56px] text-center text-muted-foreground">
                 Tipo
               </TableHead>
-              <TableHead className="h-10 px-2 text-center text-muted-foreground">
+              <TableHead className="text-center text-muted-foreground">
                 Categoría
               </TableHead>
-              <TableHead className={`h-10 min-w-[200px] px-2 text-center text-muted-foreground ${hideBelowClass('xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('xl')}`}>
                 Email
               </TableHead>
-              <TableHead className={`h-10 min-w-[160px] px-2 text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
                 Contraseña
               </TableHead>
-              <TableHead className={`h-10 min-w-[150px] px-2 text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
                 Método de Pago
               </TableHead>
-              <TableHead className={`h-10 min-w-[145px] px-2 text-center text-muted-foreground ${hideBelowClass('lg')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('lg')}`}>
                 Fecha de Vencimiento
               </TableHead>
-              <TableHead className={`h-10 min-w-[80px] px-2 text-center text-muted-foreground ${hideBelowClass('md')}`}>
+              <TableHead className={`text-center text-muted-foreground ${hideBelowClass('md')}`}>
                 Monto
               </TableHead>
-              <TableHead className="h-10 px-2 text-center text-muted-foreground">
+              <TableHead className="text-center text-muted-foreground">
                 Estado
               </TableHead>
-              <TableHead className="h-10 px-1 text-center text-muted-foreground sm:px-2">
+              <TableHead className="text-center text-muted-foreground">
                 Acciones
               </TableHead>
             </TableRow>

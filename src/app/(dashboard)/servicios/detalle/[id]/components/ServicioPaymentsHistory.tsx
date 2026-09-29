@@ -101,8 +101,8 @@ export function ServicioPaymentsHistory({
             const pagoMetodo = pago.metodoPagoId ? metodosPago.find((m) => m.id === pago.metodoPagoId) : undefined;
             const pagoCurrency = getCurrencySymbol(pago.moneda || pagoMetodo?.moneda || metodoPago?.moneda);
             return (
-              <span className="font-semibold">
-                {pagoCurrency} {pago.monto.toFixed(2)}
+              <span className="whitespace-nowrap font-semibold">
+                <span className="text-success">{pagoCurrency}</span> {pago.monto.toFixed(2)}
               </span>
             );
           },

@@ -49,7 +49,7 @@ const ORDEN_OPTIONS: readonly FilterOption[] = [
 
 const columns = defineDataTableColumns<DemoRow>([
   { key: 'cliente', header: 'Cliente', sortable: true, render: (r) => <span className="font-medium">{r.cliente}</span> },
-  { key: 'servicio', header: 'Servicio', sortable: true, hideBelow: 'md' },
+  { key: 'servicio', header: 'Servicio', sortable: true, hideBelow: 'md', render: (r) => <div className="max-w-64 leading-tight"><p className="truncate font-medium">{r.servicio}</p><p className="truncate text-xs text-muted-foreground">cuenta@movietimepty.top</p></div> },
   { key: 'categoria', header: 'Categoría', hideBelow: 'lg' },
   { key: 'perfil', header: 'Perfil', hideBelow: 'xl' },
   { key: 'monto', header: 'Monto', align: 'right', sortable: true, hideBelow: 'sm', render: (r) => <Money value={r.monto} /> },

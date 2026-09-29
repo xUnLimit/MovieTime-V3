@@ -75,11 +75,11 @@ export function ServiciosProximosTableRow({
         notif.resaltada ? 'bg-warning-subtle' : ''
       }`}
     >
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
         <Button
           variant="ghost"
           size="icon"
-          className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
+          className={`mx-auto size-7 rounded-full transition-all duration-200 ease-in-out ${
             notif.resaltada
               ? 'bg-warning-subtle hover:bg-warning/15'
               : notif.leida
@@ -107,20 +107,16 @@ export function ServiciosProximosTableRow({
         </Button>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
-        <div className="mx-auto flex max-w-[130px] flex-col max-sm:max-w-24 items-center gap-0.5">
-          <span className="w-full truncate font-medium">
-            {notif.categoriaNombre}
-          </span>
-          <span className="w-full truncate text-xs text-muted-foreground">
-            {notif.servicioNombre || '-'}
-          </span>
+      <TableCell className="text-center">
+        <div className="mx-auto max-w-36 leading-tight max-sm:max-w-24" title={notif.servicioNombre || undefined}>
+          <p className="truncate font-medium">{notif.categoriaNombre}</p>
+          {notif.servicioNombre ? <p className="truncate text-xs text-muted-foreground">{notif.servicioNombre}</p> : null}
         </div>
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('xl')}`}>
+      <TableCell className={`text-center ${hideBelowClass('xl')}`}>
         <div className="flex items-center justify-center gap-2">
-            <span className="max-w-[180px] truncate font-medium">
+            <span className="max-w-36 truncate font-medium">
               {notif.correo}
             </span>
           <Button
@@ -135,7 +131,7 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className={`w-[160px] px-2 py-2 text-center ${hideBelowClass('2xl')}`}>
+      <TableCell className={`w-32 text-center ${hideBelowClass('2xl')}`}>
         <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
           <span className="min-w-0 break-all text-center font-medium leading-tight">
             {isPasswordVisible ? notif.contrasena : '••••••••'}
@@ -167,41 +163,27 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('2xl')}`}>
+      <TableCell className={`text-center ${hideBelowClass('2xl')}`}>
         {notif.metodoPagoNombre ? (
-          <div className="flex flex-col items-center justify-center gap-0.5">
-            <span className="max-w-[110px] truncate font-medium">
-              {notif.metodoPagoNombre}
-            </span>
-            <span
-              className={`max-w-[130px] truncate text-xs leading-tight text-muted-foreground ${
-                paymentDetail ? '' : 'invisible'
-              }`}
-              aria-hidden={!paymentDetail}
-            >
-              {paymentDetail || '\u00a0'}
-            </span>
+          <div className="mx-auto max-w-56 leading-tight">
+            <p className="truncate font-medium">{notif.metodoPagoNombre}</p>
+            {paymentDetail ? <p className="truncate text-xs text-muted-foreground">{paymentDetail}</p> : null}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-0.5">
-            <span className="text-muted-foreground">-</span>
-            <span className="invisible text-xs leading-tight" aria-hidden>
-              {'\u00a0'}
-            </span>
-          </div>
+          <span className="text-muted-foreground">-</span>
         )}
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('lg')}`}>
+      <TableCell className={`text-center ${hideBelowClass('lg')}`}>
         {formatearFecha(new Date(notif.fechaVencimiento))}
       </TableCell>
 
-      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('md')}`}>
-        {getCurrencySymbol(notif.moneda)}
-        {notif.costoServicio.toFixed(2)}
+      <TableCell className={`text-center font-medium whitespace-nowrap ${hideBelowClass('md')}`}>
+        <span className="text-success">{getCurrencySymbol(notif.moneda)}</span>
+        <span className="text-foreground"> {notif.costoServicio.toFixed(2)}</span>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
         <Badge
           variant="outline"
           className={`font-normal gap-1 ${estadoBadge.variant} max-sm:max-w-24 max-sm:whitespace-normal max-sm:text-center`}
@@ -213,13 +195,13 @@ export function ServiciosProximosTableRow({
         </Badge>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="size-7"
               aria-label={`Abrir acciones de ${notif.servicioNombre}`}
             >
               <MoreHorizontal className="h-4 w-4" />

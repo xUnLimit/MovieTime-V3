@@ -29,7 +29,7 @@ function ServiciosPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoriaId, setSelectedCategoriaId] = useState('todas');
   const [orderBy, setOrderBy] = useState<'createdAt' | 'updatedAt'>('createdAt');
-  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize(54));
+  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize());
 
   const filters = useMemo((): FilterOption[] => {
     const f: FilterOption[] = [];
@@ -97,7 +97,7 @@ function ServiciosPageContent() {
       {showServiciosMetrics && <ServiciosMetrics />}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="h-auto flex-wrap">
+        <TabsList>
             {(['categorias', 'todos', 'activos', 'inactivos'] as const).map((tab) => (
               <TabsTrigger
                 key={tab}

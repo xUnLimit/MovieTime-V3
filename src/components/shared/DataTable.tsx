@@ -187,7 +187,7 @@ function DataTableComponent<T extends object>({
     initialPageSize: itemsPerPageOptions[0],
   });
 
-  const { ref: fitRef, rows: fitRows } = useFitPageSize({ enabled: autoFit, rowHeight, remeasureKey: `${loading}-${data.length}` });
+  const { ref: fitRef, rows: fitRows } = useFitPageSize({ enabled: autoFit, rowHeight, remeasureKey: `${loading}-${data.length}-${pageSize}` });
   useEffect(() => {
     if (autoFit && fitRows !== null && settleFitRows(pageSize, fitRows) !== pageSize) setPageSize(fitRows);
   }, [autoFit, fitRows, pageSize, setPageSize]);
@@ -330,7 +330,7 @@ function DataTableComponent<T extends object>({
           onPageSizeChange={handleItemsPerPageChange}
           pageSizeOptions={itemsPerPageOptions}
           showPageSize={!autoFit}
-          className={bare ? 'border-t px-4 py-2.5' : undefined}
+          className={bare ? 'border-t px-4 py-2' : undefined}
         />
       )}
     </div>

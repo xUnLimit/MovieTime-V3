@@ -37,10 +37,10 @@ export function TableCard({ title, description, actions, toolbar, footer, bodyRe
         </div>
       ) : null}
       {toolbar ? <div className={cn('px-4 pb-3', !hasHeader && 'pt-4')}>{toolbar}</div> : null}
-      <div ref={bodyRef} data-slot="table-card-body" className="@container min-w-0 border-t">
+      <div ref={bodyRef} data-slot="table-card-body" className="@container min-w-0 border-t [&_tr>:first-child]:pl-4 [&_tr>:last-child]:pr-4">
         {children}
       </div>
-      {footer ? <div className="border-t px-4 py-2.5">{footer}</div> : null}
+      {footer ? <div className="border-t px-4 py-2">{footer}</div> : null}
     </Card>
   );
 }

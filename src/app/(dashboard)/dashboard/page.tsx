@@ -34,7 +34,6 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-4 lg:grid lg:h-full lg:min-h-[840px] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)]">
       <PageHeader
         title="Dashboard"
-        description="Vista general de métricas y rendimiento"
         actions={<NotificationBell />}
       />
 

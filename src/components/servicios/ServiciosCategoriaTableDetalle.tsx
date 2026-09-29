@@ -123,7 +123,6 @@ export const ServiciosCategoriaTableDetalle = memo(
         <ServerTableCard
           title={title}
           rowCount={serviciosOrdenables.length}
-          rowHeight={54}
           loading={isLoading}
           pagination={
             showPagination

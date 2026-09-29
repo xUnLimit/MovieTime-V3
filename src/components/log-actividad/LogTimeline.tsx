@@ -161,6 +161,7 @@ export function LogTimeline({
   return (
     <>
       <ServerTableCard
+        title="Registro de actividad"
         rowCount={searchFilteredCurrentPage ? unfilteredPageCount : logs.length}
         loading={isLoading}
         pagination={{ page, totalPages, hasPrevious, hasMore, onPrevious, onNext, pageSize, onPageSizeChange }}

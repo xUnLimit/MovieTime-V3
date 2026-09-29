@@ -58,28 +58,28 @@ function ReposoNotificacionRow({
   onToggleLeida: (notifId: string, leida: boolean) => void;
 }) {
   return (
-    <TableRow className="border-b transition-colors hover:bg-muted/50">
-      <TableCell className="px-2 py-2 text-center">
+    <TableRow className="border-b whitespace-nowrap transition-colors hover:bg-muted/50">
+      <TableCell className="text-center">
         <BellToggleButton notif={notif} onToggleLeida={onToggleLeida} />
       </TableCell>
-      <TableCell className="px-2 py-2 text-center">{notif.categoriaNombre}</TableCell>
-      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('lg')}`}>{notif.correo ?? "—"}</TableCell>
-      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('xl')}`}>
+      <TableCell className="text-center">{notif.categoriaNombre}</TableCell>
+      <TableCell className={`text-center text-sm ${hideBelowClass('lg')}`}>{notif.correo ?? "—"}</TableCell>
+      <TableCell className={`text-center text-sm ${hideBelowClass('xl')}`}>
         <ReposoDateCell value={normalizeReposoDate(notif.fechaInicio)} emptyValue="-" />
       </TableCell>
-      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('xl')}`}>
+      <TableCell className={`text-center text-sm ${hideBelowClass('xl')}`}>
         <ReposoDateCell value={normalizeReposoDate(notif.fechaFin)} emptyValue="-" />
       </TableCell>
-      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('md')}`}>
+      <TableCell className={`text-center text-sm ${hideBelowClass('md')}`}>
         <ReposoDateCell value={normalizeReposoDate(notif.fechaFinReposo)} emptyValue="—" />
       </TableCell>
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
         {getEstadoBadge(notif.diasRestantes)}
       </TableCell>
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className="text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="size-7">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -103,7 +103,7 @@ function BellToggleButton({
     <Button
       variant="ghost"
       size="icon"
-      className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
+      className={`mx-auto size-7 rounded-full transition-all duration-200 ease-in-out ${
         notif.leida
           ? "bg-muted hover:bg-accent"
           : `${bellColors.bgColor} ${bellColors.hoverBgColor}`

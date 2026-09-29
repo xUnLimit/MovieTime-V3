@@ -26,7 +26,7 @@ export function ServerTableCard({ pagination, rowCount, loading = false, rowHeig
   const { ref: bodyRef, rows: fitRows } = useFitPageSize({
     enabled: Boolean(onPageSizeChange),
     rowHeight,
-    remeasureKey: `${loading}-${rowCount}`,
+    remeasureKey: `${loading}-${rowCount}-${pageSize}`,
   });
 
   useEffect(() => {

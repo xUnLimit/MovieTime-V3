@@ -104,7 +104,7 @@ function LogActividadPageContent() {
   };
 
   return (
-    <div className="min-w-0 space-y-4 overflow-x-hidden">
+    <div className="min-w-0 space-y-4">
       <PageHeader
         title="Log de Actividad"
       />

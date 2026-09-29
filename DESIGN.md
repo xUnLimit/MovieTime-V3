@@ -68,7 +68,7 @@ Fuente: **Geist Sans** (y **Geist Mono** para codigo) via `next/font/google`. Ci
 - **Altura de control: 32px** (botones, campos, selectores, opciones de menu, paginadores). En pantallas tactiles (`pointer-coarse`) sube a 40px. Compacto 28px solo para acciones dentro de tablas densas; 24px solo en casos extremos.
 - **Radios:** controles 6px (`rounded-md`), tarjetas 12px (`rounded-xl`), dialogos 12px, badges pildora.
 - **Elevacion:** se declara una sola vez. Tarjetas = borde hairline sin sombra. Solo popovers, menus y dialogos llevan sombra suave. Nunca borde + sombra difusa juntos, ni sombras de color.
-- **Densidad media:** filas de tabla ~36px (celda `py-2`), cabecera 36px, relleno de tarjeta 20px, margen de contenido 20px.
+- **Densidad media:** filas de tabla 49px (`h-[49px]`, como Ventas, celda `py-1`), cabecera 36px, relleno de tarjeta 20px, margen de contenido 20px.
 - **Bordes de color:** prohibido `border-left` de color > 1px en tarjetas, listas o alertas.
 
 ## 6. Layout
@@ -76,7 +76,8 @@ Fuente: **Geist Sans** (y **Geist Mono** para codigo) via `next/font/google`. Ci
 - **Shell:** barra lateral de 224px (56px colapsada, Ctrl/Cmd+B; drawer de 272px en movil). Fila de 32px, activo con fondo gris e icono violeta, separadores entre secciones, tooltip al colapsar, insignia de Chats con contador. La ruta activa incluye sus subrutas.
 - **Pagina:** `PageHeader` (titulo 20px, migas, acciones) + KPIs + contenido. Un solo boton primario por vista.
 - **Dashboard:** en `lg+` ocupa exactamente el alto disponible (sin scroll de pagina): filas `auto / auto / auto / 1fr`, graficos que llenan su panel (`Panel fill`). Por debajo del alto minimo (840px) hace scroll.
-- **Tablas:** sin scroll horizontal ni vertical. Las columnas secundarias se ocultan segun el ancho de la propia tabla (`hideBelow`, container queries; `hideBelowClass()` en tablas propias) y las filas por pagina se ajustan al alto disponible (`autoPageSize` o `ServerTableCard`). El alto de fila es una constante por tabla (`rowHeight`, 45px por defecto; 54-62px con celdas de dos lineas): nunca se mide de los datos, para no provocar recargas en cadena. En movil la pagina hace scroll natural.
+- **Tablas:** un solo molde y las mismas medidas en toda la app; la referencia es la tabla de Ventas. Sin scroll horizontal ni vertical. Las columnas secundarias se ocultan segun el ancho de la propia tabla (`hideBelow`, container queries; `hideBelowClass()` en tablas propias) y las filas por pagina se ajustan al alto disponible (`autoPageSize` o `ServerTableCard`). Medidas fijas (verificadas en navegador, ventana 1920x951): cabecera de pagina 52px, KPIs 80px, pestañas 36px, tarjeta de tabla desde y=228, buscador 32px, cabecera de tabla 36px, **fila 49px** (`h-[49px]`, nunca se mide de los datos), pie de paginacion 45px (`py-2`), **10 filas** cuando caben (minimo 5); una tabla llena mide 666px. Margenes laterales: primera columna `pl-4` y ultima `pr-4` (los aplica `TableCard`), celdas `px-3`. Las tablas con celdas propias no fijan `px`, `py`, `h-*` ni `min-w-*` en cabeceras o celdas. En movil la pagina hace scroll natural.
+- **Contenido de celda:** el dato principal va arriba (`font-medium`, `truncate`) y el secundario debajo, en otra linea, `text-xs text-muted-foreground` y `truncate` (envoltorio `leading-tight`). Aplica a servicio + correo, categoria + servicio, metodo de pago + detalle/alias. Nunca en la misma linea separado por espacio. Las fechas largas pueden ocupar dos lineas (caben en 49px). **Montos:** simbolo de moneda en `text-success` y cifra en `text-foreground`, misma linea (`whitespace-nowrap`), `font-medium`. Ninguna columna se oculta para evitar el scroll: se ajusta el contenido.
 - **Scrollbars:** finos, redondeados y discretos en toda la app (regla global en `globals.css`, colores `--scrollbar-thumb*`). No se personalizan por componente; solo cambian los tokens. Las barras de pestañas se ocultan a proposito.
 
 ## 7. Componentes canonicos
@@ -92,17 +93,20 @@ Fuente: **Geist Sans** (y **Geist Mono** para codigo) via `next/font/google`. Ci
 | Tablas | `TableCard` + `TableToolbar`/`TableSearch`/`FilterMenu` + `DataTable bare` (o `ServerTableCard` si pagina el servidor) | `shared/TableCard.tsx`, `shared/TableToolbar.tsx`, `shared/DataTable.tsx`, `shared/ServerTableCard.tsx` |
 | Vacio / carga / error | `EmptyState`, `Skeleton`, `LoadingSpinner`, `ModuleErrorBoundary` | `shared/*` |
 | Marca | `Logo` | `shared/Logo.tsx` |
+| Simulacion de celular (vista previa de mensajes) | `PhoneMockup`: tamano fijo 300x600, el contenido hace scroll adentro; el marco nunca cambia de tamano | `editor-mensajes/PhoneMockup.tsx` |
 | Primitivas | shadcn (Button, Input, Select, Tabs, Dialog, Dropdown, Popover, Tooltip, Badge, Card, Switch, Checkbox, Kbd...) | `src/components/ui/*` |
 | Iconos | `lucide-react` (16px, trazo estandar) | - |
 | Avisos | `sonner` con tonos semanticos | `ui/sonner.tsx` |
 
 Reglas de uso:
-- **Tabs:** variante `default` (linea inferior) para secciones; `pills` para alternar vistas dentro de una tarjeta. No se agregan clases personalizadas a `TabsList`/`TabsTrigger`.
+- **Tabs:** variante `default` (linea inferior) para secciones; `pills` para alternar vistas dentro de una tarjeta. No se agregan clases personalizadas a `TabsList`/`TabsTrigger` (ni `h-auto`/`flex-wrap`: la barra mide siempre 36px).
 - **Botones:** `default` accion principal; `outline` secundaria; `ghost` acciones discretas/tabla; `destructive` irreversible. Icon-only siempre con `aria-label` o `Tooltip`.
 - **Badges de estado:** `StatusBadge` con punto + texto. Nunca pildoras a mano con clases de color.
 - **Formularios:** secciones con responsabilidad clara, error junto al campo (`text-danger`), etiqueta visible.
 - **Dialogos:** solo para tareas enfocadas; titulo y descripcion accesibles; acciones destructivas con `destructive`.
 - **Un `Panel` no anida tarjetas.** No hay cards dentro de cards.
+- **Ajustes y configuracion** viven en su propia pagina (`/configuracion`), nunca en un dialogo. Los dialogos son solo para tareas enfocadas y cortas.
+- **Editores con vista previa:** un solo formulario sin pestanas para lo esencial, lo opcional plegado (`aria-expanded`), pie de guardado fijo dentro de la tarjeta y vista previa de tamano fijo (no debe redimensionarse al escribir). Los datos insertables son botones visibles, no un menu escondido.
 
 ## 8. Estados
 
@@ -144,6 +148,7 @@ Toda pantalla nueva debe poder revisarse aqui antes de darse por terminada.
 - [ ] Tamanos 12/14/16/20 y pesos normal/medium/semibold.
 - [ ] Controles de 32px (40px tactil); icon-only con nombre accesible.
 - [ ] `PageHeader`, `MetricGrid`/`MetricCard`, `Panel`, `StatusBadge`, `DataTable` cuando aplican.
+- [ ] Tablas: medidas de la seccion 6 (fila 49px, 10 filas, sin scroll horizontal) comparadas con Ventas en el navegador al cambiar de pagina y de pestaña; dato secundario debajo; montos con simbolo verde.
 - [ ] Carga, vacio y error resueltos con componentes compartidos.
 - [ ] Claro y oscuro revisados; movil (390px) sin desbordes.
 - [ ] Sin cards anidadas ni decoracion.

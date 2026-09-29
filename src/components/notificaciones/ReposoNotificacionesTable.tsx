@@ -75,7 +75,6 @@ export function ReposoNotificacionesTable() {
     <ServerTableCard
       title="Servicios en Reposo"
       rowCount={paginated.length}
-      rowHeight={48}
       pagination={{
         page,
         totalPages,
@@ -128,7 +127,7 @@ function ReposoTableHead({
   className: string;
 }) {
   return (
-    <TableHead className={`h-10 px-2 text-center text-muted-foreground ${className}`}>
+    <TableHead className={`text-center text-muted-foreground ${className}`}>
       {children}
     </TableHead>
   );

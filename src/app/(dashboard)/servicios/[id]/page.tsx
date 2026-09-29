@@ -32,7 +32,7 @@ function ServiciosCategoriaPageContent() {
   const [cicloFilter, setCicloFilter] = useState('todos');
   const [perfilFilter, setPerfilFilter] = useState('todos');
   const [estadoFilter, setEstadoFilter] = useState('activo');
-  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize(54));
+  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize());
   const isSearchMode = searchTerm.trim().length > 0;
 
   // Construir filtros dinámicos
@@ -147,33 +147,36 @@ function ServiciosCategoriaPageContent() {
 
       <ServiciosCategoriaMetrics categoria={categoria} />
 
-      <ServiciosCategoriaFilters
-        estadoFilter={estadoFilter}
-        onEstadoChange={setEstadoFilter}
-      />
+      {/* Pestanas y tabla juntas: 8px entre ambas, igual que en el resto de pantallas con pestanas. */}
+      <div className="space-y-2">
+        <ServiciosCategoriaFilters
+          estadoFilter={estadoFilter}
+          onEstadoChange={setEstadoFilter}
+        />
 
-      <ServiciosCategoriaTableDetalle
-        servicios={servicios}
-        onEdit={handleEdit}
-        onView={handleView}
-        title="Todos los servicios"
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        cicloFilter={cicloFilter}
-        onCicloChange={setCicloFilter}
-        perfilFilter={perfilFilter}
-        onPerfilChange={setPerfilFilter}
-        isLoading={isLoading}
-        hasMore={hasMore}
-        hasPrevious={hasPrevious}
-        page={page}
-        totalPages={totalPages}
-        showPagination
-        pageSize={pageSize}
-        onPageSizeChange={setPageSize}
-        onNext={next}
-        onPrevious={previous}
-      />
+        <ServiciosCategoriaTableDetalle
+          servicios={servicios}
+          onEdit={handleEdit}
+          onView={handleView}
+          title="Todos los servicios"
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          cicloFilter={cicloFilter}
+          onCicloChange={setCicloFilter}
+          perfilFilter={perfilFilter}
+          onPerfilChange={setPerfilFilter}
+          isLoading={isLoading}
+          hasMore={hasMore}
+          hasPrevious={hasPrevious}
+          page={page}
+          totalPages={totalPages}
+          showPagination
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          onNext={next}
+          onPrevious={previous}
+        />
+      </div>
     </div>
   );
 }

@@ -152,7 +152,7 @@ const serviciosCategoriaColumns: Column<ServicioCategoriaRow>[] = [
       );
 
       return (
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center justify-center leading-tight">
           <div className="flex items-center gap-0.5">
             {indicatorStates.map((state, index) => {
               const iconColor =

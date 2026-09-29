@@ -20,7 +20,7 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
               item.activo ? "text-success" : "text-danger",
             )}
           />
-          <div className="min-w-0">
+          <div className="min-w-0 max-w-64 leading-tight">
             <p className="truncate font-medium">{item.nombre}</p>
             <p className="truncate text-xs text-muted-foreground">{item.correo}</p>
           </div>

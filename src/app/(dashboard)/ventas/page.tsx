@@ -30,7 +30,7 @@ function VentasPageContent() {
   const { data: categorias = [] } = useCategoriasFull();
 
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'inactivas'>('todas');
-  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize(54));
+  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoriaId, setSelectedCategoriaId] = useState<string>('todas');
   const [orderBy, setOrderBy] = useState<'createdAt' | 'updatedAt'>('createdAt');
