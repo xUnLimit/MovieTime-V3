@@ -6,11 +6,11 @@
 
 'use client';
 
-import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ServerTableCard } from '@/components/shared/ServerTableCard';
 
 import { BulkNoticeSummaryDialog } from './ventas-proximas/BulkNoticeSummaryDialog';
 import { VentasProximasDialogs } from './ventas-proximas/VentasProximasDialogs';
-import { VentasProximasPagination } from './ventas-proximas/VentasProximasPagination';
 import { VentasProximasTableContent } from './ventas-proximas/VentasProximasTableContent';
 import { VentasProximasToolbar } from './ventas-proximas/VentasProximasToolbar';
 import { useVentasProximasController } from './ventas-proximas/useVentasProximasController';
@@ -19,27 +19,36 @@ export function VentasProximasTable() {
   const controller = useVentasProximasController();
 
   return (
-    <Card className="min-w-0 p-4 pb-2">
-      <h3 className="text-xl font-semibold">Ventas próximas a vencer</h3>
-      <VentasProximasToolbar
-        searchQuery={controller.searchQuery}
-        estadoFilter={controller.estadoFilter}
-        onSearchChange={controller.handleSearchChange}
-        onEstadoFilterChange={controller.handleEstadoFilterChange}
-        selectedCount={controller.bulk.selectedCount}
-        isNotifying={controller.bulk.isSending}
-        onNotifySelected={controller.bulk.notifySelected}
-        onClearSelection={controller.bulk.clearSelection}
-      />
-
-      {controller.ventasNotificaciones.length === 0 ? (
-        <div className="rounded-md border p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No se encontraron notificaciones de ventas
-          </p>
-        </div>
-      ) : (
-        <div>
+    <>
+      <ServerTableCard
+        title="Ventas próximas a vencer"
+        rowCount={controller.paginatedNotificaciones.length}
+        pagination={{
+          page: controller.safeCurrentPage,
+          totalPages: controller.totalPages,
+          hasPrevious: controller.safeCurrentPage > 1,
+          hasMore: controller.safeCurrentPage < controller.totalPages,
+          onPrevious: controller.handlePreviousPage,
+          onNext: controller.handleNextPage,
+          pageSize: controller.itemsPerPage,
+          onPageSizeChange: (size) => controller.handleItemsPerPageChange(String(size)),
+        }}
+        toolbar={
+          <VentasProximasToolbar
+            searchQuery={controller.searchQuery}
+            estadoFilter={controller.estadoFilter}
+            onSearchChange={controller.handleSearchChange}
+            onEstadoFilterChange={controller.handleEstadoFilterChange}
+            selectedCount={controller.bulk.selectedCount}
+            isNotifying={controller.bulk.isSending}
+            onNotifySelected={controller.bulk.notifySelected}
+            onClearSelection={controller.bulk.clearSelection}
+          />
+        }
+      >
+        {controller.ventasNotificaciones.length === 0 ? (
+          <EmptyState message="No se encontraron notificaciones de ventas" />
+        ) : (
           <VentasProximasTableContent
             notificaciones={controller.paginatedNotificaciones}
             visiblePasswords={controller.visiblePasswords}
@@ -55,17 +64,8 @@ export function VentasProximasTable() {
             onToggleSelected={controller.bulk.toggleSelected}
             onToggleAllSelected={controller.bulk.toggleAllOnPage}
           />
-
-          <VentasProximasPagination
-            itemsPerPage={controller.itemsPerPage}
-            safeCurrentPage={controller.safeCurrentPage}
-            totalPages={controller.totalPages}
-            onItemsPerPageChange={controller.handleItemsPerPageChange}
-            onPreviousPage={controller.handlePreviousPage}
-            onNextPage={controller.handleNextPage}
-          />
-        </div>
-      )}
+        )}
+      </ServerTableCard>
 
       <BulkNoticeSummaryDialog
         results={controller.bulk.results}
@@ -93,6 +93,6 @@ export function VentasProximasTable() {
         onGuardarPromesa={controller.handleSavePaymentPromise}
         onQuitarPromesa={controller.handleRemovePaymentPromise}
       />
-    </Card>
+    </>
   );
 }

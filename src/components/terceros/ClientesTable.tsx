@@ -5,11 +5,8 @@ import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataTable } from "@/components/shared/DataTable";
-import {
-  PaginationFooter,
-  PaginationFooterProps,
-} from "@/components/shared/PaginationFooter";
-import { Card } from "@/components/ui/card";
+import type { PaginationFooterProps } from "@/components/shared/PaginationFooter";
+import { ServerTableCard } from "@/components/shared/ServerTableCard";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
 import { deleteTerceroMutation } from "@/application/client-domain-mutations";
 import { getPublicErrorMessage } from "@/platform/errors/public-errors";
@@ -56,10 +53,6 @@ export function ClientesTable({
     enabled: !isLoading,
   });
 
-  const selectedMetodoPagoLabel =
-    metodoPagoOptions.find((option) => option.value === metodoPagoFilter)
-      ?.label ?? "Todos los métodos";
-
   const handleDelete = (cliente: Tercero) => {
     setClienteToDelete(cliente);
     setDeleteDialogOpen(true);
@@ -103,37 +96,39 @@ export function ClientesTable({
 
   return (
     <>
-      <Card className="p-4 pb-2">
-        <h3 className="text-xl font-semibold">{title}</h3>
-        <TodosTercerosTableToolbar
-          metodoPagoFilter={metodoPagoFilter}
-          metodoPagoOptions={metodoPagoOptions}
-          onMetodoPagoFilterChange={onMetodoPagoFilterChange}
-          onSearchChange={onSearchChange}
-          searchQuery={searchQuery}
-          selectedMetodoPagoLabel={selectedMetodoPagoLabel}
-        />
-
-        <div>
-          <DataTable
-            data={clientes}
-            columns={columns}
-            loading={isLoading}
-            pagination={false}
-            actions={(item) => {
-              const cliente = item;
-              return (
-                <ClientesTableActions
-                  cliente={cliente}
-                  onDelete={handleDelete}
-                  showView={Boolean(onView)}
-                />
-              );
-            }}
+      <ServerTableCard
+        title={title}
+        rowCount={clientes.length}
+        loading={isLoading}
+        pagination={pagination}
+        toolbar={
+          <TodosTercerosTableToolbar
+            metodoPagoFilter={metodoPagoFilter}
+            metodoPagoOptions={metodoPagoOptions}
+            onMetodoPagoFilterChange={onMetodoPagoFilterChange}
+            onSearchChange={onSearchChange}
+            searchQuery={searchQuery}
           />
-          {pagination && <PaginationFooter {...pagination} />}
-        </div>
-      </Card>
+        }
+      >
+        <DataTable
+          bare
+          data={clientes}
+          columns={columns}
+          loading={isLoading}
+          pagination={false}
+          actions={(item) => {
+            const cliente = item;
+            return (
+              <ClientesTableActions
+                cliente={cliente}
+                onDelete={handleDelete}
+                showView={Boolean(onView)}
+              />
+            );
+          }}
+        />
+      </ServerTableCard>
 
       <ConfirmDialog
         open={deleteDialogOpen}

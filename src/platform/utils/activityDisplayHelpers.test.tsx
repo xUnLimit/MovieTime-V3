@@ -79,7 +79,7 @@ describe('getActivityDisplayConfig', () => {
     const { color, message } = getActivityDisplayConfig(log);
     const html = renderToStaticMarkup(<>{message}</>);
 
-    expect(color).toContain('orange');
+    expect(color).toContain('warning');
     expect(html).toContain('Venta cortada');
   });
 

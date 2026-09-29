@@ -33,16 +33,16 @@ export function SlashSuggestions({ items, activeIndex, onHover, onSelect }: Prop
     <div
       role="listbox"
       aria-label="Respuestas rápidas"
-      className="absolute inset-x-3 bottom-full z-10 mb-2 max-h-64 overflow-y-auto rounded-[11px] border border-chat-line bg-chat-raised shadow-[0_-8px_30px_rgb(0_0_0/0.25)] md:inset-x-[18px]"
+      className="absolute inset-x-3 bottom-full z-10 mb-2 max-h-64 overflow-y-auto rounded-lg border border-chat-line bg-chat-raised shadow-[0_-8px_30px_rgb(0_0_0/0.25)] md:inset-x-[18px]"
     >
-      <p className="sticky top-0 border-b border-chat-line-soft bg-chat-raised px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-chat-muted">
+      <p className="sticky top-0 border-b border-chat-line-soft bg-chat-raised px-3 py-2 text-xs font-semibold uppercase tracking-wide text-chat-muted">
         <Zap className="mr-1.5 inline h-3 w-3 -translate-y-px" aria-hidden />Respuestas rápidas
       </p>
       <ul>
         {items.map((item, index) => (
           <li key={item.id}>
             {index === firstSystem ? (
-              <p role="presentation" className="border-y border-chat-line-soft bg-chat-raised px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-chat-muted">Mensajes del sistema</p>
+              <p role="presentation" className="border-y border-chat-line-soft bg-chat-raised px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-chat-muted">Mensajes del sistema</p>
             ) : null}
             <button
               type="button"
@@ -53,10 +53,10 @@ export function SlashSuggestions({ items, activeIndex, onHover, onSelect }: Prop
               className={cn('flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left focus-visible:outline-none', index === activeIndex ? 'bg-chat-selected' : 'hover:bg-chat-hover')}
             >
               <span className="flex w-full items-center justify-between gap-2">
-                <span className="truncate text-[13px] font-semibold text-chat-ink">{item.title}</span>
-                <span className="shrink-0 text-[10px] text-chat-muted">{tag(item)}</span>
+                <span className="truncate text-sm font-semibold text-chat-ink">{item.title}</span>
+                <span className="shrink-0 text-xs text-chat-muted">{tag(item)}</span>
               </span>
-              <span className="line-clamp-1 text-[12px] text-chat-muted">{preview(item)}</span>
+              <span className="line-clamp-1 text-xs text-chat-muted">{preview(item)}</span>
             </button>
           </li>
         ))}

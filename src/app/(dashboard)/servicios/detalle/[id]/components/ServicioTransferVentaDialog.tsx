@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowRightLeft, ChevronDown } from 'lucide-react';
 
+import { getDisponiblesColorClass } from '@/components/shared/disponibilidad-status';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -138,14 +139,6 @@ export function TransferVentaDialog({
     return Math.max((servicio.perfilesDisponibles || 0) - ocupados, 0);
   };
 
-  const getDisponiblesColorClass = (disponibles: number, total: number) => {
-    if (total <= 0) return 'text-muted-foreground';
-    const ratio = disponibles / total;
-    if (ratio <= 0.25) return 'text-[#ff1744]';
-    if (ratio <= 0.5) return 'text-[#ffea00]';
-    return 'text-[#00ff85]';
-  };
-
   const handleConfirm = async () => {
     if (!servicioSeleccionado || !perfilNumeroDisponible) return;
     await onConfirm({
@@ -232,7 +225,7 @@ export function TransferVentaDialog({
                       <span className="w-[112px] shrink-0 whitespace-nowrap pr-1 text-right text-xs tabular-nums text-foreground">
                         <span
                           className={cn(
-                            'font-extrabold',
+                            'font-semibold',
                             getDisponiblesColorClass(disponibles, totalPerfiles),
                           )}
                         >
@@ -288,7 +281,7 @@ export function TransferVentaDialog({
               !perfilNumeroDisponible ||
               loadingVentasRanking
             }
-            className="flex-1 bg-green-600 text-white hover:bg-green-700"
+            className="flex-1 bg-success text-success-foreground hover:bg-success/90"
           >
             {isSubmitting ? 'Transfiriendo...' : 'Transferir'}
           </Button>

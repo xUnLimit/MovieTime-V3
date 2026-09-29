@@ -73,7 +73,7 @@ export function ServicioPreviewTab({
     <TabsContent value="perfil" className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Vista previa de perfiles</h3>
+          <h3 className="text-base font-semibold">Vista previa de perfiles</h3>
           <p className="text-sm text-muted-foreground">
             {perfilesDisponiblesValue
               ? `${Number(perfilesDisponiblesValue) || 0} de ${
@@ -89,13 +89,13 @@ export function ServicioPreviewTab({
               {perfilesPreviewSample.map((numero) => (
                 <div
                   key={numero}
-                  className="flex flex-col items-center justify-center rounded-lg border border-green-300 bg-green-100 p-6 dark:border-green-700 dark:bg-green-900/40"
+                  className="flex flex-col items-center justify-center rounded-lg border border-success-border bg-success-subtle p-6"
                 >
-                  <Users className="mb-2 h-8 w-8 text-green-700 dark:text-white" />
-                  <span className="text-sm font-medium text-green-700 dark:text-white">
+                  <Users className="mb-2 h-8 w-8 text-success dark:text-white" />
+                  <span className="text-sm font-medium text-success dark:text-white">
                     Perfil {numero}
                   </span>
-                  <span className="mt-1 text-xs text-green-600 dark:text-green-400">
+                  <span className="mt-1 text-xs text-success">
                     Disponible
                   </span>
                 </div>
@@ -232,7 +232,7 @@ export function ServicioPreviewTab({
                 <span className="text-xs text-muted-foreground block mb-1">
                   Costo del servicio
                 </span>
-                <span className="font-medium text-primary text-lg">
+                <span className="font-medium text-primary text-base">
                   {simboloMoneda}{" "}
                   {costoServicioValue
                     ? Number(costoServicioValue).toFixed(2)

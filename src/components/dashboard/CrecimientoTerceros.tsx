@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Panel } from "@/components/shared/Panel";
 import { useDashboardHome } from "@/hooks/use-dashboard-home";
 
 import {
@@ -16,7 +16,7 @@ import {
   type CrecimientoPeriod,
 } from "./crecimiento-terceros-helpers";
 import { CrecimientoTercerosChartView } from "./CrecimientoTercerosChartView";
-import { CrecimientoTercerosHeader } from "./CrecimientoTercerosHeader";
+import { CrecimientoTercerosControls, getVistaDescription } from "./CrecimientoTercerosHeader";
 
 type AnimationPhase = "idle" | "exit" | "enter";
 type AnimationDirection = 1 | -1;
@@ -92,32 +92,38 @@ export function CrecimientoTerceros() {
   };
 
   return (
-    <Card className="py-1">
-      <CrecimientoTercerosHeader
-        animacionIdle={animacionFase === "idle"}
-        isLoading={isLoading}
-        puedeIrAdelante={puedeIrAdelante}
-        puedeIrAtras={puedeIrAtras}
-        selectedPeriod={selectedPeriod}
-        selectedPeriodLabel={selectedPeriodLabel}
-        totalVistas={totalVistas}
-        vista={vista}
-        vistaIndex={vistaIndex}
-        navegar={navegar}
-        setSelectedPeriod={setSelectedPeriod}
-      />
-      <CardContent className="pt-0 px-6 pb-2">
-        <CrecimientoTercerosChartView
-          animationClass={getAnimationClass(animacionFase, animacionDireccion)}
-          balanceData={balanceData}
-          churnData={churnData}
-          data={data}
+    <Panel
+      className="md:h-[324px] lg:h-auto lg:min-h-0"
+      contentClassName="min-h-[240px] md:min-h-[200px]"
+      fill
+      title={vista.title}
+      description={getVistaDescription(vista.id, selectedPeriod)}
+      actions={
+        <CrecimientoTercerosControls
+          animacionIdle={animacionFase === "idle"}
           isLoading={isLoading}
+          puedeIrAdelante={puedeIrAdelante}
+          puedeIrAtras={puedeIrAtras}
           selectedPeriod={selectedPeriod}
+          selectedPeriodLabel={selectedPeriodLabel}
+          totalVistas={totalVistas}
           vista={vista}
+          vistaIndex={vistaIndex}
+          navegar={navegar}
+          setSelectedPeriod={setSelectedPeriod}
         />
-      </CardContent>
-    </Card>
+      }
+    >
+      <CrecimientoTercerosChartView
+        animationClass={getAnimationClass(animacionFase, animacionDireccion)}
+        balanceData={balanceData}
+        churnData={churnData}
+        data={data}
+        isLoading={isLoading}
+        selectedPeriod={selectedPeriod}
+        vista={vista}
+      />
+    </Panel>
   );
 }
 

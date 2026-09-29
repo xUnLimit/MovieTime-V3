@@ -91,7 +91,7 @@ describe('Dashboard header', () => {
 
     expect(screen.queryByRole('button', { name: /sincronizar sistema/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /^sincronizar$/i })).toBeNull();
-  });
+  }, 20_000); // El primer import dinamico de la pagina es lento en frio cuando toda la suite corre en paralelo.
 
   it('shows the pending-notifications toast only once per browser runtime', async () => {
     const toast = await import('sonner').then((module) => module.toast);

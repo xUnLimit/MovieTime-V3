@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import {
   Bell,
+  CreditCard,
   DollarSign,
   FileText,
   Folder,
@@ -9,9 +10,9 @@ import {
   MessageSquare,
   Pause,
   ShoppingCart,
+  Smartphone,
   Tv2,
   Users,
-  Wallet,
 } from 'lucide-react';
 
 export type SidebarNavItem = {
@@ -83,7 +84,7 @@ const navigationSections: SidebarNavSection[] = [
       {
         name: 'Pagos Yappy',
         href: '/pagos-yappy',
-        icon: Wallet,
+        icon: Smartphone,
       },
       {
         name: 'Notificaciones',
@@ -113,7 +114,7 @@ const navigationSections: SidebarNavSection[] = [
       {
         name: 'Métodos de Pago',
         href: '/metodos-pago',
-        icon: Wallet,
+        icon: CreditCard,
       },
       {
         name: 'Plantillas de Mensajes',
@@ -137,4 +138,17 @@ export function getSidebarNavigationSections(
       return { ...section, items };
     })
     .filter((section) => section.items.length > 0);
+}
+
+/** Un item esta activo en su ruta exacta y en cualquiera de sus subrutas (p. ej. /ventas/crear resalta Ventas). */
+/** Item del menu que contiene la ruta (el de href mas largo). Sirve para las migas y el titulo de seccion. */
+export function findNavItem(pathname: string): SidebarNavItem | undefined {
+  return navigationSections
+    .flatMap((section) => section.items)
+    .filter((item) => isNavItemActive(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+}
+
+export function isNavItemActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

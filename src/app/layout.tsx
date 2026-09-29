@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
 import { headers } from 'next/headers';
 
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
+import { themeInitScript } from '@/components/layout/theme-init-script';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { NotificationEventsInitializer } from '@/components/providers/NotificationEventsInitializer';
 import { PwaBootstrap } from '@/components/pwa/PwaBootstrap';
@@ -11,6 +13,9 @@ import { PendingWhatsAppToast } from '@/components/whatsapp/PendingWhatsAppToast
 import { siteConfig } from '@/platform/config';
 
 import './globals.css';
+
+const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans', display: 'swap' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   applicationName: siteConfig.name,
@@ -35,7 +40,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: siteConfig.themeColor,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: siteConfig.themeColorLight },
+    { media: '(prefers-color-scheme: dark)', color: siteConfig.themeColor },
+  ],
   viewportFit: 'cover',
   width: 'device-width',
   initialScale: 1,
@@ -53,10 +61,17 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // Required for Next to apply the per-request CSP nonce generated in proxy.ts.
-  await headers();
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
-    <html lang="es" className="dark" suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`dark ${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="font-body antialiased">
         <ThemeProvider
           defaultTheme="dark"

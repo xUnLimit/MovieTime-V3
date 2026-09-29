@@ -11,11 +11,12 @@ import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Banknote, Bell, Pause, Server, ShoppingCart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Link from 'next/link';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { VentasProximasTable } from '@/components/notificaciones/VentasProximasTable';
 import { ServiciosProximosTable } from '@/components/notificaciones/ServiciosProximosTable';
 import { ReposoNotificacionesTable } from '@/components/notificaciones/ReposoNotificacionesTable';
 import { MetricCard } from '@/components/shared/MetricCard';
+import { MetricGrid } from '@/components/shared/MetricGrid';
 import { useNotificacionesMontos } from '@/hooks/use-notificaciones-montos';
 import { useNotificaciones } from '@/hooks/use-notificaciones';
 import { applyNotificationQueryReactions } from '@/application/store-reactions/notification-query-reactions';
@@ -39,52 +40,46 @@ function NotificacionesMetrics() {
   } = useNotificacionesMontos();
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <MetricGrid>
       <MetricCard
         title="Total Notificaciones"
         value={totalNotificaciones}
         icon={Bell}
-        iconColor="text-blue-500"
-        underlineColor="bg-blue-500"
+        tone="info"
       />
       <MetricCard
         title="Ventas Próximas"
         value={ventasProximas}
         icon={ShoppingCart}
-        iconColor="text-red-500"
-        underlineColor="bg-red-500"
+        tone="danger"
       />
       <MetricCard
         title="Servicios Próximos"
         value={serviciosProximos}
         icon={Server}
-        iconColor="text-orange-500"
-        underlineColor="bg-orange-500"
+        tone="neutral"
       />
       <MetricCard
         title="Servicios en Reposo"
         value={reposoCompletados}
         icon={Pause}
-        iconColor="text-purple-500"
-        underlineColor="bg-purple-500"
+        tone="neutral"
       />
       <MetricCard
         title="Monto Ventas en Retraso"
         value={ventasEnRetraso != null ? `$${ventasEnRetraso.toFixed(2)}` : '$0.00'}
         icon={AlertTriangle}
-        iconColor="text-red-600"
-        underlineColor="bg-red-600"
+        tone="danger"
         loading={loadingMontos}
       />
       <MetricCard
         title="Monto Servicios en Retraso"
         value={serviciosPorPagar != null ? `$${serviciosPorPagar.toFixed(2)}` : '$0.00'}
         icon={Banknote}
-        iconColor="text-emerald-500"
-        underlineColor="bg-emerald-500"
+        tone="success"
         loading={loadingMontos}
       />
-    </div>
+    </MetricGrid>
   );
 }
 
@@ -126,18 +121,9 @@ function NotificacionesPageContent() {
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
-      {/* Page Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Notificaciones</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            / <span className="text-foreground">Notificaciones</span>
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Notificaciones"
+      />
 
       {/* Metrics - matching CategoriasMetrics style */}
       <NotificacionesMetrics />
@@ -145,47 +131,43 @@ function NotificacionesPageContent() {
       {/* Tabs - matching Categorías tabs style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
         <div className="tabs-scroll-shell -mx-1 px-1">
-          <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
+          <TabsList className="tabs-scroll-list">
           <TabsTrigger
-            value="ventas"
-            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
+            value="ventas" className="text-xs whitespace-nowrap sm:px-4 sm:text-sm"
           >
             Ventas Próximas
             {ventasProximas > 0 && (
-              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
+              <span className="ml-1.5 rounded-full bg-danger px-1.5 py-0.5 text-xs text-danger-foreground sm:ml-2 sm:px-2 sm:text-xs">
                 {ventasProximas}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger
-            value="servicios"
-            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
+            value="servicios" className="text-xs whitespace-nowrap sm:px-4 sm:text-sm"
           >
             Servicios Próximos
             {serviciosProximos > 0 && (
-              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
+              <span className="ml-1.5 rounded-full bg-danger px-1.5 py-0.5 text-xs text-danger-foreground sm:ml-2 sm:px-2 sm:text-xs">
                 {serviciosProximos}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger
-            value="autorrenovables"
-            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
+            value="autorrenovables" className="text-xs whitespace-nowrap sm:px-4 sm:text-sm"
           >
             Servicios autorrenovables
             {serviciosAutorrenovables > 0 && (
-              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
+              <span className="ml-1.5 rounded-full bg-danger px-1.5 py-0.5 text-xs text-danger-foreground sm:ml-2 sm:px-2 sm:text-xs">
                 {serviciosAutorrenovables}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger
-            value="reposo"
-            className="rounded-none border-b-2 border-transparent px-3 py-2 text-xs whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent sm:px-4 sm:text-sm"
+            value="reposo" className="text-xs whitespace-nowrap sm:px-4 sm:text-sm"
           >
             Servicios en Reposo
             {reposoCompletados > 0 && (
-              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white sm:ml-2 sm:px-2 sm:text-xs">
+              <span className="ml-1.5 rounded-full bg-danger px-1.5 py-0.5 text-xs text-danger-foreground sm:ml-2 sm:px-2 sm:text-xs">
                 {reposoCompletados}
               </span>
             )}

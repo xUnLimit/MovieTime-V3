@@ -1,7 +1,10 @@
-import { CreditCard, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Edit, MoreHorizontal, Trash2 } from 'lucide-react';
 
+import { useMemo } from 'react';
+
+import { DataTable, defineDataTableColumns } from '@/components/shared/DataTable';
+import { TableCard } from '@/components/shared/TableCard';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,126 +41,124 @@ export function ServicioPaymentsHistory({
   pagosOrdenados,
   totalGastadoUSD,
 }: ServicioPaymentsHistoryProps) {
+  const columns = useMemo(
+    () =>
+      defineDataTableColumns<PagoServicio>([
+        {
+          key: 'fecha',
+          header: 'Fecha de Pago',
+          render: (pago) => (
+            <span className="whitespace-nowrap">{pago.fecha ? formatearFecha(new Date(pago.fecha)) : '—'}</span>
+          ),
+        },
+        {
+          key: 'descripcion',
+          header: 'Descripción',
+          render: (pago) => <span className="font-medium">{pago.descripcion}</span>,
+        },
+        {
+          key: 'metodoPagoNombre',
+          header: 'Método de pago',
+          hideBelow: 'md',
+          render: (pago) => {
+            const pagoMetodo = pago.metodoPagoId ? metodosPago.find((m) => m.id === pago.metodoPagoId) : undefined;
+            return (
+              <span className="whitespace-nowrap">
+                {pago.metodoPagoNombre?.trim() || pagoMetodo?.nombre || 'Sin método'}
+              </span>
+            );
+          },
+        },
+        {
+          key: 'cicloPago',
+          header: 'Ciclo de facturación',
+          hideBelow: '2xl',
+          render: (pago) => getCicloPagoLabel(pago.cicloPago ?? '') || '—',
+        },
+        {
+          key: 'fechaInicio',
+          header: 'Fecha de Inicio',
+          hideBelow: 'xl',
+          render: (pago) => (
+            <span className="whitespace-nowrap">{pago.fechaInicio ? formatearFecha(new Date(pago.fechaInicio)) : '—'}</span>
+          ),
+        },
+        {
+          key: 'fechaVencimiento',
+          header: 'Fecha de Vencimiento',
+          hideBelow: 'xl',
+          render: (pago) => (
+            <span className="whitespace-nowrap">
+              {pago.fechaVencimiento ? formatearFecha(new Date(pago.fechaVencimiento)) : '—'}
+            </span>
+          ),
+        },
+        {
+          key: 'monto',
+          header: 'Monto',
+          align: 'center',
+          render: (pago) => {
+            const pagoMetodo = pago.metodoPagoId ? metodosPago.find((m) => m.id === pago.metodoPagoId) : undefined;
+            const pagoCurrency = getCurrencySymbol(pago.moneda || pagoMetodo?.moneda || metodoPago?.moneda);
+            return (
+              <span className="font-semibold">
+                {pagoCurrency} {pago.monto.toFixed(2)}
+              </span>
+            );
+          },
+        },
+      ]),
+    [getCicloPagoLabel, metodoPago, metodosPago],
+  );
+
   return (
-    <Card className="min-w-0 space-y-4 p-6">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
-          <h2 className="text-lg font-semibold">Historial de Pagos</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Registro completo de todos los pagos realizados para este servicio.
-        </p>
-      </div>
-
-      <div className="table-scroll-shell">
-        <table className="w-full min-w-[1100px]">
-          <colgroup>
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '14%' }} />
-            <col style={{ width: '14%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '8%' }} />
-          </colgroup>
-          <thead>
-            <tr className="border-b text-sm text-muted-foreground">
-              <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Pago</th>
-              <th className="text-left py-3 pr-3 font-medium">Descripción</th>
-              <th className="text-left py-3 font-medium whitespace-nowrap">Método de pago</th>
-              <th className="text-left py-3 font-medium">Ciclo de facturación</th>
-              <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Inicio</th>
-              <th className="text-left py-3 font-medium whitespace-nowrap">Fecha de Vencimiento</th>
-              <th className="text-center py-3 font-medium">Monto</th>
-              <th className="text-center py-3 font-medium">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
-                  Cargando historial de pagos...
-                </td>
-              </tr>
+    <TableCard
+      title="Historial de Pagos"
+      description="Registro completo de todos los pagos realizados para este servicio."
+      footer={
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Total Gastado:</span>
+          <span className="text-base font-semibold text-primary">
+            {isCalculatingTotal ? (
+              <span className="text-xs">Calculando...</span>
             ) : (
-              pagosOrdenados.map((pago, index) => {
-                const esInicial = pago.isPagoInicial || pago.descripcion === 'Pago inicial';
-                const pagoMetodo = pago.metodoPagoId
-                  ? metodosPago.find((m) => m.id === pago.metodoPagoId)
-                  : undefined;
-                const metodoPagoNombre =
-                  pago.metodoPagoNombre?.trim() || pagoMetodo?.nombre || 'Sin método';
-                const pagoCurrency = getCurrencySymbol(
-                  pago.moneda || pagoMetodo?.moneda || metodoPago?.moneda,
-                );
-                const esUltimo = index === 0;
-                const puedeGestionar = esUltimo && !esInicial;
-
-                return (
-                  <tr key={pago.id} className="border-b text-sm">
-                    <td className="py-3 whitespace-nowrap">
-                      {pago.fecha ? formatearFecha(new Date(pago.fecha)) : '—'}
-                    </td>
-                    <td className="py-3 pr-3 font-medium">{pago.descripcion}</td>
-                    <td className="py-3 whitespace-nowrap">{metodoPagoNombre}</td>
-                    <td className="py-3">{getCicloPagoLabel(pago.cicloPago ?? '') || '—'}</td>
-                    <td className="py-3 whitespace-nowrap">
-                      {pago.fechaInicio ? formatearFecha(new Date(pago.fechaInicio)) : '—'}
-                    </td>
-                    <td className="py-3 whitespace-nowrap">
-                      {pago.fechaVencimiento ? formatearFecha(new Date(pago.fechaVencimiento)) : '—'}
-                    </td>
-                    <td className="py-3 text-center font-semibold">
-                      {pagoCurrency} {pago.monto.toFixed(2)}
-                    </td>
-                    <td className="py-3 text-center">
-                      {puedeGestionar ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="center">
-                            <DropdownMenuItem onClick={() => onEditarPago(pago)}>
-                              <Edit className="h-3.5 w-3.5 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => onDeleteRenovacion(pago)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <div className="h-7 flex items-center justify-center text-muted-foreground">
-                          —
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
+              formatAggregateInUSD(totalGastadoUSD)
             )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="pt-3 border-t flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">Total Gastado:</span>
-        <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-          {isCalculatingTotal ? (
-            <span className="text-xs">Calculando...</span>
+          </span>
+        </div>
+      }
+    >
+      <DataTable
+        bare
+        data={pagosOrdenados}
+        columns={columns}
+        loading={isLoading}
+        emptyMessage="No hay pagos registrados"
+        actions={(pago) => {
+          const esInicial = pago.isPagoInicial || pago.descripcion === 'Pago inicial';
+          return pago === pagosOrdenados[0] && !esInicial ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" aria-label="Acciones del pago">
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEditarPago(pago)}>
+                  <Edit />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={() => onDeleteRenovacion(pago)}>
+                  <Trash2 />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            formatAggregateInUSD(totalGastadoUSD)
-          )}
-        </span>
-      </div>
-    </Card>
+            <span className="text-muted-foreground">—</span>
+          );
+        }}
+      />
+    </TableCard>
   );
 }

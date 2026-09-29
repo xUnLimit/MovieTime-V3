@@ -81,11 +81,11 @@ export function resolveResultWaMe(
 }
 
 const BADGE_INFO: Record<NoticeBadgeStatus, { label: string; className: string }> = {
-  pending: { label: 'Pendiente', className: 'border-amber-500/50 bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300' },
-  sent: { label: 'Enviado', className: 'border-slate-400/50 bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300' },
-  delivered: { label: 'Entregado', className: 'border-blue-500/50 bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' },
-  read: { label: 'Leído', className: 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' },
-  failed: { label: 'Falló', className: 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' },
+  pending: { label: 'Pendiente', className: 'border-warning-border bg-warning-subtle text-warning' },
+  sent: { label: 'Enviado', className: 'border-border bg-muted text-muted-foreground' },
+  delivered: { label: 'Entregado', className: 'border-info-border bg-info-subtle text-info' },
+  read: { label: 'Leído', className: 'border-success-border bg-success-subtle text-success' },
+  failed: { label: 'Falló', className: 'border-danger-border bg-danger-subtle text-danger' },
 };
 
 export function noticeBadgeInfo(state: VentaNoticeState | undefined): { label: string; className: string; dateLabel: string | null } | null {

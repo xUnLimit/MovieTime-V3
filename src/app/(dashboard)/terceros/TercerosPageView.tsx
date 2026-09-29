@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClientesTable } from '@/components/terceros/ClientesTable';
@@ -33,7 +34,7 @@ export function TercerosPageView({
       <TercerosMetrics />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="inline-flex h-auto rounded-none border-b border-border bg-transparent p-0">
+        <TabsList>
           <TercerosTabTrigger value="todos">Todos</TercerosTabTrigger>
           <TercerosTabTrigger value="clientes">Clientes</TercerosTabTrigger>
           <TercerosTabTrigger value="revendedores">Revendedores</TercerosTabTrigger>
@@ -95,25 +96,17 @@ export function TercerosPageView({
 
 function TercerosPageHeading() {
   return (
-    <div className="dashboard-page-heading">
-      <div className="dashboard-page-heading-row">
-        <div className="dashboard-page-heading-copy space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Terceros</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link prefetch={false} href="/" className="transition-colors hover:text-foreground">
-              Dashboard
-            </Link>{' '}
-            / <span className="text-foreground">Terceros</span>
-          </p>
-        </div>
-        <Link prefetch={false} href="/terceros/crear" className="shrink-0">
-          <Button className="whitespace-nowrap">
-            <Plus className="mr-2 h-4 w-4" />
+    <PageHeader
+      title="Terceros"
+      actions={
+        <Button asChild className="whitespace-nowrap">
+          <Link prefetch={false} href="/terceros/crear">
+            <Plus />
             Nuevo Tercero
-          </Button>
-        </Link>
-      </div>
-    </div>
+          </Link>
+        </Button>
+      }
+    />
   );
 }
 
@@ -127,7 +120,6 @@ function TercerosTabTrigger({
   return (
     <TabsTrigger
       value={value}
-      className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
     >
       {children}
     </TabsTrigger>

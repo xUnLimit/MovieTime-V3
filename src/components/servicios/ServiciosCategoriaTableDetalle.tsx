@@ -7,8 +7,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataTable } from "@/components/shared/DataTable";
-import { PaginationFooter } from "@/components/shared/PaginationFooter";
-import { Card } from "@/components/ui/card";
+import { ServerTableCard } from "@/components/shared/ServerTableCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { deleteServicioMutation } from "@/application/client-domain-mutations";
@@ -121,53 +120,44 @@ export const ServiciosCategoriaTableDetalle = memo(
 
     return (
       <>
-        <Card className="min-w-0 p-3 pb-2 sm:p-4 sm:pb-2">
-          <h3 className="text-lg font-semibold sm:text-xl">{title}</h3>
-          <ServiciosCategoriaTableDetalleToolbar
-            cicloFilter={cicloFilter}
-            onCicloChange={onCicloChange}
-            onPerfilChange={onPerfilChange}
-            onSearchChange={onSearchChange}
-            perfilFilter={perfilFilter}
-            searchTerm={searchTerm}
-          />
-
-          <div>
-            <DataTable
-              data={serviciosOrdenables}
-              columns={serviciosCategoriaColumnsForDataTable}
-              emptyMessage="No hay servicios para mostrar"
-              loading={isLoading}
-              pagination={false}
-              containerClassName="table-scroll-shell"
-              tableClassName="table-scroll-content min-w-[1180px]"
-              actions={(item) => {
-                const servicio = item;
-                return (
-                  <ServiciosCategoriaTableDetalleActions
-                    onDelete={handleDelete}
-                    onView={onView}
-                    pathname={pathname}
-                    servicio={servicio}
-                  />
-                );
-              }}
+        <ServerTableCard
+          title={title}
+          rowCount={serviciosOrdenables.length}
+          rowHeight={54}
+          loading={isLoading}
+          pagination={
+            showPagination
+              ? { page, totalPages, hasPrevious, hasMore, onPrevious, onNext, pageSize, onPageSizeChange }
+              : undefined
+          }
+          toolbar={
+            <ServiciosCategoriaTableDetalleToolbar
+              cicloFilter={cicloFilter}
+              onCicloChange={onCicloChange}
+              onPerfilChange={onPerfilChange}
+              onSearchChange={onSearchChange}
+              perfilFilter={perfilFilter}
+              searchTerm={searchTerm}
             />
-
-            {showPagination && (
-              <PaginationFooter
-                page={page}
-                totalPages={totalPages}
-                hasPrevious={hasPrevious}
-                hasMore={hasMore}
-                onPrevious={onPrevious}
-                onNext={onNext}
-                pageSize={pageSize}
-                onPageSizeChange={onPageSizeChange}
+          }
+        >
+          <DataTable
+            bare
+            data={serviciosOrdenables}
+            columns={serviciosCategoriaColumnsForDataTable}
+            emptyMessage="No hay servicios para mostrar"
+            loading={isLoading}
+            pagination={false}
+            actions={(servicio) => (
+              <ServiciosCategoriaTableDetalleActions
+                onDelete={handleDelete}
+                onView={onView}
+                pathname={pathname}
+                servicio={servicio}
               />
             )}
-          </div>
-        </Card>
+          />
+        </ServerTableCard>
 
         <ConfirmDialog
           open={deleteDialogOpen}

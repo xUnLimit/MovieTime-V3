@@ -21,9 +21,9 @@ export function DashboardErrorFallback({ error, reset }: DashboardErrorFallbackP
   return (
     <div className="flex items-center justify-center min-h-screen p-6">
       <Card className="max-w-md w-full p-6 space-y-4">
-        <div className="flex items-center gap-3 text-red-600">
+        <div className="flex items-center gap-3 text-danger">
           <AlertCircle className="h-8 w-8" />
-          <h2 className="text-2xl font-bold">Error en la aplicación</h2>
+          <h2 className="text-xl font-semibold">Error en la aplicación</h2>
         </div>
         
         <p className="text-muted-foreground">

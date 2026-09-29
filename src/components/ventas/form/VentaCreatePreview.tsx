@@ -34,7 +34,7 @@ export function VentaCreatePreview({
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-6">
         <div className="space-y-0">
-          <h2 className="text-lg font-semibold">Vista previa de la venta</h2>
+          <h2 className="text-base font-semibold">Vista previa de la venta</h2>
           <p className="-mt-1 text-sm text-muted-foreground">
             Resumen general antes de guardar.
           </p>
@@ -80,7 +80,7 @@ export function VentaCreatePreview({
                         : "—"}
                     </p>
                   </div>
-                  <span className="font-semibold text-green-500">
+                  <span className="font-semibold text-success">
                     {simboloMoneda} {item.precioFinal.toFixed(2)}
                   </span>
                 </div>
@@ -144,10 +144,10 @@ export function VentaCreatePreview({
 
       <div className="mt-1 space-y-2 rounded-lg bg-muted/50 p-3">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold text-foreground">
+          <span className="text-base font-semibold text-foreground">
             Total de la venta
           </span>
-          <span className="text-xl font-semibold text-green-500">
+          <span className="text-xl font-semibold text-success">
             {simboloMoneda} {totalFinal.toFixed(2)}
           </span>
         </div>
@@ -164,7 +164,7 @@ export function VentaCreatePreview({
             disabled={estado === "inactivo"}
           />
           <div className="flex items-center gap-2 text-sm font-medium">
-            <MessageCircle className="h-4 w-4 text-green-500" />
+            <MessageCircle className="h-4 w-4 text-success" />
             <span>Notificar al cliente por WhatsApp</span>
           </div>
         </div>

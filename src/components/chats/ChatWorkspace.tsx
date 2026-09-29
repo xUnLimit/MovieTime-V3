@@ -210,8 +210,8 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
         />
         {searchActive ? <div className="flex items-center gap-[9px] border-b border-chat-line bg-chat-raised px-3 py-2 md:px-5">
           <Search className="h-[15px] w-[15px] shrink-0 text-chat-quiet" strokeWidth={1.6} aria-hidden />
-          <input autoFocus aria-label="Buscar en la conversación" placeholder="Buscar en los mensajes" value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setActiveMatchIndex(0); }} className="min-w-0 flex-1 bg-transparent text-[16px] text-chat-ink outline-none placeholder:text-chat-quiet sm:text-[13px]" />
-          <span className="min-w-[35px] text-center text-[11px] tabular-nums text-chat-muted">{matchIds.length ? `${shownMatchIndex + 1}/${matchIds.length}` : '0/0'}</span>
+          <input autoFocus aria-label="Buscar en la conversación" placeholder="Buscar en los mensajes" value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setActiveMatchIndex(0); }} className="min-w-0 flex-1 bg-transparent text-base text-chat-ink outline-none placeholder:text-chat-quiet sm:text-sm" />
+          <span className="min-w-[35px] text-center text-xs tabular-nums text-chat-muted">{matchIds.length ? `${shownMatchIndex + 1}/${matchIds.length}` : '0/0'}</span>
           <button type="button" className={FIND_ICON} aria-label="Resultado anterior" disabled={!matchIds.length} onClick={() => setActiveMatchIndex((index) => (index - 1 + matchIds.length) % matchIds.length)}><ChevronUp className="h-[15px] w-[15px]" /></button>
           <button type="button" className={FIND_ICON} aria-label="Resultado siguiente" disabled={!matchIds.length} onClick={() => setActiveMatchIndex((index) => (index + 1) % matchIds.length)}><ChevronDown className="h-[15px] w-[15px]" /></button>
           <button type="button" className={FIND_ICON} aria-label="Cerrar búsqueda" onClick={() => { setSearchActive(false); setSearchQuery(''); }}><X className="h-[15px] w-[15px]" /></button>

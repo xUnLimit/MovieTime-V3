@@ -45,18 +45,18 @@ export function ConfirmDialog({
   const variantConfig = {
     warning: {
       icon: AlertTriangle,
-      iconClass: 'text-yellow-600',
-      buttonClass: 'bg-yellow-600 hover:bg-yellow-700',
+      iconClass: 'text-warning',
+      buttonClass: 'bg-warning hover:bg-warning/90',
     },
     danger: {
       icon: XCircle,
-      iconClass: 'text-red-600',
-      buttonClass: 'bg-red-600 hover:bg-red-700',
+      iconClass: 'text-danger',
+      buttonClass: 'bg-danger hover:bg-danger/90',
     },
     info: {
       icon: Info,
-      iconClass: 'text-blue-600',
-      buttonClass: 'bg-blue-600 hover:bg-blue-700',
+      iconClass: 'text-info',
+      buttonClass: 'bg-info hover:bg-info/90',
     },
   };
 

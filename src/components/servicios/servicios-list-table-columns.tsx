@@ -12,13 +12,12 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
       key: "nombre",
       header: "Nombre",
       sortable: true,
-      width: "20%",
       render: (item) => (
         <div className="flex items-center gap-2">
           <Monitor
             className={cn(
               "h-4 w-4 shrink-0",
-              item.activo ? "text-green-500" : "text-red-500",
+              item.activo ? "text-success" : "text-danger",
             )}
           />
           <div className="min-w-0">
@@ -30,18 +29,18 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
     },
     {
       key: "categoriaNombre",
+      hideBelow: "sm",
       header: "Categoría",
       sortable: true,
-      width: "10%",
       render: (item) => (
         <span className="text-sm">{item.categoriaNombre}</span>
       ),
     },
     {
       key: "cicloPago",
+      hideBelow: "2xl",
       header: "Ciclo de Pago",
       sortable: true,
-      width: "10%",
       align: "center",
       render: (item) => (
         <div className="flex items-center justify-center gap-2">
@@ -52,9 +51,9 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
     },
     {
       key: "fechaInicio",
+      hideBelow: "2xl",
       header: "Fecha de Inicio",
       sortable: true,
-      width: "14%",
       align: "center",
       render: (item) => (
         <div className="text-center">
@@ -64,9 +63,9 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
     },
     {
       key: "fechaVencimiento",
+      hideBelow: "md",
       header: "Fecha de Vencimiento",
       sortable: true,
-      width: "14%",
       align: "center",
       render: (item) => (
         <div className="text-center">
@@ -78,20 +77,19 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
       key: "costo",
       header: "Monto",
       sortable: true,
-      width: "10%",
       align: "center",
       render: (item) => (
         <div className="text-center font-medium">
-          <span className="text-green-500">{getCurrencySymbol(item.moneda)}</span>
+          <span className="text-success">{getCurrencySymbol(item.moneda)}</span>
           <span className="text-foreground"> {item.costo.toFixed(2)}</span>
         </div>
       ),
     },
     {
       key: "renovaciones",
+      hideBelow: "xl",
       header: "Renovaciones",
       sortable: true,
-      width: "12%",
       align: "center",
       render: (item) => (
         <div className="flex items-center justify-center gap-1.5 font-medium">

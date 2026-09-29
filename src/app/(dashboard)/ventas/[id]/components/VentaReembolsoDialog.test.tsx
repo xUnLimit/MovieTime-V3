@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { VentaDoc } from '@/types';
@@ -61,5 +61,34 @@ describe('VentaReembolsoDialog', () => {
     const inactivateService = screen.getByRole('radio', { name: /Cortar venta e inactivar servicio/i });
     fireEvent.click(inactivateService);
     expect(inactivateService.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('keeps the confirm button disabled until the destination is filled and then submits the refund once', async () => {
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
+    render(
+      <VentaReembolsoDialog
+        open
+        onOpenChange={vi.fn()}
+        venta={{ ...venta, metodoPagoId: 'metodo-1' } as VentaDoc}
+        metodosPago={[]}
+        montoSugerido={30}
+        onConfirm={onConfirm}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    const confirm = screen.getByRole('button', { name: 'Reembolsar' }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('Cuenta destino del cliente'), { target: { value: 'Yappy 6000-0000' } });
+    expect(confirm.disabled).toBe(false);
+
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ destinoReembolso: 'Yappy 6000-0000', metodoPagoId: 'metodo-1', cortarServicio: false })
+    );
   });
 });

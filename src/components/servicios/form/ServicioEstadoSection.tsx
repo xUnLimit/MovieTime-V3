@@ -47,7 +47,7 @@ export function ServicioEstadoSection({
             onKeyDown={handleIntegerInputKeyDown}
           />
           {errors.perfilesDisponibles && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-danger">
               {errors.perfilesDisponibles.message}
             </p>
           )}
@@ -82,7 +82,7 @@ export function ServicioEstadoSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.estado && (
-            <p className="text-sm text-red-500">{errors.estado.message}</p>
+            <p className="text-sm text-danger">{errors.estado.message}</p>
           )}
         </div>
       </div>

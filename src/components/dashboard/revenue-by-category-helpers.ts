@@ -1,16 +1,10 @@
 import { useSyncExternalStore } from "react";
 
-export const REVENUE_CATEGORY_COLORS = [
-  "#3b82f6",
-  "#10b981",
-  "#6366f1",
-  "#8b5cf6",
-  "#ec4899",
-  "#f59e0b",
-  "#14b8a6",
-];
+import { categoryPalette, chartColors } from "./chart-theme";
 
-export const NEGATIVE_REVENUE_COLOR = "#dc2626";
+export const REVENUE_CATEGORY_COLORS: readonly string[] = categoryPalette;
+
+export const NEGATIVE_REVENUE_COLOR: string = chartColors.loss;
 export const MIN_NEGATIVE_AXIS_RATIO = 0.05;
 export const MIN_NEGATIVE_AXIS_RATIO_MOBILE = 0.12;
 export const VALUE_LABEL_GAP = 8;

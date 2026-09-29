@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { MetodoPago } from "@/types";
-import { DataTable, Column } from "@/components/shared/DataTable";
-import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DataTable, defineDataTableColumns } from "@/components/shared/DataTable";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { TableCard } from "@/components/shared/TableCard";
+import { FilterMenu, TableSearch, TableToolbar } from "@/components/shared/TableToolbar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,8 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, Globe2, Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Globe2, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { deleteMetodoPagoMutation } from "@/application/client-domain-mutations";
 import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -85,12 +84,19 @@ export function ServiciosMetodosPagoTable({
     }
   };
 
-  const columns: Column<MetodoPago>[] = [
+  const paisOptions = useMemo(
+    () => [
+      { value: "todos", label: "Todos los países" },
+      ...paisesUnicos.map((p) => ({ value: p, label: p })),
+    ],
+    [paisesUnicos],
+  );
+
+  const columns = defineDataTableColumns<MetodoPago>([
     {
       key: "nombre",
       header: "Método",
       sortable: true,
-      width: "15%",
       render: (item) => {
         const alias = item.alias?.trim();
 
@@ -111,24 +117,24 @@ export function ServiciosMetodosPagoTable({
     },
     {
       key: "pais",
+      hideBelow: "lg",
       header: "País",
       sortable: true,
       align: "center",
-      width: "12%",
     },
     {
       key: "titular",
+      hideBelow: "sm",
       header: "Titular",
       sortable: true,
       align: "center",
-      width: "18%",
     },
     {
       key: "email",
+      hideBelow: "md",
       header: "Email",
       sortable: false,
       align: "center",
-      width: "20%",
       render: (item) => (
         <span className="text-sm">
           {item.email || item.identificador || "N/A"}
@@ -137,10 +143,10 @@ export function ServiciosMetodosPagoTable({
     },
     {
       key: "numeroTarjeta",
+      hideBelow: "xl",
       header: "Últimos Dígitos",
       sortable: false,
       align: "center",
-      width: "13%",
       render: (item) => {
         if (item.numeroTarjeta) {
           // Extraer últimos 4 dígitos del número de tarjeta
@@ -155,105 +161,57 @@ export function ServiciosMetodosPagoTable({
       header: "Estado",
       sortable: true,
       align: "center",
-      width: "15%",
       render: (item) => (
-        <Badge
-          variant="outline"
-          className={
-            item.activo
-              ? "text-xs border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
-              : "text-xs border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
-          }
-        >
-          {item.activo ? "Activo" : "Inactivo"}
-        </Badge>
+        <StatusBadge tone={item.activo ? "success" : "danger"}>{item.activo ? "Activo" : "Inactivo"}</StatusBadge>
       ),
     },
-  ];
+  ]);
 
   return (
     <>
-      <Card className="p-4 pb-2">
-        <h3 className="text-xl font-semibold">{title}</h3>
-        <div className="dashboard-toolbar">
-          <div className="dashboard-toolbar-search">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por método, titular, alias..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="dashboard-toolbar-control-wide justify-between gap-2 font-normal"
-              >
-                <FilterTriggerContent
-                  icon={Globe2}
-                  label={paisFilter === "todos" ? "Todos los países" : paisFilter}
-                />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-              {[
-                { value: "todos", label: "Todos los países" },
-                ...paisesUnicos.map((p) => ({ value: p, label: p })),
-              ].map((op) => (
-                <DropdownMenuItem
-                  key={op.value}
-                  onClick={() => setPaisFilter(op.value)}
-                  className="dashboard-toolbar-menu-item"
-                >
-                  <span className="dashboard-toolbar-menu-item-label">{op.label}</span>
-                  {paisFilter === op.value && <Check className="h-4 w-4" />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {filteredMetodos.length === 0 ? (
-          <div className="border border-border rounded-md p-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              No se encontraron métodos de pago
-            </p>
-          </div>
-        ) : (
+      <TableCard
+        title={title}
+        toolbar={
+          <TableToolbar>
+            <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Buscar por método, titular, alias..." />
+            <FilterMenu icon={Globe2} ariaLabel="País" value={paisFilter} options={paisOptions} onChange={setPaisFilter} />
+          </TableToolbar>
+        }
+      >
           <DataTable
+            bare
+            autoPageSize
+            pagination
             data={filteredMetodos}
             columns={columns}
-            pagination={true}
-            itemsPerPageOptions={[10, 25, 50, 100]}
+            emptyMessage="No se encontraron métodos de pago"
             actions={(item) => {
               const metodo = item;
               return (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <Button variant="ghost" size="icon-sm" aria-label="Acciones del método de pago">
+                      <MoreHorizontal />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link prefetch={false} href={`/metodos-pago/${metodo.id}`}>
-                        <Eye className="h-4 w-4 mr-2" />
+                        <Eye />
                         Ver detalles
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link prefetch={false} href={`/metodos-pago/${metodo.id}/editar`}>
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit />
                         Editar
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleDelete(metodo)}
-                      className="text-red-500 focus:text-red-500"
+                      className="text-danger focus:text-danger"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 />
                       Eliminar
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -261,8 +219,7 @@ export function ServiciosMetodosPagoTable({
               );
             }}
           />
-        )}
-      </Card>
+      </TableCard>
 
       <ConfirmDialog
         open={deleteDialogOpen}

@@ -6,9 +6,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Eye, MoreHorizontal, Power, RefreshCw, Trash2 } from "lucide-react";
 
-import { DataTable, type Column } from "@/components/shared/DataTable";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { Badge } from "@/components/ui/badge";
+import { DataTable, defineDataTableColumns } from "@/components/shared/DataTable";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,81 +34,38 @@ function formatReposoDate(value?: Date | string | null, empty = "-") {
 }
 
 function renderDiasRestantes(item: ReposoServicio) {
+  const dias = `${item.diasRestantes} día${item.diasRestantes !== 1 ? "s" : ""}`;
   switch (item.estadoReposo) {
     case "completado":
-      return (
-        <Badge
-          variant="outline"
-          className="border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 font-semibold"
-        >
-          {item.diasRestantes <= 0
-            ? "Listo"
-            : `${item.diasRestantes} día${item.diasRestantes !== 1 ? "s" : ""}`}
-        </Badge>
-      );
+      return <StatusBadge tone="success">{item.diasRestantes <= 0 ? "Listo" : dias}</StatusBadge>;
     case "proximo_finalizar":
-      return (
-        <Badge
-          variant="outline"
-          className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-semibold"
-        >
-          {item.diasRestantes} día{item.diasRestantes !== 1 ? "s" : ""}
-        </Badge>
-      );
+      return <StatusBadge tone="warning">{dias}</StatusBadge>;
     default:
-      return (
-        <Badge
-          variant="outline"
-          className="border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold"
-        >
-          {item.diasRestantes} días
-        </Badge>
-      );
+      return <StatusBadge tone="info">{item.diasRestantes} días</StatusBadge>;
   }
 }
 
 function renderEstadoReposo(item: ReposoServicio) {
   switch (item.estadoReposo) {
     case "en_proceso":
-      return (
-        <Badge
-          variant="outline"
-          className="border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-        >
-          En proceso
-        </Badge>
-      );
+      return <StatusBadge tone="info">En proceso</StatusBadge>;
     case "proximo_finalizar":
-      return (
-        <Badge
-          variant="outline"
-          className="border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-        >
-          Por finalizar
-        </Badge>
-      );
+      return <StatusBadge tone="warning">Por finalizar</StatusBadge>;
     case "completado":
-      return (
-        <Badge
-          variant="outline"
-          className="border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-        >
-          Completado
-        </Badge>
-      );
+      return <StatusBadge tone="success">Completado</StatusBadge>;
   }
 }
 
 function renderProgreso(item: ReposoServicio) {
   const barColor =
     item.estadoReposo === "completado"
-      ? "[&>div]:bg-green-500"
+      ? "[&>div]:bg-success"
       : item.estadoReposo === "proximo_finalizar"
-        ? "[&>div]:bg-yellow-500"
-        : "[&>div]:bg-blue-500";
+        ? "[&>div]:bg-warning"
+        : "[&>div]:bg-info";
 
   return (
-    <div className="flex items-center gap-2 min-w-[130px]">
+    <div className="flex min-w-24 items-center gap-2">
       <Progress value={item.progreso} className={`h-2 flex-1 ${barColor}`} />
       <span className="text-xs text-muted-foreground w-8 text-right tabular-nums">
         {Math.round(item.progreso)}%
@@ -125,8 +81,8 @@ export function ReposoTable({
   onRenew,
   servicios,
 }: ReposoTableProps) {
-  const columns: Column<ReposoServicio>[] = useMemo(
-    () => [
+  const columns = useMemo(
+    () => defineDataTableColumns<ReposoServicio>([
       {
         key: "nombre",
         header: "Nombre",
@@ -135,45 +91,50 @@ export function ReposoTable({
       },
       {
         key: "correo",
+        hideBelow: "lg",
         header: "Email",
         sortable: true,
         render: (item) => <span className="text-sm">{item.correo}</span>,
       },
       {
         key: "fechaInicioReposo",
+        hideBelow: "2xl",
         header: "Fecha Inicio",
         sortable: true,
         align: "center",
         render: (item) => (
-          <span className="text-sm text-white">
+          <span className="text-sm">
             {formatReposoDate(item.fechaInicioReposo, "—")}
           </span>
         ),
       },
       {
         key: "fechaVencimiento",
+        hideBelow: "2xl",
         header: "Fecha Fin",
         sortable: true,
         align: "center",
         render: (item) => (
-          <span className="text-sm text-white">
+          <span className="text-sm">
             {formatReposoDate(item.fechaVencimiento, "—")}
           </span>
         ),
       },
       {
         key: "fechaFinReposo",
+        hideBelow: "xl",
         header: "Fecha Fin Reposo",
         sortable: true,
         align: "center",
         render: (item) => (
-          <span className="text-sm text-white">
+          <span className="text-sm">
             {formatReposoDate(item.fechaFinReposo)}
           </span>
         ),
       },
       {
         key: "diasRestantes",
+        hideBelow: "sm",
         header: "Días Restantes",
         sortable: true,
         align: "center",
@@ -181,6 +142,7 @@ export function ReposoTable({
       },
       {
         key: "progreso",
+        hideBelow: "md",
         header: "Progreso",
         sortable: true,
         align: "center",
@@ -193,51 +155,45 @@ export function ReposoTable({
         align: "center",
         render: renderEstadoReposo,
       },
-    ],
+    ]),
     [],
   );
 
-  if (isLoading) {
-    return (
-      <div className="py-12 flex justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
     <DataTable
+      bare
+      autoPageSize
+      pagination
+      loading={isLoading}
       data={servicios}
       columns={columns}
       emptyMessage="No hay servicios en reposo"
-      pagination
-      itemsPerPageOptions={[10, 25, 50]}
       actions={(item) => {
         const servicio = item;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
+              <Button variant="ghost" size="icon-sm" aria-label="Acciones del servicio">
+                <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link prefetch={false} href={`/servicios/detalle/${servicio.id}`}>
-                  <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <Eye className="text-muted-foreground" />
                   Ver detalles
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onActivate(servicio)}>
-                <Power className="h-4 w-4 mr-2 text-green-600" />
+                <Power className="text-success" />
                 Activar Servicio
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onRenew(servicio)}>
-                <RefreshCw className="h-4 w-4 mr-2 text-blue-600" />
+                <RefreshCw className="text-info" />
                 Activar y Renovar
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onDelete(servicio)}>
-                <Trash2 className="h-4 w-4 mr-2 text-red-600" />
+                <Trash2 className="text-danger" />
                 Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>

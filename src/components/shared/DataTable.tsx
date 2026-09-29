@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -12,9 +12,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useClientPagination } from '@/hooks/useClientPagination';
-import { LoadingSpinner } from './LoadingSpinner';
+import { settleFitRows, useFitPageSize } from '@/hooks/useFitPageSize';
+import { cn } from '@/platform/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from './EmptyState';
 import { PaginationFooter } from './PaginationFooter';
+
+export type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
 export interface Column<T> {
   key: string;
@@ -24,6 +28,8 @@ export interface Column<T> {
   headerRender?: () => React.ReactNode;
   width?: string;
   align?: 'left' | 'center' | 'right';
+  /** Oculta la columna por debajo de este breakpoint: la tabla se adapta al ancho en vez de hacer scroll lateral. */
+  hideBelow?: Breakpoint;
 }
 
 export interface DataTableProps<T> {
@@ -35,6 +41,10 @@ export interface DataTableProps<T> {
   actions?: (item: T) => React.ReactNode;
   pagination?: boolean;
   itemsPerPageOptions?: number[];
+  /** Ajusta las filas por pagina al alto disponible para que la pagina no haga scroll vertical. */
+  autoPageSize?: boolean;
+  /** Sin borde ni radio propios: para vivir dentro de `TableCard`. */
+  bare?: boolean;
   fixedLayout?: boolean;
   containerClassName?: string;
   tableClassName?: string;
@@ -47,12 +57,33 @@ export function defineDataTableColumns<T extends object>(columns: Column<T>[]): 
 type SortDirection = 'asc' | 'desc' | null;
 type SortableValue = string | number | boolean | Date | null | undefined;
 
-function getDefaultMinTableWidth(columnCount: number, hasActions: boolean) {
-  const effectiveColumns = columnCount + (hasActions ? 1 : 0);
-  return Math.max(720, effectiveColumns * 140);
+/**
+ * Las columnas secundarias aparecen segun el ancho de la propia tabla (container query) y no el de la ventana:
+ * asi el menu lateral, que ocupa parte del ancho, no rompe el calculo.
+ */
+const HIDE_BELOW: Record<Breakpoint, string> = {
+  sm: 'hidden @min-[30rem]:table-cell',
+  md: 'hidden @min-[40rem]:table-cell',
+  lg: 'hidden @min-[50rem]:table-cell',
+  xl: 'hidden @min-[60rem]:table-cell',
+  '2xl': 'hidden @min-[72rem]:table-cell',
+  '3xl': 'hidden @min-[100rem]:table-cell',
+};
+
+/** Clase para ocultar una celda de una tabla propia por debajo de cierto ancho de su contenedor. */
+export function hideBelowClass(breakpoint: Breakpoint) {
+  return HIDE_BELOW[breakpoint];
 }
 
-// Memoized TableRow component for better performance
+function columnClass<T>(column: Column<T>, index: number) {
+  return cn(
+    index === 0 && 'pl-4',
+    column.align === 'center' && 'text-center',
+    column.align === 'right' && 'text-right',
+    column.hideBelow && HIDE_BELOW[column.hideBelow]
+  );
+}
+
 function getCellValue<T extends object>(item: T, key: string): unknown {
   return (item as Record<string, unknown>)[key];
 }
@@ -68,6 +99,7 @@ function toSortableValue(value: unknown): SortableValue {
     : null;
 }
 
+// Fila memoizada para rendimiento
 function DataTableRow<T extends object>({
   item,
   columns,
@@ -86,15 +118,12 @@ function DataTableRow<T extends object>({
       className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
     >
       {columns.map((column, colIndex) => (
-        <TableCell
-          key={column.key}
-          className={`${colIndex === 0 ? 'pl-6' : ''} ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : ''}`}
-        >
+        <TableCell key={column.key} className={columnClass(column, colIndex)}>
           {column.render ? column.render(item) : (getCellValue(item, column.key) as React.ReactNode)}
         </TableCell>
       ))}
       {actions && (
-        <TableCell className="text-center pr-6" onClick={(e) => e.stopPropagation()}>
+        <TableCell className="w-14 pr-4 text-center" onClick={(e) => e.stopPropagation()}>
           {actions(item)}
         </TableCell>
       )}
@@ -113,12 +142,15 @@ function DataTableComponent<T extends object>({
   actions,
   pagination = false,
   itemsPerPageOptions = [10, 25, 50, 100],
+  autoPageSize = false,
+  bare = false,
   fixedLayout = false,
   containerClassName,
   tableClassName,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const autoFit = autoPageSize && pagination;
 
   const sortedData = useMemo(() => {
     if (!sortKey || !sortDirection) return data;
@@ -152,6 +184,11 @@ function DataTableComponent<T extends object>({
     initialPageSize: itemsPerPageOptions[0],
   });
 
+  const { ref: fitRef, rows: fitRows } = useFitPageSize({ enabled: autoFit, remeasureKey: `${loading}-${data.length}` });
+  useEffect(() => {
+    if (autoFit && fitRows !== null && settleFitRows(pageSize, fitRows) !== pageSize) setPageSize(fitRows);
+  }, [autoFit, fitRows, pageSize, setPageSize]);
+
   const handleSort = (key: string) => {
     if (sortKey === key) {
       // Misma columna: ciclar asc -> desc -> null
@@ -177,41 +214,47 @@ function DataTableComponent<T extends object>({
 
   const getSortIcon = (columnKey: string) => {
     if (sortKey !== columnKey) {
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+      return <ArrowUpDown className="ml-1.5 size-3.5 opacity-40" />;
     }
     if (sortDirection === 'asc') {
-      return <ArrowUp className="ml-2 h-4 w-4" />;
+      return <ArrowUp className="ml-1.5 size-3.5" />;
     }
-    return <ArrowDown className="ml-2 h-4 w-4" />;
+    return <ArrowDown className="ml-1.5 size-3.5" />;
   };
+
+  const frameClass = cn('min-w-0', !bare && 'overflow-hidden rounded-lg border bg-card', containerClassName);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner />
+      <div ref={fitRef} className="@container">
+        <div className={frameClass} aria-busy="true">
+          <div className="space-y-px">
+            {Array.from({ length: 5 }, (_, row) => (
+              <div key={row} className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0">
+                {columns.slice(0, 4).map((column) => (
+                  <Skeleton key={column.key} className="h-4 flex-1" />
+                ))}
+              </div>
+            ))}
+          </div>
+          <span className="sr-only">Cargando datos…</span>
+        </div>
       </div>
     );
   }
 
   const displayData = pagination ? paginatedData : sortedData;
-  const hasExplicitMinWidth = /\bmin-w-/.test(tableClassName ?? '');
-  const tableStyle = hasExplicitMinWidth
-    ? undefined
-    : { minWidth: `max(100%, ${getDefaultMinTableWidth(columns.length, Boolean(actions))}px)` };
 
   return (
-    <div>
-      <div className={`min-w-0 rounded-md border bg-background ${containerClassName ?? ''}`}>
-        <Table
-          className={[fixedLayout ? 'table-fixed' : '', tableClassName].filter(Boolean).join(' ') || undefined}
-          style={tableStyle}
-        >
+    <div ref={fitRef} className="@container">
+      <div className={frameClass}>
+        <Table className={cn(fixedLayout && 'table-fixed', tableClassName)}>
           {fixedLayout ? (
             <colgroup>
               {columns.map((column) => (
-                <col key={column.key} style={{ width: column.width }} />
+                <col key={column.key} className={column.hideBelow ? HIDE_BELOW[column.hideBelow] : undefined} style={{ width: column.width }} />
               ))}
-              {actions ? <col /> : null}
+              {actions ? <col className="w-14" /> : null}
             </colgroup>
           ) : null}
           <TableHeader>
@@ -219,8 +262,8 @@ function DataTableComponent<T extends object>({
               {columns.map((column, colIndex) => (
                 <TableHead
                   key={column.key}
-                  style={{ width: column.width }}
-                  className={`${colIndex === 0 ? 'pl-6' : ''} ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : ''}`}
+                  style={fixedLayout ? undefined : { width: column.width }}
+                  className={columnClass(column, colIndex)}
                 >
                   {column.headerRender ? (
                     column.headerRender()
@@ -228,7 +271,12 @@ function DataTableComponent<T extends object>({
                     <Button
                       variant="ghost"
                       onClick={() => handleSort(column.key)}
-                      className={`h-8 -ml-3 ${column.align === 'center' ? 'w-full justify-center ml-0' : ''} ${sortKey === column.key ? 'text-primary hover:text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                      className={cn(
+                        'h-8 -ml-3 px-3 text-xs font-medium',
+                        column.align === 'center' && 'ml-0 w-full justify-center',
+                        column.align === 'right' && '-mr-3 ml-auto',
+                        sortKey === column.key ? 'text-primary hover:text-primary' : 'text-muted-foreground hover:text-foreground'
+                      )}
                     >
                       {column.header}
                       {getSortIcon(column.key)}
@@ -238,7 +286,7 @@ function DataTableComponent<T extends object>({
                   )}
                 </TableHead>
               ))}
-              {actions && <TableHead className="text-center pr-6 text-muted-foreground">Acciones</TableHead>}
+              {actions && <TableHead className="w-14 pr-4 text-center text-muted-foreground">Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -278,6 +326,8 @@ function DataTableComponent<T extends object>({
           pageSize={pageSize}
           onPageSizeChange={handleItemsPerPageChange}
           pageSizeOptions={itemsPerPageOptions}
+          showPageSize={!autoFit}
+          className={bare ? 'border-t px-4 py-2.5' : undefined}
         />
       )}
     </div>

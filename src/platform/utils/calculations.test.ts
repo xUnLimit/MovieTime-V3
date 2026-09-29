@@ -113,18 +113,22 @@ describe('calculos de fechas y montos', () => {
 
 describe('presentacion de estados y pagos', () => {
   it.each([
-    ['activa', 'bg-green-500'],
-    ['suspendida', 'bg-yellow-500'],
-    ['inactiva', 'bg-gray-500'],
-    ['vencida', 'bg-red-500'],
+    ['activa', 'bg-success'],
+    ['suspendida', 'bg-warning'],
+    ['inactiva', 'bg-muted'],
+    ['vencida', 'bg-danger'],
   ] as const)('selecciona el color de %s', (estado, color) => {
     expect(getColorEstado(estado)).toBe(color);
   });
 
+  it('usa el color neutro para un estado desconocido', () => {
+    expect(getColorEstado('desconocido' as never)).toBe('bg-muted');
+  });
+
   it.each([
-    [100, 'bg-red-600'], [11, 'bg-red-500'], [8, 'bg-orange-500'],
-    [7, 'bg-orange-400'], [3, 'bg-yellow-500'], [2, 'bg-yellow-400'],
-    [1, 'bg-yellow-300'], [0, 'bg-green-500'],
+    [100, 'bg-danger'], [11, 'bg-danger'], [8, 'bg-warning'],
+    [7, 'bg-warning'], [3, 'bg-warning'], [2, 'bg-warning'],
+    [1, 'bg-warning'], [0, 'bg-success'],
   ])('selecciona el color para %s dias', (dias, color) => {
     expect(getColorDiasRetraso(dias as number)).toBe(color);
   });

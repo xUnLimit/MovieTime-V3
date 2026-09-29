@@ -4,15 +4,15 @@ import { useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Check, Edit, ListFilter, MoreHorizontal, Search, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Edit, ListFilter, MoreHorizontal, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
-import { Column, DataTable } from '@/components/shared/DataTable';
+import { DataTable, defineDataTableColumns } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
+import { TableCard } from '@/components/shared/TableCard';
+import { FilterMenu, TableSearch, TableToolbar } from '@/components/shared/TableToolbar';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -60,7 +60,6 @@ export function GastosTable({
     { value: 'todos', label: 'Todos los tipos' },
     ...tiposGasto.map((tipo) => ({ value: tipo.id, label: tipo.nombre })),
   ];
-  const tipoFilterLabel = tipoOptions.find((option) => option.value === tipoFilter)?.label ?? 'Todos los tipos';
 
   const gastosDisplay = useMemo<GastoDisplay[]>(() => (
     gastos.map((gasto) => ({
@@ -87,18 +86,17 @@ export function GastosTable({
     });
   }, [dateRange, gastosDisplay, searchQuery, tipoFilter]);
 
-  const columns: Column<GastoDisplay>[] = [
+  const columns = defineDataTableColumns<GastoDisplay>([
     {
       key: 'tipoGastoNombre',
       header: 'Tipo',
       sortable: true,
-      width: '15%',
       render: (item) => <span className="font-medium">{item.tipoGastoNombre}</span>,
     },
     {
       key: 'detalle',
       header: 'Descripción',
-      width: '30%',
+      hideBelow: 'sm',
       render: (item) => (
         <span className={item.detalle ? '' : 'text-muted-foreground'}>
           {item.detalle || 'Sin descripción'}
@@ -110,7 +108,6 @@ export function GastosTable({
       header: 'Monto',
       sortable: true,
       align: 'center',
-      width: '20%',
       render: (item) => <span className="font-medium">{formatUSD(item.monto)}</span>,
     },
     {
@@ -118,10 +115,9 @@ export function GastosTable({
       header: 'Fecha',
       sortable: true,
       align: 'center',
-      width: '35%',
       render: (item) => formatearFecha(item.fecha),
     },
-  ];
+  ]);
 
   const handleConfirmDelete = async () => {
     if (!gastoToDelete) return;
@@ -144,47 +140,15 @@ export function GastosTable({
 
   return (
     <>
-      <Card className="p-4 pb-2">
-        <h3 className="text-xl font-semibold">{title}</h3>
-
-        <div className="flex flex-col gap-4 -mb-4 xl:flex-row xl:items-center">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por tipo o descripción..."
-              className="pl-9"
-            />
-          </div>
-
-          <div className="flex flex-col gap-4 sm:flex-row xl:flex-none">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between gap-2 font-normal sm:w-[280px]">
-                  <FilterTriggerContent icon={ListFilter} label={tipoFilterLabel} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-                {tipoOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => setTipoFilter(option.value)}
-                    className="dashboard-toolbar-menu-item"
-                  >
-                    <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
-                    {tipoFilter === option.value && <Check className="h-4 w-4" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+      <TableCard
+        title={title}
+        toolbar={
+          <TableToolbar>
+            <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Buscar por tipo o descripción..." />
+            <FilterMenu icon={ListFilter} ariaLabel="Tipo de gasto" value={tipoFilter} options={tipoOptions} onChange={setTipoFilter} />
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between gap-2 text-left font-normal whitespace-nowrap sm:w-[280px]"
-                >
+                <Button variant="outline" className="w-full justify-between gap-2 text-left font-normal whitespace-nowrap sm:w-64">
                   <FilterTriggerContent
                     icon={CalendarIcon}
                     label={
@@ -208,34 +172,35 @@ export function GastosTable({
                 />
               </PopoverContent>
             </Popover>
-          </div>
-        </div>
-
+          </TableToolbar>
+        }
+      >
         <DataTable
+          bare
+          autoPageSize
           data={filteredGastos}
           columns={columns}
           emptyMessage="No hay gastos registrados"
           pagination
-          itemsPerPageOptions={[10, 25, 50]}
           actions={(item) => {
             const gasto = item;
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button variant="ghost" size="icon-sm" aria-label="Acciones del gasto">
+                    <MoreHorizontal />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onEdit(gasto)}>
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit />
                     Editar
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     variant="destructive"
                     onClick={() => setGastoToDelete(gasto)}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 />
                     Eliminar
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -243,7 +208,7 @@ export function GastosTable({
             );
           }}
         />
-      </Card>
+      </TableCard>
 
       <ConfirmDialog
         open={!!gastoToDelete}

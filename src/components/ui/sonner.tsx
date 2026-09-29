@@ -20,22 +20,22 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast: [
-            "font-sans text-sm rounded-xl border shadow-2xl",
+            "font-sans text-sm rounded-xl border shadow-lg",
             "flex gap-3 items-start p-4 pr-10",
             "bg-card border-border text-card-foreground",
-            "data-[type=success]:border-emerald-500/40 data-[type=success]:bg-emerald-50 dark:data-[type=success]:bg-emerald-950/80",
-            "data-[type=error]:border-red-500/40 data-[type=error]:bg-red-50 dark:data-[type=error]:bg-red-950/80",
-            "data-[type=warning]:border-yellow-500/40 data-[type=warning]:bg-yellow-50 dark:data-[type=warning]:bg-yellow-950/80",
-            "data-[type=info]:border-blue-500/40 data-[type=info]:bg-blue-50 dark:data-[type=info]:bg-blue-950/80",
+            "data-[type=success]:border-success-border",
+            "data-[type=error]:border-danger-border",
+            "data-[type=warning]:border-warning-border",
+            "data-[type=info]:border-info-border",
           ].join(" "),
           title: "font-semibold text-sm leading-tight tracking-tight",
           description: "text-xs text-muted-foreground mt-0.5 leading-relaxed",
           icon: [
             "mt-0.5 shrink-0",
-            "data-[type=success]:text-emerald-600 dark:data-[type=success]:text-emerald-400",
-            "data-[type=error]:text-red-600 dark:data-[type=error]:text-red-400",
-            "data-[type=warning]:text-yellow-600 dark:data-[type=warning]:text-yellow-400",
-            "data-[type=info]:text-blue-600 dark:data-[type=info]:text-blue-400",
+            "data-[type=success]:text-success",
+            "data-[type=error]:text-danger",
+            "data-[type=warning]:text-warning",
+            "data-[type=info]:text-info",
           ].join(" "),
           closeButton: [
             "absolute right-2 top-2 rounded-md p-1",
@@ -43,8 +43,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "opacity-0 group-hover:opacity-100 focus:opacity-100",
           ].join(" "),
           actionButton: [
-            "rounded-md bg-green-700 px-3 py-1.5 text-xs font-semibold text-white",
-            "hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500",
+            "rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground",
+            "hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           ].join(" "),
           cancelButton: [
             "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground",

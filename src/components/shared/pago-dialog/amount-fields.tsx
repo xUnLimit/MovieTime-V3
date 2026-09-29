@@ -65,7 +65,7 @@ export function CostoField({
         />
       </div>
       {errors.costo && (
-        <p className="text-sm text-red-500">{errors.costo.message}</p>
+        <p className="text-sm text-danger">{errors.costo.message}</p>
       )}
     </div>
   );
@@ -132,7 +132,7 @@ export function DescuentoField({
         <span className="shrink-0 pl-2 text-muted-foreground">%</span>
       </div>
       {errors.descuento && (
-        <p className="text-sm text-red-500">{errors.descuento.message}</p>
+        <p className="text-sm text-danger">{errors.descuento.message}</p>
       )}
     </div>
   );

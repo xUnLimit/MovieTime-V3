@@ -43,7 +43,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
 
             {/* Nombre y tipo */}
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-xl font-semibold">
                 {usuario.nombre} {usuario.apellido}
               </h2>
               <Badge variant="outline" className="text-sm">
@@ -54,7 +54,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
             {/* Botón de WhatsApp */}
             <Button
               onClick={handleWhatsApp}
-              className="w-full bg-green-700 hover:bg-green-800 text-white"
+              className="w-full bg-success hover:bg-success/90 text-success-foreground"
               size="lg"
             >
               <MessageCircle className="mr-2 h-5 w-5" />
@@ -67,7 +67,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
         <div className="space-y-6">
           {/* Información de Contacto */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold leading-none mb-3">
+            <h3 className="text-base font-semibold leading-none mb-3">
               Información de Contacto
             </h3>
             <div className="space-y-3">
@@ -86,7 +86,7 @@ export function TerceroDetails({ usuario }: TerceroDetailsProps) {
 
           {/* Información Adicional */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold leading-none mb-3">
+            <h3 className="text-base font-semibold leading-none mb-3">
               Información Adicional
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

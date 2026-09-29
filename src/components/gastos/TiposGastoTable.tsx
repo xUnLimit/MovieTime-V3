@@ -1,15 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Edit, MoreHorizontal, Power, Search, Trash2 } from 'lucide-react';
+import { Edit, MoreHorizontal, Power, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { Column, DataTable } from '@/components/shared/DataTable';
-import { Badge } from '@/components/ui/badge';
+import { DataTable, defineDataTableColumns } from '@/components/shared/DataTable';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { TableCard } from '@/components/shared/TableCard';
+import { TableSearch, TableToolbar } from '@/components/shared/TableToolbar';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,18 +47,17 @@ export function TiposGastoTable({
     );
   }, [searchQuery, tiposGasto]);
 
-  const columns: Column<TipoGasto>[] = [
+  const columns = defineDataTableColumns<TipoGasto>([
     {
       key: 'nombre',
       header: 'Nombre',
       sortable: true,
-      width: '25%',
       render: (item) => <span className="font-medium">{item.nombre}</span>,
     },
     {
       key: 'descripcion',
       header: 'Descripción',
-      width: '25%',
+      hideBelow: 'sm',
       render: (item) => (
         <span className={item.descripcion ? '' : 'text-muted-foreground'}>
           {item.descripcion || 'Sin descripción'}
@@ -70,21 +69,11 @@ export function TiposGastoTable({
       header: 'Estado',
       sortable: true,
       align: 'center',
-      width: '45%',
       render: (item) => (
-        <Badge
-          variant="outline"
-          className={
-            item.activo
-              ? 'text-xs border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300'
-              : 'text-xs border-zinc-500/50 bg-zinc-100 text-zinc-700 dark:bg-zinc-500/20 dark:text-zinc-300'
-          }
-        >
-          {item.activo ? 'Activo' : 'Inactivo'}
-        </Badge>
+        <StatusBadge tone={item.activo ? 'success' : 'neutral'}>{item.activo ? 'Activo' : 'Inactivo'}</StatusBadge>
       ),
     },
-  ];
+  ]);
 
   const handleToggleActivo = async (tipoGasto: TipoGasto) => {
     try {
@@ -119,46 +108,40 @@ export function TiposGastoTable({
   };
 
   return (
-    <Card className="p-4 pb-2">
-      <h3 className="text-xl font-semibold">{title}</h3>
-
-      <div className="flex flex-col gap-4 -mb-4 xl:flex-row xl:items-center">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar tipo de gasto..."
-            className="pl-9"
-          />
-        </div>
-      </div>
-
+    <TableCard
+      title={title}
+      toolbar={
+        <TableToolbar>
+          <TableSearch value={searchQuery} onChange={setSearchQuery} placeholder="Buscar tipo de gasto..." />
+        </TableToolbar>
+      }
+    >
       <DataTable
+        bare
+        autoPageSize
         data={filteredTipos}
         columns={columns}
         emptyMessage="No hay tipos de gasto registrados"
         pagination
-        itemsPerPageOptions={[10, 25, 50]}
         actions={(item) => {
           const tipoGasto = item;
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button variant="ghost" size="icon-sm" aria-label="Acciones del tipo de gasto">
+                  <MoreHorizontal />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => onEdit(tipoGasto)}>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit />
                   Editar
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleToggleActivo(tipoGasto)}
-                  className={tipoGasto.activo ? 'text-red-500 focus:text-red-500' : 'text-green-600 focus:text-green-600'}
+                  className={tipoGasto.activo ? 'text-danger focus:text-danger' : 'text-success focus:text-success'}
                 >
-                  <Power className="h-4 w-4 mr-2" />
+                  <Power />
                   {tipoGasto.activo ? 'Inactivar' : 'Activar'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -166,7 +149,7 @@ export function TiposGastoTable({
                   onClick={() => setTipoToDelete(tipoGasto)}
                   variant="destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 />
                   Eliminar
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -187,6 +170,6 @@ export function TiposGastoTable({
         variant="danger"
         loading={isDeleting}
       />
-    </Card>
+    </TableCard>
   );
 }

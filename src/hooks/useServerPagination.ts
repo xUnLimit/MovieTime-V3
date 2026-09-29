@@ -72,7 +72,7 @@ export function useServerPagination<T>({
     ],
   );
 
-  const { data: pageResult, isLoading, isFetching } = useQuery({
+  const { data: pageResult, isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
       const [result, count] = await Promise.all([
@@ -142,7 +142,8 @@ export function useServerPagination<T>({
 
   return {
     data,
-    isLoading: enabled ? isLoading || isFetching : false,
+    // Solo hay "carga" cuando no hay datos de esta pagina; una revalidacion en segundo plano no vuelve a pintar el esqueleto.
+    isLoading: enabled ? isLoading : false,
     hasMore,
     page: effectivePageIndex + 1,
     totalCount,

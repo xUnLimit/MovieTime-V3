@@ -10,6 +10,7 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { chartColors, chartInitialDimension } from "./chart-theme";
 import type { CrecimientoVista } from "./crecimiento-terceros-config";
 import type {
   BalancePoint,
@@ -47,12 +48,12 @@ export function CrecimientoTercerosChartView({
   vista,
 }: CrecimientoTercerosChartViewProps) {
   if (isLoading) {
-    return <Skeleton className="w-full h-[240px] rounded-lg" />;
+    return <Skeleton className="h-full w-full rounded-lg" />;
   }
 
   return (
     <div
-      className={`w-full h-[240px] transition-all duration-200 ease-out will-change-transform ${animationClass}`}
+      className={`h-full w-full transition-all duration-200 ease-out will-change-transform ${animationClass}`}
     >
       {vista.id === "crecimiento" ? (
         <GrowthChart data={data} selectedPeriod={selectedPeriod} />
@@ -77,21 +78,19 @@ function GrowthChart({
   selectedPeriod: CrecimientoPeriod;
 }) {
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height="100%" initialDimension={chartInitialDimension}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="colorClientes" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563eb" stopOpacity={0.95} />
-            <stop offset="50%" stopColor="#1e40af" stopOpacity={0.6} />
-            <stop offset="100%" stopColor="#1e3a8a" stopOpacity={0.4} />
+            <stop offset="0%" stopColor={chartColors.clients} stopOpacity={0.22} />
+            <stop offset="100%" stopColor={chartColors.clients} stopOpacity={0} />
           </linearGradient>
           <linearGradient id="colorRevendedores" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ec4899" stopOpacity={0.9} />
-            <stop offset="50%" stopColor="#be185d" stopOpacity={0.5} />
-            <stop offset="100%" stopColor="#4a0d25" stopOpacity={0.3} />
+            <stop offset="0%" stopColor={chartColors.resellers} stopOpacity={0.2} />
+            <stop offset="100%" stopColor={chartColors.resellers} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.2} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <BaseXAxis
           dataKey="dia"
           interval={selectedPeriod === "actual" ? 1 : 0}
@@ -111,23 +110,23 @@ function GrowthChart({
         <Area
           type="monotone"
           dataKey="clientes"
-          stroke="#2563eb"
+          stroke={chartColors.clients}
           strokeWidth={2}
           fillOpacity={1}
           fill="url(#colorClientes)"
           name="Clientes"
-          animationDuration={1000}
+          animationDuration={600}
           animationEasing="ease-out"
         />
         <Area
           type="monotone"
           dataKey="revendedores"
-          stroke="#ec4899"
+          stroke={chartColors.resellers}
           strokeWidth={2}
           fillOpacity={1}
           fill="url(#colorRevendedores)"
           name="Revendedores"
-          animationDuration={1000}
+          animationDuration={600}
           animationEasing="ease-out"
         />
       </AreaChart>
@@ -137,9 +136,9 @@ function GrowthChart({
 
 function ChurnChart({ data }: { data: ChurnPoint[] }) {
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height="100%" initialDimension={chartInitialDimension}>
       <BarChart data={data} margin={{ top: 22, right: 10, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.2} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <BaseXAxis dataKey="mes" interval={0} />
         <BaseYAxis />
         <BaseTooltip
@@ -159,8 +158,8 @@ function ChurnChart({ data }: { data: ChurnPoint[] }) {
         />
         <Bar
           dataKey="perdidos"
-          fill="#dc2626"
-          radius={[8, 8, 0, 0]}
+          fill={chartColors.loss}
+          radius={[6, 6, 0, 0]}
           name="Clientes perdidos"
           animationDuration={900}
           animationEasing="ease-out"
@@ -174,9 +173,9 @@ function ChurnChart({ data }: { data: ChurnPoint[] }) {
 
 function BalanceChart({ data }: { data: BalancePoint[] }) {
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height="100%" initialDimension={chartInitialDimension}>
       <BarChart data={data} margin={{ top: 16, right: 10, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.2} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <BaseXAxis dataKey="mes" interval={0} />
         <BaseYAxis />
         <BaseTooltip
@@ -190,16 +189,16 @@ function BalanceChart({ data }: { data: BalancePoint[] }) {
         <BaseLegend />
         <Bar
           dataKey="ganados"
-          fill="#16a34a"
-          radius={[8, 8, 0, 0]}
+          fill={chartColors.gain}
+          radius={[6, 6, 0, 0]}
           name="Ganados"
           animationDuration={900}
           animationEasing="ease-out"
         />
         <Bar
           dataKey="perdidos"
-          fill="#dc2626"
-          radius={[8, 8, 0, 0]}
+          fill={chartColors.loss}
+          radius={[6, 6, 0, 0]}
           name="Perdidos"
           animationDuration={900}
           animationEasing="ease-out"

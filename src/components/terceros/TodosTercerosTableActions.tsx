@@ -24,30 +24,30 @@ export function TodosTercerosTableActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button variant="ghost" size="icon-sm">
+          <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {showView && (
           <DropdownMenuItem asChild>
             <Link prefetch={false} href={`/terceros/${item.id}`}>
-              <Eye className="mr-2 h-4 w-4" />
+              <Eye />
               Ver detalles
             </Link>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
           <Link prefetch={false} href={`/terceros/editar/${item.id}`}>
-            <Edit className="mr-2 h-4 w-4" />
+            <Edit />
             Editar
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onDelete(item)}
-          className="text-red-500 focus:text-red-500"
+          className="text-danger focus:text-danger"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 />
           Eliminar
         </DropdownMenuItem>
       </DropdownMenuContent>

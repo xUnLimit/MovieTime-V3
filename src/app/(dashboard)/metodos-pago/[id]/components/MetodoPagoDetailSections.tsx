@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/shared/PageHeader';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { formatearFechaHora } from '@/platform/utils/calculations';
 import type { MetodoPago } from '@/types/metodos-pago';
@@ -29,23 +30,10 @@ const TIPO_METODO_PAGO_LABELS: Record<string, string> = {
   efectivo: 'Efectivo',
 };
 
-function BackButton({ variant = 'ghost' }: { variant?: 'ghost' | 'outline' }) {
-  return (
-    <Link prefetch={false} href="/metodos-pago">
-      <Button variant={variant} size="icon" className="h-8 w-8">
-        <ArrowLeft className="h-4 w-4" />
-      </Button>
-    </Link>
-  );
-}
-
 export function MetodoPagoLoadingState() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <BackButton />
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Cargando método de pago...</h1>
-      </div>
+      <PageHeader title="Cargando método de pago..." trail={[{ label: 'Detalle' }]} />
       <div className="rounded-lg border bg-card p-6">
         <p className="text-muted-foreground">Cargando datos...</p>
       </div>
@@ -56,10 +44,7 @@ export function MetodoPagoLoadingState() {
 export function MetodoPagoNotFoundState() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <BackButton />
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Método de pago no encontrado</h1>
-      </div>
+      <PageHeader title="Método de pago no encontrado" trail={[{ label: 'Detalle' }]} />
       <div className="rounded-lg border bg-card p-6">
         <p className="text-muted-foreground">El método de pago que buscas no existe.</p>
       </div>
@@ -75,45 +60,27 @@ export function MetodoPagoDetailHeader({
   onDelete: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <BackButton variant="outline" />
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{metodo.nombre}</h1>
-            <Badge
-              variant="outline"
-              className={
-                metodo.activo
-                  ? 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300'
-                  : 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
-              }
-            >
-              {metodo.activo ? 'Activo' : 'Inactivo'}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            <Link prefetch={false} href="/" className="transition-colors hover:text-foreground">Dashboard</Link>
-            {' / '}
-            <Link prefetch={false} href="/metodos-pago" className="transition-colors hover:text-foreground">Métodos de Pago</Link>
-            {' / '}
-            <span className="text-foreground">{metodo.nombre}</span>
-          </p>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <Button asChild variant="outline" size="sm">
-          <Link prefetch={false} href={`/metodos-pago/${metodo.id}/editar?from=/metodos-pago/${metodo.id}`}>
-            <Edit className="mr-1.5 h-3.5 w-3.5" />
-            Editar
-          </Link>
-        </Button>
-        <Button variant="destructive" size="sm" onClick={onDelete}>
-          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-          Eliminar
-        </Button>
-      </div>
-    </div>
+    <PageHeader
+      title={metodo.nombre}
+      trail={[{ label: metodo.nombre }]}
+      description={
+        <StatusBadge tone={metodo.activo ? 'success' : 'neutral'}>{metodo.activo ? 'Activo' : 'Inactivo'}</StatusBadge>
+      }
+      actions={
+        <>
+          <Button asChild variant="outline">
+            <Link prefetch={false} href={`/metodos-pago/${metodo.id}/editar?from=/metodos-pago/${metodo.id}`}>
+              <Edit />
+              Editar
+            </Link>
+          </Button>
+          <Button variant="destructive" onClick={onDelete}>
+            <Trash2 />
+            Eliminar
+          </Button>
+        </>
+      }
+    />
   );
 }
 
@@ -126,7 +93,7 @@ export function MetodoPagoBasicInfo({
 }) {
   return (
     <div className="rounded-lg border bg-card p-6">
-      <h2 className="mb-6 text-lg font-semibold">Información Básica</h2>
+      <h2 className="mb-6 text-base font-semibold">Información Básica</h2>
 
       <div className="space-y-5">
         <FieldValue label="Alias">{metodo.alias || 'N/A'}</FieldValue>
@@ -159,7 +126,7 @@ export function MetodoPagoAdditionalInfo({
 }) {
   return (
     <div className="rounded-lg border bg-card p-6">
-      <h2 className="mb-6 text-lg font-semibold">
+      <h2 className="mb-6 text-base font-semibold">
         {isTercero ? 'Datos de la Cuenta' : 'Información Adicional'}
       </h2>
 

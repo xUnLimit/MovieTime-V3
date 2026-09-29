@@ -25,7 +25,7 @@ type ChatHeaderProps = {
   onToggleSearch?: () => void;
 };
 
-const HEADER_ICON = 'grid h-[35px] w-[35px] shrink-0 place-items-center rounded-[9px] text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 md:w-10';
+const HEADER_ICON = 'grid h-[35px] w-[35px] shrink-0 place-items-center rounded-md text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 md:w-10';
 const HEADER_ICON_ACTIVE = 'bg-chat-selected text-chat-accent-strong';
 
 export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen = false, onBack, onTogglePanel, onMarkUnread, onToggleSearch }: ChatHeaderProps) {
@@ -40,13 +40,13 @@ export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen 
       <button
         type="button"
         onClick={onTogglePanel}
-        className="-ml-1 flex min-w-0 flex-1 items-center gap-2 rounded-[10px] p-1 text-left transition-colors hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3"
+        className="-ml-1 flex min-w-0 flex-1 items-center gap-2 rounded-lg p-1 text-left transition-colors hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3"
         aria-label={`Ver ficha de ${title}`}
       >
         <ChatAvatar name={title} seed={conversation.waId} size="sm" />
         <span className="min-w-0">
-          <span className="block truncate text-[13px] font-bold leading-tight text-chat-ink md:text-[16px]">{title}</span>
-          <span className="mt-[3px] block truncate text-[10px] tabular-nums text-chat-muted md:text-[12px]">
+          <span className="block truncate text-sm font-semibold leading-tight text-chat-ink md:text-base">{title}</span>
+          <span className="mt-[3px] block truncate text-xs tabular-nums text-chat-muted md:text-xs">
             {formatWaId(conversation.waId)}
             {conversation.terceroId ? '' : ' · No registrado'}
           </span>
@@ -55,7 +55,7 @@ export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen 
 
       <span
         className={cn(
-          'hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-[7px] text-[11px] sm:inline-flex',
+          'hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-[7px] text-xs sm:inline-flex',
           serviceWindow.open ? 'bg-chat-open text-chat-open-ink' : 'bg-chat-closed text-chat-closed-ink'
         )}
         title="WhatsApp permite texto libre durante 24 h desde el último mensaje del cliente"

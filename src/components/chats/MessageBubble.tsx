@@ -41,7 +41,7 @@ function StatusIcon({ status }: { status: string }) {
   const label = statusLabel(status);
   if (status === 'pending') return <Clock3 className="h-3.5 w-3.5" aria-label={label} />;
   if (status === 'failed') return <AlertCircle className="h-3.5 w-3.5" aria-label={label} />;
-  if (status === 'read') return <CheckCheck className="h-4 w-4 text-sky-600 dark:text-sky-300" aria-label={label} />;
+  if (status === 'read') return <CheckCheck className="h-4 w-4 text-info" aria-label={label} />;
   if (status === 'delivered') return <CheckCheck className="h-4 w-4" aria-label={label} />;
   return <Check className="h-4 w-4" aria-label={label} />;
 }
@@ -113,7 +113,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={outbound ? 'end' : 'start'} className="chat-menu min-w-0 p-1">
-        <div className="flex gap-0.5" aria-label="Reaccionar">{QUICK_REACTIONS.map((emoji) => <button key={emoji} type="button" className="rounded-[7px] p-1 text-base hover:bg-chat-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Reaccionar ${emoji}`} onClick={() => { onReact(message, reactions?.mine === emoji ? '' : emoji); setReactMenuOpen(false); }}>{emoji}</button>)}</div>
+        <div className="flex gap-0.5" aria-label="Reaccionar">{QUICK_REACTIONS.map((emoji) => <button key={emoji} type="button" className="rounded-md p-1 text-base hover:bg-chat-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Reaccionar ${emoji}`} onClick={() => { onReact(message, reactions?.mine === emoji ? '' : emoji); setReactMenuOpen(false); }}>{emoji}</button>)}</div>
       </DropdownMenuContent>
     </DropdownMenu>
   ) : null;
@@ -122,19 +122,19 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
     <li data-message-id={message.id} className={cn('group/message flex items-center gap-1 px-[13px] sm:px-[clamp(17px,3vw,48px)]', outbound ? 'flex-row-reverse' : 'flex-row', continued ? 'mt-[4px]' : 'mt-[9px]')}>
       <div
         className={cn(
-          'relative inline-block w-fit max-w-[80%] pb-[5px] pl-[9px] pr-2 pt-[6px] text-[14.5px] leading-[19px] [overflow-wrap:anywhere] sm:max-w-[min(65%,480px)]',
+          'relative inline-block w-fit max-w-[80%] pb-[5px] pl-[9px] pr-2 pt-[6px] text-sm leading-[19px] [overflow-wrap:anywhere] sm:max-w-[min(65%,480px)]',
           outbound ? 'bg-chat-bubble-out text-chat-bubble-out-ink' : 'bg-chat-bubble-in text-chat-ink',
-          'rounded-[7.5px]',
+          'rounded-md',
           failed && 'bg-destructive/15 text-chat-ink ring-1 ring-destructive',
           highlighted && 'ring-2 ring-chat-accent/60', activeMatch && 'ring-2 ring-chat-accent-strong',
           (reactions?.mine || reactions?.theirs) && 'mb-3'
         )}
       >
-        {quoted ? <div className="mb-[6px] max-w-64 truncate rounded-[4px] border-l-[3px] border-chat-accent bg-black/5 py-1 pl-[7px] pr-2 text-[12.5px] text-chat-accent-strong dark:bg-white/5">{messagePreview(quoted.kind, quoted.textBody, quoted.templateName)}</div> : null}
+        {quoted ? <div className="mb-[6px] max-w-64 truncate rounded-sm border-l-[3px] border-chat-accent bg-black/5 py-1 pl-[7px] pr-2 text-xs text-chat-accent-strong dark:bg-white/5">{messagePreview(quoted.kind, quoted.textBody, quoted.templateName)}</div> : null}
         {templateLabel ? (
           <p
             className={cn(
-              'mb-1 flex items-center gap-1 text-[11px] font-medium',
+              'mb-1 flex items-center gap-1 text-xs font-medium',
               outbound && !failed ? 'text-chat-bubble-out-meta' : 'text-chat-muted'
             )}
           >
@@ -174,7 +174,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
             <WhatsAppText text={text} />
             <span
               className={cn(
-                'float-right ml-2.5 inline-flex translate-y-[3px] items-end gap-1 self-end pl-1 text-[11px] leading-none tabular-nums',
+                'float-right ml-2.5 inline-flex translate-y-[3px] items-end gap-1 self-end pl-1 text-xs leading-none tabular-nums',
                 outbound && !failed ? 'text-chat-bubble-out-meta' : 'text-chat-muted'
               )}
             >
@@ -186,17 +186,17 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
         {interactive ? (
           <div className="mt-1.5 space-y-1" aria-label={interactive.type === 'buttons' ? 'Botones del mensaje' : 'Opciones de la lista'}>
             {interactive.type === 'buttons'
-              ? interactive.buttons.map((button) => <div key={button.id} className="rounded-lg bg-black/5 px-2 py-1 text-center text-[13px] font-medium dark:bg-white/10">{button.title}</div>)
+              ? interactive.buttons.map((button) => <div key={button.id} className="rounded-lg bg-black/5 px-2 py-1 text-center text-sm font-medium dark:bg-white/10">{button.title}</div>)
               : <>
-                  <div className="flex items-center justify-center gap-1 rounded-lg bg-black/5 px-2 py-1 text-[13px] font-medium dark:bg-white/10"><List className="h-3.5 w-3.5" aria-hidden />{interactive.buttonLabel}</div>
-                  <ul className="space-y-0.5 text-[12px] opacity-80">{interactive.rows.map((row) => <li key={row.id}>• {row.title}{row.description ? ` — ${row.description}` : ''}</li>)}</ul>
+                  <div className="flex items-center justify-center gap-1 rounded-lg bg-black/5 px-2 py-1 text-sm font-medium dark:bg-white/10"><List className="h-3.5 w-3.5" aria-hidden />{interactive.buttonLabel}</div>
+                  <ul className="space-y-0.5 text-xs opacity-80">{interactive.rows.map((row) => <li key={row.id}>• {row.title}{row.description ? ` — ${row.description}` : ''}</li>)}</ul>
                 </>}
           </div>
         ) : null}
         {!text || interactive || message.mediaId ? (
           <p
             className={cn(
-              'mt-0.5 flex items-center justify-end gap-1 text-[11px] tabular-nums',
+              'mt-0.5 flex items-center justify-end gap-1 text-xs tabular-nums',
               outbound && !failed ? 'text-chat-bubble-out-meta' : 'text-chat-muted'
             )}
           >
@@ -205,11 +205,11 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
           </p>
         ) : null}
         {failed ? (
-          <p className="mt-1 text-[11px] font-medium text-destructive">No se entregó. Revisa el número o intenta de nuevo.</p>
+          <p className="mt-1 text-xs font-medium text-destructive">No se entregó. Revisa el número o intenta de nuevo.</p>
         ) : null}
         {/* El chevron flota sobre la esquina superior derecha, sobre el hueco que dejó el spacer del texto. */}
         <div className="absolute right-[6px] top-[6px]">{optionsMenu}</div>
-        {reactions?.mine || reactions?.theirs ? <span className="absolute -bottom-3 right-2 z-[1] flex items-center gap-0.5 whitespace-nowrap rounded-full border border-chat-accent-line bg-chat-accent-soft px-[7px] py-[2px] text-[12px] leading-none text-chat-accent-strong shadow-sm" aria-label="Reacciones">{reactions.mine && reactions.mine === reactions.theirs ? <>{reactions.mine}<span className="text-[10px] tabular-nums opacity-80">x2</span></> : [reactions.mine, reactions.theirs].filter(Boolean).join(' ')}</span> : null}
+        {reactions?.mine || reactions?.theirs ? <span className="absolute -bottom-3 right-2 z-[1] flex items-center gap-0.5 whitespace-nowrap rounded-full border border-chat-accent-line bg-chat-accent-soft px-[7px] py-[2px] text-xs leading-none text-chat-accent-strong shadow-sm" aria-label="Reacciones">{reactions.mine && reactions.mine === reactions.theirs ? <>{reactions.mine}<span className="text-xs tabular-nums opacity-80">x2</span></> : [reactions.mine, reactions.theirs].filter(Boolean).join(' ')}</span> : null}
       </div>
       {/* El emoji vive en la fila, no en la burbuja: queda centrado verticalmente
           respecto a toda la altura del mensaje, sin importar cuantas lineas tenga. */}

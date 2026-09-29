@@ -57,6 +57,12 @@ Este archivo es la fuente canonica para personas y agentes de IA. `CLAUDE.md` y 
 - Las integraciones externas deben definir timeout, error controlado y politica de reintento/idempotencia cuando corresponda.
 - Los endpoints deben producir IDs de solicitud y respuestas `no-store` cuando contienen datos privados u operativos.
 
+## Diseno de UI
+
+- Toda UI se rige por [`DESIGN.md`](DESIGN.md): lee ese archivo antes de crear o modificar pantallas o componentes. `docs/DESIGN_SYSTEM.md` solo remite a el.
+- Usa tokens semanticos y los componentes compartidos (`PageHeader`, `MetricCard`/`MetricGrid`, `Panel`, `StatusBadge`, `DataTable`); no uses colores de paleta cruda, hexadecimales en clases, tamanos de fuente fuera de 12/14/16/20 ni pesos distintos de normal/medium/semibold.
+- `npm run design:check` debe pasar; forma parte de `quality:fast` y `quality:full`. No lo omitas ni agregues excepciones: si falta un token o variante, agregalo a `globals.css` y documentalo en `DESIGN.md`.
+
 ## Pruebas y calidad
 
 - Agrega unit tests para helpers puros y ramas de casos de uso.

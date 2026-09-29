@@ -34,10 +34,10 @@ export function AccionesServicioDialog({
   const diasRestantes = notificacion.diasRestantes;
   const estadoColor =
     diasRestantes <= 0
-      ? 'border-red-500/40 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400'
+      ? 'border-danger-border bg-danger-subtle text-danger'
       : diasRestantes <= 3
-        ? 'border-orange-500/40 bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400'
-        : 'border-yellow-500/40 bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400';
+        ? 'border-warning-border bg-warning-subtle text-warning'
+        : 'border-warning-border bg-warning-subtle text-warning';
   const estadoTexto =
     diasRestantes < 0
       ? `${Math.abs(diasRestantes)} día${Math.abs(diasRestantes) !== 1 ? 's' : ''} vencido`
@@ -67,8 +67,8 @@ export function AccionesServicioDialog({
         <div className="bg-muted/30 px-6 pb-4 pt-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/40">
-                <PowerOff className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-danger-subtle">
+                <PowerOff className="h-4 w-4 text-danger" />
               </div>
               Inactivar — Servicio
             </DialogTitle>
@@ -93,7 +93,7 @@ export function AccionesServicioDialog({
         </div>
 
         <div className="px-6 py-4">
-          <div className="rounded-lg border border-red-500/30 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/20 dark:text-red-300">
+          <div className="rounded-lg border border-danger-border bg-danger-subtle p-3 text-sm text-danger">
             El servicio se marcará como inactivo y esta notificación se eliminará.
           </div>
         </div>
@@ -112,7 +112,7 @@ export function AccionesServicioDialog({
             type="button"
             onClick={handleConfirmar}
             disabled={isSubmitting}
-            className="flex-1 border-transparent bg-red-600 text-white hover:bg-red-700"
+            className="flex-1 border-transparent bg-danger text-danger-foreground hover:bg-danger/90"
           >
             {isSubmitting ? 'Procesando...' : 'Inactivar'}
           </Button>

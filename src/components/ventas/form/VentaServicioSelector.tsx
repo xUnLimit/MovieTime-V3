@@ -142,7 +142,7 @@ export function VentaServicioSelector({
                       <span className="w-[112px] shrink-0 whitespace-nowrap pr-1 text-right text-xs tabular-nums text-foreground">
                         <span
                           className={cn(
-                            "font-extrabold",
+                            "font-semibold",
                             getDisponiblesColorClass(
                               perfilesDisponibles,
                               totalPerfiles,
@@ -202,7 +202,7 @@ export function VentaServicioSelector({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
     </div>
   );
 }

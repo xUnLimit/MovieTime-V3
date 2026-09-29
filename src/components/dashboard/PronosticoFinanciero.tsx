@@ -1,22 +1,25 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, BarChart3, ChevronLeft, ChevronRight, Lightbulb, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
+import { Info, RefreshCw, TriangleAlert } from 'lucide-react';
+import { PagerControls } from '@/components/shared/PagerControls';
+import { Panel } from '@/components/shared/Panel';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import { usePronosticoFinanciero, type MesPronostico } from '@/hooks/use-pronostico-financiero';
 
 function MesRowSkeleton() {
   return (
-    <div className="rounded-lg border bg-muted/30 px-3 py-2.5 relative">
-      <div className="absolute top-2 right-2">
-        <Skeleton className="h-5 w-20 rounded" />
+    <div className="rounded-lg border px-3 py-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Skeleton className="h-5 w-24" />
+        <Skeleton className="h-5 w-28" />
       </div>
-      <Skeleton className="h-5 w-24 mb-1.5" />
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-5 w-16" />
-        <Skeleton className="h-5 w-16" />
+      <div className="mt-1.5 flex items-center justify-between">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-20" />
       </div>
     </div>
   );
@@ -30,31 +33,23 @@ function MesRow({ mes }: { mes: MesPronostico }) {
   const isPositive = mes.ganancias >= 0;
 
   return (
-    <div className="rounded-lg border bg-muted/30 px-3 py-2.5 relative">
-      <div className="absolute top-2 right-2">
-        <span
-          className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-            isPositive
-              ? 'text-green-500 bg-green-500/10'
-              : 'text-red-500 bg-red-500/10'
-          }`}
-        >
-          {isPositive ? 'Ganancia' : 'P\u00e9rdida'}: {formatUSD(mes.ganancias)}
-        </span>
+    <div className="rounded-lg border px-3 py-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-sm font-medium">{mes.mes}</p>
+        <StatusBadge tone={isPositive ? 'success' : 'danger'}>
+          {isPositive ? 'Ganancia' : 'Pérdida'}: {formatUSD(mes.ganancias)}
+        </StatusBadge>
       </div>
-
-      <p className="text-sm font-medium mb-1.5 pr-24">{mes.mes}</p>
-
-      <div className="flex items-center justify-between">
+      <dl className="mt-1 flex items-center justify-between gap-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
-          <TrendingUp className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-          <span className="text-sm font-medium text-green-500">~{formatUSD(mes.ingresos)}</span>
+          <dt>Ingresos</dt>
+          <dd className="font-medium text-foreground tabular-nums">~{formatUSD(mes.ingresos)}</dd>
         </div>
         <div className="flex items-center gap-1.5">
-          <TrendingDown className="h-3.5 w-3.5 text-red-500 shrink-0" />
-          <span className="text-sm font-medium text-red-500">~{formatUSD(mes.gastos)}</span>
+          <dt>Gastos</dt>
+          <dd className="font-medium text-foreground tabular-nums">~{formatUSD(mes.gastos)}</dd>
         </div>
-      </div>
+      </dl>
     </div>
   );
 }
@@ -119,95 +114,65 @@ export function PronosticoFinanciero() {
         : 'translate-x-0 opacity-100';
 
   return (
-    <Card className="flex flex-col py-3 gap-0 h-full overflow-hidden">
-      <CardHeader className="p-0 px-4 pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-blue-500 shrink-0" />
-              <CardTitle className="text-base">{'Pron\u00f3stico Financiero'}</CardTitle>
-            </div>
-            <CardDescription className="text-sm mt-0.5">
-              {'Proyecciones para los pr\u00f3ximos meses.'}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-1">
-            {totalPaginas > 1 && (
-              <span className="text-[11px] tabular-nums text-muted-foreground px-1">
-                {paginaVisible + 1}/{totalPaginas}
-              </span>
-            )}
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7"
-              onClick={() => navegar(-1)}
-              disabled={!puedeIrAtras || isLoading || animacionFase !== 'idle'}
-              aria-label="Ver bloque anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7"
-              onClick={() => navegar(1)}
-              disabled={!puedeIrAdelante || isLoading || animacionFase !== 'idle'}
-              aria-label="Ver siguiente bloque"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="px-4 pt-0 pb-0 flex-1 space-y-2 overflow-y-auto min-h-0">
-        {error ? (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-6 text-center">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            <p className="text-sm text-muted-foreground">
-              No se puede calcular el pronóstico con una tasa de cambio segura.
-            </p>
-            <Button type="button" size="sm" variant="outline" onClick={retry}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Reintentar
-            </Button>
-          </div>
-        ) : isLoading ? (
-          <>
-            <MesRowSkeleton />
-            <MesRowSkeleton />
-            <MesRowSkeleton />
-            <MesRowSkeleton />
-          </>
-        ) : meses.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No hay datos suficientes para proyectar.
+    <Panel
+      title={
+        <span className="inline-flex items-center gap-1.5">
+          {'Pronóstico Financiero'}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="ghost" size="icon-xs" aria-label="Cómo se calcula el pronóstico" className="text-muted-foreground">
+                <Info />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-3 text-xs leading-relaxed text-muted-foreground">
+              {'Basado en renovaciones y gastos recurrentes, se muestra el pronóstico esperado de ingresos, gastos y ganancias.'}
+            </PopoverContent>
+          </Popover>
+        </span>
+      }
+      description={'Proyecciones para los próximos meses.'}
+      className="min-h-0 flex-1"
+      contentClassName="space-y-1.5 overflow-y-auto"
+      actions={
+        <PagerControls
+          index={paginaVisible}
+          total={totalPaginas}
+          onPrevious={() => navegar(-1)}
+          onNext={() => navegar(1)}
+          previousDisabled={!puedeIrAtras || isLoading || animacionFase !== 'idle'}
+          nextDisabled={!puedeIrAdelante || isLoading || animacionFase !== 'idle'}
+          previousLabel="Ver bloque anterior"
+          nextLabel="Ver siguiente bloque"
+        />
+      }
+    >
+      {error ? (
+        <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-warning-border bg-warning-subtle px-4 py-6 text-center">
+          <TriangleAlert aria-hidden className="size-5 text-warning" />
+          <p className="text-sm text-foreground">
+            No se puede calcular el pronóstico con una tasa de cambio segura.
           </p>
-        ) : (
-          <div className={`space-y-2 transition-all duration-200 ease-out will-change-transform ${animationClass}`}>
-            {mesesVisibles.map((mes) => <MesRow key={mes.mesKey} mes={mes} />)}
-          </div>
-        )}
-      </CardContent>
-
-      <CardFooter className="px-4 pt-3 pb-1 mt-auto">
-        <div className="flex items-start gap-2 rounded-lg border bg-muted/20 px-3 py-2 w-full min-h-[52px]">
-          <Lightbulb className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-          {isLoading ? (
-            <div className="flex-1 space-y-1.5">
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-3/4" />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {'Basado en renovaciones y gastos recurrentes, se muestra el pron\u00f3stico esperado de ingresos, gastos y ganancias.'}
-            </p>
-          )}
+          <Button type="button" size="sm" variant="outline" onClick={retry}>
+            <RefreshCw />
+            Reintentar
+          </Button>
         </div>
-      </CardFooter>
-    </Card>
+      ) : isLoading ? (
+        <>
+          <MesRowSkeleton />
+          <MesRowSkeleton />
+          <MesRowSkeleton />
+          <MesRowSkeleton />
+        </>
+      ) : meses.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          No hay datos suficientes para proyectar.
+        </p>
+      ) : (
+        <div className={`space-y-1.5 transition-[transform,opacity] duration-200 ease-out will-change-transform ${animationClass}`}>
+          {mesesVisibles.map((mes) => <MesRow key={mes.mesKey} mes={mes} />)}
+        </div>
+      )}
+    </Panel>
   );
 }

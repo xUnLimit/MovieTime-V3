@@ -173,14 +173,14 @@ export function VentaReembolsoDialog({
                   htmlFor="refund-only"
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
                     accion === 'reembolso'
-                      ? 'border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/20'
+                      ? 'border-success-border bg-success-subtle'
                       : 'border-border hover:border-muted-foreground/40'
                   }`}
                 >
                   <RadioGroupItem id="refund-only" value="reembolso" className="mt-0.5" />
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
-                      <RotateCcw className="h-3.5 w-3.5 text-emerald-600" />
+                      <RotateCcw className="h-3.5 w-3.5 text-success" />
                       <span className="text-sm font-medium">Reembolsar</span>
                     </div>
                     <p className="text-xs text-muted-foreground">Registra el reembolso y mantiene la venta activa.</p>
@@ -191,14 +191,14 @@ export function VentaReembolsoDialog({
                   htmlFor="refund-cut"
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
                     accion === 'reembolso-corte'
-                      ? 'border-orange-400 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/20'
+                      ? 'border-warning-border bg-warning-subtle'
                       : 'border-border hover:border-muted-foreground/40'
                   }`}
                 >
                   <RadioGroupItem id="refund-cut" value="reembolso-corte" className="mt-0.5" />
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5">
-                      <Scissors className="h-3.5 w-3.5 text-orange-600" />
+                      <Scissors className="h-3.5 w-3.5 text-warning" />
                       <span className="text-sm font-medium">Reembolsar y cortar</span>
                     </div>
                     <p className="text-xs text-muted-foreground">Registra el reembolso y permite elegir el alcance del corte.</p>
@@ -274,7 +274,7 @@ export function VentaReembolsoDialog({
               </div>
 
               {requiereMotivo ? (
-                <div className="grid gap-4 rounded-lg border border-orange-500/30 bg-orange-500/5 p-3">
+                <div className="grid gap-4 rounded-lg border border-warning-border bg-warning-subtle p-3">
                   <div className="grid gap-2">
                     <Label>Alcance del corte</Label>
                     <RadioGroup
@@ -318,11 +318,11 @@ export function VentaReembolsoDialog({
             {step === 'accion' ? 'Cancelar' : 'Atras'}
           </Button>
           {step === 'accion' ? (
-            <Button type="button" onClick={() => setStep('detalle')} className="flex-1 bg-purple-600 hover:bg-purple-700">
+            <Button type="button" onClick={() => setStep('detalle')} className="flex-1 bg-primary hover:bg-primary/90">
               Continuar
             </Button>
           ) : (
-            <Button type="button" onClick={handleSubmit} disabled={!canSubmit || isSubmitting} className="flex-1 bg-purple-600 hover:bg-purple-700">
+            <Button type="button" onClick={handleSubmit} disabled={!canSubmit || isSubmitting} className="flex-1 bg-primary hover:bg-primary/90">
               {isSubmitting ? 'Procesando...' : requiereMotivo ? 'Reembolsar y cortar' : 'Reembolsar'}
             </Button>
           )}

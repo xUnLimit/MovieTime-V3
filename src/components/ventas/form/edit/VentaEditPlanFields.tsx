@@ -90,7 +90,7 @@ export function VentaEditPlanFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {errors.categoriaId ? (
-          <p className="text-sm text-red-500">
+          <p className="text-sm text-danger">
             {errors.categoriaId.message}
           </p>
         ) : null}
@@ -190,7 +190,7 @@ export function VentaEditPlanFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {errors.planId ? (
-          <p className="text-sm text-red-500">{errors.planId.message}</p>
+          <p className="text-sm text-danger">{errors.planId.message}</p>
         ) : null}
       </div>
     </div>

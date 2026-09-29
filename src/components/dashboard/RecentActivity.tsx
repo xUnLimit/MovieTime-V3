@@ -1,96 +1,78 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Panel } from '@/components/shared/Panel';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { getActivityDisplayConfig } from '@/platform/utils/activityDisplayHelpers';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
+const VISIBLE_ACTIVITY = 5;
+
+// Las filas se reparten el alto disponible por igual; el mensaje admite hasta 2 lineas.
+const LIST_CLASS = 'flex h-full min-h-0 flex-col divide-y divide-border overflow-y-auto';
+const ROW_CLASS = 'flex min-h-11 flex-1 items-center gap-2.5 py-1.5';
+
+function formatRelative(timestamp: string | Date | undefined | null) {
+  if (!timestamp) return 'Fecha desconocida';
+  return `hace ${formatDistanceToNow(new Date(timestamp), { locale: es }).replace('alrededor de ', '')}`;
+}
+
 export function RecentActivity() {
   const { data: dashboardHome, isLoading } = useDashboardHome();
   const recentLogs = dashboardHome?.recentActivity ?? [];
 
   return (
-    <Card className="flex flex-col py-1">
-      {/* py-1 = padding vertical del Card (4px arriba + 4px abajo, igual que Ingresos por Categoría) */}
-      {/* flex flex-col = layout vertical para organizar contenido */}
-      <CardHeader className="pt-3 px-6 pb-2">
-        {/* pt-3 = padding arriba del título (12px, igual que Ingresos por Categoría) */}
-        {/* px-6 = separación del borde (24px) */}
-        {/* pb-2 = espacio entre título y contenido (8px, igual que Ingresos por Categoría) */}
-        <div className="space-y-0.5">
-          {/* space-y-0.5 = espacio mínimo entre título y descripción (2px) */}
-          <CardTitle className="text-base">Actividad Reciente</CardTitle>
-          <CardDescription className="text-sm">
-            Un vistazo a las últimas acciones realizadas.
-          </CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="-mt-4 pt-0 px-6 pb-2 flex-1 flex flex-col">
-        {/* -mt-4 = margen negativo arriba para subir actividades (16px hacia arriba) */}
-        {/* pt-0 = sin espacio arriba */}
-        {/* px-6 = separación del borde (24px) */}
-        {/* pb-2 = espacio abajo (8px) */}
-        {/* flex-1 = ocupa todo el espacio vertical disponible */}
-        {/* flex flex-col = layout en columna (actividades arriba, botón abajo) */}
-        <div className="space-y-1.5 pt-0">
-          {/* space-y-1.5 = espacio vertical entre elementos (6px) */}
-          {isLoading ? (
-            <div className="w-full space-y-1.5 animate-pulse">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-1.5">
-                  <div className="flex-shrink-0">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted/50" />
-                  </div>
-                  <div className="flex-1 space-y-0 min-w-0">
-                    <p className="text-sm leading-tight rounded bg-muted/50">&nbsp;</p>
-                    <p className="text-xs rounded bg-muted/50 w-20">&nbsp;</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : recentLogs.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-sm text-muted-foreground text-center">No hay actividad reciente</p>
-            </div>
-          ) : (
-            <div className="w-full space-y-1.5">
-            {recentLogs.map((log) => {
-              const { icon: Icon, color, message } = getActivityDisplayConfig(log);
-              const [bgColor, textColor] = color.split(' ');
+    <Panel
+      title="Actividad Reciente"
+      description="Un vistazo a las últimas acciones realizadas."
+      className="md:h-[324px] lg:h-auto lg:min-h-0"
+      contentClassName="min-h-[240px]"
+      fill
+      actions={
+        <Button variant="ghost" size="sm" asChild>
+          <Link prefetch={false} href="/log-actividad">
+            Ver todo
+          </Link>
+        </Button>
+      }
+    >
+      {isLoading ? (
+        <ul className={LIST_CLASS} aria-busy="true">
+          {Array.from({ length: VISIBLE_ACTIVITY }, (_, i) => (
+            <li key={i} className={ROW_CLASS}>
+              <Skeleton className="size-6 shrink-0 rounded-md" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-3 w-14 shrink-0" />
+            </li>
+          ))}
+        </ul>
+      ) : recentLogs.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">No hay actividad reciente</p>
+      ) : (
+        <ul className={LIST_CLASS}>
+          {recentLogs.slice(0, VISIBLE_ACTIVITY).map((log) => {
+            const { icon: Icon, color, message } = getActivityDisplayConfig(log);
+            const [bgColor, textColor] = color.split(' ');
 
-              return (
-                <div key={log.id} className="flex items-start gap-1.5">
-                  <div className="flex-shrink-0">
-                    <div className={`flex h-7 w-7 items-center justify-center rounded-full ${bgColor}`}>
-                      <Icon className={`h-3.5 w-3.5 ${textColor}`} />
-                    </div>
-                  </div>
-                  <div className="flex-1 space-y-0 min-w-0">
-                    <p className="text-sm leading-tight">{message}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {log.timestamp
-                        ? `hace ${formatDistanceToNow(new Date(log.timestamp), { locale: es }).replace('alrededor de ', '')}`
-                        : 'Fecha desconocida'}
-                    </p>
-                  </div>
+            return (
+              <li key={log.id} className={ROW_CLASS}>
+                <span className={`flex size-6 shrink-0 items-center justify-center rounded-md ${bgColor}`}>
+                  <Icon className={`size-3 ${textColor}`} />
+                </span>
+                <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+                  <p className="line-clamp-2 min-w-0 text-sm leading-snug">{message}</p>
+                  <p className="shrink-0 pt-0.5 text-xs whitespace-nowrap text-muted-foreground">
+                    {formatRelative(log.timestamp)}
+                  </p>
                 </div>
-              );
-            })
-            }
-            </div>
-          )}
-        </div>
-        <div className="pt-6">
-          <Button className="w-full bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700" asChild>
-            <Link prefetch={false} href="/log-actividad">
-              Ver todo el historial
-            </Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
   );
 }

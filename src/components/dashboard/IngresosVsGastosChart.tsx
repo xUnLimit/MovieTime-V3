@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,10 +21,12 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, subMonths, eachMon
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
+import { Panel } from '@/components/shared/Panel';
 import type { IngresosMes, IngresosDia } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, Check } from 'lucide-react';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
+import { chartColors, chartInitialDimension, chartTooltipLabelStyle, chartTooltipStyle } from './chart-theme';
 
 interface DiaData {
   dia: string;
@@ -46,11 +47,6 @@ export function IngresosVsGastosChart() {
   const stats = dashboardHome?.stats;
   const selectedMonthLabel =
     PERIOD_OPTIONS.find((option) => option.value === selectedMonth)?.label ?? 'Mes actual';
-  const axisColor = 'var(--muted-foreground)';
-  const gridColor = 'var(--border)';
-  const tooltipBg = 'var(--background)';
-  const tooltipBorder = 'var(--border)';
-  const tooltipText = 'var(--foreground)';
 
   const data = useMemo((): DiaData[] => {
     const ingresosPorMes: IngresosMes[] = stats?.ingresosPorMes ?? [];
@@ -95,82 +91,78 @@ export function IngresosVsGastosChart() {
     });
   }, [selectedMonth, stats]);
 
+  const description =
+    selectedMonth === 'actual'
+      ? 'Comparativa diaria de ingresos por ventas y gastos del mes actual.'
+      : `Comparativa de ingresos por ventas y gastos en los ${selectedMonthLabel.toLowerCase()}.`;
+
   return (
-    <Card className="py-3 gap-0 h-full flex flex-col">
-      <CardHeader className="flex flex-col gap-2 p-0 px-4 pb-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <CardTitle className="text-base">Ingresos vs Gastos</CardTitle>
-          <CardDescription className="text-sm hidden sm:block">
-            {selectedMonth === 'actual'
-              ? 'Comparativa diaria de ingresos por ventas y gastos del mes actual.'
-              : `Comparativa de ingresos por ventas y gastos en los ${selectedMonth === '3meses' ? 'últimos 3 meses' : selectedMonth === '6meses' ? 'últimos 6 meses' : 'últimos 12 meses'}.`}
-          </CardDescription>
-        </div>
+    <Panel
+      title="Ingresos vs Gastos"
+      description={description}
+      className="min-h-0 flex-1"
+      contentClassName="min-h-[240px]"
+      fill
+      actions={
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 w-full justify-between gap-2 text-xs font-normal sm:w-[150px]"
-            >
+            <Button type="button" variant="outline" className="w-[168px] justify-between gap-2 font-normal">
               <FilterTriggerContent icon={CalendarClock} label={selectedMonthLabel} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
+          <DropdownMenuContent align="end" className="dashboard-toolbar-menu">
             {PERIOD_OPTIONS.map((option) => (
               <DropdownMenuItem
                 key={option.value}
                 onSelect={() => setSelectedMonth(option.value)}
-                className="dashboard-toolbar-menu-item text-xs"
+                className="dashboard-toolbar-menu-item"
               >
                 <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
-                {selectedMonth === option.value && <Check className="h-4 w-4" />}
+                {selectedMonth === option.value && <Check className="size-4" />}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </CardHeader>
-      <CardContent className="px-4 pt-0 pb-1 flex-1 min-h-0">
-        {isLoading ? (
-          <Skeleton className="w-full h-[320px] rounded-lg" />
-        ) : (
-        <ResponsiveContainer width="100%" height={320}>
-          <AreaChart data={data} margin={{ top: 15, right: 30, left: -20, bottom: 5 }}>
+      }
+    >
+      {isLoading ? (
+        <Skeleton className="h-full w-full rounded-lg" />
+      ) : (
+        <ResponsiveContainer width="100%" height="100%" initialDimension={chartInitialDimension}>
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
             <defs>
-              <linearGradient id="colorIngresosRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+              <linearGradient id="fillIngresos" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={chartColors.income} stopOpacity={0.22} />
+                <stop offset="100%" stopColor={chartColors.income} stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="colorGastosRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#dc2626" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#dc2626" stopOpacity={0}/>
+              <linearGradient id="fillGastos" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={chartColors.expense} stopOpacity={0.16} />
+                <stop offset="100%" stopColor={chartColors.expense} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.2} />
+            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
             <XAxis
               dataKey="dia"
-              stroke={axisColor}
+              stroke={chartColors.axis}
               fontSize={12}
               tickLine={false}
               axisLine={false}
+              tickMargin={8}
               interval={selectedMonth === 'actual' ? 1 : 0}
-              tick={{ fill: axisColor }}
+              tick={{ fill: chartColors.axis }}
             />
             <YAxis
-              stroke={axisColor}
+              stroke={chartColors.axis}
               fontSize={12}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `$${Number(value).toLocaleString()}`}
-              tick={{ fill: axisColor }}
+              tick={{ fill: chartColors.axis }}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: tooltipBg,
-                border: `1px solid ${tooltipBorder}`,
-                borderRadius: '8px',
-              }}
+              contentStyle={chartTooltipStyle}
+              labelStyle={chartTooltipLabelStyle}
+              cursor={{ stroke: chartColors.grid }}
               itemSorter={(item) => (item.dataKey === 'ingresos' ? 0 : 1)}
               formatter={(value: number | undefined) => {
                 if (value === undefined) return '';
@@ -183,41 +175,40 @@ export function IngresosVsGastosChart() {
                 }
                 return label;
               }}
-              labelStyle={{ color: tooltipText }}
               animationDuration={0}
             />
             <Legend
               verticalAlign="bottom"
-              height={20}
+              height={24}
               iconType="circle"
-              wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+              iconSize={8}
+              wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }}
             />
             <Area
               type="monotone"
               dataKey="ingresos"
-              stroke="#7c3aed"
+              stroke={chartColors.income}
               strokeWidth={2}
               fillOpacity={1}
-              fill="url(#colorIngresosRevenue)"
+              fill="url(#fillIngresos)"
               name="Ingresos"
-              animationDuration={1000}
+              animationDuration={600}
               animationEasing="ease-out"
             />
             <Area
               type="monotone"
               dataKey="gastos"
-              stroke="#dc2626"
+              stroke={chartColors.expense}
               strokeWidth={2}
               fillOpacity={1}
-              fill="url(#colorGastosRevenue)"
+              fill="url(#fillGastos)"
               name="Gastos"
-              animationDuration={1000}
+              animationDuration={600}
               animationEasing="ease-out"
             />
           </AreaChart>
         </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </Panel>
   );
 }

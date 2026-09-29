@@ -51,7 +51,7 @@ export function ConfirmDeleteVentaDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-muted p-2 text-red-600">
+            <div className="rounded-full bg-muted p-2 text-danger">
               <XCircle className="h-5 w-5" />
             </div>
             <AlertDialogTitle>Eliminar Venta</AlertDialogTitle>
@@ -87,7 +87,7 @@ export function ConfirmDeleteVentaDialog({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isLoading}
-            className="bg-red-600 hover:bg-red-700"
+            className="bg-danger hover:bg-danger/90"
           >
             {isLoading ? 'Eliminando...' : 'Eliminar'}
           </AlertDialogAction>

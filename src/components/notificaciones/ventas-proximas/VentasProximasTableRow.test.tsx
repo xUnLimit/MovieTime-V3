@@ -49,7 +49,7 @@ function renderRow(overrides: Partial<NotificacionVentaConId> = {}) {
 describe('VentasProximasTableRow', () => {
   it('keeps the orange follow-up background when a payment promise exists', () => {
     renderRow();
-    expect(screen.getByRole('row').className).toContain('bg-orange-50/50');
+    expect(screen.getByRole('row').className).toContain('bg-warning-subtle');
   });
 
   it('describes a highlighted notification as being in follow-up', () => {

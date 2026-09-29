@@ -39,7 +39,7 @@ export function ServiciosCategoriaTableDetalleActions({
               prefetch={false}
               href={`/servicios/detalle/${servicio.id}?from=${fromParam}`}
             >
-              <Eye className="mr-2 h-4 w-4" />
+              <Eye />
               Ver detalles
             </Link>
           </DropdownMenuItem>
@@ -49,15 +49,15 @@ export function ServiciosCategoriaTableDetalleActions({
             prefetch={false}
             href={`/servicios/${servicio.id}/editar?from=${fromParam}`}
           >
-            <Edit className="mr-2 h-4 w-4" />
+            <Edit />
             Editar
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onDelete(servicio)}
-          className="text-red-500 focus:text-red-500"
+          className="text-danger focus:text-danger"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 />
           Eliminar
         </DropdownMenuItem>
       </DropdownMenuContent>

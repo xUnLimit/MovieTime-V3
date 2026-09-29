@@ -136,19 +136,19 @@ function MetricValue({
     value === 0
       ? 'text-muted-foreground'
       : tone === 'today' || tone === 'overdue'
-        ? 'text-red-500'
+        ? 'text-danger'
         : tone === 'upcoming'
-          ? 'text-yellow-500'
+          ? 'text-warning'
           : tone === 'completed'
-            ? 'text-green-500'
+            ? 'text-success'
             : tone === 'info'
-              ? 'text-blue-500'
-              : 'text-orange-500';
+              ? 'text-info'
+              : 'text-warning';
 
   return (
     <div className="min-w-0">
       <div className={`text-sm font-semibold leading-4 tabular-nums ${valueClass}`}>{value}</div>
-      <div className="mt-0.5 whitespace-normal break-words text-[9px] leading-[10px] text-muted-foreground">
+      <div className="mt-0.5 whitespace-normal break-words text-xs leading-[10px] text-muted-foreground">
         {label}
       </div>
     </div>
@@ -184,26 +184,26 @@ export function NotificationBell() {
     hasReposoInProgress ||
     hasHighlighted;
   const bellColor = hasOverdue || hasToday
-    ? 'text-red-500'
+    ? 'text-danger'
     : hasCompletedReposo
-      ? 'text-green-500'
+      ? 'text-success'
     : hasHighlighted
-      ? 'text-orange-500'
+      ? 'text-warning'
       : hasUpcoming || hasEndingReposo
-        ? 'text-yellow-500'
+        ? 'text-warning'
         : hasReposoInProgress
-          ? 'text-blue-500'
+          ? 'text-info'
         : 'text-muted-foreground';
   const dotColor =
     hasOverdue || hasToday
-      ? 'bg-red-500'
+      ? 'bg-danger'
       : hasCompletedReposo
-        ? 'bg-green-500'
+        ? 'bg-success'
         : hasHighlighted
-          ? 'bg-orange-500'
+          ? 'bg-warning'
           : hasUpcoming || hasEndingReposo
-            ? 'bg-yellow-500'
-            : 'bg-blue-500';
+            ? 'bg-warning'
+            : 'bg-info';
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -257,7 +257,7 @@ export function NotificationBell() {
             <>
               <div className="px-1.5 py-1">
                 <h4 className="text-sm font-medium leading-none">Notificaciones</h4>
-                <p className="mt-0.5 text-[11px] leading-3 text-muted-foreground">
+                <p className="mt-0.5 text-xs leading-3 text-muted-foreground">
                   Ventas, servicios y reposo con sus estados actuales.
                 </p>
               </div>

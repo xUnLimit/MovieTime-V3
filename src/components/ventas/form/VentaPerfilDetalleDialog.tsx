@@ -67,7 +67,7 @@ export function VentaPerfilDetalleDialog({
               Cargando perfiles...
             </div>
           ) : error ? (
-            <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            <div className="rounded-md border border-danger-border bg-danger-subtle px-3 py-2 text-sm text-danger">
               {error}
             </div>
           ) : (
@@ -79,11 +79,11 @@ export function VentaPerfilDetalleDialog({
                     className={cn(
                       "min-h-[64px] rounded-md border px-3 py-2",
                       perfil.estado === "ocupado" &&
-                        "border-green-900/50 bg-green-950/30",
+                        "border-success-border bg-success-subtle",
                       perfil.estado === "disponible" &&
                         "border-border bg-muted/50",
                       perfil.estado === "pendiente" &&
-                        "border-purple-500/30 bg-purple-500/10",
+                        "border-primary/30 bg-primary/10",
                     )}
                   >
                     <div className="flex min-h-[40px] items-start justify-between gap-4">
@@ -105,9 +105,9 @@ export function VentaPerfilDetalleDialog({
                             <span className={cn(
                               "font-medium",
                               calcularDiasRestantes(perfil.fechaFin) <= 7
-                                ? "text-red-400"
+                                ? "text-danger"
                                 : calcularDiasRestantes(perfil.fechaFin) <= 30
-                                  ? "text-yellow-400"
+                                  ? "text-warning"
                                   : "text-muted-foreground",
                             )}>
                               ({calcularDiasRestantes(perfil.fechaFin)}d)
@@ -120,11 +120,11 @@ export function VentaPerfilDetalleDialog({
                           className={cn(
                             "whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold",
                             perfil.estado === "ocupado" &&
-                              "bg-green-600/20 text-green-300",
+                              "bg-success-subtle text-success",
                             perfil.estado === "disponible" &&
-                              "bg-blue-600/20 text-blue-300",
+                              "bg-info-subtle text-info",
                             perfil.estado === "pendiente" &&
-                              "bg-purple-500/20 text-purple-300",
+                              "bg-primary/10 text-primary",
                           )}
                         >
                           {perfil.estado === "ocupado"
@@ -139,7 +139,7 @@ export function VentaPerfilDetalleDialog({
                           </p>
                         ) : null}
                         {perfil.estado === "pendiente" ? (
-                          <p className="text-right text-xs text-purple-300">
+                          <p className="text-right text-xs text-primary">
                             {pendingLabel}
                           </p>
                         ) : null}
@@ -152,15 +152,15 @@ export function VentaPerfilDetalleDialog({
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-4">
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-green-600" />
+                    <span className="h-2 w-2 rounded-full bg-success" />
                     En uso
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-blue-600" />
+                    <span className="h-2 w-2 rounded-full bg-info" />
                     Disponible
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-purple-500" />
+                    <span className="h-2 w-2 rounded-full bg-primary" />
                     Pendiente
                   </span>
                 </div>

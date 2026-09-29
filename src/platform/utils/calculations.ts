@@ -219,27 +219,22 @@ export function calcularRentabilidad(
  */
 export function getColorEstado(estado: EstadoSuscripcion): string {
   const colores: Record<EstadoSuscripcion, string> = {
-    activa: 'bg-green-500',
-    suspendida: 'bg-yellow-500',
-    inactiva: 'bg-gray-500',
-    vencida: 'bg-red-500'
+    activa: 'bg-success',
+    suspendida: 'bg-warning',
+    inactiva: 'bg-muted',
+    vencida: 'bg-danger'
   };
 
-  return colores[estado] || 'bg-gray-500';
+  return colores[estado] || 'bg-muted';
 }
 
 /**
  * Determina el color del badge según días de retraso
  */
 export function getColorDiasRetraso(dias: number): string {
-  if (dias >= 100) return 'bg-red-600';
-  if (dias >= 11) return 'bg-red-500';
-  if (dias >= 8) return 'bg-orange-500';
-  if (dias >= 7) return 'bg-orange-400';
-  if (dias >= 3) return 'bg-yellow-500';
-  if (dias >= 2) return 'bg-yellow-400';
-  if (dias >= 1) return 'bg-yellow-300';
-  return 'bg-green-500';
+  if (dias >= 11) return 'bg-danger';
+  if (dias >= 1) return 'bg-warning';
+  return 'bg-success';
 }
 
 /**

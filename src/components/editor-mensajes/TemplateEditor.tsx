@@ -75,17 +75,17 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
   };
 
   return (
-    <div className="grid min-w-0 gap-6 md:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[230px_minmax(0,1fr)_320px]">
+    <div className="grid min-w-0 gap-4 md:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_320px]">
       <div className="min-w-0 md:col-start-1 md:row-span-2 md:row-start-1 xl:row-span-1">
         <TemplateList selected={selectedTipo} statusOf={statusOf} onSelect={changeTipo} />
       </div>
 
       <div className="min-w-0 space-y-4 md:col-start-2 md:row-start-1">
-        <Card className="min-w-0 space-y-4 p-5">
+        <Card className="min-w-0 gap-4 p-4">
           <header className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h2 className="text-lg font-semibold">{tipoLabel(selectedTipo)}</h2>
-              <p className="text-sm text-muted-foreground">Cuándo se envía: {tipoCuando(selectedTipo)}.</p>
+              <h2 className="text-sm font-semibold">{tipoLabel(selectedTipo)}</h2>
+              <p className="text-xs text-muted-foreground">Cuándo se envía: {tipoCuando(selectedTipo)}.</p>
             </div>
             <ChannelChip status={channelStatus(fields.metaTemplateName, metaTemplates)} />
           </header>
@@ -114,7 +114,7 @@ export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorPro
       </div>
 
       <div className="min-w-0 md:col-start-2 md:row-start-2 xl:sticky xl:top-4 xl:col-start-3 xl:row-start-1 xl:self-start">
-        <Card className="p-5">
+        <Card className="p-4">
           <TemplatePreview
             contenido={fields.contenido}
             meta={linked}

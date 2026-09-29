@@ -66,13 +66,13 @@ export function ServicioSummaryCards({
             </div>
             <div className="flex items-start gap-2">
               <span className="text-sm text-muted-foreground mt-0.5">Fecha de Inicio</span>
-              <Badge variant="outline" className="ml-auto font-normal text-sm bg-green-100 text-green-700 border-green-300 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30 [a&]:hover:bg-green-200 dark:[a&]:hover:bg-green-500/30">
+              <Badge variant="outline" className="ml-auto font-normal text-sm bg-success-subtle text-success border-success-border [a&]:hover:bg-success/15 dark:[a&]:hover:bg-success/15">
                 {servicio.fechaInicio ? formatearFecha(new Date(servicio.fechaInicio)) : '-'}
               </Badge>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-sm text-muted-foreground mt-0.5">Fecha de Vencimiento</span>
-              <Badge variant="outline" className="ml-auto font-normal text-sm bg-green-100 text-green-700 border-green-300 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30 [a&]:hover:bg-green-200 dark:[a&]:hover:bg-green-500/30">
+              <Badge variant="outline" className="ml-auto font-normal text-sm bg-success-subtle text-success border-success-border [a&]:hover:bg-success/15 dark:[a&]:hover:bg-success/15">
                 {servicio.fechaVencimiento ? formatearFecha(new Date(servicio.fechaVencimiento)) : '-'}
               </Badge>
             </div>
@@ -82,16 +82,16 @@ export function ServicioSummaryCards({
               let badgeClass: string;
               let texto: string;
               if (dias < 0) {
-                badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
+                badgeClass = 'border-danger-border bg-danger-subtle text-danger';
                 texto = `${Math.abs(dias)} día${Math.abs(dias) !== 1 ? 's' : ''} de retraso`;
               } else if (dias === 0) {
-                badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
+                badgeClass = 'border-danger-border bg-danger-subtle text-danger';
                 texto = 'Vence hoy';
               } else if (dias <= 7) {
-                badgeClass = 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
+                badgeClass = 'border-warning-border bg-warning-subtle text-warning';
                 texto = `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''}`;
               } else {
-                badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
+                badgeClass = 'border-success-border bg-success-subtle text-success';
                 texto = `${dias} días restantes`;
               }
               return (
@@ -105,7 +105,7 @@ export function ServicioSummaryCards({
             })()}
             <div className="flex items-start gap-2">
               <span className="text-sm text-muted-foreground mt-0.5">Método de Pago</span>
-              <span className="text-sm font-medium ml-auto max-w-[220px] truncate text-right text-purple-600">
+              <span className="text-sm font-medium ml-auto max-w-[220px] truncate text-right text-primary">
                 {metodoPagoDisplay}
               </span>
             </div>
@@ -114,7 +114,7 @@ export function ServicioSummaryCards({
       </Card>
 
       <Card className="min-w-0 p-6">
-        <h2 className="text-lg font-semibold mb-0.5">Información Adicional</h2>
+        <h2 className="text-base font-semibold mb-0.5">Información Adicional</h2>
         <div className="space-y-3">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Email</p>
@@ -170,7 +170,7 @@ export function ServicioSummaryCards({
       </Card>
 
       <Card className="min-w-0 p-6">
-        <h2 className="text-lg font-semibold">Notas</h2>
+        <h2 className="text-base font-semibold">Notas</h2>
         <p className="text-sm text-muted-foreground whitespace-pre-line">
           {servicio.notas || 'Sin notas'}
         </p>

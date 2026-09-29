@@ -224,9 +224,9 @@ describe("venta-create-controller-helpers", () => {
 
   it("selects availability colors and service windows", () => {
     expect(getDisponiblesColorClass(1, 0)).toBe("text-muted-foreground");
-    expect(getDisponiblesColorClass(1, 10)).toBe("text-[#ff1744]");
-    expect(getDisponiblesColorClass(5, 10)).toBe("text-[#ffea00]");
-    expect(getDisponiblesColorClass(8, 10)).toBe("text-[#00ff85]");
+    expect(getDisponiblesColorClass(1, 10)).toBe("text-danger");
+    expect(getDisponiblesColorClass(5, 10)).toBe("text-warning");
+    expect(getDisponiblesColorClass(8, 10)).toBe("text-success");
     const rows = Array.from({ length: 20 }, (_, index) => ({ id: String(index) })) as Servicio[];
     expect(getServiciosDropdownWindow(rows, 3)[0]?.id).toBe("3");
   });

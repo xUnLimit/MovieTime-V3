@@ -14,20 +14,20 @@ export function ServiciosListTableActions({ item }: { item: ServicioRow }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button variant="ghost" size="icon-sm" aria-label="Acciones del servicio">
+          <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
           <Link prefetch={false} href={`/servicios/detalle/${item.original.id}`}>
-            <Eye className="mr-2 h-4 w-4" />
+            <Eye />
             Ver detalles
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link prefetch={false} href={`/servicios/${item.original.id}/editar`}>
-            <Edit className="mr-2 h-4 w-4" />
+            <Edit />
             Editar
           </Link>
         </DropdownMenuItem>

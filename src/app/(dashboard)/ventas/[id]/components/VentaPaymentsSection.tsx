@@ -24,7 +24,7 @@ export function VentaPaymentsSection({
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
-          <h2 className="text-lg font-semibold">Historial de Pagos</h2>
+          <h2 className="text-base font-semibold">Historial de Pagos</h2>
         </div>
         <p className="text-sm text-muted-foreground">
           Registro completo de todos los pagos realizados para esta venta.

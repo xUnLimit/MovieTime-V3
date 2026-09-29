@@ -70,7 +70,7 @@ const SECTIONS: Section[] = [
 export default function PrivacyPage() {
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-background px-4 py-10 text-foreground sm:px-6">
-      <h1 className="text-3xl font-semibold tracking-tight">Política de privacidad</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Política de privacidad</h1>
       <p className="mt-2 text-sm text-muted-foreground">Última actualización: {LAST_UPDATED}</p>
 
       {SECTIONS.map((section) => (

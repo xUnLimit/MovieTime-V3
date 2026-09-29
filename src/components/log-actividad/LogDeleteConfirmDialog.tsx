@@ -38,7 +38,7 @@ export function LogDeleteConfirmDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertTriangle className="h-5 w-5 text-danger" />
             {confirmDeleteAll ? "¿Estás seguro de eliminar todos los logs?" : "¿Estás seguro de limpiar los logs?"}
           </DialogTitle>
           <DialogDescription className="pt-1">
@@ -60,7 +60,7 @@ export function LogDeleteConfirmDialog({
             ) : confirmCount !== null ? (
               <span className="block mt-2">
                 Se eliminarán{" "}
-                <span className="font-semibold text-red-500">{confirmCount} {confirmCount === 1 ? "registro" : "registros"}</span>.{" "}
+                <span className="font-semibold text-danger">{confirmCount} {confirmCount === 1 ? "registro" : "registros"}</span>.{" "}
                 Esta acción no se puede deshacer.
               </span>
             ) : null}

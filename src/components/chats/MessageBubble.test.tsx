@@ -30,7 +30,7 @@ describe('MessageBubble', () => {
   ] as const)('renders a rounded %s bubble without a detached tail when continued is %s', (direction, continued) => {
     const { container } = render(<MessageBubble message={{ ...base, direction }} continued={continued} />);
     const bubble = container.querySelector('[data-message-id] > div');
-    expect(bubble?.classList.contains('rounded-[7.5px]')).toBe(true);
+    expect(bubble?.classList.contains('rounded-md')).toBe(true);
     expect(container.querySelector('svg[viewBox="0 0 8 13"]')).toBeNull();
   });
 

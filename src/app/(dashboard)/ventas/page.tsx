@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { ConfirmDeleteVentaDialog } from '@/components/shared/ConfirmDeleteVentaDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VentasMetrics } from '@/components/ventas/VentasMetrics';
@@ -28,7 +30,7 @@ function VentasPageContent() {
   const { data: categorias = [] } = useCategoriasFull();
 
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'inactivas'>('todas');
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize(54));
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoriaId, setSelectedCategoriaId] = useState<string>('todas');
   const [orderBy, setOrderBy] = useState<'createdAt' | 'updatedAt'>('createdAt');
@@ -116,40 +118,34 @@ function VentasPageContent() {
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Ventas</h1>
-            <p className="text-sm text-muted-foreground">
-              <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Ventas</span>
-            </p>
-          </div>
-          <Link prefetch={false} href="/ventas/crear" className="shrink-0">
-            <Button className="whitespace-nowrap">
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Venta
+        <PageHeader
+          title="Ventas"
+          actions={
+            <Button asChild className="whitespace-nowrap">
+              <Link prefetch={false} href="/ventas/crear">
+                <Plus />
+                Nueva Venta
+              </Link>
             </Button>
-          </Link>
-        </div>
+          }
+        />
 
         <VentasMetrics />
 
         <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as typeof activeTab); setSearchQuery(''); setSelectedCategoriaId('todas'); }}>
-        <TabsList className="bg-transparent rounded-none p-0 h-auto inline-flex border-b border-border">
+        <TabsList>
           <TabsTrigger
             value="todas"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
             Todas
           </TabsTrigger>
           <TabsTrigger
             value="activas"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
             Activas
           </TabsTrigger>
           <TabsTrigger
             value="inactivas"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
             Inactivas
           </TabsTrigger>
@@ -176,7 +172,7 @@ function VentasPageContent() {
             onPrevious={previous}
             showPagination
             pageSize={pageSize}
-            onPageSizeChange={(size) => { setPageSize(size); refresh(); }}
+            onPageSizeChange={setPageSize}
           />
         </TabsContent>
       </Tabs>

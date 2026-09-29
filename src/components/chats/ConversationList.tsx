@@ -59,10 +59,10 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
   const activeMoreItem = moreItems.find((item) => item.id === filter) ?? null;
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-chat-line-soft px-[21px] pb-4 pt-[26px]">
+      <div className="border-b border-chat-line-soft px-4 pb-3 pt-4">
         {header}
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-chat-quiet" aria-hidden />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-chat-quiet" aria-hidden />
           <Input
             ref={searchRef}
             value={search}
@@ -73,17 +73,17 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
             }}
             placeholder="Nombre, número o mensaje"
             aria-label="Buscar conversación"
-            className="h-[43px] rounded-[11px] border-chat-line bg-chat-raised pl-10 pr-10 text-[16px] text-chat-ink shadow-none placeholder:text-chat-quiet focus-visible:border-chat-accent focus-visible:ring-0 sm:text-[13px]"
+            className="border-chat-line bg-transparent pl-9 pr-9 text-chat-ink shadow-none placeholder:text-chat-quiet focus-visible:border-chat-accent focus-visible:ring-0"
           />
           {search ? (
-            <button type="button" onClick={() => onSearchChange('')} aria-label="Limpiar búsqueda" className="absolute right-1 top-1/2 flex h-[36px] w-[36px] -translate-y-1/2 items-center justify-center rounded-lg text-chat-quiet transition-colors hover:bg-chat-hover hover:text-chat-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button type="button" onClick={() => onSearchChange('')} aria-label="Limpiar búsqueda" className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-chat-quiet transition-colors hover:bg-chat-hover hover:text-chat-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <X className="h-4 w-4" aria-hidden />
             </button>
           ) : (
-            <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-[5px] border border-chat-line px-[5px] py-px text-[11px] text-chat-quiet sm:inline">/</kbd>
+            <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-sm border border-chat-line px-[5px] py-px text-xs text-chat-quiet sm:inline">/</kbd>
           )}
         </div>
-        <div className="-mx-1 flex gap-[7px] overflow-x-auto px-1 pb-0.5 pt-[15px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Filtrar conversaciones">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Filtrar conversaciones">
           {CHAT_FIXED_FILTERS.map((item) => {
             const active = filter === item.id;
             const count = counts[item.id];
@@ -96,9 +96,9 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                 aria-label={item.id !== 'todos' && count > 0 ? `${item.label} (${count})` : item.label}
                 onClick={() => onFilterChange(item.id)}
                 className={cn(
-                  'inline-flex min-h-[34px] shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border px-2.5 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 text-xs pointer-coarse:h-10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   active
-                    ? 'border-chat-accent bg-chat-accent font-bold text-chat-accent-ink'
+                    ? 'border-chat-accent bg-chat-accent font-semibold text-chat-accent-ink'
                     : 'border-chat-line bg-transparent text-chat-muted hover:bg-chat-hover hover:text-chat-ink'
                 )}
               >
@@ -114,9 +114,9 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                   type="button"
                   aria-label={activeMoreItem ? `${activeMoreItem.label} (más filtros)` : 'Más filtros'}
                   className={cn(
-                    'inline-flex min-h-[34px] shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border px-2.5 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 text-xs pointer-coarse:h-10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     activeMoreItem
-                      ? 'border-chat-accent bg-chat-accent font-bold text-chat-accent-ink'
+                      ? 'border-chat-accent bg-chat-accent font-semibold text-chat-accent-ink'
                       : 'border-chat-line bg-transparent text-chat-muted hover:bg-chat-hover hover:text-chat-ink'
                   )}
                 >
@@ -128,7 +128,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                 {moreItems.map((item) => {
                   const count = counts[item.id];
                   return (
-                    <DropdownMenuItem key={item.id} onSelect={() => onFilterChange(item.id)} className={cn(filter === item.id && 'font-bold text-chat-accent-strong')}>
+                    <DropdownMenuItem key={item.id} onSelect={() => onFilterChange(item.id)} className={cn(filter === item.id && 'font-semibold text-chat-accent-strong')}>
                       <span className="flex w-full items-center justify-between gap-2">
                         {item.label}
                         {count > 0 ? <span className="tabular-nums text-chat-muted">{count}</span> : null}
@@ -142,12 +142,12 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-[21px] pb-2 pt-[15px] text-[11px] uppercase tracking-[0.05em] text-chat-quiet">
+      <div className="flex items-center justify-between px-4 pb-2 pt-3 text-xs uppercase tracking-wide text-chat-quiet">
         <span>Recientes</span>
         <span className="tabular-nums">{isLoading ? '' : `${visible.length} de ${totalCount}`}</span>
       </div>
 
-      <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[9px] pb-3" aria-label="Conversaciones">
+      <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3" aria-label="Conversaciones">
         {isLoading ? (
           Array.from({ length: 6 }, (_, index) => (
             <li key={index} className="flex items-center gap-3 px-2.5 py-3" aria-hidden>
@@ -161,14 +161,14 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
         ) : visible.length === 0 ? (
           <li className="flex flex-col items-center gap-2 px-5 py-10 text-center">
             <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-chat-raised text-chat-quiet"><MessageCircle className="h-5 w-5" aria-hidden /></span>
-            <p className="text-[14px] font-bold text-chat-ink">{totalCount === 0 ? 'Aún no hay conversaciones' : search ? 'Sin resultados' : 'Sin chats en este filtro'}</p>
-            <p className="max-w-64 text-[12px] leading-relaxed text-chat-muted">
+            <p className="text-sm font-semibold text-chat-ink">{totalCount === 0 ? 'Aún no hay conversaciones' : search ? 'Sin resultados' : 'Sin chats en este filtro'}</p>
+            <p className="max-w-64 text-xs leading-relaxed text-chat-muted">
               {totalCount === 0
                 ? 'Cuando un cliente escriba al número de WhatsApp, su chat aparecerá aquí.'
                 : search ? `Ningún chat coincide con "${search}".` : 'No hay chats en este filtro.'}
             </p>
             {totalCount > 0 && (search || filter !== 'todos') ? (
-              <button type="button" className="mt-2 min-h-[40px] rounded-md px-3 py-2 text-[13px] text-chat-accent underline underline-offset-4 hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { onSearchChange(''); onFilterChange('todos'); }}>
+              <button type="button" className="mt-2 min-h-[40px] rounded-md px-3 py-2 text-sm text-chat-accent underline underline-offset-4 hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { onSearchChange(''); onFilterChange('todos'); }}>
                 Ver todas las conversaciones
               </button>
             ) : null}
@@ -186,23 +186,23 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                   onClick={() => onSelect(conversation.waId)}
                   aria-current={selected ? 'true' : undefined}
                   className={cn(
-                    'grid min-h-[60px] w-full grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-[11px] rounded-[11px] border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'grid min-h-14 w-full grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     selected ? 'border-chat-selected-line bg-chat-selected' : 'border-transparent hover:bg-chat-hover'
                   )}
                 >
                   <ChatAvatar name={title} seed={conversation.waId} size="list" />
                   <span className="min-w-0">
                     <span className="flex items-baseline gap-1.5">
-                      <span className={cn('truncate text-[14px] leading-tight text-chat-ink', unread ? 'font-bold' : 'font-semibold')}>
+                      <span className={cn('truncate text-sm leading-tight text-chat-ink', unread ? 'font-semibold' : 'font-semibold')}>
                         {title}
                       </span>
                       {!conversation.terceroId ? (
-                        <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-chat-quiet" title="No registrado">
+                        <span className="inline-flex shrink-0 items-center gap-0.5 text-xs text-chat-quiet" title="No registrado">
                           <UserPlus className="h-2.5 w-2.5" aria-hidden /> No registrado
                         </span>
                       ) : null}
                     </span>
-                    <span className={cn('mt-0.5 flex items-center gap-1.5 truncate text-[12.5px] leading-snug', unread ? 'text-chat-ink' : 'text-chat-muted')}>
+                    <span className={cn('mt-0.5 flex items-center gap-1.5 truncate text-xs leading-snug', unread ? 'text-chat-ink' : 'text-chat-muted')}>
                       {due ? (
                         <span className="inline-flex shrink-0 items-center gap-0.5 text-chat-accent-strong">
                           <CalendarClock className="h-3 w-3" aria-hidden /> {due} ·
@@ -214,11 +214,11 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                       </span>
                     </span>
                   </span>
-                  <span className="flex flex-col items-end gap-1.5 text-[11px] tabular-nums text-chat-quiet">
+                  <span className="flex flex-col items-end gap-1.5 text-xs tabular-nums text-chat-quiet">
                     <span className={cn(unread && 'text-chat-accent')}>{formatChatTime(conversation.lastMessageAt, now)}</span>
                     {unread ? (
                       <span
-                        className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-chat-accent px-[5px] text-[10px] font-extrabold text-chat-accent-ink"
+                        className="grid h-5 min-w-5 place-items-center rounded-full bg-chat-accent px-1.5 text-xs font-semibold text-chat-accent-ink"
                         aria-label={`${conversation.unreadCount} sin leer`}
                       >
                         {conversation.unreadCount}

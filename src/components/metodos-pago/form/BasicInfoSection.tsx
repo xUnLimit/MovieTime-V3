@@ -63,7 +63,7 @@ export function BasicInfoSection({
             }}
           />
           {errors.nombre && (
-            <p className="text-sm text-red-500">{errors.nombre.message}</p>
+            <p className="text-sm text-danger">{errors.nombre.message}</p>
           )}
         </div>
 
@@ -95,7 +95,7 @@ export function BasicInfoSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.asociadoA && (
-            <p className="text-sm text-red-500">{errors.asociadoA.message}</p>
+            <p className="text-sm text-danger">{errors.asociadoA.message}</p>
           )}
         </div>
       </div>
@@ -157,7 +157,7 @@ export function BasicInfoSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.pais && (
-            <p className="text-sm text-red-500">{errors.pais.message}</p>
+            <p className="text-sm text-danger">{errors.pais.message}</p>
           )}
         </div>
 
@@ -189,7 +189,7 @@ export function BasicInfoSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.moneda && (
-            <p className="text-sm text-red-500">{errors.moneda.message}</p>
+            <p className="text-sm text-danger">{errors.moneda.message}</p>
           )}
         </div>
       </div>

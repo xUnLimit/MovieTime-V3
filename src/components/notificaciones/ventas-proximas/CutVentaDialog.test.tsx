@@ -36,9 +36,9 @@ describe('CutVentaDialog', () => {
     );
 
     const heading = screen.getByRole('heading', { name: 'Cortar venta' });
-    expect(heading.querySelector('span')?.className).toContain('bg-red-100');
-    expect(heading.querySelector('svg')?.getAttribute('class')).toContain('text-red-600');
+    expect(heading.querySelector('span')?.className).toContain('bg-danger-subtle');
+    expect(heading.querySelector('svg')?.getAttribute('class')).toContain('text-danger');
     expect(screen.getByRole('button', { name: 'Cortar venta' }).className)
-      .toContain('bg-red-600');
+      .toContain('bg-danger');
   });
 });

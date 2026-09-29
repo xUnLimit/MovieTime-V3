@@ -1,8 +1,8 @@
-import { CalendarClock, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, Check } from "lucide-react";
 
 import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
+import { PagerControls } from "@/components/shared/PagerControls";
 import { Button } from "@/components/ui/button";
-import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import {
 } from "./crecimiento-terceros-config";
 import type { CrecimientoPeriod } from "./crecimiento-terceros-helpers";
 
-interface CrecimientoTercerosHeaderProps {
+interface CrecimientoTercerosControlsProps {
   animacionIdle: boolean;
   isLoading: boolean;
   puedeIrAdelante: boolean;
@@ -30,7 +30,8 @@ interface CrecimientoTercerosHeaderProps {
   setSelectedPeriod: (period: CrecimientoPeriod) => void;
 }
 
-export function CrecimientoTercerosHeader({
+/** Acciones del encabezado del panel: filtro de periodo (solo en crecimiento) y paginador de vistas. */
+export function CrecimientoTercerosControls({
   animacionIdle,
   isLoading,
   puedeIrAdelante,
@@ -42,80 +43,47 @@ export function CrecimientoTercerosHeader({
   vistaIndex,
   navegar,
   setSelectedPeriod,
-}: CrecimientoTercerosHeaderProps) {
+}: CrecimientoTercerosControlsProps) {
   return (
-    <CardHeader className="flex flex-row items-start justify-between gap-2 pt-3 pb-2 px-6">
-      <div className="space-y-0.5 min-w-0">
-        <CardTitle className="text-base">{vista.title}</CardTitle>
-        <CardDescription className="text-sm">
-          {getVistaDescription(vista.id, selectedPeriod)}
-        </CardDescription>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {vista.id === "crecimiento" && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 w-[140px] justify-between gap-2 text-xs font-normal"
+    <>
+      {vista.id === "crecimiento" && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-[150px] justify-between gap-2 font-normal"
+            >
+              <FilterTriggerContent icon={CalendarClock} label={selectedPeriodLabel} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="dashboard-toolbar-menu">
+            {PERIOD_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onSelect={() => setSelectedPeriod(option.value)}
+                className="dashboard-toolbar-menu-item"
               >
-                <FilterTriggerContent
-                  icon={CalendarClock}
-                  label={selectedPeriodLabel}
-                />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-              {PERIOD_OPTIONS.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onSelect={() => setSelectedPeriod(option.value)}
-                  className="dashboard-toolbar-menu-item text-xs"
-                >
-                  <span className="dashboard-toolbar-menu-item-label">
-                    {option.label}
-                  </span>
-                  {selectedPeriod === option.value && (
-                    <Check className="h-4 w-4" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        <span className="text-[11px] tabular-nums text-muted-foreground px-1">
-          {vistaIndex + 1}/{totalVistas}
-        </span>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7"
-          onClick={() => navegar(-1)}
-          disabled={!puedeIrAtras || isLoading || !animacionIdle}
-          aria-label="Vista anterior"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7"
-          onClick={() => navegar(1)}
-          disabled={!puedeIrAdelante || isLoading || !animacionIdle}
-          aria-label="Vista siguiente"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </CardHeader>
+                <span className="dashboard-toolbar-menu-item-label">{option.label}</span>
+                {selectedPeriod === option.value && <Check className="size-4" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+      <PagerControls
+        index={vistaIndex}
+        total={totalVistas}
+        onPrevious={() => navegar(-1)}
+        onNext={() => navegar(1)}
+        previousDisabled={!puedeIrAtras || isLoading || !animacionIdle}
+        nextDisabled={!puedeIrAdelante || isLoading || !animacionIdle}
+      />
+    </>
   );
 }
 
-function getVistaDescription(
+export function getVistaDescription(
   vistaId: CrecimientoVista["id"],
   selectedPeriod: CrecimientoPeriod,
 ) {

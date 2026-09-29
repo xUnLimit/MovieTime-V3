@@ -14,6 +14,7 @@ import {
   StarOff,
 } from 'lucide-react';
 
+import { hideBelowClass } from '@/components/shared/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,7 +72,7 @@ export function ServiciosProximosTableRow({
   return (
     <TableRow
       className={`border-b transition-colors hover:bg-muted/50 ${
-        notif.resaltada ? 'bg-orange-50/50 dark:bg-orange-500/5' : ''
+        notif.resaltada ? 'bg-warning-subtle' : ''
       }`}
     >
       <TableCell className="px-2 py-2 text-center">
@@ -80,9 +81,9 @@ export function ServiciosProximosTableRow({
           size="icon"
           className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
             notif.resaltada
-              ? 'bg-orange-100 dark:bg-orange-500/20 hover:bg-orange-200 dark:hover:bg-orange-500/30'
+              ? 'bg-warning-subtle hover:bg-warning/15'
               : notif.leida
-                ? 'bg-gray-100 dark:bg-gray-500/20 hover:bg-gray-200 dark:hover:bg-gray-500/30'
+                ? 'bg-muted hover:bg-accent'
                 : `${bellColors.bgColor} ${bellColors.hoverBgColor}`
           } hover:scale-105`}
           onClick={() => !notif.resaltada && onToggleLeida(notif.id, !notif.leida)}
@@ -95,9 +96,9 @@ export function ServiciosProximosTableRow({
           }
         >
           {notif.resaltada ? (
-            <AlertTriangle className="h-4 w-4 transition-all duration-200 ease-in-out text-orange-500" />
+            <AlertTriangle className="h-4 w-4 transition-all duration-200 ease-in-out text-warning" />
           ) : notif.leida ? (
-            <BellOff className="h-4 w-4 transition-all duration-200 ease-in-out text-gray-400 dark:text-gray-500" />
+            <BellOff className="h-4 w-4 transition-all duration-200 ease-in-out text-muted-foreground" />
           ) : (
             <BellRing
               className={`h-4 w-4 transition-all duration-200 ease-in-out ${bellColors.textColor}`}
@@ -117,7 +118,7 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('xl')}`}>
         <div className="flex items-center justify-center gap-2">
             <span className="max-w-[180px] truncate font-medium">
               {notif.correo}
@@ -134,7 +135,7 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className="w-[160px] px-2 py-2 text-center">
+      <TableCell className={`w-[160px] px-2 py-2 text-center ${hideBelowClass('2xl')}`}>
         <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
           <span className="min-w-0 break-all text-center font-medium leading-tight">
             {isPasswordVisible ? notif.contrasena : '••••••••'}
@@ -166,7 +167,7 @@ export function ServiciosProximosTableRow({
         </div>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('2xl')}`}>
         {notif.metodoPagoNombre ? (
           <div className="flex flex-col items-center justify-center gap-0.5">
             <span className="max-w-[110px] truncate font-medium">
@@ -191,11 +192,11 @@ export function ServiciosProximosTableRow({
         )}
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('lg')}`}>
         {formatearFecha(new Date(notif.fechaVencimiento))}
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('md')}`}>
         {getCurrencySymbol(notif.moneda)}
         {notif.costoServicio.toFixed(2)}
       </TableCell>
@@ -226,22 +227,22 @@ export function ServiciosProximosTableRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onRenovar(notif)}>
-              <RefreshCw className="h-4 w-4 mr-2 text-purple-600" />
-              <span className="text-purple-600">Renovar</span>
+              <RefreshCw className="h-4 w-4 mr-2 text-primary" />
+              <span className="text-primary">Renovar</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onSeguimiento(notif)}>
               {notif.resaltada ? (
-                <StarOff className="h-4 w-4 mr-2 text-orange-600" />
+                <StarOff className="h-4 w-4 mr-2 text-warning" />
               ) : (
-                <Star className="h-4 w-4 mr-2 text-orange-600" />
+                <Star className="h-4 w-4 mr-2 text-warning" />
               )}
-              <span className="text-orange-600">
+              <span className="text-warning">
                 {notif.resaltada ? 'Quitar seguimiento' : 'Seguimiento'}
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onAcciones(notif)}>
-              <PowerOff className="h-4 w-4 mr-2 text-red-600" />
-              <span className="text-red-600">Inactivar</span>
+              <PowerOff className="h-4 w-4 mr-2 text-danger" />
+              <span className="text-danger">Inactivar</span>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link prefetch={false} href={`/servicios/detalle/${notif.servicioId}`}>

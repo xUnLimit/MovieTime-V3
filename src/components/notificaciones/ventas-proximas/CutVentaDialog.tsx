@@ -55,8 +55,8 @@ export function CutVentaDialog({
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20">
-              <Scissors className="h-4 w-4 text-red-600" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-danger-subtle">
+              <Scissors className="h-4 w-4 text-danger" />
             </span>
             Cortar venta
           </DialogTitle>
@@ -101,7 +101,7 @@ export function CutVentaDialog({
           <Button
             type="button"
             disabled={isSubmitting || reason.trim().length === 0}
-            className="bg-red-600 text-white hover:bg-red-700"
+            className="bg-danger text-danger-foreground hover:bg-danger/90"
             onClick={handleCut}
           >
             {isSubmitting ? 'Procesando...' : 'Cortar venta'}

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar, Monitor } from "lucide-react";
 
 import { MetricCard } from "@/components/shared/MetricCard";
+import { MetricGrid } from "@/components/shared/MetricGrid";
 import { queryKeys } from "@/platform/query-keys";
 import { countServiciosProximosPagoByCategoriaUseCase } from "@/application/use-cases/servicios/servicios-query-use-cases";
 import { Categoria } from "@/types";
@@ -31,22 +32,20 @@ export const ServiciosCategoriaMetrics = memo(
 
     if (!categoria) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <MetricGrid>
           <MetricCard
             title="Servicios Activos"
             value="0/0"
             icon={Monitor}
-            underlineColor="bg-blue-500"
-            iconColor="text-blue-500"
+            tone="info"
           />
           <MetricCard
             title="Próximos Pagos (7 días)"
             value={0}
             icon={Calendar}
-            underlineColor="bg-yellow-500"
-            iconColor="text-yellow-500"
+            tone="warning"
           />
-        </div>
+        </MetricGrid>
       );
     }
 
@@ -54,22 +53,20 @@ export const ServiciosCategoriaMetrics = memo(
     const serviciosActivos = categoria.serviciosActivos ?? 0;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <MetricGrid>
         <MetricCard
           title="Servicios Activos"
           value={`${serviciosActivos}/${totalServicios}`}
           icon={Monitor}
-          underlineColor="bg-blue-500"
-          iconColor="text-blue-500"
+          tone="info"
         />
         <MetricCard
           title="Próximos Pagos (7 días)"
           value={proximosPagos}
           icon={Calendar}
-          underlineColor="bg-yellow-500"
-          iconColor="text-yellow-500"
+          tone="warning"
         />
-      </div>
+      </MetricGrid>
     );
   },
 );

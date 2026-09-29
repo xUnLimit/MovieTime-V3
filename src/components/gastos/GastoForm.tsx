@@ -183,7 +183,7 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: Ga
               </DropdownMenu>
               <input type="hidden" {...register('tipoGastoId')} />
               {errors.tipoGastoId && (
-                <p className="text-sm text-red-500">{errors.tipoGastoId.message}</p>
+                <p className="text-sm text-danger">{errors.tipoGastoId.message}</p>
               )}
             </div>
 
@@ -217,7 +217,7 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: Ga
                 </PopoverContent>
               </Popover>
               <input type="hidden" {...register('fecha')} />
-              {errors.fecha && <p className="text-sm text-red-500">{errors.fecha.message}</p>}
+              {errors.fecha && <p className="text-sm text-danger">{errors.fecha.message}</p>}
             </div>
           </div>
 
@@ -232,7 +232,7 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: Ga
               {...register('monto')}
               placeholder="0.00"
             />
-            {errors.monto && <p className="text-sm text-red-500">{errors.monto.message}</p>}
+            {errors.monto && <p className="text-sm text-danger">{errors.monto.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -243,7 +243,7 @@ export function GastoForm({ open, onOpenChange, gasto, tiposGasto, onSaved }: Ga
               placeholder="Describe el gasto realizado"
               rows={4}
             />
-            {errors.detalle && <p className="text-sm text-red-500">{errors.detalle.message}</p>}
+            {errors.detalle && <p className="text-sm text-danger">{errors.detalle.message}</p>}
           </div>
 
           <DialogFooter>

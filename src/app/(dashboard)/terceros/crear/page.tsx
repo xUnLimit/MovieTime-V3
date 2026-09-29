@@ -2,13 +2,11 @@
 
 import { Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 
 import { TerceroForm } from '@/components/terceros/TerceroForm';
 import { useMetodosPagoTerceros } from '@/hooks/use-metodos-pago-terceros';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 // Solo se permite volver a rutas internas del chat: evita redirecciones abiertas.
 function safeReturnPath(value: string | null) {
@@ -44,21 +42,7 @@ function CrearTerceroPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-              <Link prefetch={false} href={returnPath} aria-label="Volver">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nuevo Tercero</h1>
-          </div>
-          <p className="text-sm text-muted-foreground ml-10 sm:ml-10">
-            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link> / <Link prefetch={false} href="/terceros" className="hover:text-foreground transition-colors">Clientes</Link> / <span className="text-foreground">Crear</span>
-          </p>
-        </div>
-      </div>
+      <PageHeader title="Nuevo Tercero" trail={[{ label: 'Crear' }]} backTo={returnPath} />
 
       <div className="bg-card border border-border rounded-lg p-6">
         {loading ? (

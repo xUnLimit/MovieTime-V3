@@ -140,10 +140,4 @@ export function getPerfilesDropdownForEdit({
   return [];
 }
 
-export function getDisponiblesColorClass(disponibles: number, total: number) {
-  if (total <= 0) return "text-muted-foreground";
-  const ratio = disponibles / total;
-  if (ratio <= 0.25) return "text-[#ff1744]";
-  if (ratio <= 0.5) return "text-[#ffea00]";
-  return "text-[#00ff85]";
-}
+export { getDisponiblesColorClass } from "@/components/shared/disponibilidad-status";

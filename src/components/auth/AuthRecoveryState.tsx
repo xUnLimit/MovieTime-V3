@@ -14,8 +14,8 @@ export function AuthRecoveryState({ message, onRetry, onLogout }: AuthRecoverySt
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15">
-          <WifiOff className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning-subtle">
+          <WifiOff className="h-8 w-8 text-warning" />
         </div>
         <div className="space-y-2">
           <h1 className="text-xl font-semibold">No pudimos validar la sesión</h1>

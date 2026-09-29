@@ -45,7 +45,7 @@ export function VentaItemsCart({
             className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2 text-sm"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600/10 text-purple-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <User className="h-4 w-4" />
               </div>
               <div>
@@ -56,7 +56,7 @@ export function VentaItemsCart({
                   {item.servicioCorreo || "Sin correo"}
                 </p>
                 {item.perfilNumero ? (
-                  <span className="mt-1 inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-700 dark:bg-purple-600/10 dark:text-purple-300">
+                  <span className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                     {item.perfilNombre
                       ? item.perfilNombre
                       : `Perfil ${item.perfilNumero}`}
@@ -72,7 +72,7 @@ export function VentaItemsCart({
             <div className="flex items-center gap-2">
               <div className="mr-2 flex flex-col text-right">
                 {item.descuento > 0 ? (
-                  <span className="text-[10px] leading-none text-red-400 line-through">
+                  <span className="text-xs leading-none text-danger line-through">
                     {simboloMoneda} {item.precio.toFixed(2)}
                   </span>
                 ) : null}
@@ -85,7 +85,7 @@ export function VentaItemsCart({
                 variant="ghost"
                 size="icon"
                 onClick={() => onEditItem(item)}
-                className="h-8 w-8 text-blue-500 hover:bg-blue-500/10 hover:text-blue-600"
+                className="h-8 w-8 text-info hover:bg-info/15 hover:text-info"
                 aria-label="Editar item"
               >
                 <Pencil className="h-4 w-4" />
@@ -95,7 +95,7 @@ export function VentaItemsCart({
                 variant="ghost"
                 size="icon"
                 onClick={() => onRemoveItem(item.id)}
-                className="h-8 w-8 text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                className="h-8 w-8 text-danger hover:bg-danger/15 hover:text-danger"
                 aria-label="Eliminar item"
               >
                 <Trash2 className="h-4 w-4" />
@@ -113,7 +113,7 @@ export function VentaItemsCart({
           </span>
         </div>
         {subtotal - totalFinal > 0 ? (
-          <div className="flex items-center justify-between text-sm text-red-400">
+          <div className="flex items-center justify-between text-sm text-danger">
             <span>Descuento aplicado:</span>
             <span className="font-semibold">
               -{simboloMoneda} {(subtotal - totalFinal).toFixed(2)}
@@ -124,7 +124,7 @@ export function VentaItemsCart({
           <span className="text-sm font-medium text-muted-foreground">
             Total final:
           </span>
-          <span className="text-sm font-bold text-green-500">
+          <span className="text-sm font-semibold text-success">
             {simboloMoneda} {totalFinal.toFixed(2)}
           </span>
         </div>

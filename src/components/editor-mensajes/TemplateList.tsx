@@ -44,7 +44,7 @@ export function TemplateList({ selected, statusOf, onSelect }: TemplateListProps
         </Select>
       </div>
 
-      <nav aria-label="Mensajes" onKeyDown={moveFocus} className="hidden space-y-4 md:block">
+      <nav aria-label="Mensajes" onKeyDown={moveFocus} className="hidden space-y-4 rounded-xl border bg-card p-2 md:block">
         {TEMPLATE_GROUPS.map((group) => (
           <section key={group.id} aria-labelledby={`group-${group.id}`} data-testid={`group-${group.id}`}>
             <h2 id={`group-${group.id}`} className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -61,9 +61,9 @@ export function TemplateList({ selected, statusOf, onSelect }: TemplateListProps
                       aria-current={active ? 'true' : undefined}
                       onClick={() => onSelect(tipo)}
                       className={cn(
-                        'flex w-full items-start gap-2 rounded-lg border border-transparent px-2.5 py-2 text-left transition-colors',
+                        'flex w-full items-start gap-2 rounded-md px-2.5 py-2 text-left transition-colors',
                         'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                        active ? 'border-primary/40 bg-primary/10' : 'hover:bg-accent/50',
+                        active ? 'bg-accent' : 'hover:bg-accent/50',
                       )}
                     >
                       <span className="mt-1.5"><ChannelDot status={statusOf(tipo)} /></span>

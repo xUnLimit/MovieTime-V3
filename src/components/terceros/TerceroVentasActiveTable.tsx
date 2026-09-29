@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -13,7 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { DataTable, defineDataTableColumns } from "@/components/shared/DataTable";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,14 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { getCurrencySymbol } from "@/platform/constants";
 import { formatearFecha } from "@/platform/utils/calculations";
 
@@ -45,33 +39,49 @@ function DiasRestantesBadge({ diasRestantes }: { diasRestantes: number }) {
   if (diasRestantes < 0) {
     const diasRetraso = Math.abs(diasRestantes);
     return (
-      <Badge variant="outline" className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 gap-1">
-        <AlertTriangle className="h-3 w-3 shrink-0" />
+      <StatusBadge tone="danger" dot={false}>
+        <AlertTriangle className="size-3 shrink-0" />
         {diasRetraso} día{diasRetraso !== 1 ? "s" : ""} de retraso
-      </Badge>
+      </StatusBadge>
     );
   }
 
-  if (diasRestantes === 0) {
-    return (
-      <Badge variant="outline" className="border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300">
-        Vence hoy
-      </Badge>
-    );
-  }
+  if (diasRestantes === 0) return <StatusBadge tone="danger">Vence hoy</StatusBadge>;
 
   if (diasRestantes <= 7) {
     return (
-      <Badge variant="outline" className="border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300">
+      <StatusBadge tone="warning">
         {diasRestantes} día{diasRestantes !== 1 ? "s" : ""} restante{diasRestantes !== 1 ? "s" : ""}
-      </Badge>
+      </StatusBadge>
     );
   }
 
+  return <StatusBadge tone="success">{diasRestantes} días restantes</StatusBadge>;
+}
+
+function IconValue({ icon: Icon, children }: { icon: typeof Clock; children: React.ReactNode }) {
   return (
-    <Badge variant="outline" className="border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300">
-      {diasRestantes} días restantes
-    </Badge>
+    <div className="flex items-center justify-center gap-2">
+      <Icon className="size-4 text-muted-foreground" />
+      <span className="font-medium">{children}</span>
+    </div>
+  );
+}
+
+function CopyValue({ value, label, onCopy }: { value: string; label: string; onCopy: TerceroVentasActiveTableProps["onCopy"] }) {
+  return (
+    <div className="inline-flex items-center gap-1">
+      <span className="font-medium">{value}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        aria-label={`Copiar ${label.toLowerCase()}`}
+        onClick={() => onCopy(value, label)}
+      >
+        <Copy />
+      </Button>
+    </div>
   );
 }
 
@@ -80,114 +90,122 @@ export function TerceroVentasActiveTable({
   onCopy,
   onOpenEstadoDialog,
 }: TerceroVentasActiveTableProps) {
+  const columns = useMemo(
+    () =>
+      defineDataTableColumns<TerceroDetailsRow>([
+        {
+          key: "categoriaNombre",
+          header: "Categoría",
+          render: (row) => (
+            <div className="flex items-center gap-2">
+              <Monitor className="size-4 shrink-0 text-success" />
+              <div>
+                <p className="font-medium">{row.categoriaNombre}</p>
+                <p className="text-xs text-muted-foreground">{row.servicioNombre}</p>
+              </div>
+            </div>
+          ),
+        },
+        {
+          key: "correo",
+          header: "Email",
+          hideBelow: "lg",
+          render: (row) => <CopyValue value={row.correo} label="Correo" onCopy={onCopy} />,
+        },
+        {
+          key: "contrasena",
+          header: "Contraseña",
+          align: "center",
+          hideBelow: "xl",
+          render: (row) => <CopyValue value={row.contrasena} label="Contraseña" onCopy={onCopy} />,
+        },
+        {
+          key: "cicloPago",
+          header: "Ciclo de Pago",
+          align: "center",
+          hideBelow: "2xl",
+          render: (row) => <IconValue icon={Clock}>{row.cicloPago}</IconValue>,
+        },
+        {
+          key: "fechaInicio",
+          header: "Fecha de Inicio",
+          align: "center",
+          hideBelow: "2xl",
+          render: (row) => <IconValue icon={Calendar}>{row.fechaInicio ? formatearFecha(row.fechaInicio) : "—"}</IconValue>,
+        },
+        {
+          key: "fechaFin",
+          header: "Fecha de Expiración",
+          align: "center",
+          hideBelow: "lg",
+          render: (row) => <IconValue icon={Calendar}>{row.fechaFin ? formatearFecha(row.fechaFin) : "—"}</IconValue>,
+        },
+        {
+          key: "montoSinConsumir",
+          header: "Monto Sin Consumir",
+          align: "center",
+          hideBelow: "md",
+          render: (row) => (
+            <span className="font-medium tabular-nums">
+              <span className="text-success">{getCurrencySymbol(row.moneda)}</span> {row.montoSinConsumir.toFixed(2)}
+            </span>
+          ),
+        },
+        {
+          key: "renovaciones",
+          header: "Renovaciones",
+          align: "center",
+          hideBelow: "2xl",
+          render: (row) => (
+            <span className="inline-flex items-center justify-center gap-1 font-medium">
+              <RefreshCw className="size-3.5 text-muted-foreground" />
+              {row.renovaciones}
+            </span>
+          ),
+        },
+        {
+          key: "diasRestantes",
+          header: "Días Restantes",
+          align: "center",
+          render: (row) => <DiasRestantesBadge diasRestantes={row.diasRestantes} />,
+        },
+      ]),
+    [onCopy],
+  );
+
   return (
-    <div className="rounded-md border bg-background overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-muted-foreground">Categoría</TableHead>
-            <TableHead className="text-muted-foreground">Email</TableHead>
-            <TableHead className="text-center text-muted-foreground">Contraseña</TableHead>
-            <TableHead className="text-center text-muted-foreground">Ciclo de Pago</TableHead>
-            <TableHead className="text-center text-muted-foreground">Fecha de Inicio</TableHead>
-            <TableHead className="text-center text-muted-foreground">Fecha de Expiración</TableHead>
-            <TableHead className="text-center text-muted-foreground">Monto Sin Consumir</TableHead>
-            <TableHead className="text-center text-muted-foreground">Renovaciones</TableHead>
-            <TableHead className="text-center text-muted-foreground">Días Restantes</TableHead>
-            <TableHead className="text-center text-muted-foreground">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4 text-green-500" />
-                  <div>
-                    <p className="font-medium">{row.categoriaNombre}</p>
-                    <p className="text-xs text-muted-foreground">{row.servicioNombre}</p>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="inline-flex items-center gap-2">
-                  <span className="font-medium">{row.correo}</span>
-                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(row.correo, "Correo")}>
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex w-full items-center justify-center gap-2">
-                  <span className="font-medium">{row.contrasena}</span>
-                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(row.contrasena, "Contraseña")}>
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{row.cicloPago}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{row.fechaInicio ? formatearFecha(row.fechaInicio) : "—"}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{row.fechaFin ? formatearFecha(row.fechaFin) : "—"}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center font-medium">
-                <span className="text-green-500">{getCurrencySymbol(row.moneda)}</span>
-                <span> {row.montoSinConsumir.toFixed(2)}</span>
-              </TableCell>
-              <TableCell className="text-center">
-                <span className="inline-flex items-center justify-center gap-1 font-medium">
-                  <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
-                  {row.renovaciones}
-                </span>
-              </TableCell>
-              <TableCell className="text-center">
-                <DiasRestantesBadge diasRestantes={row.diasRestantes} />
-              </TableCell>
-              <TableCell className="text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link prefetch={false} href={`/ventas/${row.id}`}>
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        Ver Venta
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link prefetch={false} href={`/servicios/detalle/${row.servicioId}`}>
-                        <Monitor className="h-4 w-4 mr-2" />
-                        Ver Servicio
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onOpenEstadoDialog("inactivar", row)}>
-                      <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                      <span className="text-red-600">Inactivar</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <DataTable
+      bare
+      data={rows}
+      columns={columns}
+      actions={(row) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon-sm" aria-label="Acciones de la venta">
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link prefetch={false} href={`/ventas/${row.id}`}>
+                <ShoppingCart />
+                Ver Venta
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link prefetch={false} href={`/servicios/detalle/${row.servicioId}`}>
+                <Monitor />
+                Ver Servicio
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={() => onOpenEstadoDialog("inactivar", row)}>
+              <XCircle />
+              Inactivar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    />
   );
 }

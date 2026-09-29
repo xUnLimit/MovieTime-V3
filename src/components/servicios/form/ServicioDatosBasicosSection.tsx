@@ -40,7 +40,7 @@ export function ServicioDatosBasicosSection({
           }}
         />
         {errors.nombre && (
-          <p className="text-sm text-red-500">{errors.nombre.message}</p>
+          <p className="text-sm text-danger">{errors.nombre.message}</p>
         )}
       </div>
 
@@ -75,7 +75,7 @@ export function ServicioDatosBasicosSection({
           </DropdownMenuContent>
         </DropdownMenu>
         {errors.categoriaId && (
-          <p className="text-sm text-red-500">{errors.categoriaId.message}</p>
+          <p className="text-sm text-danger">{errors.categoriaId.message}</p>
         )}
       </div>
     </div>

@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import type { LabelProps } from "recharts";
 
+import { chartColors, chartInitialDimension, chartTooltipLabelStyle, chartTooltipStyle } from "./chart-theme";
 import {
   NEGATIVE_REVENUE_COLOR,
   REVENUE_CATEGORY_COLORS,
@@ -23,7 +24,6 @@ interface RevenueCategoryDatum {
 
 interface RevenueByCategoryChartProps {
   animationClass: string;
-  chartHeight: number;
   chartMargin: { left: number; right: number; top: number; bottom: number };
   data: RevenueCategoryDatum[];
   isCompactChart: boolean;
@@ -38,15 +38,12 @@ interface RevenueByCategoryChartProps {
   yAxisWidth: number;
 }
 
-const axisColor = "var(--muted-foreground)";
-const labelColor = "var(--foreground)";
-const tooltipBg = "var(--background)";
-const tooltipBorder = "var(--border)";
-const tooltipText = "var(--foreground)";
+const axisColor = chartColors.axis;
+const labelColor = chartColors.label;
+const labelHalo = chartColors.surface;
 
 export function RevenueByCategoryChart({
   animationClass,
-  chartHeight,
   chartMargin,
   data,
   isCompactChart,
@@ -59,7 +56,7 @@ export function RevenueByCategoryChart({
 }: RevenueByCategoryChartProps) {
   return (
     <div className={`h-full w-full transition-all duration-200 ease-out will-change-transform ${animationClass}`}>
-      <ResponsiveContainer width="100%" height={chartHeight}>
+      <ResponsiveContainer width="100%" height="100%" initialDimension={chartInitialDimension}>
         <BarChart data={data} layout="vertical" margin={chartMargin}>
           <XAxis
             type="number"
@@ -67,7 +64,7 @@ export function RevenueByCategoryChart({
             allowDecimals={vista.id === "margen"}
             tickCount={xAxisTickCount}
             stroke={axisColor}
-            fontSize={10}
+            fontSize={12}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) =>
@@ -81,7 +78,7 @@ export function RevenueByCategoryChart({
             type="category"
             dataKey="categoria"
             stroke={labelColor}
-            fontSize={11}
+            fontSize={12}
             tickLine={false}
             axisLine={false}
             interval={0}
@@ -90,14 +87,9 @@ export function RevenueByCategoryChart({
             tick={{ fill: labelColor }}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: tooltipBg,
-              border: `1px solid ${tooltipBorder}`,
-              borderRadius: "6px",
-              color: tooltipText,
-            }}
-            labelStyle={{ color: tooltipText }}
-            itemStyle={{ color: tooltipText }}
+            contentStyle={chartTooltipStyle}
+            labelStyle={chartTooltipLabelStyle}
+            itemStyle={{ color: labelColor }}
             wrapperStyle={{ maxWidth: isCompactChart ? 180 : undefined }}
             formatter={(value: number | undefined) => {
               const v = value ?? 0;
@@ -107,11 +99,11 @@ export function RevenueByCategoryChart({
                   : `${v.toFixed(1)}%`;
               return [formatted, vista.tooltipLabel];
             }}
-            cursor={{ fill: "hsl(var(--muted))", opacity: 0.2 }}
+            cursor={{ fill: "var(--muted)", opacity: 0.5 }}
           />
           <Bar
             dataKey="valor"
-            radius={[0, 12, 12, 0]}
+            radius={[0, 6, 6, 0]}
             isAnimationActive
             animationDuration={900}
             animationEasing="ease-out"
@@ -176,7 +168,7 @@ function renderValueLabel({
       x={labelX}
       y={labelY}
       fill={isNegative ? NEGATIVE_REVENUE_COLOR : labelColor}
-      stroke={tooltipBg}
+      stroke={labelHalo}
       strokeWidth={3}
       paintOrder="stroke"
       fontSize={valueLabelFontSize}

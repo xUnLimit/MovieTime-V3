@@ -19,15 +19,15 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
       <body>
         <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4 bg-background text-foreground">
           <div className="flex flex-col items-center gap-4 max-w-md w-full text-center">
-            <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+            <div className="w-16 h-16 rounded-full bg-danger-subtle flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-danger" />
             </div>
             <h1 className="text-xl font-semibold">Error crítico</h1>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
               No se pudo cargar la aplicación. Inténtalo nuevamente.
             </p>
             {error.digest && (
-              <p className="text-xs text-gray-400">Código: {error.digest}</p>
+              <p className="text-xs text-muted-foreground">Código: {error.digest}</p>
             )}
             <button
               onClick={reset}

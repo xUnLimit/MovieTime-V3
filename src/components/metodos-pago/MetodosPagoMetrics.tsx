@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
+import { MetricGrid } from "@/components/shared/MetricGrid";
 import { useMetodosPagoCounts } from "@/hooks/use-metodos-pago-counts";
 import { CreditCard, Users, Package } from "lucide-react";
 
@@ -12,28 +13,25 @@ export const MetodosPagoMetrics = memo(function MetodosPagoMetrics() {
   const metodosServicios = counts?.metodosServicios ?? 0;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <MetricGrid>
       <MetricCard
         title="Total Métodos"
         value={totalMetodos}
         icon={CreditCard}
-        iconColor="text-blue-500"
-        underlineColor="bg-blue-500"
+        tone="info"
       />
       <MetricCard
         title="Asociados a Terceros"
         value={metodosTerceros}
         icon={Users}
-        iconColor="text-purple-500"
-        underlineColor="bg-purple-500"
+        tone="neutral"
       />
       <MetricCard
         title="Asociados a Servicios"
         value={metodosServicios}
         icon={Package}
-        iconColor="text-orange-500"
-        underlineColor="bg-orange-500"
+        tone="neutral"
       />
-    </div>
+    </MetricGrid>
   );
 });

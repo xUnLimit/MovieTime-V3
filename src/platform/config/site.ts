@@ -9,8 +9,9 @@ export const siteConfig = {
   description: 'Sistema de gestión de servicios de streaming en Panamá',
   url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   ogImage: '',
-  themeColor: '#262626',
-  backgroundColor: '#262626',
+  themeColor: '#0a0a0a',
+  themeColorLight: '#fafafa',
+  backgroundColor: '#0a0a0a',
   links: {
     github: '',
     twitter: '',

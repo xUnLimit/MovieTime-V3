@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 export function VentaLoadingState() {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando venta...</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Cargando venta...</h1>
     </div>
   );
 }
@@ -14,7 +14,7 @@ export function VentaNotFoundState() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Venta no encontrada</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Venta no encontrada</h1>
         <p className="text-sm text-muted-foreground">
           <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
           {' / '}

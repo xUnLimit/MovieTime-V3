@@ -53,28 +53,25 @@ export function UserMenu({ variant = 'header', collapsed = false, isMobile = fal
             <button
               type="button"
               className={cn(
-                "relative flex h-11 w-full items-center overflow-hidden rounded-lg",
+                "relative flex h-10 w-full items-center gap-3 overflow-hidden rounded-md pl-1",
                 "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                "transition-colors duration-200"
+                "transition-colors duration-150"
               )}
               title={collapsed && !isMobile ? user.email : undefined}
               aria-label="Abrir menú de usuario"
             >
-              <div className="absolute left-0 flex h-11 w-11 items-center justify-center">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </div>
+              <Avatar className="size-8 shrink-0">
+                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+              </Avatar>
               <span
-                className="absolute left-11 right-2 flex min-w-0 flex-col items-start text-left"
+                className="flex min-w-0 flex-1 flex-col items-start pr-2 text-left transition-opacity duration-200"
                 style={{
                   opacity: showSidebarText ? 1 : 0,
-                  transition: 'opacity 200ms ease-in-out',
                   pointerEvents: showSidebarText ? 'auto' : 'none',
                 }}
               >
                 <span className="w-full truncate text-xs font-medium leading-4">{user.email}</span>
-                <span className="text-[11px] leading-4 text-muted-foreground">
+                <span className="text-xs leading-4 text-muted-foreground">
                   {user.role === 'admin' ? 'Administrador' : 'Operador'}
                 </span>
               </span>

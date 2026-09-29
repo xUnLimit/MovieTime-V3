@@ -26,7 +26,6 @@ import {
 } from "./reposo-helpers";
 import {
   DeleteReposoPaymentsOption,
-  getEstadoReposoLabel,
   ReposoPageHeader,
   ReposoTableCard,
   ServiciosReposoMetrics,
@@ -44,7 +43,6 @@ function ReposoPageContent() {
   const [selectedServicio, setSelectedServicio] =
     useState<ReposoServicio | null>(null);
   const [isActivating, setIsActivating] = useState(false);
-  const estadoFilterLabel = getEstadoReposoLabel(estadoFilter);
   const {
     data: serviciosReposo = [],
     isLoading,
@@ -156,7 +154,6 @@ function ReposoPageContent() {
       <ReposoTableCard
         search={search}
         estadoFilter={estadoFilter}
-        estadoFilterLabel={estadoFilterLabel}
         isLoading={isLoading}
         servicios={filteredServicios}
         onSearchChange={setSearch}

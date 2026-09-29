@@ -14,6 +14,7 @@ import {
   type ChatFilter,
 } from '@/components/chats/conversation-filters';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useWhatsAppConversations } from '@/hooks/use-whatsapp-chat';
 import { cn } from '@/platform/utils/cn';
 
@@ -106,7 +107,7 @@ function ChatsPageContent() {
   return (
     // El area de chats ocupa todo el contenido, sin el padding del layout, como en el prototipo.
     <div className="chats-surface -m-3 flex h-[calc(100%+1.5rem)] min-w-0 flex-col sm:-m-4 sm:h-[calc(100%+2rem)] md:-m-6 md:h-[calc(100%+3rem)]">
-      {missingConversation ? <p role="status" className="border-b border-chat-line bg-chat-closed px-4 py-3 text-[13px] text-chat-closed-ink md:hidden">No se encontró esa conversación. Elige otro chat de la lista.</p> : null}
+      {missingConversation ? <p role="status" className="border-b border-chat-line bg-chat-closed px-4 py-3 text-sm text-chat-closed-ink md:hidden">No se encontró esa conversación. Elige otro chat de la lista.</p> : null}
       <div className="grid min-h-0 flex-1 overflow-hidden md:grid-cols-[minmax(286px,350px)_minmax(0,1fr)]">
         <section
           aria-label="Lista de conversaciones"
@@ -114,13 +115,7 @@ function ChatsPageContent() {
         >
           <ConversationList
             ref={searchRef}
-            header={(
-              <>
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-chat-accent">MovieTime PTY</p>
-                <h1 className="mb-1 mt-2 font-editorial text-[34px] font-normal leading-[1.1] tracking-[-0.035em] md:text-[clamp(27px,2.3vw,35px)]">Conversaciones</h1>
-                <p className="mb-5 text-[12px] leading-normal text-chat-muted">La atención, con toda la información a mano.</p>
-              </>
-            )}
+            header={<PageHeader title="Conversaciones" className="mb-4" />}
             visible={visible}
             totalCount={conversations.length}
             counts={counts}
@@ -149,9 +144,9 @@ function ChatsPageContent() {
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_50%_0%,var(--chat-glow)_0,var(--chat-canvas)_60%)] p-8 text-center">
-              <span className="mb-1 flex h-16 w-16 items-center justify-center rounded-2xl border border-chat-accent-line bg-chat-accent-soft text-chat-accent-strong"><MessageCircle className="h-7 w-7" aria-hidden /></span>
-              <h2 className="font-editorial text-[24px] font-normal tracking-[-0.02em]">{missingConversation ? 'Chat no disponible' : 'Selecciona una conversación'}</h2>
-              <p className="max-w-sm text-[13px] leading-relaxed text-chat-muted">
+              <span className="mb-1 flex size-12 items-center justify-center rounded-xl border border-chat-accent-line bg-chat-accent-soft text-chat-accent-strong"><MessageCircle className="size-5" aria-hidden /></span>
+              <h2 className="text-base font-semibold">{missingConversation ? 'Chat no disponible' : 'Selecciona una conversación'}</h2>
+              <p className="max-w-sm text-sm leading-relaxed text-chat-muted">
                 {missingConversation
                   ? 'No se encontró esa conversación.'
                   : 'Elige un chat para responder. Con Alt + ↑/↓ cambias de chat y con / buscas.'}

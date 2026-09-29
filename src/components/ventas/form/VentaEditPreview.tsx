@@ -35,7 +35,7 @@ export function VentaEditPreview({
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-6">
         <div className="space-y-0">
-          <h2 className="text-lg font-semibold">Vista previa de la venta</h2>
+          <h2 className="text-base font-semibold">Vista previa de la venta</h2>
           <p className="-mt-1 text-sm text-muted-foreground">
             Resumen general antes de guardar.
           </p>
@@ -66,7 +66,7 @@ export function VentaEditPreview({
                 <p className="font-medium">{servicioNombre}</p>
                 <p className="text-xs text-muted-foreground">{cicloLabel}</p>
               </div>
-              <span className="font-semibold text-green-500">
+              <span className="font-semibold text-success">
                 {simboloMoneda} {precioFinal.toFixed(2)}
               </span>
             </div>
@@ -130,10 +130,10 @@ export function VentaEditPreview({
 
       <div className="mt-1 space-y-2 rounded-lg bg-muted/50 p-3">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold text-foreground">
+          <span className="text-base font-semibold text-foreground">
             Total de la venta
           </span>
-          <span className="text-xl font-semibold text-green-500">
+          <span className="text-xl font-semibold text-success">
             {simboloMoneda} {precioFinal.toFixed(2)}
           </span>
         </div>

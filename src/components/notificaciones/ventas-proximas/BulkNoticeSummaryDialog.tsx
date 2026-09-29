@@ -43,8 +43,8 @@ export function BulkNoticeSummaryDialog({ results, onOpenWhatsApp, onClose }: Bu
         <dl className="grid grid-cols-5 gap-2 text-center">
           {counters.map(([label, count]) => (
             <div key={label} className="rounded-md border p-2">
-              <dd className="text-lg font-semibold tabular-nums">{count}</dd>
-              <dt className="text-[11px] text-muted-foreground">{label}</dt>
+              <dd className="text-base font-semibold tabular-nums">{count}</dd>
+              <dt className="text-xs text-muted-foreground">{label}</dt>
             </div>
           ))}
         </dl>

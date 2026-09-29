@@ -9,6 +9,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
+import { hideBelowClass } from '@/components/shared/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -75,18 +76,18 @@ export function VentasProximasTableRow({
     : null;
   const promiseOverdue = promiseDisplay?.state === 'overdue';
   const rowToneClass = notif.resaltada
-    ? 'bg-orange-50/50 dark:bg-orange-500/5'
+    ? 'bg-warning-subtle'
     : promiseDisplay
       ? promiseOverdue
-        ? 'bg-red-50/70 dark:bg-red-500/10'
-        : 'bg-blue-50/70 dark:bg-blue-500/10'
+        ? 'bg-danger-subtle'
+        : 'bg-info-subtle'
       : '';
   const displayedStatus = promiseDisplay
     ? {
         text: promiseDisplay.text,
         variant: promiseOverdue
-          ? 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
-          : 'border-blue-500/50 bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300',
+          ? 'border-danger-border bg-danger-subtle text-danger'
+          : 'border-info-border bg-info-subtle text-info',
       }
     : estadoBadge;
 
@@ -108,12 +109,12 @@ export function VentasProximasTableRow({
           className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
             promiseDisplay
               ? promiseOverdue
-                ? 'bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-500/30'
-                : 'bg-blue-100 dark:bg-blue-500/20 hover:bg-blue-200 dark:hover:bg-blue-500/30'
+                ? 'bg-danger-subtle hover:bg-danger/15'
+                : 'bg-info-subtle hover:bg-info/15'
               : notif.resaltada
-              ? 'bg-orange-100 dark:bg-orange-500/20 hover:bg-orange-200 dark:hover:bg-orange-500/30'
+              ? 'bg-warning-subtle hover:bg-warning/15'
               : notif.leida
-                ? 'bg-gray-100 dark:bg-gray-500/20 hover:bg-gray-200 dark:hover:bg-gray-500/30'
+                ? 'bg-muted hover:bg-accent'
                 : `${bellColors.bgColor} ${bellColors.hoverBgColor}`
           } hover:scale-105`}
           onClick={() => !promiseDisplay && !notif.resaltada && onToggleLeida(notif.id, !notif.leida)}
@@ -130,13 +131,13 @@ export function VentasProximasTableRow({
           {promiseDisplay ? (
             <CalendarClock
               className={`h-4 w-4 transition-all duration-200 ease-in-out ${
-                promiseOverdue ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'
+                promiseOverdue ? 'text-danger' : 'text-info'
               }`}
             />
           ) : notif.resaltada ? (
-            <AlertTriangle className="h-4 w-4 transition-all duration-200 ease-in-out text-orange-500" />
+            <AlertTriangle className="h-4 w-4 transition-all duration-200 ease-in-out text-warning" />
           ) : notif.leida ? (
-            <BellOff className="h-4 w-4 transition-all duration-200 ease-in-out text-gray-400 dark:text-gray-500" />
+            <BellOff className="h-4 w-4 transition-all duration-200 ease-in-out text-muted-foreground" />
           ) : (
             <BellRing
               className={`h-4 w-4 transition-all duration-200 ease-in-out ${bellColors.textColor}`}
@@ -151,7 +152,7 @@ export function VentasProximasTableRow({
         </span>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('md')}`}>
         <div className="mx-auto flex max-w-[130px] flex-col items-center gap-0.5">
           <span className="w-full truncate font-medium">
             {notif.categoriaNombre}
@@ -162,7 +163,7 @@ export function VentasProximasTableRow({
         </div>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('2xl')}`}>
         {notif.servicioCorreo ? (
           <div className="flex items-center justify-center gap-2">
             <span className="max-w-[180px] truncate font-medium">
@@ -183,7 +184,7 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className="w-[160px] px-2 py-2 text-center">
+      <TableCell className={`w-[160px] px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
         {notif.servicioContrasena ? (
           <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1">
             <span className="min-w-0 break-all text-center font-medium leading-tight">
@@ -221,13 +222,13 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
             <span className="inline-block max-w-[100px] truncate font-medium align-middle">
               {notif.perfilNombre || '-'}
             </span>
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
         {notif.codigo ? (
           <div className="flex items-center justify-center gap-2">
             <span className="inline-block max-w-[72px] truncate font-medium align-middle">
@@ -248,21 +249,21 @@ export function VentasProximasTableRow({
         )}
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('3xl')}`}>
         {notif.fechaInicio ? formatearFecha(new Date(notif.fechaInicio)) : '—'}
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('lg')}`}>
         {formatearFecha(new Date(notif.fechaFin))}
       </TableCell>
 
-      <TableCell className="px-2 py-2 text-center">
+      <TableCell className={`px-2 py-2 text-center ${hideBelowClass('md')}`}>
         {getCurrencySymbol(notif.moneda)}
         {notif.precioFinal?.toFixed(2) || '0.00'}
       </TableCell>
 
       <TableCell
-        className="px-2 py-2 text-center tabular-nums"
+        className={`px-2 py-2 text-center tabular-nums ${hideBelowClass('3xl')}`}
         title={renovacionesError ? 'No se pudieron cargar las renovaciones' : 'Renovaciones de esta venta, sin contar el pago inicial'}
       >
         <span className="inline-flex items-center justify-center gap-1.5">
@@ -291,7 +292,7 @@ export function VentasProximasTableRow({
               </Badge>
             ) : null}
             {noticeState?.noContinuar ? (
-              <Badge variant="outline" className="border-red-500/60 bg-red-100 font-normal text-red-700 dark:bg-red-500/20 dark:text-red-300">
+              <Badge variant="outline" className="border-danger-border bg-danger-subtle font-normal text-danger">
                 No desea continuar
               </Badge>
             ) : null}

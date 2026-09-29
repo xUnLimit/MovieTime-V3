@@ -111,8 +111,8 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
         ) : visibleMessages.length === 0 ? (
           <div className="flex min-h-full flex-col items-center justify-center gap-2 px-6 py-12 text-center">
             <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-chat-raised text-chat-quiet"><MessageSquareText className="h-5 w-5" aria-hidden /></span>
-            <p className="text-[14px] font-bold text-chat-ink">Aún no hay mensajes en esta conversación.</p>
-            <p className="max-w-64 text-[13px] text-chat-muted">Los mensajes aparecerán aquí cuando se inicie el chat.</p>
+            <p className="text-sm font-semibold text-chat-ink">Aún no hay mensajes en esta conversación.</p>
+            <p className="max-w-64 text-sm text-chat-muted">Los mensajes aparecerán aquí cuando se inicie el chat.</p>
           </div>
         ) : (
           <ol aria-label="Mensajes" className="flex min-h-full flex-col justify-end pb-2">
@@ -120,14 +120,14 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
               if (item.type === 'day') {
                 return (
                   <li key={item.key} className="sticky top-1 z-10 flex justify-center py-2">
-                    <span className="rounded-lg bg-chat-raised px-3 py-1 text-[11.5px] font-medium text-chat-muted shadow-sm">{item.label}</span>
+                    <span className="rounded-lg bg-chat-raised px-3 py-1 text-xs font-medium text-chat-muted shadow-sm">{item.label}</span>
                   </li>
                 );
               }
               if (item.type === 'unread') {
                 return (
                   <li key={item.key} data-unread-divider className="mx-3 my-3 flex justify-center rounded-lg border border-chat-accent-line bg-chat-accent-soft py-1.5 sm:mx-6">
-                    <span className="text-[11px] font-bold text-chat-accent-strong">
+                    <span className="text-xs font-semibold text-chat-accent-strong">
                       {item.count === 1 ? '1 mensaje sin leer' : `${item.count} mensajes sin leer`}
                     </span>
                   </li>
@@ -148,7 +148,7 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
         >
           <ArrowDown className="h-5 w-5" aria-hidden />
           {unseen > 0 ? (
-            <span className="absolute -right-1 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chat-accent px-1 text-[10px] font-extrabold text-chat-accent-ink">
+            <span className="absolute -right-1 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chat-accent px-1 text-xs font-semibold text-chat-accent-ink">
               {unseen}
             </span>
           ) : null}

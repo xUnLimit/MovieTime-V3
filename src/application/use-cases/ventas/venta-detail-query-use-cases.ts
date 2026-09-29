@@ -16,9 +16,9 @@ export function getEstadoDetalle(venta: VentaDoc | null) {
   const estadoBadgeClass =
     venta?.estado === 'inactivo'
       ? (esCortada
-          ? 'bg-orange-100 text-orange-700 dark:bg-orange-600/20 dark:text-orange-400'
-          : 'bg-red-100 text-red-700 dark:bg-red-600/20 dark:text-red-400')
-      : 'bg-green-100 text-green-700 dark:bg-green-600/20 dark:text-green-400';
+          ? 'bg-warning-subtle text-warning'
+          : 'bg-danger-subtle text-danger')
+      : 'bg-success-subtle text-success';
 
   return { esCortada, estadoBadgeClass, estadoLabel };
 }

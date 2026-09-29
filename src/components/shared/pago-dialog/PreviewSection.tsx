@@ -27,7 +27,7 @@ export function PreviewSection({
           onCheckedChange={(checked) => setValue('notificarWhatsApp', checked as boolean)}
         />
         <div className="flex items-center gap-2 text-sm font-medium">
-          <MessageCircle className="h-4 w-4 text-green-500" />
+          <MessageCircle className="h-4 w-4 text-success" />
           <span>Notificar al cliente por WhatsApp</span>
         </div>
       </div>

@@ -119,7 +119,7 @@ export function TipoGastoDialog({ open, onOpenChange, tipoGasto, onSaved }: Tipo
           <div className="space-y-2">
             <Label htmlFor="nombre">Nombre</Label>
             <Input id="nombre" {...register('nombre')} placeholder="Ej: Internet, transporte, nómina" />
-            {errors.nombre && <p className="text-sm text-red-500">{errors.nombre.message}</p>}
+            {errors.nombre && <p className="text-sm text-danger">{errors.nombre.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -130,7 +130,7 @@ export function TipoGastoDialog({ open, onOpenChange, tipoGasto, onSaved }: Tipo
               placeholder="Detalle opcional para identificar el tipo de gasto"
               rows={3}
             />
-            {errors.descripcion && <p className="text-sm text-red-500">{errors.descripcion.message}</p>}
+            {errors.descripcion && <p className="text-sm text-danger">{errors.descripcion.message}</p>}
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-3">

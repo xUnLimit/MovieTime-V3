@@ -3,11 +3,11 @@ import { es } from "date-fns/locale";
 import { Eye } from "lucide-react";
 
 import type { Column } from "@/components/shared/DataTable";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import type { Tone } from "@/components/shared/tone";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  activityActionColors,
   getActivityDisplayConfig,
   isCorteActivityLog,
 } from "@/platform/utils/activityDisplayHelpers";
@@ -21,26 +21,18 @@ interface LogTimelineColumnsParams {
   onOpenCambios: (log: ActivityLog) => void;
 }
 
-function getActionBadgeStyle(item: ActivityLog) {
-  if (isCorteActivityLog(item)) {
-    return "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30";
-  }
+const ACTION_TONES: Record<string, Tone> = {
+  creacion: "success",
+  actualizacion: "info",
+  corte: "warning",
+  eliminacion: "danger",
+  renovacion: "brand",
+  reembolso: "success",
+};
 
-  const styles: Record<string, string> = {
-    creacion:
-      "bg-green-100 text-green-700 border-green-300 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30",
-    actualizacion:
-      "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30",
-    corte:
-      "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30",
-    eliminacion:
-      "bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30",
-    renovacion:
-      "bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30",
-    reembolso:
-      "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30",
-  };
-  return styles[item.accion] ?? activityActionColors[item.accion] ?? "";
+function getActionTone(item: ActivityLog): Tone {
+  if (isCorteActivityLog(item)) return "warning";
+  return ACTION_TONES[item.accion] ?? "neutral";
 }
 
 function getActionLabel(item: ActivityLog) {
@@ -82,20 +74,20 @@ export function createLogTimelineColumns({
   return [
     {
       key: "checkbox",
+      hideBelow: "sm",
       header: "",
-      width: "40px",
       headerRender: () => (
         <Checkbox
           checked={isAllSelected}
           onCheckedChange={toggleSelectAll}
-          className="border-purple-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+          className="border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary/30"
         />
       ),
       render: (item) => (
         <Checkbox
           checked={selectedLogs.has(item.id)}
           onCheckedChange={() => toggleSelection(item.id)}
-          className="border-purple-500 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
+          className="border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary/30"
         />
       ),
     },
@@ -103,7 +95,6 @@ export function createLogTimelineColumns({
       key: "timestamp",
       header: "Fecha",
       sortable: true,
-      width: "170px",
       render: (item) => {
         const formattedTimestamp = format(
           new Date(item.timestamp),
@@ -120,10 +111,10 @@ export function createLogTimelineColumns({
     },
     {
       key: "usuarioEmail",
+      hideBelow: "lg",
       header: "Tercero",
       sortable: true,
       align: "center",
-      width: "180px",
       render: (item) => (
         <div className="truncate text-sm" title={item.usuarioEmail}>
           {item.usuarioEmail}
@@ -135,28 +126,25 @@ export function createLogTimelineColumns({
       header: "Acción",
       sortable: true,
       align: "center",
-      width: "130px",
       render: (item) => (
-        <Badge variant="outline" className={getActionBadgeStyle(item)}>
-          {getActionLabel(item)}
-        </Badge>
+        <StatusBadge tone={getActionTone(item)}>{getActionLabel(item)}</StatusBadge>
       ),
     },
     {
       key: "entidad",
+      hideBelow: "xl",
       header: "Entidad",
       sortable: true,
       align: "center",
-      width: "120px",
       render: (item) => (
         <div className="text-sm">{getEntityLabel(item.entidad)}</div>
       ),
     },
     {
       key: "detalles",
+      hideBelow: "md",
       header: "Detalles",
       align: "left",
-      width: "340px",
       render: (item) => {
         const { icon: Icon, color, message } = getActivityDisplayConfig(item);
         const [bgColor, textColor] = color.split(" ");
@@ -181,7 +169,6 @@ export function createLogTimelineColumns({
       key: "cambios",
       header: "Cambios",
       align: "center",
-      width: "110px",
       render: (item) => {
         const cambiosCount = item.cambios?.length ?? 0;
         const hasMetadata =
@@ -193,7 +180,7 @@ export function createLogTimelineColumns({
                 variant="ghost"
                 size="xs"
                 onClick={() => onOpenCambios(item)}
-                className="text-xs font-medium text-purple-600 transition-colors hover:bg-purple-500/10 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                className="text-xs font-medium text-primary transition-colors hover:bg-primary/15 hover:text-primary"
               >
                 <Eye className="h-3 w-3" />
                 {cambiosCount > 0 ? `Ver (${cambiosCount})` : "Metadata"}

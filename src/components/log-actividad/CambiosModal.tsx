@@ -21,8 +21,8 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios, metad
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg font-medium text-foreground">
-            Cambios en <span className="text-purple-500 font-semibold">{entidadNombre}</span>
+          <DialogTitle className="text-base font-medium text-foreground">
+            Cambios en <span className="text-primary font-semibold">{entidadNombre}</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
             Detalle de los cambios registrados para esta actividad.
@@ -33,11 +33,11 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios, metad
           {cambios.map((cambio, idx) => (
             <div
               key={idx}
-              className="group relative bg-card border border-border/50 rounded-lg p-4 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all duration-200"
+              className="group relative bg-card border border-border/50 rounded-lg p-4 hover:border-primary/30 hover:bg-primary/15 transition-all duration-200"
             >
               {/* Campo Label minimalista */}
               <div className="mb-3">
-                <span className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                <span className="text-xs font-medium text-primary uppercase tracking-wider">
                   {cambio.campo}
                 </span>
               </div>
@@ -47,11 +47,11 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios, metad
                 {/* Valor Anterior */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Anterior</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-danger"></div>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Anterior</span>
                   </div>
-                  <div className="bg-red-500/5 border border-red-500/20 rounded-md px-3 py-2">
-                    <p className="text-sm text-red-700 dark:text-red-300 truncate" title={formatCambioValue(cambio.anterior, cambio.tipo, cambio.campoKey)}>
+                  <div className="bg-danger-subtle border border-danger-border rounded-md px-3 py-2">
+                    <p className="text-sm text-danger truncate" title={formatCambioValue(cambio.anterior, cambio.tipo, cambio.campoKey)}>
                       {formatCambioValue(cambio.anterior, cambio.tipo, cambio.campoKey)}
                     </p>
                   </div>
@@ -65,11 +65,11 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios, metad
                 {/* Valor Nuevo */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Actual</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-success"></div>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Actual</span>
                   </div>
-                  <div className="bg-green-500/5 border border-green-500/20 rounded-md px-3 py-2">
-                    <p className="text-sm text-green-700 dark:text-green-300 truncate" title={formatCambioValue(cambio.nuevo, cambio.tipo, cambio.campoKey)}>
+                  <div className="bg-success-subtle border border-success-border rounded-md px-3 py-2">
+                    <p className="text-sm text-success truncate" title={formatCambioValue(cambio.nuevo, cambio.tipo, cambio.campoKey)}>
                       {formatCambioValue(cambio.nuevo, cambio.tipo, cambio.campoKey)}
                     </p>
                   </div>
@@ -88,7 +88,7 @@ export function CambiosModal({ open, onOpenChange, entidadNombre, cambios, metad
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {metadataEntries.map(([key, value]) => (
                   <div key={key} className="rounded-md border bg-card px-3 py-2">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {formatMetadataKey(key)}
                     </p>
                     <p className="mt-1 truncate text-sm text-foreground" title={formatMetadataValue(value)}>

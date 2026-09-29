@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: state.replace }),
   useSearchParams: () => ({ get: (key: string) => (key === 'wa' ? state.wa : null) }),
+  usePathname: () => '/chats',
 }));
 vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useWhatsAppConversations: () => ({ data: state.conversations, isLoading: state.isLoading }),

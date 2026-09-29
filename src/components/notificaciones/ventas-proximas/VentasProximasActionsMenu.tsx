@@ -55,28 +55,28 @@ export function VentasProximasActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onNotificar(notification)}>
-          <MessageSquare className="mr-2 h-4 w-4 text-green-600" />
-          <span className="text-green-600">Notificar</span>
+          <MessageSquare className="mr-2 h-4 w-4 text-success" />
+          <span className="text-success">Notificar</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onRenovar(notification)}>
-          <RefreshCw className="mr-2 h-4 w-4 text-purple-600" />
-          <span className="text-purple-600">Renovar</span>
+          <RefreshCw className="mr-2 h-4 w-4 text-primary" />
+          <span className="text-primary">Renovar</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onSeguimiento(notification)}>
-          <FollowUpIcon className="mr-2 h-4 w-4 text-orange-600" />
-          <span className="text-orange-600">
+          <FollowUpIcon className="mr-2 h-4 w-4 text-warning" />
+          <span className="text-warning">
             {notification.resaltada ? 'Quitar seguimiento' : 'Seguimiento'}
           </span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onPaymentPromise(notification)}>
-          <CalendarClock className="mr-2 h-4 w-4 text-blue-600" />
-          <span className="text-blue-600">
+          <CalendarClock className="mr-2 h-4 w-4 text-info" />
+          <span className="text-info">
             {notification.fechaPrometidaPago ? 'Editar promesa' : 'Promesa de pago'}
           </span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onCortar(notification)}>
-          <Scissors className="mr-2 h-4 w-4 text-red-600" />
-          <span className="text-red-600">Cortar</span>
+          <Scissors className="mr-2 h-4 w-4 text-danger" />
+          <span className="text-danger">Cortar</span>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link prefetch={false} href={`/terceros/${notification.clienteId}`}>

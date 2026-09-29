@@ -82,7 +82,7 @@ export function CategoriaPlansPanel({
                       variant="ghost"
                       size="icon"
                       onClick={() => onDeletePlan(plan.id)}
-                      className="h-8 w-8 text-red-500 hover:text-red-600"
+                      className="h-8 w-8 text-danger hover:text-danger"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

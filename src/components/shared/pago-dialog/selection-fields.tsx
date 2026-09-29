@@ -62,7 +62,7 @@ export function PeriodoField({
         </DropdownMenuContent>
       </DropdownMenu>
       {errors.periodoRenovacion && (
-        <p className="text-sm text-red-500">{errors.periodoRenovacion.message}</p>
+        <p className="text-sm text-danger">{errors.periodoRenovacion.message}</p>
       )}
     </div>
   );
@@ -120,7 +120,7 @@ export function MetodoPagoField({
         </DropdownMenuContent>
       </DropdownMenu>
       {errors.metodoPagoId && (
-        <p className="text-sm text-red-500">{errors.metodoPagoId.message}</p>
+        <p className="text-sm text-danger">{errors.metodoPagoId.message}</p>
       )}
     </div>
   );

@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 import { LogTimeline } from '@/components/log-actividad/LogTimeline';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
@@ -23,7 +24,7 @@ function LogActividadPageContent() {
   const [accionFilter, setAccionFilter] = useState('all');
   const [entidadFilter, setEntidadFilter] = useState('all');
   const [usuarioFilter, setTerceroFilter] = useState('all');
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize());
   const user = useAuthStore((state) => state.user);
   const canDeleteLogs = user?.role === 'admin';
 
@@ -104,12 +105,9 @@ function LogActividadPageContent() {
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-hidden">
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Log de Actividad</h1>
-        <p className="text-sm text-muted-foreground">
-          <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Log de Actividad</span>
-        </p>
-      </div>
+      <PageHeader
+        title="Log de Actividad"
+      />
 
       <LogTimeline
         logs={filteredLogs}
@@ -137,7 +135,7 @@ function LogActividadPageContent() {
         onDeleteByDays={handleDeleteByDays}
         onDeleteAll={handleDeleteAll}
         pageSize={pageSize}
-        onPageSizeChange={(size) => { setPageSize(size); refresh(); }}
+        onPageSizeChange={setPageSize}
       />
     </div>
   );

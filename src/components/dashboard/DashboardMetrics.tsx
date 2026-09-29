@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { MetricCard } from '@/components/shared/MetricCard';
+import { MetricGrid } from '@/components/shared/MetricGrid';
 import { TrendingUp, TrendingDown, Wallet, CalendarClock, CalendarRange, RefreshCw } from 'lucide-react';
 import { usePronosticoFinanciero } from '@/hooks/use-pronostico-financiero';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
@@ -38,7 +39,7 @@ export function DashboardMetrics() {
 
   if (error) {
     return (
-      <p className="text-sm text-red-500">
+      <p role="alert" className="text-sm text-danger">
         Error al cargar métricas del dashboard. Intenta recargar la página.
       </p>
     );
@@ -47,24 +48,23 @@ export function DashboardMetrics() {
   return (
     <div className="space-y-3">
       {Boolean(forecastError) && (
-        <div className="flex items-center justify-between gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-lg border border-warning-border bg-warning-subtle px-3 py-2">
           <p className="text-sm text-muted-foreground">
             Las métricas esperadas no están disponibles hasta obtener tasas de cambio válidas.
           </p>
           <Button type="button" size="sm" variant="outline" onClick={retryForecast}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw />
             Reintentar
           </Button>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+      <MetricGrid>
       <MetricCard
         title="Gastos Totales"
         value={isLoading ? '...' : formatUSD(gastosTotal)}
         description="Suma de todos los gastos registrados"
         icon={TrendingDown}
-        iconColor="text-red-500"
-        borderColor="border-l-red-500"
+        tone="danger"
         loading={isLoading}
       />
       <MetricCard
@@ -72,18 +72,16 @@ export function DashboardMetrics() {
         value={isLoading ? '...' : formatUSD(ingresosTotal)}
         description="Suma de todas las ventas"
         icon={TrendingUp}
-        iconColor="text-blue-500"
-        borderColor="border-l-blue-500"
+        tone="neutral"
         loading={isLoading}
       />
       <MetricCard
         title="Ganancias Totales"
         value={isLoading ? '...' : formatUSD(gananciasTotal)}
-        valueColor={isLoading ? undefined : gananciasTotal >= 0 ? 'text-green-500' : 'text-red-500'}
+        valueTone={isLoading ? undefined : gananciasTotal >= 0 ? 'success' : 'danger'}
         description="Ingresos totales menos gastos totales"
         icon={Wallet}
-        iconColor="text-green-500"
-        borderColor="border-l-green-500"
+        tone="success"
         loading={isLoading}
       />
       <MetricCard
@@ -91,8 +89,7 @@ export function DashboardMetrics() {
         value={forecastError ? 'No disponible' : isLoadingMensual ? '...' : (gastoMensual !== null ? formatUSD(gastoMensual) : '$0.00')}
         description="Gastos a pagar este mes"
         icon={CalendarClock}
-        iconColor="text-purple-500"
-        borderColor="border-l-purple-500"
+        tone="neutral"
         loading={isLoadingMensual}
       />
       <MetricCard
@@ -100,11 +97,10 @@ export function DashboardMetrics() {
         value={forecastError ? 'No disponible' : isLoadingMensual ? '...' : (ingresoMensual !== null ? formatUSD(ingresoMensual) : '$0.00')}
         description="Ingresos a recibir este mes"
         icon={CalendarRange}
-        iconColor="text-orange-500"
-        borderColor="border-l-orange-500"
+        tone="neutral"
         loading={isLoadingMensual}
       />
-      </div>
+      </MetricGrid>
     </div>
   );
 }

@@ -123,7 +123,7 @@ export function VentaCreateServiceProfileFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {itemErrors.perfil ? (
-          <p className="text-sm text-red-500">{itemErrors.perfil}</p>
+          <p className="text-sm text-danger">{itemErrors.perfil}</p>
         ) : null}
       </div>
     </div>

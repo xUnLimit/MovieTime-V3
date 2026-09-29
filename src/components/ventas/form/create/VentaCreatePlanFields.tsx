@@ -77,7 +77,7 @@ export function VentaCreatePlanFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {itemErrors.categoria ? (
-          <p className="text-sm text-red-500">{itemErrors.categoria}</p>
+          <p className="text-sm text-danger">{itemErrors.categoria}</p>
         ) : null}
       </div>
 
@@ -149,7 +149,7 @@ export function VentaCreatePlanFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {itemErrors.plan ? (
-          <p className="text-sm text-red-500">{itemErrors.plan}</p>
+          <p className="text-sm text-danger">{itemErrors.plan}</p>
         ) : null}
       </div>
     </div>

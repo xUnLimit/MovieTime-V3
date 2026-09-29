@@ -225,6 +225,6 @@ function ExecutiveBlocks({
 
 function getStatusClassName(tone: string) {
   return tone === "warning" || tone === "pending"
-    ? "font-medium text-amber-600"
+    ? "font-medium text-warning"
     : "font-medium text-muted-foreground";
 }

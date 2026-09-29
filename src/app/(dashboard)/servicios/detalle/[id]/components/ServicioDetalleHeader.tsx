@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ArrowLeft, Pencil, RefreshCw, Trash2 } from 'lucide-react';
+import { Pencil, RefreshCw, Trash2 } from 'lucide-react';
 
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 
 import type { CategoriaDetalle, ServicioDetalle } from './types';
@@ -17,54 +18,35 @@ interface ServicioDetalleHeaderProps {
 export function ServicioDetalleHeader({
   categoria,
   id,
-  returnToServicios,
   servicio,
   onDelete,
   onRenovar,
 }: ServicioDetalleHeaderProps) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <Link prefetch={false} href={returnToServicios}>
-          <Button variant="outline" size="icon" className="h-8 w-8 flex-shrink-0">
-            <ArrowLeft className="h-4 w-4" />
+    <PageHeader
+      title={`Servicio: ${servicio.nombre}`}
+      trail={[
+        { label: categoria?.nombre || 'Categoría', href: `/servicios/${servicio.categoriaId}` },
+        { label: 'Detalles' },
+      ]}
+      actions={
+        <>
+          <Button asChild variant="outline">
+            <Link prefetch={false} href={`/servicios/${id}/editar?from=${encodeURIComponent(`/servicios/detalle/${id}`)}`}>
+              <Pencil />
+              Editar
+            </Link>
           </Button>
-        </Link>
-        <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Servicio: {servicio.nombre}</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>
-            {' / '}
-            <Link prefetch={false} href="/servicios" className="hover:text-foreground transition-colors">
-              Servicios
-            </Link>
-            {' / '}
-            <Link prefetch={false} href={`/servicios/${servicio.categoriaId}`} className="hover:text-foreground transition-colors">
-              {categoria?.nombre || 'Categoría'}
-            </Link>
-            {' / '}
-            <span className="text-foreground">Detalles</span>
-          </p>
-        </div>
-      </div>
-      <div className="flex shrink-0 flex-wrap justify-end gap-2">
-        <Button variant="default" size="sm" onClick={onRenovar} className="bg-purple-600 hover:bg-purple-700">
-          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-          Renovar
-        </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link prefetch={false} href={`/servicios/${id}/editar?from=${encodeURIComponent(`/servicios/detalle/${id}`)}`}>
-            <Pencil className="h-3.5 w-3.5 mr-1.5" />
-            Editar
-          </Link>
-        </Button>
-        <Button variant="destructive" size="sm" onClick={onDelete}>
-          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-          Eliminar
-        </Button>
-      </div>
-    </div>
+          <Button variant="destructive" onClick={onDelete}>
+            <Trash2 />
+            Eliminar
+          </Button>
+          <Button onClick={onRenovar}>
+            <RefreshCw />
+            Renovar
+          </Button>
+        </>
+      }
+    />
   );
 }

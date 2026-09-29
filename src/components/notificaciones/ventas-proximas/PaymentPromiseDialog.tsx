@@ -84,8 +84,8 @@ export function PaymentPromiseDialog({
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
-              <CalendarClock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-info-subtle">
+              <CalendarClock className="h-4 w-4 text-info" />
             </span>
             {hasPromise ? 'Editar promesa' : 'Promesa de pago'}
           </DialogTitle>
@@ -112,7 +112,7 @@ export function PaymentPromiseDialog({
                   variant="outline"
                   className="w-full justify-start font-normal"
                 >
-                  <CalendarClock className="mr-2 h-4 w-4 text-blue-600" />
+                  <CalendarClock className="mr-2 h-4 w-4 text-info" />
                   {format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
                 </Button>
               </PopoverTrigger>
@@ -140,7 +140,7 @@ export function PaymentPromiseDialog({
             <Button
               type="button"
               variant="outline"
-              className="border-red-500/40 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+              className="border-danger-border text-danger hover:bg-danger/15 hover:text-danger"
               disabled={isSubmitting}
               onClick={handleRemove}
             >
@@ -162,7 +162,7 @@ export function PaymentPromiseDialog({
             <Button
               type="button"
               disabled={isSubmitting || !selectedDateIsValid}
-              className="bg-blue-600 text-white hover:bg-blue-700"
+              className="bg-info text-info-foreground hover:bg-info/90"
               onClick={handleSave}
             >
               {isSubmitting ? 'Guardando...' : hasPromise ? 'Guardar cambios' : 'Guardar promesa'}

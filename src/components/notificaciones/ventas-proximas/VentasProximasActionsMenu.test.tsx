@@ -51,7 +51,7 @@ describe('VentasProximasActionsMenu', () => {
       'Ver Servicio',
     ]);
     const cutItem = screen.getByRole('menuitem', { name: 'Cortar' });
-    expect(cutItem.querySelector('span')?.className).toContain('text-red-600');
+    expect(cutItem.querySelector('span')?.className).toContain('text-danger');
   });
 
   it('offers to remove an existing follow-up and keeps promise editing in place', async () => {

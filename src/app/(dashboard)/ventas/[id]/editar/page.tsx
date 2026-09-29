@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { VentasEditForm, type VentaEditData } from '@/components/ventas/VentasEditForm';
 import { queryKeys } from '@/platform/query-keys';
 import { getVentaConUltimoPagoUseCase } from '@/application/use-cases/ventas/venta-current-payment-use-cases';
@@ -61,7 +60,7 @@ function EditarVentaPageContent() {
   if (!id) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Venta no encontrada</h1>
+        <PageHeader title="Venta no encontrada" trail={[{ label: 'Editar' }]} />
         <p className="text-sm text-muted-foreground">El ID de la venta no es valido.</p>
         <Link prefetch={false} href="/ventas" className="text-primary hover:underline">
           Volver a Ventas
@@ -72,32 +71,10 @@ function EditarVentaPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Link prefetch={false} href={`/ventas/${id}`}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Venta</h1>
-          </div>
-          <p className="text-sm text-muted-foreground ml-10">
-            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href="/ventas" className="hover:text-foreground transition-colors">
-              Ventas
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href={`/ventas/${id}`} className="hover:text-foreground transition-colors">
-              Detalle
-            </Link>{' '}
-            / <span className="text-foreground">Editar</span>
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Editar Venta"
+        trail={[{ label: 'Detalle', href: `/ventas/${id}` }, { label: 'Editar' }]}
+      />
 
       <div className="bg-card border rounded-lg p-6">
         {isLoading ? (

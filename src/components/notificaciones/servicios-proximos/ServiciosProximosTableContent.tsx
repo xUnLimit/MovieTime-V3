@@ -1,3 +1,4 @@
+import { hideBelowClass } from '@/components/shared/DataTable';
 import {
   Table,
   TableBody,
@@ -36,8 +37,7 @@ export function ServiciosProximosTableContent({
   onAcciones,
 }: ServiciosProximosTableContentProps) {
   return (
-    <div className="notification-table-scroll-shell rounded-md border">
-      <Table className="table-scroll-content min-w-[1120px] lg:min-w-full">
+    <Table>
           <TableHeader>
             <TableRow className="border-b hover:bg-muted/50">
               <TableHead className="h-10 w-[56px] px-2 text-center text-muted-foreground">
@@ -46,19 +46,19 @@ export function ServiciosProximosTableContent({
               <TableHead className="h-10 min-w-[130px] px-2 text-center text-muted-foreground">
                 Categoría
               </TableHead>
-              <TableHead className="h-10 min-w-[200px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[200px] px-2 text-center text-muted-foreground ${hideBelowClass('xl')}`}>
                 Email
               </TableHead>
-              <TableHead className="h-10 min-w-[160px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[160px] px-2 text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
                 Contraseña
               </TableHead>
-              <TableHead className="h-10 min-w-[150px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[150px] px-2 text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
                 Método de Pago
               </TableHead>
-              <TableHead className="h-10 min-w-[145px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[145px] px-2 text-center text-muted-foreground ${hideBelowClass('lg')}`}>
                 Fecha de Vencimiento
               </TableHead>
-              <TableHead className="h-10 min-w-[80px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[80px] px-2 text-center text-muted-foreground ${hideBelowClass('md')}`}>
                 Monto
               </TableHead>
               <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
@@ -86,6 +86,5 @@ export function ServiciosProximosTableContent({
             ))}
           </TableBody>
         </Table>
-    </div>
   );
 }

@@ -116,7 +116,7 @@ export function VentaClientePagoFields({
                       {usuario.telefono ? (
                         <span className="text-xs">
                           <span className="text-foreground"> - </span>
-                          <span className="text-green-400">
+                          <span className="text-success">
                             {usuario.telefono}
                           </span>
                         </span>
@@ -136,7 +136,7 @@ export function VentaClientePagoFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {clienteError ? (
-          <p className="text-sm text-red-500">{clienteError}</p>
+          <p className="text-sm text-danger">{clienteError}</p>
         ) : null}
       </div>
 
@@ -170,7 +170,7 @@ export function VentaClientePagoFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {metodoPagoError ? (
-          <p className="text-sm text-red-500">{metodoPagoError}</p>
+          <p className="text-sm text-danger">{metodoPagoError}</p>
         ) : null}
       </div>
     </div>

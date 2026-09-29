@@ -21,16 +21,16 @@ export function ServicioProfilesFooter({
     <div className="mt-2 flex min-w-0 flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between">
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-600"></div>
+          <div className="w-3 h-3 rounded-full bg-success"></div>
           <span className="text-muted-foreground">En uso</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+          <div className="w-3 h-3 rounded-full bg-info"></div>
           <span className="text-muted-foreground">Disponible</span>
         </div>
         {!isServicioActivo && (
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gray-600"></div>
+            <div className="w-3 h-3 rounded-full bg-muted"></div>
             <span className="text-muted-foreground">Inactivo</span>
           </div>
         )}

@@ -1,6 +1,7 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge as ToneBadge } from '@/components/shared/StatusBadge';
+import type { Tone } from '@/components/shared/tone';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { suggestButtonActions } from '@/modules/messaging/button-actions';
@@ -25,14 +26,14 @@ type ApiTabProps = {
   onChange: (changes: Partial<TemplateFields>) => void;
 };
 
-function statusVariant(status: string) {
-  if (status === 'APPROVED') return 'default' as const;
-  if (status === 'REJECTED') return 'destructive' as const;
-  return 'secondary' as const;
+function statusTone(status: string): Tone {
+  if (status === 'APPROVED') return 'success';
+  if (status === 'REJECTED') return 'danger';
+  return 'warning';
 }
 
 function StatusBadge({ status }: { status: string }) {
-  return <Badge variant={statusVariant(status)}>{metaStatusLabel(status)}</Badge>;
+  return <ToneBadge tone={statusTone(status)}>{metaStatusLabel(status)}</ToneBadge>;
 }
 
 export function ApiTab({ templates, fields, mapError, isLoading, onChange }: ApiTabProps) {
@@ -76,7 +77,7 @@ export function ApiTab({ templates, fields, mapError, isLoading, onChange }: Api
             ))}
           </SelectContent>
         </Select>
-        {orphan ? <p role="alert" className="text-xs text-destructive">Esta plantilla ya no existe en Meta. Elige otra o quita el vínculo.</p> : null}
+        {orphan ? <p role="alert" className="text-xs text-danger">Esta plantilla ya no existe en Meta. Elige otra o quita el vínculo.</p> : null}
       </div>
 
       {linked ? (
@@ -88,7 +89,7 @@ export function ApiTab({ templates, fields, mapError, isLoading, onChange }: Api
             <span>{linked.paramCount} {linked.paramCount === 1 ? 'variable' : 'variables'}</span>
           </div>
           {linked.status !== 'APPROVED' ? (
-            <p className="text-xs text-amber-500">Solo las plantillas aprobadas se pueden enviar por la API.</p>
+            <p className="text-xs text-warning">Solo las plantillas aprobadas se pueden enviar por la API.</p>
           ) : null}
           <div className="space-y-1 rounded-md border bg-muted/20 p-3 text-sm" data-testid="meta-body">
             {linked.header ? <p className="font-semibold">{linked.header}</p> : null}

@@ -138,7 +138,7 @@ export function VentaEditServiceProfileFields({
           </DropdownMenuContent>
         </DropdownMenu>
         {errors.perfilNumero ? (
-          <p className="text-sm text-red-500">
+          <p className="text-sm text-danger">
             {errors.perfilNumero.message}
           </p>
         ) : null}

@@ -66,7 +66,7 @@ export function AdditionalInfoSection({
           }}
         />
         {errors.titular && (
-          <p className="text-sm text-red-500">{errors.titular.message}</p>
+          <p className="text-sm text-danger">{errors.titular.message}</p>
         )}
       </div>
 
@@ -100,7 +100,7 @@ export function AdditionalInfoSection({
               </DropdownMenuContent>
             </DropdownMenu>
             {errors.tipoCuenta && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-danger">
                 {errors.tipoCuenta.message}
               </p>
             )}
@@ -114,7 +114,7 @@ export function AdditionalInfoSection({
               placeholder="Ingrese el identificador"
             />
             {errors.identificador && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-danger">
                 {errors.identificador.message}
               </p>
             )}
@@ -134,7 +134,7 @@ export function AdditionalInfoSection({
                 placeholder="Ingrese el email"
               />
               {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
+                <p className="text-sm text-danger">{errors.email.message}</p>
               )}
             </div>
 
@@ -147,7 +147,7 @@ export function AdditionalInfoSection({
                 placeholder="Ingrese la contraseña"
               />
               {errors.contrasena && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-danger">
                   {errors.contrasena.message}
                 </p>
               )}
@@ -174,7 +174,7 @@ export function AdditionalInfoSection({
                 }}
               />
               {errors.numeroTarjeta && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-danger">
                   {errors.numeroTarjeta.message}
                 </p>
               )}
@@ -198,7 +198,7 @@ export function AdditionalInfoSection({
                 }}
               />
               {errors.fechaExpiracion && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-danger">
                   {errors.fechaExpiracion.message}
                 </p>
               )}

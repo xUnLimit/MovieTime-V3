@@ -73,11 +73,11 @@ describe('ServiciosProximosTableRow', () => {
     expect(
       screen.getByRole('menuitem', { name: 'Seguimiento' }).querySelector('span')
         ?.className,
-    ).toContain('text-orange-600');
+    ).toContain('text-warning');
     expect(
       screen.getByRole('menuitem', { name: 'Inactivar' }).querySelector('span')
         ?.className,
-    ).toContain('text-red-600');
+    ).toContain('text-danger');
   });
 
   it('permite quitar el seguimiento directamente desde el menú', async () => {

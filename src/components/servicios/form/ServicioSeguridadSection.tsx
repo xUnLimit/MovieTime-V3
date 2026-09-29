@@ -18,7 +18,7 @@ export function ServicioSeguridadSection({
           placeholder="correo@ejemplo.com"
         />
         {errors.correo && (
-          <p className="text-sm text-red-500">{errors.correo.message}</p>
+          <p className="text-sm text-danger">{errors.correo.message}</p>
         )}
       </div>
 
@@ -31,7 +31,7 @@ export function ServicioSeguridadSection({
           placeholder="Ingrese la contraseña"
         />
         {errors.contrasena && (
-          <p className="text-sm text-red-500">{errors.contrasena.message}</p>
+          <p className="text-sm text-danger">{errors.contrasena.message}</p>
         )}
       </div>
     </div>

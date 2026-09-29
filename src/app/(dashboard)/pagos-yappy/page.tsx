@@ -2,16 +2,33 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { CheckCircle2, Clock, Inbox, Mail, RefreshCw, XCircle } from 'lucide-react';
+
+import { EmptyState } from '@/components/shared/EmptyState';
+import { MetricCard } from '@/components/shared/MetricCard';
+import { MetricGrid } from '@/components/shared/MetricGrid';
+import { PageHeader } from '@/components/shared/PageHeader';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import type { Tone } from '@/components/shared/tone';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useYappyActions, useYappyCandidateVentas, useYappyConnections, useYappyPayments, useYappyVentaSearch } from '@/hooks/use-yappy-payments';
 import type { YappyCandidateVenta, YappyPayment } from '@/application/use-cases/yappy-use-cases';
+import { cn } from '@/platform/utils';
 import { useAuthStore } from '@/store/authStore';
 
 const labels: Record<string, string> = {
   match_unico: 'Coincidencia única', ambiguo: 'Varias coincidencias', sin_match: 'Sin coincidencia',
   registrado: 'Registrado', descartado: 'Descartado',
 };
+const tones: Record<string, Tone> = {
+  match_unico: 'success', ambiguo: 'warning', sin_match: 'danger', registrado: 'info', descartado: 'neutral',
+};
 const filters = ['todos', 'match_unico', 'ambiguo', 'sin_match', 'registrado', 'descartado'] as const;
+const CLOSED_STATUSES = ['registrado', 'descartado'];
 const money = new Intl.NumberFormat('es-PA', { style: 'currency', currency: 'USD' });
 const panamaDate = new Intl.DateTimeFormat('es-PA', { timeZone: 'America/Panama', dateStyle: 'medium', timeStyle: 'short' });
 function maskMailbox(mailbox: string): string {
@@ -20,65 +37,109 @@ function maskMailbox(mailbox: string): string {
 }
 
 function Candidate({ venta, selected, onSelect, busy }: { venta: YappyCandidateVenta; selected: boolean; onSelect: () => void; busy: boolean }) {
-  return <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm">
-    <div>
-      <p className="font-medium">{venta.cliente || 'Cliente sin nombre'} · {venta.servicio || 'Servicio sin nombre'}</p>
-      <p className="text-muted-foreground">{venta.perfil} · Vence {venta.fechaFin} · {money.format(venta.precio)}</p>
+  return (
+    <div className={cn('flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm', selected ? 'border-primary bg-primary/5' : 'bg-muted/30')}>
+      <div className="min-w-0">
+        <p className="font-medium">{venta.cliente || 'Cliente sin nombre'} · {venta.servicio || 'Servicio sin nombre'}</p>
+        <p className="text-xs text-muted-foreground">{venta.perfil} · Vence {venta.fechaFin} · {money.format(venta.precio)}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" asChild><Link href={`/ventas/${venta.id}`}>Renovar en la venta</Link></Button>
+        <Button size="sm" variant={selected ? 'secondary' : 'default'} onClick={onSelect} disabled={busy || selected}>{selected ? 'Seleccionada' : 'Seleccionar'}</Button>
+      </div>
     </div>
-    <div className="flex flex-wrap items-center gap-2">
-      <Button variant="outline" size="sm" asChild><Link href={`/ventas/${venta.id}`}>Renovar en la venta</Link></Button>
-      <Button size="sm" onClick={onSelect} disabled={busy || selected}>{selected ? 'Seleccionada' : 'Seleccionar'}</Button>
+  );
+}
+
+function ManualSearch({ payment, selected, onSelect, busy }: { payment: YappyPayment; selected: string; onSelect: (id: string) => void; busy: boolean }) {
+  const [search, setSearch] = useState('');
+  const manualQuery = useYappyVentaSearch(search, true);
+  const manual = manualQuery.data ?? [];
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`venta-${payment.id}`}>Buscar venta para conciliación manual</Label>
+      <Input id={`venta-${payment.id}`} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cliente, servicio o ID de venta" />
+      {manual.map((venta) => <Candidate key={venta.id} venta={venta} selected={selected === venta.id} onSelect={() => onSelect(venta.id)} busy={busy} />)}
+      {manualQuery.isFetching && <p className="text-sm text-muted-foreground">Buscando ventas…</p>}
+      {manualQuery.isError && <p role="alert" className="text-sm text-danger">No se pudo buscar ventas.</p>}
+      {search.trim().length >= 2 && !manualQuery.isFetching && !manualQuery.isError && manual.length === 0 && <p className="text-sm text-muted-foreground">No hay ventas con ese criterio.</p>}
     </div>
-  </div>;
+  );
 }
 
 function PaymentCard({ payment, ventas }: { payment: YappyPayment; ventas: YappyCandidateVenta[] }) {
   const { resolve, dismiss } = useYappyActions();
   const [selected, setSelected] = useState(payment.matchStatus === 'match_unico' ? payment.candidateVentaIds[0] ?? '' : '');
-  const [search, setSearch] = useState('');
-  const manualQuery = useYappyVentaSearch(search, payment.matchStatus === 'sin_match');
   const [note, setNote] = useState('');
   const [showDismiss, setShowDismiss] = useState(false);
-  const open = !['registrado', 'descartado'].includes(payment.matchStatus);
+  const open = !CLOSED_STATUSES.includes(payment.matchStatus);
   const suggested = ventas.filter((venta) => payment.candidateVentaIds.includes(venta.id));
-  const manual = manualQuery.data ?? [];
   const busy = resolve.isPending || dismiss.isPending;
-  return <article className="rounded-xl border bg-card p-4 shadow-sm sm:p-5">
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <p className="text-xl font-semibold">{money.format(payment.amount)}</p>
-        <p className="text-sm text-muted-foreground">{payment.payerNameShort} · ****-{payment.payerPhoneLast4}</p>
+  return (
+    <Card className="gap-0 p-0">
+      <article className="p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xl font-semibold tabular-nums">{money.format(payment.amount)}</p>
+            <p className="text-sm text-muted-foreground">{payment.payerNameShort} · ****-{payment.payerPhoneLast4}</p>
+          </div>
+          <StatusBadge tone={tones[payment.matchStatus] ?? 'neutral'}>{labels[payment.matchStatus] ?? payment.matchStatus}</StatusBadge>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">{panamaDate.format(new Date(payment.paidAt))} · Confirmación {payment.confirmationCode}</p>
+        {open && (
+          <div className="mt-4 space-y-3 border-t pt-4">
+            {suggested.length > 0 && (
+              <div className="space-y-2">
+                <h2 className="text-sm font-semibold">Ventas candidatas</h2>
+                {suggested.map((venta) => <Candidate key={venta.id} venta={venta} selected={selected === venta.id} onSelect={() => setSelected(venta.id)} busy={busy} />)}
+              </div>
+            )}
+            {payment.matchStatus === 'sin_match' && <ManualSearch payment={payment} selected={selected} onSelect={setSelected} busy={busy} />}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" disabled={busy} onClick={() => setShowDismiss((value) => !value)}>Descartar</Button>
+              <Button disabled={!selected || busy} onClick={() => resolve.mutate({ paymentId: payment.id, ventaId: selected })}>Marcar como registrado</Button>
+            </div>
+            {showDismiss && (
+              <div className="space-y-2">
+                <Label htmlFor={`motivo-${payment.id}`}>Motivo para descartar</Label>
+                <Textarea id={`motivo-${payment.id}`} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} rows={2} />
+                <Button variant="destructive" disabled={!note.trim() || busy} onClick={() => dismiss.mutate({ paymentId: payment.id, note })}>Confirmar descarte</Button>
+              </div>
+            )}
+            {(resolve.isError || dismiss.isError) && <p role="alert" className="text-sm text-danger">No se pudo actualizar el pago. Inténtalo de nuevo.</p>}
+          </div>
+        )}
+        {payment.matchStatus === 'registrado' && payment.matchedVentaId && (
+          <Link className="mt-3 inline-block text-sm text-primary underline-offset-4 hover:underline" href={`/ventas/${payment.matchedVentaId}`}>Ver venta registrada</Link>
+        )}
+      </article>
+    </Card>
+  );
+}
+
+function MailboxPanel({ connections, sync }: { connections: ReturnType<typeof useYappyConnections>; sync: ReturnType<typeof useYappyActions>['sync'] }) {
+  const connection = connections.data?.[0];
+  return (
+    <Card className="gap-0 p-4" aria-label="Buzón Gmail">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted text-muted-foreground"><Mail aria-hidden className="size-4" /></div>
+        <div className="min-w-0 flex-1 basis-56">
+          <h2 className="text-sm font-semibold">Buzón Gmail</h2>
+          {connections.isLoading ? <p className="text-xs text-muted-foreground">Cargando buzón…</p> : connection ? (
+            <>
+              <p className="text-sm">{maskMailbox(connection.mailbox)}</p>
+              <p className="text-xs text-muted-foreground">Última sincronización: {connection.lastSyncedAt ? panamaDate.format(new Date(connection.lastSyncedAt)) : 'Pendiente'}</p>
+            </>
+          ) : <p className="text-xs text-muted-foreground">Aún no hay estado del buzón.</p>}
+        </div>
+        {connection && <StatusBadge tone={connection.status === 'configurado' ? 'success' : 'warning'}>{connection.status === 'configurado' ? 'Configurado' : 'Requiere atención'}</StatusBadge>}
       </div>
-      <span className="rounded-full border px-3 py-1 text-xs font-medium">{labels[payment.matchStatus] ?? payment.matchStatus}</span>
-    </div>
-    <p className="mt-3 text-sm">{panamaDate.format(new Date(payment.paidAt))} · Confirmación {payment.confirmationCode}</p>
-    {open && <div className="mt-4 space-y-3">
-      {suggested.length > 0 && <div className="space-y-2"><h2 className="text-sm font-semibold">Ventas candidatas</h2>
-        {suggested.map((venta) => <Candidate key={venta.id} venta={venta} selected={selected === venta.id} onSelect={() => setSelected(venta.id)} busy={busy} />)}
-      </div>}
-      {payment.matchStatus === 'sin_match' && <div className="space-y-2">
-        <label className="block text-sm font-medium" htmlFor={`venta-${payment.id}`}>Buscar venta para conciliación manual</label>
-        <input id={`venta-${payment.id}`} value={search} onChange={(event) => setSearch(event.target.value)}
-          placeholder="Cliente, servicio o ID de venta" className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
-        {manual.map((venta) => <Candidate key={venta.id} venta={venta} selected={selected === venta.id} onSelect={() => setSelected(venta.id)} busy={busy} />)}
-        {manualQuery.isFetching && <p className="text-sm text-muted-foreground">Buscando ventas…</p>}
-        {manualQuery.isError && <p role="alert" className="text-sm text-destructive">No se pudo buscar ventas.</p>}
-        {search.trim().length >= 2 && !manualQuery.isFetching && !manualQuery.isError && manual.length === 0 && <p className="text-sm text-muted-foreground">No hay ventas con ese criterio.</p>}
-      </div>}
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={!selected || busy} onClick={() => resolve.mutate({ paymentId: payment.id, ventaId: selected })}>Marcar como registrado</Button>
-        <Button variant="outline" disabled={busy} onClick={() => setShowDismiss((value) => !value)}>Descartar</Button>
-      </div>
-      {showDismiss && <div className="space-y-2">
-        <label htmlFor={`motivo-${payment.id}`} className="block text-sm font-medium">Motivo para descartar</label>
-        <textarea id={`motivo-${payment.id}`} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm" rows={2} />
-        <Button variant="destructive" disabled={!note.trim() || busy} onClick={() => dismiss.mutate({ paymentId: payment.id, note })}>Confirmar descarte</Button>
-      </div>}
-      {(resolve.isError || dismiss.isError) && <p role="alert" className="text-sm text-destructive">No se pudo actualizar el pago. Inténtalo de nuevo.</p>}
-    </div>}
-    {payment.matchStatus === 'registrado' && payment.matchedVentaId && <Link className="mt-3 inline-block text-sm underline" href={`/ventas/${payment.matchedVentaId}`}>Ver venta registrada</Link>}
-  </article>;
+      {connection?.lastErrorCode === 'auth_failed' && <p role="alert" className="mt-3 text-sm text-danger">Revisa la contraseña de aplicación de Gmail en Vercel.</p>}
+      {(connections.isError || sync.isError) && <p role="alert" className="mt-3 text-sm text-danger">No se pudo cargar o sincronizar el buzón.</p>}
+      {sync.isSuccess && sync.data?.errorCode === null && <p role="status" className="mt-3 text-sm text-success">Sincronización finalizada.</p>}
+      {sync.data?.errorCode === 'sync_error' && <p role="alert" className="mt-3 text-sm text-danger">La sincronización se interrumpió. Inténtalo de nuevo.</p>}
+    </Card>
+  );
 }
 
 function YappyPageContent() {
@@ -86,38 +147,51 @@ function YappyPageContent() {
   const payments = useYappyPayments();
   const connections = useYappyConnections();
   const [filter, setFilter] = useState<string>('todos');
-  const visible = useMemo(() => (payments.data ?? []).filter((payment) => filter === 'todos' || payment.matchStatus === filter), [payments.data, filter]);
+  const all = useMemo(() => payments.data ?? [], [payments.data]);
+  const visible = useMemo(() => all.filter((payment) => filter === 'todos' || payment.matchStatus === filter), [all, filter]);
   const ventas = useYappyCandidateVentas(visible.flatMap((payment) => payment.candidateVentaIds));
   const { sync } = useYappyActions();
   if (user?.role !== 'admin') return <p className="p-6">Esta sección está disponible solo para administradores.</p>;
-  const connection = connections.data?.[0];
-  return <main className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-    <div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Pagos Yappy detectados</h1>
-      <p className="text-sm text-muted-foreground">Revisa cada aviso y renueva la venta desde su detalle. La detección no registra cobros automáticamente.</p></div>
-    <section className="rounded-xl border bg-card p-4 sm:p-5" aria-label="Buzón Gmail">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div><h2 className="font-semibold">Buzón Gmail</h2>
-          {connections.isLoading ? <p className="text-sm text-muted-foreground">Cargando buzón…</p> : connection ? <>
-            <p className="text-sm">{maskMailbox(connection.mailbox)} · {connection.status === 'configurado' ? 'Configurado' : 'Requiere atención'}</p>
-            <p className="text-xs text-muted-foreground">Última sincronización: {connection.lastSyncedAt ? panamaDate.format(new Date(connection.lastSyncedAt)) : 'Pendiente'}</p>
-          </> : <p className="text-sm text-muted-foreground">Aún no hay estado del buzón.</p>}
+  const countBy = (status: string) => all.filter((payment) => payment.matchStatus === status).length;
+  const pending = all.filter((payment) => !CLOSED_STATUSES.includes(payment.matchStatus)).length;
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        title="Pagos Yappy detectados"
+        description="Revisa cada aviso y renueva la venta desde su detalle. La detección no registra cobros automáticamente."
+        actions={
+          <Button disabled={sync.isPending} onClick={() => sync.mutate()}>
+            <RefreshCw className={cn(sync.isPending && 'animate-spin')} />
+            {sync.isPending ? 'Sincronizando…' : 'Sincronizar ahora'}
+          </Button>
+        }
+      />
+      <MetricGrid>
+        <MetricCard title="Detectados" value={all.length} icon={Inbox} loading={payments.isLoading} />
+        <MetricCard title="Por revisar" value={pending} icon={Clock} tone="warning" loading={payments.isLoading} />
+        <MetricCard title="Registrados" value={countBy('registrado')} icon={CheckCircle2} tone="success" loading={payments.isLoading} />
+        <MetricCard title="Descartados" value={countBy('descartado')} icon={XCircle} loading={payments.isLoading} />
+      </MetricGrid>
+      <MailboxPanel connections={connections} sync={sync} />
+      <section className="space-y-4" aria-label="Cola de pagos">
+        <div className="flex flex-wrap gap-2">
+          {filters.map((item) => (
+            <Button key={item} size="sm" variant={filter === item ? 'default' : 'outline'} onClick={() => setFilter(item)}>
+              {item === 'todos' ? 'Todos' : labels[item]} ({item === 'todos' ? all.length : countBy(item)})
+            </Button>
+          ))}
         </div>
-        <Button disabled={sync.isPending} onClick={() => sync.mutate()}>{sync.isPending ? 'Sincronizando…' : 'Sincronizar ahora'}</Button>
-      </div>
-      {connection?.lastErrorCode === 'auth_failed' && <p role="alert" className="mt-2 text-sm text-destructive">Revisa la contraseña de aplicación de Gmail en Vercel.</p>}
-      {(connections.isError || sync.isError) && <p role="alert" className="mt-2 text-sm text-destructive">No se pudo cargar o sincronizar el buzón.</p>}
-      {sync.isSuccess && sync.data?.errorCode === null && <p role="status" className="mt-2 text-sm">Sincronización finalizada.</p>}
-      {sync.data?.errorCode === 'sync_error' && <p role="alert" className="mt-2 text-sm text-destructive">La sincronización se interrumpió. Inténtalo de nuevo.</p>}
-    </section>
-    <section className="space-y-4" aria-label="Cola de pagos">
-      <div className="flex flex-wrap gap-2">{filters.map((item) => <Button key={item} size="sm" variant={filter === item ? 'default' : 'outline'}
-        onClick={() => setFilter(item)}>{item === 'todos' ? 'Todos' : labels[item]} ({item === 'todos' ? payments.data?.length ?? 0 : payments.data?.filter((payment) => payment.matchStatus === item).length ?? 0})</Button>)}</div>
-      {payments.isLoading && <p role="status" className="text-sm text-muted-foreground">Cargando pagos…</p>}
-      {(payments.isError || ventas.isError) && <p role="alert" className="text-sm text-destructive">No se pudo cargar la cola. Actualiza la página.</p>}
-      {!payments.isLoading && !payments.isError && visible.length === 0 && <p className="rounded-xl border p-8 text-center text-sm text-muted-foreground">No hay pagos en este estado.</p>}
-      {visible.map((payment) => <PaymentCard key={payment.id} payment={payment} ventas={ventas.data ?? []} />)}
-    </section>
-  </main>;
+        {payments.isLoading && <p role="status" className="text-sm text-muted-foreground">Cargando pagos…</p>}
+        {(payments.isError || ventas.isError) && <p role="alert" className="text-sm text-danger">No se pudo cargar la cola. Actualiza la página.</p>}
+        {!payments.isLoading && !payments.isError && visible.length === 0 && (
+          <Card className="py-2"><EmptyState message="No hay pagos en este estado." /></Card>
+        )}
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          {visible.map((payment) => <PaymentCard key={payment.id} payment={payment} ventas={ventas.data ?? []} />)}
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export default function YappyPage() { return <YappyPageContent />; }

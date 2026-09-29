@@ -8,22 +8,22 @@ export function getBellIconColor(diasRestantes: number): {
 } {
   if (diasRestantes <= 0) {
     return {
-      bgColor: "bg-green-100 dark:bg-green-500/20",
-      hoverBgColor: "hover:bg-green-200 dark:hover:bg-green-500/30",
-      textColor: "text-green-600 dark:text-green-400",
+      bgColor: "bg-success-subtle",
+      hoverBgColor: "hover:bg-success/15",
+      textColor: "text-success",
     };
   }
   if (diasRestantes <= 7) {
     return {
-      bgColor: "bg-yellow-100 dark:bg-yellow-500/20",
-      hoverBgColor: "hover:bg-yellow-200 dark:hover:bg-yellow-500/30",
-      textColor: "text-yellow-600 dark:text-yellow-400",
+      bgColor: "bg-warning-subtle",
+      hoverBgColor: "hover:bg-warning/15",
+      textColor: "text-warning",
     };
   }
   return {
-    bgColor: "bg-blue-100 dark:bg-blue-500/20",
-    hoverBgColor: "hover:bg-blue-200 dark:hover:bg-blue-500/30",
-    textColor: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-info-subtle",
+    hoverBgColor: "hover:bg-info/15",
+    textColor: "text-info",
   };
 }
 
@@ -32,7 +32,7 @@ export function getEstadoBadge(diasRestantes: number) {
     return (
       <Badge
         variant="outline"
-        className="border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
+        className="border-success-border bg-success-subtle text-success"
       >
         Completado
       </Badge>
@@ -42,7 +42,7 @@ export function getEstadoBadge(diasRestantes: number) {
     return (
       <Badge
         variant="outline"
-        className="border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300"
+        className="border-warning-border bg-warning-subtle text-warning"
       >
         {diasRestantes} día{diasRestantes !== 1 ? "s" : ""} restante{diasRestantes !== 1 ? "s" : ""}
       </Badge>
@@ -51,7 +51,7 @@ export function getEstadoBadge(diasRestantes: number) {
   return (
     <Badge
       variant="outline"
-      className="border-blue-500/40 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400"
+      className="border-info-border bg-info-subtle text-info"
     >
       {diasRestantes} días restantes
     </Badge>

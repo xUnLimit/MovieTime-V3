@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Tag, Trash2 } from 'lucide-react';
+import { Edit, Tag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCategoriaDetail } from '@/hooks/use-entity-detail';
@@ -43,14 +44,7 @@ function VerCategoriaPageContent() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Link prefetch={false} href="/categorias">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando categoría...</h1>
-        </div>
+        <PageHeader title="Cargando categoría..." trail={[{ label: 'Detalle' }]} />
         <div className="rounded-lg border bg-card p-6">
           <p className="text-muted-foreground">Cargando datos...</p>
         </div>
@@ -61,14 +55,7 @@ function VerCategoriaPageContent() {
   if (!categoria) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Link prefetch={false} href="/categorias">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categoría no encontrada</h1>
-        </div>
+        <PageHeader title="Categoría no encontrada" trail={[{ label: 'Detalle' }]} />
         <div className="rounded-lg border bg-card p-6">
           <p className="text-muted-foreground">La categoría que buscas no existe.</p>
         </div>
@@ -86,44 +73,30 @@ function VerCategoriaPageContent() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link prefetch={false} href="/categorias">
-            <Button variant="outline" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
+      <PageHeader
+        title={categoria.nombre}
+        trail={[{ label: categoria.nombre }]}
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <Link prefetch={false} href={`/categorias/${categoria.id}/editar?from=/categorias/${categoria.id}`}>
+                <Edit />
+                Editar
+              </Link>
             </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{categoria.nombre}</h1>
-            <p className="text-sm text-muted-foreground">
-              <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
-              {' / '}
-              <Link prefetch={false} href="/categorias" className="hover:text-foreground transition-colors">Categorías</Link>
-              {' / '}
-              <span className="text-foreground">{categoria.nombre}</span>
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link prefetch={false} href={`/categorias/${categoria.id}/editar?from=/categorias/${categoria.id}`}>
-              <Edit className="h-3.5 w-3.5 mr-1.5" />
-              Editar
-            </Link>
-          </Button>
-          <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
-            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-            Eliminar
-          </Button>
-        </div>
-      </div>
+            <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+              <Trash2 />
+              Eliminar
+            </Button>
+          </>
+        }
+      />
 
       {/* Info + Notas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-lg border bg-card p-6">
           <div className="mb-5">
-            <h2 className="text-lg font-semibold">Información de la Categoría</h2>
+            <h2 className="text-base font-semibold">Información de la Categoría</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Datos básicos de la categoría</p>
           </div>
           <div className="space-y-3.5">
@@ -165,7 +138,7 @@ function VerCategoriaPageContent() {
 
         <div className="rounded-lg border bg-card p-6 flex flex-col">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold">Notas</h2>
+            <h2 className="text-base font-semibold">Notas</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Información adicional</p>
           </div>
           <div className="flex-1 flex items-start">

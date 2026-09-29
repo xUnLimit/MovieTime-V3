@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { TerceroDetails } from '@/components/terceros/TerceroDetails';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
 import { deleteTerceroMutation } from '@/application/client-domain-mutations';
@@ -35,7 +36,7 @@ function TerceroDetallesPageContent() {
   if (!id) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tercero no encontrado</h1>
+        <PageHeader title="Tercero no encontrado" />
         <p className="text-sm text-muted-foreground">El ID del tercero no es valido.</p>
         <Link prefetch={false} href="/terceros" className="text-primary hover:underline">
           Volver a Terceros
@@ -47,19 +48,7 @@ function TerceroDetallesPageContent() {
   if (!usuario) {
     return (
       <div className="space-y-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tercero no encontrado</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href="/terceros" className="hover:text-foreground transition-colors">
-              Terceros
-            </Link>{' '}
-            / <span className="text-foreground">Detalles</span>
-          </p>
-        </div>
+        <PageHeader title="Tercero no encontrado" trail={[{ label: 'Detalles' }]} />
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
             No se encontró el tercero con el ID proporcionado.
@@ -92,38 +81,24 @@ function TerceroDetallesPageContent() {
   return (
     <>
       <div className="space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link prefetch={false} href="/terceros">
-              <Button variant="outline" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
+        <PageHeader
+          title={`${usuario.nombre} ${usuario.apellido}`}
+          trail={[{ label: `${usuario.nombre} ${usuario.apellido}` }]}
+          actions={
+            <>
+              <Button asChild variant="outline">
+                <Link prefetch={false} href={`/terceros/editar/${usuario.id}`}>
+                  <Pencil />
+                  Editar
+                </Link>
               </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{usuario.nombre} {usuario.apellido}</h1>
-              <p className="text-sm text-muted-foreground">
-                <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
-                {' / '}
-                <Link prefetch={false} href="/terceros" className="hover:text-foreground transition-colors">Terceros</Link>
-                {' / '}
-                <span className="text-foreground">{usuario.nombre} {usuario.apellido}</span>
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link prefetch={false} href={`/terceros/editar/${usuario.id}`}>
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Editar
-              </Link>
-            </Button>
-            <Button variant="destructive" size="sm" onClick={handleDelete}>
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              Eliminar
-            </Button>
-          </div>
-        </div>
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash2 />
+                Eliminar
+              </Button>
+            </>
+          }
+        />
 
         <TerceroDetails usuario={usuario} />
       </div>

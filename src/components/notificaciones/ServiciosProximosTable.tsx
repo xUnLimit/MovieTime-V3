@@ -6,10 +6,10 @@
 
 'use client';
 
-import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ServerTableCard } from '@/components/shared/ServerTableCard';
 
 import { ServiciosProximosDialogs } from './servicios-proximos/ServiciosProximosDialogs';
-import { ServiciosProximosPagination } from './servicios-proximos/ServiciosProximosPagination';
 import { ServiciosProximosTableContent } from './servicios-proximos/ServiciosProximosTableContent';
 import { ServiciosProximosToolbar } from './servicios-proximos/ServiciosProximosToolbar';
 import { useServiciosProximosController } from './servicios-proximos/useServiciosProximosController';
@@ -28,21 +28,32 @@ export function ServiciosProximosTable({
   const controller = useServiciosProximosController({ soloAutorrenovables });
 
   return (
-    <Card className="min-w-0 p-4 pb-2">
-      <h3 className="text-xl font-semibold">{title}</h3>
-      <ServiciosProximosToolbar
-        searchQuery={controller.searchQuery}
-        estadoFilter={controller.estadoFilter}
-        onSearchChange={controller.handleSearchChange}
-        onEstadoFilterChange={controller.handleEstadoFilterChange}
-      />
-
-      {controller.serviciosNotificaciones.length === 0 ? (
-        <div className="rounded-md border p-8 text-center">
-          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-        </div>
-      ) : (
-        <div>
+    <>
+      <ServerTableCard
+        title={title}
+        rowCount={controller.paginatedNotificaciones.length}
+        pagination={{
+          page: controller.safeCurrentPage,
+          totalPages: controller.totalPages,
+          hasPrevious: controller.safeCurrentPage > 1,
+          hasMore: controller.safeCurrentPage < controller.totalPages,
+          onPrevious: controller.handlePreviousPage,
+          onNext: controller.handleNextPage,
+          pageSize: controller.itemsPerPage,
+          onPageSizeChange: (size) => controller.handleItemsPerPageChange(String(size)),
+        }}
+        toolbar={
+          <ServiciosProximosToolbar
+            searchQuery={controller.searchQuery}
+            estadoFilter={controller.estadoFilter}
+            onSearchChange={controller.handleSearchChange}
+            onEstadoFilterChange={controller.handleEstadoFilterChange}
+          />
+        }
+      >
+        {controller.serviciosNotificaciones.length === 0 ? (
+          <EmptyState message={emptyMessage} />
+        ) : (
           <ServiciosProximosTableContent
             notificaciones={controller.paginatedNotificaciones}
             visiblePasswords={controller.visiblePasswords}
@@ -53,28 +64,8 @@ export function ServiciosProximosTable({
             onSeguimiento={controller.handleSeguimiento}
             onAcciones={controller.handleAcciones}
           />
-
-          <ServiciosProximosPagination
-            itemsPerPage={controller.itemsPerPage}
-            safeCurrentPage={controller.safeCurrentPage}
-            totalPages={controller.totalPages}
-            onItemsPerPageChange={controller.handleItemsPerPageChange}
-            onPreviousPage={controller.handlePreviousPage}
-            onNextPage={controller.handleNextPage}
-          />
-        </div>
-      )}
-
-      {controller.serviciosNotificaciones.length === 0 && (
-        <ServiciosProximosPagination
-          itemsPerPage={controller.itemsPerPage}
-          safeCurrentPage={controller.safeCurrentPage}
-          totalPages={controller.totalPages}
-          onItemsPerPageChange={controller.handleItemsPerPageChange}
-          onPreviousPage={controller.handlePreviousPage}
-          onNextPage={controller.handleNextPage}
-        />
-      )}
+        )}
+      </ServerTableCard>
 
       <ServiciosProximosDialogs
         notifParaAcciones={controller.notifParaAcciones}
@@ -87,6 +78,6 @@ export function ServiciosProximosTable({
         onConfirmRenovacion={controller.handleConfirmRenovacion}
         onInactivar={controller.handleInactivarServicio}
       />
-    </Card>
+    </>
   );
 }

@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { PagerControls } from '@/components/shared/PagerControls';
+import { Panel } from '@/components/shared/Panel';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
@@ -87,13 +86,12 @@ export function RevenueByCategory() {
     () => getValueDomain(data, isCompactChart ? MIN_NEGATIVE_AXIS_RATIO_MOBILE : MIN_NEGATIVE_AXIS_RATIO),
     [data, isCompactChart]
   );
-  const chartHeight = isCompactChart ? 250 : 220;
   const chartMargin = isCompactChart
     ? { left: 0, right: 34, top: 8, bottom: 0 }
     : { left: 0, right: 50, top: 5, bottom: 5 };
   const yAxisWidth = isCompactChart ? 88 : 108;
   const yAxisTickMargin = isCompactChart ? 8 : 10;
-  const valueLabelFontSize = isCompactChart ? 11 : 12;
+  const valueLabelFontSize = 12;
   const xAxisTickCount = isCompactChart ? 3 : 5;
 
   useEffect(() => {
@@ -139,65 +137,43 @@ export function RevenueByCategory() {
         : 'translate-x-0 opacity-100';
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <CardTitle className="text-base">{vista.title}</CardTitle>
-            <CardDescription className="text-sm">{vista.description}</CardDescription>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[11px] tabular-nums text-muted-foreground px-1">
-              {vistaIndex + 1}/{totalVistas}
-            </span>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7"
-              onClick={() => navegar(-1)}
-              disabled={!puedeIrAtras || isLoading || animacionFase !== 'idle'}
-              aria-label="Vista anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7"
-              onClick={() => navegar(1)}
-              disabled={!puedeIrAdelante || isLoading || animacionFase !== 'idle'}
-              aria-label="Vista siguiente"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+    <Panel
+      title={vista.title}
+      description={vista.description}
+      className="md:h-[324px] lg:h-auto lg:min-h-0"
+      contentClassName="min-h-[260px] md:min-h-[200px]"
+      fill
+      actions={
+        <PagerControls
+          index={vistaIndex}
+          total={totalVistas}
+          onPrevious={() => navegar(-1)}
+          onNext={() => navegar(1)}
+          previousDisabled={!puedeIrAtras || isLoading || animacionFase !== 'idle'}
+          nextDisabled={!puedeIrAdelante || isLoading || animacionFase !== 'idle'}
+        />
+      }
+    >
+      {isLoading ? (
+        <Skeleton className="h-full w-full rounded-lg" />
+      ) : !hasData ? (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
         </div>
-      </CardHeader>
-      <CardContent className="pt-1 h-[260px] sm:h-[220px]">
-        {isLoading ? (
-          <Skeleton className="w-full h-full rounded-lg" />
-        ) : !hasData ? (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">No hay datos disponibles</p>
-          </div>
-        ) : (
-          <RevenueByCategoryChart
-            animationClass={animationClass}
-            chartHeight={chartHeight}
-            chartMargin={chartMargin}
-            data={data}
-            isCompactChart={isCompactChart}
-            valueDomain={valueDomain}
-            valueLabelFontSize={valueLabelFontSize}
-            vista={vista}
-            xAxisTickCount={xAxisTickCount}
-            yAxisTickMargin={yAxisTickMargin}
-            yAxisWidth={yAxisWidth}
-          />
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        <RevenueByCategoryChart
+          animationClass={animationClass}
+          chartMargin={chartMargin}
+          data={data}
+          isCompactChart={isCompactChart}
+          valueDomain={valueDomain}
+          valueLabelFontSize={valueLabelFontSize}
+          vista={vista}
+          xAxisTickCount={xAxisTickCount}
+          yAxisTickMargin={yAxisTickMargin}
+          yAxisWidth={yAxisWidth}
+        />
+      )}
+    </Panel>
   );
 }

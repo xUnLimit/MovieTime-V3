@@ -6,8 +6,7 @@ import { CambiosModal } from '@/components/log-actividad/CambiosModal';
 import { LogDeleteConfirmDialog } from '@/components/log-actividad/LogDeleteConfirmDialog';
 import { LogFilters } from '@/components/log-actividad/LogFilters';
 import { DataTable } from '@/components/shared/DataTable';
-import { PaginationFooter } from '@/components/shared/PaginationFooter';
-import { Card } from '@/components/ui/card';
+import { ServerTableCard } from '@/components/shared/ServerTableCard';
 import { countActivityLogsUseCase } from '@/application/use-cases/activity-log-use-cases';
 import type { ActivityLog } from '@/types';
 import { createLogTimelineColumns } from './log-timeline-columns';
@@ -160,82 +159,42 @@ export function LogTimeline({
   });
 
   return (
-    <Card className="p-4">
-      <div className="mb-4">
-        <LogFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          accionFilter={accionFilter}
-          setAccionFilter={setAccionFilter}
-          entidadFilter={entidadFilter}
-          setEntidadFilter={setEntidadFilter}
-          usuarioFilter={usuarioFilter}
-          setTerceroFilter={setTerceroFilter}
-          selectedCount={selectedLogs.size}
-          canDeleteLogs={canDeleteLogs}
-          onDeleteSelected={handleDeleteSelected}
-          onRequestDeleteByDays={handleRequestDeleteByDays}
-          onRequestDeleteAll={handleRequestDeleteAll}
+    <>
+      <ServerTableCard
+        rowCount={searchFilteredCurrentPage ? unfilteredPageCount : logs.length}
+        loading={isLoading}
+        pagination={{ page, totalPages, hasPrevious, hasMore, onPrevious, onNext, pageSize, onPageSizeChange }}
+        toolbar={
+          <LogFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            accionFilter={accionFilter}
+            setAccionFilter={setAccionFilter}
+            entidadFilter={entidadFilter}
+            setEntidadFilter={setEntidadFilter}
+            usuarioFilter={usuarioFilter}
+            setTerceroFilter={setTerceroFilter}
+            selectedCount={selectedLogs.size}
+            canDeleteLogs={canDeleteLogs}
+            onDeleteSelected={handleDeleteSelected}
+            onRequestDeleteByDays={handleRequestDeleteByDays}
+            onRequestDeleteAll={handleRequestDeleteAll}
+          />
+        }
+      >
+        <DataTable
+          bare
+          data={logs}
+          columns={columns}
+          loading={isLoading}
+          pagination={false}
+          emptyMessage={
+            searchFilteredCurrentPage
+              ? 'No hay coincidencias en esta página. La búsqueda se aplica sobre los registros cargados; usa la paginación para revisar más páginas.'
+              : 'No hay actividad registrada'
+          }
         />
-      </div>
-
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="border border-border rounded-md p-12 text-center">
-            <p className="text-sm text-muted-foreground">Cargando logs...</p>
-          </div>
-        ) : logs.length === 0 ? (
-          <>
-            <div className="border border-border rounded-md p-12 text-center">
-              <p className="text-sm text-muted-foreground">
-                {searchFilteredCurrentPage
-                  ? 'No hay coincidencias en esta página'
-                  : 'No hay actividad registrada'}
-              </p>
-              {searchFilteredCurrentPage ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  La búsqueda se aplica sobre los registros cargados. Usa la paginación para revisar más páginas.
-                </p>
-              ) : null}
-            </div>
-
-            {searchFilteredCurrentPage ? (
-              <PaginationFooter
-                page={page}
-                totalPages={totalPages}
-                hasPrevious={hasPrevious}
-                hasMore={hasMore}
-                onPrevious={onPrevious}
-                onNext={onNext}
-                pageSize={pageSize}
-                onPageSizeChange={onPageSizeChange}
-              />
-            ) : null}
-          </>
-        ) : (
-          <>
-            <DataTable
-              data={logs}
-              columns={columns}
-              pagination={false}
-              fixedLayout
-              containerClassName="table-scroll-shell"
-              tableClassName="table-scroll-content min-w-[1100px]"
-            />
-
-            <PaginationFooter
-              page={page}
-              totalPages={totalPages}
-              hasPrevious={hasPrevious}
-              hasMore={hasMore}
-              onPrevious={onPrevious}
-              onNext={onNext}
-              pageSize={pageSize}
-              onPageSizeChange={onPageSizeChange}
-            />
-          </>
-        )}
-      </div>
+      </ServerTableCard>
 
       {selectedLog && (
         <CambiosModal
@@ -257,6 +216,6 @@ export function LogTimeline({
         onConfirm={handleConfirmDelete}
         open={isDeleteConfirmOpen}
       />
-    </Card>
+    </>
   );
 }

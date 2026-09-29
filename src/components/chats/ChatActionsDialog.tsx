@@ -19,7 +19,7 @@ type Props = {
 
 type Step = 'menu' | 'cliente' | 'venta';
 
-const ACTION_ITEM = 'flex w-full items-center gap-3 rounded-[9px] border border-chat-line px-4 py-3 text-left transition-colors hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45';
+const ACTION_ITEM = 'flex w-full items-center gap-3 rounded-md border border-chat-line px-4 py-3 text-left transition-colors hover:bg-chat-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45';
 
 export function ChatActionsDialog({ open, onOpenChange, conversation }: Props) {
   const [step, setStep] = useState<Step>('menu');
@@ -71,22 +71,22 @@ export function ChatActionsDialog({ open, onOpenChange, conversation }: Props) {
         {step === 'menu' ? (
           <>
             <DialogHeader className="text-left">
-              <DialogTitle className="font-editorial text-[21px] font-normal">Acciones</DialogTitle>
-              <DialogDescription className="text-[13px] text-chat-muted">Registra al cliente o genera una venta sin salir de la conversación.</DialogDescription>
+              <DialogTitle>Acciones</DialogTitle>
+              <DialogDescription className="text-sm text-chat-muted">Registra al cliente o genera una venta sin salir de la conversación.</DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
               <button type="button" className={ACTION_ITEM} onClick={() => setStep('cliente')} disabled={hasCliente} aria-describedby={hasCliente ? 'accion-cliente-hint' : undefined}>
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-chat-accent-soft text-chat-accent-strong"><UserPlus className="h-[18px] w-[18px]" aria-hidden /></span>
                 <span>
-                  <span className="block text-[13px] font-semibold text-chat-ink">Registrar cliente</span>
-                  <span id="accion-cliente-hint" className="block text-[12px] text-chat-muted">{hasCliente ? 'Este número ya está registrado como cliente.' : 'Crea el tercero con el teléfono de este chat.'}</span>
+                  <span className="block text-sm font-semibold text-chat-ink">Registrar cliente</span>
+                  <span id="accion-cliente-hint" className="block text-xs text-chat-muted">{hasCliente ? 'Este número ya está registrado como cliente.' : 'Crea el tercero con el teléfono de este chat.'}</span>
                 </span>
               </button>
               <button type="button" className={ACTION_ITEM} onClick={() => setStep('venta')} disabled={!hasCliente} aria-describedby={!hasCliente ? 'accion-venta-hint' : undefined}>
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-chat-accent-soft text-chat-accent-strong"><ShoppingCart className="h-[18px] w-[18px]" aria-hidden /></span>
                 <span>
-                  <span className="block text-[13px] font-semibold text-chat-ink">Generar venta</span>
-                  <span id="accion-venta-hint" className="block text-[12px] text-chat-muted">
+                  <span className="block text-sm font-semibold text-chat-ink">Generar venta</span>
+                  <span id="accion-venta-hint" className="block text-xs text-chat-muted">
                     {hasCliente ? 'Se preselecciona a este cliente.' : 'Primero registra al cliente para poder generar una venta.'}
                   </span>
                 </span>
@@ -96,13 +96,13 @@ export function ChatActionsDialog({ open, onOpenChange, conversation }: Props) {
         ) : (
           <>
             <DialogHeader className="text-left">
-              <button type="button" onClick={() => setStep('menu')} className="mb-1 flex items-center gap-1 text-[12px] font-semibold text-chat-accent-strong hover:underline">
+              <button type="button" onClick={() => setStep('menu')} className="mb-1 flex items-center gap-1 text-xs font-semibold text-chat-accent-strong hover:underline">
                 <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Volver a acciones
               </button>
-              <DialogTitle className="font-editorial text-[21px] font-normal">{step === 'cliente' ? 'Registrar cliente' : 'Generar venta'}</DialogTitle>
+              <DialogTitle>{step === 'cliente' ? 'Registrar cliente' : 'Generar venta'}</DialogTitle>
             </DialogHeader>
             {metodosPagoLoading ? (
-              <div className="flex h-40 items-center justify-center text-[13px] text-chat-muted">Cargando...</div>
+              <div className="flex h-40 items-center justify-center text-sm text-chat-muted">Cargando...</div>
             ) : step === 'cliente' ? (
               <TerceroForm
                 tipoInicial="cliente"

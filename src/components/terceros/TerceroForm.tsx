@@ -70,10 +70,9 @@ export function TerceroForm({
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList className="mb-8 bg-transparent rounded-none p-0 h-auto inline-flex border-b border-border">
+        <TabsList className="mb-8">
           <TabsTrigger
             value="personal"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
           >
             Información Personal
           </TabsTrigger>
@@ -103,7 +102,7 @@ export function TerceroForm({
                 }}
               />
               {errors.nombre && (
-                <p className="text-sm text-red-500">{errors.nombre.message}</p>
+                <p className="text-sm text-danger">{errors.nombre.message}</p>
               )}
             </div>
 
@@ -121,7 +120,7 @@ export function TerceroForm({
                 }}
               />
               {errors.apellido && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-danger">
                   {errors.apellido.message}
                 </p>
               )}
@@ -161,7 +160,7 @@ export function TerceroForm({
                 </DropdownMenuContent>
               </DropdownMenu>
               {errors.tipoTercero && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-danger">
                   {errors.tipoTercero.message}
                 </p>
               )}
@@ -175,7 +174,7 @@ export function TerceroForm({
                 placeholder="+507 6000-0000"
               />
               {errors.telefono && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-danger">
                   {errors.telefono.message}
                 </p>
               )}
@@ -227,7 +226,7 @@ export function TerceroForm({
                 </DropdownMenuContent>
               </DropdownMenu>
               {errors.metodoPagoId && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-danger">
                   {errors.metodoPagoId.message}
                 </p>
               )}

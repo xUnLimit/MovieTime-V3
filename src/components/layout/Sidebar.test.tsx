@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({ role: 'admin', unread: 3, enabledArg: null as boolean | null }));
@@ -22,6 +22,24 @@ import { Sidebar } from './Sidebar';
 beforeEach(() => {
   state.role = 'admin';
   state.unread = 3;
+});
+
+describe('Sidebar navigation', () => {
+  it('marks the current section and collapses or expands from the footer button', () => {
+    const onCollapse = vi.fn();
+    const { unmount } = render(<Sidebar collapsed={false} onCollapse={onCollapse} />);
+
+    const current = screen.getAllByRole('link', { name: /Dashboard/ }).filter((link) => link.getAttribute('aria-current') === 'page');
+    expect(current.length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Colapsar barra lateral' }));
+    expect(onCollapse).toHaveBeenLastCalledWith(true);
+    unmount();
+
+    render(<Sidebar collapsed onCollapse={onCollapse} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir barra lateral' }));
+    expect(onCollapse).toHaveBeenLastCalledWith(false);
+  });
 });
 
 describe('Sidebar WhatsApp badge', () => {

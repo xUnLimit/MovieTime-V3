@@ -83,8 +83,8 @@ export function CategoriaPlansSection({
   return (
     <div className="space-y-4">
       {planesError && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-          <p className="text-sm text-red-500">{planesError}</p>
+        <div className="p-3 bg-danger-subtle border border-danger-border rounded-lg">
+          <p className="text-sm text-danger">{planesError}</p>
         </div>
       )}
 

@@ -7,12 +7,12 @@ import {
 } from 'lucide-react';
 
 export const activityActionColors: Record<string, string> = {
-  creacion:     'bg-green-500/10 text-green-500',
-  actualizacion:'bg-blue-500/10 text-blue-500',
-  corte:        'bg-orange-500/10 text-orange-500',
-  eliminacion:  'bg-red-500/10 text-red-500',
-  renovacion:   'bg-purple-500/10 text-purple-500',
-  reembolso:    'bg-emerald-500/10 text-emerald-500',
+  creacion:     'bg-success-subtle text-success',
+  actualizacion:'bg-info-subtle text-info',
+  corte:        'bg-warning-subtle text-warning',
+  eliminacion:  'bg-danger-subtle text-danger',
+  renovacion:   'bg-primary/10 text-primary',
+  reembolso:    'bg-success-subtle text-success',
 };
 
 type IconComponent = React.ComponentType<{ className?: string }>;
@@ -180,14 +180,14 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
       const reposoTransition = getReposoTransition(log);
       if (reposoTransition) {
         if (reposoTransition.nuevo) {
-          const reposoColor = 'bg-yellow-500/10 text-yellow-500';
+          const reposoColor = 'bg-warning-subtle text-warning';
           if (log.entidad === 'servicio') {
             return { icon: Pause, color: reposoColor, message: <><span>Servicio en reposo —</span> {nameEl}{correoEl}</> };
           }
           return { icon: Pause, color: reposoColor, message: <><span>{label} en reposo —</span> {nameEl}</> };
         }
 
-        const reactivadoColor = 'bg-emerald-500/10 text-emerald-500';
+        const reactivadoColor = 'bg-success-subtle text-success';
         if (log.entidad === 'servicio') {
           return { icon: Play, color: reactivadoColor, message: <><span>Servicio reactivado —</span> {nameEl}{correoEl}</> };
         }
@@ -199,7 +199,7 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
 
       if (esCorte) {
         const cortarIcon = Scissors;
-        const cortarColor = 'bg-orange-500/10 text-orange-500';
+        const cortarColor = 'bg-warning-subtle text-warning';
         if (log.entidad === 'servicio') {
           return { icon: cortarIcon, color: cortarColor, message: <><span>Servicio cortado —</span> {nameEl}{correoEl}</> };
         }

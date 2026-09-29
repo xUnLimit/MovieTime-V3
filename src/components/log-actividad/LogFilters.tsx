@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Activity, Calendar as CalendarIcon, Database, Search, Trash2 } from 'lucide-react';
+import { Activity, Calendar as CalendarIcon, Database, Trash2 } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
 
 import { FilterTriggerContent } from '@/components/shared/FilterTriggerContent';
+import { FilterMenu, TableSearch, TableToolbar } from '@/components/shared/TableToolbar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -16,7 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -51,6 +51,11 @@ const entityLabels: Record<string, string> = {
   template: 'Template',
 };
 
+const ENTIDAD_OPTIONS = [
+  { value: 'all', label: 'Todas las entidades' },
+  ...Object.entries(entityLabels).map(([value, label]) => ({ value, label })),
+];
+
 const actionLabels: Record<string, string> = {
   creacion: 'Creación',
   actualizacion: 'Actualización',
@@ -59,6 +64,11 @@ const actionLabels: Record<string, string> = {
   renovacion: 'Renovación',
   reembolso: 'Reembolso',
 };
+
+const ACCION_OPTIONS = [
+  { value: 'all', label: 'Todas las acciones' },
+  ...Object.entries(actionLabels).map(([value, label]) => ({ value, label })),
+];
 
 export function LogFilters({
   searchTerm,
@@ -76,20 +86,22 @@ export function LogFilters({
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   return (
-    <div className="dashboard-toolbar">
-      <div className="dashboard-toolbar-search">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por usuario, entidad, ID o detalle..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
+    <TableToolbar
+      actions={
+        <LogCleanupMenu
+          canDeleteLogs={canDeleteLogs}
+          selectedCount={selectedCount}
+          onDeleteSelected={onDeleteSelected}
+          onRequestDeleteByDays={onRequestDeleteByDays}
+          onRequestDeleteAll={onRequestDeleteAll}
         />
-      </div>
+      }
+    >
+      <TableSearch value={searchTerm} onChange={setSearchTerm} placeholder="Buscar por usuario, entidad, ID o detalle..." />
 
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="dashboard-toolbar-control-xl justify-between gap-2 text-left font-normal whitespace-nowrap">
+          <Button variant="outline" className="w-full justify-between gap-2 text-left font-normal whitespace-nowrap sm:w-64">
             <FilterTriggerContent
               icon={CalendarIcon}
               label={
@@ -114,56 +126,37 @@ export function LogFilters({
         </PopoverContent>
       </Popover>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
-            <FilterTriggerContent
-              icon={Database}
-              label={entidadFilter === 'all' ? 'Todas las entidades' : entityLabels[entidadFilter] || 'Todas las entidades'}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-          <DropdownMenuItem onClick={() => setEntidadFilter('all')} className="dashboard-toolbar-menu-item">
-            <span className="dashboard-toolbar-menu-item-label">Todas las entidades</span>
-          </DropdownMenuItem>
-          {Object.entries(entityLabels).map(([value, label]) => (
-            <DropdownMenuItem key={value} onClick={() => setEntidadFilter(value)} className="dashboard-toolbar-menu-item">
-              <span className="dashboard-toolbar-menu-item-label">{label}</span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <FilterMenu icon={Database} ariaLabel="Entidad" value={entidadFilter} options={ENTIDAD_OPTIONS} onChange={setEntidadFilter} />
+      <FilterMenu icon={Activity} ariaLabel="Acción" value={accionFilter} options={ACCION_OPTIONS} onChange={setAccionFilter} />
+    </TableToolbar>
+  );
+}
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="dashboard-toolbar-control-wide justify-between gap-2">
-            <FilterTriggerContent
-              icon={Activity}
-              label={accionFilter === 'all' ? 'Todas las acciones' : actionLabels[accionFilter] || 'Todas las acciones'}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-          <DropdownMenuItem onClick={() => setAccionFilter('all')} className="dashboard-toolbar-menu-item">
-            <span className="dashboard-toolbar-menu-item-label">Todas las acciones</span>
-          </DropdownMenuItem>
-          {Object.entries(actionLabels).map(([value, label]) => (
-            <DropdownMenuItem key={value} onClick={() => setAccionFilter(value)} className="dashboard-toolbar-menu-item">
-              <span className="dashboard-toolbar-menu-item-label">{label}</span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+interface LogCleanupMenuProps {
+  canDeleteLogs: boolean;
+  selectedCount: number;
+  onDeleteSelected: () => void;
+  onRequestDeleteByDays: (days: number) => void;
+  onRequestDeleteAll: () => void;
+}
 
+function LogCleanupMenu({
+  canDeleteLogs,
+  selectedCount,
+  onDeleteSelected,
+  onRequestDeleteByDays,
+  onRequestDeleteAll,
+}: LogCleanupMenuProps) {
+  return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="gap-2 bg-[#ff0000] hover:bg-[#e00000] text-white whitespace-nowrap shadow-lg shadow-red-600/50"
+            variant="destructive"
+            className="gap-2 whitespace-nowrap"
             disabled={!canDeleteLogs}
             title={canDeleteLogs ? 'Limpiar logs' : 'Solo administradores'}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 />
             Limpiar Logs
           </Button>
         </DropdownMenuTrigger>
@@ -189,6 +182,5 @@ export function LogFilters({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
   );
 }

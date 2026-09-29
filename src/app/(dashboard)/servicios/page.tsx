@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
 import { useQueryClient } from '@tanstack/react-query';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -27,7 +29,7 @@ function ServiciosPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoriaId, setSelectedCategoriaId] = useState('todas');
   const [orderBy, setOrderBy] = useState<'createdAt' | 'updatedAt'>('createdAt');
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize(54));
 
   const filters = useMemo((): FilterOption[] => {
     const f: FilterOption[] = [];
@@ -80,33 +82,27 @@ function ServiciosPageContent() {
 
   return (
     <div className="space-y-4">
-      <div className="dashboard-page-heading">
-        <div className="dashboard-page-heading-row">
-          <div className="dashboard-page-heading-copy space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Servicios</h1>
-            <p className="text-sm text-muted-foreground">
-              <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link> / <span className="text-foreground">Servicios</span>
-            </p>
-          </div>
-          <Link prefetch={false} href="/servicios/crear" className="shrink-0">
-            <Button className="whitespace-nowrap">
-              <Plus className="mr-2 h-4 w-4" />
+      <PageHeader
+        title="Servicios"
+        actions={
+          <Button asChild className="whitespace-nowrap">
+            <Link prefetch={false} href="/servicios/crear">
+              <Plus />
               Nuevo Servicio
-            </Button>
-          </Link>
-        </div>
-      </div>
+            </Link>
+          </Button>
+        }
+      />
 
       {showServiciosMetrics && <ServiciosMetrics />}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <div className="tabs-scroll-shell -mx-1 px-1">
-          <TabsList className="tabs-scroll-list h-auto rounded-none border-b border-border bg-transparent p-0">
+          <TabsList className="tabs-scroll-list">
             {(['categorias', 'todos', 'activos', 'inactivos'] as const).map((tab) => (
               <TabsTrigger
                 key={tab}
                 value={tab}
-                className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
                 {tab === 'categorias' ? 'Categorías' : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </TabsTrigger>
@@ -141,7 +137,7 @@ function ServiciosPageContent() {
               onNext={next}
               onPrevious={previous}
               pageSize={pageSize}
-              onPageSizeChange={(size) => { setPageSize(size); refresh(); }}
+              onPageSizeChange={setPageSize}
             />
           </TabsContent>
         )}

@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: state.push }),
+  usePathname: () => '/terceros/crear',
   useSearchParams: () => ({ get: (key: string) => state.params.get(key) ?? null }),
 }));
 vi.mock('@/hooks/use-metodos-pago-terceros', () => ({

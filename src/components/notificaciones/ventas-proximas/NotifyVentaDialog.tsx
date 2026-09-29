@@ -128,7 +128,7 @@ export function NotifyVentaDialog({
             htmlFor="notify-expiration"
             className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
               choice === 'expiration'
-                ? 'border-green-500/60 bg-green-50 dark:bg-green-500/10'
+                ? 'border-success-border bg-success-subtle'
                 : 'hover:bg-muted/50'
             }`}
           >
@@ -138,7 +138,7 @@ export function NotifyVentaDialog({
               aria-label="Aviso de pago"
               className="mt-0.5"
             />
-            <MessageSquare className="mt-0.5 h-4 w-4 text-green-600" />
+            <MessageSquare className="mt-0.5 h-4 w-4 text-success" />
             <span className="space-y-0.5">
               <span className="block text-sm font-medium">Aviso de pago</span>
               <span className="block text-xs text-muted-foreground">
@@ -151,7 +151,7 @@ export function NotifyVentaDialog({
             htmlFor="notify-cancellation"
             className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
               choice === 'cancellation'
-                ? 'border-red-500/60 bg-red-50 dark:bg-red-500/10'
+                ? 'border-danger-border bg-danger-subtle'
                 : 'hover:bg-muted/50'
             }`}
           >
@@ -161,7 +161,7 @@ export function NotifyVentaDialog({
               aria-label="Cancelación"
               className="mt-0.5"
             />
-            <XCircle className="mt-0.5 h-4 w-4 text-red-600" />
+            <XCircle className="mt-0.5 h-4 w-4 text-danger" />
             <span className="space-y-0.5">
               <span className="block text-sm font-medium">Cancelación</span>
               <span className="block text-xs text-muted-foreground">

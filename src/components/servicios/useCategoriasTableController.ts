@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 
 import { useVentasPorCategorias } from "@/hooks/use-ventas-por-categorias";
-import { useClientPagination } from "@/hooks/useClientPagination";
 import type { Categoria } from "@/types";
 
 export interface CategoriaRow {
+  id: string;
+  nombre: string;
   categoria: Categoria;
   totalServicios: number;
   serviciosActivos: number;
@@ -36,10 +37,6 @@ export function useCategoriasTableController(categorias: Categoria[]) {
   const [searchTerm, setSearchTerm] = useState("");
   const [perfilDisponibilidadFilter, setPerfilDisponibilidadFilter] =
     useState<PerfilDisponibilidadFilter>("todos");
-  const [sortKey, setSortKey] = useState<keyof CategoriaRow | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(
-    null,
-  );
   const categoriaIds = useMemo(
     () => categorias.filter((c) => c.activo).map((c) => c.id),
     [categorias],
@@ -47,125 +44,49 @@ export function useCategoriasTableController(categorias: Categoria[]) {
   const { stats: ventasPorCategoria, isLoading: isLoadingVentas } =
     useVentasPorCategorias(categoriaIds);
 
-  const rows = useMemo(() => {
-    const categoriaData: CategoriaRow[] = categorias
-      .filter((cat) => cat.activo)
-      .map((categoria) => {
-        const totalServicios = categoria.totalServicios ?? 0;
-        const serviciosActivos = categoria.serviciosActivos ?? 0;
-        const perfilesDisponibles = categoria.perfilesDisponiblesTotal ?? 0;
+  const rows = useMemo<CategoriaRow[]>(
+    () =>
+      categorias
+        .filter((cat) => cat.activo)
+        .map((categoria) => {
+          const gastosTotal = categoria.gastosTotal ?? 0;
+          const ingresoTotal = categoria.ingresosTotales ?? 0;
 
-        const gastosTotal = categoria.gastosTotal ?? 0;
-        const ingresoTotal = categoria.ingresosTotales ?? 0;
-        const ventasTotales = categoria.ventasTotales ?? 0;
-        const gananciaTotal = ingresoTotal - gastosTotal;
-        const montoSinConsumir =
-          ventasPorCategoria[categoria.id]?.montoSinConsumir ?? 0;
-
-        return {
-          categoria,
-          totalServicios,
-          serviciosActivos,
-          perfilesDisponibles,
-          ventasTotales,
-          ingresoTotal,
-          gastosTotal,
-          gananciaTotal,
-          montoSinConsumir,
-        };
-      });
-
-    return categoriaData;
-  }, [categorias, ventasPorCategoria]);
+          return {
+            id: categoria.id,
+            nombre: categoria.nombre,
+            categoria,
+            totalServicios: categoria.totalServicios ?? 0,
+            serviciosActivos: categoria.serviciosActivos ?? 0,
+            perfilesDisponibles: categoria.perfilesDisponiblesTotal ?? 0,
+            ventasTotales: categoria.ventasTotales ?? 0,
+            ingresoTotal,
+            gastosTotal,
+            gananciaTotal: ingresoTotal - gastosTotal,
+            montoSinConsumir: ventasPorCategoria[categoria.id]?.montoSinConsumir ?? 0,
+          };
+        }),
+    [categorias, ventasPorCategoria],
+  );
 
   const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const matchesSearch = row.categoria.nombre
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-      if (!matchesSearch) return false;
-      if (perfilDisponibilidadFilter === "con_disponibles") {
-        return row.perfilesDisponibles > 0;
-      }
-      if (perfilDisponibilidadFilter === "sin_disponibles") {
-        return row.perfilesDisponibles === 0;
-      }
-      return true;
-    });
+    const query = searchTerm.toLowerCase();
+    return rows
+      .filter((row) => {
+        if (!row.nombre.toLowerCase().includes(query)) return false;
+        if (perfilDisponibilidadFilter === "con_disponibles") return row.perfilesDisponibles > 0;
+        if (perfilDisponibilidadFilter === "sin_disponibles") return row.perfilesDisponibles === 0;
+        return true;
+      })
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   }, [perfilDisponibilidadFilter, rows, searchTerm]);
-
-  const sortedRows = useMemo(() => {
-    if (!sortKey || !sortDirection) {
-      return [...filteredRows].sort((a, b) =>
-        a.categoria.nombre.localeCompare(b.categoria.nombre, "es"),
-      );
-    }
-
-    const getSortValue = (
-      row: CategoriaRow,
-      key: keyof CategoriaRow,
-    ): string | number => {
-      if (key === "categoria") return row.categoria.nombre;
-      return row[key];
-    };
-
-    return [...filteredRows].sort((a, b) => {
-      const aValue = getSortValue(a, sortKey);
-      const bValue = getSortValue(b, sortKey);
-
-      if (aValue === bValue) return 0;
-      const comparison = aValue < bValue ? -1 : 1;
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
-  }, [filteredRows, sortKey, sortDirection]);
-
-  const pagination = useClientPagination({
-    data: sortedRows,
-    initialPageSize: 10,
-  });
-
-  const handleSort = (key: keyof CategoriaRow) => {
-    if (sortKey === key) {
-      if (sortDirection === "asc") {
-        setSortDirection("desc");
-      } else if (sortDirection === "desc") {
-        setSortDirection(null);
-        setSortKey(null);
-      } else {
-        setSortDirection("asc");
-      }
-    } else {
-      setSortKey(key);
-      setSortDirection("asc");
-    }
-    pagination.reset();
-  };
-
-  const perfilDisponibilidadLabel =
-    perfilDisponibilidadOptions.find(
-      (option) => option.value === perfilDisponibilidadFilter,
-    )?.label ?? "Todos los perfiles";
 
   return {
     searchTerm,
     setSearchTerm,
     perfilDisponibilidadFilter,
     setPerfilDisponibilidadFilter,
-    perfilDisponibilidadLabel,
-    sortKey,
-    sortDirection,
     isLoadingVentas,
-    paginatedRows: pagination.data,
-    page: pagination.page,
-    totalPages: pagination.totalPages,
-    hasPrevious: pagination.hasPrevious,
-    hasMore: pagination.hasMore,
-    pageSize: pagination.pageSize,
-    setPageSize: pagination.setPageSize,
-    next: pagination.next,
-    previous: pagination.previous,
-    resetPagination: pagination.reset,
-    handleSort,
+    rows: filteredRows,
   };
 }

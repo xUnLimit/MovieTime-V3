@@ -32,14 +32,14 @@ const getDiasRestantesLabel = (diasRestantes: number) => {
 
 const getDiasRestantesClass = (diasRestantes: number) => {
   if (diasRestantes <= 0) {
-    return 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
+    return 'border-danger-border bg-danger-subtle text-danger';
   }
 
   if (diasRestantes <= 7) {
-    return 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
+    return 'border-warning-border bg-warning-subtle text-warning';
   }
 
-  return 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
+  return 'border-success-border bg-success-subtle text-success';
 };
 
 interface VentaSummarySectionProps extends VentaEstadoDetalle {
@@ -65,7 +65,7 @@ export function VentaSummarySection({
       <Card className="min-w-0 p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Información General</h2>
+            <h2 className="text-base font-semibold">Información General</h2>
             <p className="text-sm text-muted-foreground">
               Resumen de la suscripción del servicio {venta.servicioNombre}.
             </p>
@@ -77,7 +77,7 @@ export function VentaSummarySection({
           <div>
             <p className="text-xs text-muted-foreground">Cliente</p>
             {venta.clienteId ? (
-              <Link prefetch={false} href={`/terceros/${venta.clienteId}`} className="text-sm font-medium text-purple-500 hover:underline">
+              <Link prefetch={false} href={`/terceros/${venta.clienteId}`} className="text-sm font-medium text-primary hover:underline">
                 {venta.clienteNombre}
               </Link>
             ) : (
@@ -86,7 +86,7 @@ export function VentaSummarySection({
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Método de Pago</p>
-            <p className="text-sm font-medium text-purple-500">{venta.metodoPagoNombre || 'Sin método'}</p>
+            <p className="text-sm font-medium text-primary">{venta.metodoPagoNombre || 'Sin método'}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Ciclo de pago</p>
@@ -106,7 +106,7 @@ export function VentaSummarySection({
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Perfil</p>
-            <p className="text-sm font-medium text-green-600 dark:text-green-400">{perfilDisplay}</p>
+            <p className="text-sm font-medium text-success">{perfilDisplay}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Código</p>
@@ -136,7 +136,7 @@ export function VentaSummarySection({
           <div>
             <p className="text-xs text-muted-foreground">Días Restantes</p>
             {esCortada ? (
-              <Badge variant="outline" className="mt-1 font-normal border-orange-500/50 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+              <Badge variant="outline" className="mt-1 font-normal border-warning-border bg-warning-subtle text-warning">
                 Servicio cortado
               </Badge>
             ) : venta.estado === 'inactivo' ? (
@@ -154,18 +154,18 @@ export function VentaSummarySection({
         <div className="flex flex-col items-center text-center gap-3">
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center ${
-              venta.estado === 'inactivo' ? 'bg-red-500/20' : 'bg-green-500/20'
+              venta.estado === 'inactivo' ? 'bg-danger-subtle' : 'bg-success-subtle'
             }`}
           >
-            <User className={`h-7 w-7 ${venta.estado === 'inactivo' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} />
+            <User className={`h-7 w-7 ${venta.estado === 'inactivo' ? 'text-danger' : 'text-success'}`} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold">
+            <h3 className="text-base font-semibold">
               {venta.estado === 'inactivo' ? 'Perfil sin Asignar' : 'Perfil Asignado'}
             </h3>
             <p className="text-sm text-muted-foreground">Información del servicio en uso</p>
           </div>
-          <p className={`text-sm font-medium ${venta.estado === 'inactivo' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+          <p className={`text-sm font-medium ${venta.estado === 'inactivo' ? 'text-danger' : 'text-success'}`}>
             {venta.estado === 'inactivo' ? 'No asignado' : (venta.servicioCorreo || venta.servicioNombre)}
           </p>
           <p className="text-xs text-muted-foreground">

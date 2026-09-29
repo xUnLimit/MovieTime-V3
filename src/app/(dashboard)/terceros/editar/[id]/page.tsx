@@ -3,10 +3,9 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { TerceroForm } from '@/components/terceros/TerceroForm';
 import { useTerceroDetail } from '@/hooks/use-entity-detail';
 import { useMetodosPagoTerceros } from '@/hooks/use-metodos-pago-terceros';
@@ -60,19 +59,7 @@ function EditarTerceroPageContent() {
   if (!usuario) {
     return (
       <div className="space-y-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tercero no encontrado</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href="/terceros" className="hover:text-foreground transition-colors">
-              Terceros
-            </Link>{' '}
-            / <span className="text-foreground">Editar</span>
-          </p>
-        </div>
+        <PageHeader title="Tercero no encontrado" trail={[{ label: 'Editar' }]} />
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
             No se encontró el tercero con el ID proporcionado.
@@ -90,34 +77,10 @@ function EditarTerceroPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Link prefetch={false} href={`/terceros/${id}`}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Editar {tipoTercero === 'cliente' ? 'Cliente' : 'Revendedor'}
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground ml-10">
-            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href="/terceros" className="hover:text-foreground transition-colors">
-              Terceros
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href={`/terceros/${id}`} className="hover:text-foreground transition-colors">
-              {usuario?.nombre || 'Detalle'}
-            </Link>{' '}
-            / <span className="text-foreground">Editar</span>
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={`Editar ${tipoTercero === 'cliente' ? 'Cliente' : 'Revendedor'}`}
+        trail={[{ label: usuario?.nombre || 'Detalle', href: `/terceros/${id}` }, { label: 'Editar' }]}
+      />
 
       <div className="bg-card border border-border rounded-lg p-6">
         <TerceroForm

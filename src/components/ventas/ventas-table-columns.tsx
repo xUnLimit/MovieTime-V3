@@ -86,7 +86,7 @@ export const ventasTableColumns: Column<VentaRow>[] = [
         <User
           className={cn(
             "h-4 w-4",
-            item.estado === "inactiva" ? "text-red-500" : "text-green-500",
+            item.estado === "inactiva" ? "text-danger" : "text-success",
           )}
         />
         <div>
@@ -105,12 +105,13 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     header: "Servicio",
     sortable: true,
     width: "18%",
+    hideBelow: "sm",
     render: (item) => (
       <div className="flex items-center gap-2">
         <Monitor
           className={cn(
             "h-4 w-4",
-            item.estado === "inactiva" ? "text-red-500" : "text-green-500",
+            item.estado === "inactiva" ? "text-danger" : "text-success",
           )}
         />
         <div>
@@ -128,6 +129,7 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     sortable: true,
     width: "12%",
     align: "center",
+    hideBelow: "2xl",
     render: (item) => (
       <div className="flex items-center justify-center gap-2">
         <Clock className="h-4 w-4 text-muted-foreground" />
@@ -141,6 +143,7 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     sortable: true,
     width: "12%",
     align: "center",
+    hideBelow: "2xl",
     render: (item) => (
       <div className="text-center">
         {item.fechaInicio ? formatearFecha(item.fechaInicio) : "-"}
@@ -153,6 +156,7 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     sortable: true,
     width: "12%",
     align: "center",
+    hideBelow: "md",
     render: (item) => (
       <div className="text-center">
         {item.fechaVencimiento ? formatearFecha(item.fechaVencimiento) : "-"}
@@ -167,7 +171,7 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     align: "center",
     render: (item) => (
       <div className="text-center font-medium">
-        <span className="text-green-500">{getCurrencySymbol(item.moneda)}</span>
+        <span className="text-success">{getCurrencySymbol(item.moneda)}</span>
         <span className="text-foreground"> {item.monto.toFixed(2)}</span>
       </div>
     ),
@@ -178,8 +182,9 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     sortable: true,
     width: "14%",
     align: "center",
+    hideBelow: "xl",
     render: (item) => (
-      <div className="min-w-[140px] text-center">
+      <div className="min-w-24 text-center">
         <span className="text-xs text-muted-foreground">
           {item.consumoPorcentaje}%
         </span>
@@ -188,10 +193,10 @@ export const ventasTableColumns: Column<VentaRow>[] = [
             className={cn(
               "h-2 rounded-full",
               item.consumoPorcentaje >= 75
-                ? "bg-red-500"
+                ? "bg-danger"
                 : item.consumoPorcentaje >= 45
-                  ? "bg-yellow-500"
-                  : "bg-green-500",
+                  ? "bg-warning"
+                  : "bg-success",
             )}
             style={{ width: `${item.consumoPorcentaje}%` }}
           />
@@ -205,9 +210,10 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     sortable: true,
     width: "12%",
     align: "center",
+    hideBelow: "lg",
     render: (item) => (
       <div className="text-center font-medium">
-        <span className="text-green-500">{getCurrencySymbol(item.moneda)}</span>
+        <span className="text-success">{getCurrencySymbol(item.moneda)}</span>
         <span className="text-foreground">
           {" "}
           {item.montoSinConsumir.toFixed(2)}
@@ -221,6 +227,7 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     sortable: true,
     width: "9%",
     align: "center",
+    hideBelow: "xl",
     render: (item) => (
       <div className="flex items-center justify-center gap-1.5 font-medium">
         <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />

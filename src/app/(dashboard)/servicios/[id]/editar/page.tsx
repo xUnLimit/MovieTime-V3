@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { ServicioForm } from '@/components/servicios/ServicioForm';
 import { useServicioDetail } from '@/hooks/use-entity-detail';
 import { isUuid, safeInternalPath } from '@/platform/utils/safety';
@@ -20,7 +19,7 @@ function EditarServicioPageContent() {
   if (!id) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Servicio no encontrado</h1>
+        <PageHeader title="Servicio no encontrado" trail={[{ label: 'Editar' }]} />
         <p className="text-sm text-muted-foreground">El ID del servicio no es valido.</p>
         <Link prefetch={false} href="/servicios" className="text-primary hover:underline">
           Volver a Servicios
@@ -31,28 +30,7 @@ function EditarServicioPageContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Link prefetch={false} href={from}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Servicio</h1>
-          </div>
-          <p className="text-sm text-muted-foreground ml-10">
-            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href="/servicios" className="hover:text-foreground transition-colors">
-              Servicios
-            </Link>{' '}
-            / <span className="text-foreground">Editar</span>
-          </p>
-        </div>
-      </div>
+      <PageHeader title="Editar Servicio" trail={[{ label: 'Editar' }]} backTo={from} />
 
       {isLoading ? (
         <div className="bg-card border rounded-lg p-6">

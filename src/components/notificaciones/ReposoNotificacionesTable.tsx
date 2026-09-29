@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { PaginationFooter } from "@/components/shared/PaginationFooter";
-import { Card } from "@/components/ui/card";
+import { hideBelowClass } from "@/components/shared/DataTable";
+import { ServerTableCard } from "@/components/shared/ServerTableCard";
 import {
   Table,
   TableBody,
@@ -19,18 +19,13 @@ import { applyNotificationQueryReactions } from "@/application/store-reactions/n
 import { ReposoNotificacionesRows } from "./ReposoNotificacionesRows";
 import { ReposoNotificacionesToolbar } from "./ReposoNotificacionesToolbar";
 import { filterReposoRows } from "./reposo-notificaciones-table-helpers";
-import {
-  ESTADO_REPOSO_OPTIONS,
-  type ReposoRow,
-} from "./reposo-notificaciones-table-types";
+import type { ReposoRow } from "./reposo-notificaciones-table-types";
 
 export function ReposoNotificacionesTable() {
   const queryClient = useQueryClient();
   const { data: notificaciones = [] } = useNotificaciones();
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("todos");
-  const estadoFilterLabel =
-    ESTADO_REPOSO_OPTIONS.find((option) => option.value === estadoFilter)?.label ?? "Todos los estados";
 
   const reposoNotificaciones = useMemo(() => {
     return notificaciones
@@ -77,55 +72,50 @@ export function ReposoNotificacionesTable() {
   };
 
   return (
-    <Card className="min-w-0 p-4 pb-2">
-      <h3 className="text-xl font-semibold">Servicios en Reposo</h3>
-      <ReposoNotificacionesToolbar
-        estadoFilter={estadoFilter}
-        estadoFilterLabel={estadoFilterLabel}
-        onEstadoFilterChange={handleEstadoFilterChange}
-        onSearchChange={handleSearchChange}
-        search={search}
-      />
-
-      <div>
-        <div className="notification-table-scroll-shell rounded-md border">
-          <Table className="table-scroll-content min-w-[980px] lg:min-w-full">
-            <TableHeader>
-              <TableRow className="border-b hover:bg-muted/50">
-                <ReposoTableHead className="w-[56px]">Tipo</ReposoTableHead>
-                <ReposoTableHead className="min-w-[130px]">Categoría</ReposoTableHead>
-                <ReposoTableHead className="min-w-[200px]">Correo</ReposoTableHead>
-                <ReposoTableHead className="min-w-[125px]">Fecha Inicio</ReposoTableHead>
-                <ReposoTableHead className="min-w-[125px]">Fecha Fin</ReposoTableHead>
-                <ReposoTableHead className="min-w-[150px]">Fecha Fin Reposo</ReposoTableHead>
-                <ReposoTableHead className="min-w-[125px]">Estado</ReposoTableHead>
-                <ReposoTableHead className="min-w-[74px]">Acciones</ReposoTableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <ReposoNotificacionesRows
-                filteredCount={filtered.length}
-                notificaciones={paginated}
-                onToggleLeida={(notifId, leida) => void handleToggleLeida(notifId, leida)}
-              />
-            </TableBody>
-          </Table>
-        </div>
-
-        <PaginationFooter
-          page={page}
-          totalPages={totalPages}
-          hasPrevious={hasPrevious}
-          hasMore={hasMore}
-          onPrevious={previous}
-          onNext={next}
-          pageSize={pageSize}
-          onPageSizeChange={setPageSize}
-          pageSizeOptions={[10, 25, 50, 100]}
-          className="px-2 py-2"
+    <ServerTableCard
+      title="Servicios en Reposo"
+      rowCount={paginated.length}
+      pagination={{
+        page,
+        totalPages,
+        hasPrevious,
+        hasMore,
+        onPrevious: previous,
+        onNext: next,
+        pageSize,
+        onPageSizeChange: setPageSize,
+      }}
+      toolbar={
+        <ReposoNotificacionesToolbar
+          estadoFilter={estadoFilter}
+          onEstadoFilterChange={handleEstadoFilterChange}
+          onSearchChange={handleSearchChange}
+          search={search}
         />
-      </div>
-    </Card>
+      }
+    >
+      <Table>
+        <TableHeader>
+          <TableRow className="border-b hover:bg-muted/50">
+            <ReposoTableHead className="w-14">Tipo</ReposoTableHead>
+            <ReposoTableHead className="min-w-32">Categoría</ReposoTableHead>
+            <ReposoTableHead className={`min-w-48 ${hideBelowClass("lg")}`}>Correo</ReposoTableHead>
+            <ReposoTableHead className={`min-w-32 ${hideBelowClass("xl")}`}>Fecha Inicio</ReposoTableHead>
+            <ReposoTableHead className={`min-w-32 ${hideBelowClass("xl")}`}>Fecha Fin</ReposoTableHead>
+            <ReposoTableHead className={`min-w-36 ${hideBelowClass("md")}`}>Fecha Fin Reposo</ReposoTableHead>
+            <ReposoTableHead className="min-w-32">Estado</ReposoTableHead>
+            <ReposoTableHead className="min-w-20">Acciones</ReposoTableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <ReposoNotificacionesRows
+            filteredCount={filtered.length}
+            notificaciones={paginated}
+            onToggleLeida={(notifId, leida) => void handleToggleLeida(notifId, leida)}
+          />
+        </TableBody>
+      </Table>
+    </ServerTableCard>
   );
 }
 

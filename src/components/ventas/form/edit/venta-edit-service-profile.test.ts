@@ -73,8 +73,8 @@ describe('sale edit service profiles', () => {
   });
 
   it.each([
-    [1, 0, 'text-muted-foreground'], [1, 10, 'text-[#ff1744]'],
-    [5, 10, 'text-[#ffea00]'], [8, 10, 'text-[#00ff85]'],
+    [1, 0, 'text-muted-foreground'], [1, 10, 'text-danger'],
+    [5, 10, 'text-warning'], [8, 10, 'text-success'],
   ])('colors %s/%s availability', (available, total, color) => {
     expect(getDisponiblesColorClass(available, total)).toBe(color);
   });

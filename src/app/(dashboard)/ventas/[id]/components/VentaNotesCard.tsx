@@ -19,7 +19,7 @@ export function VentaNotesCard({ notas, motivoCorte, reembolsos = [] }: VentaNot
   return (
     <div className="space-y-4">
       <Card className="p-6 space-y-3">
-        <h2 className="text-lg font-semibold">Notas</h2>
+        <h2 className="text-base font-semibold">Notas</h2>
         <div className="rounded-lg border bg-muted/20 p-4 text-sm whitespace-pre-line">
           {notas?.trim() ? notas : 'Sin notas'}
         </div>
@@ -27,15 +27,15 @@ export function VentaNotesCard({ notas, motivoCorte, reembolsos = [] }: VentaNot
 
       <Card className="p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold">Corte y reembolsos</h2>
+          <h2 className="text-base font-semibold">Corte y reembolsos</h2>
           <p className="text-sm text-muted-foreground">
             Motivos y notas operativas de esta venta.
           </p>
         </div>
 
         {hasMotivoCorte ? (
-          <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/50 dark:bg-orange-950/20">
-            <p className="text-xs font-medium uppercase tracking-wide text-orange-700 dark:text-orange-300">
+          <div className="rounded-lg border border-warning-border bg-warning-subtle p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-warning">
               Motivo de corte
             </p>
             <p className="mt-2 whitespace-pre-line text-sm text-foreground">{motivoCorte}</p>
@@ -58,13 +58,13 @@ export function VentaNotesCard({ notas, motivoCorte, reembolsos = [] }: VentaNot
               return (
                 <div
                   key={reembolso.id || `${reembolso.fecha?.toISOString() ?? 'reembolso'}-${index}`}
-                  className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/20"
+                  className="rounded-lg border border-danger-border bg-danger-subtle p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-red-700 dark:text-red-300">
+                    <p className="text-xs font-medium uppercase tracking-wide text-danger">
                       Nota de reembolso
                     </p>
-                    <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                    <span className="text-xs font-medium text-danger">
                       -{currencySymbol} {reembolso.total.toFixed(2)} - {fecha}
                     </span>
                   </div>

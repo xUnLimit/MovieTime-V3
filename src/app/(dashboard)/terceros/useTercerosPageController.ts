@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { filterTercerosForTercerosPage, type TercerosTab } from '@/components/terceros/terceros-search';
+import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
 import { useTerceros } from '@/hooks/use-terceros';
 import { useTercerosCounts } from '@/hooks/use-terceros-counts';
 import { useServerPagination } from '@/hooks/useServerPagination';
@@ -35,7 +36,7 @@ export function useTercerosPageController() {
   const totalClientes = counts?.totalClientes ?? 0;
   const totalRevendedores = counts?.totalRevendedores ?? 0;
   const [activeTab, setActiveTab] = useState<TercerosTab>('todos');
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => estimateInitialPageSize());
   const [searchPageIndex, setSearchPageIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [metodoPagoFilter, setMetodoPagoFilter] = useState(ALL_PAYMENT_METHODS_VALUE);
@@ -123,7 +124,6 @@ export function useTercerosPageController() {
     onPageSizeChange: (size: number) => {
       setPageSize(size);
       setSearchPageIndex(0);
-      if (!isSearchMode) refresh();
     },
   };
 

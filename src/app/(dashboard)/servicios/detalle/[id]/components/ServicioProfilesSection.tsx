@@ -65,7 +65,7 @@ export function ServicioProfilesSection({
     <Card className="h-full min-w-0 p-6">
       <div className="mb-2 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold">Perfiles</h2>
+          <h2 className="text-base font-semibold">Perfiles</h2>
           <p className="text-sm text-muted-foreground">
             {servicio.activo ? `${perfilesDisponibles} de ${servicio.perfilesDisponibles} perfiles disponibles` : 'Servicio inactivo'}
           </p>
@@ -92,7 +92,7 @@ export function ServicioProfilesSection({
             <div
               key={perfil.numero}
               className={`rounded-lg border px-4 py-3 ${
-                perfil.estado === 'ocupado' ? 'bg-green-950/30 border-green-900/50' :
+                perfil.estado === 'ocupado' ? 'bg-success-subtle border-success-border' :
                 perfil.estado === 'inactivo' ? 'bg-muted/30 border-muted opacity-50' :
                 'bg-muted/50 border-border'
               }`}
@@ -105,11 +105,11 @@ export function ServicioProfilesSection({
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <User className={`h-5 w-5 ${
-                    perfil.estado === 'ocupado' ? 'text-green-500' :
-                    perfil.estado === 'inactivo' ? 'text-gray-600' :
-                    'text-blue-500'
+                    perfil.estado === 'ocupado' ? 'text-success' :
+                    perfil.estado === 'inactivo' ? 'text-muted-foreground' :
+                    'text-info'
                   } shrink-0`} />
-                  <span className={`truncate font-medium ${perfil.estado === 'inactivo' ? 'text-gray-600' : ''}`}>
+                  <span className={`truncate font-medium ${perfil.estado === 'inactivo' ? 'text-muted-foreground' : ''}`}>
                     {perfil.estado === 'ocupado' && perfil.clienteNombre
                       ? perfil.clienteNombre
                       : perfil.nombre}
@@ -117,11 +117,11 @@ export function ServicioProfilesSection({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {perfil.estado === 'inactivo' ? (
-                    <Badge variant="secondary" className="bg-gray-200 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-700">
+                    <Badge variant="secondary" className="bg-muted text-muted-foreground hover:bg-accent">
                       Inactivo
                     </Badge>
                   ) : perfil.estado === 'disponible' ? (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-600 dark:text-white dark:hover:bg-green-700">
+                    <Badge variant="secondary" className="bg-success-subtle text-success hover:bg-success/15 dark:text-white">
                       Disponible
                     </Badge>
                   ) : (
@@ -141,7 +141,7 @@ export function ServicioProfilesSection({
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-xs gap-1 text-orange-500 hover:text-orange-400"
+                            className="h-7 px-2 text-xs gap-1 text-warning hover:text-warning"
                             onClick={() => onCutSale(venta.ventaId!)}
                           >
                             <Scissors className="h-3.5 w-3.5" />
@@ -151,7 +151,7 @@ export function ServicioProfilesSection({
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-xs gap-1 text-blue-500 hover:text-blue-400"
+                            className="h-7 px-2 text-xs gap-1 text-info hover:text-info"
                             onClick={() => onTransferSale(venta.ventaId!)}
                           >
                             <MoveRight className="h-3.5 w-3.5" />
@@ -218,16 +218,16 @@ export function ServicioProfilesSection({
                           let badgeText: string;
                           if (diasRestantes < 0) {
                             const d = Math.abs(diasRestantes);
-                            badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
+                            badgeClass = 'border-danger-border bg-danger-subtle text-danger';
                             badgeText = `${d} día${d > 1 ? 's' : ''} de retraso`;
                           } else if (diasRestantes === 0) {
-                            badgeClass = 'border-red-500/50 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300';
+                            badgeClass = 'border-danger-border bg-danger-subtle text-danger';
                             badgeText = 'Vence hoy';
                           } else if (diasRestantes <= 7) {
-                            badgeClass = 'border-yellow-500/50 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300';
+                            badgeClass = 'border-warning-border bg-warning-subtle text-warning';
                             badgeText = `${diasRestantes} día${diasRestantes > 1 ? 's' : ''} restante${diasRestantes > 1 ? 's' : ''}`;
                           } else {
-                            badgeClass = 'border-green-500/50 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300';
+                            badgeClass = 'border-success-border bg-success-subtle text-success';
                             badgeText = `${diasRestantes} días restantes`;
                           }
                           return (
@@ -249,7 +249,7 @@ export function ServicioProfilesSection({
                     </div>
                   </div>
 
-                  <div className="rounded-md border border-neutral-800 bg-black p-3">
+                  <div className="rounded-md border border-border bg-black p-3">
                     <p className="text-sm text-muted-foreground mb-2">Notas de la venta:</p>
                     <div className="text-sm whitespace-pre-line">
                       {venta.notas ? venta.notas : 'Sin notas'}

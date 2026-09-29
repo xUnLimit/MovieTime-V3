@@ -6,6 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { hideBelowClass } from "@/components/shared/DataTable";
 import { TableCell, TableRow } from "@/components/ui/table";
 import {
   formatearFechaReposo,
@@ -62,14 +63,14 @@ function ReposoNotificacionRow({
         <BellToggleButton notif={notif} onToggleLeida={onToggleLeida} />
       </TableCell>
       <TableCell className="px-2 py-2 text-center">{notif.categoriaNombre}</TableCell>
-      <TableCell className="px-2 py-2 text-center text-sm">{notif.correo ?? "—"}</TableCell>
-      <TableCell className="px-2 py-2 text-center text-sm">
+      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('lg')}`}>{notif.correo ?? "—"}</TableCell>
+      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('xl')}`}>
         <ReposoDateCell value={normalizeReposoDate(notif.fechaInicio)} emptyValue="-" />
       </TableCell>
-      <TableCell className="px-2 py-2 text-center text-sm">
+      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('xl')}`}>
         <ReposoDateCell value={normalizeReposoDate(notif.fechaFin)} emptyValue="-" />
       </TableCell>
-      <TableCell className="px-2 py-2 text-center text-sm">
+      <TableCell className={`px-2 py-2 text-center text-sm ${hideBelowClass('md')}`}>
         <ReposoDateCell value={normalizeReposoDate(notif.fechaFinReposo)} emptyValue="—" />
       </TableCell>
       <TableCell className="px-2 py-2 text-center">
@@ -104,14 +105,14 @@ function BellToggleButton({
       size="icon"
       className={`mx-auto h-8 w-8 rounded-full transition-all duration-200 ease-in-out ${
         notif.leida
-          ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-500/20 dark:hover:bg-gray-500/30"
+          ? "bg-muted hover:bg-accent"
           : `${bellColors.bgColor} ${bellColors.hoverBgColor}`
       } hover:scale-105`}
       onClick={() => onToggleLeida(notif.id, !notif.leida)}
       title={notif.leida ? "Marcar como no leída" : "Marcar como leída"}
     >
       {notif.leida ? (
-        <BellOff className="h-4 w-4 text-gray-400 transition-all duration-200 ease-in-out dark:text-gray-500" />
+        <BellOff className="h-4 w-4 text-muted-foreground transition-all duration-200 ease-in-out" />
       ) : (
         <BellRing
           className={`h-4 w-4 transition-all duration-200 ease-in-out ${bellColors.textColor}`}

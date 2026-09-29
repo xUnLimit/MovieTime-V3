@@ -1,107 +1,93 @@
 'use client';
 
 import { memo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
+
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/platform/utils';
+
+import { useMetricStrip } from './MetricGrid';
+import { toneText, type Tone } from './tone';
 
 interface MetricCardProps {
   title: string;
   value: string | number;
-  valueColor?: string;
   description?: string;
   icon?: LucideIcon;
-  iconColor?: string;
-  borderColor?: string;
-  underlineColor?: string;
+  /** Tono del icono. Usalo solo cuando el estado importa; por defecto es neutro. */
+  tone?: Tone;
+  /** Tono del valor (p. ej. ganancia positiva/negativa). */
+  valueTone?: Tone;
   trend?: {
     value: number;
     isPositive: boolean;
   };
   loading?: boolean;
+  className?: string;
 }
 
 export const MetricCard = memo(function MetricCard({
   title,
   value,
-  valueColor,
   description,
   icon: Icon,
-  iconColor,
-  borderColor,
-  underlineColor,
+  tone = 'neutral',
+  valueTone,
   trend,
   loading = false,
+  className,
 }: MetricCardProps) {
-  // Layout original con borde izquierdo — estado loading usa contenido invisible + skeleton absoluto
-  if (loading) {
-    return (
-      <Card className={`py-3 gap-0 relative ${borderColor ? `border-l-4 ${borderColor}` : ''}`}>
-        {/* Contenido invisible para fijar la altura exacta igual al estado cargado */}
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 px-4 pb-1 invisible">
-          <CardTitle className="text-sm font-medium">Cargando</CardTitle>
-          {Icon && <Icon className="h-4 w-4" />}
-        </CardHeader>
-        <CardContent className="px-4 pb-0 pt-0 invisible">
-          <div className="text-xl font-bold">$0.00</div>
-          {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
-        </CardContent>
-        {/* Skeleton superpuesto */}
-        <div className="absolute inset-0 flex flex-col justify-center px-4 gap-1.5">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-4 rounded-full" />
-          </div>
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="h-3 w-40" />
-        </div>
-      </Card>
-    );
-  }
+  const flat = useMetricStrip();
 
-  // Si tiene underlineColor, usa el layout con línea inferior
-  if (underlineColor) {
-    return (
-      <Card className="pt-3 pb-0 gap-0 overflow-hidden flex flex-col">
-        <CardHeader className="flex flex-row items-center gap-2 space-y-0 p-0 px-4 pb-1">
-          {Icon && <Icon className={`h-4 w-4 ${iconColor || 'text-muted-foreground'}`} />}
-          <CardTitle className="text-sm font-medium text-foreground">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-3 pt-0">
-          <div className="text-2xl font-bold">{value}</div>
-        </CardContent>
-        <div className={`h-1 w-full ${underlineColor}`} />
-      </Card>
-    );
-  }
-
-  // Layout original con borde izquierdo
   return (
-    <Card className={`py-3 gap-0 ${borderColor ? `border-l-4 ${borderColor}` : ''}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0 px-4 pb-1">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {Icon && <Icon className={`h-4 w-4 ${iconColor || 'text-muted-foreground'}`} />}
-      </CardHeader>
-      <CardContent className="px-4 pb-0 pt-0">
-        <div className={`text-xl font-bold ${valueColor ?? ''}`}>{value}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{description}</p>
+    <Card
+      data-slot="metric-card"
+      data-tone={tone}
+      aria-busy={loading || undefined}
+      className={cn(
+        'gap-0.5 py-3.5',
+        flat && 'rounded-none border-0 border-r border-b bg-transparent',
+        className
+      )}
+    >
+      <div className="px-4">
+        {loading ? (
+          <Skeleton className="h-4 w-24" />
+        ) : (
+          <span title={title} className="block truncate text-sm font-medium text-muted-foreground">{title}</span>
         )}
-        {trend && (
+      </div>
+      <div className="px-4">
+        {loading ? (
+          <Skeleton className="h-7 w-28" />
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <div className={cn('truncate text-xl leading-7 font-semibold tracking-tight tabular-nums', valueTone && toneText[valueTone])}>
+              {value}
+            </div>
+            {Icon ? <Icon aria-hidden className={cn('size-4 shrink-0', toneText[tone])} /> : null}
+          </div>
+        )}
+        {description ? (
+          loading ? (
+            <Skeleton className="mt-1 h-3 w-40" />
+          ) : (
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{description}</p>
+          )
+        ) : null}
+        {trend && !loading ? (
           <span
-            className={`flex items-center text-xs font-medium mt-1 ${
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
-            }`}
-          >
-            {trend.isPositive ? (
-              <TrendingUp className="h-3 w-3 mr-1" />
-            ) : (
-              <TrendingDown className="h-3 w-3 mr-1" />
+            className={cn(
+              'mt-1 flex items-center text-xs font-medium tabular-nums',
+              trend.isPositive ? toneText.success : toneText.danger
             )}
+          >
+            {trend.isPositive ? <TrendingUp aria-hidden className="mr-1 size-3" /> : <TrendingDown aria-hidden className="mr-1 size-3" />}
             {Math.abs(trend.value)}%
           </span>
-        )}
-      </CardContent>
+        ) : null}
+      </div>
     </Card>
   );
 });

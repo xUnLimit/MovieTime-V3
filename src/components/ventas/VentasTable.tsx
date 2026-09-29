@@ -2,22 +2,12 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { ArrowUpDown, Edit, Eye, MoreHorizontal, Tags, Trash2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/shared/DataTable";
-import { FilterTriggerContent } from "@/components/shared/FilterTriggerContent";
-import { PaginationFooter } from "@/components/shared/PaginationFooter";
-import {
-  Search,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Eye,
-  ArrowUpDown,
-  Check,
-  Tags,
-} from "lucide-react";
+import { ServerTableCard } from "@/components/shared/ServerTableCard";
+import { FilterMenu, TableSearch, TableToolbar } from "@/components/shared/TableToolbar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +45,11 @@ interface VentasTableProps {
   onPageSizeChange?: (size: number) => void;
 }
 
+const ORDER_OPTIONS = [
+  { value: "createdAt", label: "Más recientes" },
+  { value: "updatedAt", label: "Última actividad" },
+] as const;
+
 export function VentasTable({
   ventas,
   isLoading,
@@ -78,150 +73,97 @@ export function VentasTable({
   onPageSizeChange,
 }: VentasTableProps) {
   const filteredRows = useMemo(() => ventas.map(toVentaRow), [ventas]);
+  const categoriaOptions = useMemo(
+    () => [
+      { value: "todas", label: "Todas las categorías" },
+      ...[...categorias]
+        .sort((a, b) => a.nombre.localeCompare(b.nombre))
+        .map((categoria) => ({ value: categoria.id, label: categoria.nombre })),
+    ],
+    [categorias],
+  );
+
   return (
-    <Card className="p-4 pb-2">
-      <h3 className="text-xl font-semibold">{title}</h3>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center -mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por cliente, servicio o email..."
+    <ServerTableCard
+      title={title}
+      rowCount={filteredRows.length}
+      rowHeight={54}
+      loading={isLoading}
+      pagination={
+        showPagination
+          ? { page, totalPages, hasPrevious, hasMore, onPrevious, onNext, pageSize, onPageSizeChange }
+          : undefined
+      }
+      toolbar={
+        <TableToolbar>
+          <TableSearch
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9"
+            onChange={onSearchChange}
+            placeholder="Buscar por cliente, servicio o email..."
           />
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full sm:w-[200px] justify-between gap-2"
-            >
-              <FilterTriggerContent
-                icon={Tags}
-                label={
-                  selectedCategoriaId === "todas"
-                    ? "Todas las categorías"
-                    : (categorias.find((c) => c.id === selectedCategoriaId)
-                        ?.nombre ?? "Categoría")
-                }
-              />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-            <DropdownMenuItem onClick={() => onCategoriaChange?.("todas")} className="dashboard-toolbar-menu-item">
-              <span className="dashboard-toolbar-menu-item-label">Todas las categorías</span>
-              {selectedCategoriaId === "todas" && <Check className="h-4 w-4 shrink-0" />}
-            </DropdownMenuItem>
-            {[...categorias]
-              .sort((a, b) => a.nombre.localeCompare(b.nombre))
-              .map((cat) => (
+          <FilterMenu
+            icon={Tags}
+            ariaLabel="Categoría"
+            value={selectedCategoriaId}
+            options={categoriaOptions}
+            onChange={(id) => onCategoriaChange?.(id)}
+          />
+          <FilterMenu
+            icon={ArrowUpDown}
+            ariaLabel="Orden"
+            value={orderBy}
+            options={ORDER_OPTIONS}
+            onChange={(value) => onOrderByChange?.(value)}
+          />
+        </TableToolbar>
+      }
+    >
+      <DataTable
+        bare
+        data={filteredRows}
+        columns={ventasTableColumns}
+        loading={isLoading}
+        emptyMessage="No hay ventas para mostrar"
+        pagination={false}
+        actions={(item) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label="Acciones de la venta">
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link prefetch={false} href={`/ventas/${item.original.id}`}>
+                  <Eye />
+                  Ver detalles
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link prefetch={false} href={`/ventas/${item.original.id}/editar`}>
+                  <Edit />
+                  Editar
+                </Link>
+              </DropdownMenuItem>
+              {onDelete && (
                 <DropdownMenuItem
-                  key={cat.id}
-                  onClick={() => onCategoriaChange?.(cat.id)}
-                  className="dashboard-toolbar-menu-item"
+                  variant="destructive"
+                  onClick={() =>
+                    onDelete(
+                      item.original.id,
+                      item.original.servicioId,
+                      item.original.perfilNumero,
+                    )
+                  }
                 >
-                  <span className="dashboard-toolbar-menu-item-label">{cat.nombre}</span>
-                  {selectedCategoriaId === cat.id && <Check className="h-4 w-4 shrink-0" />}
+                  <Trash2 />
+                  Eliminar venta
                 </DropdownMenuItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full sm:w-[200px] justify-between gap-2"
-            >
-              <FilterTriggerContent
-                icon={ArrowUpDown}
-                label={orderBy === "createdAt" ? "Más recientes" : "Última actividad"}
-              />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="dashboard-toolbar-menu">
-            <DropdownMenuItem onClick={() => onOrderByChange?.("createdAt")} className="dashboard-toolbar-menu-item">
-              <span className="dashboard-toolbar-menu-item-label">Más recientes</span>
-              {orderBy === "createdAt" && <Check className="h-4 w-4 shrink-0" />}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onOrderByChange?.("updatedAt")} className="dashboard-toolbar-menu-item">
-              <span className="dashboard-toolbar-menu-item-label">Última actividad</span>
-              {orderBy === "updatedAt" && <Check className="h-4 w-4 shrink-0" />}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {isLoading ? (
-        <div className="border border-border rounded-md p-12 text-center">
-          <p className="text-sm text-muted-foreground">Cargando ventas...</p>
-        </div>
-      ) : filteredRows.length === 0 ? (
-        <div className="border border-border rounded-md p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            No hay ventas para mostrar
-          </p>
-        </div>
-      ) : (
-        <div>
-          <DataTable
-            data={filteredRows}
-            columns={ventasTableColumns}
-            pagination={false}
-            actions={(item) => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link prefetch={false} href={`/ventas/${item.original.id}`}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver detalles
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link prefetch={false} href={`/ventas/${item.original.id}/editar`}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Link>
-                  </DropdownMenuItem>
-                  {onDelete && (
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() =>
-                        onDelete(
-                          item.original.id,
-                          item.original.servicioId,
-                          item.original.perfilNumero,
-                        )
-                      }
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Eliminar venta
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          />
-
-          {showPagination && (
-            <PaginationFooter
-              page={page}
-              totalPages={totalPages}
-              hasPrevious={hasPrevious}
-              hasMore={hasMore}
-              onPrevious={onPrevious}
-              onNext={onNext}
-              pageSize={pageSize}
-              onPageSizeChange={onPageSizeChange}
-            />
-          )}
-        </div>
-      )}
-    </Card>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      />
+    </ServerTableCard>
   );
 }

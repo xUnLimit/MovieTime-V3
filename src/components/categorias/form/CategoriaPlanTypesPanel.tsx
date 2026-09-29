@@ -99,7 +99,7 @@ export function CategoriaPlanTypesPanel({
                   }}
                 />
                 {editTipoError && (
-                  <p className="text-xs text-red-500 mb-2">{editTipoError}</p>
+                  <p className="text-xs text-danger mb-2">{editTipoError}</p>
                 )}
                 <div className="flex gap-2 justify-end">
                   <button
@@ -142,7 +142,7 @@ export function CategoriaPlanTypesPanel({
                 <button
                   type="button"
                   onClick={(e) => onStartEdit(tipo, e)}
-                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-blue-500 transition-colors"
+                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-info transition-colors"
                 >
                   <Edit className="h-3.5 w-3.5" />
                 </button>
@@ -152,7 +152,7 @@ export function CategoriaPlanTypesPanel({
                     e.stopPropagation();
                     onDeleteTipo(tipo.id);
                   }}
-                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-red-500 transition-colors"
+                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-danger transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -183,7 +183,7 @@ export function CategoriaPlanTypesPanel({
               }}
             />
             {tipoNombreError && (
-              <p className="text-xs text-red-500">{tipoNombreError}</p>
+              <p className="text-xs text-danger">{tipoNombreError}</p>
             )}
             <div className="flex gap-2">
               <Button

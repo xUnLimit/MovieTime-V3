@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 
+import { THEME_STORAGE_KEY } from './theme-init-script';
+
 type Theme = 'light' | 'dark' | 'system';
 type ResolvedTheme = 'light' | 'dark';
 
@@ -17,7 +19,7 @@ type ThemeContextValue = {
   setTheme: (theme: Theme) => void;
 };
 
-const STORAGE_KEY = 'theme';
+const STORAGE_KEY = THEME_STORAGE_KEY;
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
 function getSystemTheme(): ResolvedTheme {

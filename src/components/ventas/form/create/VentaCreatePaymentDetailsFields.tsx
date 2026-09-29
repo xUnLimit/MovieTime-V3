@@ -91,7 +91,7 @@ export function VentaCreatePaymentDetailsFields({
             />
           </div>
           {itemErrors.precio ? (
-            <p className="text-sm text-red-500">{itemErrors.precio}</p>
+            <p className="text-sm text-danger">{itemErrors.precio}</p>
           ) : null}
         </div>
 

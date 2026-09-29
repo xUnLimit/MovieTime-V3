@@ -90,7 +90,7 @@ export function ServicioFinanzasSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.metodoPagoId && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-danger">
               {errors.metodoPagoId.message}
             </p>
           )}
@@ -113,7 +113,7 @@ export function ServicioFinanzasSection({
             />
           </div>
           {errors.costoServicio && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-danger">
               {errors.costoServicio.message}
             </p>
           )}
@@ -155,7 +155,7 @@ export function ServicioFinanzasSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.tipoPlan && (
-            <p className="text-sm text-red-500">{errors.tipoPlan.message}</p>
+            <p className="text-sm text-danger">{errors.tipoPlan.message}</p>
           )}
         </div>
 
@@ -195,7 +195,7 @@ export function ServicioFinanzasSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.cicloPago && (
-            <p className="text-sm text-red-500">{errors.cicloPago.message}</p>
+            <p className="text-sm text-danger">{errors.cicloPago.message}</p>
           )}
         </div>
       </div>
@@ -233,7 +233,7 @@ export function ServicioFinanzasSection({
             </PopoverContent>
           </Popover>
           {errors.fechaInicio && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-danger">
               {errors.fechaInicio.message}
             </p>
           )}
@@ -274,7 +274,7 @@ export function ServicioFinanzasSection({
             </PopoverContent>
           </Popover>
           {errors.fechaVencimiento && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-danger">
               {errors.fechaVencimiento.message}
             </p>
           )}

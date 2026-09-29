@@ -3,11 +3,10 @@
 import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 
 import { MetodoPagoForm } from '@/components/metodos-pago/MetodoPagoForm';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useMetodoPagoDetail } from '@/hooks/use-entity-detail';
 import { isUuid, safeInternalPath } from '@/platform/utils/safety';
 import { toast } from 'sonner';
@@ -38,19 +37,7 @@ function EditarMetodoPagoPageContent() {
   if (!metodoPago) {
     return (
       <div className="space-y-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Método de pago no encontrado</h1>
-          <p className="text-sm text-muted-foreground">
-            <Link prefetch={false} href="/dashboard" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href="/metodos-pago" className="hover:text-foreground transition-colors">
-              Métodos de Pago
-            </Link>{' '}
-            / <span className="text-foreground">Editar</span>
-          </p>
-        </div>
+        <PageHeader title="Método de pago no encontrado" trail={[{ label: 'Editar' }]} />
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">
             No se encontró el método de pago con el ID proporcionado.
@@ -68,29 +55,7 @@ function EditarMetodoPagoPageContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Link prefetch={false} href={from}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Editar Método de Pago</h1>
-          </div>
-          <p className="text-sm text-muted-foreground ml-10">
-            <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>{' '}
-            /{' '}
-            <Link prefetch={false} href="/metodos-pago" className="hover:text-foreground transition-colors">
-              Métodos de Pago
-            </Link>{' '}
-            / <span className="text-foreground">Editar</span>
-          </p>
-        </div>
-      </div>
+      <PageHeader title="Editar Método de Pago" trail={[{ label: 'Editar' }]} backTo={from} />
 
       {/* Form Card */}
       <div className="bg-card border rounded-lg p-6">

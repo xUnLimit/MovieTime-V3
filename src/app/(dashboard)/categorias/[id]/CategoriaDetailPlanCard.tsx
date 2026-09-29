@@ -49,7 +49,7 @@ export function CategoriaDetailPlanCard({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Precio</span>
-              <span className="text-xs font-bold">
+              <span className="text-xs font-semibold">
                 ${plan.precio.toFixed(2)}
                 <span className="font-normal text-muted-foreground">/{cicloPago.short}</span>
               </span>

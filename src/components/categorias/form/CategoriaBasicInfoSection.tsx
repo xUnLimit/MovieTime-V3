@@ -56,7 +56,7 @@ export function CategoriaBasicInfoSection({
           }}
         />
         {errors.nombre && (
-          <p className="text-sm text-red-500">{errors.nombre.message}</p>
+          <p className="text-sm text-danger">{errors.nombre.message}</p>
         )}
       </div>
 
@@ -87,7 +87,7 @@ export function CategoriaBasicInfoSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.tipo && (
-            <p className="text-sm text-red-500">{errors.tipo.message}</p>
+            <p className="text-sm text-danger">{errors.tipo.message}</p>
           )}
         </div>
 
@@ -123,7 +123,7 @@ export function CategoriaBasicInfoSection({
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.tipoCategoria && (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-danger">
               {errors.tipoCategoria.message}
             </p>
           )}

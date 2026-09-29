@@ -12,7 +12,6 @@ export function createTodosTercerosColumns(
       key: 'nombre',
       header: 'Nombre',
       sortable: true,
-      width: '14%',
       render: (item) => (
         <div className="font-medium">
           {item.nombre} {item.apellido}
@@ -21,31 +20,30 @@ export function createTodosTercerosColumns(
     },
     {
       key: 'tipo',
+      hideBelow: 'lg',
       header: 'Tipo',
       sortable: false,
       align: 'center',
-      width: '16%',
       render: (item) => <span>{item.tipo}</span>,
     },
     {
       key: 'metodoPagoNombre',
+      hideBelow: 'xl',
       header: 'Método de Pago',
       sortable: false,
       align: 'center',
-      width: '16%',
     },
     {
       key: 'serviciosActivos',
       header: 'Servicios Activos',
       sortable: true,
       align: 'center',
-      width: '16%',
       render: (item) => {
         const isActive = item.serviciosActivos > 0;
         return (
           <div className="flex items-center justify-center gap-2">
             <Monitor
-              className={`h-4 w-4 ${isActive ? 'text-green-500' : 'text-muted-foreground'}`}
+              className={`h-4 w-4 ${isActive ? 'text-success' : 'text-muted-foreground'}`}
             />
             <span className={isActive ? '' : 'text-muted-foreground'}>
               {item.serviciosActivos}
@@ -56,10 +54,10 @@ export function createTodosTercerosColumns(
     },
     {
       key: 'montoSinConsumir',
+      hideBelow: 'md',
       header: 'Monto Sin Consumir',
       sortable: true,
       align: 'center',
-      width: '16%',
       render: (item) => {
         const isActive = item.serviciosActivos > 0;
         return (
@@ -67,7 +65,7 @@ export function createTodosTercerosColumns(
             <span
               className={
                 isActive
-                  ? 'font-medium text-green-500'
+                  ? 'font-medium text-success'
                   : 'text-muted-foreground'
               }
             >
@@ -84,9 +82,9 @@ export function createTodosTercerosColumns(
     },
     {
       key: 'contacto',
+      hideBelow: 'sm',
       header: 'Contacto',
       align: 'center',
-      width: '16%',
       render: (item) => (
         <Button
           variant="ghost"
@@ -95,7 +93,7 @@ export function createTodosTercerosColumns(
             event.stopPropagation();
             onWhatsApp(item);
           }}
-          className="h-auto p-0 text-green-500 hover:text-green-400"
+          className="h-auto p-0 text-success hover:text-success"
         >
           <MessageCircle className="mr-1 h-4 w-4" />
           WhatsApp

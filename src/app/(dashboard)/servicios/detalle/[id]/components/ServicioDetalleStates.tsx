@@ -4,7 +4,7 @@ export function ServicioLoadingState() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cargando servicio...</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Cargando servicio...</h1>
         <p className="text-sm text-muted-foreground">
           <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">Dashboard</Link>
           {' / '}
@@ -24,7 +24,7 @@ export function ServicioNotFoundState() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Servicio no encontrado</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Servicio no encontrado</h1>
         <p className="text-sm text-muted-foreground">
           <Link prefetch={false} href="/" className="hover:text-foreground transition-colors">
             Dashboard

@@ -92,12 +92,12 @@ function showDashboardNotificationToast(unread: NotificacionConId[]) {
         "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg",
         "transition-all",
         isRed
-          ? "border-red-200 bg-background dark:border-red-500/30"
-          : "border-yellow-200 bg-background dark:border-yellow-500/30",
+          ? "border-danger-border bg-background"
+          : "border-warning-border bg-background",
       ].join(" ")}
     >
       <div className="grid gap-1">
-        <div className={`text-sm font-semibold flex items-center gap-2 ${isRed ? "text-red-500" : "text-yellow-500"}`}>
+        <div className={`text-sm font-semibold flex items-center gap-2 ${isRed ? "text-danger" : "text-warning"}`}>
           <Bell className="h-5 w-5" />
           ¡Notificaciones Pendientes!
         </div>
@@ -115,8 +115,8 @@ function showDashboardNotificationToast(unread: NotificacionConId[]) {
           "text-sm font-medium ring-offset-background transition-colors",
           "hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           isRed
-            ? "border-red-200 text-red-700 hover:bg-red-100 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
-            : "border-yellow-200 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-500/30 dark:text-yellow-300 dark:hover:bg-yellow-900",
+            ? "border-danger-border text-danger hover:bg-danger/15"
+            : "border-warning-border text-warning hover:bg-warning/15",
         ].join(" ")}
       >
         Ver ahora
@@ -130,8 +130,8 @@ function showDashboardNotificationToast(unread: NotificacionConId[]) {
           "absolute right-2 top-2 rounded-md p-1 opacity-0 transition-opacity",
           "hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
           isRed
-            ? "text-red-500 hover:text-red-700 dark:text-red-300 dark:hover:text-red-50 focus:ring-red-400"
-            : "text-yellow-600 hover:text-yellow-800",
+            ? "text-danger hover:text-danger focus:ring-danger-border"
+            : "text-warning hover:text-warning",
         ].join(" ")}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

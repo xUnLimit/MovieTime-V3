@@ -1,11 +1,10 @@
 import { Legend, Tooltip, XAxis, YAxis } from "recharts";
 import type { LabelProps } from "recharts";
 
-const axisColor = "var(--muted-foreground)";
-export const gridColor = "var(--border)";
-const tooltipBg = "var(--background)";
-const tooltipBorder = "var(--border)";
-const tooltipText = "var(--foreground)";
+import { chartColors, chartTooltipLabelStyle, chartTooltipStyle } from "./chart-theme";
+
+const axisColor = chartColors.axis;
+export const gridColor = chartColors.grid;
 
 export function BaseXAxis({
   dataKey,
@@ -18,7 +17,7 @@ export function BaseXAxis({
     <XAxis
       dataKey={dataKey}
       stroke={axisColor}
-      fontSize={10}
+      fontSize={12}
       tickLine={false}
       axisLine={false}
       dy={8}
@@ -32,7 +31,7 @@ export function BaseYAxis() {
   return (
     <YAxis
       stroke={axisColor}
-      fontSize={10}
+      fontSize={12}
       tickLine={false}
       axisLine={false}
       allowDecimals={false}
@@ -53,11 +52,8 @@ export function BaseTooltip({
 }) {
   return (
     <Tooltip
-      contentStyle={{
-        backgroundColor: tooltipBg,
-        border: `1px solid ${tooltipBorder}`,
-        borderRadius: "8px",
-      }}
+      contentStyle={chartTooltipStyle}
+      labelStyle={chartTooltipLabelStyle}
       formatter={formatter}
       labelFormatter={(label, payload) => {
         if (payload && payload.length > 0) {
@@ -68,7 +64,6 @@ export function BaseTooltip({
         }
         return label;
       }}
-      labelStyle={{ color: tooltipText }}
       animationDuration={0}
     />
   );
@@ -80,7 +75,8 @@ export function BaseLegend() {
       verticalAlign="bottom"
       height={30}
       iconType="circle"
-      wrapperStyle={{ fontSize: "11px", paddingTop: "4px" }}
+      iconSize={8}
+      wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
     />
   );
 }
@@ -112,11 +108,11 @@ export function renderChurnLabel(props: LabelProps) {
     <text
       x={xNum + widthNum / 2}
       y={yNum - 6}
-      fill="#dc2626"
-      stroke={tooltipBg}
+      fill={chartColors.loss}
+      stroke={chartColors.surface}
       strokeWidth={3}
       paintOrder="stroke"
-      fontSize={11}
+      fontSize={12}
       fontWeight={700}
       textAnchor="middle"
     >

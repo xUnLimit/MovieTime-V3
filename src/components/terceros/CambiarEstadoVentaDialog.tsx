@@ -75,12 +75,12 @@ export function CambiarEstadoVentaDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <div
-                className={`flex items-center justify-center w-7 h-7 rounded-full ${esActivar ? "bg-green-100 dark:bg-green-950/40" : "bg-red-100 dark:bg-red-950/40"}`}
+                className={`flex items-center justify-center w-7 h-7 rounded-full ${esActivar ? "bg-success-subtle" : "bg-danger-subtle"}`}
               >
                 {esActivar ? (
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <CheckCircle className="h-4 w-4 text-success" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <XCircle className="h-4 w-4 text-danger" />
                 )}
               </div>
               {esActivar ? "Activar venta" : "Inactivar venta"}
@@ -109,8 +109,8 @@ export function CambiarEstadoVentaDialog({
                 variant="outline"
                 className={
                   esActivar
-                    ? "border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-                    : "border-red-500/40 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                    ? "border-success-border bg-success-subtle text-success"
+                    : "border-danger-border bg-danger-subtle text-danger"
                 }
               >
                 {esActivar ? "Activar" : "Inactivar"}
@@ -136,8 +136,8 @@ export function CambiarEstadoVentaDialog({
                 className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
                   alcance === "venta"
                     ? esActivar
-                      ? "border-green-400 bg-green-50 dark:border-green-700 dark:bg-green-950/20"
-                      : "border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20"
+                      ? "border-success-border bg-success-subtle"
+                      : "border-danger-border bg-danger-subtle"
                     : "border-border hover:border-muted-foreground/40"
                 }`}
               >
@@ -149,7 +149,7 @@ export function CambiarEstadoVentaDialog({
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-1.5">
                     <ShoppingCart
-                      className={`h-3.5 w-3.5 ${esActivar ? "text-green-600" : "text-red-600"}`}
+                      className={`h-3.5 w-3.5 ${esActivar ? "text-success" : "text-danger"}`}
                     />
                     <span className="text-sm font-medium">Solo la venta</span>
                   </div>
@@ -167,8 +167,8 @@ export function CambiarEstadoVentaDialog({
                 className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
                   alcance === "venta_y_servicio"
                     ? esActivar
-                      ? "border-green-400 bg-green-50 dark:border-green-700 dark:bg-green-950/20"
-                      : "border-red-400 bg-red-50 dark:border-red-700 dark:bg-red-950/20"
+                      ? "border-success-border bg-success-subtle"
+                      : "border-danger-border bg-danger-subtle"
                     : "border-border hover:border-muted-foreground/40"
                 }`}
               >
@@ -180,7 +180,7 @@ export function CambiarEstadoVentaDialog({
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-1.5">
                     <Monitor
-                      className={`h-3.5 w-3.5 ${esActivar ? "text-green-600" : "text-red-600"}`}
+                      className={`h-3.5 w-3.5 ${esActivar ? "text-success" : "text-danger"}`}
                     />
                     <span className="text-sm font-medium">
                       Venta y servicio
@@ -214,8 +214,8 @@ export function CambiarEstadoVentaDialog({
             disabled={isSubmitting}
             className={`flex-1 text-white border-transparent ${
               esActivar
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-red-600 hover:bg-red-700"
+                ? "bg-success hover:bg-success/90"
+                : "bg-danger hover:bg-danger/90"
             }`}
           >
             {isSubmitting

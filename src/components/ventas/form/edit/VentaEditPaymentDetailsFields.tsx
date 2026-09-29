@@ -80,7 +80,7 @@ export function VentaEditPaymentDetailsFields({
             />
           </div>
           {errors.precio ? (
-            <p className="text-sm text-red-500">{errors.precio.message}</p>
+            <p className="text-sm text-danger">{errors.precio.message}</p>
           ) : null}
         </div>
 
@@ -139,7 +139,7 @@ export function VentaEditPaymentDetailsFields({
             </PopoverContent>
           </Popover>
           {errors.fechaInicio ? (
-            <p className="text-sm text-red-500">
+            <p className="text-sm text-danger">
               {errors.fechaInicio.message}
             </p>
           ) : null}
@@ -177,7 +177,7 @@ export function VentaEditPaymentDetailsFields({
             </PopoverContent>
           </Popover>
           {errors.fechaFin ? (
-            <p className="text-sm text-red-500">{errors.fechaFin.message}</p>
+            <p className="text-sm text-danger">{errors.fechaFin.message}</p>
           ) : null}
         </div>
       </div>

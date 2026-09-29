@@ -1,3 +1,4 @@
+import { hideBelowClass } from '@/components/shared/DataTable';
 import {
   Table,
   TableBody,
@@ -54,8 +55,7 @@ export function VentasProximasTableContent({
   const allSelected = notificaciones.length > 0 && notificaciones.every((notif) => selectedIds?.has(notif.id));
   const someSelected = !allSelected && notificaciones.some((notif) => selectedIds?.has(notif.id));
   return (
-    <div className="notification-table-scroll-shell rounded-md border">
-      <Table className="table-scroll-content min-w-[1540px] xl:min-w-full">
+    <Table>
         <TableHeader>
           <TableRow className="border-b hover:bg-muted/50">
             {onToggleSelected ? (
@@ -73,31 +73,31 @@ export function VentasProximasTableContent({
               <TableHead className="h-10 min-w-[130px] px-2 text-center text-muted-foreground">
                 Cliente
               </TableHead>
-              <TableHead className="h-10 min-w-[130px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[130px] px-2 text-center text-muted-foreground ${hideBelowClass('md')}`}>
                 Categoría
               </TableHead>
-              <TableHead className="h-10 min-w-[200px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[200px] px-2 text-center text-muted-foreground ${hideBelowClass('2xl')}`}>
                 Email
               </TableHead>
-              <TableHead className="h-10 min-w-[160px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[160px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Contraseña
               </TableHead>
-              <TableHead className="h-10 min-w-[100px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[100px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Perfil
               </TableHead>
-              <TableHead className="h-10 min-w-[90px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[90px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Código
               </TableHead>
-              <TableHead className="h-10 min-w-[130px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[130px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Fecha de Inicio
               </TableHead>
-              <TableHead className="h-10 min-w-[145px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[145px] px-2 text-center text-muted-foreground ${hideBelowClass('lg')}`}>
                 Fecha de Vencimiento
               </TableHead>
-              <TableHead className="h-10 min-w-[80px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[80px] px-2 text-center text-muted-foreground ${hideBelowClass('md')}`}>
                 Monto
               </TableHead>
-              <TableHead className="h-10 min-w-[120px] px-2 text-center text-muted-foreground">
+              <TableHead className={`h-10 min-w-[120px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Renovaciones
               </TableHead>
               <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
@@ -131,7 +131,6 @@ export function VentasProximasTableContent({
             />
           ))}
         </TableBody>
-      </Table>
-    </div>
+    </Table>
   );
 }

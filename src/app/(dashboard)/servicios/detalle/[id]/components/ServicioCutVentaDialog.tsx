@@ -99,7 +99,7 @@ export function CutVentaDialog({
             type="button"
             onClick={handleConfirm}
             disabled={isSubmitting || motivoCorte.trim().length === 0}
-            className="flex-1 bg-purple-600 text-white hover:bg-purple-700"
+            className="flex-1 bg-primary text-white hover:bg-primary/90"
           >
             {isSubmitting ? 'Cortando...' : 'Cortar venta'}
           </Button>

@@ -33,7 +33,7 @@ function fileBadgeText(kind: string, mimeType: string | null, filename: string |
 
 function FileBadge({ kind, mimeType, filename }: { kind: string; mimeType: string | null; filename: string | null }) {
   return (
-    <span aria-hidden className="grid h-[35px] w-8 shrink-0 place-items-center rounded-md bg-chat-accent text-[10px] font-extrabold text-chat-accent-ink">
+    <span aria-hidden className="grid h-[35px] w-8 shrink-0 place-items-center rounded-md bg-chat-accent text-xs font-semibold text-chat-accent-ink">
       {fileBadgeText(kind, mimeType, filename)}
     </span>
   );
@@ -135,7 +135,7 @@ function AudioPlayer({ mediaId, objectUrl }: { mediaId: string; objectUrl: strin
             />
           ))}
         </button>
-        <span className="mt-0.5 block text-[11px] tabular-nums text-chat-quiet">
+        <span className="mt-0.5 block text-xs tabular-nums text-chat-quiet">
           {formatDuration(playing || currentTime > 0 ? currentTime : duration)}
         </span>
       </div>
@@ -171,7 +171,7 @@ export function MessageAttachment({ mediaId, kind, mimeType, filename, onOpenIma
   if (!objectUrl) {
     if (effectiveRequested || isLoading) {
       return isAudio ? (
-        <div ref={ref} className="my-1 flex h-9 w-56 items-center gap-2 text-[12px] text-chat-quiet" role="status">
+        <div ref={ref} className="my-1 flex h-9 w-56 items-center gap-2 text-xs text-chat-quiet" role="status">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-chat-raised"><Play className="ml-0.5 h-4 w-4 opacity-40" /></span>
           Cargando audio...
         </div>
@@ -196,8 +196,8 @@ export function MessageAttachment({ mediaId, kind, mimeType, filename, onOpenIma
       <button type="button" className={FILE_CARD} onClick={() => setRequested(true)} aria-label={`Ver ${label.toLowerCase()}`}>
         <FileBadge kind={kind} mimeType={mimeType} filename={filename} />
         <span className="min-w-0">
-          <strong className="block truncate text-[12px]">{label}</strong>
-          <small className="text-[10px] opacity-75">Toca para abrir</small>
+          <strong className="block truncate text-xs">{label}</strong>
+          <small className="text-xs opacity-75">Toca para abrir</small>
         </span>
       </button>
     );
@@ -242,8 +242,8 @@ export function MessageAttachment({ mediaId, kind, mimeType, filename, onOpenIma
     >
       <FileBadge kind={kind} mimeType={mimeType} filename={filename} />
       <span className="min-w-0">
-        <strong className="block truncate text-[12px]">{label}</strong>
-        <small className="inline-flex items-center gap-1 text-[10px] opacity-75"><Download className="h-3 w-3" aria-hidden /> Descargar</small>
+        <strong className="block truncate text-xs">{label}</strong>
+        <small className="inline-flex items-center gap-1 text-xs opacity-75"><Download className="h-3 w-3" aria-hidden /> Descargar</small>
       </span>
     </a>
   );

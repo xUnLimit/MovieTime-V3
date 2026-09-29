@@ -3,6 +3,7 @@
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
+import { DataTable, defineDataTableColumns } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getCurrencySymbol } from "@/platform/constants";
 import { formatAggregateInUSD, sumInUSD } from "@/modules/payments";
+import { cn } from "@/platform/utils";
 import { formatearFecha } from "@/platform/utils/calculations";
 import { queryKeys } from "@/platform/query-keys";
 import { reportError } from "@/platform/observability/logger";
@@ -82,139 +84,148 @@ export const VentaPagosTable = memo(function VentaPagosTable({
       },
     });
 
+  const columns = useMemo(
+    () =>
+      defineDataTableColumns<VentaPago>([
+        {
+          key: "fecha",
+          header: "Fecha de pago",
+          render: (pago) => (
+            <span className="whitespace-nowrap">
+              {pago.fecha ? formatearFecha(new Date(pago.fecha)) : EMPTY_VALUE}
+            </span>
+          ),
+        },
+        {
+          key: "descripcion",
+          header: "Descripcion",
+          render: (pago) => (
+            <span className={cn("font-medium", pago.estado === "reembolsado" && "text-danger")}>
+              {pago.descripcion}
+            </span>
+          ),
+        },
+        {
+          key: "metodoPagoNombre",
+          header: "Metodo de pago",
+          hideBelow: "md",
+          render: (pago) => (
+            <span className="whitespace-nowrap">{pago.metodoPagoNombre?.trim() || "Sin metodo"}</span>
+          ),
+        },
+        {
+          key: "cicloPago",
+          header: "Ciclo de facturacion",
+          hideBelow: "2xl",
+          render: (pago) =>
+            pago.estado === "reembolsado" ? EMPTY_VALUE : getCicloPagoLabel(pago.cicloPago),
+        },
+        {
+          key: "fechaInicio",
+          header: "Fecha de inicio",
+          hideBelow: "xl",
+          render: (pago) => (
+            <span className="whitespace-nowrap">
+              {pago.estado === "reembolsado" || !pago.fechaInicio
+                ? EMPTY_VALUE
+                : formatearFecha(new Date(pago.fechaInicio))}
+            </span>
+          ),
+        },
+        {
+          key: "fechaVencimiento",
+          header: "Fecha de fin",
+          hideBelow: "xl",
+          render: (pago) => (
+            <span className="whitespace-nowrap">
+              {pago.estado === "reembolsado" || !pago.fechaVencimiento
+                ? EMPTY_VALUE
+                : formatearFecha(new Date(pago.fechaVencimiento))}
+            </span>
+          ),
+        },
+        {
+          key: "precio",
+          header: "Precio",
+          align: "center",
+          hideBelow: "lg",
+          render: (pago) =>
+            pago.estado === "reembolsado"
+              ? EMPTY_VALUE
+              : `${getCurrencySymbol(pago.moneda || moneda)} ${pago.precio.toFixed(2)}`,
+        },
+        {
+          key: "descuento",
+          header: "Descuento",
+          align: "center",
+          hideBelow: "2xl",
+          render: (pago) => (
+            <span className="text-danger">
+              {pago.estado === "reembolsado"
+                ? EMPTY_VALUE
+                : `% ${(pago.descuento > 0 ? pago.descuento : 0).toFixed(2)}`}
+            </span>
+          ),
+        },
+        {
+          key: "total",
+          header: "Total",
+          align: "center",
+          render: (pago) => (
+            <span className={cn("font-semibold", pago.estado === "reembolsado" && "text-danger")}>
+              {pago.estado === "reembolsado" ? "-" : ""}
+              {getCurrencySymbol(pago.moneda || moneda)} {pago.total.toFixed(2)}
+            </span>
+          ),
+        },
+      ]),
+    [moneda],
+  );
+
   return (
     <>
-      <div className="table-scroll-shell">
-        <table className="w-full min-w-[1100px]">
-          <colgroup>
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "7%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "7%" }} />
-          </colgroup>
-          <thead>
-            <tr className="border-b text-sm text-muted-foreground">
-              <th className="text-left py-3 font-medium whitespace-nowrap">
-                Fecha de pago
-              </th>
-              <th className="text-left py-3 font-medium">Descripcion</th>
-              <th className="text-left py-3 font-medium whitespace-nowrap">
-                Metodo de pago
-              </th>
-              <th className="text-left py-3 font-medium">
-                Ciclo de facturacion
-              </th>
-              <th className="text-left py-3 font-medium whitespace-nowrap">
-                Fecha de inicio
-              </th>
-              <th className="text-left py-3 font-medium whitespace-nowrap">
-                Fecha de fin
-              </th>
-              <th className="text-center py-3 font-medium">Precio</th>
-              <th className="text-center py-3 font-medium">Descuento</th>
-              <th className="text-center py-3 font-medium">Total</th>
-              <th className="text-center py-3 font-medium">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagos.map((pago, index) => {
-              const rowCurrency = getCurrencySymbol(pago.moneda || moneda);
-              const esInicial =
-                (pago.isPagoInicial ?? false) ||
-                pago.descripcion.toLowerCase() === "pago inicial";
-              const esReembolso = pago.estado === "reembolsado";
-              const esUltimo = index === 0;
-              const puedeGestionar =
-                canManagePagos && esUltimo && !esInicial && !esReembolso && pago.estado !== "anulado";
-              const metodoPagoNombre =
-                pago.metodoPagoNombre?.trim() || "Sin metodo";
-              const fechaPago = pago.fecha ? formatearFecha(new Date(pago.fecha)) : EMPTY_VALUE;
-              const fechaInicio = pago.fechaInicio ? formatearFecha(new Date(pago.fechaInicio)) : EMPTY_VALUE;
-              const fechaFin = pago.fechaVencimiento ? formatearFecha(new Date(pago.fechaVencimiento)) : EMPTY_VALUE;
-              const refundClass = esReembolso ? "text-red-600 dark:text-red-400" : "";
+      <DataTable
+        bare
+        data={pagos}
+        columns={columns}
+        emptyMessage="No hay pagos registrados"
+        actions={(pago) => {
+          const esInicial =
+            (pago.isPagoInicial ?? false) || pago.descripcion.toLowerCase() === "pago inicial";
+          const puedeGestionar =
+            canManagePagos &&
+            pago === pagos[0] &&
+            !esInicial &&
+            pago.estado !== "reembolsado" &&
+            pago.estado !== "anulado";
 
-              return (
-                <tr
-                  key={`${pago.id ?? pago.descripcion}-${index}`}
-                  className="border-b text-sm"
-                >
-                  <td className="py-3 whitespace-nowrap">{fechaPago}</td>
-                  <td className={`py-3 font-medium ${refundClass}`}>
-                    {pago.descripcion}
-                  </td>
-                  <td className="py-3 whitespace-nowrap">
-                    {metodoPagoNombre}
-                  </td>
-                  <td className="py-3">
-                    {esReembolso ? EMPTY_VALUE : getCicloPagoLabel(pago.cicloPago)}
-                  </td>
-                  <td className="py-3 whitespace-nowrap">
-                    {esReembolso ? EMPTY_VALUE : fechaInicio}
-                  </td>
-                  <td className="py-3 whitespace-nowrap">
-                    {esReembolso ? EMPTY_VALUE : fechaFin}
-                  </td>
-                  <td className="py-3 text-center">
-                    {esReembolso ? EMPTY_VALUE : `${rowCurrency} ${pago.precio.toFixed(2)}`}
-                  </td>
-                  <td className="py-3 text-center text-red-500">
-                    {esReembolso
-                      ? EMPTY_VALUE
-                      : pago.descuento > 0
-                        ? `% ${pago.descuento.toFixed(2)}`
-                        : `% 0.00`}
-                  </td>
-                  <td className={`py-3 text-center font-semibold ${refundClass}`}>
-                    {esReembolso ? "-" : ""}{rowCurrency} {pago.total.toFixed(2)}
-                  </td>
-                  <td className="py-3 text-center">
-                    {puedeGestionar ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center">
-                          <DropdownMenuItem onClick={() => onEdit(pago)}>
-                            <Edit className="h-3.5 w-3.5 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => onDelete(pago)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-2" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <div className="h-7 flex items-center justify-center text-muted-foreground">
-                        {EMPTY_VALUE}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+          return puedeGestionar ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-sm" aria-label="Acciones del pago">
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(pago)}>
+                  <Edit />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={() => onDelete(pago)}>
+                  <Trash2 />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <span className="text-muted-foreground">{EMPTY_VALUE}</span>
+          );
+        }}
+      />
 
-      <div className="pt-3 border-t flex items-center justify-between">
+      <div className="flex items-center justify-between border-t px-4 py-3">
         <span className="text-sm text-muted-foreground">Ingreso Total:</span>
-        <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+        <span className="text-base font-semibold text-primary">
           {isCalculatingTotal ? (
             <span className="text-xs">Calculando...</span>
           ) : (

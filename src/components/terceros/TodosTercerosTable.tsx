@@ -5,11 +5,8 @@ import { toast } from "sonner";
 
 import { DataTable } from "@/components/shared/DataTable";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  PaginationFooter,
-  PaginationFooterProps,
-} from "@/components/shared/PaginationFooter";
-import { Card } from "@/components/ui/card";
+import type { PaginationFooterProps } from "@/components/shared/PaginationFooter";
+import { ServerTableCard } from "@/components/shared/ServerTableCard";
 import { useVentasPorTerceros } from "@/hooks/use-ventas-por-terceros";
 import { deleteTerceroMutation } from "@/application/client-domain-mutations";
 import { getPublicErrorMessage } from "@/platform/errors/public-errors";
@@ -79,10 +76,6 @@ export function TodosTercerosTable({
     }));
   }, [terceros, ventasPorTercero]);
 
-  const selectedMetodoPagoLabel =
-    metodoPagoOptions.find((option) => option.value === metodoPagoFilter)
-      ?.label ?? "Todos los métodos";
-
   const handleDelete = (usuario: TerceroDisplay) => {
     setTerceroToDelete(usuario);
     setDeleteDialogOpen(true);
@@ -126,18 +119,24 @@ export function TodosTercerosTable({
 
   return (
     <>
-      <Card className="p-4 pb-2">
-        <h3 className="text-xl font-semibold">{title}</h3>
-        <TodosTercerosTableToolbar
-          metodoPagoFilter={metodoPagoFilter}
-          metodoPagoOptions={metodoPagoOptions}
-          onMetodoPagoFilterChange={onMetodoPagoFilterChange}
-          onSearchChange={onSearchChange}
-          searchQuery={searchQuery}
-          selectedMetodoPagoLabel={selectedMetodoPagoLabel}
-        />
+      <ServerTableCard
+        title={title}
+        rowCount={tercerosDisplay.length}
+        loading={isLoading}
+        pagination={pagination}
+        toolbar={
+          <TodosTercerosTableToolbar
+            metodoPagoFilter={metodoPagoFilter}
+            metodoPagoOptions={metodoPagoOptions}
+            onMetodoPagoFilterChange={onMetodoPagoFilterChange}
+            onSearchChange={onSearchChange}
+            searchQuery={searchQuery}
+          />
+        }
+      >
 
         <DataTable<TerceroDisplay>
+          bare
           data={tercerosDisplay}
           columns={columns}
           loading={isLoading}
@@ -150,8 +149,7 @@ export function TodosTercerosTable({
             />
           )}
         />
-        {pagination && <PaginationFooter {...pagination} />}
-      </Card>
+      </ServerTableCard>
 
       <ConfirmDialog
         open={deleteDialogOpen}

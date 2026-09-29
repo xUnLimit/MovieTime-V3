@@ -11,6 +11,7 @@ import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
 import { PronosticoFinanciero } from '@/components/dashboard/PronosticoFinanciero';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { NotificationBell } from '@/components/notificaciones/NotificationBell';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useDashboardNotificationToast } from './useDashboardNotificationToast';
 
 const IngresosVsGastosChart = dynamic(
@@ -30,31 +31,25 @@ export default function DashboardPage() {
   useDashboardNotificationToast();
 
   return (
-    <div className="space-y-4 -mb-3 sm:-mb-4 md:-mb-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="space-y-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Vista general de métricas y rendimiento
-          </p>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <NotificationBell />
-        </div>
-      </div>
+    <div className="flex flex-col gap-4 lg:grid lg:h-full lg:min-h-[840px] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)]">
+      <PageHeader
+        title="Dashboard"
+        description="Vista general de métricas y rendimiento"
+        actions={<NotificationBell />}
+      />
 
       <DashboardMetrics />
 
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-stretch">
-        <div className="md:col-span-2 lg:col-span-3 flex flex-col">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col">
           <IngresosVsGastosChart />
         </div>
-        <div className="md:col-span-2 lg:col-span-1 flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <PronosticoFinanciero />
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid min-h-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <CrecimientoTerceros />
         <RevenueByCategory />
         <RecentActivity />

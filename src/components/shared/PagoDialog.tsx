@@ -215,7 +215,7 @@ export function PagoDialog(props: PagoDialogProps) {
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitDisabled} className="bg-purple-600 hover:bg-purple-700">
+            <Button type="submit" disabled={submitDisabled} className="bg-primary hover:bg-primary/90">
               {isEdit ? (
                 <>
                   {!isVenta && <Pencil className="h-4 w-4 mr-2" />}
