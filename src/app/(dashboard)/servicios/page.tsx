@@ -97,8 +97,7 @@ function ServiciosPageContent() {
       {showServiciosMetrics && <ServiciosMetrics />}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <div className="tabs-scroll-shell -mx-1 px-1">
-          <TabsList className="tabs-scroll-list">
+        <TabsList className="h-auto flex-wrap">
             {(['categorias', 'todos', 'activos', 'inactivos'] as const).map((tab) => (
               <TabsTrigger
                 key={tab}
@@ -108,7 +107,6 @@ function ServiciosPageContent() {
               </TabsTrigger>
             ))}
           </TabsList>
-        </div>
 
         <TabsContent value="categorias" className="min-w-0 space-y-4">
           <CategoriasTable

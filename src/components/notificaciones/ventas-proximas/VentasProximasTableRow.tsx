@@ -94,7 +94,7 @@ export function VentasProximasTableRow({
   return (
     <TableRow className={`border-b transition-colors hover:bg-muted/50 ${rowToneClass}`}>
       {onSelectedChange ? (
-        <TableCell className="w-[40px] px-2 py-2 text-center">
+        <TableCell className="w-8 px-1 py-2 text-center">
           <Checkbox
             checked={selected}
             onCheckedChange={(value) => onSelectedChange(notif.id, value === true)}
@@ -147,13 +147,13 @@ export function VentasProximasTableRow({
       </TableCell>
 
       <TableCell className="px-2 py-2 text-center font-medium">
-        <span className="inline-block max-w-[130px] truncate align-middle">
+        <span className="inline-block max-w-[130px] truncate align-middle max-sm:max-w-24">
           {notif.clienteNombre}
         </span>
       </TableCell>
 
       <TableCell className={`px-2 py-2 text-center ${hideBelowClass('md')}`}>
-        <div className="mx-auto flex max-w-[130px] flex-col items-center gap-0.5">
+        <div className="mx-auto flex max-w-[130px] flex-col max-sm:max-w-24 items-center gap-0.5">
           <span className="w-full truncate font-medium">
             {notif.categoriaNombre}
           </span>
@@ -275,7 +275,7 @@ export function VentasProximasTableRow({
       <TableCell className="px-2 py-2 text-center">
         <Badge
           variant="outline"
-          className={`font-normal gap-1 ${displayedStatus.variant}`}
+          className={`font-normal gap-1 ${displayedStatus.variant} max-sm:max-w-24 max-sm:whitespace-normal max-sm:text-center`}
         >
           {promiseDisplay ? (
             <CalendarClock className="h-3 w-3 shrink-0" />

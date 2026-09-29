@@ -75,6 +75,7 @@ export function ReposoNotificacionesTable() {
     <ServerTableCard
       title="Servicios en Reposo"
       rowCount={paginated.length}
+      rowHeight={48}
       pagination={{
         page,
         totalPages,
@@ -98,13 +99,13 @@ export function ReposoNotificacionesTable() {
         <TableHeader>
           <TableRow className="border-b hover:bg-muted/50">
             <ReposoTableHead className="w-14">Tipo</ReposoTableHead>
-            <ReposoTableHead className="min-w-32">Categoría</ReposoTableHead>
+            <ReposoTableHead className="">Categoría</ReposoTableHead>
             <ReposoTableHead className={`min-w-48 ${hideBelowClass("lg")}`}>Correo</ReposoTableHead>
             <ReposoTableHead className={`min-w-32 ${hideBelowClass("xl")}`}>Fecha Inicio</ReposoTableHead>
             <ReposoTableHead className={`min-w-32 ${hideBelowClass("xl")}`}>Fecha Fin</ReposoTableHead>
             <ReposoTableHead className={`min-w-36 ${hideBelowClass("md")}`}>Fecha Fin Reposo</ReposoTableHead>
-            <ReposoTableHead className="min-w-32">Estado</ReposoTableHead>
-            <ReposoTableHead className="min-w-20">Acciones</ReposoTableHead>
+            <ReposoTableHead className="">Estado</ReposoTableHead>
+            <ReposoTableHead className="">Acciones</ReposoTableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

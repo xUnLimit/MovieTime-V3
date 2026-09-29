@@ -43,6 +43,8 @@ export interface DataTableProps<T> {
   itemsPerPageOptions?: number[];
   /** Ajusta las filas por pagina al alto disponible para que la pagina no haga scroll vertical. */
   autoPageSize?: boolean;
+  /** Alto estimado de una fila cuando es mayor al estandar (celdas de dos lineas); solo con `autoPageSize`. */
+  rowHeight?: number;
   /** Sin borde ni radio propios: para vivir dentro de `TableCard`. */
   bare?: boolean;
   fixedLayout?: boolean;
@@ -143,6 +145,7 @@ function DataTableComponent<T extends object>({
   pagination = false,
   itemsPerPageOptions = [10, 25, 50, 100],
   autoPageSize = false,
+  rowHeight,
   bare = false,
   fixedLayout = false,
   containerClassName,
@@ -184,7 +187,7 @@ function DataTableComponent<T extends object>({
     initialPageSize: itemsPerPageOptions[0],
   });
 
-  const { ref: fitRef, rows: fitRows } = useFitPageSize({ enabled: autoFit, remeasureKey: `${loading}-${data.length}` });
+  const { ref: fitRef, rows: fitRows } = useFitPageSize({ enabled: autoFit, rowHeight, remeasureKey: `${loading}-${data.length}` });
   useEffect(() => {
     if (autoFit && fitRows !== null && settleFitRows(pageSize, fitRows) !== pageSize) setPageSize(fitRows);
   }, [autoFit, fitRows, pageSize, setPageSize]);

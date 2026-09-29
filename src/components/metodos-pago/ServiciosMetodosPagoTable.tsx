@@ -181,6 +181,7 @@ export function ServiciosMetodosPagoTable({
           <DataTable
             bare
             autoPageSize
+            rowHeight={54}
             pagination
             data={filteredMetodos}
             columns={columns}

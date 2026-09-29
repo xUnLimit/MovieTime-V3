@@ -68,7 +68,7 @@ export function MessageTab({ tipo, value, onChange }: MessageTabProps) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Escribe aquí el mensaje..."
-        className="h-[300px] resize-none text-sm leading-normal"
+        className="h-[clamp(9rem,calc(100dvh-33rem),19rem)] resize-none text-sm leading-normal"
       />
     </div>
   );

@@ -108,7 +108,7 @@ export function ServiciosProximosTableRow({
       </TableCell>
 
       <TableCell className="px-2 py-2 text-center">
-        <div className="mx-auto flex max-w-[130px] flex-col items-center gap-0.5">
+        <div className="mx-auto flex max-w-[130px] flex-col max-sm:max-w-24 items-center gap-0.5">
           <span className="w-full truncate font-medium">
             {notif.categoriaNombre}
           </span>
@@ -204,7 +204,7 @@ export function ServiciosProximosTableRow({
       <TableCell className="px-2 py-2 text-center">
         <Badge
           variant="outline"
-          className={`font-normal gap-1 ${estadoBadge.variant}`}
+          className={`font-normal gap-1 ${estadoBadge.variant} max-sm:max-w-24 max-sm:whitespace-normal max-sm:text-center`}
         >
           {notif.resaltada && (
             <AlertTriangle className="h-3 w-3 shrink-0" />

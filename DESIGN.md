@@ -76,7 +76,7 @@ Fuente: **Geist Sans** (y **Geist Mono** para codigo) via `next/font/google`. Ci
 - **Shell:** barra lateral de 224px (56px colapsada, Ctrl/Cmd+B; drawer de 272px en movil). Fila de 32px, activo con fondo gris e icono violeta, separadores entre secciones, tooltip al colapsar, insignia de Chats con contador. La ruta activa incluye sus subrutas.
 - **Pagina:** `PageHeader` (titulo 20px, migas, acciones) + KPIs + contenido. Un solo boton primario por vista.
 - **Dashboard:** en `lg+` ocupa exactamente el alto disponible (sin scroll de pagina): filas `auto / auto / auto / 1fr`, graficos que llenan su panel (`Panel fill`). Por debajo del alto minimo (840px) hace scroll.
-- **Tablas:** scroll horizontal controlado dentro de su contenedor (`table-scroll-shell`), nunca de toda la pagina.
+- **Tablas:** sin scroll horizontal ni vertical. Las columnas secundarias se ocultan segun el ancho de la propia tabla (`hideBelow`, container queries; `hideBelowClass()` en tablas propias) y las filas por pagina se ajustan al alto disponible (`autoPageSize` o `ServerTableCard`). El alto de fila es una constante por tabla (`rowHeight`, 45px por defecto; 54-62px con celdas de dos lineas): nunca se mide de los datos, para no provocar recargas en cadena. En movil la pagina hace scroll natural.
 - **Scrollbars:** finos, redondeados y discretos en toda la app (regla global en `globals.css`, colores `--scrollbar-thumb*`). No se personalizan por componente; solo cambian los tokens. Las barras de pestañas se ocultan a proposito.
 
 ## 7. Componentes canonicos
@@ -89,7 +89,7 @@ Fuente: **Geist Sans** (y **Geist Mono** para codigo) via `next/font/google`. Ci
 | Estado | `StatusBadge` + `Tone` | `shared/StatusBadge.tsx`, `shared/tone.ts` |
 | Vencimiento / disponibilidad | `getEstadoVencimiento`, `getDisponiblesColorClass` | `shared/vencimiento-status.ts`, `shared/disponibilidad-status.ts` |
 | Dinero | `Money`, `formatearMoneda` | `shared/Money.tsx`, `platform/utils/calculations.ts` |
-| Tablas | `DataTable` (skeleton en carga, `EmptyState` en vacio) | `shared/DataTable.tsx` |
+| Tablas | `TableCard` + `TableToolbar`/`TableSearch`/`FilterMenu` + `DataTable bare` (o `ServerTableCard` si pagina el servidor) | `shared/TableCard.tsx`, `shared/TableToolbar.tsx`, `shared/DataTable.tsx`, `shared/ServerTableCard.tsx` |
 | Vacio / carga / error | `EmptyState`, `Skeleton`, `LoadingSpinner`, `ModuleErrorBoundary` | `shared/*` |
 | Marca | `Logo` | `shared/Logo.tsx` |
 | Primitivas | shadcn (Button, Input, Select, Tabs, Dialog, Dropdown, Popover, Tooltip, Badge, Card, Switch, Checkbox, Kbd...) | `src/components/ui/*` |

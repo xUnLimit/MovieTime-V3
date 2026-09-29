@@ -59,7 +59,7 @@ export function VentasProximasTableContent({
         <TableHeader>
           <TableRow className="border-b hover:bg-muted/50">
             {onToggleSelected ? (
-              <TableHead className="h-10 w-[40px] px-2 text-center">
+              <TableHead className="h-10 w-8 px-1 text-center">
                 <Checkbox
                   checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                   onCheckedChange={(value) => onToggleAllSelected?.(value === true)}
@@ -67,10 +67,10 @@ export function VentasProximasTableContent({
                 />
               </TableHead>
             ) : null}
-              <TableHead className="h-10 w-[56px] px-2 text-center text-muted-foreground">
+              <TableHead className="h-10 w-12 px-1 text-center text-muted-foreground">
                 Tipo
               </TableHead>
-              <TableHead className="h-10 min-w-[130px] px-2 text-center text-muted-foreground">
+              <TableHead className="h-10 px-2 text-center text-muted-foreground">
                 Cliente
               </TableHead>
               <TableHead className={`h-10 min-w-[130px] px-2 text-center text-muted-foreground ${hideBelowClass('md')}`}>
@@ -100,10 +100,10 @@ export function VentasProximasTableContent({
               <TableHead className={`h-10 min-w-[120px] px-2 text-center text-muted-foreground ${hideBelowClass('3xl')}`}>
                 Renovaciones
               </TableHead>
-              <TableHead className="h-10 min-w-[125px] px-2 text-center text-muted-foreground">
+              <TableHead className="h-10 px-2 text-center text-muted-foreground">
                 Estado
               </TableHead>
-              <TableHead className="h-10 min-w-[74px] px-2 text-center text-muted-foreground">
+              <TableHead className="h-10 px-1 text-center text-muted-foreground sm:px-2">
                 Acciones
               </TableHead>
           </TableRow>

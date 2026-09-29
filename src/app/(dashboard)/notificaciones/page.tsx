@@ -130,8 +130,7 @@ function NotificacionesPageContent() {
 
       {/* Tabs - matching Categorías tabs style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
-        <div className="tabs-scroll-shell -mx-1 px-1">
-          <TabsList className="tabs-scroll-list">
+        <TabsList className="h-auto flex-wrap">
           <TabsTrigger
             value="ventas" className="text-xs whitespace-nowrap sm:px-4 sm:text-sm"
           >
@@ -173,7 +172,6 @@ function NotificacionesPageContent() {
             )}
           </TabsTrigger>
           </TabsList>
-        </div>
 
         {/* Ventas Tab */}
         <TabsContent value="ventas" className="min-w-0 space-y-4">

@@ -2,16 +2,19 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Clock, Inbox, Mail, RefreshCw, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Inbox, ListFilter, Mail, RefreshCw, XCircle } from 'lucide-react';
 
-import { EmptyState } from '@/components/shared/EmptyState';
+import { DataTable, defineDataTableColumns } from '@/components/shared/DataTable';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { MetricGrid } from '@/components/shared/MetricGrid';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { TableCard } from '@/components/shared/TableCard';
+import { FilterMenu, TableSearch, TableToolbar } from '@/components/shared/TableToolbar';
 import type { Tone } from '@/components/shared/tone';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -67,53 +70,45 @@ function ManualSearch({ payment, selected, onSelect, busy }: { payment: YappyPay
   );
 }
 
-function PaymentCard({ payment, ventas }: { payment: YappyPayment; ventas: YappyCandidateVenta[] }) {
+function PaymentReview({ payment, ventas }: { payment: YappyPayment; ventas: YappyCandidateVenta[] }) {
   const { resolve, dismiss } = useYappyActions();
   const [selected, setSelected] = useState(payment.matchStatus === 'match_unico' ? payment.candidateVentaIds[0] ?? '' : '');
   const [note, setNote] = useState('');
   const [showDismiss, setShowDismiss] = useState(false);
-  const open = !CLOSED_STATUSES.includes(payment.matchStatus);
   const suggested = ventas.filter((venta) => payment.candidateVentaIds.includes(venta.id));
   const busy = resolve.isPending || dismiss.isPending;
   return (
-    <Card className="gap-0 p-0">
-      <article className="p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xl font-semibold tabular-nums">{money.format(payment.amount)}</p>
-            <p className="text-sm text-muted-foreground">{payment.payerNameShort} · ****-{payment.payerPhoneLast4}</p>
-          </div>
-          <StatusBadge tone={tones[payment.matchStatus] ?? 'neutral'}>{labels[payment.matchStatus] ?? payment.matchStatus}</StatusBadge>
+    <article className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xl font-semibold tabular-nums">{money.format(payment.amount)}</p>
+          <p className="text-sm text-muted-foreground">{payment.payerNameShort} · ****-{payment.payerPhoneLast4}</p>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">{panamaDate.format(new Date(payment.paidAt))} · Confirmación {payment.confirmationCode}</p>
-        {open && (
-          <div className="mt-4 space-y-3 border-t pt-4">
-            {suggested.length > 0 && (
-              <div className="space-y-2">
-                <h2 className="text-sm font-semibold">Ventas candidatas</h2>
-                {suggested.map((venta) => <Candidate key={venta.id} venta={venta} selected={selected === venta.id} onSelect={() => setSelected(venta.id)} busy={busy} />)}
-              </div>
-            )}
-            {payment.matchStatus === 'sin_match' && <ManualSearch payment={payment} selected={selected} onSelect={setSelected} busy={busy} />}
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" disabled={busy} onClick={() => setShowDismiss((value) => !value)}>Descartar</Button>
-              <Button disabled={!selected || busy} onClick={() => resolve.mutate({ paymentId: payment.id, ventaId: selected })}>Marcar como registrado</Button>
-            </div>
-            {showDismiss && (
-              <div className="space-y-2">
-                <Label htmlFor={`motivo-${payment.id}`}>Motivo para descartar</Label>
-                <Textarea id={`motivo-${payment.id}`} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} rows={2} />
-                <Button variant="destructive" disabled={!note.trim() || busy} onClick={() => dismiss.mutate({ paymentId: payment.id, note })}>Confirmar descarte</Button>
-              </div>
-            )}
-            {(resolve.isError || dismiss.isError) && <p role="alert" className="text-sm text-danger">No se pudo actualizar el pago. Inténtalo de nuevo.</p>}
+        <StatusBadge tone={tones[payment.matchStatus] ?? 'neutral'}>{labels[payment.matchStatus] ?? payment.matchStatus}</StatusBadge>
+      </div>
+      <p className="text-xs text-muted-foreground">{panamaDate.format(new Date(payment.paidAt))} · Confirmación {payment.confirmationCode}</p>
+      <div className="space-y-3 border-t pt-4">
+        {suggested.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold">Ventas candidatas</h2>
+            {suggested.map((venta) => <Candidate key={venta.id} venta={venta} selected={selected === venta.id} onSelect={() => setSelected(venta.id)} busy={busy} />)}
           </div>
         )}
-        {payment.matchStatus === 'registrado' && payment.matchedVentaId && (
-          <Link className="mt-3 inline-block text-sm text-primary underline-offset-4 hover:underline" href={`/ventas/${payment.matchedVentaId}`}>Ver venta registrada</Link>
+        {payment.matchStatus === 'sin_match' && <ManualSearch payment={payment} selected={selected} onSelect={setSelected} busy={busy} />}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" disabled={busy} onClick={() => setShowDismiss((value) => !value)}>Descartar</Button>
+          <Button disabled={!selected || busy} onClick={() => resolve.mutate({ paymentId: payment.id, ventaId: selected })}>Marcar como registrado</Button>
+        </div>
+        {showDismiss && (
+          <div className="space-y-2">
+            <Label htmlFor={`motivo-${payment.id}`}>Motivo para descartar</Label>
+            <Textarea id={`motivo-${payment.id}`} value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} rows={2} />
+            <Button variant="destructive" disabled={!note.trim() || busy} onClick={() => dismiss.mutate({ paymentId: payment.id, note })}>Confirmar descarte</Button>
+          </div>
         )}
-      </article>
-    </Card>
+        {(resolve.isError || dismiss.isError) && <p role="alert" className="text-sm text-danger">No se pudo actualizar el pago. Inténtalo de nuevo.</p>}
+      </div>
+    </article>
   );
 }
 
@@ -142,18 +137,58 @@ function MailboxPanel({ connections, sync }: { connections: ReturnType<typeof us
   );
 }
 
+interface PaymentRow extends YappyPayment {
+  searchText: string;
+}
+
+function createColumns(onReview: (payment: YappyPayment) => void) {
+  return defineDataTableColumns<PaymentRow>([
+    { key: 'amount', header: 'Monto', sortable: true, render: (row) => <span className="font-semibold tabular-nums">{money.format(row.amount)}</span> },
+    { key: 'payerNameShort', header: 'Pagador', sortable: true, render: (row) => <span>{row.payerNameShort} · ****-{row.payerPhoneLast4}</span> },
+    { key: 'paidAt', header: 'Fecha', sortable: true, hideBelow: 'sm', render: (row) => <span className="whitespace-nowrap">{panamaDate.format(new Date(row.paidAt))}</span> },
+    { key: 'confirmationCode', header: 'Confirmación', hideBelow: 'lg', render: (row) => <span className="tabular-nums">{row.confirmationCode}</span> },
+    { key: 'matchStatus', header: 'Estado', render: (row) => <StatusBadge tone={tones[row.matchStatus] ?? 'neutral'}>{labels[row.matchStatus] ?? row.matchStatus}</StatusBadge> },
+    {
+      key: 'acciones',
+      header: 'Detalle',
+      align: 'center',
+      render: (row) => {
+        if (!CLOSED_STATUSES.includes(row.matchStatus)) return <Button size="sm" variant="outline" onClick={() => onReview(row)}>Revisar</Button>;
+        if (row.matchStatus === 'registrado' && row.matchedVentaId) {
+          return <Link className="text-sm text-primary underline-offset-4 hover:underline" href={`/ventas/${row.matchedVentaId}`}>Ver venta registrada</Link>;
+        }
+        return <span className="text-muted-foreground">—</span>;
+      },
+    },
+  ]);
+}
+
 function YappyPageContent() {
   const user = useAuthStore((state) => state.user);
   const payments = useYappyPayments();
   const connections = useYappyConnections();
   const [filter, setFilter] = useState<string>('todos');
+  const [search, setSearch] = useState('');
+  const [reviewId, setReviewId] = useState<string | null>(null);
   const all = useMemo(() => payments.data ?? [], [payments.data]);
-  const visible = useMemo(() => all.filter((payment) => filter === 'todos' || payment.matchStatus === filter), [all, filter]);
-  const ventas = useYappyCandidateVentas(visible.flatMap((payment) => payment.candidateVentaIds));
+  const rows = useMemo<PaymentRow[]>(() => {
+    const query = search.trim().toLowerCase();
+    return all
+      .filter((payment) => filter === 'todos' || payment.matchStatus === filter)
+      .map((payment) => ({ ...payment, searchText: `${payment.payerNameShort} ${payment.confirmationCode} ${payment.payerPhoneLast4}`.toLowerCase() }))
+      .filter((row) => !query || row.searchText.includes(query));
+  }, [all, filter, search]);
+  const reviewing = all.find((payment) => payment.id === reviewId) ?? null;
+  const ventas = useYappyCandidateVentas(reviewing?.candidateVentaIds ?? []);
   const { sync } = useYappyActions();
+  const columns = useMemo(() => createColumns((payment) => setReviewId(payment.id)), []);
   if (user?.role !== 'admin') return <p className="p-6">Esta sección está disponible solo para administradores.</p>;
   const countBy = (status: string) => all.filter((payment) => payment.matchStatus === status).length;
   const pending = all.filter((payment) => !CLOSED_STATUSES.includes(payment.matchStatus)).length;
+  const filterOptions = filters.map((item) => ({
+    value: item,
+    label: `${item === 'todos' ? 'Todos' : labels[item]} (${item === 'todos' ? all.length : countBy(item)})`,
+  }));
   return (
     <div className="space-y-4">
       <PageHeader
@@ -173,23 +208,36 @@ function YappyPageContent() {
         <MetricCard title="Descartados" value={countBy('descartado')} icon={XCircle} loading={payments.isLoading} />
       </MetricGrid>
       <MailboxPanel connections={connections} sync={sync} />
-      <section className="space-y-4" aria-label="Cola de pagos">
-        <div className="flex flex-wrap gap-2">
-          {filters.map((item) => (
-            <Button key={item} size="sm" variant={filter === item ? 'default' : 'outline'} onClick={() => setFilter(item)}>
-              {item === 'todos' ? 'Todos' : labels[item]} ({item === 'todos' ? all.length : countBy(item)})
-            </Button>
-          ))}
-        </div>
-        {payments.isLoading && <p role="status" className="text-sm text-muted-foreground">Cargando pagos…</p>}
-        {(payments.isError || ventas.isError) && <p role="alert" className="text-sm text-danger">No se pudo cargar la cola. Actualiza la página.</p>}
-        {!payments.isLoading && !payments.isError && visible.length === 0 && (
-          <Card className="py-2"><EmptyState message="No hay pagos en este estado." /></Card>
-        )}
-        <div className="grid items-start gap-4 lg:grid-cols-2">
-          {visible.map((payment) => <PaymentCard key={payment.id} payment={payment} ventas={ventas.data ?? []} />)}
-        </div>
-      </section>
+      {payments.isLoading && <p role="status" className="sr-only">Cargando pagos…</p>}
+      {(payments.isError || ventas.isError) && <p role="alert" className="text-sm text-danger">No se pudo cargar la cola. Actualiza la página.</p>}
+      <TableCard
+        title="Cola de pagos"
+        toolbar={
+          <TableToolbar>
+            <TableSearch value={search} onChange={setSearch} placeholder="Buscar por pagador o confirmación..." />
+            <FilterMenu icon={ListFilter} ariaLabel="Estado" value={filter} options={filterOptions} onChange={setFilter} />
+          </TableToolbar>
+        }
+      >
+        <DataTable
+          bare
+          autoPageSize
+          pagination
+          data={rows}
+          columns={columns}
+          loading={payments.isLoading}
+          emptyMessage="No hay pagos en este estado."
+        />
+      </TableCard>
+      <Dialog open={reviewing !== null} onOpenChange={(open) => { if (!open) setReviewId(null); }}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Revisar pago</DialogTitle>
+            <DialogDescription>Elige la venta a la que corresponde el cobro o descártalo.</DialogDescription>
+          </DialogHeader>
+          {reviewing ? <PaymentReview key={reviewing.id} payment={reviewing} ventas={ventas.data ?? []} /> : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

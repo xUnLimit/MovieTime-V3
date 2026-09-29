@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { YappyCandidateVenta, YappyPayment } from '@/application/use-cases/yappy-use-cases';
 
@@ -35,6 +36,8 @@ vi.mock('@/hooks/use-yappy-payments', () => ({
 
 import YappyPage from './page';
 
+const review = () => fireEvent.click(screen.getByRole('button', { name: 'Revisar' }));
+
 beforeEach(() => {
   vi.clearAllMocks();
   queryStatus.loading = false;
@@ -51,12 +54,14 @@ describe('Yappy review queue', () => {
   it('shows detected payment, candidate and existing renewal destination', () => {
     render(<YappyPage />);
     expect(screen.getByText('Pagos Yappy detectados')).toBeTruthy();
-    expect(screen.getByText(/Emmanuel S./)).toBeTruthy();
-    expect(screen.getByText(/GZCSS-20613095/)).toBeTruthy();
+    expect(screen.getAllByText(/Emmanuel S./).length).toBeGreaterThan(0);
+    review();
+    expect(screen.getAllByText(/GZCSS-20613095/).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'Renovar en la venta' }).getAttribute('href')).toBe('/ventas/123e4567-e89b-12d3-a456-426614174004');
   });
   it('records only the selected sale and requires a reason to dismiss', () => {
     render(<YappyPage />);
+    review();
     fireEvent.click(screen.getByRole('button', { name: 'Marcar como registrado' }));
     expect(resolve).toHaveBeenCalledWith({ paymentId: queryData.payments[0].id, ventaId: queryData.ventas[0].id });
     fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
@@ -70,15 +75,17 @@ describe('Yappy review queue', () => {
     queryData.payments[0].matchStatus = 'sin_match';
     queryData.payments[0].candidateVentaIds = [];
     render(<YappyPage />);
+    review();
     expect(screen.getByRole('button', { name: 'Marcar como registrado' }).hasAttribute('disabled')).toBe(true);
     fireEvent.change(screen.getByLabelText('Buscar venta para conciliación manual'), { target: { value: 'Netflix' } });
     fireEvent.click(screen.getByRole('button', { name: 'Seleccionar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Marcar como registrado' }));
     expect(resolve).toHaveBeenCalledWith({ paymentId: queryData.payments[0].id, ventaId: queryData.ventas[0].id });
   });
-  it('filters by status and shows a useful empty state', () => {
+  it('filters by status and shows a useful empty state', async () => {
     render(<YappyPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Descartado (0)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Estado' }));
+    await userEvent.click(await screen.findByText('Descartado (0)'));
     expect(screen.getByText('No hay pagos en este estado.')).toBeTruthy();
   });
   it('shows connected account, last sync and a registered sale', () => {
@@ -110,6 +117,7 @@ describe('Yappy review queue', () => {
     queryStatus.connectionError = true;
     queryStatus.actionError = true;
     render(<YappyPage />);
+    review();
     expect(screen.getByText('No se pudo cargar la cola. Actualiza la página.')).toBeTruthy();
     expect(screen.getByText('No se pudo cargar o sincronizar el buzón.')).toBeTruthy();
     expect(screen.getByText('No se pudo actualizar el pago. Inténtalo de nuevo.')).toBeTruthy();
@@ -117,6 +125,7 @@ describe('Yappy review queue', () => {
   it('shows a no-result hint for a manual sale search', () => {
     queryData.payments[0].matchStatus = 'sin_match';
     render(<YappyPage />);
+    review();
     fireEvent.change(screen.getByLabelText('Buscar venta para conciliación manual'), { target: { value: 'Sin servicio' } });
     expect(screen.getByText('No hay ventas con ese criterio.')).toBeTruthy();
   });

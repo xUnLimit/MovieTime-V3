@@ -44,13 +44,13 @@ export function TemplateList({ selected, statusOf, onSelect }: TemplateListProps
         </Select>
       </div>
 
-      <nav aria-label="Mensajes" onKeyDown={moveFocus} className="hidden space-y-4 rounded-xl border bg-card p-2 md:block">
+      <nav aria-label="Mensajes" onKeyDown={moveFocus} className="hidden space-y-3 rounded-xl border bg-card p-2 md:block">
         {TEMPLATE_GROUPS.map((group) => (
           <section key={group.id} aria-labelledby={`group-${group.id}`} data-testid={`group-${group.id}`}>
             <h2 id={`group-${group.id}`} className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {group.label}
             </h2>
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {group.tipos.map((tipo) => {
                 const active = tipo === selected;
                 return (
@@ -61,7 +61,7 @@ export function TemplateList({ selected, statusOf, onSelect }: TemplateListProps
                       aria-current={active ? 'true' : undefined}
                       onClick={() => onSelect(tipo)}
                       className={cn(
-                        'flex w-full items-start gap-2 rounded-md px-2.5 py-2 text-left transition-colors',
+                        'flex w-full items-start gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors',
                         'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
                         active ? 'bg-accent' : 'hover:bg-accent/50',
                       )}
