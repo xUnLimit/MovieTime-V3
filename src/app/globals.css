@@ -478,6 +478,25 @@
   margin: 0.125rem 0 0;
 }
 
+/*
+ * Avisos con botones: Sonner pone `overflow-wrap: anywhere` y botones que no se encogen, asi que en
+ * pantallas estrechas el texto se quedaba sin ancho y se partia letra por letra. El texto ocupa la
+ * fila completa (menos el icono) y los botones pasan a una segunda fila, alineados a la derecha.
+ */
+[data-sonner-toast][data-styled='true']:has([data-button]) {
+  flex-wrap: wrap;
+}
+[data-sonner-toast][data-styled='true']:has([data-button]) [data-content] {
+  flex: 1 1 calc(100% - 1.75rem);
+  min-width: 0;
+}
+[data-sonner-toast][data-styled='true']:has([data-button]) [data-button] {
+  margin-left: 0;
+}
+[data-sonner-toast][data-styled='true']:has([data-button]) [data-cancel] {
+  margin-left: auto;
+}
+
 [data-sonner-toast][data-type='success'][data-styled='true'] {
   border-color: var(--success-border);
 }
