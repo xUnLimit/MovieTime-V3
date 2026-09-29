@@ -28,7 +28,7 @@ export function PagerControls({
   return (
     <div className="flex items-center gap-0.5">
       {total > 1 ? (
-        <span className="px-1 text-xs text-muted-foreground tabular-nums" aria-live="polite">
+        <span className="sr-only" aria-live="polite">
           {index + 1}/{total}
         </span>
       ) : null}

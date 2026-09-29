@@ -33,15 +33,15 @@ function EditarServicioPageContent() {
       <PageHeader title="Editar Servicio" trail={[{ label: 'Editar' }]} backTo={from} />
 
       {isLoading ? (
-        <div className="bg-card border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-4 sm:p-6">
           <p className="text-sm text-muted-foreground">Cargando servicio...</p>
         </div>
       ) : servicio ? (
-        <div className="bg-card border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-4 sm:p-6">
           <ServicioForm servicio={servicio} returnTo={from} />
         </div>
       ) : (
-        <div className="bg-card border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-4 sm:p-6">
           <p className="text-sm text-muted-foreground">No se encontró el servicio solicitado.</p>
         </div>
       )}

@@ -76,7 +76,7 @@ function EditarVentaPageContent() {
         trail={[{ label: 'Detalle', href: `/ventas/${id}` }, { label: 'Editar' }]}
       />
 
-      <div className="bg-card border rounded-lg p-6">
+      <div className="bg-card border rounded-lg p-4 sm:p-6">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Cargando venta...</p>
         ) : venta ? (

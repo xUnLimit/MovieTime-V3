@@ -8,6 +8,7 @@ import { ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFinePointer } from "@/hooks/use-media-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +50,7 @@ export function BasicInfoSection({
   onCancel,
   onNext,
 }: BasicInfoSectionProps) {
+  const finePointer = useFinePointer();
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,7 +137,7 @@ export function BasicInfoSection({
                     value={paisSearch}
                     onChange={(e) => setPaisSearch(e.target.value)}
                     className="h-8 pl-8"
-                    autoFocus
+                    autoFocus={finePointer}
                     onKeyDown={(e) => e.stopPropagation()}
                   />
                 </div>

@@ -142,10 +142,16 @@ interface PaymentRow extends YappyPayment {
 function createColumns(onReview: (payment: YappyPayment) => void) {
   return defineDataTableColumns<PaymentRow>([
     { key: 'amount', header: 'Monto', sortable: true, render: (row) => <span className="font-semibold tabular-nums">{money.format(row.amount)}</span> },
-    { key: 'payerNameShort', header: 'Pagador', sortable: true, render: (row) => <span>{row.payerNameShort} · ****-{row.payerPhoneLast4}</span> },
+    { key: 'payerNameShort', header: 'Pagador', sortable: true, render: (row) => (
+      <div className="min-w-0 leading-tight">
+        <p className="truncate font-medium">{row.payerNameShort}</p>
+        <p className="hidden truncate text-xs text-muted-foreground @min-[30rem]:block">****-{row.payerPhoneLast4}</p>
+        <StatusBadge tone={tones[row.matchStatus] ?? 'neutral'} className="mt-0.5 @min-[30rem]:hidden">{labels[row.matchStatus] ?? row.matchStatus}</StatusBadge>
+      </div>
+    ) },
     { key: 'paidAt', header: 'Fecha', sortable: true, hideBelow: 'sm', render: (row) => <span className="whitespace-nowrap">{panamaDate.format(new Date(row.paidAt))}</span> },
     { key: 'confirmationCode', header: 'Confirmación', hideBelow: 'lg', render: (row) => <span className="tabular-nums">{row.confirmationCode}</span> },
-    { key: 'matchStatus', header: 'Estado', render: (row) => <StatusBadge tone={tones[row.matchStatus] ?? 'neutral'}>{labels[row.matchStatus] ?? row.matchStatus}</StatusBadge> },
+    { key: 'matchStatus', header: 'Estado', hideBelow: 'sm', render: (row) => <StatusBadge tone={tones[row.matchStatus] ?? 'neutral'}>{labels[row.matchStatus] ?? row.matchStatus}</StatusBadge> },
     {
       key: 'acciones',
       header: 'Detalle',

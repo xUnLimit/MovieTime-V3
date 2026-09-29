@@ -14,7 +14,7 @@ function CrearServicioPageContent() {
     <div className="flex min-h-full flex-col gap-4">
       <PageHeader title="Nuevo Servicio" trail={[{ label: 'Crear' }]} backTo={from} />
 
-      <div className="flex flex-1 flex-col rounded-lg border bg-card p-4">
+      <div className="flex flex-1 flex-col p-1 sm:rounded-lg sm:border sm:bg-card sm:p-4">
         <ServicioForm returnTo={from} />
       </div>
     </div>

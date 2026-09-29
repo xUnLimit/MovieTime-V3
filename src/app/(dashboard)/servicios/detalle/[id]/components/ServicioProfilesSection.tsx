@@ -133,10 +133,10 @@ export function ServicioProfilesSection({
               {perfil.estado === 'ocupado' && expandedProfileNumber === perfil.numero && venta && (
                 <div className="mt-4 space-y-3">
                   <div className="pt-3 border-t border-border">
-                    <div className="mb-2 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
                       <p className="text-sm text-muted-foreground">Detalles de la venta:</p>
                       {venta.ventaId && (
-                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                           <Button
                             type="button"
                             variant="outline"

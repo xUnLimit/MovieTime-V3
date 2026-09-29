@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFinePointer } from "@/hooks/use-media-query";
 import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 import type { Tercero } from "@/types/clientes";
 
@@ -44,6 +45,7 @@ export function VentaClientePagoFields({
   onSelectTercero,
   onSelectMetodoPago,
 }: VentaClientePagoFieldsProps) {
+  const finePointer = useFinePointer();
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <div className="space-y-1.5">
@@ -94,7 +96,7 @@ export function VentaClientePagoFields({
                   onChange={(event) => onSearchClienteChange(event.target.value)}
                   onKeyDown={(event) => event.stopPropagation()}
                   className="h-8 pl-8"
-                  autoFocus
+                  autoFocus={finePointer}
                 />
               </div>
             </div>

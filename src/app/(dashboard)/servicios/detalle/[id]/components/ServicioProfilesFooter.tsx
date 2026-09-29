@@ -18,7 +18,7 @@ export function ServicioProfilesFooter({
   showProfileControls,
 }: ServicioProfilesFooterProps) {
   return (
-    <div className="mt-2 flex min-w-0 flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between">
+    <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-3 text-sm">
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-success"></div>
@@ -36,7 +36,7 @@ export function ServicioProfilesFooter({
         )}
       </div>
       {showProfileControls ? (
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2 ml-auto">
           <span className="whitespace-nowrap text-muted-foreground mr-2">
             Pagina {Math.min(profilePage + 1, profilePageCount)} de {profilePageCount}
           </span>

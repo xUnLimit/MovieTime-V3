@@ -12,6 +12,7 @@ import { DashboardErrorFallback } from '@/components/shared/DashboardErrorFallba
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { sincronizarNotificaciones } from '@/modules/notifications';
 import { safeAsyncSideEffect } from '@/platform/utils/safety';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { Menu } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -21,7 +22,10 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { authRecoveryError, isAuthenticated, isHydrated, logout, retryAuth } = useAuthStore();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // En iPad vertical (768-1023px) la barra empieza como riel de iconos para dar ancho al contenido.
+  const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
+  const [manualCollapsed, setSidebarCollapsed] = useState<boolean | null>(null);
+  const sidebarCollapsed = manualCollapsed ?? isTablet;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const openMobileSidebar = useCallback(() => setMobileSidebarOpen(true), []);
   const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
@@ -74,7 +78,7 @@ export default function DashboardLayout({
 
   return (
     <ErrorBoundary fallback={<DashboardErrorFallback />}>
-      <div className="flex h-[100svh] overflow-hidden">
+      <div className="flex h-[100dvh] overflow-hidden">
         {/* Sidebar */}
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -104,15 +108,9 @@ export default function DashboardLayout({
             <span className="text-sm font-semibold tracking-tight">MovieTime PTY</span>
           </header>
 
-          {/* Main */}
-          <main
-            className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background"
-            style={{
-              paddingBottom: 'calc(env(safe-area-inset-bottom) * 0.25)',
-              backgroundClip: 'content-box',
-            }}
-          >
-            <div className="h-full min-w-0 overflow-x-hidden p-3 sm:p-4 md:p-5">
+          {/* Main: ocupa toda la pantalla; el fondo llega a los bordes y el contenido respeta las areas seguras. */}
+          <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background">
+            <div className="h-full min-w-0 overflow-x-hidden px-[max(0.75rem,env(safe-area-inset-left))] pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-[max(1rem,env(safe-area-inset-left))] sm:pt-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] md:px-5 md:pt-[max(1.25rem,env(safe-area-inset-top))] md:pb-[max(1.25rem,env(safe-area-inset-bottom))]">
               {children}
             </div>
           </main>
