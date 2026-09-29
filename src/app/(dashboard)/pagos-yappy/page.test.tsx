@@ -157,6 +157,11 @@ describe('Yappy review queue', () => {
     expect(screen.getByText('No se pudo cargar o sincronizar el buzón.')).toBeTruthy();
     expect(screen.getByText('No se pudo actualizar el pago. Inténtalo de nuevo.')).toBeTruthy();
   });
+  it('falls back to a neutral badge and the raw status for an unknown match status', () => {
+    queryData.payments[0].matchStatus = 'estado_nuevo';
+    render(<YappyPage />);
+    expect(screen.getAllByText('estado_nuevo').length).toBeGreaterThan(0);
+  });
   it('shows a no-result hint for a manual sale search', () => {
     queryData.payments[0].matchStatus = 'sin_match';
     render(<YappyPage />);
