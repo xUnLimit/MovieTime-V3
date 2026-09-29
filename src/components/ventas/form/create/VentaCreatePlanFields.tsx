@@ -42,11 +42,11 @@ export function VentaCreatePlanFields({
 }: VentaCreatePlanFieldsProps) {
   return (
     <div
-      className={`grid grid-cols-1 gap-6 ${
+      className={`grid grid-cols-1 gap-3 ${
         tiposPlanes.length > 1 ? "md:grid-cols-3" : "md:grid-cols-2"
       }`}
     >
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label>Categoria</Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -82,7 +82,7 @@ export function VentaCreatePlanFields({
       </div>
 
       {tiposPlanes.length > 1 ? (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label>Tipo de plan</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -117,7 +117,7 @@ export function VentaCreatePlanFields({
         </div>
       ) : null}
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label>Plan</Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

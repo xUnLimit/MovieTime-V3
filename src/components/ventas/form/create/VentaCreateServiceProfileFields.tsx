@@ -58,7 +58,7 @@ export function VentaCreateServiceProfileFields({
   serviciosVentana,
 }: VentaCreateServiceProfileFieldsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       <VentaServicioSelector
         categoriaId={categoriaId}
         planId={planId}
@@ -78,7 +78,7 @@ export function VentaCreateServiceProfileFields({
         onSelectServicio={onServicioSelect}
       />
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label>Perfil</Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

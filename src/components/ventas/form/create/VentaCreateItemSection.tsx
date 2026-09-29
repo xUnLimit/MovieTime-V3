@@ -127,7 +127,7 @@ export function VentaCreateItemSection({
   totalFinal,
 }: VentaCreateItemSectionProps) {
   return (
-    <div className="mt-2 border rounded-lg p-4 space-y-4">
+    <div className="flex flex-1 flex-col justify-between gap-2 rounded-lg border p-3">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Agregar items a la venta</h3>
         <span className="text-sm text-muted-foreground">

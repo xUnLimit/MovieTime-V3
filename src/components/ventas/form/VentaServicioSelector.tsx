@@ -53,7 +53,7 @@ export function VentaServicioSelector({
   const isDisabled = loading || !categoriaId || (requirePlan && !planId);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <Label>Servicio</Label>
       <DropdownMenu>
         <div className="relative">

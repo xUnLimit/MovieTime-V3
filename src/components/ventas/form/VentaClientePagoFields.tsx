@@ -45,8 +45,8 @@ export function VentaClientePagoFields({
   onSelectMetodoPago,
 }: VentaClientePagoFieldsProps) {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div className="space-y-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="space-y-1.5">
         <Label>Cliente / Revendedor</Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -140,7 +140,7 @@ export function VentaClientePagoFields({
         ) : null}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label>Método de pago</Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

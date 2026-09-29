@@ -11,10 +11,10 @@ function CrearServicioPageContent() {
   const from = safeInternalPath(searchParams.get('from'), '/servicios');
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-full flex-col gap-4">
       <PageHeader title="Nuevo Servicio" trail={[{ label: 'Crear' }]} backTo={from} />
 
-      <div className="bg-card border rounded-lg p-6">
+      <div className="flex flex-1 flex-col rounded-lg border bg-card p-4">
         <ServicioForm returnTo={from} />
       </div>
     </div>

@@ -26,8 +26,8 @@ export function ServicioDatosBasicosSection({
   setValue,
 }: ServicioDatosBasicosSectionProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-1.5">
         <Label htmlFor="nombre">Nombre del servicio</Label>
         <Input
           id="nombre"
@@ -44,7 +44,7 @@ export function ServicioDatosBasicosSection({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="categoria">Categoría</Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

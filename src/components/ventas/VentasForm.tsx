@@ -109,13 +109,13 @@ export function VentasForm({ clienteIdInicial, onSaved, onCancel, sendDirectMess
     scrollServiciosDropdown,
   } = useVentasFormController({ clienteIdInicial, onSaved, sendDirectMessage });
   return (
-    <form onSubmit={handleGuardarVenta} className="space-y-6" noValidate>
+    <form onSubmit={handleGuardarVenta} className="@container flex flex-1 flex-col gap-3" noValidate>
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className="w-full"
+        className="w-full flex-1"
       >
-        <TabsList className="mb-8">
+        <TabsList>
           <TabsTrigger
             value="datos"
           >
@@ -123,16 +123,14 @@ export function VentasForm({ clienteIdInicial, onSaved, onCancel, sendDirectMess
           </TabsTrigger>
           <TabsTrigger
             value="preview"
-            className={`rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm ${
-              !isDatosTabComplete ? "cursor-not-allowed opacity-50" : ""
-            }`}
+            className={!isDatosTabComplete ? "cursor-not-allowed opacity-50" : undefined}
           >
             Vista previa
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="datos" className="space-y-6">
-          <div className="space-y-6">
+        <TabsContent value="datos" className="flex flex-col pt-4">
+          <div className="flex flex-1 flex-col justify-between gap-3">
             <VentaClientePagoFields
               clienteSeleccionado={clienteSeleccionado}
               tercerosFiltrados={tercerosFiltrados}
@@ -222,7 +220,7 @@ export function VentasForm({ clienteIdInicial, onSaved, onCancel, sendDirectMess
           </div>
         </TabsContent>
 
-        <TabsContent value="preview" className="space-y-6">
+        <TabsContent value="preview" className="pt-4">
           <VentaCreatePreview
             clienteNombre={
               clienteSeleccionado

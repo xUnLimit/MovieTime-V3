@@ -70,7 +70,7 @@ export function ServicioPreviewTab({
     perfilesPreviewTotal > PROFILE_PREVIEW_FULL_RENDER_LIMIT;
 
   return (
-    <TabsContent value="perfil" className="space-y-6">
+    <TabsContent value="perfil" className="space-y-3 pt-4">
       <div className="space-y-4">
         <div className="space-y-2">
           <h3 className="text-base font-semibold">Vista previa de perfiles</h3>
@@ -89,7 +89,7 @@ export function ServicioPreviewTab({
               {perfilesPreviewSample.map((numero) => (
                 <div
                   key={numero}
-                  className="flex flex-col items-center justify-center rounded-lg border border-success-border bg-success-subtle p-6"
+                  className="flex flex-col items-center justify-center rounded-lg border border-success-border bg-success-subtle p-4"
                 >
                   <Users className="mb-2 h-8 w-8 text-success dark:text-white" />
                   <span className="text-sm font-medium text-success dark:text-white">
@@ -116,13 +116,13 @@ export function ServicioPreviewTab({
           </div>
         ) : null}
 
-        <div className="p-5 bg-muted/50 rounded-lg space-y-4">
-          <h4 className="font-semibold text-base mb-3">
+        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+          <h4 className="font-semibold text-base mb-2">
             Resumen del servicio
           </h4>
 
           <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">
                   Nombre del servicio
@@ -141,7 +141,7 @@ export function ServicioPreviewTab({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">
                   Tipo de plan
@@ -160,7 +160,7 @@ export function ServicioPreviewTab({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">
                   Email de acceso
@@ -179,7 +179,7 @@ export function ServicioPreviewTab({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">
                   Método de pago
@@ -206,7 +206,7 @@ export function ServicioPreviewTab({
             </div>
           </div>
 
-          <div className="border-t pt-4 mt-4">
+          <div className="border-t pt-3 mt-3">
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">

@@ -35,8 +35,8 @@ export function ServicioEstadoSection({
 }: ServicioEstadoSectionProps) {
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label htmlFor="perfiles">Número de perfiles</Label>
           <Input
             id="perfiles"
@@ -53,7 +53,7 @@ export function ServicioEstadoSection({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="estado">Estado</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -87,7 +87,7 @@ export function ServicioEstadoSection({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+      <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
         <div className="space-y-1">
           <Label htmlFor="renovacionAutomatica">Autorrenovacion</Label>
           <p className="text-sm text-muted-foreground">
@@ -104,7 +104,7 @@ export function ServicioEstadoSection({
       </div>
 
       {estadoValue === "reposo" && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="diasReposo">Duración del reposo</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -134,13 +134,13 @@ export function ServicioEstadoSection({
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="notas">Notas adicionales</Label>
         <Textarea
           id="notas"
           {...register("notas")}
           placeholder="Información adicional relevante..."
-          rows={6}
+          rows={3}
         />
       </div>
     </>

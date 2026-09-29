@@ -70,8 +70,8 @@ export function VentaCreatePaymentDetailsFields({
 }: VentaCreatePaymentDetailsFieldsProps) {
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label htmlFor="venta-create-precio">Precio</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
@@ -95,7 +95,7 @@ export function VentaCreatePaymentDetailsFields({
           ) : null}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="venta-create-descuento">Descuento %</Label>
           <Input
             id="venta-create-descuento"
@@ -111,8 +111,8 @@ export function VentaCreatePaymentDetailsFields({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label>Fecha de Inicio</Label>
           <Popover open={fechaInicioOpen} onOpenChange={onFechaInicioOpenChange}>
             <PopoverTrigger asChild>
@@ -142,7 +142,7 @@ export function VentaCreatePaymentDetailsFields({
           </Popover>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label>Fecha de Fin</Label>
           <Popover open={fechaFinOpen} onOpenChange={onFechaFinOpenChange}>
             <PopoverTrigger asChild>
@@ -173,8 +173,8 @@ export function VentaCreatePaymentDetailsFields({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label htmlFor="venta-create-perfil-nombre">Nombre del Perfil</Label>
           <Input
             id="venta-create-perfil-nombre"
@@ -186,7 +186,7 @@ export function VentaCreatePaymentDetailsFields({
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="venta-create-codigo">Codigo</Label>
           <Input
             id="venta-create-codigo"
@@ -198,8 +198,8 @@ export function VentaCreatePaymentDetailsFields({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label htmlFor="venta-create-precio-final">Precio Final</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
@@ -217,7 +217,7 @@ export function VentaCreatePaymentDetailsFields({
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label>Estado</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -245,12 +245,12 @@ export function VentaCreatePaymentDetailsFields({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="venta-create-notas">Notas</Label>
         <Textarea
           id="venta-create-notas"
           name="notasItem"
-          rows={3}
+          rows={2}
           value={notasItem}
           onChange={(event) => onNotasItemChange(event.target.value)}
           placeholder="Notas adicionales"

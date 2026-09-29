@@ -63,7 +63,7 @@ export function ServicioDatosTab({
   tiposPlanesDinamicos,
 }: ServicioDatosTabProps) {
   return (
-    <TabsContent value="datos" className="space-y-6">
+    <TabsContent value="datos" className="flex flex-col justify-between gap-3 pt-4">
       <ServicioDatosBasicosSection
         categoriaNombre={categoriaNombre}
         categoriasActivas={categoriasActivas}

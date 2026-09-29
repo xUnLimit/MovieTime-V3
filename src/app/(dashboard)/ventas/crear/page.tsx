@@ -5,10 +5,10 @@ import { VentasForm } from '@/components/ventas/VentasForm';
 
 export default function CrearVentaPage() {
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-full flex-col gap-4">
       <PageHeader title="Nueva Venta" trail={[{ label: 'Crear' }]} />
 
-      <div className="bg-card border rounded-lg p-6">
+      <div className="flex flex-1 flex-col rounded-lg border bg-card p-4">
         <VentasForm />
       </div>
     </div>

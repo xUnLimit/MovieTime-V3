@@ -17,7 +17,7 @@ export function ServicioDatosFooterActions({
   onNext,
 }: ServicioDatosFooterActionsProps) {
   return (
-    <div className="flex gap-3 justify-end pt-6">
+    <div className="flex gap-3 justify-end pt-2">
       <Button type="button" variant="outline" onClick={onCancel}>
         Cancelar
       </Button>
@@ -35,7 +35,7 @@ export function ServicioPreviewFooterActions({
   onPrevious,
 }: ServicioPreviewFooterActionsProps) {
   return (
-    <div className="flex gap-3 justify-end pt-6">
+    <div className="flex gap-3 justify-end pt-2">
       <Button type="button" variant="outline" onClick={onPrevious}>
         Anterior
       </Button>

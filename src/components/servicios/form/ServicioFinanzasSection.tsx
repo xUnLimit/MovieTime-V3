@@ -61,8 +61,8 @@ export function ServicioFinanzasSection({
 }: ServicioFinanzasSectionProps) {
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label htmlFor="metodoPago">Método de Pago</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -96,7 +96,7 @@ export function ServicioFinanzasSection({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="costoServicio">Costo del servicio</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none select-none">
@@ -120,8 +120,8 @@ export function ServicioFinanzasSection({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label htmlFor="tipoPlan">Tipo de Plan</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -159,7 +159,7 @@ export function ServicioFinanzasSection({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="ciclo">Ciclo de Facturación</Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -200,14 +200,14 @@ export function ServicioFinanzasSection({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
           <Label htmlFor="fechaInicio">Fecha de inicio</Label>
           <Popover open={openFechaInicio} onOpenChange={setOpenFechaInicio}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-start text-left font-normal h-auto py-2 px-3 flex items-center gap-2"
+                className="w-full justify-start text-left font-normal flex items-center gap-2"
                 type="button"
               >
                 <CalendarIcon className="h-4 w-4 flex-shrink-0" />
@@ -239,7 +239,7 @@ export function ServicioFinanzasSection({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="fechaVencimiento">Fecha de vencimiento</Label>
           <Popover
             open={openFechaVencimiento}
@@ -248,7 +248,7 @@ export function ServicioFinanzasSection({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-start text-left font-normal h-auto py-2 px-3 flex items-center gap-2"
+                className="w-full justify-start text-left font-normal flex items-center gap-2"
                 type="button"
               >
                 <CalendarIcon className="h-4 w-4 flex-shrink-0" />

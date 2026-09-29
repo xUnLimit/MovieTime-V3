@@ -57,13 +57,13 @@ export function ServicioForm({
     perfilesDisponiblesValue,
   } = useServicioFormController({ servicio, returnTo });
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-3" noValidate>
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className="w-full"
+        className="w-full flex-1"
       >
-        <TabsList className="mb-8">
+        <TabsList>
           <TabsTrigger
             value="datos"
           >
@@ -71,9 +71,7 @@ export function ServicioForm({
           </TabsTrigger>
           <TabsTrigger
             value="perfil"
-            className={`rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm ${
-              !isDatosTabComplete ? "cursor-not-allowed opacity-50" : ""
-            }`}
+            className={!isDatosTabComplete ? "cursor-not-allowed opacity-50" : undefined}
           >
             Vista previa de perfiles
           </TabsTrigger>

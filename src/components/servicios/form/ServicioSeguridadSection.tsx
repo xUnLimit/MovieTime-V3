@@ -8,8 +8,8 @@ export function ServicioSeguridadSection({
   register,
 }: ServicioFormBindings) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-1.5">
         <Label htmlFor="correo">Email</Label>
         <Input
           id="correo"
@@ -22,7 +22,7 @@ export function ServicioSeguridadSection({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="contrasena">Contraseña</Label>
         <Input
           id="contrasena"
