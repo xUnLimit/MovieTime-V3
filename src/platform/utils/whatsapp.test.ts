@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { generateWhatsAppLink, isMobileWhatsAppDevice, openWhatsApp } from './whatsapp';
+import { generateWhatsAppLink, getSaludo, isMobileWhatsAppDevice, openWhatsApp } from './whatsapp';
 
 const desktop = {
   userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
@@ -17,6 +17,27 @@ const phone = {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe('getSaludo', () => {
+  // Panamá es UTC-5 todo el año (sin horario de verano): hora Panamá = hora UTC - 5.
+  const at = (utcHour: number, utcMinute = 0) => getSaludo(new Date(Date.UTC(2026, 9, 1, utcHour, utcMinute)));
+
+  it('greets by Panama time, not by the runtime time zone', () => {
+    expect(at(14)).toBe('Buenos días'); // 09:00 Panamá, cuando corre el cron
+    expect(at(22, 39)).toBe('Buenas tardes'); // 17:39 Panamá (en UTC ya serían las 22)
+  });
+
+  it('switches at 5:00 am, 12:00 pm and 7:00 pm Panama time', () => {
+    expect(at(5)).toBe('Buenas'); // 12:00 am
+    expect(at(9, 59)).toBe('Buenas'); // 4:59 am
+    expect(at(10)).toBe('Buenos días'); // 5:00 am
+    expect(at(16, 59)).toBe('Buenos días'); // 11:59 am
+    expect(at(17)).toBe('Buenas tardes'); // 12:00 pm
+    expect(at(23, 59)).toBe('Buenas tardes'); // 6:59 pm
+    expect(at(0)).toBe('Buenas noches'); // 7:00 pm
+    expect(at(4, 59)).toBe('Buenas noches'); // 11:59 pm
+  });
 });
 
 describe('WhatsApp destination', () => {

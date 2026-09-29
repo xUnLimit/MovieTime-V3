@@ -8,6 +8,8 @@ import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 
 export type SendNoticeInput = {
   tipo: NoticeTipo; ventaIds: string[]; origin: 'manual' | 'auto'; sentBy: string | null; now: Date;
+  /** Identifica un evento puntual (cambio de credenciales, transferencia); solo lo respetan esos tipos. */
+  eventId?: string;
 };
 export type NoticeResult = {
   noticeId: string | null; clienteNombre: string; ventaIds: string[];
@@ -23,7 +25,13 @@ export type SendNoticeDeps = {
 const TEMPLATE_TYPES: readonly NoticeTipo[] = [
   'notificacion_regular', 'dia_pago', 'cancelacion', 'actualizacion_credenciales', 'transferencia_servicio',
 ];
-const UNSAFE_META_KEYS = new Set(['contrasena', 'correo', 'codigo']);
+// Cada cambio de acceso es un evento nuevo aunque sea el mismo cliente, venta y vencimiento.
+const EVENT_TYPES: readonly NoticeTipo[] = ['actualizacion_credenciales', 'transferencia_servicio'];
+function dedupeKeyFor(input: SendNoticeInput, group: NoticeGroup, ventaIds: string[]): string {
+  const eventId = EVENT_TYPES.includes(input.tipo) ? input.eventId : undefined;
+  return noticeDedupeKey(input.tipo, group.clienteId, group.fechaVencimiento, ventaIds, eventId);
+}
+const UNSAFE_META_KEYS =new Set(['contrasena', 'correo', 'codigo']);
 const PANAMA_CLOCK = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Panama',
   year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric',
   minute: 'numeric', second: 'numeric', hourCycle: 'h23',
@@ -58,7 +66,7 @@ async function recordSkipped(group: NoticeGroup, input: SendNoticeInput, deps: S
   const ventaIds = group.ventas.map((venta) => venta.ventaId);
   const idempotencyKey = randomUUID();
   const record = await deps.store.reserve({
-    dedupeKey: noticeDedupeKey(input.tipo, group.clienteId, group.fechaVencimiento, ventaIds),
+    dedupeKey: dedupeKeyFor(input, group, ventaIds),
     tipo: input.tipo, terceroId: group.clienteId, waId: normalizedWaId ?? group.telefono.trim(),
     channel: 'text', metaTemplateName: null, fechaVencimiento: day(group.fechaVencimiento),
     origin: input.origin, idempotencyKey, createdBy: input.sentBy, ventaIds,
@@ -80,7 +88,8 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
   }
   const template = await deps.store.loadTemplate(input.tipo);
   if (!template) return recordSkipped(group, input, deps, 'plantilla_no_configurada', waId);
-  const data = buildMessageData(group, { now: panamaWallClock(input.now) });
+  // getSaludo ya convierte a hora de Panamá: hay que pasarle el instante real, no el "reloj de pared".
+  const data = buildMessageData(group, { now: input.now });
   const freeText = renderFreeText(template.contenido, data);
   const waMe = (): NoticeResult => ({ ...base, waId, status: 'wa_me', channel: 'wa_me', waMeText: freeText });
   let payload: OutboundPayload;
@@ -110,7 +119,7 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
   }
   const idempotencyKey = randomUUID();
   const record = await deps.store.reserve({
-    dedupeKey: noticeDedupeKey(input.tipo, group.clienteId, group.fechaVencimiento, ventaIds),
+    dedupeKey: dedupeKeyFor(input, group, ventaIds),
     tipo: input.tipo, terceroId: group.clienteId, waId, channel,
     metaTemplateName: channel === 'template' ? template.metaTemplateName : null,
     fechaVencimiento: day(group.fechaVencimiento), origin: input.origin,

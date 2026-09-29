@@ -17,6 +17,7 @@ const requestSchema = z.object({
   tipo: z.enum(['notificacion_regular', 'dia_pago', 'renovacion', 'suscripcion',
     'cancelacion', 'actualizacion_credenciales', 'transferencia_servicio', 'datos_pago', 'despedida']),
   ventaIds: z.array(z.string().uuid()).min(1).max(200),
+  eventId: z.string().uuid().optional(),
 });
 
 export async function POST(request: Request) {

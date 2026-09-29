@@ -144,7 +144,8 @@ describe('buildMessageData', () => {
   });
 
   it('usa el saludo del reloj cuando no se indica', () => {
-    expect(buildMessageData(group([venta()]), { now: day(2026, 10, 1, 20) }).saludo_nombre).toBe('Buenas noches, Maria');
+    // 01:00 UTC del 2 de octubre = 20:00 en Panamá
+    expect(buildMessageData(group([venta()]), { now: new Date(Date.UTC(2026, 9, 2, 1)) }).saludo_nombre).toBe('Buenas noches, Maria');
   });
 });
 
@@ -213,5 +214,14 @@ describe('noticeDedupeKey', () => {
   });
   it('acepta fecha nula', () => {
     expect(noticeDedupeKey('x', 'c1', null, ['a'])).toMatch(/^x:c1:sin-fecha:/);
+  });
+  it('separa cada evento con su eventId y conserva la llave de siempre sin él', () => {
+    const base = noticeDedupeKey('actualizacion_credenciales', 'c1', fecha, ['a']);
+    const first = noticeDedupeKey('actualizacion_credenciales', 'c1', fecha, ['a'], 'evento-1');
+    expect(first).not.toBe(base);
+    expect(first).not.toBe(noticeDedupeKey('actualizacion_credenciales', 'c1', fecha, ['a'], 'evento-2'));
+    expect(first).toBe(noticeDedupeKey('actualizacion_credenciales', 'c1', fecha, ['a'], 'evento-1'));
+    expect(first).toMatch(/^actualizacion_credenciales:c1:2026-10-05:[0-9a-f]{16}$/);
+    expect(noticeDedupeKey('actualizacion_credenciales', 'c1', fecha, ['a'], undefined)).toBe(base);
   });
 });

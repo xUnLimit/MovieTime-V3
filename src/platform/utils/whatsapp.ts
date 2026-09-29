@@ -2,12 +2,18 @@ import { WhatsAppData } from '@/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-/**
- * Obtiene el saludo apropiado según la hora del día
- */
-export function getSaludo(): string {
-  const hour = new Date().getHours();
+const panamaHour = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Panama', hour: '2-digit', hourCycle: 'h23',
+});
 
+/**
+ * Obtiene el saludo apropiado según la hora de Panamá (el servidor corre en UTC,
+ * así que no se puede usar la hora local del runtime).
+ */
+export function getSaludo(now: Date = new Date()): string {
+  const hour = Number(panamaHour.format(now));
+
+  if (hour < 5) return 'Buenas';
   if (hour < 12) return 'Buenos días';
   if (hour < 19) return 'Buenas tardes';
   return 'Buenas noches';

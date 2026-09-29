@@ -131,6 +131,29 @@ describe('handleNoticeReply', () => {
     }));
   });
 
+  it.each([
+    ['2026-09-29T23:13:00Z', 'Buenas tardes'], // 6:13 pm en Panamá (en UTC ya serían las 23)
+    ['2026-09-29T14:00:00Z', 'Buenos días'], // 9:00 am
+    ['2026-09-30T01:30:00Z', 'Buenas noches'], // 8:30 pm
+    ['2026-09-30T07:00:00Z', 'Buenas'], // 2:00 am
+  ])('greets a reply sent at %s with Panama time: %s', async (instant, saludo) => {
+    // vitest fija TZ=America/Panama; Vercel corre en UTC, que es donde salía "Buenas noches" a las 6:13 pm.
+    const previous = process.env.TZ;
+    process.env.TZ = 'UTC';
+    try {
+      const deps = { ...fixture(), now: () => new Date(instant) };
+      deps.replies.findNotice.mockResolvedValue({ ...notice, tipo: 'actualizacion_credenciales', created_at: '2026-09-29T00:00:00Z' });
+      deps.notices.loadTemplate.mockResolvedValue({ contenido: '{saludo}, {nombre_cliente}.', metaTemplateName: null, metaParamMap: [] });
+      const message = { ...inbound, payload: { type: 'template_button', payload: `DATOS:${ID}`, text: 'Recibir mis datos' } };
+      expect(await handleNoticeReply(message, deps)).toBe('accepted');
+      expect(deps.send).toHaveBeenCalledWith(expect.objectContaining({
+        payload: expect.objectContaining({ text: `${saludo}, Cliente.` }),
+      }));
+    } finally {
+      if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous;
+    }
+  });
+
   it('records action failure without another send', async () => {
     const deps = fixture();
     deps.send.mockResolvedValue({ ...accepted, sendStatus: 'failed' });

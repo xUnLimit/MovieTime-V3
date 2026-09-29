@@ -145,6 +145,45 @@ describe('sendNotice', () => {
     expect(result[0].status).toBe(expected);
     expect(send).not.toHaveBeenCalled();
   });
+  it.each(['actualizacion_credenciales', 'transferencia_servicio'] as const)(
+    'sends a new %s notice for the same sale when the event is new, but not a retry of the same event', async (tipo) => {
+      const keys = async (eventId?: string) => {
+        vi.mocked(store.reserve).mockClear();
+        await sendNotice({ ...input, tipo, eventId }, { store, catalog, send });
+        return vi.mocked(store.reserve).mock.calls[0]![0].dedupeKey;
+      };
+      const first = await keys('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+      expect(await keys('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')).toBe(first);
+      expect(await keys('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')).not.toBe(first);
+      expect(await keys()).not.toBe(first);
+    });
+  it.each([
+    ['2026-09-29T14:00:00Z', 'Buenos días, Ana'], // 9:00 am en Panamá
+    ['2026-09-29T22:39:00Z', 'Buenas tardes, Ana'], // 5:39 pm (en UTC ya serían las 22)
+    ['2026-09-30T01:30:00Z', 'Buenas noches, Ana'], // 8:30 pm
+  ])('greets by Panama time exactly once when sending at %s', async (instant, greeting) => {
+    // vitest fija TZ=America/Panama; Vercel corre en UTC, y ahí una doble conversión sí se nota.
+    const previous = process.env.TZ;
+    process.env.TZ = 'UTC';
+    try {
+      const day = new Date(new Date(instant).getTime() - 5 * 3_600_000).toISOString().slice(0, 10);
+      sales = [venta({ fechaVencimiento: new Date(`${day}T12:00:00`) })];
+      await sendNotice({ ...input, now: new Date(instant) }, { store, catalog, send });
+      expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({
+        params: expect.arrayContaining([greeting]),
+      }) }));
+    } finally {
+      if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous;
+    }
+  });
+  it('ignores the event id for payment notices so a client cannot skip their duplicate protection', async () => {
+    const keys = async (eventId?: string) => {
+      vi.mocked(store.reserve).mockClear();
+      await sendNotice({ ...input, tipo: 'dia_pago', eventId }, { store, catalog, send });
+      return vi.mocked(store.reserve).mock.calls[0]![0].dedupeKey;
+    };
+    expect(await keys('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')).toBe(await keys());
+  });
   it('labels a pending notice older than ten minutes as possibly sent', async () => {
     vi.mocked(store.reserve).mockResolvedValue(record(ID2));
     expect((await sendNotice(input, { store, catalog, send }))[0]).toMatchObject({

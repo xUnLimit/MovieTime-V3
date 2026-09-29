@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { getSaludo } from './whatsapp';
 import { formatMonto, formatVencimiento, greetingFor, renderEditorTemplate } from './whatsapp-template-render';
 
 const context = {
@@ -36,8 +37,25 @@ describe('renderEditorTemplate', () => {
       .toBe('— — — — — Netflix');
   });
 
-  it('uses the current greeting by default', () => {
-    expect(renderEditorTemplate('{saludo}', context)).toMatch(/^Buen(os días|as tardes|as noches)$/);
+  it('uses the Panama-time greeting by default, the same one the server sends', () => {
+    vi.useFakeTimers();
+    try {
+      // [instante UTC, saludo esperado en Panamá (UTC-5)]
+      const cases: [string, string][] = [
+        ['2026-10-01T06:00:00Z', 'Buenas'], // 1:00 am
+        ['2026-10-01T14:00:00Z', 'Buenos días'], // 9:00 am
+        ['2026-10-01T22:39:00Z', 'Buenas tardes'], // 5:39 pm
+        ['2026-10-02T01:00:00Z', 'Buenas noches'], // 8:00 pm
+      ];
+      for (const [instant, saludo] of cases) {
+        vi.setSystemTime(new Date(instant));
+        expect(renderEditorTemplate('{saludo}', context)).toBe(saludo);
+        expect(getSaludo()).toBe(saludo);
+        expect(greetingFor('María Pérez')).toBe(`${saludo}, María`);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

@@ -20,7 +20,7 @@ export type NoticeResult = {
 // Pide al servidor enviar avisos por la API de WhatsApp (solo admin).
 export async function postWhatsAppNotices(
   accessToken: string,
-  body: { tipo: NoticeTipo; ventaIds: string[] },
+  body: { tipo: NoticeTipo; ventaIds: string[]; eventId?: string },
 ): Promise<{ results: NoticeResult[] }> {
   const response = await fetch('/api/whatsapp/notices', {
     method: 'POST',

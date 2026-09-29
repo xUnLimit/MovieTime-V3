@@ -19,6 +19,7 @@ vi.mock('@/application/use-cases/whatsapp-notices-use-cases', () => ({
 
 import { offerApiAccessNotice } from './offer-api-access-notice';
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const message = (title: string) => ({ phone: '507', message: 'm', title, description: 'd' });
 const items = [
   { ventaId: 'v1', message: message('uno') },
@@ -54,9 +55,23 @@ describe('offerApiAccessNotice', () => {
     ]);
     const { enqueue, options } = offer();
     await options.action.onClick();
-    expect(mocks.send).toHaveBeenCalledWith({ tipo: 'actualizacion_credenciales', ventaIds: ['v1', 'v2'] });
+    expect(mocks.send).toHaveBeenCalledWith({
+      tipo: 'actualizacion_credenciales', ventaIds: ['v1', 'v2'], eventId: expect.stringMatching(UUID),
+    });
     expect(enqueue).toHaveBeenCalledWith([items[1]!.message]);
     expect(mocks.warning).toHaveBeenCalled();
+  });
+
+  it('uses one event id per offer and a new one for every new change', async () => {
+    mocks.send.mockResolvedValue([{ status: 'accepted', ventaIds: ['v1', 'v2'] }]);
+    const first = offer();
+    await first.options.action.onClick();
+    await first.options.action.onClick();
+    const second = offer();
+    await second.options.action.onClick();
+    const [a, b, c] = mocks.send.mock.calls.map(([payload]) => payload.eventId);
+    expect(a).toBe(b);
+    expect(c).not.toBe(a);
   });
 
   it('does not enqueue when everything was accepted or already sent', async () => {

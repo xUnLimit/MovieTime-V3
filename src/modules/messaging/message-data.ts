@@ -1,4 +1,4 @@
-import { replacePlaceholders } from '@/platform/utils/whatsapp';
+import { getSaludo, replacePlaceholders } from '@/platform/utils/whatsapp';
 import { formatMonto, formatVencimiento, greetingFor } from '@/platform/utils/whatsapp-template-render';
 
 export type NoticeVenta = {
@@ -147,7 +147,7 @@ function itemRow(venta: NoticeVenta): MessageItemData {
 }
 
 export function buildMessageData(group: NoticeGroup, options: { saludo?: string; now: Date }): MessageData {
-  const saludo = options.saludo ?? saludoAt(options.now);
+  const saludo = options.saludo ?? getSaludo(options.now);
   const first = group.ventas[0];
   const names = [...new Set(group.ventas.map((v) => v.categoriaNombre).filter(Boolean))];
   const total = group.ventas.reduce((sum, v) => sum + v.monto, 0);
@@ -166,13 +166,6 @@ export function buildMessageData(group: NoticeGroup, options: { saludo?: string;
     items: group.ventas.map((v) => `*${v.categoriaNombre}*`).join('\n'),
     itemRows: group.ventas.map(itemRow),
   };
-}
-
-function saludoAt(now: Date): string {
-  const hour = now.getHours();
-  if (hour < 12) return 'Buenos días';
-  if (hour < 19) return 'Buenas tardes';
-  return 'Buenas noches';
 }
 
 function cleanParam(value: string): string {
@@ -243,8 +236,11 @@ export function noticeDedupeKey(
   clienteId: string,
   fechaVencimiento: Date | null,
   ventaIds: readonly string[],
+  eventId?: string,
 ): string {
-  const joined = [...ventaIds].sort().join(',');
+  // Sin eventId la llave es identica a la de siempre; con eventId cada evento (p. ej. un cambio de
+  // credenciales) tiene su propia llave y la proteccion solo cubre reintentos del mismo evento.
+  const joined = [...ventaIds].sort().join(',') + (eventId ? `|${eventId}` : '');
   const hash = fnv1a(joined, 0x811c9dc5) + fnv1a(joined, 0x9747b28c);
   const fecha = fechaVencimiento ? dayKey(fechaVencimiento) : 'sin-fecha';
   return `${tipo}:${clienteId}:${fecha}:${hash}`;

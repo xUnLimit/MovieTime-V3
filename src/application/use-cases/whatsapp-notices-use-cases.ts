@@ -58,7 +58,9 @@ export async function getVentaNoticeStatusUseCase(ventaIds: string[]): Promise<R
   return states;
 }
 
-export async function sendWhatsAppNoticesUseCase(input: { tipo: NoticeTipo; ventaIds: string[] }): Promise<NoticeResult[]> {
+export async function sendWhatsAppNoticesUseCase(
+  input: { tipo: NoticeTipo; ventaIds: string[]; eventId?: string },
+): Promise<NoticeResult[]> {
   const session = await getCurrentSession();
   if (!session?.access_token) throw new Error('No hay una sesión activa para enviar avisos por WhatsApp.');
   const { results } = await postWhatsAppNotices(session.access_token, input);
