@@ -205,10 +205,10 @@ function YappyPageContent() {
         }
       />
       <MetricGrid>
-        <MetricCard title="Detectados" value={all.length} icon={Inbox} loading={payments.isLoading} />
+        <MetricCard title="Detectados" value={all.length} icon={Inbox} tone="info" loading={payments.isLoading} />
         <MetricCard title="Por revisar" value={pending} icon={Clock} tone="warning" loading={payments.isLoading} />
         <MetricCard title="Registrados" value={countBy('registrado')} icon={CheckCircle2} tone="success" loading={payments.isLoading} />
-        <MetricCard title="Descartados" value={countBy('descartado')} icon={XCircle} loading={payments.isLoading} />
+        <MetricCard title="Descartados" value={countBy('descartado')} icon={XCircle} tone="danger" loading={payments.isLoading} />
       </MetricGrid>
       <MailboxPanel connections={connections} sync={sync} />
       {payments.isLoading && <p role="status" className="sr-only">Cargando pagos…</p>}

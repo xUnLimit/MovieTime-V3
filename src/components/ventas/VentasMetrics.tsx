@@ -4,7 +4,7 @@ import { memo } from "react";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { MetricGrid } from "@/components/shared/MetricGrid";
 import {
-  CreditCard,
+  ShoppingCart,
   DollarSign,
   CalendarRange,
   Wallet,
@@ -38,26 +38,26 @@ export const VentasMetrics = memo(function VentasMetrics() {
       <MetricCard
         title="Ventas Totales"
         value={totalVentas}
-        icon={CreditCard}
-        loading={isLoadingCounts}
+        icon={ShoppingCart}
+        tone="info"loading={isLoadingCounts}
       />
       <MetricCard
         title="Ingreso Total"
         value={money(ingresoTotal)}
         icon={DollarSign}
-        loading={isLoadingDashboardStats}
+        tone="success"loading={isLoadingDashboardStats}
       />
       <MetricCard
         title="Ingresos Esperados del Mes"
         value={money(ingresoMensual)}
         icon={CalendarRange}
-        loading={isLoadingMensual}
+        tone="brand"loading={isLoadingMensual}
       />
       <MetricCard
         title="Monto Sin Consumir"
         value={money(montoSinConsumir)}
         icon={Wallet}
-        loading={isLoadingMonto}
+        tone="warning"loading={isLoadingMonto}
       />
       <MetricCard
         title="Ventas Activas"

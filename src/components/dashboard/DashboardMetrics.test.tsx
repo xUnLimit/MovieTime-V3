@@ -21,20 +21,27 @@ describe('DashboardMetrics colors', () => {
     mocks.forecast = { meses: [{ ingresos: 107, gastos: 16.84 }], isLoading: false, error: null, retry: vi.fn() };
   });
 
-  it('shows every expense in red, every income in blue and profit in green', () => {
+  it('keeps the values neutral and gives each card icon its own tone', () => {
     render(<DashboardMetrics />);
 
-    expect(valueOf('$2,708.67').className).toContain('text-danger');
-    expect(valueOf('$16.84').className).toContain('text-danger');
-    expect(valueOf('$5,455.89').className).toContain('text-info');
-    expect(valueOf('$107.00').className).toContain('text-info');
-    expect(valueOf('$2,747.22').className).toContain('text-success');
+    const expected: Record<string, string> = {
+      '$2,708.67': 'danger',
+      '$5,455.89': 'info',
+      '$2,747.22': 'success',
+      '$16.84': 'warning',
+      '$107.00': 'brand',
+    };
+    for (const [value, tone] of Object.entries(expected)) {
+      const element = valueOf(value);
+      expect(element.className).not.toMatch(/text-(danger|info|success|warning|primary)/);
+      expect(element.closest('[data-slot="metric-card"]')?.getAttribute('data-tone')).toBe(tone);
+    }
   });
 
-  it('turns profit red when expenses exceed income', () => {
+  it('shows a negative profit without coloring the value', () => {
     mocks.home = { data: { stats: { ingresosPorMes: [{ mes: '2026-01', ingresos: 100, gastos: 250 }] } }, isLoading: false, error: null };
     render(<DashboardMetrics />);
-    expect(valueOf('$-150.00').className).toContain('text-danger');
+    expect(valueOf('$-150.00').className).not.toContain('text-danger');
   });
 
   it('keeps the colors off placeholder values while loading or when the forecast is unavailable', () => {

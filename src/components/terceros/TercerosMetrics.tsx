@@ -18,13 +18,13 @@ export const TercerosMetrics = memo(function TercerosMetrics() {
         title="Total Clientes"
         value={totalClientes}
         icon={Users}
-        tone="neutral"
+        tone="info"
       />
       <MetricCard
         title="Total Revendedores"
         value={totalRevendedores}
         icon={Store}
-        tone="neutral"
+        tone="warning"
       />
       <MetricCard
         title="Terceros Activos"
@@ -36,7 +36,7 @@ export const TercerosMetrics = memo(function TercerosMetrics() {
         title="Terceros Nuevos"
         value={totalNuevosHoy}
         icon={UserPlus}
-        tone="neutral"
+        tone="brand"
       />
     </MetricGrid>
   );

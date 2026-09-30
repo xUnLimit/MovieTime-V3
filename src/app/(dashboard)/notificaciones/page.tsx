@@ -51,19 +51,19 @@ function NotificacionesMetrics() {
         title="Ventas Próximas"
         value={ventasProximas}
         icon={ShoppingCart}
-        tone="danger"
+        tone="brand"
       />
       <MetricCard
         title="Servicios Próximos"
         value={serviciosProximos}
         icon={Server}
-        tone="neutral"
+        tone="success"
       />
       <MetricCard
         title="Servicios en Reposo"
         value={reposoCompletados}
         icon={Pause}
-        tone="neutral"
+        tone="warning"
       />
       <MetricCard
         title="Monto Ventas en Retraso"
@@ -76,7 +76,7 @@ function NotificacionesMetrics() {
         title="Monto Servicios en Retraso"
         value={serviciosPorPagar != null ? `$${serviciosPorPagar.toFixed(2)}` : '$0.00'}
         icon={Banknote}
-        tone="success"
+        tone="danger"
         loading={loadingMontos}
       />
     </MetricGrid>

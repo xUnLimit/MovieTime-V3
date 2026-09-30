@@ -24,13 +24,13 @@ export const CategoriasMetrics = memo(function CategoriasMetrics() {
         title="Categorías de Clientes"
         value={categoriasClientes}
         icon={Users}
-        tone="neutral"
+        tone="success"
       />
       <MetricCard
         title="Categorías de Revendedores"
         value={categoriasRevendedores}
         icon={Store}
-        tone="neutral"
+        tone="warning"
       />
     </MetricGrid>
   );

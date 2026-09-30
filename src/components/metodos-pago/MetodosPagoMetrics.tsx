@@ -24,13 +24,13 @@ export const MetodosPagoMetrics = memo(function MetodosPagoMetrics() {
         title="Asociados a Terceros"
         value={metodosTerceros}
         icon={Users}
-        tone="neutral"
+        tone="success"
       />
       <MetricCard
         title="Asociados a Servicios"
         value={metodosServicios}
         icon={Package}
-        tone="neutral"
+        tone="warning"
       />
     </MetricGrid>
   );

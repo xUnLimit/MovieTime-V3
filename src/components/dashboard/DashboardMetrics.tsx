@@ -62,7 +62,6 @@ export function DashboardMetrics() {
       <MetricCard
         title="Gastos Totales"
         value={isLoading ? '...' : formatUSD(gastosTotal)}
-        valueTone={isLoading ? undefined : 'danger'}
         description="Suma de todos los gastos registrados"
         icon={TrendingDown}
         tone="danger"
@@ -71,7 +70,6 @@ export function DashboardMetrics() {
       <MetricCard
         title="Ingresos Totales"
         value={isLoading ? '...' : formatUSD(ingresosTotal)}
-        valueTone={isLoading ? undefined : 'info'}
         description="Suma de todas las ventas"
         icon={TrendingUp}
         tone="info"
@@ -80,7 +78,6 @@ export function DashboardMetrics() {
       <MetricCard
         title="Ganancias Totales"
         value={isLoading ? '...' : formatUSD(gananciasTotal)}
-        valueTone={isLoading ? undefined : gananciasTotal >= 0 ? 'success' : 'danger'}
         description="Ingresos totales menos gastos totales"
         icon={Wallet}
         tone="success"
@@ -89,19 +86,17 @@ export function DashboardMetrics() {
       <MetricCard
         title="Gastos Esperados del Mes"
         value={forecastError ? 'No disponible' : isLoadingMensual ? '...' : (gastoMensual !== null ? formatUSD(gastoMensual) : '$0.00')}
-        valueTone={forecastError || isLoadingMensual ? undefined : 'danger'}
         description="Gastos a pagar este mes"
         icon={CalendarClock}
-        tone="danger"
+        tone="warning"
         loading={isLoadingMensual}
       />
       <MetricCard
         title="Ingresos Esperados del Mes"
         value={forecastError ? 'No disponible' : isLoadingMensual ? '...' : (ingresoMensual !== null ? formatUSD(ingresoMensual) : '$0.00')}
-        valueTone={forecastError || isLoadingMensual ? undefined : 'info'}
         description="Ingresos a recibir este mes"
         icon={CalendarRange}
-        tone="info"
+        tone="brand"
         loading={isLoadingMensual}
       />
       </MetricGrid>

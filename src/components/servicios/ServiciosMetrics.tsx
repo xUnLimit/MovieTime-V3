@@ -21,7 +21,7 @@ export const ServiciosMetrics = memo(function ServiciosMetrics() {
         title="Categorías"
         value={totalCategoriasActivas}
         icon={Tag}
-        tone="danger"
+        tone="brand"
       />
       <MetricCard
         title="Total Servicios"
@@ -39,7 +39,7 @@ export const ServiciosMetrics = memo(function ServiciosMetrics() {
         title="Total Suscripciones Activas"
         value={ventasActivas}
         icon={ShoppingBag}
-        tone="neutral"
+        tone="warning"
       />
     </MetricGrid>
   );

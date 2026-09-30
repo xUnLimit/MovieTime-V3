@@ -2,7 +2,7 @@
 
 import { memo, useMemo } from 'react';
 import { isSameMonth } from 'date-fns';
-import { Receipt, Tags, TrendingDown } from 'lucide-react';
+import { CalendarDays, Tags, TrendingDown } from 'lucide-react';
 import { Gasto, TipoGasto } from '@/types';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { MetricGrid } from '@/components/shared/MetricGrid';
@@ -39,14 +39,14 @@ export const GastosMetrics = memo(function GastosMetrics({ gastos, tiposGasto }:
       <MetricCard
         title="Gastos del Mes Registrado"
         value={formatUSD(gastosMesActual)}
-        icon={Receipt}
-        tone="neutral"
+        icon={CalendarDays}
+        tone="warning"
       />
       <MetricCard
         title="Tipos de Gastos"
         value={totalTiposGasto}
         icon={Tags}
-        tone="info"
+        tone="brand"
       />
     </MetricGrid>
   );
