@@ -5,13 +5,13 @@ const core = vi.hoisted(() => ({
   create: vi.fn(), update: vi.fn(), remove: vi.fn(),
 }));
 vi.mock('./record-core', () => ({
-  ...core, queryDocuments: core.query, getCount: core.count, logCacheHit: vi.fn(),
+  ...core, queryDocuments: core.query, getCount: core.count,
 }));
 
 import {
-  countGastos, countMetodosPago, countTiposGasto, createGasto, createMetodoPago, createTipoGasto,
+  countGastos, countMetodosPago, createGasto, createMetodoPago, createTipoGasto,
   getGastoById, getGastos, getMetodoPagoById, getMetodosPago, getTipoGastoById, getTiposGasto,
-  queryGastos, queryMetodosPago, queryTiposGasto, removeGasto, removeMetodoPago, removeTipoGasto,
+  queryMetodosPago, removeGasto, removeMetodoPago, removeTipoGasto,
   updateGasto, updateMetodoPago, updateTipoGasto,
 } from './catalogos-repository';
 
@@ -22,24 +22,29 @@ beforeEach(() => {
 
 describe('catalog repository facades', () => {
   it.each([
-    ['metodosPago', getMetodosPago, getMetodoPagoById, queryMetodosPago, countMetodosPago, createMetodoPago, updateMetodoPago, removeMetodoPago],
-    ['tiposGasto', getTiposGasto, getTipoGastoById, queryTiposGasto, countTiposGasto, createTipoGasto, updateTipoGasto, removeTipoGasto],
-    ['gastos', getGastos, getGastoById, queryGastos, countGastos, createGasto, updateGasto, removeGasto],
-  ] as const)('delegates all %s operations', async (entity, getAll, getById, query, count, create, update, remove) => {
-    const filters = [{ field: 'activo', operator: '==', value: true }] as const;
+    ['metodosPago', getMetodosPago, getMetodoPagoById, createMetodoPago, updateMetodoPago, removeMetodoPago],
+    ['tiposGasto', getTiposGasto, getTipoGastoById, createTipoGasto, updateTipoGasto, removeTipoGasto],
+    ['gastos', getGastos, getGastoById, createGasto, updateGasto, removeGasto],
+  ] as const)('delegates the %s CRUD operations', async (entity, getAll, getById, create, update, remove) => {
     await getAll();
     await getById('id1');
-    await query([...filters]);
-    await count([...filters]);
     await create({ nombre: 'nuevo' });
     await update('id1', { nombre: 'editado' });
     await remove('id1');
     expect(core.getAll).toHaveBeenCalledWith(entity);
     expect(core.getById).toHaveBeenCalledWith(entity, 'id1');
-    expect(core.query).toHaveBeenCalledWith(entity, [...filters]);
-    expect(core.count).toHaveBeenCalledWith(entity, [...filters]);
     expect(core.create).toHaveBeenCalledWith(entity, { nombre: 'nuevo' });
     expect(core.update).toHaveBeenCalledWith(entity, 'id1', { nombre: 'editado' });
     expect(core.remove).toHaveBeenCalledWith(entity, 'id1');
+  });
+
+  it('queries and counts with filters', async () => {
+    const filters = [{ field: 'activo', operator: '==', value: true }] as const;
+    await queryMetodosPago([...filters]);
+    await countMetodosPago([...filters]);
+    await countGastos([...filters]);
+    expect(core.query).toHaveBeenCalledWith('metodosPago', [...filters]);
+    expect(core.count).toHaveBeenCalledWith('metodosPago', [...filters]);
+    expect(core.count).toHaveBeenCalledWith('gastos', [...filters]);
   });
 });

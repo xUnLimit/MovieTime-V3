@@ -13,7 +13,7 @@
 /**
  * Base interface with common fields for all notifications
  */
-export interface NotificacionBase {
+interface NotificacionBase {
   id: string;
   tipo: 'sistema'; // For future extensibility (could add 'user' type)
   prioridad: 'baja' | 'media' | 'alta' | 'critica';

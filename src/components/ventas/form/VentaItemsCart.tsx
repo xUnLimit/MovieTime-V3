@@ -2,7 +2,7 @@ import { Pencil, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { VentaItem } from "@/features/ventas/ventas-form-shared";
+import type { VentaItem } from "@/components/ventas/form/ventas-form-shared";
 
 interface CategoriaNombre {
   id: string;

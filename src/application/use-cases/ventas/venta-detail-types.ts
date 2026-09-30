@@ -1,4 +1,4 @@
-import type { MetodoPago, VentaDoc } from '@/types';
+import type { VentaDoc } from '@/types';
 
 export interface VentaDetalleQueryData {
   servicioContrasena: string;
@@ -69,9 +69,3 @@ export type VentaDetalleWorkflowOutcome =
       type: 'ventaPaymentDeleted';
       ventaActualizada: VentaDoc | null;
     };
-
-export type VentaPaymentSelection = {
-  input: VentaPagoWorkflowInput;
-  metodosPago: MetodoPago[];
-  venta: VentaDoc;
-};

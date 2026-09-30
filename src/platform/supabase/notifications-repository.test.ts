@@ -20,20 +20,9 @@ vi.mock('./record-core', () => ({
   getById: coreMocks.getById,
   getCount: coreMocks.getCount,
   remove: coreMocks.remove,
-  logCacheHit: vi.fn(),
 }));
 
-import {
-  countNotificaciones,
-  createNotificacion,
-  createNotification,
-  getNotificacionById,
-  queryNotificaciones,
-  queryNotifications,
-  removeNotificacion,
-  updateNotificacion,
-  updateNotification,
-} from './notifications-repository';
+import { createNotificacion, createNotification, queryNotificaciones, queryNotifications, removeNotificacion, updateNotificacion, updateNotification } from './notifications-repository';
 
 function readQuery(result: { data: unknown[] | null; error: Error | null }) {
   const chain = {
@@ -80,9 +69,7 @@ describe('notifications repository aggregate writes', () => {
       .mockReturnValueOnce(readQuery({ data: [], error: null }))
       .mockReturnValueOnce(readQuery({ data: [], error: null }))
       .mockReturnValueOnce(readQuery({ data: [], error: null }));
-    expect(await getNotificacionById('n1')).toEqual({ id: 'n1' });
     expect(await queryNotificaciones()).toEqual([]);
-    expect(await countNotificaciones()).toBe(3);
     expect(await createNotificacion(ventaPayload)).toBe('notification-1');
     await updateNotificacion('n1', { leida: true });
     await removeNotificacion('n1');

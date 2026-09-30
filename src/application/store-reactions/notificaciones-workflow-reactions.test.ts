@@ -17,13 +17,7 @@ vi.mock('@/application/use-cases/notificaciones/notificaciones-store-use-cases',
   deleteNotificacionesPorVentaUseCase: mocks.deleteByVenta,
 }));
 
-import {
-  activateReposoServicioStoreWorkflow, cutVentaFromNotificationStoreWorkflow,
-  deleteNotificationStoreItem, deleteReposoServicioStoreWorkflow,
-  deleteServicioNotificationsStoreWorkflow, deleteVentaNotificationsStoreWorkflow,
-  getCurrentMetodosPagoStoreSnapshot, inactivateServicioFromNotificationStoreWorkflow,
-  refreshVentasStoreCache,
-} from './notificaciones-workflow-reactions';
+import { activateReposoServicioStoreWorkflow, cutVentaFromNotificationStoreWorkflow, deleteNotificationStoreItem, deleteReposoServicioStoreWorkflow, deleteVentaNotificationsStoreWorkflow, getCurrentMetodosPagoStoreSnapshot, inactivateServicioFromNotificationStoreWorkflow, refreshVentasStoreCache } from './notificaciones-workflow-reactions';
 
 const log: ActivityLogOptions = {
   logContext: { usuarioId: 'u1', usuarioEmail: 'a@b.com' },
@@ -56,11 +50,9 @@ describe('notification store workflows', () => {
   it('deletes one notification and entity notification groups', async () => {
     await deleteNotificationStoreItem('n1');
     await deleteVentaNotificationsStoreWorkflow('v1');
-    await deleteServicioNotificationsStoreWorkflow('s1');
     expect(mocks.deleteNotification).toHaveBeenCalledWith('n1');
     expect(mocks.deleteByVenta).toHaveBeenCalledWith('v1');
-    expect(mocks.deleteByServicio).toHaveBeenCalledWith('s1');
-    expect(mocks.invalidate).toHaveBeenCalledTimes(3);
+    expect(mocks.invalidate).toHaveBeenCalledTimes(2);
   });
 
   it('refreshes active query caches and flattens payment snapshots', () => {

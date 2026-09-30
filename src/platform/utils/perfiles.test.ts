@@ -1,32 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  getProfileIndicatorStates,
-  getProfileNumbersForPage,
-  getProfilePageCount,
-  getProfilePageForNumber,
-  getProfilePageLabel,
-  getProfilePreviewSample,
-} from './perfiles';
+import { getProfileIndicatorStates, getProfilePreviewSample } from './perfiles';
 
 describe('profile pagination', () => {
-  it('counts pages and locates profile numbers safely', () => {
-    expect(getProfilePageCount(21)).toBe(3);
-    expect(getProfilePageCount(-2)).toBe(1);
-    expect(getProfilePageCount(10, 0)).toBe(0);
-    expect(getProfilePageForNumber(11)).toBe(1);
-    expect(getProfilePageForNumber(Number.NaN)).toBe(0);
-    expect(getProfilePageForNumber(0)).toBe(0);
-    expect(getProfilePageForNumber(2, 0)).toBe(0);
-  });
 
   it('returns bounded page numbers and labels', () => {
-    expect(getProfileNumbersForPage(0, 0)).toEqual([]);
-    expect(getProfileNumbersForPage(10, 0, 0)).toEqual([]);
-    expect(getProfileNumbersForPage(25, -4)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(getProfileNumbersForPage(25, 99)).toEqual([21, 22, 23, 24, 25]);
-    expect(getProfilePageLabel(0, 0)).toBe('Sin perfiles');
-    expect(getProfilePageLabel(25, 2)).toBe('21-25');
     expect(getProfilePreviewSample(-1)).toEqual([]);
     expect(getProfilePreviewSample(20, 3)).toEqual([1, 2, 3]);
   });

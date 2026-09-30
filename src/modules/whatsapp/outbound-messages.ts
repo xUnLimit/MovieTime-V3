@@ -4,7 +4,7 @@ import { WHATSAPP_TEMPLATE_LANGUAGE, type TemplateCatalog } from './template-cat
 
 // Ventana de atencion de Meta: el texto libre solo se entrega si el cliente
 // escribio en las ultimas 24 horas; fuera de ella solo se permiten plantillas.
-export const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export type OutboundStatus = 'pending' | 'accepted' | 'failed';
 

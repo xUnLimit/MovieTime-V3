@@ -1,29 +1,6 @@
 import { queryNotificationIdsRead } from '@/platform/supabase/domain-read-adapters';
-import {
-  countNotificaciones,
-  removeNotificacion,
-  updateNotificacion,
-} from '@/platform/supabase/notifications-repository';
-import { queryNotificationsRead } from '@/platform/supabase/domain-read-adapters';
+import { removeNotificacion, updateNotificacion } from '@/platform/supabase/notifications-repository';
 import { isValidPaymentPromiseDate } from './payment-promise';
-
-export async function fetchNotificationCountsUseCase() {
-  const now = new Date();
-  const inSevenDays = new Date();
-  inSevenDays.setDate(now.getDate() + 7);
-
-  await Promise.all([
-    countNotificaciones(),
-    countNotificaciones([{ field: 'entidad', operator: '==', value: 'venta' }]),
-    countNotificaciones([{ field: 'entidad', operator: '==', value: 'servicio' }]),
-    countNotificaciones([{ field: 'entidad', operator: '==', value: 'reposo' }]),
-    queryNotificationsRead([
-      { field: 'fecha', operator: '>=', value: now },
-      { field: 'fecha', operator: '<=', value: inSevenDays },
-    ]),
-    queryNotificationsRead([{ field: 'leida', operator: '==', value: false }]),
-  ]);
-}
 
 export async function toggleNotificacionLeidaUseCase(
   notifId: string,

@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import type { VentaItemErrors } from "@/features/ventas/ventas-form-shared";
+import type { VentaItemErrors } from "@/components/ventas/form/ventas-form-shared";
 import type { Categoria, Plan } from "@/types";
 
 interface VentaCreatePlanFieldsProps {

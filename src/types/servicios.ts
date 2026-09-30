@@ -67,16 +67,3 @@ export interface PagoServicio {
   createdAt: Date;
   updatedAt: Date;
 }
-
-// Form Types
-export interface ServicioFormData {
-  categoriaId: string;
-  nombre: string;
-  tipo: string;
-  correo: string;
-  contrasena: string;
-  perfilesDisponibles: number;
-  costoPorPerfil: number;
-  renovacionAutomatica: boolean;
-  fechaRenovacion?: Date;
-}

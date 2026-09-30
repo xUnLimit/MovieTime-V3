@@ -18,7 +18,7 @@ export interface VentaPago {
   destinoReembolso?: string | null;
 }
 
-export type PagoVentaEstado = 'registrado' | 'anulado' | 'reembolsado';
+type PagoVentaEstado = 'registrado' | 'anulado' | 'reembolsado';
 
 /**
  * Documento de pago de venta en la colección pagosVenta

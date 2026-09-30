@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import type { UseFormClearErrors, UseFormSetValue } from "react-hook-form";
 
-import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
+import type { VentaEditFormData } from "@/components/ventas/form/venta-edit-form-schema";
 import { getCurrencySymbol } from "@/platform/constants";
 import {
   calculateDiscountedAmount,

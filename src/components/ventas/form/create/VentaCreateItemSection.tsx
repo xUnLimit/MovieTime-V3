@@ -10,7 +10,7 @@ import { VentaCreateServiceProfileFields } from "@/components/ventas/form/create
 import type {
   VentaItem,
   VentaItemErrors,
-} from "@/features/ventas/ventas-form-shared";
+} from "@/components/ventas/form/ventas-form-shared";
 import type { Categoria, Plan, Servicio } from "@/types";
 
 interface VentaCreateItemSectionProps {

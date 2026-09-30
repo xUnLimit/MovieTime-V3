@@ -13,7 +13,7 @@ export const CHAT_MORE_FILTERS = [
   { id: 'ventana_abierta', label: 'Ventana abierta' },
 ] as const;
 
-export type ChatFixedFilter = (typeof CHAT_FIXED_FILTERS)[number]['id'] | (typeof CHAT_MORE_FILTERS)[number]['id'];
+type ChatFixedFilter = (typeof CHAT_FIXED_FILTERS)[number]['id'] | (typeof CHAT_MORE_FILTERS)[number]['id'];
 export type ChatCategoryFilter = `categoria:${string}`;
 export type ChatFilter = ChatFixedFilter | ChatCategoryFilter;
 
@@ -21,7 +21,7 @@ export function categoryFilterId(categoryName: string): ChatCategoryFilter {
   return `categoria:${categoryName}`;
 }
 
-export function categoryFromFilter(filter: ChatFilter): string | null {
+function categoryFromFilter(filter: ChatFilter): string | null {
   return filter.startsWith('categoria:') ? filter.slice('categoria:'.length) : null;
 }
 

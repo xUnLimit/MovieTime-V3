@@ -60,12 +60,6 @@ export async function updateMetodoPagoMutation(id: string, updates: Partial<Meto
   await invalidateStoreQueries(['metodosPago', 'terceros', 'servicios', 'ventas', 'pagination']);
 }
 
-export async function toggleMetodoPagoActivoMutation(id: string, metodo?: MetodoPago) {
-  const resolvedMetodo = metodo ?? await getMetodoPagoUseCase(id);
-  if (!resolvedMetodo) throw new Error('Metodo de pago no encontrado');
-  await updateMetodoPagoMutation(id, { activo: !resolvedMetodo.activo }, resolvedMetodo);
-}
-
 export async function deleteMetodoPagoMutation(id: string, metodo?: MetodoPago) {
   const resolvedMetodo = metodo ?? await getMetodoPagoUseCase(id) ?? undefined;
   await deleteMetodoPagoUseCase(id);

@@ -1,9 +1,9 @@
 import { WHATSAPP_TEMPLATE_LANGUAGE } from './template-catalog';
 
-export type InteractiveButton = { id: string; title: string };
-export type InteractiveRow = { id: string; title: string; description?: string };
-export type SharedContact = { name: string; phone: string };
-export type SharedLocation = { latitude: number; longitude: number; name?: string; address?: string };
+type InteractiveButton = { id: string; title: string };
+type InteractiveRow = { id: string; title: string; description?: string };
+type SharedContact = { name: string; phone: string };
+type SharedLocation = { latitude: number; longitude: number; name?: string; address?: string };
 
 // Todo lo que el sistema puede enviar. Solo las plantillas funcionan con la
 // ventana de 24 h cerrada; el resto exige que el cliente haya escrito antes.

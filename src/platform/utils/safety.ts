@@ -1,3 +1,5 @@
+import { createLogger } from '@/platform/observability/logger';
+
 type AsyncSideEffectContext = {
   operation: string;
   entity?: string;
@@ -97,6 +99,6 @@ export function logAsyncSideEffectError(
     context.entityId ? `id=${context.entityId}` : null,
   ].filter(Boolean).join(' ');
 
-  const prefix = context.critical ? '[SideEffect:CRITICAL]' : '[SideEffect]';
-  console.error(`${prefix} ${scope}`, error);
+  // Via logger central: redacta secretos que puedan venir dentro del error.
+  createLogger(context.critical ? 'SideEffect:CRITICAL' : 'SideEffect').error(scope, { error });
 }

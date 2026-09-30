@@ -5,7 +5,7 @@ export function getExecutivePushBlockMeta(block: ExecutivePushBlock) {
   return EXECUTIVE_PUSH_BLOCKS.find((item) => item.key === block);
 }
 
-export function buildExecutivePushDestination(blocks: ExecutivePushSummaryBlock[]): { destination: string; tab?: string } {
+function buildExecutivePushDestination(blocks: ExecutivePushSummaryBlock[]): { destination: string; tab?: string } {
   const primary = blocks[0];
   return {
     destination: primary?.destination ?? '/dashboard',
@@ -21,7 +21,7 @@ function formatAmounts(amounts: Record<string, number>): string {
     .join(', ');
 }
 
-export function isExecutivePushBlockActive(block: ExecutivePushSummaryBlock): boolean {
+function isExecutivePushBlockActive(block: ExecutivePushSummaryBlock): boolean {
   if (block.amounts !== undefined) {
     return Object.values(block.amounts).some((value) => value > 0);
   }
@@ -41,7 +41,7 @@ function formatBlock(block: ExecutivePushSummaryBlock): string {
   return `${block.label}: ${block.count ?? 0}`;
 }
 
-export function buildExecutivePushBody(blocks: ExecutivePushSummaryBlock[]): string {
+function buildExecutivePushBody(blocks: ExecutivePushSummaryBlock[]): string {
   const clientesBlock = blocks.find((b) => b.key === 'clientes_por_notificar');
   const serviciosBlock = blocks.find((b) => b.key === 'servicios_por_pagar');
   const montoBlock = blocks.find((b) => b.key === 'monto_a_fondear');

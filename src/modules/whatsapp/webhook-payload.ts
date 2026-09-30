@@ -115,7 +115,7 @@ export type InboundMessage = {
   payload: Json;
 };
 
-export type MessageStatus = {
+type MessageStatus = {
   waMessageId: string;
   status: 'sent' | 'delivered' | 'read' | 'failed';
   recipientWaId: string;

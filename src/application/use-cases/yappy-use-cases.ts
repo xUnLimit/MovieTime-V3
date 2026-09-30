@@ -2,7 +2,7 @@ import { triggerYappySync } from '@/platform/supabase/yappy-client';
 import { getCurrentSession } from '@/platform/supabase/auth';
 import { dismissYappyPayment, listYappyCandidateVentas, listYappyConnections, listYappyPayments, resolveYappyPayment, searchYappyCandidateVentas } from '@/platform/supabase/yappy-repository';
 
-export type { YappyPayment, YappyConnectionStatus, YappyCandidateVenta } from '@/platform/supabase/yappy-repository';
+export type { YappyPayment,  YappyCandidateVenta } from '@/platform/supabase/yappy-repository';
 export const fetchYappyPayments = listYappyPayments;
 export const fetchYappyConnections = listYappyConnections;
 export const fetchYappyCandidateVentas = listYappyCandidateVentas;

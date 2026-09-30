@@ -31,7 +31,7 @@ export type NoticeGroup = {
   ventas: NoticeVenta[];
 };
 
-export type MessageItemData = Record<string, string>;
+type MessageItemData = Record<string, string>;
 
 export type MessageData = {
   saludo: string;

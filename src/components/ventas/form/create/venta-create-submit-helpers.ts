@@ -1,4 +1,4 @@
-import type { VentaItem } from "@/features/ventas/ventas-form-shared";
+import type { VentaItem } from "@/components/ventas/form/ventas-form-shared";
 import type { VentaDoc, VentaPago } from "@/types";
 
 import { createClientId } from "./venta-create-id";
@@ -10,7 +10,7 @@ export type CreateVentaWriteInput = Omit<
   pagos?: VentaPago[];
 };
 
-export function buildVentaCreateInput({
+function buildVentaCreateInput({
   clienteId,
   clienteNombre,
   clienteTelefono,

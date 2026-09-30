@@ -2,7 +2,6 @@ import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/s
 import { clearBrowserSessionArtifacts, supabase } from './client';
 import type { User } from '@/types';
 
-
 const INVALID_AUTH_CODES = new Set([
   'bad_jwt',
   'invalid_jwt',
@@ -47,12 +46,6 @@ export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw new Error(error.message);
 }
-
-export async function sendPasswordReset(email: string, redirectTo?: string): Promise<void> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) throw new Error(error.message);
-}
-
 
 export function clearLocalSession(): void {
   clearBrowserSessionArtifacts();

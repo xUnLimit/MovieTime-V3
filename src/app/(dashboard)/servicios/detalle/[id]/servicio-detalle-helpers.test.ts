@@ -2,46 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import type { Servicio, Tercero, VentaDoc } from "@/types";
 
-import {
-  buildTransferVentaForMessage,
-  buildTransferWhatsAppToast,
-  getCicloPagoLabel,
-  getReturnToServicios,
-  sortPagosServicioByNewest,
-  toPerfilVenta,
-} from "./servicio-detalle-helpers";
+import { buildTransferVentaForMessage, buildTransferWhatsAppToast, getCicloPagoLabel, getReturnToServicios, sortPagosServicioByNewest } from "./servicio-detalle-helpers";
 
 describe("servicio-detalle-helpers", () => {
-  it("maps venta docs to perfil venta rows", () => {
-    const fechaFin = new Date("2026-06-01T00:00:00.000Z");
-    const row = toPerfilVenta({
-      id: "venta-1",
-      clienteId: "tercero-1",
-      clienteNombre: "Ana Perez",
-      clienteTelefono: "+50760000000",
-      perfilNumero: 2,
-      perfilNombre: "Casa",
-      precio: 10,
-      precioFinal: 8.5,
-      descuento: 15,
-      fechaFin,
-      servicioNombre: "Netflix",
-      servicioCorreo: "netflix@example.com",
-      moneda: "USD",
-      codigo: "ABC",
-      cicloPago: "mensual",
-    } as VentaDoc);
-
-    expect(row).toMatchObject({
-      ventaId: "venta-1",
-      clienteId: "tercero-1",
-      perfilNumero: 2,
-      precioFinal: 8.5,
-      fechaFin,
-      servicioNombre: "Netflix",
-      codigo: "ABC",
-    });
-  });
 
   it("builds transfer venta docs and WhatsApp payloads", () => {
     const selectedActionVenta = {

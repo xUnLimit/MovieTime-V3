@@ -19,8 +19,8 @@ import {
   useMetodosPagoTercerosWithPending,
   useServiciosByCategoria,
 } from "@/components/ventas/form/useVentaFormQueries";
-import { ventaEditSchema, type VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
-import { SERVICIOS_DROPDOWN_VISIBLE_ROWS } from "@/features/ventas/ventas-form-shared";
+import { ventaEditSchema, type VentaEditFormData } from "@/components/ventas/form/venta-edit-form-schema";
+import { SERVICIOS_DROPDOWN_VISIBLE_ROWS } from "@/components/ventas/form/ventas-form-shared";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useTerceros } from "@/hooks/use-terceros";
 import { refreshServicioProfileCountMutation } from "@/application/client-domain-mutations";

@@ -60,12 +60,3 @@ export async function afterTemplateUpdated({
     cambios,
   });
 }
-
-export async function afterTemplateDeleted(templateId: string, template?: TemplateMensaje) {
-  recordTemplateActivityLog({
-    accion: 'eliminacion',
-    templateId,
-    templateNombre: template?.nombre ?? templateId,
-    detalles: `Template eliminado: "${template?.nombre}"`,
-  });
-}

@@ -38,7 +38,7 @@ const TERCERO_WRITE_KEYS = [
   'createdBy',
 ] as const satisfies ReadonlyArray<keyof TerceroWritePayload>;
 
-export function toTerceroWritePayload(input: UpdateTerceroInput): TerceroWritePayload {
+function toTerceroWritePayload(input: UpdateTerceroInput): TerceroWritePayload {
   const payload: TerceroWritePayload = {};
 
   for (const field of TERCERO_WRITE_KEYS) {

@@ -6,7 +6,7 @@ import { Panel } from '@/components/shared/Panel';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { getActivityDisplayConfig } from '@/platform/utils/activityDisplayHelpers';
+import { getActivityDisplayConfig } from '@/components/shared/activity-display';
 import { useDashboardHome } from '@/hooks/use-dashboard-home';
 
 const VISIBLE_ACTIVITY = 5;

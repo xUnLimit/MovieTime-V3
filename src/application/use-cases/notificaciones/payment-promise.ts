@@ -4,7 +4,7 @@ const SHORT_MONTHS = [
   'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
 ] as const;
 
-export type PaymentPromiseState = 'active' | 'today' | 'overdue';
+type PaymentPromiseState = 'active' | 'today' | 'overdue';
 
 export type PaymentPromiseDisplay = {
   state: PaymentPromiseState;

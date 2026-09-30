@@ -9,7 +9,7 @@ import { notifyCommittedMutation } from '@/components/shared/notify-committed-mu
 import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import { updateServicioPagoUseCase } from "@/application/use-cases/servicios/servicios-payment-use-cases";

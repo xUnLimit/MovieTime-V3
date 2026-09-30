@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
+import { estimateInitialPageSize } from '@/hooks/use-fit-page-size';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
@@ -13,7 +13,7 @@ import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
-import { useServerPagination } from '@/hooks/useServerPagination';
+import { useServerPagination } from '@/hooks/use-server-pagination';
 import { subscribeToServicioCategoryListReactions } from '@/platform/events/cache-reactions';
 import { SERVICIOS_COLLECTION } from '@/application/use-cases/servicios/servicios-query-use-cases';
 import { isUuid } from '@/platform/utils/safety';

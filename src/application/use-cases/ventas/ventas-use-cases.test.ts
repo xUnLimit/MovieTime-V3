@@ -55,11 +55,11 @@ import {
   createVentaUseCase,
   deleteVentaUseCase,
   updateVentaUseCase,
-} from './ventas/ventas-write-use-cases';
+} from './ventas-write-use-cases';
 import {
   renewVentaUseCase,
   updateVentaWithLatestPagoUseCase,
-} from './ventas/ventas-payment-use-cases';
+} from './ventas-payment-use-cases';
 import type { VentaDoc } from '@/types';
 
 const logContext = {

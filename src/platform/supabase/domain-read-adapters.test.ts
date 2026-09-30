@@ -10,12 +10,7 @@ vi.mock('./categorias-repository', () => ({ getCategoriaById: mocks.categoria })
 vi.mock('./servicios-repository', () => ({ queryServicios: mocks.servicios, getServicioById: mocks.servicioById }));
 vi.mock('./ventas-repository', () => ({ getVentaById: mocks.ventaById, timestampToDate: mocks.timestamp }));
 
-import {
-  fetchServiciosByIdsRead, getCategoriaPlanesRead, getCategoriaRead, getMetodoPagoRead,
-  getServicioContrasenaRead, getServicioRead, getServicioTipoRead, getVentaDetalleRead,
-  queryMetodosPagoRead, queryMetodosPagoServiciosRead, queryMetodosPagoTercerosRead,
-  queryNotificationIdsRead, queryNotificationsRead,
-} from './domain-read-adapters';
+import { getCategoriaPlanesRead, getCategoriaRead, getMetodoPagoRead, getServicioContrasenaRead, getServicioRead, getServicioTipoRead, getVentaDetalleRead, queryMetodosPagoRead, queryMetodosPagoServiciosRead, queryMetodosPagoTercerosRead, queryNotificationIdsRead, queryNotificationsRead } from './domain-read-adapters';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -33,8 +28,6 @@ describe('domain read adapters', () => {
     expect(await queryMetodosPagoRead()).toEqual([]);
     expect(await getCategoriaRead('c1')).toEqual({ id: 'c1' });
     expect(await getServicioRead('s1')).toEqual({ id: 's1' });
-    expect(await fetchServiciosByIdsRead(['s1'])).toEqual([]);
-    expect(mocks.servicios).toHaveBeenCalledWith([{ field: '__name__', operator: 'in', value: ['s1'] }]);
   });
 
   it('builds service and tercero payment-method filters with optional active status', async () => {

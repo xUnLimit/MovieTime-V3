@@ -6,7 +6,7 @@ export interface CredentialChangeFlags {
   contrasena: boolean;
 }
 
-export const DEFAULT_CREDENTIAL_UPDATE_TEMPLATE = [
+const DEFAULT_CREDENTIAL_UPDATE_TEMPLATE = [
   '{saludo} {nombre_cliente}, te compartimos la actualizacion de acceso para *{servicio}*.',
   '',
   '{credenciales_cambiadas}',
@@ -19,7 +19,7 @@ export const DEFAULT_CREDENTIAL_UPDATE_TEMPLATE = [
   'Por favor usa estos datos desde ahora.',
 ].join('\n');
 
-export const DEFAULT_SERVICE_TRANSFER_TEMPLATE = [
+const DEFAULT_SERVICE_TRANSFER_TEMPLATE = [
   '{saludo} {nombre_cliente}, tu acceso fue transferido a *{servicio}*.',
   '',
   'Estas son tus credenciales actualizadas:',

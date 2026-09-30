@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { addMonths } from "date-fns";
 import type { UseFormGetValues, UseFormSetValue } from "react-hook-form";
 
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import type { Servicio } from "@/types";
 
 import { getBillingCycleMonths } from "./servicio-form-helpers";

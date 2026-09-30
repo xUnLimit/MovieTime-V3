@@ -1,10 +1,7 @@
 import { queryMetodosPago, getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import { queryNotifications } from '@/platform/supabase/notifications-repository';
 import { getCategoriaById } from '@/platform/supabase/categorias-repository';
-import {
-  queryServicios,
-  getServicioById,
-} from '@/platform/supabase/servicios-repository';
+import { getServicioById } from '@/platform/supabase/servicios-repository';
 import { getVentaById, timestampToDate } from '@/platform/supabase/ventas-repository';
 import type { QueryFilter } from '@/platform/supabase/entities';
 import type { Categoria, MetodoPago, Notificacion, Servicio, VentaDoc } from '@/types';
@@ -59,12 +56,6 @@ export async function getCategoriaPlanesRead(id: string): Promise<Plan[]> {
 
 export function getServicioRead(id: string) {
   return getServicioById<Servicio>(id);
-}
-
-export function fetchServiciosByIdsRead(ids: string[]) {
-  return queryServicios<Servicio>([
-    { field: '__name__', operator: 'in', value: ids },
-  ]);
 }
 
 export async function getServicioTipoRead(id: string): Promise<string | undefined> {

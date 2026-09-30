@@ -11,10 +11,7 @@ import {
   updateServicio,
 } from '@/platform/supabase/servicios-repository';
 import { toDateOnly, toIso } from '@/platform/supabase/dates';
-import {
-  resyncServiciosDenormalizedData,
-  syncServicioDependencias,
-} from '@/application/use-cases/servicios/servicio-dependencies-use-cases';
+import { syncServicioDependencias } from '@/application/use-cases/servicios/servicio-dependencies-use-cases';
 import { storeEventBus } from '@/platform/events/store-event-bus';
 import { convertToUSD, sumPaymentsInUSD } from '@/modules/payments';
 import { detectarCambios } from '@/platform/utils/activityLogHelpers';
@@ -249,5 +246,3 @@ export async function deleteServicioUseCase(
 
   return { servicio };
 }
-
-export const resyncServicioReferenciasUseCase = resyncServiciosDenormalizedData;

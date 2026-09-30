@@ -1,13 +1,4 @@
-import {
-  getAll,
-  getById,
-  queryDocuments,
-  getCount,
-  create,
-  update,
-  archiveRecord,
-  logCacheHit,
-} from './record-core';
+import { getById, queryDocuments, getCount, create, update, archiveRecord } from './record-core';
 import { supabase } from './client';
 import { timestampToDate, toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
@@ -26,9 +17,7 @@ import {
   type CreateVentaWithInitialPaymentPayload,
 } from './ventas-rpc-adapter';
 
-export { logCacheHit, timestampToDate };
-
-export const getVentas = <T>() => getAll<T>(ENTITIES.VENTAS);
+export { timestampToDate };
 export const getVentaById = <T>(id: string) => getById<T>(ENTITIES.VENTAS, id);
 export const queryVentas = <T>(filters: QueryFilter[] = []) => queryDocuments<T>(ENTITIES.VENTAS, filters);
 export const countVentas = (filters: QueryFilter[] = []) => getCount(ENTITIES.VENTAS, filters);
@@ -58,11 +47,8 @@ export async function createVentaRefund(payload: CreateVentaRefundPayload): Prom
 
 export const getPagoVentaById = <T>(id: string) => getById<T>(ENTITIES.PAGOS_VENTA, id);
 export const queryPagosVenta = <T>(filters: QueryFilter[] = []) => queryDocuments<T>(ENTITIES.PAGOS_VENTA, filters);
-export const countPagosVenta = (filters: QueryFilter[] = []) => getCount(ENTITIES.PAGOS_VENTA, filters);
 export const createPagoVenta = (payload: CreatePagoVentaInput) =>
   createPagoVentaRecord(payload);
-export const updatePagoVenta = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
-  update(ENTITIES.PAGOS_VENTA, id, payload);
 
 export async function removePagoVenta(id: string): Promise<void> {
   await deleteVentaPaymentRpc({
@@ -193,4 +179,3 @@ function getVentaPeriodoIdFromPago(pago: unknown): string {
   return periodoId;
 }
 
-export { ENTITIES } from './entities';

@@ -31,7 +31,7 @@ interface PageHeaderProps {
 }
 
 /** Miga estandar: Dashboard › Seccion [› elemento]. La seccion enlaza solo cuando hay un elemento debajo. */
-export function buildBreadcrumb(pathname: string, trail: PageHeaderBreadcrumb[] = []): PageHeaderBreadcrumb[] {
+function buildBreadcrumb(pathname: string, trail: PageHeaderBreadcrumb[] = []): PageHeaderBreadcrumb[] {
   const section = findNavItem(pathname);
   if (!section || section.href === '/dashboard') return [];
 

@@ -1,7 +1,6 @@
 import {
   createTemplate,
   getTemplates,
-  removeTemplate,
   updateTemplate,
 } from '@/platform/supabase/templates-repository';
 import type { TemplateMensaje } from '@/types';
@@ -39,8 +38,4 @@ export async function updateTemplateUseCase(
   updates: Partial<TemplateMensaje>,
 ) {
   await updateTemplate(id, normalizeMetaLink(updates));
-}
-
-export async function deleteTemplateUseCase(id: string) {
-  await removeTemplate(id);
 }

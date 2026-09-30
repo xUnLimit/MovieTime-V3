@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
 vi.mock('./record-core', () => ({
   getAll: mocks.getAll, getById: mocks.getById, queryDocuments: mocks.query,
-  getCount: mocks.count, create: mocks.create, update: mocks.update, logCacheHit: vi.fn(),
+  getCount: mocks.count, create: mocks.create, update: mocks.update,
 }));
 vi.mock('./categorias-rpc-adapter', () => ({
   deleteCategoriaRpc: mocks.deleteRpc,
@@ -17,12 +17,7 @@ vi.mock('./categorias-rpc-adapter', () => ({
   getCategoriasFullRpc: mocks.fullRpc,
 }));
 
-import {
-  buildCategorias, countCategorias, createCategoria, createCategoriaRecord,
-  deleteCategoriaRecord, getCategoriaById, getCategorias, getCategoriasCounts,
-  getCategoriasFull, queryCategorias, updateCategoria, updateCategoriaRecord,
-  upsertCategoriaPlanes,
-} from './categorias-repository';
+import { buildCategorias, countCategorias, createCategoriaRecord, deleteCategoriaRecord, getCategoriaById, getCategoriasCounts, getCategoriasFull, updateCategoriaRecord, upsertCategoriaPlanes } from './categorias-repository';
 
 type DbResult = { data: unknown; error: { message: string } | null };
 
@@ -53,20 +48,11 @@ beforeEach(() => {
 });
 
 describe('category repository facades', () => {
-  it('delegates generic CRUD operations', async () => {
-    mocks.getAll.mockResolvedValue(['all']);
+  it('delegates generic reads', async () => {
     mocks.getById.mockResolvedValue({ id: 'c1' });
-    mocks.query.mockResolvedValue(['filtered']);
     mocks.count.mockResolvedValue(2);
-    mocks.create.mockResolvedValue('new');
-    mocks.update.mockResolvedValue(undefined);
-    expect(await getCategorias()).toEqual(['all']);
     expect(await getCategoriaById('c1')).toEqual({ id: 'c1' });
-    expect(await queryCategorias([{ field: 'activo', operator: '==', value: true }])).toEqual(['filtered']);
     expect(await countCategorias()).toBe(2);
-    expect(await createCategoria({ nombre: 'Nueva' })).toBe('new');
-    await updateCategoria('c1', { nombre: 'Editada' });
-    expect(mocks.update).toHaveBeenCalledWith('categorias', 'c1', { nombre: 'Editada' });
   });
 
   it('normalizes full RPC JSON and invalid values', async () => {

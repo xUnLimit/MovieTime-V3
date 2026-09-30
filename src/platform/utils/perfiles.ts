@@ -1,44 +1,9 @@
 export const PROFILE_PAGE_SIZE = 10;
 export const PROFILE_ICON_LIMIT = 10;
 export const PROFILE_PREVIEW_FULL_RENDER_LIMIT = 20;
-export const PROFILE_PREVIEW_SAMPLE_LIMIT = 12;
+const PROFILE_PREVIEW_SAMPLE_LIMIT = 12;
 
 export type ProfileIndicatorState = 'occupied' | 'available' | 'inactive';
-
-export function getProfilePageCount(total: number, pageSize = PROFILE_PAGE_SIZE): number {
-  if (pageSize <= 0) return 0;
-  return Math.max(Math.ceil(Math.max(total, 0) / pageSize), 1);
-}
-
-export function getProfilePageForNumber(profileNumber: number, pageSize = PROFILE_PAGE_SIZE): number {
-  if (!Number.isFinite(profileNumber) || profileNumber <= 0 || pageSize <= 0) return 0;
-  return Math.floor((profileNumber - 1) / pageSize);
-}
-
-export function getProfileNumbersForPage(
-  total: number,
-  pageIndex: number,
-  pageSize = PROFILE_PAGE_SIZE
-): number[] {
-  if (total <= 0 || pageSize <= 0) return [];
-
-  const maxPageIndex = Math.max(getProfilePageCount(total, pageSize) - 1, 0);
-  const safePageIndex = Math.min(Math.max(pageIndex, 0), maxPageIndex);
-  const start = safePageIndex * pageSize + 1;
-  const end = Math.min(start + pageSize - 1, total);
-
-  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-}
-
-export function getProfilePageLabel(
-  total: number,
-  pageIndex: number,
-  pageSize = PROFILE_PAGE_SIZE
-): string {
-  const numbers = getProfileNumbersForPage(total, pageIndex, pageSize);
-  if (numbers.length === 0) return 'Sin perfiles';
-  return `${numbers[0]}-${numbers[numbers.length - 1]}`;
-}
 
 export function getProfilePreviewSample(
   total: number,

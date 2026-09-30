@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useClientPagination } from "@/hooks/useClientPagination";
+import { useClientPagination } from "@/hooks/use-client-pagination";
 import { useNotificaciones } from "@/hooks/use-notificaciones";
 import { toggleNotificationReadStoreCache } from "@/application/store-reactions/notification-cache-reactions";
 import { applyNotificationQueryReactions } from "@/application/store-reactions/notification-query-reactions";

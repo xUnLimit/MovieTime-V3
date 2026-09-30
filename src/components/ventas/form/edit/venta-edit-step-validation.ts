@@ -1,4 +1,4 @@
-import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
+import type { VentaEditFormData } from "@/components/ventas/form/venta-edit-form-schema";
 
 export type VentaEditDatosStepField =
   | "clienteId"

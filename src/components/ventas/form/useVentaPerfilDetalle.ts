@@ -6,7 +6,7 @@ import { queryVentasByServicioUseCase } from "@/application/use-cases/ventas/ven
 import type {
   PerfilDetalleOcupado,
   PerfilDetalleVisual,
-} from "@/features/ventas/ventas-form-shared";
+} from "@/components/ventas/form/ventas-form-shared";
 import type { Servicio, VentaDoc } from "@/types";
 
 export interface PendingVentaPerfil {

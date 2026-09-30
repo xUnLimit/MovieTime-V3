@@ -18,13 +18,7 @@ vi.mock('@/application/store-reactions/notificaciones-workflow-reactions', () =>
 vi.mock('@/platform/supabase/domain-read-adapters', () => domainReadAdapters);
 vi.mock('@/application/use-cases/servicios/servicios-payment-use-cases', () => servicioPayments);
 
-import {
-  activateAndRenewReposoServicioUseCase,
-  activateReposoServicioUseCase,
-  clearReposoNotificationsUseCase,
-  deleteReposoServicioUseCase,
-  getReposoDependenciesInvalidationOutcome,
-} from './notificaciones-reposo-use-cases';
+import { activateAndRenewReposoServicioUseCase, activateReposoServicioUseCase, clearReposoNotificationsUseCase, deleteReposoServicioUseCase } from './notificaciones-reposo-use-cases';
 import type { Servicio } from '@/types/servicios';
 
 const servicio = {
@@ -57,13 +51,6 @@ describe('notificaciones reposo use-cases', () => {
     });
     expect(workflowReactions.deleteNotificationStoreItem).toHaveBeenCalledWith('notif-1');
     expect(workflowReactions.deleteNotificationStoreItem).toHaveBeenCalledWith('notif-2');
-  });
-
-  it('describes reposo dependency invalidations without receiving a QueryClient', () => {
-    expect(getReposoDependenciesInvalidationOutcome()).toEqual({
-      type: 'reposoDependenciesInvalidationNeeded',
-      queryTargets: ['categorias', 'servicios'],
-    });
   });
 
   it('activates a reposo servicio and returns UI/cache outcome', async () => {

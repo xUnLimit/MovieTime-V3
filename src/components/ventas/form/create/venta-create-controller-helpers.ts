@@ -3,8 +3,8 @@ import {
   type TipoVentaItem,
   type VentaItem,
   type VentaItemErrors,
-} from "@/features/ventas/ventas-form-shared";
-import type { VentaFormData } from "@/features/ventas/venta-form-schema";
+} from "@/components/ventas/form/ventas-form-shared";
+import type { VentaFormData } from "@/components/ventas/form/venta-form-schema";
 import { PENDING_TERCERO_PAYMENT_ID } from "@/platform/utils/terceroMetodoPago";
 import { PROFILE_PAGE_SIZE } from "@/platform/utils/perfiles";
 import { normalizePhoneSearch, normalizeSearchText } from "@/platform/utils";
@@ -288,6 +288,4 @@ export function validateVentaItemSelection({
 
   return errors;
 }
-
-export { buildVentaCreateBatchInputs, buildVentaCreateInput, getServicioIdsConPerfil, type CreateVentaWriteInput } from "./venta-create-submit-helpers";
 

@@ -183,7 +183,3 @@ export const financialPayments = {
   calculateTotalUsdSync,
   formatTotalUsd: formatAggregateInUSD,
 };
-
-export type RegisterVentaPaymentInput = RegisterVentaPaymentCommand;
-export type RegisterServicioPaymentInput = RegisterServicioPaymentCommand;
-export type PaymentCycle = CicloPago;

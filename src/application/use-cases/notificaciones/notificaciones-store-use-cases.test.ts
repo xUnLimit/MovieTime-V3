@@ -6,7 +6,6 @@ vi.mock('@/platform/supabase/domain-read-adapters', () => ({
 }));
 
 vi.mock('@/platform/supabase/notifications-repository', () => ({
-  countNotificaciones: vi.fn(),
   removeNotificacion: vi.fn(),
   updateNotificacion: vi.fn(),
 }));
@@ -15,35 +14,15 @@ import {
   queryNotificationIdsRead,
   queryNotificationsRead,
 } from '@/platform/supabase/domain-read-adapters';
-import {
-  countNotificaciones,
-  removeNotificacion,
-  updateNotificacion,
-} from '@/platform/supabase/notifications-repository';
-import {
-  deleteNotificacionUseCase,
-  deleteNotificacionesPorServicioUseCase,
-  deleteNotificacionesPorVentaUseCase,
-  fetchNotificationCountsUseCase,
-  setVentaPaymentPromiseUseCase,
-  toggleNotificacionLeidaUseCase,
-  toggleNotificacionResaltadaUseCase,
-} from './notificaciones-store-use-cases';
+import { removeNotificacion, updateNotificacion } from '@/platform/supabase/notifications-repository';
+import { deleteNotificacionUseCase, deleteNotificacionesPorServicioUseCase, deleteNotificacionesPorVentaUseCase, setVentaPaymentPromiseUseCase, toggleNotificacionLeidaUseCase, toggleNotificacionResaltadaUseCase } from './notificaciones-store-use-cases';
 
 describe('notificaciones store use cases', () => {
   beforeEach(() => {
-    vi.mocked(countNotificaciones).mockReset().mockResolvedValue(0);
     vi.mocked(queryNotificationsRead).mockReset().mockResolvedValue([]);
     vi.mocked(queryNotificationIdsRead).mockReset().mockResolvedValue([]);
     vi.mocked(removeNotificacion).mockReset().mockResolvedValue(undefined);
     vi.mocked(updateNotificacion).mockReset().mockResolvedValue(undefined);
-  });
-
-  it('fetches count dependencies without exposing repository details to stores', async () => {
-    await fetchNotificationCountsUseCase();
-
-    expect(countNotificaciones).toHaveBeenCalledTimes(4);
-    expect(queryNotificationsRead).toHaveBeenCalledTimes(2);
   });
 
   it('updates read and highlighted flags', async () => {

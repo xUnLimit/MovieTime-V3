@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import type { Categoria, MetodoPago, Servicio, Tercero, VentaDoc } from "@/types";
 
 import {

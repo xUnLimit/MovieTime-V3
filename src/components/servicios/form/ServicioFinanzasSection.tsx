@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import { formatearFecha } from "@/platform/utils/calculations";
 import { getServicioMetodoPagoNombre } from "@/platform/utils/servicioMetodoPago";
 import type { MetodoPago, TipoPlanConfig } from "@/types";

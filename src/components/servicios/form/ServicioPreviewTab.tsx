@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Users } from "lucide-react";
 
 import { TabsContent } from "@/components/ui/tabs";
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import { formatearFecha } from "@/platform/utils/calculations";
 import {
   PROFILE_PREVIEW_FULL_RENDER_LIMIT,

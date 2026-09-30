@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { useClientPagination } from '@/hooks/useClientPagination';
-import { settleFitRows, useFitPageSize } from '@/hooks/useFitPageSize';
+import { useClientPagination } from '@/hooks/use-client-pagination';
+import { settleFitRows, useFitPageSize } from '@/hooks/use-fit-page-size';
 import { cn } from '@/platform/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from './EmptyState';

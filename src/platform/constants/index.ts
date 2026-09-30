@@ -7,6 +7,11 @@ export const CYCLE_MONTHS = {
 
 export type CicloPago = keyof typeof CYCLE_MONTHS;
 
+/** Meses de un ciclo de pago; un ciclo desconocido cuenta como mensual. */
+export function getCycleMonths(ciclo?: string | null): number {
+  return CYCLE_MONTHS[ciclo as CicloPago] ?? 1;
+}
+
 export const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export const REPOSO_DAY_OPTIONS = [7, 28, 29, 30, 31] as const;

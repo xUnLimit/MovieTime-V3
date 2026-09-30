@@ -17,8 +17,8 @@ export interface ExchangeRateAPIResponse {
   rates: Record<string, number>;
 }
 
-export const FRESH_RATE_MAX_AGE_HOURS = 24;
-export const STALE_RATE_MAX_AGE_HOURS = 72;
+const FRESH_RATE_MAX_AGE_HOURS = 24;
+const STALE_RATE_MAX_AGE_HOURS = 72;
 export const API_BASE_URL = "https://open.er-api.com/v6";
 
 export function getCurrencyCacheAgeHours(lastUpdated: Date, now = new Date()): number {

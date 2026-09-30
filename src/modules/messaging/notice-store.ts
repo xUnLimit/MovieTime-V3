@@ -7,7 +7,7 @@ export type NoticeTipo = Database['public']['Enums']['tipo_template_enum'];
 export type NoticeTemplate = { contenido: string; metaTemplateName: string | null; metaParamMap: string[];
   metaButtonActions: ('RENOVAR' | 'NO_CONTINUAR' | 'DATOS' | 'NINGUNA')[] };
 export type NoticeRecord = Database['public']['Tables']['whatsapp_notices']['Row'];
-export type NoticeReservation = {
+type NoticeReservation = {
   dedupeKey: string; tipo: NoticeTipo; terceroId: string; waId: string;
   channel: 'template' | 'text'; metaTemplateName: string | null;
   fechaVencimiento: string | null; origin: 'manual' | 'auto';

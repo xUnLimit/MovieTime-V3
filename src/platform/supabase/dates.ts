@@ -1,7 +1,3 @@
-export function convertTimestamps<T>(value: T): T {
-  return reviveDates(value);
-}
-
 export function timestampToDate(value: unknown): Date {
   if (!value) return new Date(0);
   if (value instanceof Date) return value;

@@ -6,7 +6,7 @@ import {
   useVentaPerfilDetalle,
   type PendingVentaPerfil,
 } from "@/components/ventas/form/useVentaPerfilDetalle";
-import type { VentaItem } from "@/features/ventas/ventas-form-shared";
+import type { VentaItem } from "@/components/ventas/form/ventas-form-shared";
 import { getCurrencySymbol } from "@/platform/constants";
 import {
   calculateDiscountedAmount,

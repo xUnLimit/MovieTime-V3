@@ -118,15 +118,3 @@ function sonValoresIguales(a: unknown, b: unknown): boolean {
   // Primitivos
   return a === b;
 }
-
-/**
- * Genera el texto resumido de cambios para el campo `detalles`
- */
-export function generarResumenCambios(cambios: CambioLog[]): string {
-  if (cambios.length === 0) return 'sin cambios';
-  if (cambios.length === 1) return `1 cambio: ${cambios[0].campo}`;
-  if (cambios.length <= 3) {
-    return `${cambios.length} cambios: ${cambios.map(c => c.campo).join(', ')}`;
-  }
-  return `${cambios.length} cambios: ${cambios.slice(0, 3).map(c => c.campo).join(', ')}...`;
-}

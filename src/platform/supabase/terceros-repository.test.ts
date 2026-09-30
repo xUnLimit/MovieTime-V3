@@ -6,19 +6,16 @@ const core = vi.hoisted(() => ({
 }));
 vi.mock('./record-core', () => ({
   getAll: core.getAll, getById: core.getById, queryDocuments: core.query, getCount: core.count,
-  countFromView: core.countView, create: core.create, update: core.update, remove: core.remove, logCacheHit: vi.fn(),
+  countFromView: core.countView, create: core.create, update: core.update, remove: core.remove,
 }));
 
-import {
-  countTerceros, createTercero, getTerceroById, getTerceros,
-  queryTerceros, removeTercero, updateTercero,
-} from './terceros-repository';
+import { countTerceros, createTercero, getTerceroById, getTerceros, removeTercero, updateTercero } from './terceros-repository';
 
 beforeEach(() => vi.clearAllMocks());
 
 describe('third-party repository', () => {
   it('delegates CRUD and chooses the correct count source', async () => {
-    await getTerceros(); await getTerceroById('t1'); await queryTerceros();
+    await getTerceros(); await getTerceroById('t1');
     await countTerceros([{ field: 'activo', operator: '==', value: true }]);
     const derived = [{ field: 'serviciosActivos', operator: '>', value: 0 }] as const;
     await countTerceros([...derived]);

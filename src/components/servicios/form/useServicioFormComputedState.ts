@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import { getServicioMetodoPagoNombre } from "@/platform/utils/servicioMetodoPago";
 import type { Categoria, MetodoPago, Servicio } from "@/types";
 

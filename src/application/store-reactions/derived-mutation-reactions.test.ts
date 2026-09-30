@@ -24,7 +24,7 @@ vi.mock('@/platform/utils/activityLogHelpers', () => ({ detectarCambios: mocks.c
 import { afterVentaCreated, afterVentaDeleted, afterVentaUpdated } from './ventas-mutation-reactions';
 import { afterServicioCreated, afterServicioDeleted, afterServicioUpdated } from './servicios-mutation-reactions';
 import { afterGastoCreated, afterGastoDeleted, afterGastoUpdated } from './gastos-mutation-reactions';
-import { afterTemplateCreated, afterTemplateDeleted, afterTemplateUpdated } from './templates-mutation-reactions';
+import { afterTemplateCreated, afterTemplateUpdated } from './templates-mutation-reactions';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -68,16 +68,14 @@ describe('derived mutation reactions', () => {
     expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ cambios: [{ campo: 'Monto' }] }));
   });
 
-  it('records template create/update/delete with snapshot and fallback paths', async () => {
+  it('records template create/update with snapshot and fallback paths', async () => {
     const template = { id: 't1', nombre: 'Renovación', tipo: 'renovacion', contenido: 'Hola' } as never;
     await afterTemplateCreated(template);
     mocks.changes.mockReturnValue([{ campo: 'Contenido' }]);
     await afterTemplateUpdated({ templateId: 't1', oldTemplate: template, updates: { contenido: 'Nuevo' } });
     mocks.changes.mockReturnValue([]);
     await afterTemplateUpdated({ templateId: 't2', updates: { contenido: 'Nuevo' } });
-    await afterTemplateDeleted('t1', template);
-    await afterTemplateDeleted('t2');
-    expect(mocks.record).toHaveBeenCalledTimes(5);
+    expect(mocks.record).toHaveBeenCalledTimes(3);
     expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ cambios: [{ campo: 'Contenido' }] }));
     expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ entidadNombre: 't2' }));
   });

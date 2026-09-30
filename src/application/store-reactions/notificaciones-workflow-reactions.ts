@@ -88,8 +88,3 @@ export async function deleteVentaNotificationsStoreWorkflow(ventaId: string) {
   await deleteNotificacionesPorVentaUseCase(ventaId);
   await invalidateStoreQueries(['notificaciones', 'dashboard']);
 }
-
-export async function deleteServicioNotificationsStoreWorkflow(servicioId: string) {
-  await deleteNotificacionesPorServicioUseCase(servicioId);
-  await invalidateStoreQueries(['notificaciones', 'dashboard']);
-}

@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { handleDecimalKeyDown, handleIntegerKeyDown } from "@/components/ventas/form/input-key-handlers";
-import type { VentaItemErrors } from "@/features/ventas/ventas-form-shared";
+import type { VentaItemErrors } from "@/components/ventas/form/ventas-form-shared";
 import { cn } from "@/platform/utils";
 import { formatearFecha } from "@/platform/utils/calculations";
 

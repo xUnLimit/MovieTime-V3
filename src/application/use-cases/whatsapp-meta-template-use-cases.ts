@@ -12,7 +12,7 @@ function parseButtons(value: MetaTemplateRow['buttons']): MetaTemplateButton[] {
   });
 }
 
-export function toMetaTemplateInfo(row: MetaTemplateRow): MetaTemplateInfo {
+function toMetaTemplateInfo(row: MetaTemplateRow): MetaTemplateInfo {
   return {
     id: row.id,
     name: row.name,

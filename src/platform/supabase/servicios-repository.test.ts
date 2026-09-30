@@ -9,7 +9,7 @@ vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
 vi.mock('./record-core', () => ({
   getAll: mocks.getAll, getById: mocks.getById, queryDocuments: mocks.query,
   getCount: mocks.count, create: mocks.create, update: mocks.update,
-  archiveRecord: mocks.archive, logCacheHit: vi.fn(),
+  archiveRecord: mocks.archive,
 }));
 vi.mock('./servicios-rpc-adapter', () => ({
   deleteServicioWithPaymentsRpc: mocks.deleteAll,
@@ -18,13 +18,7 @@ vi.mock('./servicios-rpc-adapter', () => ({
   updateServicioPaymentAndPeriodRpc: mocks.updatePayment,
 }));
 
-import {
-  countServicios, createServicio, createServicioWithInitialPayment, getPagoServicioById,
-  getServicioById, getServicios, queryPagosServicio, queryServicios, removePagoServicio,
-  removeServicio, removeServicioWithPayments, updateLatestServicioPeriodo, updatePagoServicio,
-  updateServicio, updateServicioPaymentAndPeriod, updateServicioPeriodoById,
-  type ServicioPeriodoUpdate,
-} from './servicios-repository';
+import { countServicios, createServicioWithInitialPayment, getPagoServicioById, getServicioById, getServicios, queryPagosServicio, queryServicios, removePagoServicio, removeServicio, removeServicioWithPayments, updateLatestServicioPeriodo, updateServicio, updateServicioPaymentAndPeriod, updateServicioPeriodoById, type ServicioPeriodoUpdate } from './servicios-repository';
 
 function dbQuery(result: { data?: unknown; error: { message: string } | null }) {
   const chain = {
@@ -49,11 +43,10 @@ beforeEach(() => {
 describe('service repository', () => {
   it('delegates service and payment facades', async () => {
     mocks.createInitial.mockResolvedValue('s1');
-    await getServicios(); await getServicioById('s1'); await queryServicios(); await countServicios();
-    await createServicio({ nombre: 'S' }); await updateServicio('s1', { nombre: 'N' }); await removeServicio('s1');
+    await getServicios(); await getServicioById('s1'); await queryServicios(); await countServicios(); await updateServicio('s1', { nombre: 'N' }); await removeServicio('s1');
     await removeServicioWithPayments('s1', true);
     expect(await createServicioWithInitialPayment({} as never)).toBe('s1');
-    await queryPagosServicio(); await getPagoServicioById('p1'); await updatePagoServicio('p1', { notas: 'n' });
+    await queryPagosServicio(); await getPagoServicioById('p1');
     await removePagoServicio('p1');
     expect(mocks.archive).toHaveBeenCalledWith('servicios', 's1');
     expect(mocks.deleteAll).toHaveBeenCalledWith({ p_servicio_id: 's1', p_delete_payments: true });

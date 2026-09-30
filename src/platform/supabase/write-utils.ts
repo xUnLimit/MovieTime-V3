@@ -2,7 +2,10 @@ import { supabase } from './client';
 import { toSnakeCase } from './mappers';
 import { ENTITIES, writeTable, type CollectionName, type PublicTableName } from './entities';
 import type { Database } from './database.types';
+import { createLogger } from '@/platform/observability/logger';
 import { assertRecordId, isUuid } from '@/platform/utils/safety';
+
+const logger = createLogger('supabase records');
 
 /**
  * Columnas escribibles por tabla para el path de escritura generico.
@@ -99,8 +102,8 @@ export function normalizeWritePayload(
       (k) => !allowed.includes(k) && snake[k] !== undefined && k !== 'id'
     );
     if (dropped.length > 0) {
-      console.warn(
-        `[supabase records] write to "${collectionName}" dropped fields not in allowlist: ${dropped.join(', ')}\n` +
+      logger.warn(
+        `write to "${collectionName}" dropped fields not in allowlist: ${dropped.join(', ')}. ` +
         'These fields do not exist on the SQL table. Either add them to the allowlist or remove them from the caller.'
       );
     }

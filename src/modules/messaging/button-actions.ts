@@ -20,7 +20,7 @@ export function resizeButtonActions(actions: readonly string[], buttonCount: num
 }
 
 /** Sugerencia inicial segun el texto del boton. */
-export function suggestButtonAction(text: string): ButtonAction {
+function suggestButtonAction(text: string): ButtonAction {
   const label = text.toLowerCase();
   if (/\bno\b.{0,12}continuar/.test(label)) return 'NO_CONTINUAR';
   if (/renov|continuar|pagar/.test(label)) return 'RENOVAR';

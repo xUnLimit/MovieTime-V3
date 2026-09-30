@@ -1,5 +1,5 @@
 import { TabsContent } from "@/components/ui/tabs";
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import type { Categoria, MetodoPago, TipoPlanConfig } from "@/types";
 
 import { ServicioDatosBasicosSection } from "./ServicioDatosBasicosSection";

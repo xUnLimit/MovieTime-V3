@@ -79,8 +79,6 @@ export const sendWhatsAppMessageSchema = z.object({
   ]),
 });
 
-export type SendWhatsAppMessageRequest = z.infer<typeof sendWhatsAppMessageSchema>;
-
 export const markConversationReadSchema = z.object({
   waId: z.string().regex(/^\d{8,15}$/),
   readAt: z.iso.datetime(),

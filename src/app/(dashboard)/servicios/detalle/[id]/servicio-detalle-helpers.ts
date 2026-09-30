@@ -1,52 +1,6 @@
-import {
-  fetchServicioDetalleBundleUseCase,
-  fetchServicioVentasProfilesUseCase,
-} from "@/application/use-cases/servicios/servicio-detail-use-cases";
 import { buildServiceTransferMessage } from "@/platform/utils/credentialNotification";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
 import type { PagoServicio, Servicio, Tercero, VentaDoc } from "@/types";
-
-import type {
-  CategoriaDetalle,
-  MetodoPagoDetalle,
-  PerfilVenta,
-} from "./components/types";
-
-export function toPerfilVenta(
-  venta: VentaDoc,
-): PerfilVenta & { perfilNumero?: number | null } {
-  return {
-    ventaId: venta.id || undefined,
-    clienteId: venta.clienteId || undefined,
-    perfilNumero: venta.perfilNumero ?? null,
-    clienteNombre: venta.clienteNombre || undefined,
-    clienteTelefono: venta.clienteTelefono || undefined,
-    createdAt: venta.createdAt,
-    precioFinal: venta.precioFinal ?? venta.precio ?? 0,
-    descuento: venta.descuento ?? 0,
-    fechaInicio: venta.fechaInicio ?? undefined,
-    fechaFin: venta.fechaFin ?? undefined,
-    notas: venta.notas || "",
-    servicioNombre: venta.servicioNombre,
-    servicioCorreo: venta.servicioCorreo || "",
-    moneda: venta.moneda || undefined,
-    perfilNombre: venta.perfilNombre || undefined,
-    codigo: venta.codigo || undefined,
-    cicloPago: venta.cicloPago || undefined,
-  };
-}
-
-export async function fetchServicioVentasProfiles(id: string) {
-  return fetchServicioVentasProfilesUseCase(id);
-}
-
-export async function fetchServicioDetalleBundle(id: string): Promise<{
-  categoria: CategoriaDetalle;
-  metodoPago: MetodoPagoDetalle | null;
-  servicio: Servicio;
-}> {
-  return fetchServicioDetalleBundleUseCase(id);
-}
 
 export function buildTransferVentaForMessage({
   codigo,

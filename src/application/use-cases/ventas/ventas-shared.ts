@@ -93,13 +93,6 @@ export function nullableMetodoPagoId(id?: string | null) {
   return isPendingTerceroPaymentMethodId(id) ? null : id ?? null;
 }
 
-export function nullableUuid(id?: string | null) {
-  if (!id) return null;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
-    ? id
-    : null;
-}
-
 export function getPagoValues(venta: VentaDoc, input: VentaPagoInput) {
   const costo = roundToDecimals(input.costo);
   const descuentoNumero = roundToDecimals(Number(input.descuento) || 0);
@@ -111,7 +104,7 @@ export function getPagoValues(venta: VentaDoc, input: VentaPagoInput) {
   return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda };
 }
 
-export function getPagoSignedUsd(pago: PagoVenta) {
+function getPagoSignedUsd(pago: PagoVenta) {
   const amount = toMoneyNumber((pago as PagoVenta & { montoUsd?: number }).montoUsd ?? pago.monto ?? 0);
   return pago.estado === 'reembolsado' ? -amount : pago.estado === 'anulado' ? 0 : amount;
 }

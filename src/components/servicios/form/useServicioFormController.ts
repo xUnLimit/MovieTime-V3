@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
 
-import { servicioSchema, type ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import { servicioSchema, type ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import { useCategoriasFull } from "@/hooks/use-categorias-full";
 import { useMetodosPagoServicios } from "@/hooks/use-metodos-pago-servicios";
 import { usePagosServicio } from "@/hooks/use-pagos-servicio";

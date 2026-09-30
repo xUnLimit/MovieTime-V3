@@ -1,6 +1,6 @@
 import type { NoticeBadgeStatus, VentaNoticeState } from '@/application/use-cases/whatsapp-notices-use-cases';
 import { buildMessageData, renderFreeText, type NoticeGroup, type NoticeVenta } from '@/modules/messaging/message-data';
-import type { NoticeResult, NoticeTipo } from '@/platform/api/whatsapp-notices-client';
+import type { NoticeResult } from '@/platform/api/whatsapp-notices-client';
 
 import type { NotificacionVentaConId } from './types';
 
@@ -44,7 +44,7 @@ function toNoticeVenta(notif: NotificacionVentaConId): NoticeVenta {
 }
 
 /** Texto libre para todas las ventas dadas (un solo cliente): agrupa con {{#items}}. */
-export function buildGroupedNoticeText(notifs: readonly NotificacionVentaConId[], contenido: string, now = new Date()): string {
+function buildGroupedNoticeText(notifs: readonly NotificacionVentaConId[], contenido: string, now = new Date()): string {
   const first = notifs[0];
   if (!first) return '';
   const group: NoticeGroup = {
@@ -137,4 +137,3 @@ export function summarizeNoticeResults(results: readonly NoticeResult[]): Notice
   };
 }
 
-export type { NoticeTipo };

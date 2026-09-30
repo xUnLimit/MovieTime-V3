@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { filterTercerosForTercerosPage, type TercerosTab } from '@/components/terceros/terceros-search';
-import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
+import { estimateInitialPageSize } from '@/hooks/use-fit-page-size';
 import { useTerceros } from '@/hooks/use-terceros';
 import { useTercerosCounts } from '@/hooks/use-terceros-counts';
-import { useServerPagination } from '@/hooks/useServerPagination';
+import { useServerPagination } from '@/hooks/use-server-pagination';
 import { subscribeToTercerosPageReactions } from '@/platform/events/cache-reactions';
 import { queryKeys } from '@/platform/query-keys';
 import { queryMetodosPagoTercerosUseCase } from '@/application/use-cases/metodos-pago-use-cases';

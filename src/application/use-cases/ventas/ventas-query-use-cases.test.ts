@@ -6,12 +6,7 @@ vi.mock('@/platform/supabase/ventas-repository', () => ({
   countVentas: mocks.count, queryVentas: mocks.ventas, queryPagosVenta: mocks.pagos,
 }));
 
-import {
-  countVentasActivasByServicioUseCase, fetchPagosVentaByVentaIdsUseCase,
-  fetchVentasByClienteIdsUseCase, fetchVentasCountsUseCase, getVentaDetalleUseCase,
-  queryPagosVentaByVentaUseCase, queryVentasActivasByServiciosUseCase,
-  queryVentasByClienteUseCase, queryVentasByServicioUseCase,
-} from './ventas-query-use-cases';
+import { countVentasActivasByServicioUseCase, fetchVentasByClienteIdsUseCase, fetchVentasCountsUseCase, getVentaDetalleUseCase, queryPagosVentaByVentaUseCase, queryVentasActivasByServiciosUseCase, queryVentasByClienteUseCase, queryVentasByServicioUseCase } from './ventas-query-use-cases';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -28,12 +23,11 @@ describe('sales query use cases', () => {
     expect(mocks.ventas).toHaveBeenCalledTimes(3);
   });
 
-  it('chunks and flattens sale and payment queries', async () => {
+  it('chunks sale queries by cliente and flattens the results', async () => {
     mocks.ventas.mockResolvedValueOnce([{ id: 'v1' }]).mockResolvedValueOnce([{ id: 'v2' }]);
     expect(await fetchVentasByClienteIdsUseCase(['c1', 'c2', 'c3'], 2)).toEqual([{ id: 'v1' }, { id: 'v2' }]);
-    mocks.pagos.mockResolvedValueOnce([{ id: 'p1' }]).mockResolvedValueOnce([{ id: 'p2' }]);
-    expect(await fetchPagosVentaByVentaIdsUseCase(['v1', 'v2', 'v3'], 2)).toEqual([{ id: 'p1' }, { id: 'p2' }]);
+    expect(mocks.ventas).toHaveBeenNthCalledWith(1, [{ field: 'clienteId', operator: 'in', value: ['c1', 'c2'] }]);
+    expect(mocks.ventas).toHaveBeenNthCalledWith(2, [{ field: 'clienteId', operator: 'in', value: ['c3'] }]);
     expect(await fetchVentasByClienteIdsUseCase([], 2)).toEqual([]);
-    expect(await fetchPagosVentaByVentaIdsUseCase([], 2)).toEqual([]);
   });
 });

@@ -1,8 +1,7 @@
-﻿import { getServicios } from '@/platform/supabase/servicios-repository';
 import { queryVentas } from '@/platform/supabase/ventas-repository';
 import { storeEventBus } from '@/platform/events/store-event-bus';
-import { sincronizarNotificacionesForzado, sincronizarUnServicio, sincronizarUnaVenta } from '@/modules/notifications';
-import type { Servicio, VentaDoc } from '@/types';
+import { sincronizarUnServicio, sincronizarUnaVenta } from '@/modules/notifications';
+import type { Servicio } from '@/types';
 
 type ServicioDenormalizedSnapshot = Pick<
   Servicio,
@@ -57,7 +56,7 @@ export async function syncServicioDependencias(
   return outcome;
 }
 
-export async function planServicioDependencySync(
+async function planServicioDependencySync(
   nextServicio: ServicioDenormalizedSnapshot,
   options: Pick<SyncServicioDependenciasOptions, 'refreshNotifications'> = {}
 ): Promise<SyncServicioDependenciasResult> {
@@ -77,7 +76,7 @@ export async function planServicioDependencySync(
   };
 }
 
-export async function applyServicioDependencySyncReactions(
+async function applyServicioDependencySyncReactions(
   servicioId: string,
   outcome: SyncServicioDependenciasResult,
   options: Pick<SyncServicioDependenciasOptions, 'emitEvents'> = {}
@@ -95,27 +94,4 @@ export async function applyServicioDependencySyncReactions(
   if (options.emitEvents ?? true) {
     emitServicioSyncEvents(servicioId, outcome.ventaIds);
   }
-}
-
-/**
- * Full resync of denormalized service data in all sales
- */
-export async function resyncServiciosDenormalizedData(preFetchedData?: {
-  servicios?: Servicio[];
-  ventas?: VentaDoc[];
-}): Promise<{
-  serviciosRevisados: number;
-  ventasActualizadas: number;
-}> {
-  const servicios = preFetchedData?.servicios || await getServicios<Servicio>();
-  void preFetchedData?.ventas;
-
-  await sincronizarNotificacionesForzado();
-
-  emitServicioSyncEvents(null, []);
-
-  return {
-    serviciosRevisados: servicios.length,
-    ventasActualizadas: 0,
-  };
 }

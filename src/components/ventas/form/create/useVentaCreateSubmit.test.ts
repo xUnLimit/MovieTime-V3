@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { FormEvent } from 'react';
-import type { VentaItem } from '@/features/ventas/ventas-form-shared';
+import type { VentaItem } from '@/components/ventas/form/ventas-form-shared';
 import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
 vi.mock('@/application/use-cases/terceros/tercero-metodo-pago-use-cases', () => ({ syncTerceroMetodoPagoUseCase: vi.fn() }));

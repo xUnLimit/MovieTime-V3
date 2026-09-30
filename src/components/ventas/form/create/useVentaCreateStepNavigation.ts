@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { UseFormSetError } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import type { VentaFormData } from '@/features/ventas/venta-form-schema';
-import type { VentaItem } from '@/features/ventas/ventas-form-shared';
+import type { VentaFormData } from '@/components/ventas/form/venta-form-schema';
+import type { VentaItem } from '@/components/ventas/form/ventas-form-shared';
 import {
   validateVentaCreateDatosStep,
   type VentaCreateDatosStepField,

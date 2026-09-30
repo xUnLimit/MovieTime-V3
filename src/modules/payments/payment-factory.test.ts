@@ -12,18 +12,7 @@ const paymentsRepository = vi.hoisted(() => ({
 vi.mock('@/platform/supabase/pagos-repository', () => pagosRepository);
 vi.mock('@/platform/supabase/payments-repository', () => paymentsRepository);
 
-import {
-  countServicioRenewals,
-  countVentaRenewals,
-  createInitialServicioPayment,
-  createInitialVentaPayment,
-  createRenewalServicioPayment,
-  createRenewalVentaPayment,
-  getManyServicioPayments,
-  getManyVentaPayments,
-  getServicioPayments,
-  getVentaPayments,
-} from './payment-factory';
+import { createInitialServicioPayment, createInitialVentaPayment, createRenewalServicioPayment, createRenewalVentaPayment, getServicioPayments } from './payment-factory';
 
 describe('payment-factory', () => {
   beforeEach(() => {
@@ -123,19 +112,6 @@ describe('payment-factory', () => {
     }));
   });
 
-  it('queries and counts venta renewal payments', async () => {
-    pagosRepository.queryPagosVenta.mockResolvedValue([
-      { id: 'pago-1', isPagoInicial: true },
-      { id: 'pago-2', isPagoInicial: false },
-    ]);
-
-    await expect(getVentaPayments('venta-1')).resolves.toHaveLength(2);
-    await expect(countVentaRenewals('venta-1')).resolves.toBe(1);
-    expect(pagosRepository.queryPagosVenta).toHaveBeenCalledWith([
-      { field: 'ventaId', operator: '==', value: 'venta-1' },
-    ]);
-  });
-
   it('queries and sorts servicio payments by newest date', async () => {
     pagosRepository.queryPagosServicio.mockResolvedValue([
       { id: 'old', fecha: new Date('2026-05-01T00:00:00Z'), isPagoInicial: true },
@@ -146,19 +122,5 @@ describe('payment-factory', () => {
       { id: 'new' },
       { id: 'old' },
     ]);
-    await expect(countServicioRenewals('servicio-1')).resolves.toBe(1);
-  });
-
-  it('chunks batch payment queries', async () => {
-    pagosRepository.queryPagosVenta.mockResolvedValue([{ id: 'venta-payment' }]);
-    pagosRepository.queryPagosServicio.mockResolvedValue([{ id: 'servicio-payment', fecha: new Date('2026-01-01') }]);
-
-    await expect(getManyVentaPayments(Array.from({ length: 11 }, (_, index) => `venta-${index}`)))
-      .resolves.toHaveLength(2);
-    await expect(getManyServicioPayments(Array.from({ length: 11 }, (_, index) => `servicio-${index}`)))
-      .resolves.toHaveLength(2);
-
-    expect(pagosRepository.queryPagosVenta).toHaveBeenCalledTimes(2);
-    expect(pagosRepository.queryPagosServicio).toHaveBeenCalledTimes(2);
   });
 });

@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { addMonths } from "date-fns";
 import { useForm } from "react-hook-form";
 
-import { ventaSchema, type VentaFormData } from "@/features/ventas/venta-form-schema";
-import type { VentaItem, VentaItemErrors } from "@/features/ventas/ventas-form-shared";
+import { ventaSchema, type VentaFormData } from "@/components/ventas/form/venta-form-schema";
+import type { VentaItem, VentaItemErrors } from "@/components/ventas/form/ventas-form-shared";
 import {
   getDisponiblesColorClass,
 } from "@/components/ventas/form/create/venta-create-controller-helpers";

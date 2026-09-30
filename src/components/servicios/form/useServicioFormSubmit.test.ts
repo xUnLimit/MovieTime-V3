@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Categoria, MetodoPago, PagoServicio, Servicio } from '@/types';
-import type { ServicioFormData } from '@/features/servicios/servicio-form-schema';
+import type { ServicioFormData } from '@/components/servicios/form/servicio-form-schema';
 
 const submitMocks = vi.hoisted(() => ({
   updateServicioPagoUseCase: vi.fn(),

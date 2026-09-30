@@ -5,10 +5,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
 
-import {
-  getConfig, updateExecutivePushSettings, updateNotificationLeadDays,
-  updateNotificationSendHour, updateWhatsappPrefix, updateWhatsappAutoSettings, upsertExchangeRates,
-} from './config-repository';
+import { getConfig, updateExecutivePushSettings, updateWhatsappAutoSettings } from './config-repository';
 
 function readQuery(result: { data: unknown; error: { message: string } | null }) {
   const chain = { select: vi.fn(), eq: vi.fn(), single: vi.fn() };
@@ -91,36 +88,11 @@ describe('config repository', () => {
     await expect(getConfig()).rejects.toThrow('rates');
   });
 
-  it('upserts only numeric exchange rates and skips empty updates', async () => {
-    const write = writeQuery();
-    mocks.from.mockReturnValue(write);
-    await upsertExchangeRates({ USD_EUR: 2, ultimaActualizacion: new Date() });
-    expect(write.upsert).toHaveBeenCalledWith([
-      expect.objectContaining({ currency_pair: 'USD_EUR', rate: 2, source: 'app-config' }),
-    ], { onConflict: 'currency_pair' });
-    mocks.from.mockClear();
-    await upsertExchangeRates({ ultimaActualizacion: new Date() });
-    expect(mocks.from).not.toHaveBeenCalled();
-  });
-
-  it('propagates exchange-rate writes and updates every config setting', async () => {
-    mocks.from.mockReturnValueOnce(writeQuery({ message: 'guardar' }));
-    await expect(upsertExchangeRates({ USD_EUR: 2 })).rejects.toThrow('guardar');
-    const lead = writeQuery(); const hour = writeQuery(); const prefix = writeQuery(); const executive = writeQuery();
-    mocks.from.mockReturnValueOnce(lead).mockReturnValueOnce(hour).mockReturnValueOnce(prefix).mockReturnValueOnce(executive);
-    await updateNotificationLeadDays(5);
-    await updateNotificationSendHour(10);
-    await updateWhatsappPrefix('+34');
+  it('updates the executive push settings', async () => {
+    const executive = writeQuery();
+    mocks.from.mockReturnValueOnce(executive);
     await updateExecutivePushSettings({ executive_push_enabled: false });
-    expect(lead.update).toHaveBeenCalledWith({ notificaciones_dias_anticipacion: 5 });
-    expect(hour.update).toHaveBeenCalledWith({ hora_envio: 10 });
-    expect(prefix.update).toHaveBeenCalledWith({ whatsapp_prefijo: '+34' });
     expect(executive.update).toHaveBeenCalledWith({ executive_push_enabled: false });
-  });
-
-  it('propagates config update errors', async () => {
-    mocks.from.mockReturnValue(writeQuery({ message: 'actualizar' }));
-    await expect(updateWhatsappPrefix('+1')).rejects.toThrow('actualizar');
   });
 
   it('writes the automatic WhatsApp settings using the existing integer send hour', async () => {

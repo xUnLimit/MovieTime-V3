@@ -22,22 +22,3 @@ export interface Tercero {
   // NOTA: montoSinConsumir NO se guarda en Supabase
   // Se calcula dinámicamente en el cliente usando useVentasPorTerceros
 }
-
-// Type guards para facilitar discriminación
-export function esCliente(usuario: Tercero): boolean {
-  return usuario.tipo === 'cliente';
-}
-
-export function esRevendedor(usuario: Tercero): boolean {
-  return usuario.tipo === 'revendedor';
-}
-
-// Form Types
-export interface TerceroFormData {
-  nombre: string;
-  apellido: string;
-  tipo: 'cliente' | 'revendedor';
-  telefono: string;
-  email?: string;
-  metodoPagoId: string;
-}

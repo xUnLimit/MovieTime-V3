@@ -13,7 +13,7 @@ import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSel
 import {
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
   type VentaItemErrors,
-} from "@/features/ventas/ventas-form-shared";
+} from "@/components/ventas/form/ventas-form-shared";
 import type { Servicio } from "@/types";
 
 interface VentaCreateServiceProfileFieldsProps {

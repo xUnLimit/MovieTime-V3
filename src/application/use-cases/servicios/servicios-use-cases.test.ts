@@ -29,7 +29,6 @@ vi.mock('@/modules/dashboard-read-models', () => ({
 }));
 
 vi.mock('@/application/use-cases/servicios/servicio-dependencies-use-cases', () => ({
-  resyncServiciosDenormalizedData: vi.fn(),
   syncServicioDependencias: vi.fn(),
 }));
 
@@ -77,12 +76,12 @@ import {
   createServicioUseCase,
   deleteServicioUseCase,
   updateServicioUseCase,
-} from './servicios/servicios-write-use-cases';
+} from './servicios-write-use-cases';
 import {
   deleteServicioPagoUseCase,
   renewServicioUseCase,
   updateServicioPagoUseCase,
-} from './servicios/servicios-payment-use-cases';
+} from './servicios-payment-use-cases';
 
 const servicio: Servicio = {
   id: 'servicio-1',

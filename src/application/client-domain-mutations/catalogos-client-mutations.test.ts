@@ -26,12 +26,7 @@ vi.mock('@/application/store-reactions/catalogos-mutation-reactions', () => ({
 vi.mock('@/platform/cache/store-query-invalidation', () => ({ invalidateStoreQueries: mocks.invalidate }));
 vi.mock('@/platform/activity/activity-log-adapter', () => ({ getActivityLogOptions: mocks.log }));
 
-import {
-  createCategoriaMutation, createMetodoPagoMutation, createTipoGastoMutation,
-  deleteCategoriaMutation, deleteMetodoPagoMutation, deleteTipoGastoMutation,
-  toggleMetodoPagoActivoMutation, toggleTipoGastoActivoMutation,
-  updateCategoriaMutation, updateMetodoPagoMutation, updateTipoGastoMutation,
-} from './catalogos-client-mutations';
+import { createCategoriaMutation, createMetodoPagoMutation, createTipoGastoMutation, deleteCategoriaMutation, deleteMetodoPagoMutation, deleteTipoGastoMutation, toggleTipoGastoActivoMutation, updateCategoriaMutation, updateMetodoPagoMutation, updateTipoGastoMutation } from './catalogos-client-mutations';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -50,25 +45,17 @@ describe('catalog client mutations', () => {
     expect(mocks.invalidate).toHaveBeenCalledTimes(3);
   });
 
-  it('creates, updates, toggles and deletes payment methods with supplied and loaded snapshots', async () => {
+  it('creates, updates and deletes payment methods with supplied and loaded snapshots', async () => {
     const method = { id: 'm1', nombre: 'Visa', activo: true } as never;
     await createMetodoPagoMutation(method);
     await updateMetodoPagoMutation('m1', { nombre: 'Nueva' }, method);
     mocks.getMetodo.mockResolvedValue(method);
     await updateMetodoPagoMutation('m1', { moneda: 'EUR' });
-    await toggleMetodoPagoActivoMutation('m1', method);
-    await toggleMetodoPagoActivoMutation('m1');
     await deleteMetodoPagoMutation('m1', method);
     await deleteMetodoPagoMutation('m1');
     expect(mocks.afterCreated).toHaveBeenCalled();
     expect(mocks.afterUpdated).toHaveBeenCalledWith(expect.objectContaining({ metodoId: 'm1' }));
-    expect(mocks.updateMetodo).toHaveBeenCalledWith('m1', { activo: false });
     expect(mocks.afterDeleted).toHaveBeenCalledTimes(2);
-  });
-
-  it('rejects toggling a missing payment method', async () => {
-    mocks.getMetodo.mockResolvedValue(null);
-    await expect(toggleMetodoPagoActivoMutation('missing')).rejects.toThrow('Metodo de pago no encontrado');
   });
 
   it('creates, updates, toggles and deletes expense types', async () => {

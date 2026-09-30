@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 import { addMonths } from "date-fns";
 import type { UseFormSetValue } from "react-hook-form";
+import { getCycleMonths } from '@/platform/constants';
 
-import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
-import { MESES_POR_CICLO } from "@/features/ventas/ventas-form-shared";
+import type { VentaEditFormData } from "@/components/ventas/form/venta-edit-form-schema";
 import type { Plan } from "@/types";
 
 interface UseVentaEditPlanPricingParams {
@@ -72,7 +72,7 @@ export function useVentaEditPlanPricing({
       lastFechaInicioTimeRef.current !== fechaInicioValue.getTime();
 
     if (planCambio || fechaInicioCambio) {
-      const meses = MESES_POR_CICLO[planSeleccionado.cicloPago] ?? 1;
+      const meses = getCycleMonths(planSeleccionado.cicloPago);
       const fechaCalculada = addMonths(new Date(fechaInicioValue), meses);
       setValue("fechaFin", fechaCalculada);
     }

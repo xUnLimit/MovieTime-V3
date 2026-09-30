@@ -5,22 +5,9 @@ import { snakeField } from './filters';
 import { ENTITIES, type PublicViewName, type QueryBuilder, type QueryFilter } from './entities';
 import type { Json } from './database.types';
 import { upsertNotificationAggregateRpc } from './notifications-rpc-adapter';
-import {
-  getById as coreGetById,
-  getCount as coreGetCount,
-  remove as coreRemove,
-  logCacheHit,
-} from './record-core';
-
-export { logCacheHit };
-
-// Notificaciones tienen su propia forma de query/create/update (campos polimorficos por
-// entidad), por eso usan funciones dedicadas en este repo en vez del path generico del core.
-// Las lecturas/conteos/borrado sencillos sí reusan el motor generico.
-export const getNotificacionById = <T>(id: string) => coreGetById<T>(ENTITIES.NOTIFICACIONES, id);
+import { remove as coreRemove } from './record-core';
 export const queryNotificaciones = <T>(filters: QueryFilter[] = []) =>
   queryNotifications<T>(filters);
-export const countNotificaciones = (filters: QueryFilter[] = []) => coreGetCount(ENTITIES.NOTIFICACIONES, filters);
 export const createNotificacion = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
   createNotification(payload as Record<string, unknown>);
 export const updateNotificacion = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>

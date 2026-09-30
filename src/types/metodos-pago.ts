@@ -2,9 +2,9 @@
 // METODO PAGO TYPES
 // ===========================
 
-export type TipoMetodoPago = 'banco' | 'yappy' | 'paypal' | 'binance' | 'efectivo';
-export type TipoCuenta = 'ahorro' | 'corriente' | 'wallet' | 'telefono' | 'email';
-export type AsociadoA = 'tercero' | 'servicio';
+type TipoMetodoPago = 'banco' | 'yappy' | 'paypal' | 'binance' | 'efectivo';
+type TipoCuenta = 'ahorro' | 'corriente' | 'wallet' | 'telefono' | 'email';
+type AsociadoA = 'tercero' | 'servicio';
 
 export interface MetodoPago {
   id: string;

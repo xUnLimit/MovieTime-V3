@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
+import { estimateInitialPageSize } from '@/hooks/use-fit-page-size';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
-import { useServerPagination } from '@/hooks/useServerPagination';
+import { useServerPagination } from '@/hooks/use-server-pagination';
 import { deleteVentaMutation } from '@/application/client-domain-mutations';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import { subscribeToVentaListReactions } from '@/platform/events/cache-reactions';

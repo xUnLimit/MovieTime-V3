@@ -12,7 +12,7 @@ import type {
   PerfilDetalleVisual,
   PerfilesDetalleResumen,
   ServicioPerfilDetalle,
-} from "@/features/ventas/ventas-form-shared";
+} from "@/components/ventas/form/ventas-form-shared";
 
 const CICLO_LABEL: Record<string, string> = {
   mensual: "Mensual",

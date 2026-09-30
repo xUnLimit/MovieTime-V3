@@ -13,15 +13,6 @@ export const toneText: Record<Tone, string> = {
   info: 'text-info',
 };
 
-export const toneSurface: Record<Tone, string> = {
-  neutral: 'bg-muted',
-  brand: 'bg-primary/10',
-  success: 'bg-success-subtle',
-  warning: 'bg-warning-subtle',
-  danger: 'bg-danger-subtle',
-  info: 'bg-info-subtle',
-};
-
 export const toneDot: Record<Tone, string> = {
   neutral: 'bg-muted-foreground/60',
   brand: 'bg-primary',

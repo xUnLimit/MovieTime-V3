@@ -13,7 +13,7 @@ type NotificationRpcErrorShape = {
 export type NotificationAggregateRpcPayload =
   Database['public']['Functions']['upsert_notification_aggregate']['Args'];
 
-export class NotificationAggregateRpcError extends Error {
+class NotificationAggregateRpcError extends Error {
   readonly code?: string;
   readonly details?: string;
   readonly hint?: string;

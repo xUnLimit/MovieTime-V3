@@ -20,19 +20,7 @@ vi.mock('./write-utils', () => ({
   normalizeWritePayload: mocks.normalizeWrite,
 }));
 
-import {
-  archiveRecord,
-  countFromView,
-  create,
-  createRaw,
-  getAll,
-  getById,
-  getCount,
-  logCacheHit,
-  queryDocuments,
-  remove,
-  update,
-} from './record-core';
+import { archiveRecord, countFromView, create, createRaw, getAll, getById, getCount, queryDocuments, remove, update } from './record-core';
 
 type Result = { data?: unknown; count?: number | null; error?: { message: string } | null };
 
@@ -174,15 +162,4 @@ describe('record-core writes and views', () => {
     await expect(countFromView('config', 'v_terceros_servicios_activos', [])).rejects.toThrow('vista');
   });
 
-  it('only logs cache hits in development', () => {
-    const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
-    vi.stubEnv('NODE_ENV', 'development');
-    logCacheHit('config');
-    expect(debug).toHaveBeenCalled();
-    vi.stubEnv('NODE_ENV', 'test');
-    logCacheHit('config');
-    expect(debug).toHaveBeenCalledTimes(1);
-    vi.unstubAllEnvs();
-    debug.mockRestore();
-  });
 });

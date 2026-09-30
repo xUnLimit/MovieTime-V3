@@ -35,7 +35,7 @@ export interface PagoFormData {
 
 export type CategoriaDetalle = Pick<Categoria, 'id' | 'nombre'> & Partial<Categoria>;
 export type MetodoPagoDetalle = Pick<MetodoPago, 'id' | 'nombre' | 'moneda'> & Partial<MetodoPago>;
-export type PerfilEstado = 'ocupado' | 'disponible' | 'inactivo';
+type PerfilEstado = 'ocupado' | 'disponible' | 'inactivo';
 
 export interface PerfilDetalle {
   numero: number;

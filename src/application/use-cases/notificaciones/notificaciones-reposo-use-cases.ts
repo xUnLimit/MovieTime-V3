@@ -70,13 +70,6 @@ export async function clearReposoNotificationsUseCase(servicioId: string): Promi
   }
 }
 
-export function getReposoDependenciesInvalidationOutcome(): ReposoWorkflowOutcome {
-  return {
-    type: 'reposoDependenciesInvalidationNeeded',
-    queryTargets: ['categorias', 'servicios'],
-  };
-}
-
 export async function activateReposoServicioUseCase({
   log,
   servicio,

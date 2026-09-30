@@ -30,7 +30,7 @@ export function clearBrowserSessionArtifacts(): void {
   });
 }
 
-export function getSupabaseClient(): SupabaseClient<Database> {
+function getSupabaseClient(): SupabaseClient<Database> {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
       'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Set them in .env.local.'

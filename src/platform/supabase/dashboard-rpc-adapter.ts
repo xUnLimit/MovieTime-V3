@@ -41,24 +41,10 @@ type DashboardJsonRpcClient = {
 const dashboardStatsRpcClient = typedRpcClient<DashboardStatsRpcClient>();
 const dashboardJsonRpcClient = typedRpcClient<DashboardJsonRpcClient>();
 
-export async function getDashboardStatsLiveRpc(): Promise<DashboardStatsRpcRow | null> {
-  const { data, error } = await dashboardStatsRpcClient
-    .rpc('get_dashboard_stats_live')
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return data;
-}
-
 export async function getDashboardStatsSnapshotRpc(): Promise<DashboardStatsRpcRow | null> {
   const { data, error } = await dashboardStatsRpcClient
     .rpc('get_dashboard_stats_snapshot')
     .maybeSingle();
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-export async function getDashboardChurnStatsRpc(): Promise<Json | null> {
-  const { data, error } = await dashboardJsonRpcClient.rpc('get_dashboard_churn_stats');
   if (error) throw new Error(error.message);
   return data;
 }

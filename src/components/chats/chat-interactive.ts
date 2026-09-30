@@ -5,7 +5,7 @@ import { z } from '@/platform/validation/zod';
 export { INTERACTIVE_LIMITS };
 
 export type InteractiveType = 'buttons' | 'list';
-export type InteractiveOption = { title: string; description: string };
+type InteractiveOption = { title: string; description: string };
 export type InteractiveDraft = {
   type: InteractiveType;
   body: string;

@@ -1,19 +1,10 @@
 import { countCategorias } from '@/platform/supabase/categorias-repository';
 import { getServicioRead } from '@/platform/supabase/domain-read-adapters';
 import { ENTITIES } from '@/platform/supabase/entities';
-import {
-  countServicios,
-  getServicioById,
-  getServicios,
-  queryServicios,
-} from '@/platform/supabase/servicios-repository';
+import { countServicios, getServicios, queryServicios } from '@/platform/supabase/servicios-repository';
 import type { Servicio } from '@/types';
 
 export const SERVICIOS_COLLECTION = ENTITIES.SERVICIOS;
-
-export function getServicioUseCase(id: string) {
-  return getServicioById<Servicio>(id);
-}
 
 export function getServicioReadUseCase(id: string) {
   return getServicioRead(id);

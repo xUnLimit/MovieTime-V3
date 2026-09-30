@@ -27,8 +27,6 @@ import {
 } from '@/application/use-cases/ventas/ventas-shared';
 import { updateVentaUseCase } from '@/application/use-cases/ventas/ventas-write-use-cases';
 
-export { getVentaConPagoActualUseCase };
-
 export async function renewVentaUseCase(
   venta: VentaDoc,
   input: VentaPagoInput,

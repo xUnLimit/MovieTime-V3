@@ -4,10 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { differenceInCalendarDays } from 'date-fns';
 
-import {
-  invalidateVentasPorTercerosCache as invalidateVentasPorTercerosCacheReaction,
-  subscribeToVentasPorTercerosReactions,
-} from '@/platform/events/cache-reactions';
+import { subscribeToVentasPorTercerosReactions } from '@/platform/events/cache-reactions';
 import { queryKeys } from '@/platform/query-keys';
 import { fetchVentasByClienteIdsUseCase } from '@/application/use-cases/ventas/ventas-query-use-cases';
 import { CACHE_TTL_MS } from '@/platform/constants';
@@ -21,14 +18,6 @@ import type { VentaDoc } from '@/types';
  */
 export interface VentasTerceroStats {
   montoSinConsumir: number;
-}
-
-/**
- * Invalida las queries activas de ventas por terceros.
- * Se mantiene como interfaz pública para callers existentes durante la migración a React Query.
- */
-export function invalidateVentasPorTercerosCache() {
-  invalidateVentasPorTercerosCacheReaction();
 }
 
 async function calculateVentasPorTerceros(

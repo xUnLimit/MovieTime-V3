@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getActivityDisplayConfig,
   isCorteActivityLog,
-} from './activityDisplayHelpers';
+} from './activity-display';
 import type { ActivityLog } from '@/types';
 
 function makeRenewalLog(detalles: string): ActivityLog {

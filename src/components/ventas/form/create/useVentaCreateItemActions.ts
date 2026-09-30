@@ -1,12 +1,12 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { UseFormSetValue } from 'react-hook-form';
 
-import type { VentaFormData } from '@/features/ventas/venta-form-schema';
+import type { VentaFormData } from '@/components/ventas/form/venta-form-schema';
 import type {
   TipoVentaItem,
   VentaItem,
   VentaItemErrors,
-} from '@/features/ventas/ventas-form-shared';
+} from '@/components/ventas/form/ventas-form-shared';
 import type { Categoria, Plan, Servicio } from '@/types';
 
 import {

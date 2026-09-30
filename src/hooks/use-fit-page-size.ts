@@ -45,10 +45,10 @@ interface UseFitPageSizeOptions {
 }
 
 /** Alto de fila que se asume: es una constante por tabla (no se mide) para que el resultado no dependa de los datos cargados. */
-export const DEFAULT_ROW_HEIGHT = 49;
+const DEFAULT_ROW_HEIGHT = 49;
 
 /** Todas las tablas muestran 10 filas cuando caben; con menos alto, las que quepan (minimo 5). */
-export const MAX_ROWS = 10;
+const MAX_ROWS = 10;
 
 const MOBILE_QUERY = '(max-width: 767px)';
 

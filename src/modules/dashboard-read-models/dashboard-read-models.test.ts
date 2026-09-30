@@ -9,13 +9,7 @@ const dashboardRpc = vi.hoisted(() => ({
 
 vi.mock('@/platform/supabase/dashboard-rpc-adapter', () => dashboardRpc);
 
-import {
-  getDashboardChurnStats,
-  getDashboardHome,
-  getDashboardStats,
-  getDiaKeyFromDate,
-  getMesKeyFromDate,
-} from './dashboard-read-models';
+import { getDashboardHome, getDashboardStats } from './dashboard-read-models';
 
 describe('dashboard-read-models', () => {
   beforeEach(() => {
@@ -24,13 +18,6 @@ describe('dashboard-read-models', () => {
     dashboardRpc.getDashboardStatsSnapshotRpc.mockResolvedValue(null);
     dashboardRpc.getDashboardStatsLiveRpc.mockResolvedValue(null);
     dashboardRpc.getDashboardHomeRpc.mockResolvedValue(null);
-  });
-
-  it('formats month and day keys', () => {
-    const date = new Date('2026-05-23T12:30:00Z');
-
-    expect(getMesKeyFromDate(date)).toBe('2026-05');
-    expect(getDiaKeyFromDate(date)).toBe('2026-05-23');
   });
 
   it('maps snapshot stats with embedded churn payload', async () => {
@@ -128,15 +115,6 @@ describe('dashboard-read-models', () => {
 
   it('returns empty home and churn fallbacks for invalid RPC payloads', async () => {
     dashboardRpc.getDashboardHomeRpc.mockResolvedValue([]);
-
-    await expect(getDashboardChurnStats()).resolves.toMatchObject({
-      kpis: {
-        clientesActivos: 0,
-        clientesInactivos: 0,
-        tasaChurnMesActual: 0,
-      },
-      porMes: [],
-    });
     await expect(getDashboardHome()).resolves.toMatchObject({
       stats: { gastosTotal: 0, ingresosTotal: 0 },
       counts: { ventasActivas: 0, totalClientes: 0, totalRevendedores: 0 },

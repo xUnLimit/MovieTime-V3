@@ -20,5 +20,3 @@ export const pushTestRequestSchema = z.object({ endpoint: endpoint.optional() })
 export const executivePushRunSchema = z.object({
   run_id: z.string().max(128).regex(/^[A-Za-z0-9._:-]+$/).optional(),
 }).strict();
-
-export type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;

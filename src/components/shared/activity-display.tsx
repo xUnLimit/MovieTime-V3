@@ -6,7 +6,7 @@ import {
   Tv2, ShoppingCart, Tag, CreditCard, FileText, RotateCcw,
 } from 'lucide-react';
 
-export const activityActionColors: Record<string, string> = {
+const activityActionColors: Record<string, string> = {
   creacion:     'bg-success-subtle text-success',
   actualizacion:'bg-info-subtle text-info',
   corte:        'bg-warning-subtle text-warning',

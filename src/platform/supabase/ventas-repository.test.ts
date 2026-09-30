@@ -9,7 +9,7 @@ vi.mock('./client', () => ({ supabase: { from: mocks.from } }));
 vi.mock('./record-core', () => ({
   getAll: mocks.getAll, getById: mocks.getById, queryDocuments: mocks.query,
   getCount: mocks.count, create: mocks.create, update: mocks.update,
-  archiveRecord: mocks.archive, logCacheHit: vi.fn(),
+  archiveRecord: mocks.archive,
 }));
 vi.mock('./payments-repository', () => ({ createPagoVenta: mocks.createPayment }));
 vi.mock('./ventas-rpc-adapter', () => ({
@@ -18,13 +18,7 @@ vi.mock('./ventas-rpc-adapter', () => ({
   updateVentaPaymentAndPeriodRpc: mocks.updatePayment,
 }));
 
-import {
-  countPagosVenta, countVentas, createPagoVenta, createVenta, createVentaRefund,
-  createVentaWithInitialPayment, getPagoVentaById, getVentaById, getVentas,
-  queryPagosVenta, queryVentas, removePagoVenta, removeVenta, removeVentaWithPayments,
-  updateLatestVentaPeriodo, updatePagoVenta, updateVenta, updateVentaPaymentAndPeriod,
-  updateVentaPeriodoById, type VentaPeriodoUpdate,
-} from './ventas-repository';
+import { countVentas, createPagoVenta, createVenta, createVentaRefund, createVentaWithInitialPayment, getPagoVentaById, getVentaById, queryPagosVenta, queryVentas, removePagoVenta, removeVenta, removeVentaWithPayments, updateLatestVentaPeriodo, updateVenta, updateVentaPaymentAndPeriod, updateVentaPeriodoById, type VentaPeriodoUpdate } from './ventas-repository';
 
 function dbQuery(result: { data?: unknown; error: { message: string } | null }) {
   const chain = {
@@ -49,14 +43,13 @@ beforeEach(() => {
 
 describe('sales repository', () => {
   it('delegates every sale and payment facade', async () => {
-    mocks.createInitial.mockResolvedValue('v1'); mocks.refund.mockResolvedValue('r1');
-    await getVentas(); await getVentaById('v1'); await queryVentas(); await countVentas();
+    mocks.createInitial.mockResolvedValue('v1'); mocks.refund.mockResolvedValue('r1'); await getVentaById('v1'); await queryVentas(); await countVentas();
     await createVenta({ clienteId: 'c1' }); await updateVenta('v1', { notas: 'n' }); await removeVenta('v1');
     await removeVentaWithPayments('v1', true);
     expect(await createVentaWithInitialPayment({} as never)).toBe('v1');
     expect(await createVentaRefund({} as never)).toBe('r1');
-    await getPagoVentaById('p1'); await queryPagosVenta(); await countPagosVenta();
-    await createPagoVenta({} as never); await updatePagoVenta('p1', { notas: 'n' }); await removePagoVenta('p1');
+    await getPagoVentaById('p1'); await queryPagosVenta();
+    await createPagoVenta({} as never); await removePagoVenta('p1');
     expect(mocks.archive).toHaveBeenCalledWith('ventas', 'v1');
     expect(mocks.deleteAll).toHaveBeenCalledWith({ p_venta_id: 'v1', p_delete_payments: true });
     expect(mocks.deletePayment).toHaveBeenCalledWith({ p_pago_id: 'p1' });

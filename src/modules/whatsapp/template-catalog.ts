@@ -3,7 +3,7 @@ import { z } from '@/platform/validation/zod';
 
 export const WHATSAPP_TEMPLATE_LANGUAGE = 'es';
 
-export type ApprovedTemplate = {
+type ApprovedTemplate = {
   paramCount: number;
   buttons: { type: string; text: string }[];
 };

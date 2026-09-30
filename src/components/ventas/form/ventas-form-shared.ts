@@ -72,13 +72,6 @@ export type ServicioPerfilDetalle = Pick<
   "nombre" | "correo"
 > | null;
 
-export const MESES_POR_CICLO: Record<string, number> = {
-  mensual: 1,
-  trimestral: 3,
-  semestral: 6,
-  anual: 12,
-};
-
 export const SERVICIOS_DROPDOWN_VISIBLE_ROWS = 10;
 
 export function getCicloPagoLabel(ciclo?: string) {

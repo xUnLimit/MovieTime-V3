@@ -7,7 +7,7 @@ import { VentaPerfilDetalleDialog } from "@/components/ventas/form/VentaPerfilDe
 import { VentaEditDatosTab } from "@/components/ventas/form/edit/VentaEditDatosTab";
 import type { VentaEditData } from "@/components/ventas/form/edit/types";
 import { useVentasEditFormController } from "@/components/ventas/form/edit/useVentasEditFormController";
-import { getCicloPagoLabel } from "@/features/ventas/ventas-form-shared";
+import { getCicloPagoLabel } from "@/components/ventas/form/ventas-form-shared";
 import { getTerceroMetodoPagoNombre } from "@/platform/utils/terceroMetodoPago";
 
 export type { VentaEditData };

@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { formatearFecha } from "@/platform/utils/calculations";
-import type { VentaItem } from "@/features/ventas/ventas-form-shared";
+import type { VentaItem } from "@/components/ventas/form/ventas-form-shared";
 
 interface VentaCreatePreviewProps {
   clienteNombre: string;

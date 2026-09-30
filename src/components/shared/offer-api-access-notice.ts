@@ -6,7 +6,7 @@ import type { PendingWhatsAppToast } from '@/store/whatsappToastStore';
 
 type WaMeMessage = Omit<PendingWhatsAppToast, 'id'>;
 
-export type AccessNoticeItem = { ventaId: string; message: WaMeMessage };
+type AccessNoticeItem = { ventaId: string; message: WaMeMessage };
 
 interface OfferApiAccessNoticeParams {
   tipo: 'actualizacion_credenciales' | 'transferencia_servicio';

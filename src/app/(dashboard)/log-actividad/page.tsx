@@ -1,12 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
+import { estimateInitialPageSize } from '@/hooks/use-fit-page-size';
 import { PageHeader } from '@/components/shared/PageHeader';
 
 import { LogTimeline } from '@/components/log-actividad/LogTimeline';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
-import { useServerPagination } from '@/hooks/useServerPagination';
+import { useServerPagination } from '@/hooks/use-server-pagination';
 import { ACTIVITY_LOG_COLLECTION } from '@/application/use-cases/activity-log-use-cases';
 import {
   deleteAllActivityLogsUseCase,

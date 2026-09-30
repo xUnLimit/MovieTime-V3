@@ -28,7 +28,3 @@ export function isAuthorizedExecutivePushCronRequest(request: Request) {
 export async function sendScheduledExecutivePush(runId?: string) {
   return sendExecutivePushDailySummary({ runId });
 }
-
-export async function sendForcedExecutivePush() {
-  return sendExecutivePushDailySummary({ force: true });
-}

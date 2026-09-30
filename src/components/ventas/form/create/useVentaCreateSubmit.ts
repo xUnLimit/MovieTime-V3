@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
-import type { VentaItem } from '@/features/ventas/ventas-form-shared';
+import type { VentaItem } from '@/components/ventas/form/ventas-form-shared';
 import { syncTerceroMetodoPagoUseCase } from '@/application/use-cases/terceros/tercero-metodo-pago-use-cases';
 import { reportError } from '@/platform/observability/logger';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';

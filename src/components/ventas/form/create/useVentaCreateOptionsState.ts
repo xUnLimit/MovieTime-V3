@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import type {
   MetodoPagoTerceroOption,
   TipoVentaItem,
-} from "@/features/ventas/ventas-form-shared";
+} from "@/components/ventas/form/ventas-form-shared";
 import type { Categoria, Servicio, Tercero } from "@/types";
 
 import {

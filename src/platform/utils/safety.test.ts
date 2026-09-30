@@ -52,7 +52,7 @@ describe('safety assertions', () => {
     await vi.waitFor(() => {
       expect(spy).toHaveBeenCalledWith(
         '[SideEffect] sync entity=venta id=venta-1',
-        expect.any(Error)
+        { error: expect.objectContaining({ message: 'boom' }) }
       );
     });
     spy.mockRestore();
@@ -69,8 +69,17 @@ describe('safety assertions', () => {
 
     expect(spy).toHaveBeenCalledWith(
       '[SideEffect] sync entity=venta id=venta-1',
-      expect.any(Error)
+      { error: expect.objectContaining({ message: 'boom' }) }
     );
+    spy.mockRestore();
+  });
+
+  it('marks critical side-effect failures in the log scope', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    logAsyncSideEffectError(new Error('boom'), { operation: 'sync', critical: true });
+
+    expect(spy).toHaveBeenCalledWith('[SideEffect:CRITICAL] sync', expect.any(Object));
     spy.mockRestore();
   });
 });

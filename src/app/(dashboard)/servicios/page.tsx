@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { estimateInitialPageSize } from '@/hooks/useFitPageSize';
+import { estimateInitialPageSize } from '@/hooks/use-fit-page-size';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { ServiciosMetrics } from '@/components/servicios/ServiciosMetrics';
 import { ServiciosListTable } from '@/components/servicios/ServiciosListTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
-import { useServerPagination } from '@/hooks/useServerPagination';
+import { useServerPagination } from '@/hooks/use-server-pagination';
 import { subscribeToServicioListReactions } from '@/platform/events/cache-reactions';
 import { SERVICIOS_COLLECTION } from '@/application/use-cases/servicios/servicios-query-use-cases';
 import type { FilterOption } from '@/types/pagination';

@@ -1,7 +1,7 @@
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
-export type AutoNoticeConfig = { enabled: boolean; sendHour: number; dailyCap: number };
+type AutoNoticeConfig = { enabled: boolean; sendHour: number; dailyCap: number };
 export type AutoNoticeCounts = { sent: number; failed: number; skipped: number; already_sent: number };
 export type AutoNoticeRunDetails = {
   reasons: Record<string, number>;

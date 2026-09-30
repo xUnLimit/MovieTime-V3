@@ -1,8 +1,8 @@
 import type { EditableTipoKey } from '@/modules/messaging/template-tipos';
 
-export { TEMPLATE_GROUPS, TEMPLATE_TIPOS, tipoCuando, tipoLabel } from '@/modules/messaging/template-tipos';
+export { TEMPLATE_GROUPS,  tipoCuando, tipoLabel } from '@/modules/messaging/template-tipos';
 
-export const ITEMS_BLOCK_KEY = '{{#items}}\n...\n{{/items}}';
+const ITEMS_BLOCK_KEY = '{{#items}}\n...\n{{/items}}';
 
 export const PLACEHOLDERS: { key: string; label: string; description: string }[] = [
   { key: '{saludo}', label: 'Saludo', description: 'Buenos días, tardes o noches' },
@@ -28,7 +28,7 @@ const ACCESO = ['{perfil_nombre}', '{correo}', '{contrasena}', '{codigo}'];
 const CAMBIOS = ['{credenciales_cambiadas}', '{cambio_correo}', '{cambio_contrasena}'];
 
 // Solo los datos que tienen sentido en cada mensaje; el resto solo agrega ruido al elegir.
-export const TIPO_PLACEHOLDERS: Record<EditableTipoKey, readonly string[]> = {
+const TIPO_PLACEHOLDERS: Record<EditableTipoKey, readonly string[]> = {
   dia_pago: COBROS,
   cancelacion: COBROS,
   renovacion: COBROS,
@@ -39,7 +39,7 @@ export const TIPO_PLACEHOLDERS: Record<EditableTipoKey, readonly string[]> = {
   transferencia_servicio: [...COBROS, ...ACCESO, ...CAMBIOS],
 };
 
-export function placeholdersFor(tipo: EditableTipoKey) {
+function placeholdersFor(tipo: EditableTipoKey) {
   const allowed = new Set(TIPO_PLACEHOLDERS[tipo]);
   return PLACEHOLDERS.filter((item) => allowed.has(item.key));
 }

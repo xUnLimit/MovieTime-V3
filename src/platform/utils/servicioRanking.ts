@@ -1,6 +1,6 @@
 import { addMonths, differenceInCalendarDays } from 'date-fns';
+import { getCycleMonths } from '@/platform/constants';
 
-import { MESES_POR_CICLO } from '@/features/ventas/ventas-form-shared';
 import type { Servicio, VentaDoc } from '@/types';
 
 interface RankServiciosOptions {
@@ -28,7 +28,7 @@ export function rankServicios(
     fechaInicio = new Date(),
     fechaFin,
   } = options;
-  const meses = MESES_POR_CICLO[planCicloPago as keyof typeof MESES_POR_CICLO] ?? 1;
+  const meses = getCycleMonths(planCicloPago);
   const fechaFinNuevo = fechaFin ?? addMonths(fechaInicio, meses);
   const hoy = new Date();
   const diasRestantesNuevo = Math.max(

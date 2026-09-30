@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   getActivityDisplayConfig,
   isCorteActivityLog,
-} from "@/platform/utils/activityDisplayHelpers";
+} from "@/components/shared/activity-display";
 import type { ActivityLog } from "@/types";
 
 interface LogTimelineColumnsParams {

@@ -5,8 +5,6 @@ export const ESTADO_FILTER_OPTIONS = [
   { value: 'vencidas', label: 'Vencidas' },
 ] as const;
 
-export const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100] as const;
-
 export { getBellIconColor, getEstadoBadge } from '@/components/shared/vencimiento-status';
 
 export function formatearFecha(fecha: Date): string {

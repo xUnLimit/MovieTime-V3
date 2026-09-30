@@ -1,11 +1,5 @@
-import { format } from 'date-fns';
 import type { Json } from '@/platform/supabase/database.types';
-import {
-  getDashboardChurnStatsRpc,
-  getDashboardHomeRpc,
-  getDashboardStatsSnapshotRpc,
-  type DashboardStatsRpcRow,
-} from '@/platform/supabase/dashboard-rpc-adapter';
+import { getDashboardHomeRpc, getDashboardStatsSnapshotRpc, type DashboardStatsRpcRow } from '@/platform/supabase/dashboard-rpc-adapter';
 import type {
   DashboardStats,
   IngresoCategoria,
@@ -57,11 +51,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   return rowToStats(statsResult);
 }
 
-export async function getDashboardChurnStats(): Promise<ChurnStats> {
-  const data = await getDashboardChurnStatsRpc();
-  return jsonToChurnStats(data);
-}
-
 export async function getDashboardHome(): Promise<DashboardHome> {
   const data = await getDashboardHomeRpc();
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -84,14 +73,6 @@ export async function getDashboardHome(): Promise<DashboardHome> {
     },
     recentActivity: jsonArray<Record<string, unknown>>(record.recentActivity).map(activityLogFromJson),
   };
-}
-
-export function getMesKeyFromDate(date: Date): string {
-  return format(date, 'yyyy-MM');
-}
-
-export function getDiaKeyFromDate(date: Date): string {
-  return format(date, 'yyyy-MM-dd');
 }
 
 function rowToStats(row: DashboardStatsRow): DashboardStats {

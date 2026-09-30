@@ -2,11 +2,7 @@ export * from './forecast-sync';
 export * from './financial-forecast';
 
 import { convertToUSDSync, ensureRatesLoaded } from '@/modules/payments';
-import {
-  buildPronosticoSignature,
-  calculateFinancialForecast,
-  type FinancialForecastInput,
-} from './financial-forecast';
+import { calculateFinancialForecast, type FinancialForecastInput } from './financial-forecast';
 
 export type FinancialForecastReadModel = Pick<FinancialForecastInput, 'ventas' | 'servicios'>;
 
@@ -31,8 +27,3 @@ export async function buildFinancialForecastFromReadModel({
     convertToUSD: convertToUSDSync,
   });
 }
-
-export const financialForecasting = {
-  signature: buildPronosticoSignature,
-  buildFromReadModel: buildFinancialForecastFromReadModel,
-};

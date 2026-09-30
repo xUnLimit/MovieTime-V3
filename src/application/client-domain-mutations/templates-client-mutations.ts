@@ -1,13 +1,5 @@
-import {
-  afterTemplateCreated,
-  afterTemplateDeleted,
-  afterTemplateUpdated,
-} from '@/application/store-reactions/templates-mutation-reactions';
-import {
-  createTemplateUseCase,
-  deleteTemplateUseCase,
-  updateTemplateUseCase,
-} from '@/application/use-cases/templates-use-cases';
+import { afterTemplateCreated, afterTemplateUpdated } from '@/application/store-reactions/templates-mutation-reactions';
+import { createTemplateUseCase, updateTemplateUseCase } from '@/application/use-cases/templates-use-cases';
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
 import type { TemplateMensaje } from '@/types';
 
@@ -20,11 +12,5 @@ export async function createTemplateMutation(template: Omit<TemplateMensaje, 'id
 export async function updateTemplateMutation(id: string, updates: Partial<TemplateMensaje>, oldTemplate?: TemplateMensaje) {
   await updateTemplateUseCase(id, updates);
   await afterTemplateUpdated({ templateId: id, oldTemplate, updates });
-  await invalidateStoreQueries(['templates', 'notificaciones']);
-}
-
-export async function deleteTemplateMutation(id: string, template?: TemplateMensaje) {
-  await deleteTemplateUseCase(id);
-  await afterTemplateDeleted(id, template);
   await invalidateStoreQueries(['templates', 'notificaciones']);
 }

@@ -144,6 +144,3 @@ export const env = {
   isProduction,
   isTest: process.env.NODE_ENV === 'test',
 } as const;
-
-// Type-safe environment variable access
-export type Env = typeof env;

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { VentaServicioSelector } from "@/components/ventas/form/VentaServicioSelector";
-import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
+import type { VentaEditFormData } from "@/components/ventas/form/venta-edit-form-schema";
 import type { Servicio } from "@/types";
 
 interface VentaEditServiceProfileFieldsProps {

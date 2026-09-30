@@ -20,7 +20,6 @@ type LegacyCookieMigrationInput = RememberAwareStorageInput & {
   secure: boolean;
 };
 
-
 type SupabaseAuthCleanupInput = {
   storageKey: string;
   localStorage: StorageLike;
@@ -179,7 +178,7 @@ export function migrateLegacyAuthCookies({
   }
 }
 
-export function clearLegacyAuthCookies(
+function clearLegacyAuthCookies(
   storageKey: string,
   cookieDocument: CookieDocument = document,
   secure = typeof location !== 'undefined' && location.protocol === 'https:'

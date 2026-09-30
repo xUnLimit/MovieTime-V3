@@ -4,10 +4,6 @@ const mocks = vi.hoisted(() => ({ update: vi.fn(), runs: vi.fn() }));
 vi.mock('@/platform/supabase/config-repository', () => ({
   getConfig: vi.fn(),
   updateExecutivePushSettings: vi.fn(),
-  updateNotificationLeadDays: vi.fn(),
-  updateNotificationSendHour: vi.fn(),
-  updateWhatsappPrefix: vi.fn(),
-  upsertExchangeRates: vi.fn(),
   updateWhatsappAutoSettings: mocks.update,
 }));
 vi.mock('@/platform/supabase/auto-notice-runs-repository', () => ({ listRecentAutoNoticeRuns: mocks.runs }));

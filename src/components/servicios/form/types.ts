@@ -5,7 +5,7 @@ import type {
   UseFormSetValue,
 } from "react-hook-form";
 
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 
 export interface ServicioFormBindings {
   errors: FieldErrors<ServicioFormData>;

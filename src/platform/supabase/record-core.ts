@@ -12,9 +12,7 @@ import { readField, normalizeFilterValue } from './filters';
 import { mapReadRow, enrichCategorias, enrichTerceros } from './read-models';
 import { insertRawRow, normalizeWritePayload } from './write-utils';
 
-export { ENTITIES };
 export type { CollectionName, QueryFilter };
-export { convertTimestamps, timestampToDate } from './dates';
 
 type QueryResult<T> = QueryBuilder & PromiseLike<T>;
 
@@ -28,12 +26,6 @@ type QueryResult<T> = QueryBuilder & PromiseLike<T>;
  */
 function asQuery<T>(builder: unknown): QueryResult<T> {
   return builder as QueryResult<T>;
-}
-
-export function logCacheHit(collectionName: string) {
-  if (process.env.NODE_ENV === 'development') {
-    console.debug(`[Supabase cache hit] ${collectionName}`);
-  }
 }
 
 export async function getAll<T>(collectionName: CollectionName): Promise<T[]> {

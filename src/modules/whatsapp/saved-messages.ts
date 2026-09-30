@@ -11,7 +11,7 @@ const draftSchema = z.object({
 });
 
 export type SavedMessageDraft = z.infer<typeof draftSchema>;
-export type SavedMessageInput = SavedMessageDraft;
+type SavedMessageInput = SavedMessageDraft;
 export type SavedMessage = SavedMessageInput & {
   id: string;
   createdBy: string;

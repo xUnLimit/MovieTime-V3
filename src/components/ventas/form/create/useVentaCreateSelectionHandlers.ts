@@ -1,12 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { UseFormClearErrors, UseFormSetValue } from 'react-hook-form';
 import { addMonths } from 'date-fns';
+import { getCycleMonths } from '@/platform/constants';
 
-import type { VentaFormData } from '@/features/ventas/venta-form-schema';
-import {
-  MESES_POR_CICLO,
-  type VentaItemErrors,
-} from '@/features/ventas/ventas-form-shared';
+import type { VentaFormData } from '@/components/ventas/form/venta-form-schema';
+import {  type VentaItemErrors,
+} from '@/components/ventas/form/ventas-form-shared';
 import type { Plan, Servicio } from '@/types';
 
 type UseVentaCreateSelectionHandlersParams = {
@@ -98,7 +97,7 @@ export function useVentaCreateSelectionHandlers({
       perfil: undefined,
     }));
     if (fechaInicio) {
-      const meses = MESES_POR_CICLO[plan.cicloPago] ?? 1;
+      const meses = getCycleMonths(plan.cicloPago);
       setValue('fechaFin', addMonths(new Date(fechaInicio), meses));
     }
   };
@@ -123,7 +122,7 @@ export function useVentaCreateSelectionHandlers({
     setValue('fechaInicio', date || new Date());
     clearErrors('fechaInicio');
     if (planSeleccionado && date) {
-      const meses = MESES_POR_CICLO[planSeleccionado.cicloPago] ?? 1;
+      const meses = getCycleMonths(planSeleccionado.cicloPago);
       setValue('fechaFin', addMonths(date, meses));
     }
   };

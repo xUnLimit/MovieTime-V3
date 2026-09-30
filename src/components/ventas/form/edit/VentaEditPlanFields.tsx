@@ -4,6 +4,7 @@ import type {
   UseFormClearErrors,
   UseFormSetValue,
 } from "react-hook-form";
+import { getCycleMonths } from "@/platform/constants";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
-import { MESES_POR_CICLO } from "@/features/ventas/ventas-form-shared";
+import type { VentaEditFormData } from "@/components/ventas/form/venta-edit-form-schema";
 import type { Categoria, Plan } from "@/types";
 
 interface VentaEditPlanFieldsProps {
@@ -174,7 +174,7 @@ export function VentaEditPlanFields({
                   setValue("perfilNumero", "");
                   setValue("perfilNombre", "");
                   if (fechaInicioValue) {
-                    const meses = MESES_POR_CICLO[plan.cicloPago] ?? 1;
+                    const meses = getCycleMonths(plan.cicloPago);
                     const fechaFin = new Date(fechaInicioValue);
                     fechaFin.setMonth(fechaFin.getMonth() + meses);
                     setValue("fechaFin", fechaFin);

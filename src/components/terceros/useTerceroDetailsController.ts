@@ -181,7 +181,6 @@ export function useTerceroDetailsController(usuario: Tercero) {
     });
   };
 
-
   const activeRows = useMemo(
     () => rows.filter((row) => row.estado === "Activo"),
     [rows],
@@ -205,7 +204,7 @@ export function useTerceroDetailsController(usuario: Tercero) {
   };
 }
 
-export type TerceroDetailsController = ReturnType<
+type TerceroDetailsController = ReturnType<
   typeof useTerceroDetailsController
 >;
 export type TerceroDetailsRow = TerceroDetailsController["rows"][number];

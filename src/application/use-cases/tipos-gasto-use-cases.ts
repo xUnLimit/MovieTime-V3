@@ -1,12 +1,4 @@
-import {
-  countGastos,
-  countTiposGasto,
-  createTipoGasto,
-  getTipoGastoById,
-  getTiposGasto,
-  removeTipoGasto,
-  updateTipoGasto,
-} from '@/platform/supabase/catalogos-repository';
+import { countGastos, createTipoGasto, getTipoGastoById, getTiposGasto, removeTipoGasto, updateTipoGasto } from '@/platform/supabase/catalogos-repository';
 import type { TipoGasto } from '@/types';
 
 async function assertUniqueNombre(normalizedNombre: string, currentId?: string) {
@@ -19,13 +11,6 @@ async function assertUniqueNombre(normalizedNombre: string, currentId?: string) 
   if (existing) {
     throw new Error('Ya existe un tipo de gasto con ese nombre');
   }
-}
-
-export async function fetchTiposGastoCountsUseCase() {
-  await Promise.all([
-    countTiposGasto([]),
-    countTiposGasto([{ field: 'activo', operator: '==', value: true }]),
-  ]);
 }
 
 export function getTipoGastoUseCase(id: string) {

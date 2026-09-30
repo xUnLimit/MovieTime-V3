@@ -1,4 +1,4 @@
-import type { MetodoPago, PagoServicio, Servicio, Tercero, VentaDoc } from '@/types';
+import type { MetodoPago, Servicio, Tercero } from '@/types';
 
 export interface PerfilVentaDetalle {
   renovaciones?: number;
@@ -20,8 +20,6 @@ export interface PerfilVentaDetalle {
   codigo?: string;
   cicloPago?: string;
 }
-
-export type CategoriaDetalle = Pick<Servicio, 'categoriaId' | 'categoriaNombre'>;
 export type MetodoPagoDetalle = Pick<MetodoPago, 'id' | 'nombre' | 'moneda'> & Partial<MetodoPago>;
 
 export type ServicioDetalleWorkflowDeps = {
@@ -60,23 +58,3 @@ export type ServicioDetalleWorkflowOutcome =
       whatsappRequested: boolean;
       tercero?: Tercero | null;
     };
-
-export type ServicioPaymentWorkflowContext = {
-  data: ServicioPagoWorkflowInput;
-  metodosPago: MetodoPago[];
-  servicio: Servicio;
-};
-
-export type ServicioPaymentDeletionContext = {
-  fallbackMoneda?: string;
-  id: string;
-  pago: PagoServicio;
-  pagosOrdenados: PagoServicio[];
-  pagosServicio: PagoServicio[];
-  servicio: Servicio;
-};
-
-export type ServicioVentaWorkflowContext = {
-  deps: Pick<ServicioDetalleWorkflowDeps, 'invalidateNotifications' | 'updatePerfilOcupado'>;
-  venta: VentaDoc;
-};

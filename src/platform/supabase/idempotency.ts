@@ -9,12 +9,3 @@ export function createIdempotencyKey(): string {
     return value.toString(16);
   });
 }
-
-export function withIdempotencyKey<T extends object>(
-  payload: T & { p_idempotency_key?: string | null }
-): T & { p_idempotency_key: string } {
-  return {
-    ...payload,
-    p_idempotency_key: payload.p_idempotency_key ?? createIdempotencyKey(),
-  };
-}

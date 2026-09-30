@@ -3,8 +3,8 @@
 // ===========================
 
 // Activity Log Types
-export type AccionLog = 'creacion' | 'actualizacion' | 'corte' | 'eliminacion' | 'renovacion' | 'reembolso';
-export type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'tercero' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
+type AccionLog = 'creacion' | 'actualizacion' | 'corte' | 'eliminacion' | 'renovacion' | 'reembolso';
+type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'tercero' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
 
 export interface CambioLog {
   campo: string;        // Nombre del campo en español (ej: "Precio", "Estado")
@@ -36,7 +36,7 @@ export interface TasasCambio {
   ultimaActualizacion: Date;
 }
 
-export interface ConfiguracionNotificaciones {
+interface ConfiguracionNotificaciones {
   diasAntes: number[];
   horaEnvio: number;
 }
@@ -74,7 +74,7 @@ export interface AutoNoticeRun {
   alreadySent: number;
 }
 
-export interface ConfiguracionWhatsApp {
+interface ConfiguracionWhatsApp {
   prefijoTelefono: string;
   autoEnabled: boolean;
   autoDailyCap: number;

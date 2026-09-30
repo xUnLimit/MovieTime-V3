@@ -61,31 +61,3 @@ export async function getVentaConUltimoPagoUseCase(
     fechaFin: pagoMasReciente.fechaVencimiento ?? new Date(),
   };
 }
-
-export async function getVentasConUltimoPagoUseCase(
-  ventas: VentaDoc[],
-): Promise<VentaConUltimoPago[]> {
-  if (ventas.length === 0) return [];
-
-  const ventaIds = ventas.map((venta) => venta.id);
-  const chunks: string[][] = [];
-  for (let i = 0; i < ventaIds.length; i += 10) {
-    chunks.push(ventaIds.slice(i, i + 10));
-  }
-  const allPagos = await Promise.all(
-    chunks.map((chunk) =>
-      queryPagosVenta<PagoVenta>([
-        { field: 'ventaId', operator: 'in', value: chunk },
-      ]),
-    ),
-  );
-  const pagosPorVenta = new Map<string, PagoVenta[]>();
-  allPagos.flat().forEach((pago) => {
-    const existing = pagosPorVenta.get(pago.ventaId) ?? [];
-    pagosPorVenta.set(pago.ventaId, [...existing, pago]);
-  });
-
-  return Promise.all(
-    ventas.map((venta) => getVentaConUltimoPagoUseCase(venta, pagosPorVenta.get(venta.id) ?? [])),
-  );
-}

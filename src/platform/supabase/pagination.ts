@@ -20,10 +20,6 @@ export interface PaginatedResult<T> {
   hasMore: boolean;
 }
 
-export type SupabaseFilter = FilterOption;
-export type SupabasePaginationOptions = PaginationOptions;
-export type SupabasePaginatedResult<T> = PaginatedResult<T>;
-
 type PublicTableName = keyof Database['public']['Tables'];
 type PublicViewName = keyof Database['public']['Views'];
 type PublicEntity = PublicTableName | PublicViewName;

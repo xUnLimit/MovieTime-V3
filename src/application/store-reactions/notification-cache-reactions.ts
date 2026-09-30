@@ -1,22 +1,8 @@
 import { invalidateStoreQueries } from '@/platform/cache/store-query-invalidation';
-import {
-  deleteNotificacionesPorServicioUseCase,
-  deleteNotificacionesPorVentaUseCase,
-  fetchNotificationCountsUseCase,
-  toggleNotificacionLeidaUseCase,
-  toggleNotificacionResaltadaUseCase,
-} from '@/application/use-cases/notificaciones/notificaciones-store-use-cases';
+import { deleteNotificacionesPorServicioUseCase, deleteNotificacionesPorVentaUseCase, toggleNotificacionLeidaUseCase, toggleNotificacionResaltadaUseCase } from '@/application/use-cases/notificaciones/notificaciones-store-use-cases';
 
 export async function refreshNotificationListCache() {
   await invalidateStoreQueries(['notificaciones', 'dashboard']);
-}
-
-export async function refreshNotificationStoreCache() {
-  await Promise.all([
-    refreshNotificationListCache(),
-    fetchNotificationCountsUseCase(),
-  ]);
-  await invalidateStoreQueries(['notificaciones']);
 }
 
 export async function deleteVentaNotificationStoreCache(ventaId: string) {

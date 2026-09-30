@@ -7,6 +7,7 @@ import type {
   UseFormRegister,
   UseFormSetValue,
 } from "react-hook-form";
+import { getCycleMonths } from "@/platform/constants";
 
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,7 @@ import {
   handleDecimalKeyDown,
   handleIntegerKeyDown,
 } from "@/components/ventas/form/input-key-handlers";
-import type { VentaEditFormData } from "@/features/ventas/venta-edit-form-schema";
-import { MESES_POR_CICLO } from "@/features/ventas/ventas-form-shared";
+import type { VentaEditFormData } from "@/components/ventas/form/venta-edit-form-schema";
 import { cn } from "@/platform/utils";
 import { formatearFecha } from "@/platform/utils/calculations";
 import type { Plan } from "@/types";
@@ -127,7 +127,7 @@ export function VentaEditPaymentDetailsFields({
                   setValue("fechaInicio", nextDate);
                   clearErrors("fechaInicio");
                   if (planSeleccionado) {
-                    const meses = MESES_POR_CICLO[planSeleccionado.cicloPago] ?? 1;
+                    const meses = getCycleMonths(planSeleccionado.cicloPago);
                     const fechaFin = new Date(nextDate);
                     fechaFin.setMonth(fechaFin.getMonth() + meses);
                     setValue("fechaFin", fechaFin);

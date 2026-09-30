@@ -1,4 +1,4 @@
-export type TemplateTipoKey =
+type TemplateTipoKey =
   | 'notificacion_regular'
   | 'dia_pago'
   | 'renovacion'

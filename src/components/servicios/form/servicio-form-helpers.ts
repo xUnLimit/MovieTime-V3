@@ -1,7 +1,7 @@
 import { addDays } from "date-fns";
 
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/platform/constants";
-import type { ServicioFormData } from "@/features/servicios/servicio-form-schema";
+import type { ServicioFormData } from "@/components/servicios/form/servicio-form-schema";
 import {
   buildCredentialUpdateMessage,
   type CredentialChangeFlags,

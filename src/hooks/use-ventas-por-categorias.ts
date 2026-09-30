@@ -8,7 +8,7 @@ import { queryKeys } from '@/platform/query-keys';
 import { convertToUSD } from '@/modules/payments';
 import { useDashboardStats } from '@/hooks/use-dashboard-stats';
 
-export interface VentasCategoriaStats {
+interface VentasCategoriaStats {
   montoSinConsumir: number;
 }
 

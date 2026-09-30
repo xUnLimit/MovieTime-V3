@@ -40,7 +40,7 @@ export type QueryBuilder = {
   or: (filters: string) => QueryBuilder;
 };
 
-export const TABLE_BY_COLLECTION: Record<CollectionName, PublicTableName> = {
+const TABLE_BY_COLLECTION: Record<CollectionName, PublicTableName> = {
   terceros: 'terceros',
   servicios: 'servicios',
   categorias: 'categorias',
@@ -56,7 +56,7 @@ export const TABLE_BY_COLLECTION: Record<CollectionName, PublicTableName> = {
   pagosVenta: 'pagos_venta',
 };
 
-export const READ_ENTITY_BY_COLLECTION: Partial<Record<CollectionName, PublicEntity>> = {
+const READ_ENTITY_BY_COLLECTION: Partial<Record<CollectionName, PublicEntity>> = {
   gastos: 'v_gastos_full',
   pagosServicio: 'v_pagos_servicio_full',
   pagosVenta: 'v_pagos_venta_full',

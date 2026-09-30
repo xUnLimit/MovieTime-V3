@@ -13,7 +13,7 @@ import {
   PENDING_TERCERO_PAYMENT_NAME,
   withPendingTerceroPaymentMethod,
 } from "@/platform/utils/terceroMetodoPago";
-import type { MetodoPagoTerceroOption } from "@/features/ventas/ventas-form-shared";
+import type { MetodoPagoTerceroOption } from "@/components/ventas/form/ventas-form-shared";
 import type { VentaDoc } from "@/types";
 
 const PENDING_METODO_PAGO_TERCERO_OPTION: MetodoPagoTerceroOption = {

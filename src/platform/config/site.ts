@@ -18,5 +18,3 @@ export const siteConfig = {
   },
   creator: 'MovieTime PTY',
 } as const;
-
-export type SiteConfig = typeof siteConfig;

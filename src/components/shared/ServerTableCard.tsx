@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { settleFitRows, useFitPageSize } from '@/hooks/useFitPageSize';
+import { settleFitRows, useFitPageSize } from '@/hooks/use-fit-page-size';
 
 import { PaginationFooter, type PaginationFooterProps } from './PaginationFooter';
 import { TableCard, type TableCardProps } from './TableCard';

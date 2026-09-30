@@ -1,14 +1,6 @@
-import {
-  getConfig,
-  updateExecutivePushSettings,
-  updateNotificationLeadDays,
-  updateNotificationSendHour,
-  updateWhatsappAutoSettings,
-  updateWhatsappPrefix,
-  upsertExchangeRates,
-} from '@/platform/supabase/config-repository';
+import { getConfig, updateExecutivePushSettings, updateWhatsappAutoSettings } from '@/platform/supabase/config-repository';
 import { listRecentAutoNoticeRuns } from '@/platform/supabase/auto-notice-runs-repository';
-import type { ExecutivePushSettings, TasasCambio } from '@/types';
+import type { ExecutivePushSettings } from '@/types';
 
 function sameArray(left: readonly string[] | undefined, right: readonly string[] | undefined) {
   if (left === undefined && right === undefined) return true;
@@ -18,24 +10,6 @@ function sameArray(left: readonly string[] | undefined, right: readonly string[]
 
 export function getConfigUseCase() {
   return getConfig();
-}
-
-export function updateTasasCambioUseCase(tasasUpdates: Partial<TasasCambio>) {
-  return upsertExchangeRates(tasasUpdates);
-}
-
-export function updateDiasNotificacionUseCase(dias: number[]) {
-  const diasAnticipacion = Math.min(60, Math.max(1, dias[0] ?? 7));
-  return updateNotificationLeadDays(diasAnticipacion);
-}
-
-export function updateHoraEnvioUseCase(hora: number) {
-  const safeHora = Math.min(23, Math.max(0, hora));
-  return updateNotificationSendHour(safeHora);
-}
-
-export function updatePrefijoWhatsAppUseCase(prefijo: string) {
-  return updateWhatsappPrefix(prefijo);
 }
 
 export function updateExecutivePushUseCase(

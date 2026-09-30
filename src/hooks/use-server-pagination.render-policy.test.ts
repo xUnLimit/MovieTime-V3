@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const HOOK_FILE = join(process.cwd(), 'src/hooks/useServerPagination.ts');
+const HOOK_FILE = join(process.cwd(), 'src/hooks/use-server-pagination.ts');
 
 describe('useServerPagination render policy', () => {
   it('does not reset pagination state during render', () => {

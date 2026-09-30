@@ -1,13 +1,4 @@
-import {
-  getAll,
-  getById,
-  queryDocuments,
-  getCount,
-  create,
-  update,
-  archiveRecord,
-  logCacheHit,
-} from './record-core';
+import { getAll, getById, queryDocuments, getCount, update, archiveRecord } from './record-core';
 import { supabase } from './client';
 import { toDateOnly } from './dates';
 import { ENTITIES, type QueryFilter } from './entities';
@@ -20,14 +11,10 @@ import {
   type CreateServicioWithInitialPaymentPayload,
 } from './servicios-rpc-adapter';
 
-export { logCacheHit };
-
 export const getServicios = <T>() => getAll<T>(ENTITIES.SERVICIOS);
 export const getServicioById = <T>(id: string) => getById<T>(ENTITIES.SERVICIOS, id);
 export const queryServicios = <T>(filters: QueryFilter[] = []) => queryDocuments<T>(ENTITIES.SERVICIOS, filters);
 export const countServicios = (filters: QueryFilter[] = []) => getCount(ENTITIES.SERVICIOS, filters);
-export const createServicio = <T extends Record<string, unknown>>(payload: Omit<T, 'id'>) =>
-  create(ENTITIES.SERVICIOS, payload);
 export const updateServicio = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.SERVICIOS, id, payload);
 // Politica de persistencia del agregado servicio: se archiva (soft-delete), no se borra.
@@ -49,8 +36,6 @@ export async function createServicioWithInitialPayment(
 export const queryPagosServicio = <T>(filters: QueryFilter[] = []) =>
   queryDocuments<T>(ENTITIES.PAGOS_SERVICIO, filters);
 export const getPagoServicioById = <T>(id: string) => getById<T>(ENTITIES.PAGOS_SERVICIO, id);
-export const updatePagoServicio = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
-  update(ENTITIES.PAGOS_SERVICIO, id, payload);
 
 export async function removePagoServicio(id: string): Promise<void> {
   await deleteServicioPaymentRpc({
@@ -137,4 +122,3 @@ export async function updateServicioPaymentAndPeriod(
   });
 }
 
-export { ENTITIES } from './entities';

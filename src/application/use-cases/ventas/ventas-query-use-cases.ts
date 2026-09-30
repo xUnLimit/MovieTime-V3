@@ -8,7 +8,6 @@ import {
 import type { PagoVenta, VentaDoc } from '@/types';
 
 export const VENTAS_COLLECTION = ENTITIES.VENTAS;
-export { timestampToDate } from '@/platform/supabase/dates';
 
 export function getVentaDetalleUseCase(id: string) {
   return getVentaDetalleRead(id);
@@ -71,21 +70,4 @@ export function countVentasActivasByServicioUseCase(servicioId: string) {
     { field: 'servicioId', operator: '==', value: servicioId },
     { field: 'estado', operator: '!=', value: 'inactivo' },
   ]);
-}
-
-export async function fetchPagosVentaByVentaIdsUseCase<T = PagoVenta>(
-  ventaIds: string[],
-  chunkSize = 10,
-): Promise<T[]> {
-  const chunks: string[][] = [];
-  for (let i = 0; i < ventaIds.length; i += chunkSize) {
-    chunks.push(ventaIds.slice(i, i + chunkSize));
-  }
-
-  const results = await Promise.all(
-    chunks.map((chunk) =>
-      queryPagosVenta<T>([{ field: 'ventaId', operator: 'in', value: chunk }])
-    )
-  );
-  return results.flat();
 }

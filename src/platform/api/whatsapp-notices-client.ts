@@ -4,7 +4,7 @@ export type NoticeTipo =
   | 'notificacion_regular' | 'dia_pago' | 'renovacion' | 'suscripcion' | 'cancelacion'
   | 'actualizacion_credenciales' | 'transferencia_servicio' | 'datos_pago' | 'despedida';
 
-export type NoticeResultStatus = 'accepted' | 'already_sent' | 'failed' | 'skipped' | 'uncertain' | 'wa_me';
+type NoticeResultStatus = 'accepted' | 'already_sent' | 'failed' | 'skipped' | 'uncertain' | 'wa_me';
 
 export type NoticeResult = {
   noticeId: string | null;

@@ -7,7 +7,7 @@ import {
   type WheelEvent,
 } from "react";
 
-import { SERVICIOS_DROPDOWN_VISIBLE_ROWS } from "@/features/ventas/ventas-form-shared";
+import { SERVICIOS_DROPDOWN_VISIBLE_ROWS } from "@/components/ventas/form/ventas-form-shared";
 import type { Plan, Servicio, VentaDoc } from "@/types";
 
 import { useVentasActivasByServicio } from "../useVentaFormQueries";

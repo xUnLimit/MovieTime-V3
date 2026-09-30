@@ -1,42 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const queryVentasMock = vi.fn();
-const getServiciosMock = vi.fn();
-const syncNotificacionesMock = vi.fn();
 const syncUnServicioMock = vi.fn();
 const syncUnaVentaMock = vi.fn();
-const refreshNotificationStoreCacheMock = vi.fn();
-
-vi.mock('@/platform/supabase/servicios-repository', () => ({
-  getServicios: getServiciosMock,
-  ENTITIES: {
-    SERVICIOS: 'servicios',
-  },
-}));
 
 vi.mock('@/platform/supabase/ventas-repository', () => ({
   queryVentas: queryVentasMock,
 }));
 
 vi.mock('@/modules/notifications', () => ({
-  sincronizarNotificacionesForzado: syncNotificacionesMock,
   sincronizarUnServicio: syncUnServicioMock,
   sincronizarUnaVenta: syncUnaVentaMock,
-}));
-
-vi.mock('@/application/store-reactions/notification-cache-reactions', () => ({
-  refreshNotificationStoreCache: refreshNotificationStoreCacheMock,
 }));
 
 describe('servicio-dependencies-use-cases', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     queryVentasMock.mockResolvedValue([]);
-    getServiciosMock.mockResolvedValue([]);
-    syncNotificacionesMock.mockResolvedValue(undefined);
     syncUnServicioMock.mockResolvedValue(undefined);
     syncUnaVentaMock.mockResolvedValue(undefined);
-    refreshNotificationStoreCacheMock.mockResolvedValue(undefined);
   });
 
   describe('syncServicioDependencias', () => {
@@ -99,31 +81,6 @@ describe('servicio-dependencies-use-cases', () => {
 
       expect(syncUnServicioMock).toHaveBeenCalledWith('servicio-1');
       expect(syncUnaVentaMock).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('resyncServiciosDenormalizedData', () => {
-    it('fuerza notificaciones y refresca el store, sin escribir campos en ventas', async () => {
-      getServiciosMock.mockResolvedValue([
-        { id: 'servicio-1', nombre: 'Netflix', correo: 'a@demo.com', contrasena: '1234', categoriaId: 'cat-1', categoriaNombre: 'Streaming' },
-        { id: 'servicio-2', nombre: 'Disney', correo: 'b@demo.com', contrasena: '5678', categoriaId: 'cat-2', categoriaNombre: 'Kids' },
-      ]);
-
-      const { resyncServiciosDenormalizedData } = await import('./servicio-dependencies-use-cases');
-      const result = await resyncServiciosDenormalizedData();
-
-      expect(syncNotificacionesMock).toHaveBeenCalledTimes(1);
-      // V2: sale display fields come from views — no writes to ventas
-      expect(result).toEqual({ serviciosRevisados: 2, ventasActualizadas: 0 });
-    });
-
-    it('devuelve serviciosRevisados=0 cuando no hay servicios', async () => {
-      getServiciosMock.mockResolvedValue([]);
-
-      const { resyncServiciosDenormalizedData } = await import('./servicio-dependencies-use-cases');
-      const result = await resyncServiciosDenormalizedData();
-
-      expect(result).toEqual({ serviciosRevisados: 0, ventasActualizadas: 0 });
     });
   });
 });

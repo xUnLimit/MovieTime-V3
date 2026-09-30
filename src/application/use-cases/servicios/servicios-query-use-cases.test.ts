@@ -10,11 +10,7 @@ vi.mock('@/platform/supabase/servicios-repository', () => ({
   getServicios: mocks.getAll, queryServicios: mocks.query,
 }));
 
-import {
-  countServiciosProximosPagoByCategoriaUseCase, fetchServiciosByIdsUseCase,
-  fetchServiciosCountsUseCase, fetchServiciosUseCase, getServicioReadUseCase,
-  getServicioUseCase, queryServiciosByCategoriaUseCase, queryServiciosEnReposoUseCase,
-} from './servicios-query-use-cases';
+import { countServiciosProximosPagoByCategoriaUseCase, fetchServiciosByIdsUseCase, fetchServiciosCountsUseCase, fetchServiciosUseCase, getServicioReadUseCase, queryServiciosByCategoriaUseCase, queryServiciosEnReposoUseCase } from './servicios-query-use-cases';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -22,7 +18,6 @@ describe('service query use cases', () => {
   it('delegates simple service reads and filters', async () => {
     mocks.getById.mockResolvedValue({ id: 's1' }); mocks.read.mockResolvedValue({ id: 's1' });
     mocks.getAll.mockResolvedValue([]); mocks.query.mockResolvedValue([{ id: 's1' }]);
-    expect(await getServicioUseCase('s1')).toEqual({ id: 's1' });
     expect(await getServicioReadUseCase('s1')).toEqual({ id: 's1' });
     expect(await fetchServiciosUseCase()).toEqual([]);
     await queryServiciosByCategoriaUseCase('c1');

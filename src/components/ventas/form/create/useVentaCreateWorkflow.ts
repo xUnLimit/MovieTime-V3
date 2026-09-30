@@ -4,13 +4,13 @@ import { useMemo, type Dispatch, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import type { UseFormClearErrors, UseFormSetValue } from "react-hook-form";
 
-import type { VentaFormData } from "@/features/ventas/venta-form-schema";
+import type { VentaFormData } from "@/components/ventas/form/venta-form-schema";
 import type {
   MetodoPagoTerceroOption,
   TipoVentaItem,
   VentaItem,
   VentaItemErrors,
-} from "@/features/ventas/ventas-form-shared";
+} from "@/components/ventas/form/ventas-form-shared";
 import { useTemplates } from "@/hooks/use-templates";
 import {
   createVentaMutation,

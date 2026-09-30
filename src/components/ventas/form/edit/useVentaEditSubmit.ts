@@ -10,7 +10,7 @@ import type { VentaEditData } from './types';
 import {
   buildVentaEditPayload,
 } from './venta-edit-controller-helpers';
-import type { VentaEditFormData } from '@/features/ventas/venta-edit-form-schema';
+import type { VentaEditFormData } from '@/components/ventas/form/venta-edit-form-schema';
 import type { UseFormSetError } from 'react-hook-form';
 
 type MetodoPagoEditResumen = Pick<MetodoPago, 'id' | 'nombre' | 'moneda'>;

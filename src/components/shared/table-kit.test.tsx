@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Tags } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { computeFitRows } from '@/hooks/useFitPageSize';
+import { computeFitRows } from '@/hooks/use-fit-page-size';
 
 import { DataTable, defineDataTableColumns, hideBelowClass } from './DataTable';
 import { PaginationFooter } from './PaginationFooter';
@@ -12,8 +12,8 @@ import { TableCard } from './TableCard';
 import { FilterMenu, TableSearch, TableToolbar } from './TableToolbar';
 
 const fit = vi.hoisted(() => ({ rows: null as number | null }));
-vi.mock('@/hooks/useFitPageSize', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/hooks/useFitPageSize')>()),
+vi.mock('@/hooks/use-fit-page-size', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/use-fit-page-size')>()),
   useFitPageSize: () => ({ ref: { current: null }, rows: fit.rows }),
 }));
 

@@ -7,10 +7,6 @@ const META: Record<Status, { dot: string; label: string; hint: string }> = {
   wame: { dot: 'bg-muted-foreground/50', label: 'Manual', hint: 'Sin plantilla de Meta: se envía a mano por wa.me' },
 };
 
-export function channelLabel(status: Status) {
-  return META[status].label;
-}
-
 export function ChannelDot({ status }: { status: Status }) {
   return (
     <span data-testid="channel-dot" data-status={status} className="inline-flex shrink-0 items-center">

@@ -1,33 +1,3 @@
-/**
- * snake_case (DB) <-> camelCase (TS) mapping helpers.
- *
- * Database schema uses snake_case; the TypeScript domain types use camelCase.
- * Use these to translate at the supabase/queries layer; never let snake_case
- * names leak into UI components.
- */
-
-type CamelCase<S extends string> = S extends `${infer Head}_${infer Tail}`
-  ? `${Head}${Capitalize<CamelCase<Tail>>}`
-  : S;
-
-type SnakeCase<S extends string> = S extends `${infer Head}${infer Tail}`
-  ? Tail extends Uncapitalize<Tail>
-    ? `${Lowercase<Head>}${SnakeCase<Tail>}`
-    : `${Lowercase<Head>}_${SnakeCase<Uncapitalize<Tail>>}`
-  : S;
-
-export type CamelCaseKeys<T> = T extends Array<infer U>
-  ? Array<CamelCaseKeys<U>>
-  : T extends object
-    ? { [K in keyof T as K extends string ? CamelCase<K> : K]: CamelCaseKeys<T[K]> }
-    : T;
-
-export type SnakeCaseKeys<T> = T extends Array<infer U>
-  ? Array<SnakeCaseKeys<U>>
-  : T extends object
-    ? { [K in keyof T as K extends string ? SnakeCase<K> : K]: SnakeCaseKeys<T[K]> }
-    : T;
-
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return Object.prototype.toString.call(value) === '[object Object]';
 };
@@ -75,26 +45,3 @@ export function toSnakeCase<T>(value: unknown): T {
   }
   return value as T;
 }
-
-/**
- * Parse listed fields from ISO strings to Date objects in-place on a copy.
- * Use after toCamelCase() to hydrate timestamps.
- */
-export function parseDateFields<T extends Record<string, unknown>>(
-  obj: T,
-  fields: readonly (keyof T)[]
-): T {
-  const copy = { ...obj };
-  for (const f of fields) {
-    const val = copy[f];
-    if (typeof val === 'string') {
-      copy[f] = new Date(val) as T[keyof T];
-    }
-  }
-  return copy;
-}
-
-/**
- * Standard timestamp fields present on most tables.
- */
-export const COMMON_DATE_FIELDS = ['createdAt', 'updatedAt'] as const;
