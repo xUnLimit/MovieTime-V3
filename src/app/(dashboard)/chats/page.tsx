@@ -11,6 +11,7 @@ import {
   countByFilter,
   matchesFilter,
   matchesSearch,
+  sortConversations,
   type ChatFilter,
 } from '@/components/chats/conversation-filters';
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
@@ -69,7 +70,7 @@ function ChatsPageContent() {
   const counts = useMemo(() => countByFilter(conversations, now), [conversations, now]);
   const categories = useMemo(() => activeConversationCategories(conversations), [conversations]);
   const visible = useMemo(
-    () => conversations.filter((item) => matchesFilter(item, filter, now) && matchesSearch(item, search)),
+    () => sortConversations(conversations.filter((item) => matchesFilter(item, filter, now) && matchesSearch(item, search))),
     [conversations, filter, now, search]
   );
   const selected = conversations.find((conversation) => conversation.waId === selectedWaId) ?? null;

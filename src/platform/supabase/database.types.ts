@@ -2242,6 +2242,27 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_conversation_flags: {
+        Row: {
+          archived_at: string | null
+          pinned_at: string | null
+          updated_at: string
+          wa_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          pinned_at?: string | null
+          updated_at?: string
+          wa_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          pinned_at?: string | null
+          updated_at?: string
+          wa_id?: string
+        }
+        Relationships: []
+      }
       auto_notice_runs: {
         Row: {
           id: string
@@ -4029,12 +4050,14 @@ export type Database = {
       }
       v_whatsapp_conversations: {
         Row: {
+          archived: boolean | null
           categorias_activas: string[] | null
           contact_name: string | null
           last_direction: string | null
           last_inbound_at: string | null
           last_message_at: string | null
           last_preview: string | null
+          pinned_at: string | null
           proxima_fecha_fin: string | null
           tercero_id: string | null
           tercero_nombre: string | null

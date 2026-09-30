@@ -15,6 +15,7 @@ import {
   matchesFilter,
   matchesSearch,
   parseDateOnly,
+  sortConversations,
 } from './conversation-filters';
 
 const NOW = new Date(2026, 8, 27, 15, 30);
@@ -24,7 +25,7 @@ function conversation(overrides: Partial<WhatsAppConversation> = {}): WhatsAppCo
     waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
     lastDirection: 'inbound', lastPreview: 'Ya pagué', lastMessageAt: NOW.toISOString(),
     lastInboundAt: new Date(2026, 8, 27, 14, 0).toISOString(), unreadCount: 0, nextExpiry: null,
-    activeCategories: [],
+    activeCategories: [], pinnedAt: null, archived: false,
     ...overrides,
   };
 }
@@ -70,7 +71,30 @@ describe('conversation filters', () => {
     expect(matchesFilter(unregistered, 'sin_registrar', NOW)).toBe(true);
     expect(matchesFilter(unread, 'sin_registrar', NOW)).toBe(false);
     expect(matchesFilter(unread, 'todos', NOW)).toBe(true);
-    expect(countByFilter([unread, unregistered, due], NOW)).toEqual({ todos: 3, no_leidos: 1, ventana_abierta: 2, sin_registrar: 1 });
+    expect(countByFilter([unread, unregistered, due], NOW)).toEqual({ todos: 3, no_leidos: 1, ventana_abierta: 2, sin_registrar: 1, archivados: 0 });
+  });
+
+  it('keeps archived chats out of every filter except their own', () => {
+    const archived = conversation({ waId: '9', archived: true, unreadCount: 1, activeCategories: ['Netflix'] });
+    const active = conversation({ waId: '1' });
+
+    expect(matchesFilter(archived, 'archivados', NOW)).toBe(true);
+    expect(matchesFilter(active, 'archivados', NOW)).toBe(false);
+    for (const filter of ['todos', 'no_leidos', 'ventana_abierta', 'sin_registrar', categoryFilterId('Netflix')] as const) {
+      expect(matchesFilter(archived, filter, NOW)).toBe(false);
+    }
+    expect(countByFilter([archived, active], NOW)).toMatchObject({ todos: 1, no_leidos: 0, archivados: 1 });
+  });
+
+  it('puts pinned chats first, latest pin first, keeping the rest in order', () => {
+    const a = conversation({ waId: 'a' });
+    const b = conversation({ waId: 'b', pinnedAt: '2026-09-29T10:00:00Z' });
+    const c = conversation({ waId: 'c' });
+    const d = conversation({ waId: 'd', pinnedAt: '2026-09-30T10:00:00Z' });
+    const input = [a, b, c, d];
+
+    expect(sortConversations(input).map((item) => item.waId)).toEqual(['d', 'b', 'a', 'c']);
+    expect(input.map((item) => item.waId)).toEqual(['a', 'b', 'c', 'd']);
   });
 
   it('auto-tags a client by their active services and filters/counts by category', () => {

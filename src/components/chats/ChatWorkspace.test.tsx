@@ -8,6 +8,8 @@ const state = vi.hoisted(() => ({
   sendMutate: vi.fn(),
   markRead: vi.fn(),
   markUnread: vi.fn(),
+  setPinned: vi.fn(),
+  setArchived: vi.fn(),
   hideMessage: vi.fn(),
   saveSticker: vi.fn(),
   ventas: [] as unknown[],
@@ -20,6 +22,7 @@ const state = vi.hoisted(() => ({
   metas: [] as unknown[],
 }));
 const toastError = vi.hoisted(() => vi.fn());
+const toastSuccess = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useWhatsAppMessages: () => ({ data: state.messages, isLoading: false }),
@@ -27,6 +30,8 @@ vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useMarkWhatsAppConversationRead: () => ({ mutate: state.markRead }),
   useMarkWhatsAppConversationUnread: () => ({ mutate: state.markUnread }),
   useHideWhatsAppMessage: () => ({ mutate: state.hideMessage }),
+  useSetWhatsAppConversationPinned: () => ({ mutate: state.setPinned }),
+  useSetWhatsAppConversationArchived: () => ({ mutate: state.setArchived }),
   useVentaMessageContext: (ventaId: string | null) => ({ data: ventaId ? state.context : null }),
   useUploadWhatsAppMedia: () => ({ mutateAsync: vi.fn() }),
   useWhatsAppMedia: () => ({ objectUrl: state.mediaObjectUrl, isLoading: false, isError: false }),
@@ -55,7 +60,7 @@ vi.mock('@/platform/utils/whatsapp', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/platform/utils/whatsapp')>()),
   getSaludo: () => 'Buenas tardes',
 }));
-vi.mock('sonner', () => ({ toast: { error: toastError } }));
+vi.mock('sonner', () => ({ toast: { error: toastError, success: toastSuccess } }));
 
 import { ChatWorkspace } from './ChatWorkspace';
 
@@ -65,7 +70,7 @@ const open: WhatsAppConversation = {
   waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
   lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: NOW.toISOString(),
   lastInboundAt: new Date(2026, 8, 27, 14, 30).toISOString(), unreadCount: 1, nextExpiry: '2026-09-27',
-  activeCategories: [],
+  activeCategories: [], pinnedAt: null, archived: false,
 };
 const closed: WhatsAppConversation = { ...open, lastInboundAt: null, unreadCount: 0 };
 
@@ -85,6 +90,9 @@ beforeEach(() => {
   state.sendMutate.mockReset();
   state.markRead.mockReset();
   state.markUnread.mockReset();
+  state.setPinned.mockReset();
+  state.setArchived.mockReset();
+  toastSuccess.mockReset();
   state.hideMessage.mockReset();
   state.mediaObjectUrl = null;
   state.ventas = [venta];
@@ -250,6 +258,46 @@ describe('ChatWorkspace', () => {
       expect.any(Object)
     );
     expect(props.onBack).toHaveBeenCalled();
+  });
+
+  it('pins and unpins the chat from the menu', async () => {
+    const user = userEvent.setup();
+    const props = renderWorkspace();
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Fijar conversación' }));
+    expect(state.setPinned).toHaveBeenCalledWith({ waId: '50760000000', pinned: true }, expect.any(Object));
+    expect(props.onBack).not.toHaveBeenCalled();
+  });
+
+  it('archives the chat, confirms and returns to the list', async () => {
+    const user = userEvent.setup();
+    state.setArchived.mockImplementation((_input, options) => options.onSuccess());
+    const props = renderWorkspace();
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Archivar conversación' }));
+
+    expect(state.setArchived).toHaveBeenCalledWith({ waId: '50760000000', archived: true }, expect.any(Object));
+    expect(toastSuccess).toHaveBeenCalledWith(expect.stringContaining('archivada'));
+    expect(props.onBack).toHaveBeenCalled();
+  });
+
+  it('keeps the chat open after unarchiving it and reports failures', async () => {
+    const user = userEvent.setup();
+    const props = renderWorkspace({ ...open, archived: true });
+    state.setArchived.mockImplementationOnce((_input, options) => options.onSuccess());
+    state.setPinned.mockImplementationOnce((_input, options) => options.onError(new Error('boom')));
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Desarchivar conversación' }));
+    expect(state.setArchived).toHaveBeenCalledWith({ waId: '50760000000', archived: false }, expect.any(Object));
+    expect(toastSuccess).toHaveBeenCalledWith('Conversación desarchivada.');
+    expect(props.onBack).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Fijar conversación' }));
+    expect(toastError).toHaveBeenCalledWith('No se pudo cambiar el fijado. Intenta de nuevo.');
   });
 
   it('overlays the panel on narrow screens and pins it on wide ones', async () => {

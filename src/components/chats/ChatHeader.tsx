@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Ellipsis, Mail, PanelRight, PanelRightClose, Search, UserRound } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowLeft, Ellipsis, Mail, PanelRight, PanelRightClose, Pin, PinOff, Search, UserRound } from 'lucide-react';
 
 import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
 import {
@@ -23,13 +23,15 @@ type ChatHeaderProps = {
   onBack: () => void;
   onTogglePanel: () => void;
   onMarkUnread: () => void;
+  onTogglePin: () => void;
+  onToggleArchive: () => void;
   onToggleSearch?: () => void;
 };
 
 const HEADER_ICON = 'grid h-[35px] w-[35px] shrink-0 place-items-center rounded-md text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 md:w-10';
 const HEADER_ICON_ACTIVE = 'bg-chat-selected text-chat-accent-strong';
 
-export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen = false, onBack, onTogglePanel, onMarkUnread, onToggleSearch }: ChatHeaderProps) {
+export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen = false, onBack, onTogglePanel, onMarkUnread, onTogglePin, onToggleArchive, onToggleSearch }: ChatHeaderProps) {
   const title = conversationTitle(conversation);
 
   return (
@@ -94,6 +96,14 @@ export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen 
           ) : null}
           <DropdownMenuItem disabled={!conversation.lastInboundAt} onSelect={onMarkUnread}>
             <Mail className="mr-2 h-4 w-4" aria-hidden /> Marcar como no leído
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={onTogglePin}>
+            {conversation.pinnedAt ? <PinOff className="mr-2 h-4 w-4" aria-hidden /> : <Pin className="mr-2 h-4 w-4" aria-hidden />}
+            {conversation.pinnedAt ? 'Desfijar conversación' : 'Fijar conversación'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={onToggleArchive}>
+            {conversation.archived ? <ArchiveRestore className="mr-2 h-4 w-4" aria-hidden /> : <Archive className="mr-2 h-4 w-4" aria-hidden />}
+            {conversation.archived ? 'Desarchivar conversación' : 'Archivar conversación'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

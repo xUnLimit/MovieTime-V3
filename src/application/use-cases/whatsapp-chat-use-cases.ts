@@ -14,6 +14,8 @@ import {
   listWhatsAppConversations,
   listWhatsAppMessages,
   markWhatsAppConversationUnread,
+  setWhatsAppConversationArchived,
+  setWhatsAppConversationPinned,
 } from '@/platform/supabase/whatsapp-chat-repository';
 import type { VentaMessageContext } from '@/platform/utils/whatsapp-template-render';
 import { fetchVentaDetalleQuery } from './ventas/venta-detail-query-use-cases';
@@ -53,6 +55,21 @@ export async function markWhatsAppConversationReadUseCase(waId: string, readAt: 
 
 export async function markWhatsAppConversationUnreadUseCase(waId: string, lastInboundAt: string) {
   await markWhatsAppConversationUnread(waId, lastInboundAt);
+}
+
+const WA_ID_PATTERN = /^[0-9]{8,15}$/;
+
+function assertWaId(waId: string): string {
+  if (!WA_ID_PATTERN.test(waId)) throw new Error('El número de WhatsApp no es válido.');
+  return waId;
+}
+
+export async function setWhatsAppConversationPinnedUseCase(waId: string, pinned: boolean) {
+  await setWhatsAppConversationPinned(assertWaId(waId), pinned ? new Date().toISOString() : null);
+}
+
+export async function setWhatsAppConversationArchivedUseCase(waId: string, archived: boolean) {
+  await setWhatsAppConversationArchived(assertWaId(waId), archived ? new Date().toISOString() : null);
 }
 
 // Solo oculta el mensaje en esta bandeja; el cliente lo sigue viendo en su WhatsApp.

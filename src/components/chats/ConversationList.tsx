@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, type ReactNode } from 'react';
-import { CalendarClock, ChevronDown, MessageCircle, Search, UserPlus, X } from 'lucide-react';
+import { CalendarClock, ChevronDown, MessageCircle, Pin, Search, UserPlus, X } from 'lucide-react';
 
 import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat-use-cases';
 import {
@@ -177,11 +177,11 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
         ) : visible.length === 0 ? (
           <li className="flex flex-col items-center gap-2 px-5 py-10 text-center">
             <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-chat-raised text-chat-quiet"><MessageCircle className="h-5 w-5" aria-hidden /></span>
-            <p className="text-sm font-semibold text-chat-ink">{totalCount === 0 ? 'Aún no hay conversaciones' : search ? 'Sin resultados' : 'Sin chats en este filtro'}</p>
+            <p className="text-sm font-semibold text-chat-ink">{totalCount === 0 ? 'Aún no hay conversaciones' : search ? 'Sin resultados' : filter === 'archivados' ? 'No hay chats archivados' : 'Sin chats en este filtro'}</p>
             <p className="max-w-64 text-xs leading-relaxed text-chat-muted">
               {totalCount === 0
                 ? 'Cuando un cliente escriba al número de WhatsApp, su chat aparecerá aquí.'
-                : search ? `Ningún chat coincide con "${search}".` : 'No hay chats en este filtro.'}
+                : search ? `Ningún chat coincide con "${search}".`   : filter === 'archivados' ? 'Los chats archivados aparecen aquí y vuelven a la bandeja cuando el cliente escribe.' : 'No hay chats en este filtro.'}
             </p>
             {totalCount > 0 && (search || filter !== 'todos') ? (
               <button type="button" className="mt-2 min-h-[40px] rounded-md px-3 py-2 text-sm text-chat-accent underline underline-offset-4 hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { onSearchChange(''); onFilterChange('todos'); }}>
@@ -233,6 +233,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                   </span>
                   <span className="flex flex-col items-end gap-1.5 text-xs tabular-nums text-chat-quiet">
                     <span className={cn(unread && 'text-chat-accent')}>{formatChatTime(conversation.lastMessageAt, now)}</span>
+                    {conversation.pinnedAt && !unread ? <Pin className="size-3.5 text-chat-quiet" aria-label="Fijado" /> : null}
                     {unread ? (
                       <span
                         className="grid h-5 min-w-5 place-items-center rounded-full bg-chat-accent px-1.5 text-xs font-semibold text-chat-accent-ink"

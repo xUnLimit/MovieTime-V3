@@ -5,8 +5,8 @@ import type { WhatsAppConversation } from '@/application/use-cases/whatsapp-chat
 import { ForwardDialog } from './ForwardDialog';
 
 const conversations: WhatsAppConversation[] = [
-  { waId: '50760000000', contactName: 'María', terceroId: null, terceroNombre: null, lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: '2026-09-27T12:00:00Z', lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [] },
-  { waId: '50761111111', contactName: 'Pedro', terceroId: null, terceroNombre: null, lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: '2026-09-27T12:00:00Z', lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [] },
+  { waId: '50760000000', contactName: 'María', terceroId: null, terceroNombre: null, lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: '2026-09-27T12:00:00Z', lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [], pinnedAt: null, archived: false },
+  { waId: '50761111111', contactName: 'Pedro', terceroId: null, terceroNombre: null, lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: '2026-09-27T12:00:00Z', lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [], pinnedAt: null, archived: false },
 ];
 
 describe('ForwardDialog', () => {

@@ -11,6 +11,7 @@ export const CHAT_FIXED_FILTERS = [
 
 export const CHAT_MORE_FILTERS = [
   { id: 'ventana_abierta', label: 'Ventana abierta' },
+  { id: 'archivados', label: 'Archivados' },
 ] as const;
 
 type ChatFixedFilter = (typeof CHAT_FIXED_FILTERS)[number]['id'] | (typeof CHAT_MORE_FILTERS)[number]['id'];
@@ -59,7 +60,10 @@ export function isDueSoon(conversation: Pick<WhatsAppConversation, 'nextExpiry'>
   return days <= DUE_SOON_DAYS && days >= -OVERDUE_DAYS;
 }
 
+// Los archivados solo se ven en su propio filtro; en los demas (incluido "Todos") quedan fuera.
 export function matchesFilter(conversation: WhatsAppConversation, filter: ChatFilter, now: Date) {
+  if (filter === 'archivados') return conversation.archived;
+  if (conversation.archived) return false;
   const category = categoryFromFilter(filter);
   if (category !== null) return conversation.activeCategories.includes(category);
   switch (filter) {
@@ -92,4 +96,12 @@ export function countByFilter(conversations: readonly WhatsAppConversation[], no
   return Object.fromEntries(
     filters.map((filter) => [filter, conversations.filter((item) => matchesFilter(item, filter, now)).length])
   );
+}
+
+// Fijados arriba (el mas reciente primero); el resto conserva el orden de la lista.
+export function sortConversations(conversations: readonly WhatsAppConversation[]): WhatsAppConversation[] {
+  const pinned = conversations
+    .filter((item) => item.pinnedAt)
+    .sort((a, b) => (b.pinnedAt ?? '').localeCompare(a.pinnedAt ?? ''));
+  return [...pinned, ...conversations.filter((item) => !item.pinnedAt)];
 }

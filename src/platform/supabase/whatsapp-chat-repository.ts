@@ -13,6 +13,10 @@ export type WhatsAppConversation = {
   unreadCount: number;
   nextExpiry: string | null;
   activeCategories: string[];
+  /** Fecha en que se fijo el chat arriba de la lista, o null si no esta fijado. */
+  pinnedAt: string | null;
+  /** Archivado y sin mensajes nuevos del cliente desde entonces (vuelve sola a la bandeja cuando el cliente escribe). */
+  archived: boolean;
 };
 
 export type WhatsAppChatMessage = {
@@ -63,6 +67,8 @@ export async function listWhatsAppConversations(): Promise<WhatsAppConversation[
       unreadCount: row.unread_count ?? 0,
       nextExpiry: row.proxima_fecha_fin,
       activeCategories: row.categorias_activas ?? [],
+      pinnedAt: row.pinned_at ?? null,
+      archived: row.archived ?? false,
     }];
   });
 }
@@ -111,6 +117,21 @@ export async function markWhatsAppConversationRead(waId: string, readAt: string)
 export async function markWhatsAppConversationUnread(waId: string, lastInboundAt: string): Promise<void> {
   const readAt = new Date(new Date(lastInboundAt).getTime() - 1).toISOString();
   await markWhatsAppConversationRead(waId, readAt);
+}
+
+// Fijar y archivar son marcas por conversacion; el upsert solo toca la columna enviada.
+export async function setWhatsAppConversationPinned(waId: string, pinnedAt: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('whatsapp_conversation_flags')
+    .upsert({ wa_id: waId, pinned_at: pinnedAt }, { onConflict: 'wa_id' });
+  if (error) throw error;
+}
+
+export async function setWhatsAppConversationArchived(waId: string, archivedAt: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('whatsapp_conversation_flags')
+    .upsert({ wa_id: waId, archived_at: archivedAt }, { onConflict: 'wa_id' });
+  if (error) throw error;
 }
 
 // Oculta el mensaje solo en esta bandeja: la API de WhatsApp no ofrece forma de

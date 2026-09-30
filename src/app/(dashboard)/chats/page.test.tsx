@@ -44,7 +44,7 @@ function conversation(waId: string, name: string, unreadCount = 0): WhatsAppConv
   return {
     waId, contactName: name, terceroId: null, terceroNombre: null,
     lastDirection: 'inbound', lastPreview: `Hola de ${name}`, lastMessageAt: new Date().toISOString(),
-    lastInboundAt: new Date().toISOString(), unreadCount, nextExpiry: null, activeCategories: [],
+    lastInboundAt: new Date().toISOString(), unreadCount, nextExpiry: null, activeCategories: [], pinnedAt: null, archived: false,
   };
 }
 

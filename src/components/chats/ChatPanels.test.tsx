@@ -15,7 +15,7 @@ const conversation: WhatsAppConversation = {
   waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
   lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: NOW.toISOString(),
   lastInboundAt: new Date(2026, 8, 27, 14, 0).toISOString(), unreadCount: 0, nextExpiry: '2026-09-27',
-  activeCategories: [],
+  activeCategories: [], pinnedAt: null, archived: false,
 };
 
 function venta(id: string, fechaFin: Date | null, overrides: Partial<VentaTerceroDoc> = {}): VentaTerceroDoc {
@@ -29,7 +29,7 @@ function venta(id: string, fechaFin: Date | null, overrides: Partial<VentaTercer
 describe('ChatHeader', () => {
   it('shows the contact, the service window and the chat actions', async () => {
     const user = userEvent.setup();
-    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn() };
+    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn(), onTogglePin: vi.fn(), onToggleArchive: vi.fn() };
     render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen {...handlers} />);
 
     expect(screen.getByText('Ventana abierta · 23 h')).toBeTruthy();
@@ -46,9 +46,28 @@ describe('ChatHeader', () => {
     expect(handlers.onMarkUnread).toHaveBeenCalled();
   });
 
+  it('pins and archives from the menu and flips the labels when already set', async () => {
+    const user = userEvent.setup();
+    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn(), onTogglePin: vi.fn(), onToggleArchive: vi.fn() };
+    const view = render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen {...handlers} />);
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Fijar conversación' }));
+    expect(handlers.onTogglePin).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Archivar conversación' }));
+    expect(handlers.onToggleArchive).toHaveBeenCalledTimes(1);
+
+    view.rerender(<ChatHeader conversation={{ ...conversation, pinnedAt: '2026-09-30T10:00:00Z', archived: true }} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen {...handlers} />);
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }));
+    expect(screen.getByRole('menuitem', { name: 'Desfijar conversación' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Desarchivar conversación' })).toBeTruthy();
+  });
+
   it('toggles the customer panel from the overflow menu, with its own label per state', async () => {
     const user = userEvent.setup();
-    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn() };
+    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn(), onTogglePin: vi.fn(), onToggleArchive: vi.fn() };
     const { rerender } = render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 23 }} panelOpen={false} {...handlers} />);
 
     await user.click(screen.getByRole('button', { name: 'Más opciones' }));
@@ -61,7 +80,7 @@ describe('ChatHeader', () => {
   });
 
   it('shows the active services of the client next to the number, capped to three', () => {
-    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn() };
+    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn(), onTogglePin: vi.fn(), onToggleArchive: vi.fn() };
     render(<ChatHeader conversation={{ ...conversation, activeCategories: ['Canva', 'Crunchyroll', 'Disney+', 'Netflix'] }} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} {...handlers} />);
 
     expect(screen.getByRole('group', { name: 'Servicios activos: Canva, Crunchyroll, Disney+, Netflix' })).toBeTruthy();
@@ -78,7 +97,7 @@ describe('ChatHeader', () => {
         panelOpen={false}
         onBack={vi.fn()}
         onTogglePanel={vi.fn()}
-        onMarkUnread={vi.fn()}
+        onMarkUnread={vi.fn()} onTogglePin={vi.fn()} onToggleArchive={vi.fn()}
       />
     );
 
@@ -91,11 +110,11 @@ describe('ChatHeader', () => {
   it('keeps conversation search visible and reports its open state', async () => {
     const user = userEvent.setup();
     const onToggleSearch = vi.fn();
-    const view = render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} searchOpen={false} onBack={vi.fn()} onTogglePanel={vi.fn()} onMarkUnread={vi.fn()} onToggleSearch={onToggleSearch} />);
+    const view = render(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} searchOpen={false} onBack={vi.fn()} onTogglePanel={vi.fn()} onMarkUnread={vi.fn()} onTogglePin={vi.fn()} onToggleArchive={vi.fn()} onToggleSearch={onToggleSearch} />);
 
     await user.click(screen.getByRole('button', { name: 'Buscar en la conversación' }));
     expect(onToggleSearch).toHaveBeenCalledOnce();
-    view.rerender(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} searchOpen onBack={vi.fn()} onTogglePanel={vi.fn()} onMarkUnread={vi.fn()} onToggleSearch={onToggleSearch} />);
+    view.rerender(<ChatHeader conversation={conversation} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} searchOpen onBack={vi.fn()} onTogglePanel={vi.fn()} onMarkUnread={vi.fn()} onTogglePin={vi.fn()} onToggleArchive={vi.fn()} onToggleSearch={onToggleSearch} />);
     expect(screen.getByRole('button', { name: 'Cerrar búsqueda en la conversación' }).getAttribute('aria-pressed')).toBe('true');
   });
 });

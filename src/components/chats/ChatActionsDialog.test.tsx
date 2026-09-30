@@ -46,7 +46,7 @@ import { ChatActionsDialog } from './ChatActionsDialog';
 const conversation: WhatsAppConversation = {
   waId: '50760000000', contactName: 'Mary', terceroId: null, terceroNombre: null,
   lastDirection: 'inbound', lastPreview: 'Hola', lastMessageAt: '2026-09-27T12:00:00Z',
-  lastInboundAt: '2026-09-27T12:00:00Z', unreadCount: 0, nextExpiry: null, activeCategories: [],
+  lastInboundAt: '2026-09-27T12:00:00Z', unreadCount: 0, nextExpiry: null, activeCategories: [], pinnedAt: null, archived: false,
 };
 
 beforeEach(() => {

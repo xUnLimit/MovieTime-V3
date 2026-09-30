@@ -22,7 +22,7 @@ function demoConversation(waId: string, name: string, unreadCount: number) {
   return {
     waId, contactName: name, terceroId: null, terceroNombre: null,
     lastDirection: 'inbound' as const, lastPreview: `Hola de ${name}`, lastMessageAt: now,
-    lastInboundAt: now, unreadCount, nextExpiry: null, activeCategories: [],
+    lastInboundAt: now, unreadCount, nextExpiry: null, activeCategories: [], pinnedAt: null, archived: false,
   };
 }
 

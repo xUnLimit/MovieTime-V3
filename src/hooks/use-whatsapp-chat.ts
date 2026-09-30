@@ -12,6 +12,8 @@ import {
   markWhatsAppConversationReadUseCase,
   markWhatsAppConversationUnreadUseCase,
   sendWhatsAppMessageUseCase,
+  setWhatsAppConversationArchivedUseCase,
+  setWhatsAppConversationPinnedUseCase,
   uploadWhatsAppMediaUseCase,
   type WhatsAppChatMessage,
   type WhatsAppConversation,
@@ -40,7 +42,7 @@ export function useWhatsAppUnreadChats(enabled: boolean) {
     enabled,
     refetchInterval: UNREAD_BADGE_REFRESH_MS,
     select: (conversations: WhatsAppConversation[]) =>
-      conversations.filter((conversation) => conversation.unreadCount > 0).length,
+      conversations.filter((conversation) => conversation.unreadCount > 0 && !conversation.archived).length,
   });
   return enabled ? data ?? 0 : 0;
 }
@@ -107,6 +109,39 @@ export function useMarkWhatsAppConversationUnread() {
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.whatsapp.conversations() }),
   });
+}
+
+// Fijar y archivar cambian la lista al instante; si el servidor falla, la recarga deja el estado real.
+function useConversationFlagMutation<TInput extends { waId: string }>(
+  mutationFn: (input: TInput) => Promise<void>,
+  patch: (input: TInput) => Partial<WhatsAppConversation>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onMutate: async (input) => {
+      const key = queryKeys.whatsapp.conversations();
+      await queryClient.cancelQueries({ queryKey: key });
+      queryClient.setQueryData<WhatsAppConversation[]>(key, (current) => current?.map((conversation) =>
+        conversation.waId === input.waId ? { ...conversation, ...patch(input) } : conversation
+      ));
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.whatsapp.conversations() }),
+  });
+}
+
+export function useSetWhatsAppConversationPinned() {
+  return useConversationFlagMutation(
+    ({ waId, pinned }: { waId: string; pinned: boolean }) => setWhatsAppConversationPinnedUseCase(waId, pinned),
+    ({ pinned }) => ({ pinnedAt: pinned ? new Date().toISOString() : null })
+  );
+}
+
+export function useSetWhatsAppConversationArchived() {
+  return useConversationFlagMutation(
+    ({ waId, archived }: { waId: string; archived: boolean }) => setWhatsAppConversationArchivedUseCase(waId, archived),
+    ({ archived }) => ({ archived })
+  );
 }
 
 // Quita el mensaje de la bandeja al instante; si el servidor falla, la

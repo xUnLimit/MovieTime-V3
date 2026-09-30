@@ -11,6 +11,8 @@ const deps = vi.hoisted(() => ({
   listWhatsAppMessages: vi.fn(),
   markWhatsAppConversationUnread: vi.fn(),
   hideWhatsAppMessage: vi.fn(),
+  setWhatsAppConversationPinned: vi.fn(),
+  setWhatsAppConversationArchived: vi.fn(),
   fetchVentaDetalleQuery: vi.fn(),
 }));
 
@@ -27,6 +29,8 @@ vi.mock('@/platform/supabase/whatsapp-chat-repository', () => ({
   listWhatsAppMessages: deps.listWhatsAppMessages,
   markWhatsAppConversationUnread: deps.markWhatsAppConversationUnread,
   hideWhatsAppMessage: deps.hideWhatsAppMessage,
+  setWhatsAppConversationPinned: deps.setWhatsAppConversationPinned,
+  setWhatsAppConversationArchived: deps.setWhatsAppConversationArchived,
 }));
 vi.mock('./ventas/venta-detail-query-use-cases', () => ({ fetchVentaDetalleQuery: deps.fetchVentaDetalleQuery }));
 
@@ -39,6 +43,8 @@ import {
   markWhatsAppConversationReadUseCase,
   markWhatsAppConversationUnreadUseCase,
   sendWhatsAppMessageUseCase,
+  setWhatsAppConversationArchivedUseCase,
+  setWhatsAppConversationPinnedUseCase,
   uploadWhatsAppMediaUseCase,
 } from './whatsapp-chat-use-cases';
 
@@ -111,6 +117,25 @@ describe('WhatsApp chat use cases', () => {
   it('marks a conversation unread', async () => {
     await markWhatsAppConversationUnreadUseCase('507', '2026-09-27T12:00:00Z');
     expect(deps.markWhatsAppConversationUnread).toHaveBeenCalledWith('507', '2026-09-27T12:00:00Z');
+  });
+
+  it('pins and archives with a timestamp, and clears the flag with null', async () => {
+    await setWhatsAppConversationPinnedUseCase('50760000000', true);
+    await setWhatsAppConversationPinnedUseCase('50760000000', false);
+    await setWhatsAppConversationArchivedUseCase('50760000000', true);
+    await setWhatsAppConversationArchivedUseCase('50760000000', false);
+
+    expect(deps.setWhatsAppConversationPinned).toHaveBeenNthCalledWith(1, '50760000000', expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/));
+    expect(deps.setWhatsAppConversationPinned).toHaveBeenNthCalledWith(2, '50760000000', null);
+    expect(deps.setWhatsAppConversationArchived).toHaveBeenNthCalledWith(1, '50760000000', expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/));
+    expect(deps.setWhatsAppConversationArchived).toHaveBeenNthCalledWith(2, '50760000000', null);
+  });
+
+  it('rejects a malformed WhatsApp number before writing', async () => {
+    await expect(setWhatsAppConversationPinnedUseCase('abc', true)).rejects.toThrow('no es válido');
+    await expect(setWhatsAppConversationArchivedUseCase("507' or 1=1", true)).rejects.toThrow('no es válido');
+    expect(deps.setWhatsAppConversationPinned).not.toHaveBeenCalled();
+    expect(deps.setWhatsAppConversationArchived).not.toHaveBeenCalled();
   });
 
   it('hides a message from the inbox only', async () => {

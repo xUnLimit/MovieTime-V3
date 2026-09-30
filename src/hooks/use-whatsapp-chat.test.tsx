@@ -12,6 +12,8 @@ const useCases = vi.hoisted(() => ({
   markWhatsAppConversationReadUseCase: vi.fn(),
   markWhatsAppConversationUnreadUseCase: vi.fn(),
   sendWhatsAppMessageUseCase: vi.fn(),
+  setWhatsAppConversationArchivedUseCase: vi.fn(),
+  setWhatsAppConversationPinnedUseCase: vi.fn(),
   uploadWhatsAppMediaUseCase: vi.fn(),
 }));
 
@@ -23,6 +25,8 @@ import {
   useHideWhatsAppMessage,
   useMarkWhatsAppConversationRead,
   useMarkWhatsAppConversationUnread,
+  useSetWhatsAppConversationArchived,
+  useSetWhatsAppConversationPinned,
   useVentaMessageContext,
   useWhatsAppUnreadChats,
   useSendWhatsAppMessage,
@@ -131,6 +135,7 @@ describe('WhatsApp chat hooks', () => {
   it('counts chats with unread messages only for admins', async () => {
     useCases.fetchWhatsAppConversationsUseCase.mockResolvedValue([
       { waId: '1', unreadCount: 2 }, { waId: '2', unreadCount: 0 }, { waId: '3', unreadCount: 1 },
+      { waId: '4', unreadCount: 5, archived: true },
     ]);
     const { wrapper } = createWrapper();
 
@@ -139,6 +144,39 @@ describe('WhatsApp chat hooks', () => {
 
     const other = renderHook(() => useWhatsAppUnreadChats(false), { wrapper: createWrapper().wrapper });
     expect(other.result.current).toBe(0);
+  });
+
+  it('pins a conversation in the list right away and refreshes from the server', async () => {
+    useCases.setWhatsAppConversationPinnedUseCase.mockResolvedValue(undefined);
+    const { wrapper, invalidate } = createWrapper();
+    lastClient.setQueryData(['whatsapp', 'conversations'], [{ waId: '507', pinnedAt: null }, { waId: '508', pinnedAt: null }]);
+    const { result } = renderHook(() => useSetWhatsAppConversationPinned(), { wrapper });
+
+    result.current.mutate({ waId: '507', pinned: true });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(useCases.setWhatsAppConversationPinnedUseCase).toHaveBeenCalledWith('507', true);
+    const list = lastClient.getQueryData<Array<{ waId: string; pinnedAt: string | null }>>(['whatsapp', 'conversations']);
+    expect(list?.[0]?.pinnedAt).toEqual(expect.any(String));
+    expect(list?.[1]?.pinnedAt).toBeNull();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['whatsapp', 'conversations'] });
+  });
+
+  it('archives and unarchives a conversation and reloads the list when the server fails', async () => {
+    useCases.setWhatsAppConversationArchivedUseCase.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('forbidden'));
+    const { wrapper, invalidate } = createWrapper();
+    lastClient.setQueryData(['whatsapp', 'conversations'], [{ waId: '507', archived: false }]);
+    const { result } = renderHook(() => useSetWhatsAppConversationArchived(), { wrapper });
+
+    result.current.mutate({ waId: '507', archived: true });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(useCases.setWhatsAppConversationArchivedUseCase).toHaveBeenCalledWith('507', true);
+    expect(lastClient.getQueryData<Array<{ archived: boolean }>>(['whatsapp', 'conversations'])?.[0]?.archived).toBe(true);
+
+    invalidate.mockClear();
+    result.current.mutate({ waId: '507', archived: false });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['whatsapp', 'conversations'] });
   });
 
   it('loads the sale context only when a sale is chosen', async () => {

@@ -10,6 +10,8 @@ import {
   useHideWhatsAppMessage,
   useMarkWhatsAppConversationRead,
   useMarkWhatsAppConversationUnread,
+  useSetWhatsAppConversationArchived,
+  useSetWhatsAppConversationPinned,
   useSendWhatsAppMessage,
   useVentaMessageContext,
   useWhatsAppMessages,
@@ -51,6 +53,8 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   const sendMessage = useSendWhatsAppMessage();
   const { mutate: markRead } = useMarkWhatsAppConversationRead();
   const markUnread = useMarkWhatsAppConversationUnread();
+  const setPinned = useSetWhatsAppConversationPinned();
+  const setArchived = useSetWhatsAppConversationArchived();
   const hideMessage = useHideWhatsAppMessage(waId);
   const saveSticker = useSaveChatSticker();
 
@@ -208,6 +212,16 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
               markUnread.mutate({ waId, lastInboundAt: conversation.lastInboundAt }, { onSuccess: onBack });
             }
           }}
+          onTogglePin={() => setPinned.mutate({ waId, pinned: !conversation.pinnedAt }, {
+            onError: (error) => toast.error(getPublicErrorMessage(error, 'No se pudo cambiar el fijado. Intenta de nuevo.')),
+          })}
+          onToggleArchive={() => setArchived.mutate({ waId, archived: !conversation.archived }, {
+            onSuccess: () => {
+              toast.success(conversation.archived ? 'Conversación desarchivada.' : 'Conversación archivada. Volverá a la bandeja cuando el cliente escriba.');
+              if (!conversation.archived) onBack();
+            },
+            onError: (error) => toast.error(getPublicErrorMessage(error, 'No se pudo cambiar el archivado. Intenta de nuevo.')),
+          })}
         />
         {searchActive ? <div className="flex items-center gap-[9px] border-b border-chat-line bg-chat-raised px-3 py-2 md:px-5">
           <Search className="h-[15px] w-[15px] shrink-0 text-chat-quiet" strokeWidth={1.6} aria-hidden />

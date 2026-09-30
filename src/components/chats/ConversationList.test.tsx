@@ -12,17 +12,17 @@ const conversations: WhatsAppConversation[] = [
     waId: '50760000000', contactName: 'Mary', terceroId: 't1', terceroNombre: 'María Pérez',
     lastDirection: 'inbound', lastPreview: 'Ya pagué', lastMessageAt: new Date(2026, 8, 27, 10, 32).toISOString(),
     lastInboundAt: new Date(2026, 8, 27, 10, 32).toISOString(), unreadCount: 2, nextExpiry: '2026-09-27',
-    activeCategories: ['Netflix'],
+    activeCategories: ['Netflix'], pinnedAt: null, archived: false,
   },
   {
     waId: '50761111111', contactName: null, terceroId: null, terceroNombre: null,
     lastDirection: 'outbound', lastPreview: 'vence_hoy', lastMessageAt: new Date(2026, 8, 26, 9, 0).toISOString(),
-    lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [],
+    lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [], pinnedAt: null, archived: false,
   },
   {
     waId: '50762222222', contactName: 'Juan', terceroId: 't2', terceroNombre: 'Juan Gómez',
     lastDirection: 'inbound', lastPreview: 'Gracias', lastMessageAt: new Date(2026, 8, 20, 9, 0).toISOString(),
-    lastInboundAt: null, unreadCount: 0, nextExpiry: '2026-09-26', activeCategories: ['Crunchyroll'],
+    lastInboundAt: null, unreadCount: 0, nextExpiry: '2026-09-26', activeCategories: ['Crunchyroll'], pinnedAt: null, archived: false,
   },
 ];
 
@@ -50,6 +50,17 @@ function renderList(overrides: Partial<Parameters<typeof ConversationList>[0]> =
 }
 
 describe('ConversationList', () => {
+  it('marks pinned chats', () => {
+    const pinned = { ...conversations[1]!, pinnedAt: '2026-09-30T10:00:00Z' };
+    renderList({ visible: [pinned] });
+    expect(screen.getByLabelText('Fijado')).toBeTruthy();
+  });
+
+  it('shows a dedicated message when there are no archived chats', () => {
+    renderList({ visible: [], filter: 'archivados' });
+    expect(screen.getByText('No hay chats archivados')).toBeTruthy();
+  });
+
   it('tags each chat automatically with the active services of its client, and caps them when there are many', () => {
     const many = { ...conversations[0]!, waId: '50763333333', activeCategories: ['Canva', 'Crunchyroll', 'Disney+', 'Netflix'] };
     renderList({ visible: [conversations[0]!, conversations[1]!, many] });

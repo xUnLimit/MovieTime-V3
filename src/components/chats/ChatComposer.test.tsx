@@ -308,7 +308,7 @@ describe('ChatComposer', () => {
     expect(screen.queryByRole('menuitem', { name: 'Acciones' })).toBeNull();
     await user.keyboard('{Escape}');
 
-    const conversation = { waId: '50760000000', contactName: 'Mary', terceroId: null, terceroNombre: null, lastDirection: 'inbound' as const, lastPreview: '', lastMessageAt: '', lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [] };
+    const conversation = { waId: '50760000000', contactName: 'Mary', terceroId: null, terceroNombre: null, lastDirection: 'inbound' as const, lastPreview: '', lastMessageAt: '', lastInboundAt: null, unreadCount: 0, nextExpiry: null, activeCategories: [], pinnedAt: null, archived: false };
     renderComposer({ conversation });
     await user.click(screen.getAllByRole('button', { name: 'Respuestas rápidas y acciones' })[1]);
     expect(screen.getByRole('menuitem', { name: 'Acciones' })).toBeTruthy();
