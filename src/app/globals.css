@@ -522,8 +522,10 @@
  * animan la entrada; las transiciones de salida viven en sus hijos para que no se pisen.
  */
 @keyframes login-rise {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
+  /* Solo desplazamiento: no parte de opacity 0, asi el primer cuadro ya pinta el contenido (Lighthouse
+     midio NO_FCP con la entrada invisible porque sus animaciones no avanzan) y el texto siempre es legible. */
+  from { transform: translateY(12px); }
+  to { transform: none; }
 }
 
 .login-rise {
