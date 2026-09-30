@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CheckCircle, XCircle, ShoppingCart, Monitor } from "lucide-react";
 import {
   Dialog,
@@ -39,9 +39,12 @@ export function CambiarEstadoVentaDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset al abrir para una venta distinta
-  useEffect(() => {
+  const resetKey = `${venta?.id ?? ""}|${modo}`;
+  const [lastResetKey, setLastResetKey] = useState(resetKey);
+  if (resetKey !== lastResetKey) {
+    setLastResetKey(resetKey);
     setAlcance("venta");
-  }, [venta?.id, modo]);
+  }
 
   if (!venta) return null;
 

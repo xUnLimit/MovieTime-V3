@@ -70,6 +70,9 @@ describe('LoginScreen', () => {
   });
 
   it('shows the error inline, shakes the card and lets the user retry when login fails', async () => {
+    // El reintento entra con exito: con reloj real su espera de animacion seguiria viva y
+    // llamaria a push durante el test siguiente.
+    vi.useFakeTimers();
     const animate = vi.fn();
     HTMLElement.prototype.animate = animate;
     mocks.login.mockRejectedValueOnce(new Error('bad credentials'));

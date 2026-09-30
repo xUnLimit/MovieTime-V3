@@ -54,7 +54,12 @@ export function BaseTooltip({
     <Tooltip
       contentStyle={chartTooltipStyle}
       labelStyle={chartTooltipLabelStyle}
-      formatter={formatter}
+      formatter={(value, name) =>
+        formatter(
+          typeof value === "number" ? value : undefined,
+          typeof name === "string" ? name : undefined,
+        )
+      }
       labelFormatter={(label, payload) => {
         if (payload && payload.length > 0) {
           const dateStr = payload[0].payload.fullDate;

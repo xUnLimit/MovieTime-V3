@@ -91,8 +91,8 @@ export function RevenueByCategoryChart({
             labelStyle={chartTooltipLabelStyle}
             itemStyle={{ color: labelColor }}
             wrapperStyle={{ maxWidth: isCompactChart ? 180 : undefined }}
-            formatter={(value: number | undefined) => {
-              const v = value ?? 0;
+            formatter={(value) => {
+              const v = typeof value === "number" ? value : 0;
               const formatted =
                 vista.id === "ganancia"
                   ? `$${v.toFixed(2)} USD`

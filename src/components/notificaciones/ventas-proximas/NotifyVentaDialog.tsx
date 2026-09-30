@@ -59,9 +59,10 @@ export function NotifyVentaDialog({
     template?.metaTemplateName
       && metaTemplates.some((meta) => meta.name === template.metaTemplateName && isUsableMetaTemplate(meta)),
   );
+  const templateContent = template?.contenido;
   const preview = useMemo(
-    () => (template?.contenido ? buildNoticePreview(notification, template.contenido) : null),
-    [notification, template?.contenido],
+    () => (templateContent ? buildNoticePreview(notification, templateContent) : null),
+    [notification, templateContent],
   );
   const isBusy = sendNotices.isPending || isOpeningWhatsApp;
 

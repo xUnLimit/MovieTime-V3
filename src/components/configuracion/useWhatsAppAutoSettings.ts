@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -21,12 +21,15 @@ export function useWhatsAppAutoSettings(enabled: boolean) {
     queryFn: listAutoNoticeRunsUseCase,
     enabled,
   });
-  const [draftCap, setDraftCap] = useState('');
+  const [draftCap, setDraftCap] = useState(auto ? String(auto.autoDailyCap) : '');
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
+  // Sincroniza el borrador cuando llega una configuracion nueva del servidor.
+  const [syncedAuto, setSyncedAuto] = useState(auto);
+  if (auto !== syncedAuto) {
+    setSyncedAuto(auto);
     if (auto) setDraftCap(String(auto.autoDailyCap));
-  }, [auto]);
+  }
 
   const save = async (updates: WhatsAppAutoUpdate, okMessage: string) => {
     setIsSaving(true);

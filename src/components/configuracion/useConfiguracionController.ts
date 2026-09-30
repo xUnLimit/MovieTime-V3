@@ -73,7 +73,11 @@ export function useConfiguracionController() {
     return getExecutivePushStatus(executivePush);
   }, [executivePush]);
 
-  useEffect(() => {
+  // Sincroniza los borradores cuando cambia el horario guardado en el servidor.
+  const savedSchedule = `${executivePush?.windowStart ?? ''}|${executivePush?.windowEnd ?? ''}|${executivePush?.intervalHours ?? ''}`;
+  const [syncedSchedule, setSyncedSchedule] = useState<string | null>(null);
+  if (savedSchedule !== syncedSchedule) {
+    setSyncedSchedule(savedSchedule);
     if (executivePush?.windowStart) {
       setDraftWindowStart(executivePush.windowStart);
     }
@@ -83,7 +87,7 @@ export function useConfiguracionController() {
     if (executivePush?.intervalHours) {
       setDraftIntervalHours(executivePush.intervalHours);
     }
-  }, [executivePush?.windowStart, executivePush?.windowEnd, executivePush?.intervalHours]);
+  }
 
   const handlePushSubscriptionToggle = async (enabled: boolean) => {
     try {

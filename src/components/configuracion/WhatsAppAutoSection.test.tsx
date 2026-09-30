@@ -50,6 +50,17 @@ describe('WhatsAppAutoSection', () => {
     expect(screen.getByLabelText('Tope diario de envíos').hasAttribute('disabled')).toBe(true);
   });
 
+  it('keeps the hour select controlled while the config loads', () => {
+    // Radix avisa del cambio controlado/no controlado con console.warn.
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const view = render(<WhatsAppAutoSection settings={settings({ autoConfig: null })} />);
+    expect(screen.getByRole('combobox', { name: 'Hora de envío' }).textContent).toContain('Selecciona la hora');
+    view.rerender(<WhatsAppAutoSection settings={settings()} />);
+    expect(screen.getByRole('combobox', { name: 'Hora de envío' }).textContent).toContain('09:00');
+    expect(consoleWarn.mock.calls.flat().join(' ')).not.toMatch(/uncontrolled to controlled/);
+    consoleWarn.mockRestore();
+  });
+
   it('lists the last runs with sent, failed and skipped counts', () => {
     render(<WhatsAppAutoSection settings={settings({
       runs: [{ id: 'r1', runDate: '2026-09-27', status: 'done', sent: 12, failed: 2, skipped: 3, alreadySent: 0 }],

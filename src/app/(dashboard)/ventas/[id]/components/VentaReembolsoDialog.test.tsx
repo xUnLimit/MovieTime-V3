@@ -63,6 +63,20 @@ describe('VentaReembolsoDialog', () => {
     expect(inactivateService.getAttribute('aria-checked')).toBe('true');
   });
 
+  it('starts again from the first step when the dialog is closed and reopened', () => {
+    const props = { onOpenChange: vi.fn(), venta, metodosPago: [], montoSugerido: 30, onConfirm: vi.fn() };
+    const view = render(<VentaReembolsoDialog open {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    fireEvent.change(screen.getByLabelText('Cuenta destino del cliente'), { target: { value: 'Yappy 6000-0000' } });
+
+    view.rerender(<VentaReembolsoDialog open={false} {...props} />);
+    view.rerender(<VentaReembolsoDialog open {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect((screen.getByLabelText('Cuenta destino del cliente') as HTMLInputElement).value).toBe('');
+  });
+
   it('keeps the confirm button disabled until the destination is filled and then submits the refund once', async () => {
     const onConfirm = vi.fn().mockResolvedValue(undefined);
     render(

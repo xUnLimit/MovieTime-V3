@@ -51,7 +51,8 @@ export function WhatsAppAutoSection({ settings }: { settings: AutoSettings }) {
         <div className="space-y-1.5">
           <Label htmlFor="whatsapp-auto-hour">Hora de envío (hora de Panamá)</Label>
           <Select
-            value={autoConfig ? String(autoConfig.autoSendHour) : undefined}
+            // '' (no undefined) mientras carga: el Select queda controlado desde el inicio y muestra el placeholder.
+            value={autoConfig ? String(autoConfig.autoSendHour) : ''}
             disabled={disabled}
             onValueChange={(value) => { void handleHourChange(Number(value)); }}
           >

@@ -164,8 +164,8 @@ export function IngresosVsGastosChart() {
               labelStyle={chartTooltipLabelStyle}
               cursor={{ stroke: chartColors.grid }}
               itemSorter={(item) => (item.dataKey === 'ingresos' ? 0 : 1)}
-              formatter={(value: number | undefined) => {
-                if (value === undefined) return '';
+              formatter={(value) => {
+                if (typeof value !== 'number') return '';
                 return `$${value.toFixed(2)}`;
               }}
               labelFormatter={(label, payload) => {

@@ -73,6 +73,12 @@ describe('NotifyVentaDialog', () => {
     expect(screen.getByText(/Hola Ana Pérez, tu Netflix vence/)).toBeTruthy();
   });
 
+  it('shows no preview when the notice type has no active template', () => {
+    mocks.templates.mockReturnValue({ data: [] });
+    renderDialog();
+    expect(screen.queryByText(/Hola Ana Pérez/)).toBeNull();
+  });
+
   it('announces WhatsApp when there is no approved linked template', () => {
     renderDialog();
     expect(screen.getByTestId('notice-channel').textContent).toBe('Se abrirá WhatsApp');

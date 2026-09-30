@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "**/*.json",
     "next-env.d.ts",
+    // Skills locales de agentes (ignoradas por git; no son codigo del proyecto).
+    ".agents/**",
+    ".claude/**",
   ]),
   {
     rules: {

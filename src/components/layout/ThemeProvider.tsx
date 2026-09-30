@@ -41,41 +41,57 @@ function applyTheme(theme: Theme): ResolvedTheme {
   return resolvedTheme;
 }
 
+// Tema guardado y preferencia del sistema como fuente externa: evita setState en efectos
+// y, con el snapshot de servidor nulo, no provoca desajustes de hidratacion.
+const themeListeners = new Set<() => void>();
+
+function notifyThemeListeners() {
+  themeListeners.forEach((listener) => listener());
+}
+
+function subscribeTheme(listener: () => void) {
+  themeListeners.add(listener);
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  window.addEventListener('storage', listener);
+  mediaQuery.addEventListener('change', listener);
+  return () => {
+    themeListeners.delete(listener);
+    window.removeEventListener('storage', listener);
+    mediaQuery.removeEventListener('change', listener);
+  };
+}
+
+function readStoredTheme(): string | null {
+  return window.localStorage.getItem(STORAGE_KEY);
+}
+
+const readServerNull = () => null;
+
 export function ThemeProvider({
   children,
   defaultTheme = 'dark',
   enableSystem = true,
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme>(
-    defaultTheme === 'light' ? 'light' : 'dark'
-  );
+  const storedTheme = React.useSyncExternalStore(subscribeTheme, readStoredTheme, readServerNull);
+  const systemTheme = React.useSyncExternalStore(subscribeTheme, getSystemTheme, readServerNull);
+
+  const theme: Theme =
+    storedTheme === 'light' || storedTheme === 'dark' || (enableSystem && storedTheme === 'system')
+      ? storedTheme
+      : defaultTheme;
+  const resolvedTheme: ResolvedTheme =
+    theme === 'system'
+      ? systemTheme ?? (defaultTheme === 'light' ? 'light' : 'dark')
+      : theme;
 
   React.useEffect(() => {
-    const storedTheme = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initialTheme =
-      storedTheme === 'light' || storedTheme === 'dark' || (enableSystem && storedTheme === 'system')
-        ? storedTheme
-        : defaultTheme;
-
-    setThemeState(initialTheme);
-    setResolvedTheme(applyTheme(initialTheme));
-  }, [defaultTheme, enableSystem]);
-
-  React.useEffect(() => {
-    if (!enableSystem || theme !== 'system') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => setResolvedTheme(applyTheme('system'));
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [enableSystem, theme]);
+    applyTheme(theme);
+  }, [theme, systemTheme]);
 
   const setTheme = React.useCallback((nextTheme: Theme) => {
-    setThemeState(nextTheme);
     window.localStorage.setItem(STORAGE_KEY, nextTheme);
-    setResolvedTheme(applyTheme(nextTheme));
+    applyTheme(nextTheme);
+    notifyThemeListeners();
   }, []);
 
   const value = React.useMemo(

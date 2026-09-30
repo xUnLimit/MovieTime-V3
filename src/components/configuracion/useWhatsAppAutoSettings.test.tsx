@@ -3,17 +3,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const whatsapp = (autoDailyCap: number) => ({ prefijoTelefono: '507', autoEnabled: false, autoDailyCap, autoSendHour: 9 });
 const mocks = vi.hoisted(() => ({
   update: vi.fn(), list: vi.fn(), refetch: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn(),
+  config: undefined as { whatsapp: unknown } | undefined,
 }));
 vi.mock('@/application/use-cases/config-use-cases', () => ({
   updateWhatsAppAutoUseCase: mocks.update,
   listAutoNoticeRunsUseCase: mocks.list,
 }));
-vi.mock('@/hooks/use-config', () => {
-  const data = { whatsapp: { prefijoTelefono: '507', autoEnabled: false, autoDailyCap: 200, autoSendHour: 9 } };
-  return { useConfig: () => ({ data, refetch: mocks.refetch }) };
-});
+vi.mock('@/hooks/use-config', () => ({ useConfig: () => ({ data: mocks.config, refetch: mocks.refetch }) }));
 vi.mock('sonner', () => ({ toast: { error: mocks.toastError, success: mocks.toastSuccess } }));
 
 import { useWhatsAppAutoSettings } from './useWhatsAppAutoSettings';
@@ -29,6 +28,21 @@ describe('useWhatsAppAutoSettings', () => {
     mocks.update.mockResolvedValue(undefined);
     mocks.list.mockResolvedValue([]);
     mocks.refetch.mockResolvedValue(undefined);
+    mocks.config = { whatsapp: whatsapp(200) };
+  });
+
+  it('fills the cap draft when the config arrives and follows later server changes', () => {
+    mocks.config = undefined;
+    const { result, rerender } = renderHook(() => useWhatsAppAutoSettings(true), { wrapper });
+    expect(result.current.draftCap).toBe('');
+
+    mocks.config = { whatsapp: whatsapp(200) };
+    rerender();
+    expect(result.current.draftCap).toBe('200');
+
+    mocks.config = { whatsapp: whatsapp(300) };
+    rerender();
+    expect(result.current.draftCap).toBe('300');
   });
 
   it('persists the switch and refreshes the config', async () => {

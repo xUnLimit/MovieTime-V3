@@ -80,8 +80,11 @@ export function VentaReembolsoDialog({
     refundDate !== null &&
     (!requiereMotivo || motivoCorte.trim().length > 0);
 
-  useEffect(() => {
-    if (!open) return;
+  // Reinicia el formulario al abrir o si cambia la venta/sugerencia con el dialogo abierto.
+  const [resetFor, setResetFor] = useState<{ venta: VentaDoc; montoSugerido: number } | null>(null);
+  if (!open && resetFor !== null) setResetFor(null);
+  if (open && (resetFor?.venta !== venta || resetFor.montoSugerido !== montoSugerido)) {
+    setResetFor({ venta, montoSugerido });
     const initialDate = toDateInputValue(new Date());
     setStep('accion');
     setAccion('reembolso');
@@ -98,7 +101,7 @@ export function VentaReembolsoDialog({
     setMotivoCorte('');
     setInactivarServicio(false);
     setIsSubmitting(false);
-  }, [open, montoSugerido, venta]);
+  }
 
   const handleDateChange = (value: string) => {
     setFecha(value);
