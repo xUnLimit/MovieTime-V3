@@ -1,19 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { XCircle } from 'lucide-react';
 
 interface ConfirmDeleteVentaDialogProps {
   open: boolean;
@@ -35,64 +25,45 @@ export function ConfirmDeleteVentaDialog({
     setIsLoading(true);
     try {
       await onConfirm(deletePagos);
-      setDeletePagos(false); // Reset checkbox
     } finally {
       setIsLoading(false);
+      setDeletePagos(false);
     }
   };
 
-  const handleCancel = () => {
-    setDeletePagos(false); // Reset checkbox on cancel
-    onOpenChange(false);
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setDeletePagos(false);
+    onOpenChange(next);
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-muted p-2 text-danger">
-              <XCircle className="h-5 w-5" />
-            </div>
-            <AlertDialogTitle>Eliminar Venta</AlertDialogTitle>
-          </div>
-          <AlertDialogDescription className="pt-2">
-            ¿Estás seguro de que quieres eliminar {ventaNombre}? Esta acción no se puede deshacer.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-
-        <div className="flex items-start space-x-3 py-4">
-          <Checkbox
-            id="delete-pagos"
-            checked={deletePagos}
-            onCheckedChange={(checked) => setDeletePagos(checked as boolean)}
-            className="mt-1"
-          />
-          <div className="flex-1 space-y-1">
-            <Label
-              htmlFor="delete-pagos"
-              className="text-sm font-medium leading-none cursor-pointer"
-            >
-              Eliminar también historial de pagos
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              Al marcar esta opción, se eliminarán todos los registros de pago de la base de datos. Si no se marca, se conservarán para historial.
-            </p>
-          </div>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      onConfirm={handleConfirm}
+      title="Eliminar Venta"
+      description={`¿Estás seguro de que quieres eliminar ${ventaNombre}? Esta acción no se puede deshacer.`}
+      confirmText="Eliminar"
+      loadingText="Eliminando..."
+      variant="danger"
+      loading={isLoading}
+    >
+      <div className="flex items-start space-x-3">
+        <Checkbox
+          id="delete-pagos"
+          checked={deletePagos}
+          onCheckedChange={(checked) => setDeletePagos(checked === true)}
+          className="mt-1"
+        />
+        <div className="flex-1 space-y-1">
+          <Label htmlFor="delete-pagos" className="cursor-pointer text-sm font-medium leading-none">
+            Eliminar también historial de pagos
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Al marcar esta opción, se eliminarán todos los registros de pago de la base de datos. Si no se marca, se conservarán para historial.
+          </p>
         </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel} disabled={isLoading}>
-            Cancelar
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            disabled={isLoading}
-            className="bg-danger hover:bg-danger/90"
-          >
-            {isLoading ? 'Eliminando...' : 'Eliminar'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      </div>
+    </ConfirmDialog>
   );
 }
