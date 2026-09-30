@@ -5,6 +5,7 @@ import {
   groupNoticeVentas,
   isNoticeEligible,
   metaParamsFromMap,
+  maskCredentials,
   noticeDedupeKey,
   normalizePanamaWaId,
   renderFreeText,
@@ -223,5 +224,29 @@ describe('noticeDedupeKey', () => {
     expect(first).toBe(noticeDedupeKey('actualizacion_credenciales', 'c1', fecha, ['a'], 'evento-1'));
     expect(first).toMatch(/^actualizacion_credenciales:c1:2026-10-05:[0-9a-f]{16}$/);
     expect(noticeDedupeKey('actualizacion_credenciales', 'c1', fecha, ['a'], undefined)).toBe(base);
+  });
+});
+
+describe('maskCredentials', () => {
+  it('hides the password and PIN everywhere, keeping the rest of the message readable', () => {
+    const data = buildMessageData(groupNoticeVentas([venta({ contrasena: 'clave-secreta', codigo: '4321' })])[0]!, { saludo: 'Hola', now: day(2026, 10, 1, 9) });
+    const masked = maskCredentials(data);
+    expect(masked.contrasena).toBe('••••••••');
+    expect(masked.codigo).toBe('••••••••');
+    expect(masked.itemRows[0]).toMatchObject({ contrasena: '••••••••', codigo: '••••••••' });
+    expect(masked.correo).toBe(data.correo);
+    const template = ['{correo} / {contrasena} / {codigo}', '{{#items}}', '{categoria}: {contrasena}', '{{/items}}'].join('\n');
+    const text = renderFreeText(template, masked);
+    expect(text).not.toContain('clave-secreta');
+    expect(text).not.toContain('4321');
+  });
+
+  it('leaves empty values alone and does not modify the original data', () => {
+    const data = buildMessageData(groupNoticeVentas([venta({ contrasena: '', codigo: '' })])[0]!, { saludo: 'Hola', now: day(2026, 10, 1, 9) });
+    expect(maskCredentials(data).contrasena).toBe(data.contrasena);
+    expect(maskCredentials(data).codigo).toBe(data.codigo);
+    const filled = buildMessageData(groupNoticeVentas([venta({ contrasena: 'x' })])[0]!, { saludo: 'Hola', now: day(2026, 10, 1, 9) });
+    maskCredentials(filled);
+    expect(filled.contrasena).toBe('x');
   });
 });

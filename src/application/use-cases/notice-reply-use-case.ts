@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { buildMessageData, renderFreeText, type NoticeGroup } from '@/modules/messaging/message-data';
+import { buildMessageData, maskCredentials, renderFreeText, type NoticeGroup } from '@/modules/messaging/message-data';
 import type { NoticeStore } from '@/modules/messaging/notice-store';
 import type { NoticeReplyAction, NoticeReplyStore } from '@/modules/messaging/notice-reply-store';
 import type { NewOutboundMessage, OutboundResult } from '@/modules/whatsapp/outbound-messages';
@@ -10,7 +10,6 @@ import { createLogger } from '@/platform/observability/logger';
 import { isUuid } from '@/platform/utils/safety';
 
 const MAX_NOTICE_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-const CREDENTIALS_REDACTION = '[Credenciales enviadas]';
 const log = createLogger('NoticeReply');
 
 export type NoticeReplyDeps = {
@@ -70,7 +69,8 @@ export async function handleNoticeReply(message: InboundMessage, deps: NoticeRep
       : action === 'NO_CONTINUAR' ? 'despedida' : notice.tipo;
     const template = await deps.notices.loadTemplate(tipo);
     if (!template?.contenido) throw new Error('Notice reply template is unavailable');
-    const rendered = renderFreeText(template.contenido, buildMessageData(group, { now }));
+    const data = buildMessageData(group, { now });
+    const rendered = renderFreeText(template.contenido, data);
     if (!rendered || rendered.length > 4096) throw new Error('Notice reply text is invalid');
     if (action === 'NO_CONTINUAR') {
       await deps.replies.declineVentas(ventaIds, now.toISOString());
@@ -85,7 +85,8 @@ export async function handleNoticeReply(message: InboundMessage, deps: NoticeRep
       idempotencyKey: randomUUID(), toWaId: notice.wa_id,
       payload: { kind: 'text', text: rendered, replyTo: message.waMessageId },
       sentBy: null,
-      ...(action === 'DATOS' ? { storedTextBody: CREDENTIALS_REDACTION } : {}),
+      // El cliente recibe el texto real; el chat guarda el mismo texto con contrasena y PIN ocultos.
+      ...(action === 'DATOS' ? { storedTextBody: renderFreeText(template.contenido, maskCredentials(data)) } : {}),
     });
     if (result.sendStatus !== 'accepted') throw new Error('Notice reply send was not accepted');
     await deps.replies.finish(noticeId, action, 'accepted');

@@ -118,7 +118,7 @@ describe('handleNoticeReply', () => {
   });
 
   it.each(['actualizacion_credenciales', 'transferencia_servicio'] as const)
-  ('loads current credentials and redacts outbound storage for %s', async (tipo) => {
+  ('loads current credentials and stores a masked copy for %s', async (tipo) => {
     const deps = fixture();
     deps.replies.findNotice.mockResolvedValue({ ...notice, tipo });
     const message = { ...inbound, payload: { type: 'template_button', payload: `DATOS:${ID}`, text: 'Recibir mis datos' } };
@@ -126,9 +126,11 @@ describe('handleNoticeReply', () => {
     expect(deps.notices.loadVentas).toHaveBeenCalledWith(['sale-1']);
     expect(deps.notices.loadTemplate).toHaveBeenCalledWith(tipo);
     expect(deps.send).toHaveBeenCalledWith(expect.objectContaining({
-      storedTextBody: '[Credenciales enviadas]',
+      // El cliente recibe la contraseña real; el chat guarda el mismo texto con contraseña y PIN ocultos.
+      storedTextBody: 'Hola Cliente Ejemplo: cuenta@example.test / •••••••• / ••••••••',
       payload: expect.objectContaining({ text: expect.stringContaining(venta.contrasena) }),
     }));
+    expect(deps.send.mock.calls[0]![0].storedTextBody).not.toContain(venta.contrasena);
   });
 
   it.each([

@@ -133,6 +133,22 @@ function firstName(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] ?? '';
 }
 
+const SECRET_MASK = '••••••••';
+
+/**
+ * Copia de los datos con la contrasena y el PIN ocultos, para guardar en el chat lo que se envio
+ * sin dejar los secretos en la bandeja. El mensaje real que recibe el cliente no usa esta copia.
+ */
+export function maskCredentials(data: MessageData): MessageData {
+  const hide = (value: string) => (value && value !== EMPTY ? SECRET_MASK : value);
+  return {
+    ...data,
+    contrasena: hide(data.contrasena),
+    codigo: hide(data.codigo),
+    itemRows: data.itemRows.map((row) => ({ ...row, contrasena: hide(row.contrasena), codigo: hide(row.codigo) })),
+  };
+}
+
 function itemRow(venta: NoticeVenta): MessageItemData {
   return {
     servicio: venta.servicioNombre || venta.categoriaNombre,
