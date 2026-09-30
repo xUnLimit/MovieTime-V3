@@ -19,6 +19,20 @@
 - Feature flag: runtime rollout switch stored in Supabase and read through React Query.
 - Store event: typed client-side business event used to invalidate queries/stores without DOM/localStorage coupling.
 - Idempotency key: client-generated UUID passed to critical RPCs so network retries do not duplicate ventas, servicios, pagos or refunds.
+- Corte: ending a venta early, optionally inactivating its servicio, usually together with a refund.
+
+## Messaging (WhatsApp)
+
+- Plantilla (template): message text edited in `/editor-mensajes`, keyed by tipo (`dia_pago`, `cancelacion`, `renovacion`, `suscripcion`, `actualizacion_credenciales`, `transferencia_servicio`, `datos_pago`, `despedida`). It can be linked to an approved Meta template so it can be sent outside the 24h window.
+- Plantilla Meta: template approved by Meta for the WhatsApp Cloud API. The approved list lives in `docs/whatsapp/plantillas-meta-v2.md`.
+- Aviso: expiration or cancellation message sent to a cliente for a venta, manually from `/notificaciones` or automatically by cron. Avisos are deduplicated per venta and event.
+- Envio automatico: hourly cron that sends payment-day avisos. It is controlled from Configuracion by an on/off switch, the send hour (Panama time) and a daily cap.
+- Boton de respuesta: quick reply on an aviso that triggers an action: `RENOVAR` sends payment details, `NO_CONTINUAR` records that the cliente will not renew, `DATOS` sends access credentials.
+- Chat: WhatsApp conversation shown in `/chats`, stored from the Meta webhook together with delivery statuses and media.
+
+## Payments detection (Yappy)
+
+- Aviso Yappy: payment notification email read by IMAP and shown in `/pagos-yappy`. It never creates `pagos_venta` by itself. An operator registers the payment through the normal renewal flow and then reconciles or discards the aviso.
 
 ## Architecture
 
@@ -31,6 +45,8 @@
 - `src/modules/dashboard-read-models` and `src/modules/forecasting` own dashboard/forecast reads and sync. New dashboard code should not add client-side metric mutation APIs.
 - `src/platform/events` owns typed client business events through `StoreEventBus`.
 - `src/platform/supabase` owns Supabase clients, repositories, mappers and generated database types.
+- `src/modules/messaging` owns template tipos, aviso storage, reply buttons and Meta template mapping. `src/modules/whatsapp` owns the Cloud API client, webhook parsing, outbound messages and media.
+- `src/modules/yappy` owns parsing of Yappy payment emails.
 - `src/modules/services` contains operational services that still have their own domain behavior. Do not add dashboard metric mutation or notification sync interfaces here when a deep module already exists.
 - `supabase/migrations` owns schema, views, RPC functions, triggers and RLS.
 - `scripts` owns maintenance and validation commands.
@@ -41,11 +57,4 @@ Critical RPCs that create ventas, servicios, payments or refunds must be called 
 
 ## Validation
 
-Use these commands before merging meaningful changes:
-
-```bash
-npm run lint
-npm test -- --run
-npm run build
-npm run migrate:validate
-```
+The definition of done and the required commands are in `AGENTS.md`.

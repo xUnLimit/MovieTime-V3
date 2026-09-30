@@ -64,8 +64,5 @@ supabase/.temp/
 
 # AI agent skills (local tooling, not project code)
 .agents/
+.claude/skills/
 skills-lock.json
-
-# Scripts empaquetados de terceros de la skill impeccable: se instalan localmente,
-# no se versionan (el escaner de secretos los marca como falsos positivos).
-.claude/skills/impeccable/scripts/

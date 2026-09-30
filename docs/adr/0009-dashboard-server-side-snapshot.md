@@ -1,4 +1,4 @@
-# ADR-0002: Dashboard Snapshot Server-Side
+# ADR-0009: Dashboard Snapshot Server-Side
 
 **Status:** Accepted  
 **Date:** 2026-05-31

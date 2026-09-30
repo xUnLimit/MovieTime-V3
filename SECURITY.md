@@ -16,6 +16,14 @@ Solo la revision actualmente desplegada desde `main` recibe correcciones. Las ve
 - Los secretos confirmados se revocan y rotan; eliminarlos del Git actual no reemplaza la rotacion ni la limpieza del historial.
 - La CSP de produccion no admite `unsafe-eval`. Zod se consume mediante `@/platform/validation/zod` en modo `jitless`, y ESLint bloquea imports directos que omitan esa configuracion.
 
+## Integraciones y secretos
+
+- Webhook de WhatsApp: todo POST se valida con la firma `x-hub-signature-256` (HMAC con `WHATSAPP_APP_SECRET`) antes de procesarlo. La verificacion inicial exige `WHATSAPP_VERIFY_TOKEN`.
+- Endpoints de cron (push ejecutivo, avisos automaticos de WhatsApp, sincronizacion Yappy): exigen `Authorization: Bearer` con su secreto propio y lo comparan en tiempo constante. Supabase lee el mismo valor desde Vault; nunca va en una migracion.
+- Yappy lee Gmail por IMAP con TLS verificado, en modo solo lectura y con una contrasena de aplicacion revocable. Solo guarda los datos del pago de clientes activos con ventas activas.
+- Todos los secretos viven en variables de entorno de Vercel o en Supabase Vault, sin prefijo `NEXT_PUBLIC_`. Si se filtra uno, se rota tanto en Vercel como en Meta, Google o Vault.
+- El hook `.githooks/pre-commit` y CI ejecutan `secrets:scan`. Activalo localmente con `git config core.hooksPath .githooks`.
+
 ## Respuesta a incidentes
 
 1. Contener: deshabilitar la ruta, integracion o credencial afectada y preservar evidencia sin datos sensibles.

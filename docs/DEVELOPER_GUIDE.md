@@ -1,7 +1,7 @@
 # Developer Guide — MovieTime PTY
 
 Guía práctica de desarrollo. Las **reglas de arquitectura e imports por capa** viven en
-[`CLAUDE.md`](../CLAUDE.md) (no se repiten aquí); el vocabulario de dominio en
+[`AGENTS.md`](../AGENTS.md) (no se repiten aquí); el vocabulario de dominio en
 [`CONTEXT.md`](../CONTEXT.md); las decisiones en [`docs/adr/`](adr/README.md).
 
 ---
@@ -23,7 +23,7 @@ Supabase / Postgres           fuente de verdad (tablas, RPC, RLS)
 ```
 
 Regla de oro: las flechas solo apuntan hacia abajo. La matriz exacta de qué puede importar
-cada capa está en `CLAUDE.md` y la valida `src/platform/architecture-boundaries.test.ts`.
+cada capa está en `AGENTS.md` y la valida `src/platform/architecture-boundaries.test.ts`.
 
 ---
 
@@ -64,13 +64,7 @@ interno privado.
 
 ## Antes de mergear
 
-```bash
-npm run lint
-npm run typecheck
-npm test -- --run
-npm run test:coverage
-npm run build
-npm run migrate:validate   # si tocaste Supabase/schema
-```
-
-El CI (`.github/workflows/quality.yml`) corre estos gates en cada PR.
+Mientras iteras usa `npm run quality:fast`. Un cambio esta terminado solo cuando pasa
+`npm run quality:full` (definicion en `AGENTS.md`). Si tocaste Supabase, corre ademas
+`npm run migrate:validate`. El CI (`.github/workflows/quality.yml`) repite los gates en cada
+push y PR.

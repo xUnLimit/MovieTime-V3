@@ -1,16 +1,28 @@
-# Scripts de Mantenimiento
+# Scripts
 
-Scripts operativos para Supabase.
+Gates de calidad y scripts operativos. Se ejecutan con los comandos de `package.json`.
 
-| Script | Descripcion |
-|--------|-------------|
-| `validate-supabase-migration.ts` | Valida conteos actuales de Supabase y ejecuta `run_all_validations()` |
-| `reset-supabase-staging.ts` | Limpia una base Supabase de staging con confirmacion explicita |
+## Gates de calidad
 
-## Comandos
+| Script | Comando | Que hace |
+|--------|---------|----------|
+| `scan-secrets.mjs` | `secrets:scan`, `secrets:scan:all` | Busca secretos en los archivos cambiados o, con `--all`, en todos los archivos versionados |
+| `check-design-tokens.mjs` | `design:check` | Falla ante colores, tamanos o pesos de fuente fuera de `DESIGN.md` |
+| `security-audit.mjs` | `security:audit:prod`, `security:audit:all` | Audita dependencias contra `security-audit-exceptions.json` |
+| `validate-migration-safety.mjs` | `migrate:lint` | Bloquea migraciones destructivas o no compatibles hacia atras |
+| `check-diff-coverage.mjs` | `coverage:diff` | Exige la cobertura minima sobre las lineas cambiadas |
+| `build-verification.mjs` | `build:verify` | Build productivo con valores de relleno para las variables que faltan (sirve en CI sin secretos) |
+| `run-browser-gate.mjs` | `test:e2e`, `test:a11y`, `test:performance` | Levanta la app y corre Playwright por etiqueta |
+| `run-lighthouse-gate.mjs` | `test:lighthouse` | Corre Lighthouse con los presupuestos de `lighthouserc.json` |
+| `validate-env.ts` | `env:validate` | Valida las variables de entorno con el mismo esquema de la app |
 
-```bash
-npm run migrate:validate
-npm run supabase:reset:dry
-npm run supabase:reset
-```
+## Operacion y despliegue
+
+| Script | Comando | Que hace |
+|--------|---------|----------|
+| `validate-supabase-migration.ts` | `migrate:validate` | Cuenta tablas y ejecuta `run_all_validations()` en Supabase |
+| `verify-notification-integrity.ts` | `notifications:verify` | Compara las notificaciones guardadas en Supabase con las que deberian existir |
+| `reset-supabase-staging.ts` | `supabase:reset:dry`, `supabase:reset` | Limpia una base de staging; exige confirmacion explicita y nunca corre contra produccion |
+| `vercel-production-alias.mjs` | usado por CI | Consulta, promueve y revierte el deployment productivo en Vercel |
+| `lighthouse-vercel-auth.cjs` | usado por CI | Autentica Lighthouse contra el deployment staged |
+| `supabase-admin.ts` | modulo interno | Cliente admin de Supabase compartido por los scripts |
