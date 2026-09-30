@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, useEffect, useLayoutEffect, useRef, useImperativeHandle, useState } from 'react';
-import { ClipboardList, FileText, ListChecks, Lock, Mic, Paperclip, Plus, Send, Sticker as StickerIcon, Square, X, Zap } from 'lucide-react';
+import { Bookmark, FileText, ListChecks, Lock, Mic, MousePointerClick, Paperclip, Plus, Send, Sticker as StickerIcon, Square, X, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -287,8 +287,8 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" className="chat-menu w-56">
-              <DropdownMenuItem onSelect={() => setSavedMessagesOpen(true)}><Zap className="mr-2 h-4 w-4" aria-hidden /> Mensajes guardados</DropdownMenuItem>
-              {conversation ? <DropdownMenuItem onSelect={() => setActionsOpen(true)}><ClipboardList className="mr-2 h-4 w-4" aria-hidden /> Acciones</DropdownMenuItem> : null}
+              <DropdownMenuItem onSelect={() => setSavedMessagesOpen(true)}><Bookmark className="mr-2 h-4 w-4" aria-hidden /> Mensajes guardados</DropdownMenuItem>
+              {conversation ? <DropdownMenuItem onSelect={() => setActionsOpen(true)}><MousePointerClick className="mr-2 h-4 w-4" aria-hidden /> Acciones</DropdownMenuItem> : null}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}

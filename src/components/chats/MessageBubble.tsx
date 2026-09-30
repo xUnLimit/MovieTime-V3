@@ -17,6 +17,7 @@ import { cn } from '@/platform/utils/cn';
 import { QUICK_REACTIONS, messagePreview, statusLabel } from './chat-format';
 import { isInteractiveKind, readInteractiveOptions } from './chat-interactive';
 import type { MessageReactions } from './chat-reactions';
+import type { TemplateContent } from './chat-template-content';
 import { MessageAttachment } from './MessageAttachment';
 import { WhatsAppText } from './WhatsAppText';
 
@@ -25,6 +26,10 @@ type MessageBubbleProps = {
   continued: boolean;
   quotedByWaMessageId?: Record<string, WhatsAppChatMessage>;
   reactions?: MessageReactions;
+  /** Cuerpo y botones de la plantilla enviada por la API; sin esto solo se ve su nombre. */
+  templateContent?: TemplateContent | null;
+  /** Emojis del selector de reacciones, ya ordenados por uso. */
+  reactionEmojis?: readonly string[];
   highlighted?: boolean;
   activeMatch?: boolean;
   onReply?: (message: WhatsAppChatMessage) => void;
@@ -50,7 +55,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-export function MessageBubble({ message, continued, quotedByWaMessageId = {}, reactions, highlighted, activeMatch, onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry }: MessageBubbleProps) {
+export function MessageBubble({ message, continued, quotedByWaMessageId = {}, reactions, templateContent, reactionEmojis = QUICK_REACTIONS, highlighted, activeMatch, onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry }: MessageBubbleProps) {
   const [confirmHide, setConfirmHide] = useState(false);
   const [reactMenuOpen, setReactMenuOpen] = useState(false);
   const outbound = message.direction === 'outbound';
@@ -58,7 +63,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
   const templateLabel = message.templateName;
   const text = message.mediaId && !message.textBody
     ? null
-    : templateLabel ?? messagePreview(message.kind, message.textBody, null);
+    : templateContent?.body ?? templateLabel ?? messagePreview(message.kind, message.textBody, null);
   const quoted = message.contextWaMessageId ? quotedByWaMessageId[message.contextWaMessageId] : null;
   const location = message.payload?.location;
   const latitude = location && typeof location === 'object' && 'latitude' in location ? location.latitude : null;
@@ -113,7 +118,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={outbound ? 'end' : 'start'} className="chat-menu min-w-0 p-1">
-        <div className="flex gap-0.5" aria-label="Reaccionar">{QUICK_REACTIONS.map((emoji) => <button key={emoji} type="button" className="rounded-md p-1 text-base hover:bg-chat-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Reaccionar ${emoji}`} onClick={() => { onReact(message, reactions?.mine === emoji ? '' : emoji); setReactMenuOpen(false); }}>{emoji}</button>)}</div>
+        <div className="flex gap-0.5" aria-label="Reaccionar">{reactionEmojis.map((emoji) => <button key={emoji} type="button" className="rounded-md p-1 text-base hover:bg-chat-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Reaccionar ${emoji}`} onClick={() => { onReact(message, reactions?.mine === emoji ? '' : emoji); setReactMenuOpen(false); }}>{emoji}</button>)}</div>
       </DropdownMenuContent>
     </DropdownMenu>
   ) : null;
@@ -138,7 +143,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
               outbound && !failed ? 'text-chat-bubble-out-meta' : 'text-chat-muted'
             )}
           >
-            <FileText className="h-3 w-3" aria-hidden /> Plantilla
+            <FileText className="h-3 w-3" aria-hidden /> Plantilla{templateContent ? ` · ${templateLabel}` : ''}
           </p>
         ) : null}
         {message.mediaId ? (
@@ -183,6 +188,12 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
             </span>
           </p>
         ) : text ? <p className="whitespace-pre-wrap break-words"><WhatsAppText text={text} /></p> : null}
+        {templateContent?.footer ? <p className="mt-1 text-xs text-chat-bubble-out-meta">{templateContent.footer}</p> : null}
+        {templateContent && templateContent.buttons.length > 0 ? (
+          <div className="mt-1.5 space-y-1" aria-label="Botones de la plantilla">
+            {templateContent.buttons.map((button) => <div key={button} className="rounded-lg bg-black/5 px-2 py-1 text-center text-sm font-medium dark:bg-white/10">{button}</div>)}
+          </div>
+        ) : null}
         {interactive ? (
           <div className="mt-1.5 space-y-1" aria-label={interactive.type === 'buttons' ? 'Botones del mensaje' : 'Opciones de la lista'}>
             {interactive.type === 'buttons'

@@ -28,6 +28,7 @@ import { searchMessages } from './chat-search';
 import { buildMetaTemplateParams, buildTemplateOptions, suggestTipoByDueDate } from './chat-templates';
 import { CustomerPanel, sortVentasForChat } from './CustomerPanel';
 import { ImageLightbox } from './ImageLightbox';
+import { buildTemplateContent, templatePreview } from './chat-template-content';
 import { MessageTimeline } from './MessageTimeline';
 import { ForwardDialog } from './ForwardDialog';
 import { TemplateSendDialog } from './TemplateSendDialog';
@@ -216,8 +217,13 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           <button type="button" className={FIND_ICON} aria-label="Resultado siguiente" disabled={!matchIds.length} onClick={() => setActiveMatchIndex((index) => (index + 1) % matchIds.length)}><ChevronDown className="h-[15px] w-[15px]" /></button>
           <button type="button" className={FIND_ICON} aria-label="Cerrar búsqueda" onClick={() => { setSearchActive(false); setSearchQuery(''); }}><X className="h-[15px] w-[15px]" /></button>
         </div> : null}
-        <MessageTimeline key={waId} messages={messages} isLoading={isLoading} unreadCount={conversation.unreadCount} now={now} searchQuery={searchActive ? searchQuery : ''} matchIds={matchIds} activeMatchIndex={shownMatchIndex} canRetry={canRetry}
-          onReply={(message) => { if (message.waMessageId) { setReplyTarget({ waMessageId: message.waMessageId, preview: messagePreview(message.kind, message.textBody, message.templateName) }); composerRef.current?.focus(); } }}
+        <MessageTimeline key={waId} messages={messages} isLoading={isLoading} unreadCount={conversation.unreadCount} now={now} searchQuery={searchActive ? searchQuery : ''} matchIds={matchIds} activeMatchIndex={shownMatchIndex} metaTemplates={metaTemplates} canRetry={canRetry}
+          onReply={(message) => {
+            if (!message.waMessageId) return;
+            const content = message.templateName ? buildTemplateContent(message.templateName, message.templateParams, metaTemplates) : null;
+            setReplyTarget({ waMessageId: message.waMessageId, preview: content ? templatePreview(content) : messagePreview(message.kind, message.textBody, message.templateName) });
+            composerRef.current?.focus();
+          }}
           onReact={(message, emoji) => { if (message.waMessageId) sendExtra(waId, { kind: 'reaction', targetWaMessageId: message.waMessageId, emoji }); }}
           onForward={setForwardMessage} onRetry={retryMessage}
           onHide={(message) => hideMessage.mutate({ messageId: message.id, direction: message.direction }, {

@@ -61,7 +61,8 @@ const KIND_PREVIEWS: Record<string, string> = {
   list: 'Mensaje interactivo',
 };
 
-export const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'] as const;
+// Orden inicial del selector; con el uso, el emoji mas usado pasa al frente (use-reaction-order.ts).
+export const QUICK_REACTIONS = ['✅', '❤️', '👍', '😂', '😮', '😢', '🙏'] as const;
 
 export function messagePreview(kind: string, textBody: string | null, templateName: string | null) {
   if (textBody) return textBody;

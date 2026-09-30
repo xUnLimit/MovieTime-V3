@@ -15,6 +15,25 @@ vi.mock('./MessageAttachment', () => ({
 
 const base: WhatsAppChatMessage = { id: 'm1', waMessageId: 'wa-1', direction: 'outbound', kind: 'text', textBody: 'Hola', templateName: null, occurredAt: '2026-09-27T12:00:00Z', status: 'sent', mediaId: null, mediaMimeType: null, mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} };
 
+describe('MessageBubble template messages', () => {
+  const template = { ...base, textBody: null, templateName: 'acceso_actualizado' };
+
+  it('shows the approved text and buttons of a template instead of only its name', () => {
+    render(<MessageBubble message={template} continued={false} templateContent={{ body: 'Buenas tardes, Allan. Actualizamos tus datos.', footer: '— MovieTime PTY', buttons: ['Recibir mis datos'] }} />);
+    expect(screen.getByText(/Actualizamos tus datos/)).toBeTruthy();
+    expect(screen.getByText('Plantilla · acceso_actualizado')).toBeTruthy();
+    expect(screen.getByText('— MovieTime PTY')).toBeTruthy();
+    expect(screen.getByLabelText('Botones de la plantilla').textContent).toBe('Recibir mis datos');
+  });
+
+  it('falls back to the template name when its content is unknown', () => {
+    render(<MessageBubble message={template} continued={false} templateContent={null} />);
+    expect(screen.getByText('acceso_actualizado')).toBeTruthy();
+    expect(screen.getByText('Plantilla')).toBeTruthy();
+    expect(screen.queryByLabelText('Botones de la plantilla')).toBeNull();
+  });
+});
+
 describe('MessageBubble', () => {
   it('reserves room for the always-visible mobile menu button so it never overlaps short text', () => {
     const { container } = render(<MessageBubble message={{ ...base, textBody: 'Test' }} continued={false} />);

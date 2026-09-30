@@ -1,5 +1,7 @@
 'use client';
 
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { ExternalLink, FileText, Send, UserPlus, X } from 'lucide-react';
 
@@ -29,6 +31,10 @@ type CustomerPanelProps = {
 const SECTION_HEADING = 'mb-[15px] text-xs font-semibold uppercase tracking-[0.15em] text-chat-quiet';
 const DETAIL_NOTE = 'text-sm leading-[1.55] text-chat-muted';
 const DETAIL_ACTION = 'flex min-h-[42px] w-full items-center justify-between gap-2 rounded-md border border-chat-accent-line bg-chat-accent-soft px-3 text-left text-xs text-chat-accent-strong transition-colors hover:bg-chat-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+function dueDate(fechaFin: Date) {
+  return format(fechaFin, 'd MMM yyyy', { locale: es });
+}
 
 function dueText(fechaFin: Date | null, now: Date) {
   if (!fechaFin) return { text: 'Sin vencimiento', tone: 'text-chat-muted' };
@@ -99,8 +105,8 @@ export function CustomerPanel(props: CustomerPanelProps) {
             </div>
             {isLoading ? (
               <div className="space-y-2" aria-hidden>
-                <Skeleton className="h-16 w-full rounded-lg" />
-                <Skeleton className="h-16 w-full rounded-lg" />
+                <Skeleton className="h-[52px] w-full rounded-lg" />
+                <Skeleton className="h-[52px] w-full rounded-lg" />
               </div>
             ) : activas.length === 0 ? (
               <p className={DETAIL_NOTE}>No tiene servicios activos.</p>
@@ -117,25 +123,19 @@ export function CustomerPanel(props: CustomerPanelProps) {
                         aria-checked={isSelected}
                         onClick={() => onSelectVenta(venta.id)}
                         className={cn(
-                          'w-full rounded-lg border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'w-full rounded-lg border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           isSelected ? 'border-chat-selected-line bg-chat-selected' : 'border-chat-line hover:bg-chat-hover'
                         )}
                       >
-                        <span className="flex items-baseline justify-between gap-2">
-                          <span className="truncate text-base font-semibold">{venta.categoriaNombre}</span>
-                          <span className="shrink-0 truncate text-xs text-chat-quiet">
-                            {venta.perfilNumero ? `Perfil ${venta.perfilNumero}` : venta.servicioNombre}
-                          </span>
-                        </span>
-                        <span className="mt-3 grid grid-cols-2 gap-[18px]">
-                          <span>
-                            <span className="mb-[5px] block text-xs text-chat-quiet">Monto</span>
-                            <span className="text-sm font-semibold tabular-nums">${venta.precioFinal.toFixed(2)}</span>
-                          </span>
-                          <span>
-                            <span className="mb-[5px] block text-xs text-chat-quiet">Vencimiento</span>
-                            <span className={cn('text-sm font-semibold', due.tone)}>{due.text}</span>
-                          </span>
+                        <span className="block truncate text-sm font-semibold">{venta.categoriaNombre}</span>
+                        <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 text-xs">
+                          {venta.fechaFin ? (
+                            <>
+                              <span className="tabular-nums text-chat-muted">{dueDate(venta.fechaFin)}</span>
+                              <span aria-hidden className="text-chat-quiet">·</span>
+                            </>
+                          ) : null}
+                          <span className={cn('font-medium', due.tone)}>{due.text}</span>
                         </span>
                       </button>
                     </li>

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/platform/utils/cn';
 import { ChatAvatar } from './ChatAvatar';
+import { ServiceTags } from './ServiceTags';
 import { conversationTitle, formatWaId, type ServiceWindow } from './chat-format';
 
 type ChatHeaderProps = {
@@ -46,9 +47,12 @@ export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen 
         <ChatAvatar name={title} seed={conversation.waId} size="sm" />
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold leading-tight text-chat-ink md:text-base">{title}</span>
-          <span className="mt-[3px] block truncate text-xs tabular-nums text-chat-muted md:text-xs">
-            {formatWaId(conversation.waId)}
-            {conversation.terceroId ? '' : ' · No registrado'}
+          <span className="mt-[3px] flex min-w-0 items-center gap-2">
+            <span className="truncate text-xs tabular-nums text-chat-muted">
+              {formatWaId(conversation.waId)}
+              {conversation.terceroId ? '' : ' · No registrado'}
+            </span>
+            <ServiceTags categories={conversation.activeCategories} max={3} className="hidden sm:flex" />
           </span>
         </span>
       </button>

@@ -22,6 +22,8 @@ export type WhatsAppChatMessage = {
   kind: string;
   textBody: string | null;
   templateName: string | null;
+  /** Valores de {{1}}, {{2}}... con los que se envio la plantilla (nunca llevan credenciales). */
+  templateParams?: string[];
   occurredAt: string;
   status: string;
   mediaId: string | null;
@@ -33,6 +35,10 @@ export type WhatsAppChatMessage = {
 };
 
 const CONVERSATION_LIMIT = 200;
+
+function readTemplateParams(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((item) => (typeof item === 'string' ? item : String(item ?? ''))) : [];
+}
 
 // Las vistas exponen columnas anulables; las filas sin identificador no se muestran.
 export async function listWhatsAppConversations(): Promise<WhatsAppConversation[]> {
@@ -80,6 +86,7 @@ export async function listWhatsAppMessages(waId: string, limit = 200): Promise<W
         kind: row.message_kind ?? 'text',
         textBody: row.text_body,
         templateName: row.template_name,
+        templateParams: readTemplateParams(row.template_params),
         occurredAt: row.occurred_at,
         status: row.status ?? 'pending',
         mediaId: row.media_id,

@@ -50,6 +50,17 @@ function renderList(overrides: Partial<Parameters<typeof ConversationList>[0]> =
 }
 
 describe('ConversationList', () => {
+  it('tags each chat automatically with the active services of its client, and caps them when there are many', () => {
+    const many = { ...conversations[0]!, waId: '50763333333', activeCategories: ['Canva', 'Crunchyroll', 'Disney+', 'Netflix'] };
+    renderList({ visible: [conversations[0]!, conversations[1]!, many] });
+
+    expect(screen.getByRole('group', { name: 'Servicios activos: Netflix' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Servicios activos: Canva, Crunchyroll, Disney+, Netflix' })).toBeTruthy();
+    expect(screen.getByText('+2').getAttribute('title')).toBe('Disney+, Netflix');
+    // El cliente sin servicios activos no muestra ninguna etiqueta.
+    expect(screen.getAllByRole('group')).toHaveLength(2);
+  });
+
   it('shows name, preview, time, unread count, due date and registration state', () => {
     renderList();
 
@@ -98,6 +109,25 @@ describe('ConversationList', () => {
   it('shows the active category on the dropdown trigger itself', () => {
     renderList({ filter: 'categoria:Netflix' });
     expect(screen.getByRole('button', { name: 'Netflix (más filtros)' })).toBeTruthy();
+  });
+
+  it('shows the active extra filter as its own removable chip so a long name is never cut off in the tab row', async () => {
+    const user = userEvent.setup();
+    const props = renderList({ filter: 'ventana_abierta' });
+
+    // El botón queda compacto (solo el icono); el nombre y el contador van en la etiqueta.
+    expect(screen.getByRole('button', { name: 'Ventana abierta (más filtros)' }).textContent).toBe('');
+    const chip = screen.getByRole('button', { name: 'Quitar filtro Ventana abierta' }).parentElement!;
+    expect(chip.textContent).toContain('Ventana abierta');
+    expect(chip.textContent).toContain('1');
+
+    await user.click(screen.getByRole('button', { name: 'Quitar filtro Ventana abierta' }));
+    expect(props.onFilterChange).toHaveBeenCalledWith('todos');
+  });
+
+  it('shows no filter chip when only a fixed filter is active', () => {
+    renderList({ filter: 'no_leidos' });
+    expect(screen.queryByRole('button', { name: /Quitar filtro/ })).toBeNull();
   });
 
   it('opens the first result with Enter and clears the search with Escape', async () => {

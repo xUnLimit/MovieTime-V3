@@ -60,6 +60,15 @@ describe('ChatHeader', () => {
     expect(screen.getByRole('menuitem', { name: 'Ocultar ficha del cliente' })).toBeTruthy();
   });
 
+  it('shows the active services of the client next to the number, capped to three', () => {
+    const handlers = { onBack: vi.fn(), onTogglePanel: vi.fn(), onMarkUnread: vi.fn() };
+    render(<ChatHeader conversation={{ ...conversation, activeCategories: ['Canva', 'Crunchyroll', 'Disney+', 'Netflix'] }} serviceWindow={{ open: true, hoursLeft: 20 }} panelOpen={false} {...handlers} />);
+
+    expect(screen.getByRole('group', { name: 'Servicios activos: Canva, Crunchyroll, Disney+, Netflix' })).toBeTruthy();
+    expect(screen.getByText('Disney+')).toBeTruthy();
+    expect(screen.getByText('+1').getAttribute('title')).toBe('Netflix');
+  });
+
   it('shows a closed window and hides client links for unregistered numbers', async () => {
     const user = userEvent.setup();
     render(
@@ -115,8 +124,12 @@ describe('CustomerPanel', () => {
 
     expect(screen.getByText('Vence hoy')).toBeTruthy();
     expect(screen.getByText('Vence en 23 días')).toBeTruthy();
-    expect(screen.getByText('Perfil 2')).toBeTruthy();
-    expect(screen.getByText('Cuenta 01')).toBeTruthy();
+    // Cada servicio es una tarjeta de dos líneas: nombre, y debajo la fecha con los días restantes.
+    expect(screen.getByText('27 sep 2026')).toBeTruthy();
+    expect(screen.getByText('20 oct 2026')).toBeTruthy();
+    expect(screen.queryByText(/Perfil \d/)).toBeNull();
+    expect(screen.queryByText('Monto')).toBeNull();
+    expect(screen.queryByText(/\$\d/)).toBeNull();
     expect(screen.getByRole('radio', { name: /Servicio a/ }).getAttribute('aria-checked')).toBe('true');
     expect(screen.getByRole('link', { name: 'Ver venta' }).getAttribute('href')).toBe('/ventas/a');
 

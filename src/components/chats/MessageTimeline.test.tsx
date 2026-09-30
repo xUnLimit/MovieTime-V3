@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { WhatsAppChatMessage } from '@/application/use-cases/whatsapp-chat-use-cases';
@@ -42,6 +42,48 @@ beforeEach(() => {
 });
 
 describe('MessageTimeline', () => {
+  it('shows the text of an approved template with the values that were sent', () => {
+    const sent = message({ id: 'tpl', direction: 'outbound', textBody: null, templateName: 'acceso_actualizado', templateParams: ['Buenas tardes, Allan', 'Crunchyroll'], status: 'read' });
+    const catalog = [{ id: 'x', name: 'acceso_actualizado', language: 'es', status: 'APPROVED', category: 'UTILITY', body: '{{1}}. Actualizamos tu servicio de *{{2}}*.', header: null, footer: null, buttons: [{ type: 'QUICK_REPLY', text: 'Recibir mis datos' }], paramCount: 2, retired: false, syncedAt: '2026-09-29T00:00:00Z' }];
+    render(<MessageTimeline messages={[sent]} isLoading={false} unreadCount={0} now={NOW} metaTemplates={catalog} />);
+    expect(screen.getByText(/Buenas tardes, Allan/)).toBeTruthy();
+    expect(screen.getByText('Crunchyroll').tagName).toBe('STRONG');
+    expect(screen.getByLabelText('Botones de la plantilla').textContent).toBe('Recibir mis datos');
+  });
+
+  it('quotes a template with its text, not just its name, when the client replies to it', () => {
+    const sent = message({ id: 'tpl', waMessageId: 'wa-tpl', direction: 'outbound', textBody: null, templateName: 'acceso_actualizado', templateParams: ['Buenas noches, Dino', 'Crunchyroll'], status: 'read' });
+    const reply = message({ id: 'reply', textBody: 'Recibir mis datos', contextWaMessageId: 'wa-tpl' });
+    const body = ['🔐 *Acceso actualizado*', '', '{{1}}. Actualizamos tu servicio de *{{2}}*.'].join('\n');
+    const catalog = [{ id: 'x', name: 'acceso_actualizado', language: 'es', status: 'APPROVED', category: 'UTILITY', body, header: null, footer: null, buttons: [{ type: 'QUICK_REPLY', text: 'Recibir mis datos' }], paramCount: 2, retired: false, syncedAt: '2026-09-29T00:00:00Z' }];
+    render(<MessageTimeline messages={[sent, reply]} isLoading={false} unreadCount={0} now={NOW} metaTemplates={catalog} />);
+    expect(screen.getByText('🔐 Acceso actualizado Buenas noches, Dino. Actualizamos tu servicio de Crunchyroll.')).toBeTruthy();
+    expect(screen.queryByText('Plantilla: acceso_actualizado')).toBeNull();
+  });
+
+  it('starts with the check and the heart, then moves the most used emoji to the front for every chat', () => {
+    vi.mocked(localStorage.getItem).mockReturnValue(undefined as unknown as string);
+    const onReact = vi.fn();
+    const target = message({ id: 'target', waMessageId: 'wa-target', textBody: 'Pago recibido' });
+    const { unmount } = render(<MessageTimeline messages={[target]} isLoading={false} unreadCount={0} now={NOW} onReact={onReact} />);
+
+    const picker = () => within(screen.getByLabelText('Reaccionar')).getAllByRole('button').map((button) => button.textContent);
+    fireEvent.click(screen.getByRole('button', { name: 'Reaccionar al mensaje' }), { button: 0 });
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Reaccionar al mensaje' }), { button: 0, ctrlKey: false });
+    expect(picker()).toEqual(['✅', '❤️', '👍', '😂', '😮', '😢', '🙏']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reaccionar 😂' }));
+    expect(onReact).toHaveBeenCalledWith(expect.objectContaining({ id: 'target' }), '😂');
+    expect(localStorage.setItem).toHaveBeenCalledWith('chat-reaction-usage', '{"😂":1}');
+    unmount();
+
+    // Otro chat: el conteo guardado mueve 😂 al frente.
+    vi.mocked(localStorage.getItem).mockReturnValue('{"😂":1}');
+    render(<MessageTimeline messages={[target]} isLoading={false} unreadCount={0} now={NOW} onReact={onReact} />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Reaccionar al mensaje' }), { button: 0, ctrlKey: false });
+    expect(picker().slice(0, 3)).toEqual(['😂', '✅', '❤️']);
+  });
+
   it('attaches reactions and quoted previews without rendering reaction events', () => {
     const original = message({ id: 'original', waMessageId: 'wa-original', textBody: 'Mensaje inicial' });
     const reply = message({ id: 'reply', textBody: 'Respuesta', contextWaMessageId: 'wa-original' });

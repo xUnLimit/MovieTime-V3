@@ -6,7 +6,10 @@ import { ArrowDown, MessageSquareText } from 'lucide-react';
 import type { WhatsAppChatMessage } from '@/application/use-cases/whatsapp-chat-use-cases';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildTimeline } from './chat-timeline';
+import type { MetaTemplateInfo } from '@/modules/messaging/meta-template-mapping';
 import { groupReactions } from './chat-reactions';
+import { buildTemplateContent, templatePreview } from './chat-template-content';
+import { useReactionOrder } from './use-reaction-order';
 import { searchMessages } from './chat-search';
 import { MessageBubble } from './MessageBubble';
 
@@ -18,6 +21,7 @@ type MessageTimelineProps = {
   searchQuery?: string;
   matchIds?: string[];
   activeMatchIndex?: number;
+  metaTemplates?: readonly MetaTemplateInfo[];
   onReply?: (message: WhatsAppChatMessage) => void;
   onReact?: (message: WhatsAppChatMessage, emoji: string) => void;
   onForward?: (message: WhatsAppChatMessage) => void;
@@ -31,8 +35,9 @@ type MessageTimelineProps = {
 // Distancia al final (px) dentro de la cual se sigue "pegado" a los mensajes nuevos.
 const STICKY_THRESHOLD = 120;
 
-export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQuery = '', matchIds, activeMatchIndex = 0, onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry }: MessageTimelineProps) {
+export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQuery = '', matchIds, activeMatchIndex = 0, metaTemplates = [], onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry }: MessageTimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { emojis: reactionEmojis, record: recordReaction } = useReactionOrder();
   const stickToBottom = useRef(true);
   const seenCount = useRef(messages.length);
   const [unseen, setUnseen] = useState(0);
@@ -42,10 +47,13 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
   const visibleMessages = useMemo(() => messages.filter((message) => message.kind !== 'reaction'), [messages]);
   const items = useMemo(() => buildTimeline(visibleMessages, now, openingUnread), [visibleMessages, now, openingUnread]);
   const reactions = useMemo(() => groupReactions(messages), [messages]);
+  // Las citas de una plantilla muestran su texto (no solo "Plantilla: nombre").
   const quoteLookup = useMemo(() => visibleMessages.reduce<Record<string, WhatsAppChatMessage>>((lookup, message) => {
-    if (message.waMessageId) lookup[message.waMessageId] = message;
+    if (!message.waMessageId) return lookup;
+    const content = message.templateName ? buildTemplateContent(message.templateName, message.templateParams, metaTemplates) : null;
+    lookup[message.waMessageId] = content ? { ...message, textBody: templatePreview(content) } : message;
     return lookup;
-  }, {}), [visibleMessages]);
+  }, {}), [visibleMessages, metaTemplates]);
   const matches = useMemo(() => matchIds ?? searchMessages(visibleMessages, searchQuery), [matchIds, visibleMessages, searchQuery]);
   const activeId = searchQuery.trim() ? matches[activeMatchIndex] : undefined;
 
@@ -133,7 +141,7 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
                   </li>
                 );
               }
-              return <MessageBubble key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} onReply={onReply} onReact={onReact} onForward={onForward} onRetry={onRetry} onHide={onHide} onOpenImage={onOpenImage} onSaveSticker={onSaveSticker} canRetry={canRetry} />;
+              return <MessageBubble key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} templateContent={item.message.templateName ? buildTemplateContent(item.message.templateName, item.message.templateParams, metaTemplates) : null} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} reactionEmojis={reactionEmojis} onReply={onReply} onReact={onReact && ((message, emoji) => { recordReaction(emoji); onReact(message, emoji); })} onForward={onForward} onRetry={onRetry} onHide={onHide} onOpenImage={onOpenImage} onSaveSticker={onSaveSticker} canRetry={canRetry} />;
             })}
           </ol>
         )}

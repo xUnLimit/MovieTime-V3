@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/platform/utils/cn';
 import { ChatAvatar } from './ChatAvatar';
+import { ServiceTags } from './ServiceTags';
 import { conversationTitle, formatChatTime } from './chat-format';
 import {
   categoryFilterId,
@@ -98,7 +99,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                 className={cn(
                   'inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 text-xs pointer-coarse:h-10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   active
-                    ? 'border-chat-accent bg-chat-accent font-semibold text-chat-accent-ink'
+                    ? 'border-chat-selected-line bg-chat-selected font-semibold text-chat-ink'
                     : 'border-chat-line bg-transparent text-chat-muted hover:bg-chat-hover hover:text-chat-ink'
                 )}
               >
@@ -116,11 +117,10 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                   className={cn(
                     'inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 text-xs pointer-coarse:h-10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     activeMoreItem
-                      ? 'border-chat-accent bg-chat-accent font-semibold text-chat-accent-ink'
+                      ? 'border-chat-selected-line bg-chat-selected font-semibold text-chat-ink'
                       : 'border-chat-line bg-transparent text-chat-muted hover:bg-chat-hover hover:text-chat-ink'
                   )}
                 >
-                  {activeMoreItem ? activeMoreItem.label : null}
                   <ChevronDown className="h-3.5 w-3.5" aria-hidden />
                 </button>
               </DropdownMenuTrigger>
@@ -140,6 +140,22 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
             </DropdownMenu>
           ) : null}
         </div>
+        {activeMoreItem ? (
+          <div className="pt-2">
+            <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-md border border-chat-selected-line bg-chat-selected pl-2.5 pr-1 text-xs text-chat-ink">
+              <span className="truncate font-semibold">{activeMoreItem.label}</span>
+              {counts[activeMoreItem.id] > 0 ? <span className="shrink-0 tabular-nums opacity-75">{counts[activeMoreItem.id]}</span> : null}
+              <button
+                type="button"
+                onClick={() => onFilterChange('todos')}
+                aria-label={`Quitar filtro ${activeMoreItem.label}`}
+                className="grid size-5 shrink-0 place-items-center rounded-sm transition-colors hover:bg-chat-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-8"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex items-center justify-between px-4 pb-2 pt-3 text-xs uppercase tracking-wide text-chat-quiet">
@@ -213,6 +229,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
                         {conversation.lastPreview}
                       </span>
                     </span>
+                    <ServiceTags categories={conversation.activeCategories} className="mt-1" />
                   </span>
                   <span className="flex flex-col items-end gap-1.5 text-xs tabular-nums text-chat-quiet">
                     <span className={cn(unread && 'text-chat-accent')}>{formatChatTime(conversation.lastMessageAt, now)}</span>
