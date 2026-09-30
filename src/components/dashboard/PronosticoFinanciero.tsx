@@ -43,11 +43,11 @@ function MesRow({ mes }: { mes: MesPronostico }) {
       <dl className="mt-1 flex items-center justify-between gap-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <dt>Ingresos</dt>
-          <dd className="font-medium text-foreground tabular-nums">~{formatUSD(mes.ingresos)}</dd>
+          <dd className="font-medium text-info tabular-nums">~{formatUSD(mes.ingresos)}</dd>
         </div>
         <div className="flex items-center gap-1.5">
           <dt>Gastos</dt>
-          <dd className="font-medium text-foreground tabular-nums">~{formatUSD(mes.gastos)}</dd>
+          <dd className="font-medium text-danger tabular-nums">~{formatUSD(mes.gastos)}</dd>
         </div>
       </dl>
     </div>
