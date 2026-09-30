@@ -208,7 +208,7 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
   if (!serviceWindow.open) {
     return (
       <>
-      <div className="flex flex-col gap-3 border-t border-chat-line bg-chat-surface px-3 pb-[calc(13px+env(safe-area-inset-bottom))] pt-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 md:px-[18px] md:pb-[15px] md:pt-[13px]">
+      <div className="flex flex-col gap-3 border-t border-chat-line bg-chat-surface px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 md:px-[18px] md:pb-[max(15px,env(safe-area-inset-bottom))] md:pt-[13px]">
         <p className="flex flex-1 items-start gap-2 text-xs leading-normal text-chat-muted">
           <Lock className="mt-0.5 h-4 w-4 shrink-0 text-chat-closed-ink" aria-hidden />
           <span>
@@ -231,7 +231,7 @@ export const ChatComposer = forwardRef<HTMLTextAreaElement | null, ChatComposerP
 
   return (
     <form
-      className="relative border-t border-chat-line bg-chat-surface px-3 pb-[calc(13px+env(safe-area-inset-bottom))] pt-2.5 md:px-[18px] md:pb-[15px] md:pt-[13px]"
+      className="relative border-t border-chat-line bg-chat-surface px-3 pb-[max(0.625rem,env(safe-area-inset-bottom))] pt-2.5 md:px-[18px] md:pb-[max(15px,env(safe-area-inset-bottom))] md:pt-[13px]"
       onSubmit={(event) => {
         event.preventDefault();
         if (canSend) onSend();

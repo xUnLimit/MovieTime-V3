@@ -192,13 +192,12 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden h-[100dvh] md:flex">{sidebarContent(false, true)}</div>
+      <div className="hidden h-[var(--app-height,100dvh)] bg-sidebar pt-[env(safe-area-inset-top)] md:flex">{sidebarContent(false, true)}</div>
 
       {/* Mobile overlay — siempre en el DOM para que la transición CSS funcione */}
       <div
-        className="fixed top-0 right-0 left-0 z-[65] bg-black/50 md:hidden"
+        className="fixed inset-0 z-[65] bg-black/50 md:hidden"
         style={{
-          bottom: 'env(safe-area-inset-bottom)',
           opacity: mobileOpen ? 1 : 0,
           pointerEvents: mobileOpen ? 'auto' : 'none',
           transition: 'opacity 300ms ease-in-out',

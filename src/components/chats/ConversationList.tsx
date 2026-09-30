@@ -60,7 +60,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
   const activeMoreItem = moreItems.find((item) => item.id === filter) ?? null;
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-chat-line-soft px-4 pb-3 pt-4">
+      <div className="border-b border-chat-line-soft px-4 pb-3 pt-4 md:pt-[max(1rem,env(safe-area-inset-top))]">
         {header}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-chat-quiet" aria-hidden />
@@ -163,7 +163,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
         <span className="tabular-nums">{isLoading ? '' : `${visible.length} de ${totalCount}`}</span>
       </div>
 
-      <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3" aria-label="Conversaciones">
+      <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]" aria-label="Conversaciones">
         {isLoading ? (
           Array.from({ length: 6 }, (_, index) => (
             <li key={index} className="flex items-center gap-3 px-2.5 py-3" aria-hidden>

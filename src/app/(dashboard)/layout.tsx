@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { cn } from '@/platform/utils/cn';
+import { useVisualViewportHeight } from '@/hooks/use-visual-viewport-height';
 import { useAuthStore } from '@/store/authStore';
 import { AuthRecoveryState } from '@/components/auth/AuthRecoveryState';
 import { shouldRedirectToLogin } from '@/components/auth/auth-routing';
@@ -21,6 +23,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  useVisualViewportHeight();
+  const isChats = pathname === '/chats';
+  // En movil un chat abierto usa toda la pantalla: su propio encabezado reemplaza al global.
+  const chatOpen = isChats && searchParams.has('wa');
   const { authRecoveryError, isAuthenticated, isHydrated, logout, retryAuth } = useAuthStore();
   // En iPad vertical (768-1023px) la barra empieza como riel de iconos para dar ancho al contenido.
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
@@ -75,7 +83,7 @@ export default function DashboardLayout({
 
   return (
     <ErrorBoundary fallback={<DashboardErrorFallback />}>
-      <div className="flex h-[100dvh] overflow-hidden">
+      <div className="flex h-[var(--app-height,100dvh)] overflow-hidden">
         {/* Sidebar */}
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -88,7 +96,7 @@ export default function DashboardLayout({
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Account for the top safe area in full-screen mobile layouts. */}
           <header
-            className="relative z-[66] flex shrink-0 items-center gap-2 border-b border-sidebar-border bg-sidebar px-4 md:hidden"
+            className={cn('relative z-[66] shrink-0 items-center gap-2 border-b border-sidebar-border bg-sidebar px-4 md:hidden', chatOpen ? 'hidden' : 'flex')}
             style={{
               height: 'calc(56px + env(safe-area-inset-top))',
               paddingTop: 'env(safe-area-inset-top)',
@@ -106,8 +114,9 @@ export default function DashboardLayout({
           </header>
 
           {/* Main: ocupa toda la pantalla; el fondo llega a los bordes y el contenido respeta las areas seguras. */}
-          <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-none bg-background">
-            <div className="h-full min-w-0 overflow-x-hidden px-[max(0.75rem,env(safe-area-inset-left))] pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-[max(1rem,env(safe-area-inset-left))] sm:pt-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] md:px-5 md:pt-[max(1.25rem,env(safe-area-inset-top))] md:pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          {/* Chats es de borde a borde: cada panel gestiona su propia area segura (arriba y compositor abajo). */}
+          <main className={cn('flex-1 overflow-x-hidden overscroll-none bg-background', isChats ? 'overflow-y-hidden' : 'overflow-y-auto')}>
+            <div className={cn('h-full min-w-0 overflow-x-hidden', !isChats && 'px-[max(0.75rem,env(safe-area-inset-left))] pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-[max(1rem,env(safe-area-inset-left))] sm:pt-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] md:px-5 md:pt-[max(1.25rem,env(safe-area-inset-top))] md:pb-[max(1.25rem,env(safe-area-inset-bottom))]')}>
               {children}
             </div>
           </main>

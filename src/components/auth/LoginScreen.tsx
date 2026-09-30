@@ -102,7 +102,7 @@ export function LoginScreen() {
   const busy = isLoading || entering;
 
   return (
-    <main className="login-shell flex min-h-dvh flex-col items-center justify-center bg-background p-4" data-phase={entering ? 'entering' : 'idle'}>
+    <main className="login-shell flex min-h-dvh flex-col items-center justify-center bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]" data-phase={entering ? 'entering' : 'idle'}>
       <div className="w-full max-w-sm">
         <div className="login-rise mb-6 flex flex-col items-center gap-4 text-center" data-step="0">
           <div className="login-tile flex size-12 items-center justify-center rounded-xl border bg-card text-foreground" aria-hidden>

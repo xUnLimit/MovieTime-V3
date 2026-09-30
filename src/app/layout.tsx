@@ -34,7 +34,9 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black',
+    // La PWA de iOS dibuja bajo la barra de estado (hora/bateria) en lugar de dejar una franja
+    // aparte; el contenido compensa con env(safe-area-inset-top).
+    statusBarStyle: 'black-translucent',
     title: siteConfig.name,
   },
 };

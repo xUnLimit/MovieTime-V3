@@ -69,14 +69,14 @@ export function CustomerPanel(props: CustomerPanelProps) {
 
   return (
     <aside aria-label="Ficha del cliente" className="flex h-full min-h-0 flex-col bg-chat-surface text-chat-ink">
-      <div className="flex h-[68px] shrink-0 items-center justify-between border-b border-chat-line-soft px-5 md:h-[78px]">
+      <div className="flex h-[calc(68px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-chat-line-soft px-5 pt-[env(safe-area-inset-top)] md:h-[calc(78px+env(safe-area-inset-top))]">
         <h2 className="text-sm font-semibold">Ficha del cliente</h2>
         <button type="button" onClick={onClose} aria-label="Cerrar ficha" className="grid h-10 w-10 place-items-center rounded-md text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <X className="h-[19px] w-[19px]" strokeWidth={1.6} />
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-[22px]">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-[max(22px,env(safe-area-inset-bottom))] pt-[22px]">
         <section className="border-b border-chat-line pb-[21px]">
           <div className="flex items-center gap-3">
             <ChatAvatar name={title} seed={conversation.waId} size="lg" />
