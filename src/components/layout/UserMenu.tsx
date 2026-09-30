@@ -26,9 +26,12 @@ export function UserMenu({ variant = 'header', collapsed = false, isMobile = fal
   const router = useRouter();
   const { user, logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    // Se espera al cierre antes de navegar: si el login aparece con la sesion aun abierta, su
+    // redireccion "ya autenticado" devuelve al panel y se ve un parpadeo login -> panel -> login.
+    // logout() nunca rechaza (registra el error y limpia el estado en `finally`).
+    await logout();
+    router.replace('/login');
   };
 
   if (!user) return null;

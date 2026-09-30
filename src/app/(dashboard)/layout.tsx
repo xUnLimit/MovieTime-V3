@@ -67,13 +67,10 @@ export default function DashboardLayout({
     );
   }
 
-  // Si ya se hidrató pero no está autenticado, mostrar loader mientras redirige
+  // Ya hidratado y sin sesión (p. ej. al cerrarla): la redirección a /login es inmediata, así que se
+  // deja solo el fondo; un spinner que aparece y desaparece en unos milisegundos se ve como parpadeo.
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <div className="min-h-screen bg-background" aria-hidden />;
   }
 
   return (

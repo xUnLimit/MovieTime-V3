@@ -119,6 +119,13 @@ Todo dato remoto tiene carga, vacio y error.
 
 Discreto y funcional: 150-200ms `ease-out` en hover, aperturas y cambios de vista; retroalimentacion de pulsacion (`active:scale-[0.98]`). Se respeta `prefers-reduced-motion`. Sin animaciones decorativas.
 
+**Acceso (`/login`)** es la unica pantalla con una secuencia propia, porque marca el paso entre "fuera" y "dentro" y comunica estado (`LoginScreen`, clases `login-*` en `globals.css`):
+- Entrada escalonada de 420ms (marca y titulo, formulario, pie con 70ms de diferencia), solo `transform` y `opacity`.
+- Al iniciar sesion: el boton muestra un check y "Bienvenido", el formulario se desvanece, la marca se rellena de `primary` y la pantalla se apaga (480ms en total, `LOGIN_ENTER_MS`) antes de navegar al Dashboard.
+- Error: mensaje visible junto al formulario (`role="alert"`) y un temblor de 320ms de la tarjeta; el foco vuelve al campo.
+- Con `prefers-reduced-motion: reduce` no hay animaciones ni espera: se navega de inmediato.
+- No se agregan mas secuencias como esta a otras pantallas; el resto de la app sigue la regla de 150-200ms.
+
 ## 10. Accesibilidad
 
 - Foco visible siempre (anillo violeta). No se quita `focus-visible`.

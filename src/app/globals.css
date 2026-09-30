@@ -515,6 +515,57 @@
 [data-sonner-toast][data-type='warning'] [data-icon] { color: var(--warning); }
 [data-sonner-toast][data-type='info'] [data-icon] { color: var(--info); }
 
+/*
+ * Acceso (/login). Solo transform y opacity, con curva de salida suave. La entrada aparece
+ * escalonada; al iniciar sesion el formulario se desvanece, la marca se rellena y la pantalla se
+ * apaga antes de navegar (LOGIN_ENTER_MS en LoginScreen.tsx). Los contenedores `login-rise` solo
+ * animan la entrada; las transiciones de salida viven en sus hijos para que no se pisen.
+ */
+@keyframes login-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+.login-rise {
+  animation: login-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.login-rise[data-step='1'] { animation-delay: 70ms; }
+.login-rise[data-step='2'] { animation-delay: 140ms; }
+
+.login-shell { transition: opacity 200ms ease-out; }
+.login-tile {
+  transition: background-color 200ms ease-out, border-color 200ms ease-out, color 200ms ease-out,
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.login-card { transition: opacity 200ms ease-out, transform 200ms ease-out; }
+.login-meta { transition: opacity 160ms ease-out; }
+
+.login-shell[data-phase='entering'] { opacity: 0; transition-delay: 280ms; }
+.login-shell[data-phase='entering'] .login-tile {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  transform: scale(1.2);
+}
+.login-shell[data-phase='entering'] .login-card {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  pointer-events: none;
+}
+.login-shell[data-phase='entering'] .login-meta { opacity: 0; }
+
+@keyframes login-check {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: none; }
+}
+.login-check { animation: login-check 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .login-rise, .login-check { animation: none; }
+  .login-shell, .login-tile, .login-card, .login-meta { transition: none; }
+  .login-shell[data-phase='entering'] { transition-delay: 0s; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) {
     animation: none;
