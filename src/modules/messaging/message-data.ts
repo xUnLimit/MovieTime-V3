@@ -73,8 +73,16 @@ export function normalizePanamaWaId(telefono: string): string | null {
   return null;
 }
 
-export function isNoticeEligible(venta: NoticeVenta, today: Date): boolean {
-  if (!venta.activa || venta.reembolsada || venta.enReposo) return false;
+/**
+ * `regular`: recordatorios y avisos manuales (venta activa, sin promesa de pago vigente).
+ * `renewal`: confirmacion de renovacion; aplica aunque el cliente hubiera dicho "no continuar", porque pago.
+ */
+export type NoticeEligibilityMode = 'regular' | 'renewal';
+
+export function isNoticeEligible(venta: NoticeVenta, today: Date, mode: NoticeEligibilityMode = 'regular'): boolean {
+  if (venta.reembolsada || venta.enReposo) return false;
+  if (mode === 'renewal') return venta.activa;
+  if (!venta.activa) return false;
   if (venta.respuestaCliente === 'no_continuar') return false;
   if (venta.promesaPagoHasta && dayKey(venta.promesaPagoHasta) >= dayKey(today)) return false;
   return true;

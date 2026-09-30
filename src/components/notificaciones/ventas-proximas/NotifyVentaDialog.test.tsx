@@ -6,7 +6,9 @@ const mocks = vi.hoisted(() => ({
   templates: vi.fn(),
   metaTemplates: vi.fn(),
   mutateAsync: vi.fn(),
+  config: vi.fn(),
 }));
+vi.mock('@/hooks/use-config', () => ({ useConfig: mocks.config }));
 vi.mock('@/hooks/use-templates', () => ({
   useTemplates: mocks.templates,
   useMetaTemplates: mocks.metaTemplates,
@@ -64,6 +66,7 @@ describe('NotifyVentaDialog', () => {
     vi.clearAllMocks();
     mocks.templates.mockReturnValue({ data: [template('dia_pago'), template('cancelacion')] });
     mocks.metaTemplates.mockReturnValue({ data: [] });
+    mocks.config.mockReturnValue({ data: { whatsapp: { autoEnabled: false } } });
   });
 
   it('keeps both options and shows the free-text preview', () => {
@@ -184,5 +187,50 @@ describe('NotifyVentaDialog', () => {
     await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalled());
     expect(screen.queryByRole('list', { name: 'Resultado del envío' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Abrir en WhatsApp' })).toBeTruthy();
+  });
+});
+
+describe('NotifyVentaDialog with the automatic WhatsApp switch', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.templates.mockReturnValue({ data: [template('dia_pago', 'aviso_pago'), template('cancelacion', 'servicio_suspendido')] });
+    mocks.metaTemplates.mockReturnValue({ data: [approved('aviso_pago'), approved('servicio_suspendido')] });
+    mocks.mutateAsync.mockResolvedValue([]);
+  });
+
+  it('on: the cancellation notice goes only by the API, with no WhatsApp button', async () => {
+    mocks.config.mockReturnValue({ data: { whatsapp: { autoEnabled: true } } });
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(screen.getByRole('radio', { name: 'Cancelación' }));
+    expect(screen.queryByRole('button', { name: 'Abrir en WhatsApp' })).toBeNull();
+    expect(screen.getByText(/se envía por la API/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+    expect(mocks.mutateAsync).toHaveBeenCalledWith({ tipo: 'cancelacion', ventaIds: ['venta-1'] });
+  });
+
+  it('on: without an approved template the only possible channel is WhatsApp, and it says so', () => {
+    mocks.config.mockReturnValue({ data: { whatsapp: { autoEnabled: true } } });
+    mocks.metaTemplates.mockReturnValue({ data: [] });
+    renderDialog();
+    expect(screen.getByTestId('notice-channel').textContent).toContain('no tiene una plantilla aprobada');
+    expect(screen.getByRole('button', { name: 'Abrir en WhatsApp' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Enviar' })).toBeNull();
+  });
+
+  it('off: offers both the API and WhatsApp', async () => {
+    mocks.config.mockReturnValue({ data: { whatsapp: { autoEnabled: false } } });
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(screen.getByRole('radio', { name: 'Cancelación' }));
+    expect(screen.getByRole('button', { name: 'Abrir en WhatsApp' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeTruthy();
+  });
+
+  it('offers both channels while the configuration is still loading', () => {
+    mocks.config.mockReturnValue({ data: undefined });
+    renderDialog();
+    expect(screen.getByRole('button', { name: 'Abrir en WhatsApp' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeTruthy();
   });
 });

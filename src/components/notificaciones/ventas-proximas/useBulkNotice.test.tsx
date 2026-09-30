@@ -10,6 +10,7 @@ const wa = vi.hoisted(() => ({ open: vi.fn() }));
 vi.mock('@/platform/utils/whatsapp', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/platform/utils/whatsapp')>()), openWhatsApp: wa.open }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
 
+import { BulkNoticeConfirmDialog } from './BulkNoticeConfirmDialog';
 import { BulkNoticeSummaryDialog } from './BulkNoticeSummaryDialog';
 import { useBulkNotice } from './useBulkNotice';
 import type { NotificacionVentaConId } from './types';
@@ -78,11 +79,83 @@ describe('useBulkNotice', () => {
     expect(wa.open.mock.calls[0]![1]).toContain('Disney+');
   });
 
+  it('asks for confirmation first: requestNotify opens it without sending, cancel closes it', () => {
+    const { result } = setup();
+    act(() => result.current.requestNotify());
+    expect(result.current.confirmOpen).toBe(false);
+    act(() => result.current.toggleSelected('1', true));
+    act(() => result.current.requestNotify());
+    expect(result.current.confirmOpen).toBe(true);
+    expect(result.current.confirmItems).toEqual([all[0]]);
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    act(() => result.current.cancelNotify());
+    expect(result.current.confirmOpen).toBe(false);
+    expect(result.current.selectedCount).toBe(1);
+  });
+
+  it('closes the confirmation once the send finishes', async () => {
+    mocks.mutateAsync.mockResolvedValue([]);
+    const { result } = setup();
+    act(() => result.current.toggleSelected('1', true));
+    act(() => result.current.requestNotify());
+    await act(async () => { await result.current.notifySelected(); });
+    expect(result.current.confirmOpen).toBe(false);
+    expect(result.current.confirmItems).toEqual([all[0]]);
+  });
+
   it('does nothing without a selection', async () => {
     const { result } = setup();
     await act(async () => { await result.current.notifySelected(); });
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
     expect(result.current.results).toBeNull();
+  });
+});
+
+describe('BulkNoticeConfirmDialog', () => {
+  const venta = (id: string, clienteId: string, categoria: string, fechaFin: Date) => ({
+    ...notif(id, `v${id}`, 0), clienteId, clienteNombre: `Cliente ${clienteId}`, categoriaNombre: categoria, fechaFin,
+  }) as NotificacionVentaConId;
+  const dia1 = new Date(2026, 9, 1);
+  const dia2 = new Date(2026, 9, 5);
+  const items = [venta('1', 'A', 'Netflix', dia1), venta('2', 'B', 'Disney+', dia1)];
+
+  it('lists the clients and only sends after confirming', async () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    const user = userEvent.setup();
+    render(<BulkNoticeConfirmDialog open items={items} isSending={false} onConfirm={onConfirm} onCancel={onCancel} />);
+    expect(screen.getByText('¿Enviar 2 mensajes por WhatsApp?')).toBeTruthy();
+    expect(screen.getByText('Cliente A')).toBeTruthy();
+    expect(onConfirm).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('button', { name: 'Enviar 2 mensajes' }));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('counts one message per client and due date, like the real send', () => {
+    const many = [
+      venta('1', 'A', 'Netflix', dia1),
+      venta('2', 'A', 'Disney+', dia1),
+      venta('3', 'A', 'Max', dia2),
+      venta('4', 'B', 'Spotify', dia1),
+    ];
+    render(<BulkNoticeConfirmDialog open items={many} isSending={false} onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByText('¿Enviar 3 mensajes por WhatsApp?')).toBeTruthy();
+    expect(screen.getByText(/Los 4 servicios seleccionados se agrupan en 3 mensajes/)).toBeTruthy();
+    expect(screen.getByText('Netflix, Disney+')).toBeTruthy();
+    expect(screen.getByText('2 servicios')).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('locks the buttons and ignores Escape while sending', async () => {
+    const onCancel = vi.fn();
+    const user = userEvent.setup();
+    render(<BulkNoticeConfirmDialog open items={items.slice(0, 1)} isSending onConfirm={vi.fn()} onCancel={onCancel} />);
+    expect((screen.getByRole('button', { name: 'Enviando...' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Cancelar' }) as HTMLButtonElement).disabled).toBe(true);
+    await user.keyboard('{Escape}');
+    expect(onCancel).not.toHaveBeenCalled();
   });
 });
 

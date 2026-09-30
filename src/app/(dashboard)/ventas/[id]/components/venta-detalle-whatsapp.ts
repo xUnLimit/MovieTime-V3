@@ -1,11 +1,17 @@
-import { toast } from 'sonner';
-
-import { generarMensajeVenta, openWhatsApp } from '@/platform/utils/whatsapp';
+import { announceRenewal } from '@/components/shared/renewal-whatsapp-notice';
+import { generarMensajeVenta } from '@/platform/utils/whatsapp';
+import type { PendingWhatsAppToast } from '@/store/whatsappToastStore';
 import type { TemplateMensaje, VentaDoc } from '@/types';
 
+/**
+ * Aviso final de una renovacion hecha desde el detalle de la venta. Con el WhatsApp automatico encendido la
+ * confirmacion sale sola por la API; apagado, se ofrecen la API y WhatsApp si se pidio notificar al cliente.
+ */
 export function showVentaRenovadaWhatsAppToast({
   data,
+  enqueueWhatsAppMessages,
   monto,
+  notificarCliente,
   servicioContrasena,
   templateRenovacion,
   venta,
@@ -14,21 +20,33 @@ export function showVentaRenovadaWhatsAppToast({
     codigo?: string;
     fechaVencimiento: Date;
   };
+  enqueueWhatsAppMessages: (messages: Array<Omit<PendingWhatsAppToast, 'id'>>) => void;
   monto: number;
+  /** El dialogo de pago tenia encendido "Notificar al cliente por WhatsApp". */
+  notificarCliente: boolean;
   servicioContrasena: string;
   templateRenovacion: TemplateMensaje | undefined;
   venta: VentaDoc;
 }) {
-  if (!templateRenovacion) {
-    toast.success('Venta renovada exitosamente');
-    return;
-  }
+  void announceRenewal({
+    ventaId: venta.id,
+    clienteNombre: venta.clienteNombre,
+    waMessage: notificarCliente && templateRenovacion ? buildWaMessage({ data, monto, servicioContrasena, templateRenovacion, venta }) : null,
+    enqueueWhatsAppMessages,
+  });
+}
 
+function buildWaMessage({ data, monto, servicioContrasena, templateRenovacion, venta }: {
+  data: { codigo?: string; fechaVencimiento: Date };
+  monto: number;
+  servicioContrasena: string;
+  templateRenovacion: TemplateMensaje;
+  venta: VentaDoc;
+}): { phone: string; message: string } | null {
   try {
-    const clienteSoloNombre = venta.clienteNombre.split(' ')[0];
     const mensaje = generarMensajeVenta(templateRenovacion.contenido, {
       clienteNombre: venta.clienteNombre,
-      clienteSoloNombre,
+      clienteSoloNombre: venta.clienteNombre.split(' ')[0],
       servicioNombre: venta.servicioNombre,
       categoriaNombre: venta.categoriaNombre || '',
       perfilNombre: venta.perfilNombre || '',
@@ -38,15 +56,8 @@ export function showVentaRenovadaWhatsAppToast({
       fechaVencimiento: data.fechaVencimiento,
       monto,
     });
-    toast.success('Venta renovada exitosamente', {
-      duration: Infinity,
-      action: {
-        label: 'Enviar WhatsApp',
-        onClick: () => openWhatsApp(venta.clienteTelefono || '', mensaje),
-      },
-      actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
-    });
+    return { phone: venta.clienteTelefono || '', message: mensaje };
   } catch {
-    toast.success('Venta renovada exitosamente');
+    return null;
   }
 }

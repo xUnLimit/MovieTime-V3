@@ -36,7 +36,10 @@ export function WhatsAppAutoSection({ settings }: { settings: AutoSettings }) {
             <MessageCircle className="h-4 w-4" aria-hidden />WhatsApp automático
           </h3>
           <p className="text-xs text-muted-foreground">
-            Envía el aviso &apos;Día de pago&apos; por WhatsApp a las ventas que vencen hoy
+            Todo sale por la API de WhatsApp: el aviso de día de pago a la hora indicada y, al instante, la confirmación de renovación y los avisos que envías desde Notificaciones.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Apagado, tú eliges cómo avisar: por la API o abriendo WhatsApp.
           </p>
         </div>
         <Switch

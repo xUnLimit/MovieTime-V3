@@ -182,6 +182,7 @@ export async function updateVentaUseCase(
 
   storeEventBus.emit({ type: 'VENTA_UPDATED', ventaId: id });
 
+
   return { ventaAnterior, ventaActualizada, finalUpdates, pronostico, serviceProfileDelta };
 }
 

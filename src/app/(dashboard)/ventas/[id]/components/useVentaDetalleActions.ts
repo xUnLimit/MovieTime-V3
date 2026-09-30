@@ -19,6 +19,7 @@ import {
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
 import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
+import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
 import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
 import type { VentaDialogDependenciesResult } from './venta-dialog-dependencies';
 
@@ -55,6 +56,7 @@ export function useVentaDetalleActions({
   updatePerfilOcupado,
   venta,
 }: UseVentaDetalleActionsParams) {
+  const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [reembolsoDialogOpen, setReembolsoDialogOpen] = useState(false);
@@ -141,9 +143,11 @@ export function useVentaDetalleActions({
       if (outcome.type === 'ventaRenewed') setVentaData(outcome.ventaActualizada);
       setRenovarDialogOpen(false);
 
-      if (outcome.type === 'ventaRenewed' && outcome.whatsappRequested) {
+      if (outcome.type === 'ventaRenewed') {
         showVentaRenovadaWhatsAppToast({
+          notificarCliente: outcome.whatsappRequested,
           data,
+          enqueueWhatsAppMessages,
           monto: outcome.monto,
           servicioContrasena,
           templateRenovacion: getTemplateByTipo('renovacion'),

@@ -20,6 +20,32 @@ export function groupNotificationsByTipo(notifs: readonly NotificacionVentaConId
   return [...groups].map(([tipo, ventaIds]) => ({ tipo, ventaIds: [...new Set(ventaIds)] }));
 }
 
+export interface NoticeSendGroup {
+  key: string;
+  clienteNombre: string;
+  notifs: NotificacionVentaConId[];
+}
+
+function dayKey(fecha: Date): string {
+  if (Number.isNaN(fecha.getTime())) return 'sin-fecha';
+  return `${fecha.getFullYear()}-${fecha.getMonth() + 1}-${fecha.getDate()}`;
+}
+
+/**
+ * Agrupa como el envio real (groupNoticeVentas): un mensaje por cliente, dia de vencimiento
+ * y moneda. Sirve para que la confirmacion cuente mensajes y no ventas.
+ */
+export function groupNotificationsForSend(notifs: readonly NotificacionVentaConId[]): NoticeSendGroup[] {
+  const groups = new Map<string, NoticeSendGroup>();
+  for (const notif of notifs) {
+    const key = [dayKey(new Date(notif.fechaFin)), notif.clienteId, notif.moneda ?? 'USD'].join('\u0000');
+    const existing = groups.get(key);
+    if (existing) existing.notifs.push(notif);
+    else groups.set(key, { key, clienteNombre: notif.clienteNombre, notifs: [notif] });
+  }
+  return [...groups.values()];
+}
+
 function toNoticeVenta(notif: NotificacionVentaConId): NoticeVenta {
   return {
     ventaId: notif.ventaId,

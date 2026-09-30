@@ -18,7 +18,7 @@ vi.mock('./ventas-rpc-adapter', () => ({
   updateVentaPaymentAndPeriodRpc: mocks.updatePayment,
 }));
 
-import { countVentas, createPagoVenta, createVenta, createVentaRefund, createVentaWithInitialPayment, getPagoVentaById, getVentaById, queryPagosVenta, queryVentas, removePagoVenta, removeVenta, removeVentaWithPayments, updateLatestVentaPeriodo, updateVenta, updateVentaPaymentAndPeriod, updateVentaPeriodoById, type VentaPeriodoUpdate } from './ventas-repository';
+import { clearVentaCustomerResponse, countVentas, createPagoVenta, createVenta, createVentaRefund, createVentaWithInitialPayment, getPagoVentaById, getVentaById, queryPagosVenta, queryVentas, removePagoVenta, removeVenta, removeVentaWithPayments, updateLatestVentaPeriodo, updateVenta, updateVentaPaymentAndPeriod, updateVentaPeriodoById, type VentaPeriodoUpdate } from './ventas-repository';
 
 function dbQuery(result: { data?: unknown; error: { message: string } | null }) {
   const chain = {
@@ -53,6 +53,18 @@ describe('sales repository', () => {
     expect(mocks.archive).toHaveBeenCalledWith('ventas', 'v1');
     expect(mocks.deleteAll).toHaveBeenCalledWith({ p_venta_id: 'v1', p_delete_payments: true });
     expect(mocks.deletePayment).toHaveBeenCalledWith({ p_pago_id: 'p1' });
+  });
+
+  it('clears the customer response when a sale is renewed and surfaces failures', async () => {
+    const update = dbQuery({ error: null });
+    mocks.from.mockReturnValueOnce(update);
+    await clearVentaCustomerResponse('v1');
+    expect(mocks.from).toHaveBeenCalledWith('ventas');
+    expect(update.update).toHaveBeenCalledWith({ respuesta_cliente: null, respuesta_cliente_at: null });
+    expect(update.eq).toHaveBeenCalledWith('id', 'v1');
+
+    mocks.from.mockReturnValueOnce(dbQuery({ error: { message: 'denied' } }));
+    await expect(clearVentaCustomerResponse('v1')).rejects.toThrow('denied');
   });
 
   it('updates the latest sale period including plan snapshots', async () => {

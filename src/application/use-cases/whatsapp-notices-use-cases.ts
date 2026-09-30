@@ -70,3 +70,17 @@ export async function sendWhatsAppNoticesUseCase(
 export function isNoticeDelivered(status: NoticeResult['status']): boolean {
   return status === 'accepted' || status === 'already_sent';
 }
+
+export type AutomaticRenewalOutcome = 'auto_disabled' | 'sent' | 'not_sent';
+
+/**
+ * Confirma la renovacion por la API solo si el WhatsApp automatico esta encendido: el servidor decide entre
+ * texto libre (ventana de 24 h abierta) y plantilla de Meta. `auto_disabled` deja la eleccion a quien renovo.
+ */
+export async function sendAutomaticRenewalNoticeUseCase(ventaId: string): Promise<AutomaticRenewalOutcome> {
+  const session = await getCurrentSession();
+  if (!session?.access_token) throw new Error('No hay una sesión activa para enviar avisos por WhatsApp.');
+  const { results, skipped } = await postWhatsAppNotices(session.access_token, { tipo: 'renovacion', ventaIds: [ventaId], automatic: true });
+  if (skipped) return 'auto_disabled';
+  return results.some((result) => isNoticeDelivered(result.status)) ? 'sent' : 'not_sent';
+}

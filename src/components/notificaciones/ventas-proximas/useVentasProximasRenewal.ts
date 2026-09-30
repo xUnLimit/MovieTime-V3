@@ -8,7 +8,7 @@ import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog'
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { reportError } from '@/platform/observability/logger';
-import { openWhatsApp } from '@/platform/utils/whatsapp';
+import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
 import { applyNotificationQueryReactions } from '@/application/store-reactions/notification-query-reactions';
 import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import {
@@ -19,6 +19,7 @@ import type { MetodoPago } from '@/types';
 import type { Plan } from '@/types/categorias';
 
 import type { NotificacionVentaConId } from './types';
+import { showVentaRenewalOutcome } from './venta-renewal-outcome';
 
 interface Params {
   notifSeleccionada: NotificacionVentaConId | null;
@@ -29,6 +30,7 @@ interface Params {
 // Dialogo de renovacion desde la notificacion: opciones, confirmacion y aviso final.
 export function useVentasProximasRenewal({ notifSeleccionada, setNotifSeleccionada, refreshNotificationCaches }: Params) {
   const queryClient = useQueryClient();
+  const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
   const [isLoadingRenovar, setIsLoadingRenovar] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
   const [metodosPagoTerceros, setMetodosPagoTerceros] = useState<MetodoPago[]>([]);
@@ -68,7 +70,7 @@ export function useVentasProximasRenewal({ notifSeleccionada, setNotifSelecciona
           description: 'La renovacion se guardo, pero no se pudo actualizar el metodo de pago en terceros.',
         });
       }
-      showVentaRenewalOutcome(outcome);
+      showVentaRenewalOutcome(outcome, notifSeleccionada, enqueueWhatsAppMessages);
       setRenovarDialogOpen(false);
       setNotifSeleccionada(null);
     } catch (error) {
@@ -91,20 +93,4 @@ export function useVentasProximasRenewal({ notifSeleccionada, setNotifSelecciona
     servicioTipoSeleccionado,
     setRenovarDialogOpen,
   };
-}
-
-function showVentaRenewalOutcome({ whatsappMessage }: Awaited<ReturnType<typeof confirmVentaRenewal>>) {
-  if (!whatsappMessage) {
-    toast.success('Venta renovada exitosamente');
-    return;
-  }
-
-  toast.success('Venta renovada exitosamente', {
-    duration: Infinity,
-    action: {
-      label: 'Enviar WhatsApp',
-      onClick: () => openWhatsApp(whatsappMessage.phone, whatsappMessage.message),
-    },
-    actionButtonStyle: { backgroundColor: '#15803d', color: '#fff' },
-  });
 }

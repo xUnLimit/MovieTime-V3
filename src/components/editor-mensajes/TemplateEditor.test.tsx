@@ -112,7 +112,7 @@ describe('TemplateEditor', () => {
   it('groups the messages by moment and hides the removed notificacion_regular', () => {
     render(wrap([]));
     const groups: Record<string, string[]> = {
-      cobros: ['Aviso de vencimiento', 'Corte de servicio'],
+      cobros: ['Aviso de vencimiento', 'Aviso de corte'],
       respuestas: ['Datos de pago', 'Despedida'],
       ventas: ['Notificación de Suscripción', 'Notificación de Renovación'],
       cuentas: ['Actualización de Credenciales', 'Transferencia de Servicio'],
@@ -245,7 +245,7 @@ describe('TemplateEditor', () => {
 
     await user.click(tipoButton('cancelacion'));
     await user.click(await screen.findByRole('button', { name: 'Descartar y cambiar' }));
-    expect(screen.getByRole('heading', { name: 'Corte de servicio' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Aviso de corte' })).toBeTruthy();
     expect(screen.queryByText('Cambios sin guardar')).toBeNull();
   });
 

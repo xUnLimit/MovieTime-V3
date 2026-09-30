@@ -89,7 +89,7 @@ beforeEach(() => {
 });
 
 describe('useVentaDetalleActions', () => {
-  it('shows the WhatsApp confirmation after a requested renewal', async () => {
+  it('hands the renewal to the notice flow with the customer choice from the payment dialog', async () => {
     const { params, result } = renderActions();
 
     await act(async () => {
@@ -99,13 +99,14 @@ describe('useVentaDetalleActions', () => {
     expect(params.setVentaData).toHaveBeenCalledWith(expect.objectContaining({ id: 'venta-1' }));
     expect(mocks.showWhatsApp).toHaveBeenCalledWith(expect.objectContaining({
       monto: 15,
+      notificarCliente: true,
       servicioContrasena: 'secret',
       venta,
     }));
     expect(mocks.toastSuccess).not.toHaveBeenCalled();
   });
 
-  it('shows the standard confirmation when WhatsApp was not requested', async () => {
+  it('still runs the notice flow when the dialog did not ask to notify, because the automatic switch decides', async () => {
     mocks.renew.mockResolvedValueOnce({
       type: 'ventaRenewed',
       monto: 15,
@@ -117,8 +118,7 @@ describe('useVentaDetalleActions', () => {
     await act(async () => {
       await result.current.handleConfirmRenovacion({ enviarWhatsApp: false } as never);
     });
-    expect(mocks.showWhatsApp).not.toHaveBeenCalled();
-    expect(mocks.toastSuccess).toHaveBeenCalledWith('Venta renovada exitosamente');
+    expect(mocks.showWhatsApp).toHaveBeenCalledWith(expect.objectContaining({ notificarCliente: false }));
   });
 
   it('opens dependencies and deletes a sale with its payment records', async () => {

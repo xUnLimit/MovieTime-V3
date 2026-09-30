@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useConfig } from '@/hooks/use-config';
 import { useTemplates, useMetaTemplates } from '@/hooks/use-templates';
 import { useSendNotices } from '@/hooks/use-whatsapp-notices';
 import { isUsableMetaTemplate } from '@/modules/messaging/meta-template-mapping';
@@ -52,6 +53,7 @@ export function NotifyVentaDialog({
   const { data: templates = [] } = useTemplates();
   const { data: metaTemplates = [] } = useMetaTemplates();
   const sendNotices = useSendNotices();
+  const { data: config } = useConfig();
 
   const tipo = choice === 'expiration' ? noticeTipoFor() : 'cancelacion';
   const template = templates.find((item) => item.tipo === tipo && item.activo);
@@ -65,7 +67,10 @@ export function NotifyVentaDialog({
     [notification, templateContent],
   );
   const isBusy = sendNotices.isPending || isOpeningWhatsApp;
-
+  // Con el WhatsApp automatico encendido todo sale por la API; apagado (o sin cargar) se ofrecen los dos canales.
+  const autoOn = config?.whatsapp?.autoEnabled === true;
+  const apiOnly = autoOn && usesApiTemplate;
+  const whatsappOnly = autoOn && !usesApiTemplate;
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setChoice('expiration');
@@ -116,7 +121,9 @@ export function NotifyVentaDialog({
         <DialogHeader>
           <DialogTitle>Notificar a {notification.clienteNombre}</DialogTitle>
           <DialogDescription>
-            Selecciona el mensaje y envíalo por la API o ábrelo en WhatsApp.
+            {autoOn
+              ? 'Selecciona el mensaje: con el WhatsApp automático encendido se envía por la API.'
+              : 'Selecciona el mensaje y envíalo por la API o ábrelo en WhatsApp.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -182,7 +189,9 @@ export function NotifyVentaDialog({
         <p className="text-xs text-muted-foreground" data-testid="notice-channel">
           {usesApiTemplate
             ? 'Se enviará por WhatsApp API (plantilla con botones)'
-            : 'Se abrirá WhatsApp'}
+            : whatsappOnly
+              ? 'Este aviso no tiene una plantilla aprobada para la API: se abrirá WhatsApp'
+              : 'Se abrirá WhatsApp'}
         </p>
 
         {results ? (
@@ -193,12 +202,16 @@ export function NotifyVentaDialog({
           <Button type="button" variant="outline" disabled={isBusy} onClick={() => handleOpenChange(false)}>
             {results ? 'Cerrar' : 'Volver'}
           </Button>
-          <Button type="button" variant="outline" disabled={isBusy} onClick={handleOpenWhatsApp}>
-            Abrir en WhatsApp
-          </Button>
-          <Button type="button" disabled={isBusy} onClick={handleSend}>
-            {sendNotices.isPending ? 'Enviando...' : 'Enviar'}
-          </Button>
+          {apiOnly ? null : (
+            <Button type="button" variant={whatsappOnly ? 'default' : 'outline'} disabled={isBusy} onClick={handleOpenWhatsApp}>
+              Abrir en WhatsApp
+            </Button>
+          )}
+          {whatsappOnly ? null : (
+            <Button type="button" disabled={isBusy} onClick={handleSend}>
+              {sendNotices.isPending ? 'Enviando...' : 'Enviar'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

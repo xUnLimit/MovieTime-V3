@@ -14,9 +14,9 @@ export type EditableTipoKey = Exclude<TemplateTipoKey, 'notificacion_regular'>;
 // notificacion_regular sigue en el enum solo por historial; ya no se edita ni se envia.
 export const TEMPLATE_TIPOS: readonly { value: EditableTipoKey; label: string; cuando: string }[] = [
   { value: 'dia_pago', label: 'Aviso de vencimiento', cuando: 'antes y el día que vence' },
-  { value: 'renovacion', label: 'Notificación de Renovación', cuando: 'al registrar un pago' },
+  { value: 'renovacion', label: 'Notificación de Renovación', cuando: 'al registrar una renovación' },
   { value: 'suscripcion', label: 'Notificación de Suscripción', cuando: 'al crear una venta' },
-  { value: 'cancelacion', label: 'Corte de servicio', cuando: 'cuando ya venció' },
+  { value: 'cancelacion', label: 'Aviso de corte', cuando: 'al darle Notificar y elegir Cancelación (al cortar una venta no se envía nada)' },
   { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales', cuando: 'al cambiar datos de acceso' },
   { value: 'transferencia_servicio', label: 'Transferencia de Servicio', cuando: 'al mover a otra cuenta' },
   { value: 'datos_pago', label: 'Datos de pago', cuando: 'cuando el cliente toca un botón de renovar' },

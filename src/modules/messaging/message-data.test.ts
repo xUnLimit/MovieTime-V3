@@ -73,6 +73,21 @@ describe('isNoticeEligible', () => {
   });
 });
 
+describe('isNoticeEligible en renovacion', () => {
+  const today = day(2026, 10, 1, 9);
+  it('avisa a una venta activa aunque hubiera dicho no continuar o tuviera promesa', () => {
+    expect(isNoticeEligible(venta(), today, 'renewal')).toBe(true);
+    expect(isNoticeEligible(venta({ respuestaCliente: 'no_continuar', promesaPagoHasta: day(2026, 10, 3) }), today, 'renewal')).toBe(true);
+  });
+  it.each([
+    ['inactiva', { activa: false }],
+    ['reembolsada', { reembolsada: true }],
+    ['en reposo', { enReposo: true }],
+  ])('no avisa si esta %s', (_name, overrides) => {
+    expect(isNoticeEligible(venta(overrides), today, 'renewal')).toBe(false);
+  });
+});
+
 describe('groupNoticeVentas', () => {
   it('agrupa por cliente, dia de vencimiento y moneda', () => {
     const groups = groupNoticeVentas([

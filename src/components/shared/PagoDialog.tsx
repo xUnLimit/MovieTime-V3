@@ -138,7 +138,7 @@ export function PagoDialog(props: PagoDialogProps) {
 
   return (
     <Dialog open={props.open} onOpenChange={handleOpenChange}>
-      <DialogContent className={cn('max-w-[calc(100vw-2rem)]', dialogContentClassName)}>
+      <DialogContent className={cn('flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden', dialogContentClassName)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -146,7 +146,8 @@ export function PagoDialog(props: PagoDialogProps) {
           </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex min-h-0 flex-1 flex-col">
+          <div className="-mx-1 min-h-0 flex-1 space-y-4 overflow-y-auto px-1">
           {isVenta ? (
             <>
               <div className="grid grid-cols-2 gap-4">
@@ -210,8 +211,9 @@ export function PagoDialog(props: PagoDialogProps) {
               setValue={setValue}
             />
           )}
+          </div>
 
-          <div className="flex gap-3 justify-end pt-2">
+          <div className="flex shrink-0 justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancelar
             </Button>

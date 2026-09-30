@@ -25,6 +25,11 @@ export const createVenta = <T extends Record<string, unknown>>(payload: Omit<T, 
   create(ENTITIES.VENTAS, payload);
 export const updateVenta = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   update(ENTITIES.VENTAS, id, payload);
+// Una renovacion cancela la respuesta "no continuar" del ciclo anterior: el cliente pago.
+export async function clearVentaCustomerResponse(id: string): Promise<void> {
+  const { error } = await supabase.from('ventas').update({ respuesta_cliente: null, respuesta_cliente_at: null }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
 // Politica de persistencia del agregado venta: se archiva (soft-delete), no se borra.
 export const removeVenta = (id: string) => archiveRecord(ENTITIES.VENTAS, id);
 

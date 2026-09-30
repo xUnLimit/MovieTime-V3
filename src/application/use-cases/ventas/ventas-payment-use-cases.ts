@@ -5,6 +5,7 @@ import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { toDateOnly } from '@/platform/supabase/dates';
 import { logAsyncSideEffectError } from '@/platform/utils/safety';
 import {
+  clearVentaCustomerResponse,
   getPagoVentaById,
   queryPagosVenta,
   removePagoVenta,
@@ -69,6 +70,12 @@ export async function renewVentaUseCase(
   return afterCommit(venta.id, async () => {
     await updateVenta(venta.id, { notas: notaPrincipal });
 
+    try {
+      await clearVentaCustomerResponse(venta.id);
+    } catch (error) {
+      logAsyncSideEffectError(error, { operation: 'clearVentaCustomerResponse', entity: 'venta', entityId: venta.id });
+    }
+
     let syncPaymentMethodFailed = false;
     try {
       await syncTerceroMetodoPagoUseCase({
@@ -113,6 +120,7 @@ export async function renewVentaUseCase(
         origen: 'renewVentaUseCase',
       },
     });
+
 
     return { costo, descuentoNumero, monto, notaPrincipal, metodoPagoNombre, moneda, pronostico, syncPaymentMethodFailed };
   });

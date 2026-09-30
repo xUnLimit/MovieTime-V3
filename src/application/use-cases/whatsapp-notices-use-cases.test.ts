@@ -9,7 +9,7 @@ vi.mock('@/platform/api/whatsapp-notices-client', () => ({ postWhatsAppNotices: 
 vi.mock('@/platform/supabase/auth', () => ({ getCurrentSession: mocks.session }));
 
 import {
-  getVentaNoticeStatusUseCase, isNoticeDelivered, mapNoticeBadge, sendWhatsAppNoticesUseCase,
+  getVentaNoticeStatusUseCase, isNoticeDelivered, mapNoticeBadge, sendAutomaticRenewalNoticeUseCase, sendWhatsAppNoticesUseCase,
 } from './whatsapp-notices-use-cases';
 
 describe('mapNoticeBadge', () => {
@@ -71,5 +71,34 @@ describe('sendWhatsAppNoticesUseCase', () => {
     expect(isNoticeDelivered('already_sent')).toBe(true);
     expect(isNoticeDelivered('failed')).toBe(false);
     expect(isNoticeDelivered('wa_me')).toBe(false);
+  });
+});
+
+describe('sendAutomaticRenewalNoticeUseCase', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('requires a session', async () => {
+    mocks.session.mockResolvedValue(null);
+    await expect(sendAutomaticRenewalNoticeUseCase('v1')).rejects.toThrow('sesión');
+  });
+
+  it('asks the server for an automatic renewal notice and reports what happened', async () => {
+    mocks.session.mockResolvedValue({ access_token: 'tok' });
+    mocks.post.mockResolvedValueOnce({ results: [{ status: 'accepted' }] });
+    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('sent');
+    expect(mocks.post).toHaveBeenCalledWith('tok', { tipo: 'renovacion', ventaIds: ['v1'], automatic: true });
+
+    mocks.post.mockResolvedValueOnce({ results: [{ status: 'already_sent' }] });
+    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('sent');
+    mocks.post.mockResolvedValueOnce({ results: [{ status: 'skipped' }] });
+    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('not_sent');
+    mocks.post.mockResolvedValueOnce({ results: [{ status: 'failed' }, { status: 'wa_me' }] });
+    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('not_sent');
+  });
+
+  it('tells the caller when the automatic switch is off', async () => {
+    mocks.session.mockResolvedValue({ access_token: 'tok' });
+    mocks.post.mockResolvedValue({ results: [], skipped: 'auto_disabled' });
+    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('auto_disabled');
   });
 });

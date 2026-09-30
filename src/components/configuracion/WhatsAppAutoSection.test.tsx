@@ -26,7 +26,8 @@ describe('WhatsAppAutoSection', () => {
   it('is off by default, explains itself and toggles through the handler', async () => {
     const s = settings();
     render(<WhatsAppAutoSection settings={s} />);
-    expect(screen.getByText(/Envía el aviso 'Día de pago' por WhatsApp a las ventas que vencen hoy/)).toBeTruthy();
+    expect(screen.getByText(/Todo sale por la API de WhatsApp: el aviso de día de pago a la hora indicada/)).toBeTruthy();
+    expect(screen.getByText('Apagado, tú eliges cómo avisar: por la API o abriendo WhatsApp.')).toBeTruthy();
     const toggle = screen.getByRole('switch', { name: 'Activar envío automático por WhatsApp' });
     expect(toggle.getAttribute('aria-checked')).toBe('false');
     await userEvent.setup().click(toggle);

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { buildMessageData, groupNoticeVentas, isNoticeEligible, metaParamsFromMap,
-  normalizePanamaWaId, noticeDedupeKey, renderFreeText, type NoticeGroup, type NoticeVenta } from '@/modules/messaging/message-data';
+  normalizePanamaWaId, noticeDedupeKey, renderFreeText, type NoticeEligibilityMode, type NoticeGroup,
+  type NoticeVenta } from '@/modules/messaging/message-data';
 import type { NoticeStore, NoticeTipo } from '@/modules/messaging/notice-store';
 import { isWindowOpen, type OutboundResult } from '@/modules/whatsapp/outbound-messages';
 import { WHATSAPP_TEMPLATE_LANGUAGE, type TemplateCatalog } from '@/modules/whatsapp/template-catalog';
@@ -45,8 +46,12 @@ function panamaWallClock(now: Date): Date {
   const part = (name: string) => Number(parts.find((item) => item.type === name)?.value);
   return new Date(part('year'), part('month') - 1, part('day'), part('hour'), part('minute'), part('second'));
 }
-function skipReason(venta: NoticeVenta): string {
-  if (venta.respuestaCliente) return 'no_continuar';
+// La renovacion siempre se confirma (el cliente pago), aunque antes hubiera dicho "no continuar".
+function eligibilityMode(input: SendNoticeInput): NoticeEligibilityMode {
+  return input.tipo === 'renovacion' ? 'renewal' : 'regular';
+}
+function skipReason(venta: NoticeVenta, mode: NoticeEligibilityMode): string {
+  if (mode !== 'renewal' && venta.respuestaCliente) return 'no_continuar';
   if (venta.reembolsada) return 'reembolsada';
   if (venta.enReposo) return 'en_reposo';
   if (!venta.activa) return 'inactiva';
@@ -95,7 +100,11 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
   let payload: OutboundPayload;
   let channel: 'template' | 'text';
   let buttonTexts: string[] = [];
-  if (TEMPLATE_TYPES.includes(input.tipo)) {
+  // La confirmacion de renovacion va como texto libre mientras la ventana de 24 h siga abierta;
+  // con la ventana cerrada necesita la plantilla de Meta vinculada.
+  const templateOnly = TEMPLATE_TYPES.includes(input.tipo);
+  const windowOpen = templateOnly ? false : isWindowOpen(await deps.store.lastInboundAt(waId), input.now);
+  if (templateOnly || (input.tipo === 'renovacion' && !windowOpen)) {
     const metaName = template.metaTemplateName;
     if (!metaName) return input.origin === 'auto'
       ? recordSkipped(group, input, deps, 'plantilla_no_aprobada', waId) : waMe();
@@ -113,7 +122,7 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
     // The notice ID is needed in button payloads, so payload is completed after reservation.
     payload = { kind: 'template', templateName: metaName, params };
   } else {
-    if (!isWindowOpen(await deps.store.lastInboundAt(waId), input.now)) return waMe();
+    if (!windowOpen) return waMe();
     channel = 'text';
     payload = { kind: 'text', text: freeText };
   }
@@ -153,19 +162,20 @@ export async function sendNotice(input: SendNoticeInput, deps: SendNoticeDeps): 
   const loaded = await deps.store.loadVentas(requestedIds);
   const byId = new Map(loaded.map((venta) => [venta.ventaId, venta]));
   const today = panamaWallClock(input.now);
+  const mode = eligibilityMode(input);
   const skipped: NoticeResult[] = [];
   for (const id of requestedIds) {
     const venta = byId.get(id);
-    if (venta && isNoticeEligible(venta, today)) continue;
+    if (venta && isNoticeEligible(venta, today, mode)) continue;
     if (venta) {
       const group = groupNoticeVentas([venta])[0];
-      skipped.push(await recordSkipped(group, input, deps, skipReason(venta), normalizePanamaWaId(venta.telefono)));
+      skipped.push(await recordSkipped(group, input, deps, skipReason(venta, mode), normalizePanamaWaId(venta.telefono)));
     } else {
       skipped.push({ noticeId: null, clienteNombre: '', ventaIds: [id],
         status: 'skipped', channel: null, waId: null, error: 'venta_no_encontrada' });
     }
   }
-  const eligible = loaded.filter((venta) => isNoticeEligible(venta, today));
+  const eligible = loaded.filter((venta) => isNoticeEligible(venta, today, mode));
   const groups = groupNoticeVentas(eligible);
   const results: NoticeResult[] = [];
   for (const group of groups) results.push(await sendGroup(group, input, deps));

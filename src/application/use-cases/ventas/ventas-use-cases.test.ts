@@ -13,6 +13,7 @@ const ventasRepository = vi.hoisted(() => ({
   removeVenta: vi.fn(),
   removeVentaWithPayments: vi.fn(),
   updateLatestVentaPeriodo: vi.fn(),
+  clearVentaCustomerResponse: vi.fn(),
   updateVenta: vi.fn(),
   updateVentaPaymentAndPeriod: vi.fn(),
 }));
@@ -241,6 +242,39 @@ describe('ventas use cases', () => {
       shouldIncrement: false,
     });
     expect(result.pronostico).toBeNull();
+  });
+
+  it('clears the old no-continue answer when a sale is renewed', async () => {
+    await renewVentaUseCase(ventaBase, {
+      periodoRenovacion: 'mensual', metodoPagoId: '00000000-0000-4000-8000-000000000015', metodoPagoNombre: 'Zelle',
+      moneda: 'USD', costo: 12, descuento: 0,
+      fechaInicio: new Date('2026-06-01T00:00:00.000Z'), fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
+      planId: ventaBase.planId, planNombre: ventaBase.planNombre, planTipoNombre: ventaBase.planTipoNombre,
+    });
+    expect(ventasRepository.clearVentaCustomerResponse).toHaveBeenCalledWith(ventaBase.id);
+  });
+
+  it('still completes the renewal when clearing the old answer fails', async () => {
+    ventasRepository.clearVentaCustomerResponse.mockRejectedValueOnce(new Error('rls'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(renewVentaUseCase(ventaBase, {
+      periodoRenovacion: 'mensual', metodoPagoId: '00000000-0000-4000-8000-000000000015', metodoPagoNombre: 'Zelle',
+      moneda: 'USD', costo: 12, descuento: 0,
+      fechaInicio: new Date('2026-06-01T00:00:00.000Z'), fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
+      planId: ventaBase.planId, planNombre: ventaBase.planNombre, planTipoNombre: ventaBase.planTipoNombre,
+    })).resolves.toBeDefined();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('does not touch the customer answer when the renewal failed to register', async () => {
+    paymentsModule.financialPayments.registerRenewalVentaPayment.mockRejectedValueOnce(new Error('rpc'));
+    await expect(renewVentaUseCase(ventaBase, {
+      periodoRenovacion: 'mensual', metodoPagoId: '00000000-0000-4000-8000-000000000015', metodoPagoNombre: 'Zelle',
+      moneda: 'USD', costo: 12, descuento: 0,
+      fechaInicio: new Date('2026-06-01T00:00:00.000Z'), fechaVencimiento: new Date('2026-07-01T00:00:00.000Z'),
+      planId: ventaBase.planId, planNombre: ventaBase.planNombre, planTipoNombre: ventaBase.planTipoNombre,
+    })).rejects.toThrow('rpc');
+    expect(ventasRepository.clearVentaCustomerResponse).not.toHaveBeenCalled();
   });
 
   it('passes plan data when editing the latest venta payment period', async () => {

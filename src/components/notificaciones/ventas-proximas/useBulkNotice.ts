@@ -26,6 +26,9 @@ interface UseBulkNoticeParams {
 export function useBulkNotice({ notificaciones, pageNotificaciones, onOpenWhatsApp, getContenido }: UseBulkNoticeParams) {
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const [results, setResults] = useState<NoticeResult[] | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  // Copia de lo que se va a enviar: el dialogo la conserva mientras se anima su cierre.
+  const [confirmItems, setConfirmItems] = useState<NotificacionVentaConId[]>([]);
   const sendNotices = useSendNotices();
 
   const selected = useMemo(
@@ -51,8 +54,19 @@ export function useBulkNotice({ notificaciones, pageNotificaciones, onOpenWhatsA
     });
   }, [pageNotificaciones]);
 
-  const notifySelected = async () => {
+  const requestNotify = () => {
     if (selected.length === 0) return;
+    setConfirmItems(selected);
+    setConfirmOpen(true);
+  };
+
+  const cancelNotify = () => setConfirmOpen(false);
+
+  const notifySelected = async () => {
+    if (selected.length === 0) {
+      setConfirmOpen(false);
+      return;
+    }
     const collected: NoticeResult[] = [];
     for (const group of groupNotificationsByTipo(selected)) {
       try {
@@ -77,6 +91,7 @@ export function useBulkNotice({ notificaciones, pageNotificaciones, onOpenWhatsA
     }
     setResults(collected);
     setSelectedIds(new Set());
+    setConfirmOpen(false);
   };
 
   const openResultWhatsApp = async (result: NoticeResult) => {
@@ -98,6 +113,10 @@ export function useBulkNotice({ notificaciones, pageNotificaciones, onOpenWhatsA
     toggleSelected,
     toggleAllOnPage,
     clearSelection: () => setSelectedIds(new Set()),
+    confirmOpen,
+    confirmItems,
+    requestNotify,
+    cancelNotify,
     notifySelected,
     openResultWhatsApp,
     closeSummary: () => setResults(null),

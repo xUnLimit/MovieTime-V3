@@ -9,6 +9,7 @@
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ServerTableCard } from '@/components/shared/ServerTableCard';
 
+import { BulkNoticeConfirmDialog } from './ventas-proximas/BulkNoticeConfirmDialog';
 import { BulkNoticeSummaryDialog } from './ventas-proximas/BulkNoticeSummaryDialog';
 import { VentasProximasDialogs } from './ventas-proximas/VentasProximasDialogs';
 import { VentasProximasTableContent } from './ventas-proximas/VentasProximasTableContent';
@@ -41,7 +42,7 @@ export function VentasProximasTable() {
             onEstadoFilterChange={controller.handleEstadoFilterChange}
             selectedCount={controller.bulk.selectedCount}
             isNotifying={controller.bulk.isSending}
-            onNotifySelected={controller.bulk.notifySelected}
+            onNotifySelected={controller.bulk.requestNotify}
             onClearSelection={controller.bulk.clearSelection}
           />
         }
@@ -66,6 +67,14 @@ export function VentasProximasTable() {
           />
         )}
       </ServerTableCard>
+
+      <BulkNoticeConfirmDialog
+        open={controller.bulk.confirmOpen}
+        items={controller.bulk.confirmItems}
+        isSending={controller.bulk.isSending}
+        onConfirm={controller.bulk.notifySelected}
+        onCancel={controller.bulk.cancelNotify}
+      />
 
       <BulkNoticeSummaryDialog
         results={controller.bulk.results}

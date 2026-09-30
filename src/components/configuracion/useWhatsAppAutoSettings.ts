@@ -12,7 +12,7 @@ import { queryKeys } from '@/platform/query-keys';
 export const AUTO_CAP_MIN = 1;
 export const AUTO_CAP_MAX = 1000;
 
-// Ajustes del envio automatico "Dia de pago" por WhatsApp (interruptor, hora de Panama y tope diario).
+// Ajustes del envio automatico por WhatsApp (interruptor, hora de Panama y tope diario): dia de pago, confirmacion de renovacion y avisos enviados desde Notificaciones.
 export function useWhatsAppAutoSettings(enabled: boolean) {
   const { data: config, refetch: refetchConfig } = useConfig();
   const auto = config?.whatsapp;

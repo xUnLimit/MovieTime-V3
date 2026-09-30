@@ -90,3 +90,18 @@ describe('offerApiAccessNotice', () => {
     expect(mocks.error).toHaveBeenCalled();
   });
 });
+
+describe('offerApiAccessNotice for renewals', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('shows a success-styled offer and sends the renewal through the API', async () => {
+    mocks.send.mockResolvedValue([{ status: 'accepted', ventaIds: ['v1'] }]);
+    const enqueue = vi.fn();
+    offerApiAccessNotice({ tipo: 'renovacion', items: [items[0]!], enqueueWhatsAppMessages: enqueue, title: 'Venta renovada', description: 'D', kind: 'success' });
+    expect(mocks.info).not.toHaveBeenCalled();
+    const options = mocks.success.mock.calls.at(-1)?.[1];
+    await options.action.onClick();
+    expect(mocks.send).toHaveBeenCalledWith({ tipo: 'renovacion', ventaIds: ['v1'], eventId: expect.stringMatching(UUID) });
+    expect(enqueue).toHaveBeenCalledWith([]);
+  });
+});
