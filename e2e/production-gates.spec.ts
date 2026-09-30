@@ -61,14 +61,13 @@ test('@smoke serves the chat stylesheet used by the current interface', async ({
   expect(css.includes('.bg-chat-bubble-out'), 'Falta el fondo de los mensajes enviados').toBe(true);
 });
 
-test('@smoke keeps the iOS status bar separate from the web app header', async ({ request }) => {
+test('@smoke draws the iOS web app under the status bar and compensates with safe areas', async ({ request }) => {
   const response = await request.get('/dashboard');
   const html = await response.text();
 
   expect(response.status()).toBe(200);
   expect(html).toContain('name="mobile-web-app-capable" content="yes"');
-  expect(html).toContain('name="apple-mobile-web-app-status-bar-style" content="black"');
-  expect(html).not.toContain('name="apple-mobile-web-app-status-bar-style" content="black-translucent"');
+  expect(html).toContain('name="apple-mobile-web-app-status-bar-style" content="black-translucent"');
 });
 
 test('@smoke allows zoom on login and preserves the operational viewport', async ({ request }) => {
