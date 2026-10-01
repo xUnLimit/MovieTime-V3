@@ -8,7 +8,7 @@ import { reportError } from '@/platform/observability/logger';
 import type { TemplateMensaje } from '@/types';
 
 import type { NotificacionVentaConId } from './types';
-import { notifyVentaCancellation, notifyVentaExpiration } from './venta-notification-messaging';
+import { notifyVentaExpiration } from './venta-notification-messaging';
 import { useBulkNotice } from './useBulkNotice';
 
 interface Params {
@@ -42,24 +42,6 @@ export function useVentasProximasNotices({ ventasNotificaciones, paginatedNotifi
     }
   };
 
-  const handleCancelar = (notif: NotificacionVentaConId) => {
-    const template = getTemplateByTipo('cancelacion');
-
-    if (!template) {
-      toast.error('Template de cancelación no encontrado');
-      return false;
-    }
-
-    try {
-      notifyVentaCancellation(notif, template);
-      return true;
-    } catch (error) {
-      reportError('VentasProximas', 'Error generando mensaje de cancelacion', error);
-      toast.error('Error generando mensaje de cancelación');
-      return false;
-    }
-  };
-
   const bulk = useBulkNotice({
     notificaciones: ventasNotificaciones,
     pageNotificaciones: paginatedNotificaciones,
@@ -67,5 +49,5 @@ export function useVentasProximasNotices({ ventasNotificaciones, paginatedNotifi
     getContenido: (tipo) => getTemplateByTipo(tipo)?.contenido,
   });
 
-  return { handleNotificar, handleCancelar, bulk, getTemplateByTipo };
+  return { handleNotificar, bulk, getTemplateByTipo };
 }

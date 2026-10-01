@@ -13,8 +13,8 @@ import {
   getPagoDialogCopy,
   getPrecioPorCiclo,
   hasServicioPagoChanges,
-  buildVentaPreviewMessage,
 } from './helpers';
+import { buildVentaPreviewMessage } from './preview-helpers';
 
 describe('pago dialog helpers', () => {
   const baseProps = {

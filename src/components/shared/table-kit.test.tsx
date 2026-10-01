@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { computeFitRows } from '@/hooks/use-fit-page-size';
 
 import { DataTable, defineDataTableColumns, hideBelowClass } from './DataTable';
+import { columnClass, getRowKey, toSortableValue } from './data-table-parts';
 import { PaginationFooter } from './PaginationFooter';
 import { ServerTableCard } from './ServerTableCard';
 import { TableCard } from './TableCard';
@@ -124,6 +125,14 @@ describe('TableCard', () => {
 });
 
 describe('DataTable estandar', () => {
+  it('resuelve claves de fila y valores de ordenacion sin IDs validos', () => {
+    expect(getRowKey({ nombre: 'Ana' }, 4)).toBe(4);
+    expect(getRowKey({ id: 7 }, 4)).toBe(7);
+    expect(toSortableValue({ valor: 1 })).toBeNull();
+    expect(toSortableValue(true)).toBe(true);
+    expect(columnClass({ key: 'monto', header: 'Monto', align: 'right', hideBelow: 'md' }, 0)).toContain('text-right');
+    expect(columnClass({ key: 'estado', header: 'Estado', align: 'center' }, 1)).toContain('text-center');
+  });
   it('oculta columnas secundarias segun el ancho del contenedor', () => {
     expect(hideBelowClass('lg')).toContain('hidden');
     expect(hideBelowClass('lg')).toContain('table-cell');
@@ -156,6 +165,29 @@ describe('DataTable estandar', () => {
     expect(screen.queryByLabelText('Filas por página')).toBeNull();
     expect(screen.getByText(/Página 1 de/)).toBeTruthy();
     fit.rows = null;
+  });
+
+  it('ordena en ambos sentidos y conserva las columnas del layout fijo', async () => {
+    const { container } = render(<DataTable fixedLayout data={rows} columns={columns} />);
+    expect(container.querySelector('colgroup col')).toBeTruthy();
+    const sort = screen.getByRole('button', { name: /Nombre/ });
+    await userEvent.click(sort);
+    expect(screen.getAllByRole('row')[2].textContent).toContain('Luis');
+    await userEvent.click(sort);
+    expect(screen.getAllByRole('row')[1].textContent).toContain('Luis');
+    await userEvent.click(sort);
+    expect(screen.getAllByRole('row')[1].textContent).toContain('Ana');
+  });
+
+  it('detiene el click de fila en la celda de acciones', async () => {
+    const onRowClick = vi.fn();
+    const action = vi.fn();
+    render(<DataTable data={rows} columns={columns} onRowClick={onRowClick} actions={() => <button onClick={action}>Abrir</button>} />);
+    await userEvent.click(screen.getAllByText('Abrir')[0]);
+    expect(action).toHaveBeenCalledOnce();
+    expect(onRowClick).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByText('Ana'));
+    expect(onRowClick).toHaveBeenCalledWith(rows[0]);
   });
 });
 

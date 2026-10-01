@@ -224,4 +224,100 @@ describe('CurrencyService', () => {
     const service = new CurrencyService({ now: () => NOW, fetchRates: vi.fn().mockResolvedValue(rates(0)) });
     await expect(service.refreshExchangeRates()).resolves.toBeUndefined();
   });
-});
+
+  describe('timeout de la API de cambio', () => {
+    function mockTimeout() {
+      vi.useFakeTimers();
+      return vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), milliseconds);
+        controller.signal.addEventListener('abort', () => clearTimeout(timer), { once: true });
+        return controller.signal;
+      });
+    }
+
+    function pendingFetch() {
+      return vi.spyOn(globalThis, 'fetch').mockImplementation((_url, options) =>
+        new Promise<Response>((_resolve, reject) => {
+          options?.signal?.addEventListener('abort', () => reject(new DOMException('timeout', 'TimeoutError')), { once: true });
+        }));
+    }
+
+    it('usa cache utilizable cuando la API no responde y libera el temporizador', async () => {
+      const timeout = mockTimeout();
+      const fetchMock = pendingFetch();
+      fromMock.mockReset().mockReturnValue(cacheReadResult([
+        { currency_pair: 'USD_EUR', rate: 2, source: 'db', last_updated: rates(48).lastUpdated.toISOString() },
+      ]));
+      try {
+        const service = new CurrencyService({ now: () => NOW });
+        const result = service.convertToUSD(100, 'EUR');
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        await vi.advanceTimersByTimeAsync(5000);
+        await expect(result).resolves.toBe(50);
+        expect(timeout).toHaveBeenCalledWith(5000);
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        fetchMock.mockRestore();
+        timeout.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it('bloquea sin cache cuando la API no responde', async () => {
+      const timeout = mockTimeout();
+      const fetchMock = pendingFetch();
+      fromMock.mockReset().mockReturnValue(cacheReadResult([]));
+      try {
+        const result = new CurrencyService({ now: () => NOW }).convertToUSD(100, 'EUR');
+        const rejection = expect(result).rejects.toMatchObject({ code: 'CURRENCY_RATE_UNAVAILABLE' });
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        await vi.advanceTimersByTimeAsync(5000);
+        await rejection;
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        fetchMock.mockRestore();
+        timeout.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it('acepta una respuesta dentro del limite', async () => {
+      const timeout = mockTimeout();
+      fromMock.mockReset().mockReturnValueOnce(cacheReadResult([]))
+        .mockReturnValueOnce({ upsert: vi.fn().mockResolvedValue({ error: null }) });
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((_url, options) =>
+        new Promise<Response>((resolve, reject) => {
+          const timer = setTimeout(() => resolve(new Response(JSON.stringify({
+            result: 'success', time_last_update_unix: Math.floor(NOW.getTime() / 1000), rates: { EUR: 2 },
+          }), { status: 200 })), 1000);
+          options?.signal?.addEventListener('abort', () => {
+            clearTimeout(timer);
+            reject(new DOMException('timeout', 'TimeoutError'));
+          }, { once: true });
+        }));
+      try {
+        const result = new CurrencyService({ now: () => NOW }).convertToUSD(100, 'EUR');
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        await vi.advanceTimersByTimeAsync(1000);
+        await expect(result).resolves.toBe(50);
+      } finally {
+        fetchMock.mockRestore();
+        timeout.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it.each(['network', 'non-ok'])('controla fallo %s sin cache', async (failure) => {
+      fromMock.mockReset().mockReturnValue(cacheReadResult([]));
+      const fetchMock = vi.spyOn(globalThis, 'fetch');
+      if (failure === 'network') fetchMock.mockRejectedValue(new Error('network private detail'));
+      else fetchMock.mockResolvedValue(new Response('', { status: 503 }));
+      try {
+        await expect(new CurrencyService({ now: () => NOW }).convertToUSD(100, 'EUR'))
+          .rejects.toMatchObject({ code: 'CURRENCY_RATE_UNAVAILABLE' });
+      } finally {
+        fetchMock.mockRestore();
+      }
+    });
+  });});

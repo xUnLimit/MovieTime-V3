@@ -47,6 +47,20 @@ describe('getDashboardStatsSnapshotRpc', () => {
 
     await expect(getDashboardStatsSnapshotRpc()).rejects.toThrow('Snapshot failed');
   });
+
+  it('permite que no exista una fila de snapshot', async () => {
+    rpcMock.mockReturnValue({ maybeSingle: maybeSingleMock });
+    maybeSingleMock.mockResolvedValue({ data: null, error: null });
+    await expect(getDashboardStatsSnapshotRpc()).resolves.toBeNull();
+  });
+
+  it.each([{ ...statsRow, id: '' }, { ...statsRow, ingresos_total: {} }])(
+    'rechaza una fila de snapshot invalida', async (data) => {
+      rpcMock.mockReturnValue({ maybeSingle: maybeSingleMock });
+      maybeSingleMock.mockResolvedValue({ data, error: null });
+      await expect(getDashboardStatsSnapshotRpc()).rejects.toThrow('Respuesta invalida de get_dashboard_stats_snapshot');
+    }
+  );
 });
 
 describe('dashboard JSON RPCs', () => {
@@ -62,4 +76,11 @@ describe('dashboard JSON RPCs', () => {
 
     expect(rpcMock).toHaveBeenCalledWith('get_dashboard_home');
   });
+
+  it.each([null, [], { counts: { ventasActivas: '1' } }])(
+    'rechaza un resumen invalido', async (data) => {
+      rpcMock.mockResolvedValue({ data, error: null });
+      await expect(getDashboardHomeRpc()).rejects.toThrow('Respuesta invalida de get_dashboard_home');
+    }
+  );
 });

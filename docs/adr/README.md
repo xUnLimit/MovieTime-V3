@@ -19,6 +19,10 @@ ADRs:
 - [0007 - Migracion final de stores remotos a React Query](0007-react-query-final-store-migration.md)
 - [0008 - Politica de zoom en PWA movil interna](0008-mobile-pwa-viewport-zoom-policy.md)
 - [0009 - Snapshot del dashboard calculado en servidor](0009-dashboard-server-side-snapshot.md)
+- [0010 - Politica de permisos del navegador](0010-browser-permissions-policy.md)
+- [0011 - Bandeja de chats en tiempo real con Supabase Realtime](0011-realtime-chat-inbox.md)
+- [0012 - Politica de cobertura sobre todo el codigo](0012-coverage-policy.md)
+- [0013 - Gates de calidad, paridad con el CI y piramide de pruebas](0013-quality-gates-and-test-pyramid.md)
 
 Numeracion: el siguiente ADR usa el numero libre mas alto. No reutilices numeros.
 

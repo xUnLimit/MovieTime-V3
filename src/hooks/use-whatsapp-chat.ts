@@ -20,17 +20,21 @@ import {
   type WhatsAppSendMessage,
 } from "@/application/use-cases/whatsapp-chat-use-cases";
 import { queryKeys } from "@/platform/query-keys";
+import { pollingInterval } from "./whatsapp-realtime-status";
 
 // Sondeo mientras la pantalla esta abierta; con la app cerrada avisa el push.
 const CONVERSATIONS_REFRESH_MS = 10_000;
 const MESSAGES_REFRESH_MS = 5_000;
 const UNREAD_BADGE_REFRESH_MS = 30_000;
+const CONVERSATIONS_BACKUP_REFRESH_MS = 60_000;
+const MESSAGES_BACKUP_REFRESH_MS = 30_000;
+const UNREAD_BADGE_BACKUP_REFRESH_MS = 120_000;
 
 export function useWhatsAppConversations() {
   return useQuery({
     queryKey: queryKeys.whatsapp.conversations(),
     queryFn: fetchWhatsAppConversationsUseCase,
-    refetchInterval: CONVERSATIONS_REFRESH_MS,
+    refetchInterval: () => pollingInterval(CONVERSATIONS_REFRESH_MS, CONVERSATIONS_BACKUP_REFRESH_MS),
   });
 }
 
@@ -40,7 +44,7 @@ export function useWhatsAppUnreadChats(enabled: boolean) {
     queryKey: queryKeys.whatsapp.conversations(),
     queryFn: fetchWhatsAppConversationsUseCase,
     enabled,
-    refetchInterval: UNREAD_BADGE_REFRESH_MS,
+    refetchInterval: () => pollingInterval(UNREAD_BADGE_REFRESH_MS, UNREAD_BADGE_BACKUP_REFRESH_MS),
     select: (conversations: WhatsAppConversation[]) =>
       conversations.filter((conversation) => conversation.unreadCount > 0 && !conversation.archived).length,
   });
@@ -52,7 +56,7 @@ export function useWhatsAppMessages(waId: string | null) {
     queryKey: queryKeys.whatsapp.messages(waId ?? ""),
     queryFn: () => fetchWhatsAppMessagesUseCase(waId ?? ""),
     enabled: Boolean(waId),
-    refetchInterval: MESSAGES_REFRESH_MS,
+    refetchInterval: () => pollingInterval(MESSAGES_REFRESH_MS, MESSAGES_BACKUP_REFRESH_MS),
   });
 }
 

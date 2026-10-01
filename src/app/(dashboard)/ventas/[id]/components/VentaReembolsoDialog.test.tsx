@@ -105,4 +105,29 @@ describe('VentaReembolsoDialog', () => {
       expect.objectContaining({ destinoReembolso: 'Yappy 6000-0000', metodoPagoId: 'metodo-1', cortarServicio: false })
     );
   });
+
+  it('keeps the edited refund details when navigating back and closes on cancel', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <VentaReembolsoDialog
+        open
+        onOpenChange={onOpenChange}
+        venta={venta}
+        metodosPago={[{ id: 'metodo-1', nombre: 'Banco', moneda: 'USD', activo: true, asociadoA: 'tercero' } as never]}
+        montoSugerido={30}
+        onConfirm={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    fireEvent.change(screen.getByLabelText('Monto a reembolsar'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Cuenta destino del cliente'), { target: { value: 'Banco 123' } });
+    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: 'Detalle' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Atras' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect((screen.getByLabelText('Monto a reembolsar') as HTMLInputElement).value).toBe('12');
+    expect((screen.getByLabelText('Cuenta destino del cliente') as HTMLInputElement).value).toBe('Banco 123');
+    fireEvent.click(screen.getByRole('button', { name: 'Atras' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });

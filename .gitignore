@@ -66,3 +66,10 @@ supabase/.temp/
 .agents/
 .claude/skills/
 skills-lock.json
+
+# Reportes de pruebas de mutacion (Stryker)
+reports/
+.stryker-tmp/
+
+# Playwright: sesiones guardadas por el proyecto setup (contienen tokens)
+e2e/.auth/

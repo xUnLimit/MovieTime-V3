@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   isLoading: false,
   replace: vi.fn(),
   panel: vi.fn(),
+  realtime: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -20,6 +21,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/hooks/use-whatsapp-chat', () => ({
   useWhatsAppConversations: () => ({ data: state.conversations, isLoading: state.isLoading }),
 }));
+vi.mock('@/hooks/use-whatsapp-realtime', () => ({ useWhatsAppRealtime: state.realtime }));
 vi.mock('@/components/chats/ChatWorkspace', () => ({
   ChatWorkspace: ({ conversation, onBack, panelPreferred, onPanelPreferredChange }: {
     conversation: WhatsAppConversation;
@@ -56,6 +58,7 @@ beforeEach(() => {
   state.isLoading = false;
   state.replace.mockReset();
   state.panel.mockReset();
+  state.realtime.mockReset();
   storage.clear();
   vi.mocked(localStorage.getItem).mockImplementation((key) => storage.get(key) ?? null);
   vi.mocked(localStorage.setItem).mockImplementation((key, value) => {
@@ -67,6 +70,8 @@ describe('ChatsPage', () => {
   it('asks to pick a chat and navigates on select', async () => {
     const user = userEvent.setup();
     render(<ChatsPage />);
+
+    expect(state.realtime).toHaveBeenCalledWith();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Conversaciones' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Selecciona una conversación' })).toBeTruthy();

@@ -1,4 +1,4 @@
-import type { EnrichedPagoDialogFormData } from '@/components/shared/PagoDialog';
+import type { ServicioPagoInput } from '@/application/use-cases/servicios/servicios-shared';
 import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import {
@@ -100,7 +100,7 @@ export async function activateAndRenewReposoServicioUseCase({
   servicio,
 }: {
   log: ActivityLogOptions;
-  pagoData: EnrichedPagoDialogFormData;
+  pagoData: ServicioPagoInput;
   servicio: ReposoServicioBase;
 }): Promise<ReposoWorkflowOutcome> {
   const notaPrincipal = pagoData.notas?.trim() ?? '';

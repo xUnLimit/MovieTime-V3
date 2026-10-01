@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const storeWebhookBatch = vi.hoisted(() => vi.fn());
 const notifyWhatsAppMessages = vi.hoisted(() => vi.fn());
 const handleNoticeReply = vi.hoisted(() => vi.fn());
+const sendOutboundMessage = vi.hoisted(() => vi.fn());
+const sendCloudApiMessage = vi.hoisted(() => vi.fn());
 const afterCallbacks = vi.hoisted(() => [] as Array<() => Promise<void>>);
 const env = vi.hoisted(() => ({
   whatsappVerifyToken: 'verify-token-123456',
@@ -16,6 +18,8 @@ vi.mock('@/platform/config', () => ({ env }));
 vi.mock('@/modules/whatsapp/webhook-inbox', () => ({ storeWebhookBatch }));
 vi.mock('@/modules/notifications/whatsapp-message-push', () => ({ notifyWhatsAppMessages }));
 vi.mock('@/application/use-cases/notice-reply-use-case', () => ({ handleNoticeReply }));
+vi.mock('@/modules/whatsapp/outbound-messages', () => ({ sendOutboundMessage }));
+vi.mock('@/modules/whatsapp/cloud-api-client', () => ({ sendCloudApiMessage }));
 vi.mock('@/modules/messaging/notice-reply-store', () => ({ createNoticeReplyStore: () => ({}) }));
 vi.mock('@/modules/messaging/notice-store', () => ({ createNoticeStore: () => ({}) }));
 vi.mock('@/modules/whatsapp/template-catalog', () => ({ createTemplateCatalog: () => ({}) }));
@@ -65,6 +69,8 @@ beforeEach(() => {
   storeWebhookBatch.mockReset();
   notifyWhatsAppMessages.mockReset();
   handleNoticeReply.mockReset();
+  sendOutboundMessage.mockReset();
+  sendCloudApiMessage.mockReset();
   afterCallbacks.length = 0;
   env.whatsappVerifyToken = 'verify-token-123456';
   env.whatsappAppSecret = APP_SIGNING_FIXTURE;
@@ -115,7 +121,7 @@ describe('POST /api/whatsapp/webhook', () => {
     const order: string[] = [];
     env.whatsappAccessToken = 'test-token';
     env.whatsappPhoneNumberId = '123456';
-    storeWebhookBatch.mockImplementation(async () => { order.push('stored'); return { messages: 1, statuses: 0 }; });
+    storeWebhookBatch.mockImplementation(async () => { order.push('stored'); return { messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.BUTTON'] }; });
     handleNoticeReply.mockImplementation(async () => { order.push('action'); throw new Error('action failed'); });
     notifyWhatsAppMessages.mockResolvedValue({ sent: 0, failed: 0 });
     const event = structuredClone(textMessageEvent);
@@ -132,13 +138,13 @@ describe('POST /api/whatsapp/webhook', () => {
     }), expect.anything());
   });
   it('stores a signed inbound message and acknowledges it', async () => {
-    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0 });
+    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
 
     const response = await POST(signedPost(textMessageEvent));
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toMatchObject({ ok: true, data: { messages: 1, statuses: 0 } });
+    expect(body).toMatchObject({ ok: true, data: { messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] } });
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(storeWebhookBatch).toHaveBeenCalledWith(expect.objectContaining({
       messages: [expect.objectContaining({ waMessageId: 'wamid.IN', textBody: 'Hola' })],
@@ -146,7 +152,7 @@ describe('POST /api/whatsapp/webhook', () => {
   });
 
   it('schedules a push alert after responding when customers write', async () => {
-    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0 });
+    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
     notifyWhatsAppMessages.mockResolvedValueOnce({ sent: 1, failed: 0 });
 
     await POST(signedPost(textMessageEvent));
@@ -159,7 +165,7 @@ describe('POST /api/whatsapp/webhook', () => {
   });
 
   it('keeps the acknowledgement when the push alert fails', async () => {
-    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0 });
+    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
     notifyWhatsAppMessages.mockRejectedValueOnce(new Error('push down'));
 
     const response = await POST(signedPost(textMessageEvent));
@@ -178,6 +184,30 @@ describe('POST /api/whatsapp/webhook', () => {
 
     expect(response.status).toBe(200);
     expect(afterCallbacks).toHaveLength(0);
+  });
+
+  it('no repite el push tras una reentrega de Meta', async () => {
+    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: [] });
+    await POST(signedPost(textMessageEvent));
+    await Promise.all(afterCallbacks.map((callback) => callback()));
+    expect(notifyWhatsAppMessages).not.toHaveBeenCalled();
+  });
+
+  it('conecta el envio de botones con la Cloud API', async () => {
+    env.whatsappAccessToken = 'test-token';
+    env.whatsappPhoneNumberId = '123456';
+    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
+    handleNoticeReply.mockImplementationOnce(async (_message, deps: { send: (message: object) => Promise<unknown> }) => {
+      await deps.send({ idempotencyKey: 'key' });
+      return 'accepted';
+    });
+    sendOutboundMessage.mockImplementationOnce(async (_message, deps: { send: (to: string, payload: object) => Promise<unknown> }) => {
+      await deps.send('50760000000', { kind: 'text', text: 'Hola' });
+    });
+    sendCloudApiMessage.mockResolvedValueOnce({ waMessageId: 'wamid.OUT' });
+    await POST(signedPost(textMessageEvent));
+    await Promise.all(afterCallbacks.map((callback) => callback()));
+    expect(sendCloudApiMessage).toHaveBeenCalledTimes(1);
   });
 
   it('rejects an event signed with another secret without storing it', async () => {

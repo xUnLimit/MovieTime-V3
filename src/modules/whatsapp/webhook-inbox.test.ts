@@ -7,13 +7,14 @@ vi.mock('@/platform/server/supabase-server', () => ({
 import { storeWebhookBatch } from './webhook-inbox';
 import type { WebhookBatch } from './webhook-payload';
 
-function fakeClient(errors: Record<string, { code: string } | null> = {}) {
+function fakeClient(errors: Record<string, { code: string } | null> = {}, inserted = ['wamid.IN']) {
   const upserts: Array<{ table: string; rows: unknown; options: unknown }> = [];
   const client = {
     from: (table: string) => ({
-      upsert: async (rows: unknown, options: unknown) => {
+      upsert: (rows: unknown, options: unknown) => {
         upserts.push({ table, rows, options });
-        return { error: errors[table] ?? null };
+        return { select: async () => ({ data: inserted.map((wa_message_id) => ({ wa_message_id })), error: errors[table] ?? null }),
+          then: (resolve: (value: { error: { code: string } | null }) => void) => resolve({ error: errors[table] ?? null }) };
       },
     }),
   };
@@ -52,7 +53,7 @@ describe('storeWebhookBatch', () => {
   it('upserts messages and statuses idempotently by their natural ids', async () => {
     const { client, upserts } = fakeClient();
 
-    await expect(storeWebhookBatch(batch, client)).resolves.toEqual({ messages: 1, statuses: 1 });
+    await expect(storeWebhookBatch(batch, client)).resolves.toEqual({ messages: 1, statuses: 1, insertedWaMessageIds: ['wamid.IN'] });
     expect(upserts).toEqual([
       {
         table: 'whatsapp_inbound_messages',
@@ -92,7 +93,7 @@ describe('storeWebhookBatch', () => {
     const { client, upserts } = fakeClient();
 
     await expect(storeWebhookBatch({ messages: [], statuses: [], skippedChanges: 1, skippedItems: 0 }, client))
-      .resolves.toEqual({ messages: 0, statuses: 0 });
+      .resolves.toEqual({ messages: 0, statuses: 0, insertedWaMessageIds: [] });
     expect(upserts).toEqual([]);
   });
 
@@ -106,5 +107,10 @@ describe('storeWebhookBatch', () => {
     const { client } = fakeClient({ whatsapp_message_statuses: { code: '23514' } });
 
     await expect(storeWebhookBatch(batch, client)).rejects.toThrow('No se pudieron guardar los estados de WhatsApp: 23514');
+  });
+
+  it('no vuelve a marcar como nuevos los mensajes reentregados', async () => {
+    const { client } = fakeClient({}, []);
+    await expect(storeWebhookBatch(batch, client)).resolves.toMatchObject({ insertedWaMessageIds: [] });
   });
 });

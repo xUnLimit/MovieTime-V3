@@ -166,6 +166,41 @@ describe('useVentaDetalleActions', () => {
     expect(mocks.toastSuccess).toHaveBeenCalledWith('Venta reembolsada, cortada y servicio inactivado');
   });
 
+  it('invalidates notifications and reports a failed refund', async () => {
+    mocks.refund.mockImplementationOnce(async (params: { deps: { invalidateNotifications: () => Promise<unknown> } }) => {
+      await params.deps.invalidateNotifications();
+      throw new Error('Refund failed');
+    });
+    const { params, result } = renderActions();
+    await act(async () => {
+      await result.current.handleConfirmReembolso({ monto: 10 } as never);
+    });
+    expect(params.queryClient.invalidateQueries).toHaveBeenCalled();
+    expect(mocks.reportError).toHaveBeenCalledWith('VentaDetalleActions', 'Error registrando reembolso', expect.any(Error));
+    expect(mocks.toastError).toHaveBeenCalledWith('Error al registrar reembolso', expect.any(Object));
+  });
+
+  it('closes the refund dialog when a committed mutation reports a follow-up error', async () => {
+    mocks.refund.mockRejectedValueOnce(new Error('Follow-up failed'));
+    mocks.notifyCommitted.mockReturnValueOnce(true);
+    const { result } = renderActions();
+    await act(async () => { await result.current.handleOpenReembolso(); });
+    expect(result.current.reembolsoDialogOpen).toBe(true);
+    await act(async () => { await result.current.handleConfirmReembolso({ monto: 10 } as never); });
+    expect(result.current.reembolsoDialogOpen).toBe(false);
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ type: 'ventaRefunded', cut: true, serviceInactivated: false }, 'Venta reembolsada y cortada'],
+    [{ type: 'refundRecorded' }, 'Reembolso registrado'],
+  ])('reports the refund outcome %s', async (outcome, message) => {
+    mocks.refund.mockResolvedValueOnce(outcome);
+    const { result } = renderActions();
+    await act(async () => { await result.current.handleConfirmReembolso({ monto: 10 } as never); });
+    expect(mocks.toastSuccess).toHaveBeenCalledWith(message);
+  });
+
   it('edits and deletes an existing payment', async () => {
     const pago = { id: 'pago-1' } as never;
     const { params, result } = renderActions();

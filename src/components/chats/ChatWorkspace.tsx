@@ -8,10 +8,6 @@ import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { useVentasTercero } from '@/hooks/use-ventas-tercero';
 import {
   useHideWhatsAppMessage,
-  useMarkWhatsAppConversationRead,
-  useMarkWhatsAppConversationUnread,
-  useSetWhatsAppConversationArchived,
-  useSetWhatsAppConversationPinned,
   useSendWhatsAppMessage,
   useVentaMessageContext,
   useWhatsAppMessages,
@@ -34,6 +30,7 @@ import { buildTemplateContent, templatePreview } from './chat-template-content';
 import { MessageTimeline } from './MessageTimeline';
 import { ForwardDialog } from './ForwardDialog';
 import { TemplateSendDialog } from './TemplateSendDialog';
+import { useChatWorkspaceActions } from './useChatWorkspaceActions';
 
 const FIND_ICON = 'grid h-[31px] w-[31px] shrink-0 place-items-center rounded-lg text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45';
 
@@ -51,10 +48,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   const { data: messages = [], isLoading } = useWhatsAppMessages(waId);
   const { ventas, isLoading: ventasLoading } = useVentasTercero(conversation.terceroId ?? '');
   const sendMessage = useSendWhatsAppMessage();
-  const { mutate: markRead } = useMarkWhatsAppConversationRead();
-  const markUnread = useMarkWhatsAppConversationUnread();
-  const setPinned = useSetWhatsAppConversationPinned();
-  const setArchived = useSetWhatsAppConversationArchived();
+  const { onMarkUnread, onTogglePin, onToggleArchive } = useChatWorkspaceActions(conversation, onBack);
   const hideMessage = useHideWhatsAppMessage(waId);
   const saveSticker = useSaveChatSticker();
 
@@ -85,9 +79,6 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
   // el mismo envio en lugar de mandarle el mensaje dos veces al cliente.
   const attemptKey = useRef<string | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
-  // Tras "Marcar como no leído" el chat abierto deja de marcarse como leído solo;
-  // si no, la recarga de la lista revertía la marca en milisegundos.
-  const autoReadEnabled = useRef(true);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;
@@ -134,12 +125,6 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
       sendExtra(waId, { kind: message.kind, mediaId: message.mediaId, mimeType: message.mediaMimeType, filename: message.mediaFilename ?? undefined, caption: message.textBody ?? undefined, replyTo: message.contextWaMessageId ?? undefined });
     } else toast.error('No hay datos suficientes para reintentar este mensaje.');
   };
-
-  useEffect(() => {
-    if (autoReadEnabled.current && conversation.unreadCount > 0) {
-      markRead({ waId, readAt: new Date().toISOString() });
-    }
-  }, [conversation.unreadCount, markRead, waId]);
 
   const send = (message: WhatsAppSendMessage, onDone: () => void) => {
     attemptKey.current ??= crypto.randomUUID();
@@ -206,22 +191,9 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           onBack={onBack}
           onTogglePanel={togglePanel}
           onToggleSearch={() => setSearchActive((active) => !active)}
-          onMarkUnread={() => {
-            if (conversation.lastInboundAt) {
-              autoReadEnabled.current = false;
-              markUnread.mutate({ waId, lastInboundAt: conversation.lastInboundAt }, { onSuccess: onBack });
-            }
-          }}
-          onTogglePin={() => setPinned.mutate({ waId, pinned: !conversation.pinnedAt }, {
-            onError: (error) => toast.error(getPublicErrorMessage(error, 'No se pudo cambiar el fijado. Intenta de nuevo.')),
-          })}
-          onToggleArchive={() => setArchived.mutate({ waId, archived: !conversation.archived }, {
-            onSuccess: () => {
-              toast.success(conversation.archived ? 'Conversación desarchivada.' : 'Conversación archivada. Volverá a la bandeja cuando el cliente escriba.');
-              if (!conversation.archived) onBack();
-            },
-            onError: (error) => toast.error(getPublicErrorMessage(error, 'No se pudo cambiar el archivado. Intenta de nuevo.')),
-          })}
+          onMarkUnread={onMarkUnread}
+          onTogglePin={onTogglePin}
+          onToggleArchive={onToggleArchive}
         />
         {searchActive ? <div className="flex items-center gap-[9px] border-b border-chat-line bg-chat-raised px-3 py-2 md:px-5">
           <Search className="h-[15px] w-[15px] shrink-0 text-chat-quiet" strokeWidth={1.6} aria-hidden />

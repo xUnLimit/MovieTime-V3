@@ -1,0 +1,14 @@
+# Propietarios que deben revisar los cambios sensibles (activar "Require review from Code Owners" en la proteccion de main).
+* @xUnLimit
+
+# Base de datos y seguridad: RLS, funciones SECURITY DEFINER, migraciones forward-only.
+/supabase/ @xUnLimit
+
+# Pipeline de calidad y despliegue a produccion.
+/.github/ @xUnLimit
+/scripts/ @xUnLimit
+
+# Reglas de ingenieria y diseno canonicas.
+/AGENTS.md @xUnLimit
+/DESIGN.md @xUnLimit
+/docs/ @xUnLimit

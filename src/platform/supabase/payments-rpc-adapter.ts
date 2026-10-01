@@ -1,13 +1,5 @@
 import { executeIdempotentRpc } from './idempotent-rpc';
-import { typedRpcClient, type RpcResult } from './rpc-client';
-
-type CreateServicioPaymentRpcClient = {
-  rpc: (fn: 'create_servicio_payment', args: CreateServicioPaymentPayload) => Promise<RpcResult>;
-};
-
-type CreateVentaPaymentRpcClient = {
-  rpc: (fn: 'create_venta_payment', args: CreateVentaPaymentPayload) => Promise<RpcResult>;
-};
+import { callRpc } from './rpc-client';
 
 export type CreateServicioPaymentPayload = {
   p_servicio_id: string;
@@ -48,17 +40,14 @@ export type CreateVentaPaymentPayload = {
   p_idempotency_key?: string | null;
 };
 
-const servicioPaymentRpcClient = typedRpcClient<CreateServicioPaymentRpcClient>();
-const ventaPaymentRpcClient = typedRpcClient<CreateVentaPaymentRpcClient>();
-
 export async function createServicioPaymentRpc(
   payload: CreateServicioPaymentPayload
 ): Promise<string> {
   return executeIdempotentRpc('create_servicio_payment', payload, (request) =>
-    servicioPaymentRpcClient.rpc('create_servicio_payment', request));
+    callRpc('create_servicio_payment', request));
 }
 
 export async function createVentaPaymentRpc(payload: CreateVentaPaymentPayload): Promise<string> {
   return executeIdempotentRpc('create_venta_payment', payload, (request) =>
-    ventaPaymentRpcClient.rpc('create_venta_payment', request));
+    callRpc('create_venta_payment', request));
 }

@@ -14,6 +14,7 @@ const deps = vi.hoisted(() => ({
   setWhatsAppConversationPinned: vi.fn(),
   setWhatsAppConversationArchived: vi.fn(),
   fetchVentaDetalleQuery: vi.fn(),
+  subscribeToWhatsAppChanges: vi.fn(),
 }));
 
 vi.mock('@/platform/api/whatsapp-messages-client', () => ({
@@ -24,6 +25,7 @@ vi.mock('@/platform/api/whatsapp-messages-client', () => ({
 }));
 vi.mock('@/platform/supabase/auth', () => ({ getCurrentSession: deps.getCurrentSession }));
 vi.mock('@/platform/supabase/idempotency', () => ({ createIdempotencyKey: deps.createIdempotencyKey }));
+vi.mock('@/platform/supabase/whatsapp-realtime', () => ({ subscribeToWhatsAppChanges: deps.subscribeToWhatsAppChanges }));
 vi.mock('@/platform/supabase/whatsapp-chat-repository', () => ({
   listWhatsAppConversations: deps.listWhatsAppConversations,
   listWhatsAppMessages: deps.listWhatsAppMessages,
@@ -43,6 +45,7 @@ import {
   markWhatsAppConversationReadUseCase,
   markWhatsAppConversationUnreadUseCase,
   sendWhatsAppMessageUseCase,
+  subscribeToWhatsAppChatChangesUseCase,
   setWhatsAppConversationArchivedUseCase,
   setWhatsAppConversationPinnedUseCase,
   uploadWhatsAppMediaUseCase,
@@ -54,6 +57,17 @@ beforeEach(() => {
 });
 
 describe('WhatsApp chat use cases', () => {
+  it('delega la suscripcion y devuelve su cancelacion', () => {
+    const cancel = vi.fn();
+    const listener = { onEvent: vi.fn(), onStatus: vi.fn() };
+    deps.subscribeToWhatsAppChanges.mockReturnValue(cancel);
+
+    const unsubscribe = subscribeToWhatsAppChatChangesUseCase(listener);
+
+    expect(deps.subscribeToWhatsAppChanges).toHaveBeenCalledWith(listener);
+    unsubscribe();
+    expect(cancel).toHaveBeenCalledOnce();
+  });
   it('reads conversations and messages through the repository', async () => {
     deps.listWhatsAppConversations.mockResolvedValue(['c']);
     deps.listWhatsAppMessages.mockResolvedValue(['m']);

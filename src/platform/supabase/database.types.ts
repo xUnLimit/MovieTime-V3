@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -2422,6 +2422,10 @@ export type Database = {
           inbound_wa_message_id: string
           handled_at: string
           result: string
+          attempts: number
+          locked_until: string | null
+          next_attempt_at: string | null
+          last_error: string | null
         }
         Insert: {
           id?: number
@@ -2430,6 +2434,10 @@ export type Database = {
           inbound_wa_message_id: string
           handled_at?: string
           result?: string
+          attempts?: number
+          locked_until?: string | null
+          next_attempt_at?: string | null
+          last_error?: string | null
         }
         Update: {
           id?: number
@@ -2438,6 +2446,10 @@ export type Database = {
           inbound_wa_message_id?: string
           handled_at?: string
           result?: string
+          attempts?: number
+          locked_until?: string | null
+          next_attempt_at?: string | null
+          last_error?: string | null
         }
         Relationships: [
           {
@@ -4089,6 +4101,10 @@ export type Database = {
       }
     }
     Functions: {
+      claim_whatsapp_notice_reply: { Args: { p_notice_id: string; p_action: string; p_inbound_wa_message_id: string }; Returns: { reply_id: number; attempts: number; outcome: string }[] }
+      finish_whatsapp_notice_reply: { Args: { p_reply_id: number; p_attempt: number; p_result: string; p_error_label?: string | null }; Returns: boolean }
+      list_retryable_whatsapp_notice_replies: { Args: { p_limit: number }; Returns: { reply_id: number; notice_id: string; action: string; inbound_wa_message_id: string }[] }
+      trigger_notice_reply_retries: { Args: never; Returns: number }
       trigger_auto_notices: { Args: never; Returns: number }
       ingest_yappy_payment: { Args: { p_uid_validity: number; p_imap_uid: number; p_internet_message_id: string | null; p_received_at: string; p_subject: string | null; p_dmarc_pass: boolean | null; p_parser_version: number; p_confirmation_code: string; p_amount: number; p_payer_name_short: string; p_payer_phone_last4: string; p_paid_at: string; p_reject_reason?: string | null }; Returns: { outcome: string; payment_id: string | null; match_status: string | null }[] }
       record_invalid_yappy_mail: { Args: { p_uid_validity: number; p_imap_uid: number; p_received_at: string; p_parser_version: number; p_failure_reason: string }; Returns: undefined }

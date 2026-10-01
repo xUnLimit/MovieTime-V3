@@ -23,6 +23,17 @@ test('@smoke exposes a minimal health endpoint with production headers', async (
   expect(response.headers()['x-content-type-options']).toBe('nosniff');
   expect(response.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
   expect(response.headers()['permissions-policy']).toContain('camera=()');
+  expect(response.headers()['permissions-policy']).toContain('microphone=(self)');
+  expect(response.headers()['permissions-policy']).toContain('geolocation=()');
+});
+
+test('@smoke applies the browser permissions policy to login', async ({ request }) => {
+  const response = await request.get('/login');
+
+  expect(response.status()).toBe(200);
+  expect(response.headers()['permissions-policy']).toContain('camera=()');
+  expect(response.headers()['permissions-policy']).toContain('microphone=(self)');
+  expect(response.headers()['permissions-policy']).toContain('geolocation=()');
 });
 
 test('@smoke serves the web app manifest without a redirect loop', async ({ request }) => {

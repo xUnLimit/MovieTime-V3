@@ -38,6 +38,6 @@
     "**/*.spec.ts",
     "**/*.spec.tsx",
     "src/test",
-    "vitest.config.ts"
+    "vitest.config.mts"
   ]
 }

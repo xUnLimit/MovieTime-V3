@@ -1,34 +1,16 @@
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+// Uso: node scripts/validate-migration-safety.mjs (MIGRATION_BASE opcional).
+// Protege el historial SQL y revisa migraciones nuevas expand/contract.
+import { inspectMigrations } from './lib/migration-safety.mjs';
 
-const base = process.env.MIGRATION_BASE?.trim();
-const args = base && !/^0+$/.test(base)
-  ? ['diff', '--name-only', '--diff-filter=ACMR', `${base}...HEAD`, '--', 'supabase/migrations/*.sql']
-  : ['diff', '--name-only', '--diff-filter=ACMR', 'HEAD', '--', 'supabase/migrations/*.sql'];
-const trackedChanges = execFileSync('git', args, { encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
-const untrackedChanges = execFileSync('git',
-  ['ls-files', '--others', '--exclude-standard', '--', 'supabase/migrations/*.sql'],
-  { encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
-const files = [...new Set([...trackedChanges, ...untrackedChanges])];
-const forbidden = [
-  { name: 'DROP TABLE', pattern: /\bDROP\s+TABLE\b/i },
-  { name: 'DROP COLUMN', pattern: /\bDROP\s+COLUMN\b/i },
-  { name: 'TRUNCATE', pattern: /\bTRUNCATE\b/i },
-  { name: 'unbounded DELETE', pattern: /\bDELETE\s+FROM\s+[\w."-]+\s*;/i },
-];
-
-const failures = [];
-for (const file of files) {
-  const sql = readFileSync(file, 'utf8').replace(/--.*$/gm, '');
-  for (const rule of forbidden) {
-    if (rule.pattern.test(sql)) failures.push(`${file}: ${rule.name}`);
+try {
+  const { files, failures } = inspectMigrations(process.cwd(), process.env);
+  if (failures.length) {
+    failures.forEach((failure) => console.error(failure));
+    process.exitCode = 1;
+  } else {
+    console.log(`Migration safety passed (${files.length} changed migration files).`);
   }
+} catch (error) {
+  console.error(`No se pudo validar el historial de migraciones: ${error.message}`);
+  process.exitCode = 1;
 }
-
-if (failures.length > 0) {
-  console.error('Destructive production migration detected. Use an expand/contract migration instead:');
-  failures.forEach((failure) => console.error(`- ${failure}`));
-  process.exit(1);
-}
-
-console.log(`Migration safety passed (${files.length} changed migration files).`);

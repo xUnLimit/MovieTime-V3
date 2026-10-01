@@ -1,0 +1,35 @@
+name: synthetic
+
+# Prueba sintetica de produccion: avisa (el workflow falla y GitHub notifica) si el login o el health dejan de responder.
+# No usa credenciales: solo rutas publicas.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: synthetic
+  cancel-in-progress: true
+
+jobs:
+  production:
+    name: production health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check production routes
+        shell: bash
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          test -n "$PRODUCTION_URL" || { echo "Falta la variable PRODUCTION_URL del repositorio"; exit 1; }
+          [[ "$PRODUCTION_URL" =~ ^https://[A-Za-z0-9.-]+/?$ ]] || { echo "PRODUCTION_URL debe ser https://host"; exit 1; }
+          base="${PRODUCTION_URL%/}"
+          for path in /api/health /login; do
+            status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 15 --retry 2 --retry-delay 5 "$base$path")"
+            echo "$path -> $status"
+            test "$status" = "200" || { echo "::error::$path respondio $status"; exit 1; }
+          done

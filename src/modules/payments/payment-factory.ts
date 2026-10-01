@@ -1,5 +1,6 @@
 import { queryPagosServicio } from '@/platform/supabase/pagos-repository';
 import { createPagoServicio, createPagoVenta } from '@/platform/supabase/payments-repository';
+import { convertToUSD } from './currency-converter';
 import type { PagoServicio } from '@/types';
 
 type CicloPago = 'mensual' | 'trimestral' | 'semestral' | 'anual';
@@ -19,6 +20,7 @@ export async function createInitialVentaPayment(
   fechaVencimiento?: Date,
   idempotencyKey?: string
 ): Promise<string> {
+  const conversion = await convertAmountToUSD(monto, moneda);
   return createPagoVenta({
     idempotencyKey,
     ventaId,
@@ -27,6 +29,8 @@ export async function createInitialVentaPayment(
     categoriaId,
     fecha: new Date(),
     monto,
+    montoUsd: conversion.usd,
+    exchangeRate: conversion.rate,
     metodoPagoId,
     metodoPago,
     moneda,
@@ -58,6 +62,7 @@ export async function createRenewalVentaPayment(
   planTipoNombre?: string,
   idempotencyKey?: string
 ): Promise<string> {
+  const conversion = await convertAmountToUSD(monto, moneda);
   return createPagoVenta({
     ventaId,
     clienteId,
@@ -65,6 +70,8 @@ export async function createRenewalVentaPayment(
     categoriaId,
     fecha: new Date(),
     monto,
+    montoUsd: conversion.usd,
+    exchangeRate: conversion.rate,
     precio,
     descuento,
     metodoPagoId,
@@ -96,6 +103,7 @@ export async function createInitialServicioPayment(
   renovacionAutomatica?: boolean,
   idempotencyKey?: string
 ): Promise<void> {
+  const conversion = await convertAmountToUSD(monto, moneda);
   await createPagoServicio({
     servicioId,
     categoriaId,
@@ -105,6 +113,8 @@ export async function createInitialServicioPayment(
     fechaInicio,
     fechaVencimiento,
     monto,
+    montoUsd: conversion.usd,
+    exchangeRate: conversion.rate,
     metodoPagoId,
     metodoPagoNombre,
     moneda,
@@ -130,6 +140,7 @@ export async function createRenewalServicioPayment(
   renovacionAutomatica?: boolean,
   idempotencyKey?: string
 ): Promise<void> {
+  const conversion = await convertAmountToUSD(monto, moneda);
   await createPagoServicio({
     servicioId,
     categoriaId,
@@ -139,6 +150,8 @@ export async function createRenewalServicioPayment(
     fechaInicio,
     fechaVencimiento,
     monto,
+    montoUsd: conversion.usd,
+    exchangeRate: conversion.rate,
     metodoPagoId,
     metodoPagoNombre,
     moneda,
@@ -161,3 +174,14 @@ function sortServicioPaymentsByNewest(payments: PagoServicio[]): PagoServicio[] 
   return [...payments].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 }
 
+
+// La conversion de moneda es una decision de negocio: el repositorio solo persiste valores ya convertidos.
+async function convertAmountToUSD(amount: number, moneda?: string | null) {
+  const currency = String(moneda ?? 'USD');
+  const monto = Number(amount ?? 0);
+  const usd = await convertToUSD(monto, currency);
+  return {
+    usd,
+    rate: currency === 'USD' || monto === 0 || usd === 0 ? 1 : monto / usd,
+  };
+}

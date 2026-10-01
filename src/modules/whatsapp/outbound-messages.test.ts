@@ -22,6 +22,7 @@ function fakeStore(overrides: Partial<OutboundStore> = {}) {
     insertPending: vi.fn().mockResolvedValue({ id: 'out-1', sendStatus: 'pending', waMessageId: null, errorTitle: null }),
     markAccepted: vi.fn().mockResolvedValue(undefined),
     markFailed: vi.fn().mockResolvedValue(undefined),
+    retryFailed: vi.fn().mockResolvedValue(true),
     ...overrides,
   } satisfies OutboundStore;
 }
@@ -72,6 +73,17 @@ describe('sendOutboundMessage', () => {
     await expect(sendOutboundMessage(textMessage, { store, catalog, send, now }))
       .resolves.toMatchObject({ id: 'out-0', replayed: true });
     expect(send).not.toHaveBeenCalled();
+    expect(store.insertPending).not.toHaveBeenCalled();
+  });
+
+  it('reintenta un rechazo confirmado con la misma reserva', async () => {
+    const store = fakeStore({ findByIdempotencyKey: vi.fn().mockResolvedValue({
+      id: 'out-1', sendStatus: 'failed', waMessageId: null, errorTitle: 'Rejected',
+    }) });
+    const send = vi.fn().mockResolvedValue({ waMessageId: 'wamid.RETRY' });
+    await expect(sendOutboundMessage(textMessage, { store, catalog, send, now }))
+      .resolves.toMatchObject({ sendStatus: 'accepted', waMessageId: 'wamid.RETRY' });
+    expect(store.retryFailed).toHaveBeenCalledWith('out-1');
     expect(store.insertPending).not.toHaveBeenCalled();
   });
 

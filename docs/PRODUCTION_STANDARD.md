@@ -15,6 +15,10 @@ Un release es elegible solo cuando `npm run release:check` y todos los jobs de G
 | Datos | Migraciones desde cero, historial sincronizado, RLS/RPC e invariantes verdes |
 | Operacion | Variables validadas, health check verde, SBOM generado y rollback disponible |
 
+La definicion canonica de terminado esta en [`AGENTS.md`](../AGENTS.md). `quality:fast` y `quality:full` deben ejecutar `arch:check`, `module-size`, `ci:parity` y `dead-code`; el gate completo tambien ejecuta `test:coverage` y `coverage:baseline`. `ci:parity` comprueba que los comandos del gate completo esten representados en CI.
+
+Los controles exclusivos de CI incluyen CodeQL, SBOM, `test:db`, `test:integration`, E2E autenticado y la validacion de migraciones desde cero. Stryker, auditorias recurrentes y el informe de codigo muerto de produccion se ejecutan en el workflow nocturno. Los comandos locales y la piramide de pruebas se documentan en [`QA.md`](QA.md).
+
 ## Migraciones
 
 - Todo cambio de esquema vive en `supabase/migrations`; no se modifica produccion desde el dashboard.

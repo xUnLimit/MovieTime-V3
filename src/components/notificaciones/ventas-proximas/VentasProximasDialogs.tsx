@@ -22,8 +22,6 @@ interface VentasProximasDialogsProps {
   onPromesaOpenChange: (open: boolean) => void;
   onNotificarOpenChange: (open: boolean) => void;
   onConfirmRenovacion: (data: EnrichedPagoDialogFormData) => void;
-  onNotificar: (notification: NotificacionVentaConId) => boolean | Promise<boolean>;
-  onCancelar: (notification: NotificacionVentaConId) => boolean | Promise<boolean>;
   onCortar: (motivoCorte: string) => Promise<void>;
   onGuardarPromesa: (fecha: Date) => Promise<void>;
   onQuitarPromesa: () => Promise<void>;
@@ -43,8 +41,6 @@ export function VentasProximasDialogs({
   onPromesaOpenChange,
   onNotificarOpenChange,
   onConfirmRenovacion,
-  onNotificar,
-  onCancelar,
   onCortar,
   onGuardarPromesa,
   onQuitarPromesa,
@@ -85,8 +81,6 @@ export function VentasProximasDialogs({
           notification={notifSeleccionada}
           open={notificarDialogOpen}
           onOpenChange={onNotificarOpenChange}
-          onNotify={onNotificar}
-          onCancelMessage={onCancelar}
         />
       ) : null}
 

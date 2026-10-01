@@ -9,7 +9,9 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "scripts/**/*.ts",
-    "vitest.config.ts"
+    "e2e/**/*.ts",
+    "playwright.config.ts",
+    "vitest.config.mts"
   ],
   "exclude": ["node_modules", ".next", "coverage"]
 }

@@ -9,13 +9,15 @@ type WaMeMessage = Omit<PendingWhatsAppToast, 'id'>;
 type AccessNoticeItem = { ventaId: string; message: WaMeMessage };
 
 interface OfferApiAccessNoticeParams {
-  tipo: 'actualizacion_credenciales' | 'transferencia_servicio' | 'renovacion';
+  tipo: 'actualizacion_credenciales' | 'transferencia_servicio' | 'renovacion' | 'dia_pago' | 'cancelacion';
   items: AccessNoticeItem[];
   enqueueWhatsAppMessages: (messages: WaMeMessage[]) => void;
   title: string;
   description: string;
   /** Estilo del aviso: informativo por defecto; exito cuando acompana una accion ya completada. */
   kind?: 'info' | 'success';
+  /** Se ejecuta al terminar el intento por la API (con exito o no), por ejemplo para refrescar estados. */
+  onApiSettled?: () => void;
 }
 
 /**
@@ -23,7 +25,7 @@ interface OfferApiAccessNoticeParams {
  * omitido, wa.me) cae al toast wa.me existente. Sin plantilla vinculada no se usa.
  */
 export function offerApiAccessNotice({
-  tipo, items, enqueueWhatsAppMessages, title, description, kind = 'info',
+  tipo, items, enqueueWhatsAppMessages, title, description, kind = 'info', onApiSettled,
 }: OfferApiAccessNoticeParams) {
   // Un id por cambio: reintentar el mismo aviso no duplica, pero un cambio nuevo sobre la misma
   // venta sí se envía (antes el servidor lo tomaba por duplicado y no mandaba nada).
@@ -50,6 +52,8 @@ export function offerApiAccessNotice({
         id: loadingId,
         description: 'Se prepararon los mensajes para abrirlos en WhatsApp.',
       });
+    } finally {
+      onApiSettled?.();
     }
   };
 

@@ -189,4 +189,89 @@ describe('auth store session initialization', () => {
       authRecoveryError: null,
     });
   });
+
+  it('mantiene el perfil vigente al recibir otra vez la misma sesion', async () => {
+    useAuthStore.setState({ user, isAuthenticated: true, isHydrated: false, authRecoveryError: 'Error' });
+    listener('TOKEN_REFRESHED', session);
+    await vi.runAllTimersAsync();
+    expect(authUseCaseMocks.loadActiveProfileUseCase).not.toHaveBeenCalled();
+    expect(useAuthStore.getState()).toMatchObject({ user, isHydrated: true, authRecoveryError: null });
+  });
+
+  it('ignora el evento de inicio mientras el login carga el perfil', async () => {
+    useAuthStore.setState({ isLoading: true });
+    listener('SIGNED_IN', session);
+    await vi.runAllTimersAsync();
+    expect(authUseCaseMocks.loadActiveProfileUseCase).not.toHaveBeenCalled();
+  });
+
+  it('descarta la carga de un perfil de una sesion anterior', async () => {
+    let complete!: (value: User) => void;
+    authUseCaseMocks.loadActiveProfileUseCase.mockImplementation(() => new Promise<User>((resolve) => { complete = resolve; }));
+    listener('INITIAL_SESSION', session);
+    await vi.advanceTimersByTimeAsync(0);
+    listener('SIGNED_OUT', null);
+    complete(user);
+    await Promise.resolve();
+    expect(useAuthStore.getState().user).toBeNull();
+  });
+
+  it('recupera el estado al reintentar sin sesion o con fallo de red', async () => {
+    authUseCaseMocks.getCurrentSessionUseCase.mockResolvedValueOnce(null).mockRejectedValueOnce(new Error('red'));
+    useAuthStore.getState().retryAuth();
+    await vi.runAllTimersAsync();
+    expect(useAuthStore.getState()).toMatchObject({ user: null, isHydrated: true, authRecoveryError: null });
+    useAuthStore.getState().retryAuth();
+    await vi.runAllTimersAsync();
+    expect(useAuthStore.getState().authRecoveryError).toContain('No pudimos validar');
+  });
+
+  it('conserva la preferencia de recordar sesion y completa login', async () => {
+    authUseCaseMocks.signInUseCase.mockResolvedValue(session);
+    authUseCaseMocks.loadActiveProfileUseCase.mockResolvedValue(user);
+    await useAuthStore.getState().login('admin@movietime.test', 'secret');
+    expect(useAuthStore.getState()).toMatchObject({ user, isAuthenticated: true, isLoading: false });
+  });
+
+  it('limpia el estado cuando falla el inicio antes de crear sesion', async () => {
+    authUseCaseMocks.signInUseCase.mockRejectedValue(new Error('Credenciales invalidas'));
+    await expect(useAuthStore.getState().login('admin@movietime.test', 'bad')).rejects.toThrow('Credenciales invalidas');
+    expect(useAuthStore.getState()).toMatchObject({ isLoading: false, isHydrated: true });
+  });
+
+  it('cierra una sesion cuyo perfil falla de forma terminal durante el login', async () => {
+    authUseCaseMocks.signInUseCase.mockResolvedValue(session);
+    authUseCaseMocks.loadActiveProfileUseCase.mockRejectedValue(new TerminalAuthError('Inactivo'));
+    await expect(useAuthStore.getState().login('admin@movietime.test', 'secret')).rejects.toThrow('Inactivo');
+    expect(authUseCaseMocks.signOutUseCase).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+
+  it('actualiza los indicadores locales sin consultar la sesion', () => {
+    useAuthStore.getState().setUser(user);
+    useAuthStore.getState().checkAuth();
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    useAuthStore.getState().setUser(null);
+    useAuthStore.getState().checkAuth();
+    useAuthStore.getState().setHydrated(true);
+    useAuthStore.getState().initAuth();
+    expect(useAuthStore.getState()).toMatchObject({ isAuthenticated: false, isHydrated: true });
+    expect(authUseCaseMocks.onAuthStateChangeUseCase).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancela la carga pendiente al cerrar sesion', async () => {
+    listener('INITIAL_SESSION', session);
+    listener('SIGNED_OUT', null);
+    await vi.runAllTimersAsync();
+    expect(authUseCaseMocks.loadActiveProfileUseCase).not.toHaveBeenCalled();
+  });
+
+  it('limpia el store aunque falle la limpieza local o el cierre terminal', async () => {
+    authUseCaseMocks.clearLocalSessionUseCase.mockImplementation(() => { throw new Error('storage'); });
+    authUseCaseMocks.signOutUseCase.mockRejectedValue(new Error('red'));
+    authUseCaseMocks.loadActiveProfileUseCase.mockRejectedValue(new TerminalAuthError('Inactivo'));
+    listener('INITIAL_SESSION', session);
+    await vi.runAllTimersAsync();
+    expect(useAuthStore.getState()).toMatchObject({ user: null, isAuthenticated: false, isHydrated: true });
+  });
 });

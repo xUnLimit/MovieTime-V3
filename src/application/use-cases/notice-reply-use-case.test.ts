@@ -5,7 +5,7 @@ import type { NoticeRecord, NoticeStore } from '@/modules/messaging/notice-store
 import type { NoticeReplyStore } from '@/modules/messaging/notice-reply-store';
 import type { OutboundResult } from '@/modules/whatsapp/outbound-messages';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
-import { handleNoticeReply, type NoticeReplyDeps } from './notice-reply-use-case';
+import { handleNoticeReply, retryPendingNoticeReplies, type NoticeReplyDeps } from './notice-reply-use-case';
 
 const ID = '123e4567-e89b-12d3-a456-426614174000';
 const NOW = new Date('2026-09-28T16:00:00Z');
@@ -39,9 +39,10 @@ function fixture() {
   const replies = {
     findNotice: vi.fn().mockResolvedValue(notice),
     ventaIds: vi.fn().mockResolvedValue(['sale-1']),
-    claim: vi.fn().mockResolvedValue(true),
-    declineVentas: vi.fn().mockResolvedValue(undefined),
-    finish: vi.fn().mockResolvedValue(undefined),
+    claim: vi.fn().mockResolvedValue({ id: 42, attempts: 1, outcome: 'claimed' }),
+    declineVentas: vi.fn().mockResolvedValue(true),
+    finish: vi.fn().mockResolvedValue(true),
+    listRetryable: vi.fn().mockResolvedValue([]),
   } satisfies NoticeReplyStore;
   const notices = {
     loadVentas: vi.fn().mockResolvedValue([venta]),
@@ -82,7 +83,7 @@ describe('handleNoticeReply', () => {
     expect(deps.send).toHaveBeenCalledWith(expect.objectContaining({
       sentBy: null, toWaId: notice.wa_id, payload: expect.objectContaining({ kind: 'text' }),
     }));
-    expect(deps.replies.finish).toHaveBeenCalledWith(ID, 'RENOVAR', 'accepted');
+    expect(deps.replies.finish).toHaveBeenCalledWith(42, 1, 'accepted');
   });
 
   it('uses the sender when context and the notice message ID are both absent', async () => {
@@ -93,7 +94,7 @@ describe('handleNoticeReply', () => {
 
   it('does nothing on a duplicate tap', async () => {
     const deps = fixture();
-    deps.replies.claim.mockResolvedValue(false);
+    deps.replies.claim.mockResolvedValue({ id: 42, attempts: 1, outcome: 'duplicate' });
     expect(await handleNoticeReply(inbound, deps)).toBe('duplicate');
     expect(deps.notices.loadVentas).not.toHaveBeenCalled();
     expect(deps.send).not.toHaveBeenCalled();
@@ -160,6 +161,76 @@ describe('handleNoticeReply', () => {
     const deps = fixture();
     deps.send.mockResolvedValue({ ...accepted, sendStatus: 'failed' });
     expect(await handleNoticeReply(inbound, deps)).toBe('failed');
-    expect(deps.replies.finish).toHaveBeenCalledWith(ID, 'RENOVAR', 'failed');
+    expect(deps.replies.finish).toHaveBeenCalledWith(42, 1, 'failed', 'SEND_REJECTED');
+  });
+
+  it('mantiene la misma clave al reintentar un rechazo confirmado', async () => {
+    const deps = fixture();
+    deps.send.mockResolvedValueOnce({ ...accepted, sendStatus: 'failed' }).mockResolvedValueOnce(accepted);
+    expect(await handleNoticeReply(inbound, deps)).toBe('failed');
+    deps.replies.claim.mockResolvedValue({ id: 42, attempts: 2, outcome: 'claimed' });
+    expect(await handleNoticeReply(inbound, deps)).toBe('accepted');
+    expect(deps.send.mock.calls[0]![0].idempotencyKey).toBe(deps.send.mock.calls[1]![0].idempotencyKey);
+  });
+
+  it('deja una excepcion de envio incierta y no vuelve a enviar', async () => {
+    const deps = fixture();
+    deps.send.mockRejectedValueOnce(new Error('timeout'));
+    expect(await handleNoticeReply(inbound, deps)).toBe('uncertain');
+    expect(deps.replies.finish).toHaveBeenCalledWith(42, 1, 'uncertain', 'SEND_EXCEPTION');
+    deps.replies.claim.mockResolvedValue({ id: 42, attempts: 1, outcome: 'uncertain' });
+    expect(await handleNoticeReply(inbound, deps)).toBe('uncertain');
+    expect(deps.send).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['busy', 'exhausted'] as const)('no procesa un claim %s', async (outcome) => {
+    const deps = fixture();
+    deps.replies.claim.mockResolvedValue({ id: 42, attempts: 5, outcome });
+    expect(await handleNoticeReply(inbound, deps)).toBe(outcome);
+    expect(deps.send).not.toHaveBeenCalled();
+  });
+
+  it('no repite el push de administradores si las ventas ya fueron marcadas', async () => {
+    const deps = fixture();
+    deps.replies.declineVentas.mockResolvedValue(false);
+    const message = { ...inbound, payload: { type: 'template_button', payload: `NO_CONTINUAR:${ID}` } };
+    expect(await handleNoticeReply(message, deps)).toBe('accepted');
+    expect(deps.notifyAdmins).not.toHaveBeenCalled();
+  });
+
+  it('procesa un lote recuperado', async () => {
+    const deps = fixture();
+    deps.replies.listRetryable.mockResolvedValue([inbound]);
+    expect(await retryPendingNoticeReplies(deps, 25)).toEqual({
+      processed: 1, accepted: 1, failed: 0, uncertain: 0, skipped: 0,
+    });
+    expect(deps.replies.listRetryable).toHaveBeenCalledWith(25);
+  });
+
+  it.each(['no sales', 'mismatched sales', 'no template'] as const)
+  ('registra un fallo preparatorio: %s', async (condition) => {
+    const deps = fixture();
+    if (condition === 'no sales') deps.replies.ventaIds.mockResolvedValue([]);
+    if (condition === 'mismatched sales') deps.notices.loadVentas.mockResolvedValue([{ ...venta, clienteId: 'other' }]);
+    if (condition === 'no template') deps.notices.loadTemplate.mockResolvedValue(null);
+    expect(await handleNoticeReply(inbound, deps)).toBe('failed');
+    expect(deps.replies.finish).toHaveBeenCalledWith(42, 1, 'failed', 'PREPARE_FAILED');
+    expect(deps.send).not.toHaveBeenCalled();
+  });
+
+  it('trata un resultado saliente pendiente como incierto', async () => {
+    const deps = fixture();
+    deps.send.mockResolvedValue({ ...accepted, sendStatus: 'pending' });
+    expect(await handleNoticeReply(inbound, deps)).toBe('uncertain');
+    expect(deps.replies.finish).toHaveBeenCalledWith(42, 1, 'uncertain', 'SEND_PENDING');
+  });
+
+  it('continua el lote cuando una fila falla antes del claim', async () => {
+    const deps = fixture();
+    deps.replies.listRetryable.mockResolvedValue([inbound, inbound]);
+    deps.replies.findNotice.mockRejectedValueOnce(new Error('temporary'));
+    expect(await retryPendingNoticeReplies(deps, 25)).toEqual({
+      processed: 2, accepted: 1, failed: 0, uncertain: 0, skipped: 1,
+    });
   });
 });

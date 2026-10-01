@@ -9,7 +9,7 @@ const paymentFactory = vi.hoisted(() => ({
 
 vi.mock('./payment-factory', () => paymentFactory);
 
-vi.mock('@/modules/services/currencyService', () => ({
+vi.mock('@/modules/services', () => ({
   currencyService: {
     convertToUSD: vi.fn(async (amount: number, currency: string) => currency === 'USD' ? amount : amount * 2),
     convertToUSDSync: vi.fn((amount: number, currency: string) => currency === 'USD' ? amount : amount * 2),

@@ -63,6 +63,9 @@ jobs:
           test -n "$bypass" || { echo "Vercel automation bypass is not configured"; exit 1; }
           echo "::add-mask::$bypass"
           echo "VERCEL_AUTOMATION_BYPASS_SECRET=$bypass" >> "$GITHUB_ENV"
+      # Las migraciones se aplican ANTES de validar el staged. Es seguro porque son forward-only y compatibles
+      # con la version anterior (expand/contract, AGENTS.md): si el staged se descarta, produccion sigue sirviendo
+      # la version anterior sobre el esquema nuevo.
       - name: Apply forward-only database migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -87,7 +90,19 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: echo "url=$(npx --yes vercel@59.23.2 --prod --skip-domain --force --yes --token '${{ secrets.VERCEL_TOKEN }}')" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: |
+          url="$(npx --yes vercel@59.23.2 --prod --skip-domain --force --yes --token '${{ secrets.VERCEL_TOKEN }}')"
+          [[ "$url" =~ ^https://[A-Za-z0-9.-]+$ ]] || { echo "Vercel did not return a deployment URL"; exit 1; }
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: Resolve staged deployment id
+        id: staged
+        env:
+          STAGED_DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: echo "deployment_id=$(node scripts/vercel-production-alias.mjs id "$STAGED_DEPLOYMENT_URL")" >> "$GITHUB_OUTPUT"
       - name: Install Chromium
         run: npx --no-install playwright install --with-deps chromium
       - name: Validate staged deployment
@@ -107,22 +122,34 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: echo "deployment_id=$(node scripts/vercel-production-alias.mjs current)" >> "$GITHUB_OUTPUT"
       - name: Promote exact staged deployment
+        id: promote
         env:
           STAGED_DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: node scripts/vercel-production-alias.mjs promote "$STAGED_DEPLOYMENT_URL"
-      - name: Verify production or roll back
-        shell: bash
+      - name: Verify production
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.PRODUCTION_URL }}
+        run: npm run test:e2e
+      # Recuperacion basada en el destino REAL de produccion: cubre una promocion fallida o parcial (POST aceptado
+      # pero sondeo agotado) y una verificacion posterior fallida. No hace nada si produccion ya sirve la version anterior.
+      - name: Recover production after a failed promotion or verification
+        if: failure() && steps.current-production.outputs.deployment_id != ''
+        env:
           PREVIOUS_DEPLOYMENT_ID: ${{ steps.current-production.outputs.deployment_id }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          if ! npm run test:e2e; then
-            node scripts/vercel-production-alias.mjs rollback "$PREVIOUS_DEPLOYMENT_ID"
-            exit 1
-          fi
+        run: node scripts/vercel-production-alias.mjs recover "$PREVIOUS_DEPLOYMENT_ID"
+      # Limpieza del despliegue en cola que creamos si el release fallo. Nunca borra el que sirve produccion.
+      - name: Remove the staged deployment that did not go live
+        if: failure() && steps.staged.outputs.deployment_id != ''
+        env:
+          STAGED_DEPLOYMENT_ID: ${{ steps.staged.outputs.deployment_id }}
+          PREVIOUS_DEPLOYMENT_ID: ${{ steps.current-production.outputs.deployment_id }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: node scripts/vercel-production-alias.mjs remove "$STAGED_DEPLOYMENT_ID" "$PREVIOUS_DEPLOYMENT_ID"

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/platform/server/supabase-server', () => ({ createServiceRoleClient: vi.fn() }));
-vi.mock('./push-delivery', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./push-delivery')>()),
+vi.mock('@/modules/push-delivery', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/modules/push-delivery')>()),
   sendPushNotification: vi.fn(),
 }));
 

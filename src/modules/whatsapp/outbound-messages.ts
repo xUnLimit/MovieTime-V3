@@ -31,6 +31,7 @@ export type OutboundStore = {
   insertPending(message: NewOutboundMessage): Promise<OutboundRecord | null>;
   markAccepted(id: string, waMessageId: string): Promise<void>;
   markFailed(id: string, code: number | null, title: string): Promise<void>;
+  retryFailed(id: string): Promise<boolean>;
 };
 
 export type OutboundDeps = {
@@ -79,7 +80,7 @@ export async function sendOutboundMessage(
   { store, catalog, send, now = () => new Date() }: OutboundDeps
 ): Promise<OutboundResult> {
   const previous = await replay(store, message.idempotencyKey);
-  if (previous) return previous;
+  if (previous && previous.sendStatus !== 'failed') return previous;
 
   if (message.payload.kind === 'template') {
     const approved = await catalog.getApproved(message.payload.templateName, WHATSAPP_TEMPLATE_LANGUAGE);
@@ -93,7 +94,14 @@ export async function sendOutboundMessage(
     throw new CustomerWindowClosedError();
   }
 
-  const pending = await store.insertPending(message);
+  if (previous && !await store.retryFailed(previous.id)) {
+    const current = await replay(store, message.idempotencyKey);
+    return current?.sendStatus === 'failed'
+      ? { ...current, sendStatus: 'pending' }
+      : current ?? { ...previous, sendStatus: 'pending' };
+  }
+
+  const pending = previous ?? await store.insertPending(message);
   if (!pending) {
     const raced = await replay(store, message.idempotencyKey);
     if (raced) return raced;
@@ -110,7 +118,7 @@ export async function sendOutboundMessage(
       ? 'Sensitive WhatsApp message failed'
       : error instanceof CloudApiError ? error.title : 'Unexpected send failure';
     await store.markFailed(pending.id, code, title);
-    if (!(error instanceof CloudApiError)) throw error;
+    if (!(error instanceof CloudApiError) || error.code === null) throw error;
     return { id: pending.id, sendStatus: 'failed', waMessageId: null, errorTitle: title, replayed: false };
   }
 }

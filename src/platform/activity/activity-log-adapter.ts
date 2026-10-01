@@ -1,29 +1,45 @@
-import type { ActivityLogOptions } from '@/application/activity/activity-log-types';
-import { useActivityLogStore } from '@/store/activityLogStore';
-import { useAuthStore } from '@/store/authStore';
 import type { ActivityLog } from '@/types';
 
-export type { ActivityLogOptions } from '@/application/activity/activity-log-types';
+type ActivityLogContext = Pick<ActivityLog, 'usuarioId' | 'usuarioEmail'>;
+export type ActivityLogRecorder = (log: Omit<ActivityLog, 'id' | 'timestamp'>) => Promise<void>;
 
-function getStoreLogContext() {
-  const user = useAuthStore.getState().user;
-  return {
-    usuarioId: user?.id ?? 'sistema',
-    usuarioEmail: user?.email ?? 'sistema',
-  };
+export type ActivityLogOptions = {
+  logContext: ActivityLogContext;
+  recordActivityLog: ActivityLogRecorder;
+};
+
+export type ActivityLogSource = {
+  getContext: () => ActivityLogContext;
+  record: ActivityLogRecorder;
+};
+
+// La identidad y el registro se inyectan desde el composition root de la UI
+// (`src/components/providers/activity-log-composition.ts`); platform no lee stores globales.
+let source: ActivityLogSource | null = null;
+
+export function configureActivityLogSource(next: ActivityLogSource | null) {
+  source = next;
+}
+
+function requireSource(): ActivityLogSource {
+  if (!source) {
+    throw new Error('Activity log source is not configured. Register it in the composition root.');
+  }
+  return source;
 }
 
 export function getActivityLogOptions(): ActivityLogOptions {
+  const current = requireSource();
   return {
-    logContext: getStoreLogContext(),
-    recordActivityLog: useActivityLogStore.getState().addLog,
+    logContext: current.getContext(),
+    recordActivityLog: current.record,
   };
 }
 
-export function recordActivityLog(log: Omit<ActivityLog, 'id' | 'timestamp'>) {
-  return useActivityLogStore.getState().addLog(log);
+export function recordActivityLog(log: Parameters<ActivityLogRecorder>[0]) {
+  return requireSource().record(log);
 }
 
 export function getActivityLogContext() {
-  return getStoreLogContext();
+  return requireSource().getContext();
 }

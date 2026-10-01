@@ -102,5 +102,14 @@ export function createOutboundStore(client: ServiceClient = createServiceRoleCli
         .eq('id', id);
       if (error) fail('mark the message as failed', error.code);
     },
+    async retryFailed(id) {
+      // Solo un rechazo explicito de Meta permite reservar otro intento.
+      const { data, error } = await client.from('whatsapp_outbound_messages')
+        .update({ send_status: 'pending', error_code: null, error_title: null })
+        .eq('id', id).eq('send_status', 'failed').not('error_code', 'is', null)
+        .select('id').maybeSingle();
+      if (error) fail('retry the rejected message', error.code);
+      return data !== null;
+    },
   };
 }

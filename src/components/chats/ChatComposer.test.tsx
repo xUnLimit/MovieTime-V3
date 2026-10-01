@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, renderHook, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,11 +17,13 @@ vi.mock('sonner', () => ({ toast: { error: toastError } }));
 vi.mock('./ChatActionsDialog', () => ({ ChatActionsDialog: () => null }));
 
 import { ChatComposer } from './ChatComposer';
+import { useVoiceRecorder } from './useVoiceRecorder';
 
 // Simula el MediaRecorder del navegador: `supported` fija que formatos acepta
 // grabar (Chrome de escritorio en la practica solo ofrece audio/webm).
 class FakeMediaRecorder {
   static supported = new Set(['audio/webm']);
+  static emitChunk = true;
   static isTypeSupported(type: string) {
     return FakeMediaRecorder.supported.has(type);
   }
@@ -38,7 +40,7 @@ class FakeMediaRecorder {
   }
 
   start() {
-    this.ondataavailable?.({ data: new Blob(['audio'], { type: this.mimeType }) });
+    if (FakeMediaRecorder.emitChunk) this.ondataavailable?.({ data: new Blob(['audio'], { type: this.mimeType }) });
   }
 
   stop() {
@@ -82,6 +84,7 @@ describe('ChatComposer voice notes', () => {
 
   beforeEach(() => {
     FakeMediaRecorder.supported = new Set(['audio/webm']);
+    FakeMediaRecorder.emitChunk = true;
     getUserMedia.mockReset().mockResolvedValue({ getTracks: () => [] } as unknown as MediaStream);
     vi.stubGlobal('MediaRecorder', FakeMediaRecorder);
     vi.stubGlobal('navigator', { ...globalThis.navigator, mediaDevices: { getUserMedia } });
@@ -133,6 +136,46 @@ describe('ChatComposer voice notes', () => {
 
     expect(screen.queryByRole('button', { name: 'Enviar archivo' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Grabar audio' })).toBeTruthy();
+  });
+
+  it('reports when the browser cannot record audio', async () => {
+    vi.stubGlobal('MediaRecorder', undefined);
+    renderComposer();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Grabar audio' }));
+    expect(toastError).toHaveBeenCalledWith(expect.stringContaining('no permite grabar audio'));
+  });
+
+  it('reports microphone failures and empty recordings', async () => {
+    const user = userEvent.setup();
+    getUserMedia.mockRejectedValueOnce(new Error('Microphone denied'));
+    renderComposer();
+    await user.click(screen.getByRole('button', { name: 'Grabar audio' }));
+    expect(toastError).toHaveBeenCalledWith(expect.any(String));
+
+    FakeMediaRecorder.emitChunk = false;
+    await user.click(screen.getByRole('button', { name: 'Grabar audio' }));
+    await user.click(screen.getByRole('button', { name: 'Detener grabación' }));
+    expect(toastError).toHaveBeenCalledWith('No se pudo grabar el audio. Intenta de nuevo.');
+    expect(screen.queryByRole('button', { name: 'Enviar archivo' })).toBeNull();
+  });
+
+  it('updates the recording timer and releases microphone tracks', async () => {
+    const stopTrack = vi.fn();
+    getUserMedia.mockResolvedValueOnce({ getTracks: () => [{ stop: stopTrack }] } as unknown as MediaStream);
+    const selectFile = vi.fn();
+    vi.useFakeTimers();
+    try {
+      const { result, unmount } = renderHook(() => useVoiceRecorder(selectFile));
+      await act(async () => { await result.current.startRecording(); });
+      act(() => { vi.advanceTimersByTime(1000); });
+      expect(result.current.recordSeconds).toBe(1);
+      act(() => result.current.stopRecording(true));
+      expect(stopTrack).toHaveBeenCalled();
+      expect(selectFile).toHaveBeenCalledOnce();
+      unmount();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

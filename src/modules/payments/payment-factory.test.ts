@@ -4,6 +4,7 @@ const pagosRepository = vi.hoisted(() => ({
   queryPagosServicio: vi.fn(),
   queryPagosVenta: vi.fn(),
 }));
+const currency = vi.hoisted(() => ({ convertToUSD: vi.fn() }));
 const paymentsRepository = vi.hoisted(() => ({
   createPagoServicio: vi.fn(),
   createPagoVenta: vi.fn(),
@@ -11,12 +12,14 @@ const paymentsRepository = vi.hoisted(() => ({
 
 vi.mock('@/platform/supabase/pagos-repository', () => pagosRepository);
 vi.mock('@/platform/supabase/payments-repository', () => paymentsRepository);
+vi.mock('./currency-converter', () => ({ convertToUSD: currency.convertToUSD }));
 
 import { createInitialServicioPayment, createInitialVentaPayment, createRenewalServicioPayment, createRenewalVentaPayment, getServicioPayments } from './payment-factory';
 
 describe('payment-factory', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    currency.convertToUSD.mockImplementation(async (amount: number) => amount);
     paymentsRepository.createPagoVenta.mockResolvedValue('pago-venta-1');
     paymentsRepository.createPagoServicio.mockResolvedValue('pago-servicio-1');
     pagosRepository.queryPagosVenta.mockResolvedValue([]);
@@ -122,5 +125,44 @@ describe('payment-factory', () => {
       { id: 'new' },
       { id: 'old' },
     ]);
+  });
+
+  it('converts non-USD amounts before calling the repositories', async () => {
+    currency.convertToUSD.mockResolvedValue(10);
+
+    await createInitialVentaPayment('venta-1', 'c-1', 'Cliente', 'cat-1', 20, 'Banco', 'm-1', 'EUR');
+    await createInitialServicioPayment(
+      'servicio-1', 'cat-1', 20, 'm-1', 'Banco', 'EUR', 'mensual',
+      new Date('2026-05-01T00:00:00Z'), new Date('2026-06-01T00:00:00Z'),
+    );
+
+    expect(currency.convertToUSD).toHaveBeenCalledWith(20, 'EUR');
+    expect(paymentsRepository.createPagoVenta).toHaveBeenCalledWith(expect.objectContaining({ montoUsd: 10, exchangeRate: 2 }));
+    expect(paymentsRepository.createPagoServicio).toHaveBeenCalledWith(expect.objectContaining({ montoUsd: 10, exchangeRate: 2 }));
+  });
+
+  it.each([
+    ['USD currency', 20, 'USD', 20],
+    ['zero amount', 0, 'EUR', 0],
+    ['zero conversion', 20, 'EUR', 0],
+  ])('uses a neutral exchange rate for %s', async (_label, monto, moneda, usd) => {
+    currency.convertToUSD.mockResolvedValue(usd);
+
+    await createInitialVentaPayment('venta-1', 'c-1', 'Cliente', 'cat-1', monto, 'Banco', 'm-1', moneda);
+
+    expect(paymentsRepository.createPagoVenta).toHaveBeenCalledWith(expect.objectContaining({ montoUsd: usd, exchangeRate: 1 }));
+  });
+
+  it('defaults to USD and does not persist when conversion fails', async () => {
+    await createRenewalServicioPayment(
+      'servicio-1', 'cat-1', 5, 'm-1', 'Banco', undefined as unknown as string, 'mensual',
+      new Date('2026-05-01T00:00:00Z'), new Date('2026-06-01T00:00:00Z'), 1,
+    );
+    expect(currency.convertToUSD).toHaveBeenCalledWith(5, 'USD');
+
+    currency.convertToUSD.mockRejectedValueOnce(new Error('rate unavailable'));
+    await expect(createInitialVentaPayment('venta-1', 'c-1', 'Cliente', 'cat-1', 20, 'Banco', 'm-1', 'EUR'))
+      .rejects.toThrow('rate unavailable');
+    expect(paymentsRepository.createPagoVenta).not.toHaveBeenCalled();
   });
 });

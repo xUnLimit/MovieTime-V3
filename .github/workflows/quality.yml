@@ -15,8 +15,8 @@ permissions:
   security-events: write
 
 jobs:
-  quality:
-    name: security + types + tests + build
+  static:
+    name: security + static analysis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -33,18 +33,59 @@ jobs:
         run: npm run security:audit:prod && npm run security:audit:all
       - name: Static analysis and lint
         run: npm run security:static
+      - name: Design tokens
+        run: npm run design:check
+      - name: Dead code and unused dependencies
+        run: npm run dead-code
+      - name: Architecture boundaries
+        run: npm run arch:check
+      - name: Module size (300 lines)
+        run: npm run module-size
+      - name: CI and quality:full parity
+        run: npm run ci:parity
       - name: Typecheck application and tests
         run: npm run typecheck
       - name: Migration safety
         run: npm run migrate:lint
         env:
           MIGRATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+
+  tests:
+    name: tests + coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - name: Tests and coverage
         run: npm run test:coverage
+      - name: Coverage baseline (never goes down)
+        run: npm run coverage:baseline
       - name: Changed-code coverage
         run: npm run coverage:diff
         env:
           COVERAGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+  browser:
+    name: build + browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - name: Production build
         run: npm run build:verify
       - name: Install Chromium
@@ -58,7 +99,6 @@ jobs:
           name: release-evidence
           path: |
             sbom.cdx.json
-            coverage/
             playwright-report/
           retention-days: 30
 
@@ -102,14 +142,61 @@ jobs:
       - name: Validate local database invariants
         shell: bash
         run: |
-          npx --no-install supabase status -o env > supabase-status.env
           set -a
-          source supabase-status.env
+          source <(npx --no-install supabase status -o env)
           set +a
           NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
           NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
           SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
           npm run migrate:validate
+      - name: Database assertions (pgTAP)
+        run: npm run test:db
+      - name: Integration tests against local Supabase
+        shell: bash
+        run: |
+          set -a
+          source <(npx --no-install supabase status -o env)
+          set +a
+          INTEGRATION_SUPABASE_URL="$API_URL" \
+          INTEGRATION_SUPABASE_ANON_KEY="$ANON_KEY" \
+          INTEGRATION_SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          npm run test:integration
+
+  e2e-authenticated:
+    name: authenticated browser flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Start clean local Supabase
+        run: npx --no-install supabase start
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Build and test authenticated flows
+        shell: bash
+        run: |
+          set -a
+          source <(npx --no-install supabase status -o env)
+          set +a
+          export E2E_SUPABASE_URL="$API_URL"
+          export E2E_SUPABASE_ANON_KEY="$ANON_KEY"
+          export E2E_SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          export E2E_ADMIN_EMAIL='e2e-admin@example.com'
+          export E2E_ADMIN_PASSWORD='E2e-Admin-Local-Password1!'
+          export E2E_OPERATOR_EMAIL='e2e-operator@example.com'
+          export E2E_OPERATOR_PASSWORD='E2e-Operator-Local-Password1!'
+          export E2E_WHATSAPP_APP_SECRET='e2e-local-whatsapp-app-secret'
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY"
+          export AUTH_GATE_PORT=3211
+          export NEXT_PUBLIC_APP_URL=http://127.0.0.1:3211
+          npm run build:verify
+          npm run test:e2e:auth
 
   codeql:
     name: codeql

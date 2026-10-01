@@ -16,7 +16,7 @@ function fakeClient(results: Record<string, Result>) {
     from(table: string) {
       const result = { data: results[table]?.data ?? null, error: results[table]?.error ?? null };
       const builder: Record<string, unknown> = {};
-      for (const method of ['select', 'eq', 'order', 'limit', 'insert', 'update']) {
+      for (const method of ['select', 'eq', 'order', 'limit', 'insert', 'update', 'not']) {
         builder[method] = (...args: unknown[]) => {
           calls.push({ table, method, args });
           return builder;
@@ -107,6 +107,12 @@ describe('createOutboundStore', () => {
       { send_status: 'accepted', wa_message_id: 'wamid.OUT' },
       { send_status: 'failed', error_code: 131026, error_title: 'Message undeliverable' },
     ]);
+  });
+
+  it('reserva de nuevo solo una salida fallida con codigo explicito', async () => {
+    const { client, calls } = fakeClient({ whatsapp_outbound_messages: { data: { id: 'out-1' } } });
+    await expect(createOutboundStore(client).retryFailed('out-1')).resolves.toBe(true);
+    expect(calls).toContainEqual({ table: 'whatsapp_outbound_messages', method: 'not', args: ['error_code', 'is', null] });
   });
 
   it.each([

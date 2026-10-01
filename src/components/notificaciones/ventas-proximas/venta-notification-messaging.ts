@@ -47,9 +47,3 @@ export function notifyVentaExpiration(
   openVentaWhatsappMessage(notif, template, { includeDiasRetraso: true });
 }
 
-export function notifyVentaCancellation(
-  notif: NotificacionVentaConId,
-  template: TemplateMensaje,
-) {
-  openVentaWhatsappMessage(notif, template);
-}

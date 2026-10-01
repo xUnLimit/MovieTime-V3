@@ -105,3 +105,18 @@ describe('offerApiAccessNotice for renewals', () => {
     expect(enqueue).toHaveBeenCalledWith([]);
   });
 });
+
+describe('offerApiAccessNotice onApiSettled', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each(['accepted', 'throws'])('runs the callback after the API attempt when it %s', async (kind) => {
+    if (kind === 'throws') mocks.send.mockRejectedValue(new Error('down'));
+    else mocks.send.mockResolvedValue([{ status: 'accepted', ventaIds: ['v1'] }]);
+    const settled = vi.fn();
+    offerApiAccessNotice({ tipo: 'dia_pago', items: [items[0]!], enqueueWhatsAppMessages: vi.fn(), title: 'T', description: 'D', onApiSettled: settled });
+    expect(settled).not.toHaveBeenCalled();
+    await mocks.info.mock.calls.at(-1)?.[1].action.onClick();
+    expect(settled).toHaveBeenCalledTimes(1);
+    expect(mocks.send).toHaveBeenCalledWith({ tipo: 'dia_pago', ventaIds: ['v1'], eventId: expect.stringMatching(UUID) });
+  });
+});

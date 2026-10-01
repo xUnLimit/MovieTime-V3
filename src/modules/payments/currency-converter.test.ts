@@ -4,7 +4,7 @@ const service = vi.hoisted(() => ({
   getExchangeRate: vi.fn(), convertToUSD: vi.fn(), convertToUSDSync: vi.fn(),
   ensureRatesLoaded: vi.fn(), refreshExchangeRates: vi.fn(), getLastRateUpdate: vi.fn(), clearMemoryCache: vi.fn(),
 }));
-vi.mock('@/modules/services/currencyService', () => ({ currencyService: service }));
+vi.mock('@/modules/services', () => ({ currencyService: service }));
 
 import {
   convertToUSD, convertToUSDSync, currencyConverter, ensureRatesLoaded,

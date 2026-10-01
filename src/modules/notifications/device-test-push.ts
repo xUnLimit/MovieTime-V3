@@ -4,7 +4,7 @@ import {
   sendPushNotification,
   shouldDisablePushSubscription,
   toPushDeliveryFailure,
-} from './push-delivery';
+} from '@/modules/push-delivery';
 
 const log = createLogger('DeviceTestPush');
 

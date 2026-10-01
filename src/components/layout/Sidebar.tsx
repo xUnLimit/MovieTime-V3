@@ -14,6 +14,7 @@ import { UserMenu } from './UserMenu';
 import { getSidebarNavigationSections, isNavItemActive } from './sidebar-navigation';
 import { SIDEBAR_WIDTH, SidebarRowContent, SidebarTooltip, sidebarRowClassName } from './SidebarParts';
 import { useWhatsAppUnreadChats } from '@/hooks/use-whatsapp-chat';
+import { useWhatsAppRealtime } from '@/hooks/use-whatsapp-realtime';
 import { useSidebarThemeTransition } from './useSidebarThemeTransition';
 
 interface SidebarProps {
@@ -36,7 +37,9 @@ export function Sidebar({ collapsed: controlledCollapsed, onCollapse, mobileOpen
     themeButtonRef,
   });
 
-  const unreadChats = useWhatsAppUnreadChats(user?.role === 'admin');
+  const whatsappEnabled = user?.role === 'admin';
+  useWhatsAppRealtime(whatsappEnabled);
+  const unreadChats = useWhatsAppUnreadChats(whatsappEnabled);
 
   const filteredSections = useMemo(() => {
     return getSidebarNavigationSections(user?.role);

@@ -17,6 +17,7 @@ import {
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useWhatsAppConversations } from '@/hooks/use-whatsapp-chat';
+import { useWhatsAppRealtime } from '@/hooks/use-whatsapp-realtime';
 import { cn } from '@/platform/utils/cn';
 
 const CLOCK_TICK_MS = 60_000;
@@ -56,6 +57,7 @@ function isTypingTarget(target: EventTarget | null) {
 }
 
 function ChatsPageContent() {
+  useWhatsAppRealtime();
   const router = useRouter();
   const searchParams = useSearchParams();
   const requested = searchParams.get('wa');

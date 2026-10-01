@@ -82,7 +82,7 @@ export function useVentasProximasController() {
     await refreshNotificationCaches();
   };
 
-  const { handleNotificar, handleCancelar, bulk } = useVentasProximasNotices({ ventasNotificaciones, paginatedNotificaciones });
+  const { handleNotificar, bulk } = useVentasProximasNotices({ ventasNotificaciones, paginatedNotificaciones });
   const renewal = useVentasProximasRenewal({ notifSeleccionada, setNotifSeleccionada, refreshNotificationCaches });
 
   const handleOpenNotificar = (notif: NotificacionVentaConId) => {
@@ -170,7 +170,6 @@ export function useVentasProximasController() {
     categoriaPlanes: renewal.categoriaPlanes,
     estadoFilter,
     handleAcciones,
-    handleCancelar,
     handleConfirmRenovacion: renewal.handleConfirmRenovacion,
     handleCortarFromModal,
     handleSeguimiento,

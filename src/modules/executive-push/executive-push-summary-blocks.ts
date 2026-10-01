@@ -1,5 +1,5 @@
 import type { ExecutivePushBlock, ExecutivePushSummaryBlock } from '@/types';
-import { getExecutivePushBlockMeta } from '@/modules/pwa/push-helpers';
+import { getExecutivePushBlockMeta } from '@/modules/pwa';
 
 interface ExecutivePushBlockSettings {
   selectedBlocks: ExecutivePushBlock[];

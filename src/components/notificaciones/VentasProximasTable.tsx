@@ -96,8 +96,6 @@ export function VentasProximasTable() {
         onPromesaOpenChange={controller.setPromesaDialogOpen}
         onNotificarOpenChange={controller.setNotificarDialogOpen}
         onConfirmRenovacion={controller.handleConfirmRenovacion}
-        onNotificar={controller.handleNotificar}
-        onCancelar={controller.handleCancelar}
         onCortar={controller.handleCortarFromModal}
         onGuardarPromesa={controller.handleSavePaymentPromise}
         onQuitarPromesa={controller.handleRemovePaymentPromise}

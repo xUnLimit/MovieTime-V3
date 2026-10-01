@@ -20,9 +20,12 @@ type CurrencyServiceDependencies = {
 };
 
 const defaultLogger = createLogger('CurrencyService');
+const CURRENCY_FETCH_TIMEOUT_MS = 5000;
 
 async function fetchRatesFromApi(): Promise<CachedRates> {
-  const response = await fetch(`${API_BASE_URL}/latest/USD`);
+  const response = await fetch(`${API_BASE_URL}/latest/USD`, {
+    signal: AbortSignal.timeout(CURRENCY_FETCH_TIMEOUT_MS),
+  });
   if (!response.ok) throw new Error(`Exchange-rate API failed with status ${response.status}`);
 
   const data = await response.json() as ExchangeRateAPIResponse;

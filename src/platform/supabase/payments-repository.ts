@@ -1,5 +1,4 @@
 import { toDateOnly, toIso } from './dates';
-import { convertToUSD } from '@/modules/payments';
 import {
   createServicioPaymentRpc,
   createVentaPaymentRpc,
@@ -17,6 +16,10 @@ export type CreatePagoServicioInput = {
   fechaInicio?: Date | string | null;
   fechaVencimiento?: Date | string | null;
   monto: number;
+  /** Monto ya convertido a USD (la conversion vive en modules/payments). */
+  montoUsd: number;
+  /** Tasa de cambio aplicada (1 para USD). */
+  exchangeRate: number;
   metodoPagoId?: string | null;
   metodoPagoNombre?: string | null;
   moneda?: string | null;
@@ -33,6 +36,10 @@ export type CreatePagoVentaInput = {
   categoriaId?: string | null;
   fecha?: Date | string | null;
   monto: number;
+  /** Monto ya convertido a USD (la conversion vive en modules/payments). */
+  montoUsd: number;
+  /** Tasa de cambio aplicada (1 para USD). */
+  exchangeRate: number;
   precio?: number | null;
   descuento?: number | null;
   metodoPagoId?: string | null;
@@ -54,7 +61,6 @@ export async function createPagoServicio(payload: CreatePagoServicioInput): Prom
 
   const monto = Number(payload.monto ?? 0);
   const moneda = String(payload.moneda ?? 'USD');
-  const { usd, rate } = await convertAmountToUSD(monto, moneda);
 
   return createServicioPaymentRpc({
     p_idempotency_key: payload.idempotencyKey,
@@ -65,8 +71,8 @@ export async function createPagoServicio(payload: CreatePagoServicioInput): Prom
     p_ciclo_pago: toCicloPago(payload.cicloPago),
     p_costo_original: monto,
     p_moneda_original: moneda,
-    p_costo_usd: usd,
-    p_exchange_rate: rate,
+    p_costo_usd: Number(payload.montoUsd),
+    p_exchange_rate: Number(payload.exchangeRate),
     p_renovacion_automatica: Boolean(payload.renovacionAutomatica ?? false),
     p_metodo_pago_id: optionalString(payload.metodoPagoId),
     p_metodo_pago_nombre_snapshot: optionalString(payload.metodoPagoNombre),
@@ -83,7 +89,6 @@ export async function createPagoVenta(payload: CreatePagoVentaInput): Promise<st
   const precio = Number(payload.precio ?? monto);
   const descuento = Number(payload.descuento ?? 0);
   const moneda = String(payload.moneda ?? 'USD');
-  const { usd, rate } = await convertAmountToUSD(monto, moneda);
 
   return createVentaPaymentRpc({
     p_idempotency_key: payload.idempotencyKey,
@@ -95,8 +100,8 @@ export async function createPagoVenta(payload: CreatePagoVentaInput): Promise<st
     p_descuento: descuento,
     p_total_original: monto,
     p_moneda_original: moneda,
-    p_total_usd: usd,
-    p_exchange_rate: rate,
+    p_total_usd: Number(payload.montoUsd),
+    p_exchange_rate: Number(payload.exchangeRate),
     p_metodo_pago_id: optionalString(payload.metodoPagoId),
     p_metodo_pago_nombre_snapshot: optionalString(payload.metodoPago),
     p_fecha_pago: toIso(payload.fecha ?? new Date()),
@@ -105,14 +110,6 @@ export async function createPagoVenta(payload: CreatePagoVentaInput): Promise<st
     p_plan_nombre_snapshot: optionalString(payload.planNombre),
     p_plan_tipo_nombre_snapshot: optionalString(payload.planTipoNombre),
   });
-}
-
-async function convertAmountToUSD(amount: number, moneda: string) {
-  const usd = await convertToUSD(amount, moneda);
-  return {
-    usd,
-    rate: moneda === 'USD' || amount === 0 || usd === 0 ? 1 : amount / usd,
-  };
 }
 
 function optionalString(value: unknown): string | null {

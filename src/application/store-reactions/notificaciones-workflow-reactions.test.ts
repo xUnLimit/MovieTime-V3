@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ActivityLogOptions } from '@/application/activity/activity-log-types';
+import type { ActivityLogOptions } from '@/platform/activity/activity-log-adapter';
 
 const mocks = vi.hoisted(() => ({
   getClient: vi.fn(), invalidate: vi.fn(), updateVenta: vi.fn(), updateServicio: vi.fn(),

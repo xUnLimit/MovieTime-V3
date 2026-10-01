@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "public/sw.js",
+    "e2e/setup/auth.setup.ts",
+    "lighthouserc.deployment.cjs",
+    "scripts/lighthouse-vercel-auth.cjs"
+  ],
+  "ignoreIssues": {
+    "src/platform/supabase/database.types.ts": ["exports", "types"]
+  }
+}

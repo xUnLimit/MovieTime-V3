@@ -4,6 +4,7 @@ import type { Servicio } from '@/types';
 import type { PagoDialogProps } from './types';
 vi.mock('@/hooks/use-templates', () => ({ useTemplates: () => ({ data: [] }) }));
 import { usePagoDialogController } from './usePagoDialogController';
+import { usePagoDialogResetModel } from './usePagoDialogResetModel';
 
 const data = {
   periodoRenovacion: 'mensual', metodoPagoId: 'method', costo: 10,
@@ -15,6 +16,16 @@ const props = (onConfirm = vi.fn().mockResolvedValue(undefined)): PagoDialogProp
 });
 
 describe('payment dialog intent', () => {
+  it('selects sale reset values for a renewal', () => {
+    const sale = {
+      context: 'venta', mode: 'renew', open: true, onConfirm: vi.fn(), onOpenChange: vi.fn(), metodosPago: [],
+      venta: { clienteNombre: 'Cliente', precioFinal: 12, fechaFin: new Date('2026-09-30') },
+    } as PagoDialogProps;
+    const { result } = renderHook(() => usePagoDialogResetModel(sale));
+    expect(result.current.resetValues?.costo).toBe(12);
+    expect(result.current.dialogTargetKey).toContain('venta:renew');
+  });
+
   it('retains the operation key when the parent handles an error without closing', async () => {
     const options = props();
     const { result } = renderHook(() => usePagoDialogController(options));

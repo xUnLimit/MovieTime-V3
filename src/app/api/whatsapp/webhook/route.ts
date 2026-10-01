@@ -92,6 +92,7 @@ export async function POST(request: Request) {
     // Un error de almacenamiento devuelve 500 para que Meta reintente la entrega.
     const stored = await storeWebhookBatch(parsed.batch);
     const { messages } = parsed.batch;
+    const insertedIds = new Set(stored.insertedWaMessageIds);
     if (messages.length > 0) {
       // El aviso push corre despues de responder para no retrasar a Meta.
       after(async () => {
@@ -116,7 +117,8 @@ export async function POST(request: Request) {
           }
         }
         try {
-          await notifyWhatsAppMessages(messages);
+          const newMessages = messages.filter((message) => insertedIds.has(message.waMessageId));
+          if (newMessages.length > 0) await notifyWhatsAppMessages(newMessages);
         } catch (error) {
           logger.warn('WhatsApp message push could not be sent', { requestId, error });
         }

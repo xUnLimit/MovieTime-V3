@@ -1,42 +1,7 @@
 import type { Database } from '@/platform/supabase/database.types';
 
 import { executeIdempotentRpc } from './idempotent-rpc';
-import { typedRpcClient, type RpcResult } from './rpc-client';
-
-type CreateVentaWithInitialPaymentRpcClient = {
-  rpc: (
-    fn: 'create_venta_with_initial_payment',
-    args: CreateVentaWithInitialPaymentPayload
-  ) => Promise<RpcResult>;
-};
-
-type CreateVentaRefundRpcClient = {
-  rpc: (
-    fn: 'create_venta_refund',
-    args: CreateVentaRefundPayload
-  ) => Promise<RpcResult>;
-};
-
-type DeleteVentaWithPaymentsRpcClient = {
-  rpc: (
-    fn: 'delete_venta_with_payments',
-    args: DeleteVentaWithPaymentsPayload
-  ) => Promise<RpcResult>;
-};
-
-type DeleteVentaPaymentRpcClient = {
-  rpc: (
-    fn: 'delete_venta_payment_and_empty_period',
-    args: DeleteVentaPaymentPayload
-  ) => Promise<RpcResult>;
-};
-
-type UpdateVentaPaymentAndPeriodRpcClient = {
-  rpc: (
-    fn: 'update_venta_payment_and_period',
-    args: UpdateVentaPaymentAndPeriodPayload
-  ) => Promise<RpcResult>;
-};
+import { assertRpcVoidResult, callRpc } from './rpc-client';
 
 export type CreateVentaWithInitialPaymentPayload = {
   p_cliente_id: string | null;
@@ -98,46 +63,36 @@ export type UpdateVentaPaymentAndPeriodPayload = {
   p_idempotency_key?: string | null;
 };
 
-const ventaInitialPaymentRpcClient = typedRpcClient<CreateVentaWithInitialPaymentRpcClient>();
-const ventaRefundRpcClient = typedRpcClient<CreateVentaRefundRpcClient>();
-const deleteVentaWithPaymentsRpcClient = typedRpcClient<DeleteVentaWithPaymentsRpcClient>();
-const deleteVentaPaymentRpcClient = typedRpcClient<DeleteVentaPaymentRpcClient>();
-const updateVentaPaymentAndPeriodRpcClient =
-  typedRpcClient<UpdateVentaPaymentAndPeriodRpcClient>();
-
 export async function createVentaWithInitialPaymentRpc(
   payload: CreateVentaWithInitialPaymentPayload
 ): Promise<string> {
   return executeIdempotentRpc('create_venta_with_initial_payment', payload, (request) =>
-    ventaInitialPaymentRpcClient.rpc('create_venta_with_initial_payment', request));
+    callRpc('create_venta_with_initial_payment', request));
 }
 
 export async function createVentaRefundRpc(payload: CreateVentaRefundPayload): Promise<string> {
   return executeIdempotentRpc('create_venta_refund', payload, (request) =>
-    ventaRefundRpcClient.rpc('create_venta_refund', request));
+    callRpc('create_venta_refund', request));
 }
 
 export async function deleteVentaWithPaymentsRpc(
   payload: DeleteVentaWithPaymentsPayload
 ): Promise<void> {
-  const { error } = await deleteVentaWithPaymentsRpcClient.rpc('delete_venta_with_payments', payload);
+  const { data, error } = await callRpc('delete_venta_with_payments', payload);
   if (error) throw new Error(error.message);
+  assertRpcVoidResult(data, 'delete_venta_with_payments');
 }
 
 export async function deleteVentaPaymentRpc(payload: DeleteVentaPaymentPayload): Promise<void> {
-  const { error } = await deleteVentaPaymentRpcClient.rpc(
-    'delete_venta_payment_and_empty_period',
-    payload
-  );
+  const { data, error } = await callRpc('delete_venta_payment_and_empty_period', payload);
   if (error) throw new Error(error.message);
+  assertRpcVoidResult(data, 'delete_venta_payment_and_empty_period');
 }
 
 export async function updateVentaPaymentAndPeriodRpc(
   payload: UpdateVentaPaymentAndPeriodPayload
 ): Promise<void> {
-  const { error } = await updateVentaPaymentAndPeriodRpcClient.rpc(
-    'update_venta_payment_and_period',
-    payload
-  );
+  const { data, error } = await callRpc('update_venta_payment_and_period', payload);
   if (error) throw new Error(error.message);
+  assertRpcVoidResult(data, 'update_venta_payment_and_period');
 }

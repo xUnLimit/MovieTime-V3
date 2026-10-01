@@ -2,7 +2,7 @@
  * Test Setup
  *
  * Global setup for test environment.
- * Imported in vitest.config.ts
+ * Imported in vitest.config.mts
  */
 
 import { afterEach, vi } from 'vitest';
@@ -28,7 +28,7 @@ const localStorageMock = {
 global.localStorage = localStorageMock as unknown as Storage;
 
 // Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
+if (typeof window !== 'undefined') Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
     matches: false,

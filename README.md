@@ -6,7 +6,7 @@ Cubre:
 
 - **Operacion:** terceros (clientes y revendedores), servicios (cuentas de proveedor), ventas y sus periodos, renovaciones, reembolsos, cortes y reposo.
 - **Finanzas:** pagos de ventas y servicios, gastos, categorias, metodos de pago y un dashboard financiero con pronostico.
-- **WhatsApp (Cloud API de Meta):** bandeja de chats en `/chats`, plantillas aprobadas por Meta, avisos de vencimiento manuales y automaticos con botones de respuesta.
+- **WhatsApp (Cloud API de Meta):** bandeja de chats en `/chats` que se actualiza en tiempo real con Supabase Realtime (con sondeo lento de respaldo), plantillas aprobadas por Meta, avisos de vencimiento manuales y automaticos con botones de respuesta.
 - **Pagos Yappy:** deteccion de avisos de pago por correo (IMAP) en `/pagos-yappy` para conciliarlos.
 - **Notificaciones:** vencimientos de ventas y servicios, push web y resumen ejecutivo programado.
 

@@ -1,0 +1,27 @@
+import { render } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  compose: vi.fn(),
+  initialize: vi.fn(),
+}));
+
+vi.mock('./activity-log-composition', () => {
+  mocks.compose();
+  return {};
+});
+vi.mock('@/modules/notifications/notification-event-listeners', () => ({
+  initializeNotificationEventListeners: mocks.initialize,
+}));
+
+import { NotificationEventsInitializer } from './NotificationEventsInitializer';
+
+describe('NotificationEventsInitializer', () => {
+  it('composes activity logging on import and installs notification listeners once per mount', () => {
+    expect(mocks.compose).toHaveBeenCalledOnce();
+    const view = render(<NotificationEventsInitializer />);
+    expect(mocks.initialize).toHaveBeenCalledOnce();
+    view.rerender(<NotificationEventsInitializer />);
+    expect(mocks.initialize).toHaveBeenCalledOnce();
+  });
+});

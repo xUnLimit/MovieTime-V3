@@ -1,0 +1,42 @@
+{
+  "application": {
+    "lines": 87.07,
+    "branches": 70.81,
+    "functions": 87.43
+  },
+  "platform": {
+    "lines": 87.93,
+    "branches": 80.29,
+    "functions": 89.98
+  },
+  "modules": {
+    "lines": 85.49,
+    "branches": 73.28,
+    "functions": 88.75
+  },
+  "store": {
+    "lines": 67.25,
+    "branches": 40.78,
+    "functions": 54.17
+  },
+  "components": {
+    "lines": 45.03,
+    "branches": 48.5,
+    "functions": 42.93
+  },
+  "app": {
+    "lines": 39.4,
+    "branches": 39.85,
+    "functions": 34.18
+  },
+  "hooks": {
+    "lines": 47.41,
+    "branches": 35.5,
+    "functions": 47.64
+  },
+  "proxy+request-auth": {
+    "lines": 100,
+    "branches": 100,
+    "functions": 100
+  }
+}

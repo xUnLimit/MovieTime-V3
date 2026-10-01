@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import './activity-log-composition';
 import { initializeNotificationEventListeners } from '@/modules/notifications/notification-event-listeners';
 
 export function NotificationEventsInitializer() {

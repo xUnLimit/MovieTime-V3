@@ -1,4 +1,4 @@
-import { currencyService } from '@/modules/services/currencyService';
+import { currencyService } from '@/modules/services';
 
 export const currencyConverter = {
   getExchangeRate: (fromCurrency: string, toCurrency = 'USD') =>

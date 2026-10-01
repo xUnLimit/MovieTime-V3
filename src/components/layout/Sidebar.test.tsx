@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({ role: 'admin', unread: 3, enabledArg: null as boolean | null }));
+const state = vi.hoisted(() => ({ role: 'admin', unread: 3, enabledArg: null as boolean | null, realtime: vi.fn() }));
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/dashboard' }));
 vi.mock('next/image', () => ({ default: () => null }));
@@ -16,12 +16,14 @@ vi.mock('@/hooks/use-whatsapp-chat', () => ({
     return enabled ? state.unread : 0;
   },
 }));
+vi.mock('@/hooks/use-whatsapp-realtime', () => ({ useWhatsAppRealtime: state.realtime }));
 
 import { Sidebar } from './Sidebar';
 
 beforeEach(() => {
   state.role = 'admin';
   state.unread = 3;
+  state.realtime.mockReset();
 });
 
 describe('Sidebar navigation', () => {
@@ -47,6 +49,7 @@ describe('Sidebar WhatsApp badge', () => {
     render(<Sidebar collapsed={false} onCollapse={vi.fn()} />);
 
     expect(state.enabledArg).toBe(true);
+    expect(state.realtime).toHaveBeenCalledWith(true);
     expect(screen.getAllByLabelText('3 chats sin leer').length).toBeGreaterThan(0);
   });
 
@@ -65,5 +68,6 @@ describe('Sidebar WhatsApp badge', () => {
     state.role = 'vendedor';
     render(<Sidebar collapsed={false} onCollapse={vi.fn()} />);
     expect(state.enabledArg).toBe(false);
+    expect(state.realtime).toHaveBeenLastCalledWith(false);
   });
 });

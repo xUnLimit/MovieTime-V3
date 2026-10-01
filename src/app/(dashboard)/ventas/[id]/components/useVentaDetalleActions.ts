@@ -12,18 +12,18 @@ import { getActivityLogOptions } from '@/platform/activity/activity-log-adapter'
 import {
   deleteVentaDetalleWorkflow,
   deleteVentaPagoDetalleWorkflow,
-  refundVentaDetalleWorkflow,
   renewVentaDetalleWorkflow,
   updateVentaPagoDetalleWorkflow,
 } from '@/application/use-cases/ventas/venta-detail-use-cases';
 import type { MetodoPago, TemplateMensaje, VentaDoc, VentaPago } from '@/types';
 
-import type { VentaPagoFormData, VentaReembolsoFormData } from './types';
+import type { VentaPagoFormData } from './types';
 import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
 import { showVentaRenovadaWhatsAppToast } from './venta-detalle-whatsapp';
 import type { VentaDialogDependenciesResult } from './venta-dialog-dependencies';
+import { useVentaReembolsoActions } from './useVentaReembolsoActions';
 
-type UseVentaDetalleActionsParams = {
+export type UseVentaDetalleActionsParams = {
   deleteNotificacionesPorVenta: (ventaId: string) => Promise<void>;
   deleteVenta: (ventaId: string, servicioId?: string, perfilNumero?: number | null, deletePagos?: boolean) => Promise<void>;
   ensureDialogDependencies: () => Promise<VentaDialogDependenciesResult>;
@@ -59,7 +59,6 @@ export function useVentaDetalleActions({
   const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renovarDialogOpen, setRenovarDialogOpen] = useState(false);
-  const [reembolsoDialogOpen, setReembolsoDialogOpen] = useState(false);
   const [editarPagoDialogOpen, setEditarPagoDialogOpen] = useState(false);
   const [deletePagoDialogOpen, setDeletePagoDialogOpen] = useState(false);
   const [pagoToEdit, setPagoToEdit] = useState<VentaPago | null>(null);
@@ -86,9 +85,10 @@ export function useVentaDetalleActions({
     if (await preparePaymentDialog()) setRenovarDialogOpen(true);
   };
 
-  const handleOpenReembolso = async () => {
-    if (await preparePaymentDialog()) setReembolsoDialogOpen(true);
-  };
+  const { reembolsoDialogOpen, setReembolsoDialogOpen, handleOpenReembolso, handleConfirmReembolso } = useVentaReembolsoActions({
+    deleteNotificacionesPorVenta, id, inactivateServicio, queryClient, refreshPagos,
+    setVentaData, updatePerfilOcupado, venta, preparePaymentDialog,
+  });
 
   const handleDelete = async (deletePagos: boolean) => {
     if (!venta) return;
@@ -172,49 +172,6 @@ export function useVentaDetalleActions({
     setEditarPagoDialogOpen(true);
   };
 
-  const handleConfirmReembolso = async (data: VentaReembolsoFormData) => {
-    if (!venta) return;
-    try {
-      const outcome = await refundVentaDetalleWorkflow(
-        {
-          deps: {
-            deleteNotificacionesPorVenta,
-            inactivateServicio,
-            invalidateNotifications: () => queryClient.invalidateQueries({ queryKey: queryKeys.notificaciones.all }),
-            refreshPagos,
-            updatePerfilOcupado,
-          },
-          id,
-          input: data,
-          log: getActivityLogOptions(),
-          venta,
-        },
-      );
-
-      if (outcome.type === 'ventaRefunded' && outcome.ventaActualizada) {
-        setVentaData(outcome.ventaActualizada);
-      }
-
-      setReembolsoDialogOpen(false);
-
-      toast.success(
-        outcome.type === 'ventaRefunded' && outcome.serviceInactivated
-          ? 'Venta reembolsada, cortada y servicio inactivado'
-          : outcome.type === 'ventaRefunded' && outcome.cut
-            ? 'Venta reembolsada y cortada'
-            : 'Reembolso registrado'
-      );
-    } catch (error) {
-      reportError('VentaDetalleActions', 'Error registrando reembolso', error);
-      if (notifyCommittedMutation(error)) {
-        setReembolsoDialogOpen(false);
-        return;
-      }
-      toast.error('Error al registrar reembolso', {
-        description: getPublicErrorMessage(error, 'No se pudo completar la operación de la venta.'),
-      });
-    }
-  };
 
   const handleDeletePago = (pago: VentaPago) => {
     setPagoToDelete(pago);

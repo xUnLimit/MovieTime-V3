@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createLogger, redact } from './logger';
+import { createLogger, redact, reportError, sanitizeText } from './logger';
 
 describe('observability logger', () => {
   describe('redact', () => {
@@ -86,4 +86,69 @@ describe('observability logger', () => {
       spy.mockRestore();
     });
   });
-});
+
+  describe('sanitizeText', () => {
+    it('sanea datos personales y credenciales sin perder identificadores tecnicos', () => {
+      const uuid = '123e4567-e89b-12d3-a456-426614174000';
+      const input = `venta-1 ${uuid} 2026-09-30T12:30:00Z 12.50 correo a@b.com telefono +507 6000-0000 ` +
+        'Bearer abc.def.ghi eyJhbGci.eyJzdWI.signature password=secreto ' +
+        '"token":"oculto" https://user:pass@example.com/path';
+      const safe = sanitizeText(input);
+      expect(safe).toContain(`venta-1 ${uuid} 2026-09-30T12:30:00Z 12.50`);
+      expect(safe).toContain('[email]');
+      expect(safe).toContain('[phone]');
+      expect(safe).toContain('password=[redacted]');
+      expect(safe).toContain('"token":"[redacted]"');
+      expect(safe).toContain('https://example.com/path');
+      expect(safe.match(/\[token\]/g)).toHaveLength(2);
+      for (const secret of ['a@b.com', '507 6000-0000', 'abc.def.ghi', 'eyJhbGci', 'secreto', 'oculto', 'user:pass']) {
+        expect(safe).not.toContain(secret);
+      }
+    });
+
+    it('acota texto largo', () => {
+      const safe = sanitizeText('x'.repeat(3000));
+      expect(safe).toHaveLength(2011);
+      expect(safe.endsWith('[truncated]')).toBe(true);
+    });
+  });
+
+  it('redacta claves personales y tolera ciclos', () => {
+    const circular: Record<string, unknown> = { email: 'a@b.com', phone: '50760000000', text_body: 'secreto' };
+    circular.self = circular;
+    expect(redact(circular)).toEqual({
+      email: '[REDACTED]', phone: '[REDACTED]', text_body: '[REDACTED]', self: '[Circular]',
+    });
+    expect(redact({ telefono: '50760000000', wa_id: '50760000000', payload: 'x', body: 'x', message_body: 'x' }))
+      .toEqual({ telefono: '[REDACTED]', wa_id: '[REDACTED]', payload: '[REDACTED]', body: '[REDACTED]', message_body: '[REDACTED]' });
+  });
+
+  it('sanea errores SQL y causas en todos los niveles del logger', () => {
+    const uuid = '123e4567-e89b-12d3-a456-426614174000';
+    const cause = Object.assign(new Error('Bearer abc.def.ghi'), {
+      details: 'telefono 50760000000', hint: 'token=oculto', code: 'P0001',
+    });
+    const error = Object.assign(new Error(`tabla ventas constraint ventas_email_key ${uuid} a@b.com`), {
+      details: 'telefono 50760000000 eyJhbGci.eyJzdWI.signature',
+      hint: 'password=secreto', code: '23505', cause,
+    });
+    const log = createLogger('Scope a@b.com');
+    const spies = [vi.spyOn(console, 'log').mockImplementation(() => {}),
+      vi.spyOn(console, 'warn').mockImplementation(() => {}),
+      vi.spyOn(console, 'error').mockImplementation(() => {})];
+    try {
+      for (const level of ['info', 'warn', 'error', 'debug'] as const) {
+        log[level]('correo a@b.com', { error, note: 'telefono 50760000000' });
+      }
+      reportError('Scope', 'Bearer abc.def.ghi', error);
+      const output = spies.flatMap((spy) => spy.mock.calls).map((args) => JSON.stringify(args)).join(' ');
+      for (const secret of ['a@b.com', '50760000000', 'eyJhbGci', 'abc.def.ghi', 'secreto', 'oculto']) {
+        expect(output).not.toContain(secret);
+      }
+      for (const technical of ['23505', 'P0001', 'ventas_email_key', uuid, '[email]', '[phone]']) {
+        expect(output).toContain(technical);
+      }
+    } finally {
+      spies.forEach((spy) => spy.mockRestore());
+    }
+  });});

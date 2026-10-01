@@ -1,8 +1,14 @@
-import { setTimeout as delay } from 'node:timers/promises';
+import { assertDeploymentId, createVercelClient } from './lib/vercel-alias.mjs';
 
-const API_ORIGIN = 'https://api.vercel.com';
-const POLL_INTERVAL_MS = 2_000;
-const POLL_TIMEOUT_MS = 180_000;
+const USAGE = [
+  'Usage: node scripts/vercel-production-alias.mjs',
+  '  current                         # id del despliegue que sirve produccion',
+  '  id <deployment>                 # id (dpl_...) de un despliegue por URL o id',
+  '  promote <deployment>            # promueve el despliegue en cola',
+  '  rollback <deployment>           # devuelve produccion a un despliegue',
+  '  recover <previous-id>           # si produccion no apunta a previous-id, la revierte',
+  '  remove <deployment> [protected] # elimina un despliegue en cola (nunca el de produccion)',
+].join('\n');
 
 function requireValue(name) {
   const value = process.env[name]?.trim();
@@ -10,115 +16,38 @@ function requireValue(name) {
   return value;
 }
 
-const token = requireValue('VERCEL_TOKEN');
-const teamId = requireValue('VERCEL_ORG_ID');
-const projectId = requireValue('VERCEL_PROJECT_ID');
+const client = createVercelClient({
+  token: requireValue('VERCEL_TOKEN'),
+  teamId: requireValue('VERCEL_ORG_ID'),
+  projectId: requireValue('VERCEL_PROJECT_ID'),
+});
 
-function withTeam(path) {
-  const url = new URL(path, API_ORIGIN);
-  url.searchParams.set('teamId', teamId);
-  return url;
-}
+const [action, reference, extra] = process.argv.slice(2);
 
-async function vercelRequest(path, init = {}) {
-  const response = await fetch(withTeam(path), {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...init.headers,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Vercel API ${init.method ?? 'GET'} ${path} failed with ${response.status}`);
-  }
-
-  const body = await response.text();
-  return body ? JSON.parse(body) : null;
-}
-
-async function getProject() {
-  return vercelRequest(`/v9/projects/${encodeURIComponent(projectId)}`);
-}
-
-function assertDeploymentId(value) {
-  if (!/^dpl_[A-Za-z0-9]+$/.test(value)) throw new Error('Invalid Vercel deployment ID');
-  return value;
-}
-
-async function getDeployment(reference) {
-  const normalized = reference.startsWith('http') ? new URL(reference).hostname : reference;
-  const deployment = await vercelRequest(`/v13/deployments/${encodeURIComponent(normalized)}`);
-
-  if (deployment.projectId !== projectId || deployment.ownerId !== teamId) {
-    throw new Error('Deployment does not belong to the configured production project');
-  }
-  if (deployment.readyState !== 'READY') {
-    throw new Error(`Deployment is not ready: ${deployment.readyState ?? 'unknown'}`);
-  }
-  return deployment;
-}
-
-async function waitForProductionDeployment(expectedDeploymentId, operation) {
-  const deadline = Date.now() + POLL_TIMEOUT_MS;
-
-  while (Date.now() < deadline) {
-    const project = await getProject();
-    if (project.targets?.production?.id === expectedDeploymentId) return;
-    await delay(POLL_INTERVAL_MS);
-  }
-
-  throw new Error(
-    `Vercel ${operation} did not point production to ${expectedDeploymentId} within ${POLL_TIMEOUT_MS / 1_000} seconds`,
-  );
-}
-
-async function promote(reference) {
-  const [project, deployment] = await Promise.all([getProject(), getDeployment(reference)]);
-  const previousDeploymentId = project.targets?.production?.id;
-
-  if (!previousDeploymentId) throw new Error('Current production deployment could not be determined');
-
-  if (previousDeploymentId === deployment.id) {
-    console.log(`Deployment ${deployment.id} is already serving production`);
-    return;
-  }
-
-  await vercelRequest(
-    `/v10/projects/${encodeURIComponent(projectId)}/promote/${encodeURIComponent(deployment.id)}`,
-    { method: 'POST', body: '{}' },
-  );
-  await waitForProductionDeployment(deployment.id, 'promote');
-  console.log(`Promoted deployment ${deployment.id}`);
-}
-
-async function rollback(reference) {
-  const [project, deployment] = await Promise.all([getProject(), getDeployment(reference)]);
-
-  if (project.targets?.production?.id === deployment.id) {
-    console.log(`Deployment ${deployment.id} is already serving production`);
-    return;
-  }
-
-  await vercelRequest(
-    `/v1/projects/${encodeURIComponent(projectId)}/rollback/${encodeURIComponent(deployment.id)}`,
-    { method: 'POST', body: '{}' },
-  );
-  await waitForProductionDeployment(deployment.id, 'rollback');
-  console.log(`Rolled back to deployment ${deployment.id}`);
-}
-
-const [action, reference] = process.argv.slice(2);
 if (action === 'current') {
-  const project = await getProject();
-  console.log(assertDeploymentId(project.targets?.production?.id ?? ''));
-} else if (!reference || !['promote', 'rollback'].includes(action)) {
-  throw new Error(
-    'Usage: node scripts/vercel-production-alias.mjs current | <promote|rollback> <deployment>',
-  );
+  console.log(await client.currentProductionId());
+} else if (!reference) {
+  throw new Error(USAGE);
+} else if (action === 'id') {
+  console.log(await client.stagedId(reference));
 } else if (action === 'promote') {
-  await promote(reference);
+  const result = await client.promote(reference);
+  console.log(result.status === 'already-serving'
+    ? `Deployment ${result.deploymentId} is already serving production`
+    : `Promoted deployment ${result.deploymentId}`);
+} else if (action === 'rollback') {
+  const result = await client.rollback(reference);
+  console.log(result.status === 'already-serving'
+    ? `Deployment ${result.deploymentId} is already serving production`
+    : `Rolled back to deployment ${result.deploymentId}`);
+} else if (action === 'recover') {
+  const result = await client.recover(assertDeploymentId(reference));
+  console.log(result.status === 'already-serving'
+    ? `Production already serves ${result.deploymentId}: nothing to recover`
+    : `Recovered production to ${result.deploymentId}`);
+} else if (action === 'remove') {
+  const result = await client.remove(reference, extra ? [extra] : []);
+  console.log(`Removed staged deployment ${result.deploymentId}`);
 } else {
-  await rollback(reference);
+  throw new Error(USAGE);
 }

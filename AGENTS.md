@@ -6,6 +6,8 @@ Este archivo es la fuente canonica y unica para personas y agentes de IA. `CLAUD
 
 - Un cambio no esta terminado hasta que `npm run quality:full` pasa desde un checkout reproducible.
 - Durante iteracion puede usarse `npm run quality:fast`, pero no reemplaza el gate completo.
+- `quality:fast` y `quality:full` deben incluir `arch:check`, `module-size`, `ci:parity` y `dead-code`; `quality:full` tambien exige `coverage:baseline` tras `test:coverage`.
+- La aprobacion de un PR requiere ademas los jobs de CI: CodeQL, SBOM, migraciones desde cero, `test:db`, `test:integration` y E2E autenticado. Mutacion y controles de deriva corren de noche. Consulta [`docs/QA.md`](docs/QA.md) para los comandos y su alcance.
 - Todo cambio funcional o correccion debe incluir pruebas de la conducta nueva y de la regresion relevante.
 - Nunca reduzcas umbrales, omitas pruebas, desactives reglas o agregues excepciones para hacer pasar un cambio.
 - Una excepcion de dependencia de desarrollo requiere advisory, propietario, motivo, mitigacion, fecha de creacion y vencimiento de hasta 30 dias. Produccion no admite excepciones.
@@ -71,6 +73,7 @@ Este archivo es la fuente canonica y unica para personas y agentes de IA. `CLAUD
 - El codigo cambiado exige al menos 80% de lineas/funciones y 70% de ramas.
 - Auth, autorizacion, pagos, reembolsos, RLS y migraciones exigen 90% de lineas/funciones y 80% de ramas.
 - Los flujos publicos nuevos deben incluir smoke E2E, accesibilidad sin impactos serios/criticos y presupuesto de rendimiento.
+- `npm run dead-code` (Knip) debe pasar con cero hallazgos: archivos, exportaciones, tipos y dependencias sin usar. Forma parte de `quality:fast` y `quality:full`. No lo omitas ni agregues excepciones: elimina el codigo muerto, o declara en `knip.json` solo un punto de entrada real que se cargue por ruta.
 - Mantener cero errores y cero warnings de ESLint, typecheck de aplicacion y tests, build productivo y arquitectura en verde.
 
 ## Release

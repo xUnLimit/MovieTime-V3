@@ -33,6 +33,13 @@ describe('getCategoriasFullRpc', () => {
 
     await expect(getCategoriasFullRpc()).rejects.toThrow('RPC failed');
   });
+
+  it.each([null, { id: 'categoria-1' }, [{ id: '', nombre: 'Netflix' }]])(
+    'rechaza una lista de categorias invalida', async (data) => {
+      rpcMock.mockResolvedValue({ data, error: null });
+      await expect(getCategoriasFullRpc()).rejects.toThrow('Respuesta invalida de get_categorias_full');
+    }
+  );
 });
 
 describe('getCategoriasCountsRpc', () => {
@@ -54,6 +61,13 @@ describe('getCategoriasCountsRpc', () => {
 
     await expect(getCategoriasCountsRpc()).rejects.toThrow('RPC failed');
   });
+
+  it.each([null, [], { totalCategorias: '1' }])(
+    'rechaza conteos invalidos', async (data) => {
+      rpcMock.mockResolvedValue({ data, error: null });
+      await expect(getCategoriasCountsRpc()).rejects.toThrow('Respuesta invalida de get_categorias_counts');
+    }
+  );
 });
 
 describe('deleteCategoriaRpc', () => {
@@ -74,6 +88,11 @@ describe('deleteCategoriaRpc', () => {
     rpcMock.mockResolvedValue({ data: null, error: { message: 'RPC failed' } });
 
     await expect(deleteCategoriaRpc('categoria-1')).rejects.toThrow('RPC failed');
+  });
+
+  it('rechaza un retorno inesperado al eliminar', async () => {
+    rpcMock.mockResolvedValue({ data: { id: 'categoria-1' }, error: null });
+    await expect(deleteCategoriaRpc('categoria-1')).rejects.toThrow('Respuesta invalida de delete_categoria');
   });
 });
 

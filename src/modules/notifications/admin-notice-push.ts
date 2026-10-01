@@ -1,6 +1,6 @@
 import { createLogger } from '@/platform/observability/logger';
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
-import { sendPushNotification, shouldDisablePushSubscription, toPushDeliveryFailure } from './push-delivery';
+import { sendPushNotification, shouldDisablePushSubscription, toPushDeliveryFailure } from '@/modules/push-delivery';
 
 const log = createLogger('AdminNoticePush');
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;

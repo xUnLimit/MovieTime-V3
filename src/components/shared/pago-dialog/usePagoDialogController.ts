@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { useTemplates } from "@/hooks/use-templates";
 import { createMutationIntent } from '@/platform/utils/mutation-intent';
 import { getCurrencySymbol } from "@/platform/constants";
-import { reportError } from "@/platform/observability/logger";
 import { calculateDiscountedAmount, roundToDecimals } from "@/platform/utils/calculations";
 import { getServicioMetodoPagoNombre } from "@/platform/utils/servicioMetodoPago";
 import {
@@ -19,7 +18,10 @@ import type { TemplateMensaje } from "@/types";
 
 import { pagoDialogSchema, type PagoDialogFormData } from "./schema";
 import type { PagoDialogProps } from "./types";
-import { buildVentaPreviewMessage, getCicloPagoMonths, getDefaultCosto, getDefaultMetodoPagoId, getPagoDialogCopy, getPagoDialogPresentation, getPagoDialogResetValues, getPagoDialogTargetKey, hasServicioPagoChanges } from "./helpers";
+import { getCicloPagoMonths, getDefaultCosto, getDefaultMetodoPagoId, getPagoDialogCopy, getPagoDialogPresentation, hasServicioPagoChanges } from "./helpers";
+import { usePagoDialogResetModel } from './usePagoDialogResetModel';
+import { buildVentaPreviewMessage } from './preview-helpers';
+import { reportError } from '@/platform/observability/logger';
 import { buildPagoDialogSubmitPayload, getPagoDialogPaymentMethods, getPagoDialogSelectedPlan } from "./pago-dialog-model";
 import { usePagoDialogNumberInputs } from "./usePagoDialogNumberInputs";
 
@@ -103,39 +105,7 @@ export function usePagoDialogController(props: PagoDialogProps) {
     categoriaPlanes: props.categoriaPlanes,
     tipoPlan: props.tipoPlan,
   }), [periodoValue, props.categoriaPlanes, props.tipoPlan]);
-  // getPagoDialogTargetKey solo lee context, mode, venta.clienteNombre, servicio.id/nombre y pago?.id.
-  // Los deps enumeran exactamente esos campos primitivos; depender de `props` entero recalcularia
-  // en cada render (props es un objeto nuevo). Los deps son completos y correctos.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dialogTargetKey = useMemo(() => getPagoDialogTargetKey(props), [
-    props.context,
-    props.mode,
-    pago?.id,
-    servicio?.id,
-    servicio?.nombre,
-    venta?.clienteNombre,
-  ]);
-  // getPagoDialogResetValues lee context, mode, pago, y campos puntuales de venta/servicio.
-  // Los deps enumeran exactamente esos campos; depender de `props` entero recalcularia en cada
-  // render (props es un objeto nuevo). Los deps son completos y correctos.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const resetValues = useMemo(() => getPagoDialogResetValues(props), [
-    props.context,
-    props.mode,
-    props.categoriaPlanes,
-    props.tipoPlan,
-    pago,
-    servicio?.cicloPago,
-    servicio?.costoServicio,
-    servicio?.fechaVencimiento,
-    servicio?.metodoPagoId,
-    servicio?.notas,
-    servicio?.renovacionAutomatica,
-    venta?.fechaFin,
-    venta?.metodoPagoId,
-    venta?.notas,
-    venta?.precioFinal,
-  ]);
+  const { dialogTargetKey, resetValues } = usePagoDialogResetModel(props);
   const costoNormalizado = roundToDecimals(Number(costoValue) || 0);
   const descuentoNumero = Number(descuentoValue) || 0;
   const precioFinal = calculateDiscountedAmount(costoNormalizado, descuentoNumero);

@@ -5,7 +5,7 @@ import {
   shouldDisablePushSubscription,
   toPushDeliveryFailure,
   type PushNotificationPayload,
-} from './push-delivery';
+} from '@/modules/push-delivery';
 
 const log = createLogger('WhatsAppMessagePush');
 const PREVIEW_LENGTH = 100;

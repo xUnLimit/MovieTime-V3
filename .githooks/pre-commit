@@ -1,4 +1,18 @@
 #!/bin/sh
-set -eu
+# Gancho previo al commit: controles baratos para que los errores no lleguen al CI.
+# Se instala con `npm run prepare` (git config core.hooksPath .githooks). Para saltarlo en una emergencia: git commit --no-verify
+# (el CI vuelve a ejecutar todo, asi que no es una forma de evitar los controles).
+set -e
 
-npm run secrets:scan
+echo "pre-commit: escaneo de secretos"
+npm run --silent secrets:scan
+
+echo "pre-commit: tokens de diseno"
+npm run --silent design:check
+
+staged="$(git diff --cached --name-only --diff-filter=ACM | grep -E '^(src|e2e|scripts)/.*\.(ts|tsx|mjs)$' || true)"
+if [ -n "$staged" ]; then
+  echo "pre-commit: ESLint de los archivos staged"
+  # En lotes: con muchos archivos staged una sola linea de comandos excede el limite de Windows.
+  printf '%s\n' "$staged" | xargs -d '\n' -n 40 npx --no-install eslint --max-warnings=0
+fi

@@ -1,35 +1,7 @@
 import type { Database } from '@/platform/supabase/database.types';
 
 import { executeIdempotentRpc } from './idempotent-rpc';
-import { typedRpcClient, type RpcResult } from './rpc-client';
-
-type CreateServicioWithInitialPaymentRpcClient = {
-  rpc: (
-    fn: 'create_servicio_with_initial_payment',
-    args: CreateServicioWithInitialPaymentPayload
-  ) => Promise<RpcResult>;
-};
-
-type DeleteServicioWithPaymentsRpcClient = {
-  rpc: (
-    fn: 'delete_servicio_with_payments',
-    args: DeleteServicioWithPaymentsPayload
-  ) => Promise<RpcResult>;
-};
-
-type DeleteServicioPaymentRpcClient = {
-  rpc: (
-    fn: 'delete_servicio_payment_and_empty_period',
-    args: DeleteServicioPaymentPayload
-  ) => Promise<RpcResult>;
-};
-
-type UpdateServicioPaymentAndPeriodRpcClient = {
-  rpc: (
-    fn: 'update_servicio_payment_and_period',
-    args: UpdateServicioPaymentAndPeriodPayload
-  ) => Promise<RpcResult>;
-};
+import { assertRpcVoidResult, callRpc } from './rpc-client';
 
 export type CreateServicioWithInitialPaymentPayload = {
   p_categoria_id: string;
@@ -79,47 +51,33 @@ export type UpdateServicioPaymentAndPeriodPayload = {
   p_pago_notas: string | null;
 };
 
-const servicioInitialPaymentRpcClient =
-  typedRpcClient<CreateServicioWithInitialPaymentRpcClient>();
-const deleteServicioWithPaymentsRpcClient =
-  typedRpcClient<DeleteServicioWithPaymentsRpcClient>();
-const deleteServicioPaymentRpcClient = typedRpcClient<DeleteServicioPaymentRpcClient>();
-const updateServicioPaymentAndPeriodRpcClient =
-  typedRpcClient<UpdateServicioPaymentAndPeriodRpcClient>();
-
 export async function createServicioWithInitialPaymentRpc(
   payload: CreateServicioWithInitialPaymentPayload
 ): Promise<string> {
   return executeIdempotentRpc('create_servicio_with_initial_payment', payload, (request) =>
-    servicioInitialPaymentRpcClient.rpc('create_servicio_with_initial_payment', request));
+    callRpc('create_servicio_with_initial_payment', request));
 }
 
 export async function deleteServicioWithPaymentsRpc(
   payload: DeleteServicioWithPaymentsPayload
 ): Promise<void> {
-  const { error } = await deleteServicioWithPaymentsRpcClient.rpc(
-    'delete_servicio_with_payments',
-    payload
-  );
+  const { data, error } = await callRpc('delete_servicio_with_payments', payload);
   if (error) throw new Error(error.message);
+  assertRpcVoidResult(data, 'delete_servicio_with_payments');
 }
 
 export async function deleteServicioPaymentRpc(
   payload: DeleteServicioPaymentPayload
 ): Promise<void> {
-  const { error } = await deleteServicioPaymentRpcClient.rpc(
-    'delete_servicio_payment_and_empty_period',
-    payload
-  );
+  const { data, error } = await callRpc('delete_servicio_payment_and_empty_period', payload);
   if (error) throw new Error(error.message);
+  assertRpcVoidResult(data, 'delete_servicio_payment_and_empty_period');
 }
 
 export async function updateServicioPaymentAndPeriodRpc(
   payload: UpdateServicioPaymentAndPeriodPayload
 ): Promise<void> {
-  const { error } = await updateServicioPaymentAndPeriodRpcClient.rpc(
-    'update_servicio_payment_and_period',
-    payload
-  );
+  const { data, error } = await callRpc('update_servicio_payment_and_period', payload);
   if (error) throw new Error(error.message);
+  assertRpcVoidResult(data, 'update_servicio_payment_and_period');
 }

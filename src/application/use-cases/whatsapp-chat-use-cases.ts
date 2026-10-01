@@ -8,6 +8,7 @@ import {
   type WhatsAppUploadResult,
 } from '@/platform/api/whatsapp-messages-client';
 import { getCurrentSession } from '@/platform/supabase/auth';
+import { subscribeToWhatsAppChanges, type WhatsAppRealtimeListener } from '@/platform/supabase/whatsapp-realtime';
 import { createIdempotencyKey } from '@/platform/supabase/idempotency';
 import {
   hideWhatsAppMessage,
@@ -24,6 +25,11 @@ export type { VentaMessageContext } from '@/platform/utils/whatsapp-template-ren
 
 export type { WhatsAppConversation, WhatsAppChatMessage } from '@/platform/supabase/whatsapp-chat-repository';
 export type { WhatsAppSendMessage, WhatsAppSendResult, WhatsAppUploadResult } from '@/platform/api/whatsapp-messages-client';
+export type { WhatsAppRealtimeEvent, WhatsAppRealtimeStatus, WhatsAppRealtimeListener } from '@/platform/supabase/whatsapp-realtime';
+
+export function subscribeToWhatsAppChatChangesUseCase(listener: WhatsAppRealtimeListener): () => void {
+  return subscribeToWhatsAppChanges(listener);
+}
 
 export function fetchWhatsAppConversationsUseCase() {
   return listWhatsAppConversations();

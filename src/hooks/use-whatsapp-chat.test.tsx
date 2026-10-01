@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as realtimeStatus from './whatsapp-realtime-status';
 
 const useCases = vi.hoisted(() => ({
   fetchVentaMessageContextUseCase: vi.fn(),
@@ -48,9 +49,24 @@ function createWrapper() {
 
 beforeEach(() => {
   Object.values(useCases).forEach((mock) => mock.mockReset());
+  realtimeStatus.setWhatsAppRealtimeStatus('offline');
 });
 
 describe('WhatsApp chat hooks', () => {
+  it('configura el respaldo lento para los tres sondeos', () => {
+    const polling = vi.spyOn(realtimeStatus, 'pollingInterval');
+    const conversations = renderHook(() => useWhatsAppConversations(), { wrapper: createWrapper().wrapper });
+    const messages = renderHook(() => useWhatsAppMessages('507'), { wrapper: createWrapper().wrapper });
+    const badge = renderHook(() => useWhatsAppUnreadChats(true), { wrapper: createWrapper().wrapper });
+
+    expect(polling).toHaveBeenCalledWith(10_000, 60_000);
+    expect(polling).toHaveBeenCalledWith(5_000, 30_000);
+    expect(polling).toHaveBeenCalledWith(30_000, 120_000);
+    conversations.unmount();
+    messages.unmount();
+    badge.unmount();
+    polling.mockRestore();
+  });
   it('uploads selected media through the use case', async () => {
     useCases.uploadWhatsAppMediaUseCase.mockResolvedValue({ mediaId: 'media-1', mimeType: 'image/png', filename: 'foto.png' });
     const { wrapper } = createWrapper();
