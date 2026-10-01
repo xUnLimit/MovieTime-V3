@@ -1,0 +1,1 @@
+-- Datos de prueba locales; ver src/test/integration y supabase/tests.
