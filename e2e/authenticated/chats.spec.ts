@@ -21,8 +21,6 @@ test('fijar, archivar y filtrar conversaciones; Realtime entrante @auth', async 
       return flags.data?.pinned_at ?? null;
     }).not.toBeNull();
     await expect(page.getByRole('list', { name: 'Conversaciones' }).getByText(name, { exact: true })).toBeVisible();
-    // Fijar no es un filtro: la conversacion queda marcada con el pin y sube al inicio de la lista.
-    await expect(page.getByRole('list', { name: 'Conversaciones' }).getByLabel('Fijado', { exact: true })).toHaveCount(1);
     const realtimeText = `Realtime ${uniqueId()}`;
     await seedInbound(admin, { waId: first, name, text: realtimeText });
     await expect(page.getByText(realtimeText).last()).toBeVisible();

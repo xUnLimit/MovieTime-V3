@@ -116,35 +116,36 @@ export class FixtureScope {
   /** Metodo de pago, categoria, plan, tercero cliente y servicio con perfiles. */
   async createCatalog(): Promise<Catalog> {
     const db = this.service;
-    const categoriaId = uniqueId('cat');
-    const planTipoId = uniqueId('plantipo');
-    const planId = uniqueId('plan');
-    const metodoPagoId = uniqueId('metodo');
-    const servicioId = uniqueId('servicio');
-    const terceroId = uniqueId('tercero');
+    const categoriaId = newUuid();
+    const planTipoId = newUuid();
+    const planId = newUuid();
+    const metodoPagoId = newUuid();
+    const servicioId = newUuid();
+    const terceroId = newUuid();
+    const label = uniqueId('fixture');
     const phone = `6${String(randomInt(0, 1e7)).padStart(7, '0')}`;
     const catalog: Catalog = { categoriaId, planTipoId, planId, metodoPagoId, servicioId, terceroId };
     this.catalogs.push(catalog);
-    unwrap(await db.from('categorias').insert({ id: categoriaId, nombre: categoriaId, tipo: 'cliente' }).select('id'), 'categoria');
-    unwrap(await db.from('planes_tipos').insert({ id: planTipoId, categoria_id: categoriaId, nombre: planTipoId }).select('id'), 'plan tipo');
+    unwrap(await db.from('categorias').insert({ id: categoriaId, nombre: label, tipo: 'cliente' }).select('id'), 'categoria');
+    unwrap(await db.from('planes_tipos').insert({ id: planTipoId, categoria_id: categoriaId, nombre: label }).select('id'), 'plan tipo');
     unwrap(
       await db
         .from('planes')
-        .insert({ id: planId, categoria_id: categoriaId, plan_tipo_id: planTipoId, nombre: planId, precio: 10, ciclo_pago: 'mensual' })
+        .insert({ id: planId, categoria_id: categoriaId, plan_tipo_id: planTipoId, nombre: label, precio: 10, ciclo_pago: 'mensual' })
         .select('id'),
       'plan'
     );
     unwrap(
       await db
         .from('metodos_pago')
-        .insert({ id: metodoPagoId, nombre: 'Efectivo fixture', tipo: 'efectivo', moneda: 'USD', titular: 'Fixture', identificador: metodoPagoId })
+        .insert({ id: metodoPagoId, nombre: 'Efectivo fixture', tipo: 'efectivo', moneda: 'USD', titular: 'Fixture', identificador: label })
         .select('id'),
       'metodo de pago'
     );
     unwrap(
       await db
         .from('servicios')
-        .insert({ id: servicioId, categoria_id: categoriaId, nombre: servicioId, correo: 'fixture@example.test', contrasena: 'fixture-local', perfiles_disponibles: 10 })
+        .insert({ id: servicioId, categoria_id: categoriaId, nombre: label, correo: 'fixture@example.test', contrasena: 'fixture-local', perfiles_disponibles: 10 })
         .select('id'),
       'servicio'
     );

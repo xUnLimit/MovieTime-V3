@@ -7,6 +7,7 @@ import { FixtureScope, uniqueId, uniqueWaId, unwrap } from '@/test/integration/f
 
 const EVENT_TIMEOUT_MS = 10_000;
 const SILENCE_MS = 4_000;
+const MAX_INSERT_ATTEMPTS = 3;
 
 type Subscription = { channel: RealtimeChannel; events: string[]; ready: Promise<string> };
 
@@ -62,25 +63,33 @@ describe.skipIf(requireIntegrationEnv() === null)('integracion: Realtime de la b
 
   it('un admin activo recibe el INSERT de un mensaje entrante y un usuario inactivo no', async () => {
     const waId = scope.trackWaId(uniqueWaId());
-    const waMessageId = uniqueId('wamid');
     const adminSub = subscribe(admin);
     const inactiveSub = subscribe(inactive);
     expect(await adminSub.ready).toBe('SUBSCRIBED');
     // El inactivo puede quedar suscrito o ser rechazado: lo que importa es que no recibe filas.
     await inactiveSub.ready;
 
-    unwrap(
-      await scope.service
-        .from('whatsapp_inbound_messages')
-        .insert({ wa_message_id: waMessageId, phone_number_id: 'fixture', from_wa_id: waId, message_type: 'text', text_body: 'hola', sent_at: new Date().toISOString() })
-        .select('id'),
-      'mensaje entrante'
-    );
+    // Tras un arranque limpio, Realtime puede tardar en empezar a replicar aunque el canal ya este suscrito:
+    // se reintenta con un mensaje nuevo en vez de esperar mas en el primero.
+    const sent: string[] = [];
+    let adminReceived = false;
+    for (let attempt = 0; attempt < MAX_INSERT_ATTEMPTS && !adminReceived; attempt += 1) {
+      const waMessageId = uniqueId('wamid');
+      sent.push(waMessageId);
+      unwrap(
+        await scope.service
+          .from('whatsapp_inbound_messages')
+          .insert({ wa_message_id: waMessageId, phone_number_id: 'fixture', from_wa_id: waId, message_type: 'text', text_body: 'hola', sent_at: new Date().toISOString() })
+          .select('id'),
+        'mensaje entrante'
+      );
+      adminReceived = await waitFor(() => adminSub.events.some((id) => sent.includes(id)), EVENT_TIMEOUT_MS);
+    }
 
-    expect(await waitFor(() => adminSub.events.includes(waMessageId), EVENT_TIMEOUT_MS)).toBe(true);
+    expect(adminReceived).toBe(true);
     // El admin ya lo recibio: esperar un margen adicional demuestra que el inactivo no lo recibira.
     await new Promise((resolve) => setTimeout(resolve, SILENCE_MS));
-    expect(inactiveSub.events).not.toContain(waMessageId);
+    expect(inactiveSub.events.filter((id) => sent.includes(id))).toEqual([]);
 
     await Promise.all([admin.removeChannel(adminSub.channel), inactive.removeChannel(inactiveSub.channel)]);
   });
