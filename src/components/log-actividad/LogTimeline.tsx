@@ -185,6 +185,7 @@ export function LogTimeline({
       >
         <DataTable
           bare
+          fixedLayout
           data={logs}
           columns={columns}
           loading={isLoading}

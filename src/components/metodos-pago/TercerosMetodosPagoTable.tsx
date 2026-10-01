@@ -171,6 +171,7 @@ export function TercerosMetodosPagoTable({
       >
           <DataTable
             bare
+            fixedLayout
             autoPageSize
             pagination
             data={filteredMetodos}

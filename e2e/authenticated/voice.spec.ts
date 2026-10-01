@@ -16,6 +16,8 @@ test('nota de voz inicia y detiene grabacion @auth', async ({ page }) => {
     await page.getByRole('list', { name: 'Conversaciones' }).getByText('E2E Audio').click();
     await page.getByRole('button', { name: 'Grabar audio' }).click();
     await expect(page.getByRole('button', { name: 'Detener grabación' })).toBeVisible();
+    // Con el micrófono falso, detener antes de 1 s puede no entregar datos: se espera a que el contador avance.
+    await expect(page.getByText('0:01', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Detener grabación' }).click();
     await expect(page.getByRole('button', { name: 'Enviar archivo' })).toBeEnabled();
     const audioPreview = page.getByText(/^audio-\d+\.(?:m4a|aac|mp3|ogg|webm)$/);

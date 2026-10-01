@@ -53,6 +53,7 @@ export const CategoriasTable = memo(function CategoriasTable({
     >
       <DataTable
         bare
+        fixedLayout
         autoPageSize
         pagination
         data={rows}

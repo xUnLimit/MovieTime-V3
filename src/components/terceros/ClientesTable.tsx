@@ -113,6 +113,7 @@ export function ClientesTable({
       >
         <DataTable
           bare
+          fixedLayout
           data={clientes}
           columns={columns}
           loading={isLoading}

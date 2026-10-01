@@ -10,6 +10,9 @@ const USAGE = [
   '  remove <deployment> [protected] # elimina un despliegue en cola (nunca el de produccion)',
 ].join('\n');
 
+// Sin saltos de linea: un id con CR/LF no puede falsificar lineas del log (CWE-117).
+const oneLine = (value) => String(value).replace(/[\r\n]+/g, ' ');
+
 function requireValue(name) {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`${name} is required`);
@@ -33,21 +36,21 @@ if (action === 'current') {
 } else if (action === 'promote') {
   const result = await client.promote(reference);
   console.log(result.status === 'already-serving'
-    ? `Deployment ${JSON.stringify(result.deploymentId)} is already serving production`
-    : `Promoted deployment ${JSON.stringify(result.deploymentId)}`);
+    ? `Deployment ${oneLine(result.deploymentId)} is already serving production`
+    : `Promoted deployment ${oneLine(result.deploymentId)}`);
 } else if (action === 'rollback') {
   const result = await client.rollback(reference);
   console.log(result.status === 'already-serving'
-    ? `Deployment ${JSON.stringify(result.deploymentId)} is already serving production`
-    : `Rolled back to deployment ${JSON.stringify(result.deploymentId)}`);
+    ? `Deployment ${oneLine(result.deploymentId)} is already serving production`
+    : `Rolled back to deployment ${oneLine(result.deploymentId)}`);
 } else if (action === 'recover') {
   const result = await client.recover(assertDeploymentId(reference));
   console.log(result.status === 'already-serving'
-    ? `Production already serves ${JSON.stringify(result.deploymentId)}: nothing to recover`
-    : `Recovered production to ${JSON.stringify(result.deploymentId)}`);
+    ? `Production already serves ${oneLine(result.deploymentId)}: nothing to recover`
+    : `Recovered production to ${oneLine(result.deploymentId)}`);
 } else if (action === 'remove') {
   const result = await client.remove(reference, extra ? [extra] : []);
-  console.log(`Removed staged deployment ${JSON.stringify(result.deploymentId)}`);
+  console.log(`Removed staged deployment ${oneLine(result.deploymentId)}`);
 } else {
   throw new Error(USAGE);
 }

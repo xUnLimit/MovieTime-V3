@@ -86,6 +86,10 @@ EXCEPTION WHEN insufficient_privilege THEN
 END;
 $$;
 
+-- authenticated no tiene USAGE sobre `private` (a proposito): el helper lee el rol con el JWT activo sin ampliar permisos.
+CREATE FUNCTION pg_temp.rol_actual() RETURNS text
+LANGUAGE sql SECURITY DEFINER SET search_path = '' AS $$ SELECT private.auth_role() $$;
+
 CREATE FUNCTION pg_temp.anon_no_autenticado() RETURNS boolean
 LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
 BEGIN
@@ -138,9 +142,8 @@ SELECT ok(pg_temp.mutacion_denegada($$INSERT INTO public.config (id) VALUES ('wp
 SELECT ok(pg_temp.mutacion_denegada($$INSERT INTO public.whatsapp_inbound_messages
   (wa_message_id, phone_number_id, from_wa_id, message_type, sent_at)
   VALUES ('wp-a-operator-message', 'test', 'test', 'text', now())$$, true), 'operador no escribe WhatsApp');
-SELECT is((SELECT count(*) FROM public.ventas v WHERE v.id = 'a1000000-0000-4000-8000-000000000005' AND (SELECT private.auth_role()) = 'admin'), 0::bigint, 'operador no puede eliminar ventas');
-SELECT is((WITH changed AS (DELETE FROM public.ventas WHERE id = 'a1000000-0000-4000-8000-000000000005' RETURNING 1)
-  SELECT count(*) FROM changed), 0::bigint, 'operador no elimina ventas');
+SELECT is((SELECT count(*) FROM public.ventas WHERE id = 'a1000000-0000-4000-8000-000000000005'), 1::bigint, 'operador ve la venta antes de intentar eliminarla');
+SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.ventas WHERE id = 'a1000000-0000-4000-8000-000000000005'$$, false), 'operador no elimina ventas');
 SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.pagos_venta WHERE id = 'a1000000-0000-4000-8000-000000000007'$$, false), 'operador no elimina pagos');
 SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.terceros WHERE id = 'a1000000-0000-4000-8000-000000000004'$$, false), 'operador no elimina terceros');
 SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.servicios WHERE id = 'a1000000-0000-4000-8000-000000000003'$$, false), 'operador no elimina servicios');
@@ -153,7 +156,7 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', '{"sub":"33333333-3333-4333-8333-333333333333","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
 SELECT ok(NOT public.is_authenticated(), 'operador inactivo no esta autenticado para RLS');
-SELECT is(private.auth_role(), NULL::text, 'rol de inactivo es NULL');
+SELECT is(pg_temp.rol_actual(), NULL::text, 'rol de inactivo es NULL');
 SELECT is((SELECT count(*) FROM public.ventas), 0::bigint, 'inactivo no lee ventas');
 SELECT is((SELECT count(*) FROM public.pagos_venta), 0::bigint, 'inactivo no lee pagos');
 SELECT is((SELECT count(*) FROM public.terceros), 0::bigint, 'inactivo no lee terceros');
@@ -188,10 +191,8 @@ SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.terceros WHERE id = 'a1
 SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.servicios WHERE id = 'a1000000-0000-4000-8000-000000000003'$$, false), 'inactivo no elimina servicios');
 SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.config WHERE id = 'global'$$, false), 'inactivo no elimina config');
 SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.whatsapp_inbound_messages WHERE wa_message_id = 'wp-a-inactive-message'$$, false), 'inactivo no elimina WhatsApp');
-SELECT is((WITH changed AS (UPDATE public.ventas SET notas = 'prohibido' WHERE id = 'a1000000-0000-4000-8000-000000000005' RETURNING 1)
-  SELECT count(*) FROM changed), 0::bigint, 'inactivo no actualiza ventas');
-SELECT is((WITH changed AS (DELETE FROM public.ventas WHERE id = 'a1000000-0000-4000-8000-000000000005' RETURNING 1)
-  SELECT count(*) FROM changed), 0::bigint, 'inactivo no elimina ventas');
+SELECT ok(pg_temp.mutacion_denegada($$UPDATE public.ventas SET notas = 'prohibido' WHERE id = 'a1000000-0000-4000-8000-000000000005'$$, false), 'inactivo no actualiza ventas');
+SELECT ok(pg_temp.mutacion_denegada($$DELETE FROM public.ventas WHERE id = 'a1000000-0000-4000-8000-000000000005'$$, false), 'inactivo no elimina ventas');
 SELECT throws_ok($$UPDATE public.usuarios SET active = true WHERE id = '33333333-3333-4333-8333-333333333333'$$,
   '42501', NULL, 'inactivo no se reactiva');
 RESET ROLE;
@@ -201,14 +202,14 @@ SELECT is((SELECT count(*) FROM public.ventas WHERE id = 'a1000000-0000-4000-800
 
 SELECT set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-8444-444444444444","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
-SELECT is(private.auth_role(), NULL::text, 'admin inactivo pierde el rol');
+SELECT is(pg_temp.rol_actual(), NULL::text, 'admin inactivo pierde el rol');
 SELECT throws_ok($$SELECT public.dismiss_yappy_payment('55555555-5555-4555-8555-555555555555', 'prueba')$$,
   'P0001', 'forbidden', 'RPC de admin rechaza admin inactivo');
 RESET ROLE;
 
 SELECT set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
-SELECT is(private.auth_role(), 'admin'::text, 'admin activo conserva su rol');
+SELECT is(pg_temp.rol_actual(), 'admin'::text, 'admin activo conserva su rol');
 UPDATE public.usuarios SET active = true WHERE id = '33333333-3333-4333-8333-333333333333';
 SELECT is((SELECT active FROM public.usuarios WHERE id = '33333333-3333-4333-8333-333333333333'), true, 'admin activo reactiva a otro usuario');
 RESET ROLE;

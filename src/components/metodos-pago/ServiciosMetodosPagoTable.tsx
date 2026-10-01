@@ -173,6 +173,7 @@ export function ServiciosMetodosPagoTable({
       >
           <DataTable
             bare
+            fixedLayout
             autoPageSize
             pagination
             data={filteredMetodos}

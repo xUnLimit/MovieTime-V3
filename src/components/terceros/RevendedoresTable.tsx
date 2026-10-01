@@ -118,6 +118,7 @@ export function RevendedoresTable({
       >
         <DataTable
           bare
+          fixedLayout
           data={revendedores}
           columns={columns}
           loading={isLoading}

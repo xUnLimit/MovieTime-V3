@@ -137,6 +137,7 @@ export function TodosTercerosTable({
 
         <DataTable<TerceroDisplay>
           bare
+          fixedLayout
           data={tercerosDisplay}
           columns={columns}
           loading={isLoading}
