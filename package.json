@@ -69,7 +69,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "imapflow": "^2.1.2",
-    "lucide-react": "^0.563.0",
+    "lucide-react": "^1.48.0",
     "mailparser": "^3.9.31",
     "next": "^16.3.7",
     "radix-ui": "^1.6.7",
