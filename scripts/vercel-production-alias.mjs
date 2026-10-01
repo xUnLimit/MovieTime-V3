@@ -33,21 +33,21 @@ if (action === 'current') {
 } else if (action === 'promote') {
   const result = await client.promote(reference);
   console.log(result.status === 'already-serving'
-    ? `Deployment ${result.deploymentId} is already serving production`
-    : `Promoted deployment ${result.deploymentId}`);
+    ? `Deployment ${JSON.stringify(result.deploymentId)} is already serving production`
+    : `Promoted deployment ${JSON.stringify(result.deploymentId)}`);
 } else if (action === 'rollback') {
   const result = await client.rollback(reference);
   console.log(result.status === 'already-serving'
-    ? `Deployment ${result.deploymentId} is already serving production`
-    : `Rolled back to deployment ${result.deploymentId}`);
+    ? `Deployment ${JSON.stringify(result.deploymentId)} is already serving production`
+    : `Rolled back to deployment ${JSON.stringify(result.deploymentId)}`);
 } else if (action === 'recover') {
   const result = await client.recover(assertDeploymentId(reference));
   console.log(result.status === 'already-serving'
-    ? `Production already serves ${result.deploymentId}: nothing to recover`
-    : `Recovered production to ${result.deploymentId}`);
+    ? `Production already serves ${JSON.stringify(result.deploymentId)}: nothing to recover`
+    : `Recovered production to ${JSON.stringify(result.deploymentId)}`);
 } else if (action === 'remove') {
   const result = await client.remove(reference, extra ? [extra] : []);
-  console.log(`Removed staged deployment ${result.deploymentId}`);
+  console.log(`Removed staged deployment ${JSON.stringify(result.deploymentId)}`);
 } else {
   throw new Error(USAGE);
 }

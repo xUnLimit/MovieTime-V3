@@ -53,6 +53,7 @@ export function ServiciosListTable({
     >
       <DataTable
         bare
+        fixedLayout
         data={rows}
         columns={columns}
         loading={isLoading}

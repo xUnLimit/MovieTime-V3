@@ -6,7 +6,7 @@ import { OPERATOR_STATE_PATH } from './helpers/auth-files';
 test('login, logout y redireccion anonima @auth', async ({ browser }) => {
   const admin = serviceClient();
   const user = await createTempUser(admin, 'operador');
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   try {
     const page = await context.newPage();
     await page.goto('/ventas');
@@ -27,7 +27,7 @@ test('login, logout y redireccion anonima @auth', async ({ browser }) => {
 test('operador inactivo pierde acceso a datos @auth', async ({ browser }) => {
   const admin = serviceClient();
   const user = await createTempUser(admin, 'operador');
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   try {
     const page = await context.newPage();
     await loginViaUi(page, user.email, user.password);

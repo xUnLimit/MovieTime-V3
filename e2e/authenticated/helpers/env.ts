@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 // Contrato de entorno E2E_* (lo define el CI con `supabase start`). Falla con un mensaje claro si falta algo.
 function required(name: string): string {
   const value = process.env[name]?.trim();
@@ -22,5 +24,5 @@ export function e2eEnv() {
 
 /** Id corto y unico para nombres de datos de prueba (evita colisiones entre specs y ejecuciones). */
 export function uniqueId(): string {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  return randomUUID().replaceAll('-', '');
 }

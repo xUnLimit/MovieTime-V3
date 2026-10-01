@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { resolveGitExecutable } from './git-executable.mjs';
 
 const migration = (path) => /^supabase\/migrations\/[^/]+\.sql$/.test(path);
 const lines = (value) => value.split(/\r?\n/).filter(Boolean);
-const git = (root, args) => execFileSync('git', args, {
+const git = (root, args) => execFileSync(resolveGitExecutable(), args, {
   cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
 }).trim();
 
@@ -116,5 +117,5 @@ export function inspectMigrations(root, environment = process.env) {
       failures.push(`${file}: instruccion incompatible con expand/contract (${rule}).`);
     }
   }
-  return { files: [...changed].sort(), failures: [...new Set(failures)] };
+  return { files: [...changed].sort((left, right) => left.localeCompare(right)), failures: [...new Set(failures)] };
 }

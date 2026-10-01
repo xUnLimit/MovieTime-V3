@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -6,7 +6,7 @@ import { uniqueId } from './env';
 import { assertOk, assertRow, bestEffort } from './supabase';
 
 /** Fecha local YYYY-MM-DD desplazada `offsetDays` dias desde hoy. */
-function isoDate(offsetDays = 0): string {
+export function isoDate(offsetDays = 0): string {
   const date = new Date();
   date.setDate(date.getDate() + offsetDays);
   const pad = (value: number) => String(value).padStart(2, '0');
@@ -18,7 +18,7 @@ const usedLast4 = new Set<string>();
 /** Ultimos 4 digitos de telefono unicos dentro del proceso (el match de Yappy se basa en ellos). */
 function uniqueLast4(): string {
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    const candidate = String(1000 + Math.floor(Math.random() * 9000));
+    const candidate = String(randomInt(1000, 10000));
     if (!usedLast4.has(candidate)) {
       usedLast4.add(candidate);
       return candidate;
@@ -167,7 +167,9 @@ export async function findVentaId(admin: SupabaseClient, catalog: Catalog): Prom
 export async function cleanupCatalog(admin: SupabaseClient, adminUser: SupabaseClient, catalog: Catalog): Promise<void> {
   await bestEffort('borrar ventas', async () => {
     const { data } = await admin.from('ventas').select('id').eq('cliente_id', catalog.terceroId);
-    for (const row of data ?? []) {
+    await (data ?? []).reduce(async (previous, row) => {
+      // Las ventas comparten servicio: conservar el orden de los RPC de limpieza.
+      await previous;
       const id = String(row.id);
       const { error } = await adminUser.rpc('delete_venta_with_payments', { p_venta_id: id, p_delete_payments: true });
       if (error) {
@@ -175,7 +177,7 @@ export async function cleanupCatalog(admin: SupabaseClient, adminUser: SupabaseC
         await admin.from('venta_periodos').delete().eq('venta_id', id);
         assertOk(await admin.from('ventas').delete().eq('id', id), 'borrar venta');
       }
-    }
+    }, Promise.resolve());
   });
   await bestEffort('borrar servicio', async () => assertOk(await admin.from('servicios').delete().eq('id', catalog.servicioId), 'servicio'));
   await bestEffort('borrar tercero', async () => assertOk(await admin.from('terceros').delete().eq('id', catalog.terceroId), 'tercero'));

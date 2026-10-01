@@ -13,16 +13,16 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
       header: "Nombre",
       sortable: true,
       render: (item) => (
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <Monitor
             className={cn(
               "h-4 w-4 shrink-0",
               item.activo ? "text-success" : "text-danger",
             )}
           />
-          <div className="min-w-0 max-w-64 leading-tight">
-            <p className="truncate font-medium">{item.nombre}</p>
-            <p className="truncate text-xs text-muted-foreground">{item.correo}</p>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate font-medium" title={item.nombre}>{item.nombre}</p>
+            <p className="truncate text-xs text-muted-foreground" title={item.correo}>{item.correo}</p>
           </div>
         </div>
       ),
@@ -33,7 +33,7 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
       header: "Categoría",
       sortable: true,
       render: (item) => (
-        <span className="text-sm">{item.categoriaNombre}</span>
+        <span className="block truncate text-sm" title={item.categoriaNombre}>{item.categoriaNombre}</span>
       ),
     },
     {
@@ -44,8 +44,8 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
       align: "center",
       render: (item) => (
         <div className="flex items-center justify-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{item.cicloPago}</span>
+          <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="truncate font-medium">{item.cicloPago}</span>
         </div>
       ),
     },
@@ -79,7 +79,7 @@ export function createServiciosListColumns(): Column<ServicioRow>[] {
       sortable: true,
       align: "center",
       render: (item) => (
-        <div className="text-center font-medium">
+        <div className="whitespace-nowrap text-center font-medium">
           <span className="text-success">{getCurrencySymbol(item.moneda)}</span>
           <span className="text-foreground"> {item.costo.toFixed(2)}</span>
         </div>

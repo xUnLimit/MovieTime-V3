@@ -69,7 +69,7 @@ describe('ConversationList', () => {
     expect(screen.getByRole('group', { name: 'Servicios activos: Canva, Crunchyroll, Disney+, Netflix' })).toBeTruthy();
     expect(screen.getByText('+2').getAttribute('title')).toBe('Disney+, Netflix');
     // El cliente sin servicios activos no muestra ninguna etiqueta.
-    expect(screen.getAllByRole('group')).toHaveLength(2);
+    expect(screen.getAllByRole('group', { name: /^Servicios activos:/ })).toHaveLength(2);
   });
 
   it('shows name, preview, time, unread count, due date and registration state', () => {
@@ -90,10 +90,12 @@ describe('ConversationList', () => {
     const user = userEvent.setup();
     const props = renderList();
 
-    expect(screen.getByRole('tab', { name: 'No leídos (1)' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Todos' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Todos3', 'No leídos1', 'Sin registrar1']);
-    await user.click(screen.getByRole('tab', { name: 'Sin registrar (1)' }));
+    expect(screen.getByRole('group', { name: 'Filtrar conversaciones' })).toBeTruthy();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.getByRole('button', { name: 'No leídos (1)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Todos', pressed: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sin registrar (1)', pressed: false })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Sin registrar (1)' }));
     expect(props.onFilterChange).toHaveBeenCalledWith('sin_registrar');
 
     await user.type(screen.getByLabelText('Buscar conversación'), 'j');

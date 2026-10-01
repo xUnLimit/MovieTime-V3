@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { resolveGitExecutable } from './lib/git-executable.mjs';
 import {
   addUntrackedFile, evaluateCoverage, isProductionFile, mergeChangedLines,
   parseChangedLines, relativeCoverage,
@@ -13,7 +14,7 @@ if (!existsSync(reportPath)) {
 }
 
 function git(...args) {
-  return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  return execFileSync(resolveGitExecutable(), args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 
 function validCommit(ref) {

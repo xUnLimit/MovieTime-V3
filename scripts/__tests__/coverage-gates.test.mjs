@@ -115,6 +115,29 @@ describe('gate del diff', () => {
 });
 
 describe('baseline por area', () => {
+  it('reports a missing summary clearly and accepts an absent baseline', () => {
+    const cwd = fixture();
+    const execute = () => spawnSync(process.execPath, [baselineScript], { cwd, encoding: 'utf8' });
+    expect(execute().status).toBe(1);
+    expect(execute().stderr).toContain('Ejecuta npm run test:coverage');
+    writeFileSync(path.join(cwd, 'coverage', 'coverage-summary.json'), '{}');
+    expect(execute().status).toBe(0);
+  });
+
+  it('does not treat malformed reports or baselines as missing files', () => {
+    const cwd = fixture();
+    const execute = () => spawnSync(process.execPath, [baselineScript], { cwd, encoding: 'utf8' });
+    writeFileSync(path.join(cwd, 'coverage', 'coverage-summary.json'), 'invalid json');
+    expect(execute().status).toBe(1);
+    expect(execute().stderr).toContain('SyntaxError');
+    writeFileSync(path.join(cwd, 'coverage', 'coverage-summary.json'), '{}');
+    writeFileSync(path.join(cwd, 'coverage-baseline.json'), 'invalid json');
+    expect(execute().status).toBe(1);
+    expect(execute().stderr).toContain('SyntaxError');
+    writeFileSync(path.join(cwd, 'coverage-baseline.json'), 'null');
+    expect(execute().status).toBe(1);
+  });
+
   it('falla si baja y solo actualiza hacia arriba', () => {
     const base = { application: { lines: 80, branches: 70, functions: 80 } };
     const current = Object.fromEntries(

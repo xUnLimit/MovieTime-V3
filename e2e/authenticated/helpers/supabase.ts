@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { e2eEnv, uniqueId } from './env';
@@ -62,7 +63,7 @@ export type TestUser = { id: string; email: string; password: string };
 /** Usuario efimero (correo unico) para pruebas que lo desactivan o cierran su sesion. */
 export async function createTempUser(admin: SupabaseClient, role: AppRole, active = true): Promise<TestUser> {
   const email = `e2e-${role}-${uniqueId()}@example.com`;
-  const password = `E2e-${uniqueId()}-Pass1!`;
+  const password = `E2e-${randomBytes(24).toString('base64url')}-Pass1!`;
   const id = await ensureUser(admin, { email, password, role, active });
   return { id, email, password };
 }

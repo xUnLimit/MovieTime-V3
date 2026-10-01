@@ -119,6 +119,7 @@ export function VentasTable({
     >
       <DataTable
         bare
+        fixedLayout
         data={filteredRows}
         columns={ventasTableColumns}
         loading={isLoading}

@@ -84,9 +84,9 @@ describe('ChatsPage', () => {
     const user = userEvent.setup();
     render(<ChatsPage />);
 
-    await user.click(screen.getByRole('tab', { name: 'No leídos (1)' }));
+    await user.click(screen.getByRole('button', { name: 'No leídos (1)' }));
     expect(screen.queryByText('Juan')).toBeNull();
-    await user.click(screen.getByRole('tab', { name: 'Todos' }));
+    await user.click(screen.getByRole('button', { name: 'Todos' }));
 
     await user.type(screen.getByLabelText('Buscar conversación'), 'juan');
     expect(screen.queryByText('Mary')).toBeNull();

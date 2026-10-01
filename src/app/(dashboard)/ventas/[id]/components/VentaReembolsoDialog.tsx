@@ -31,8 +31,8 @@ export function VentaReembolsoDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden gap-0">
-        <div className="px-6 pt-6 pb-4 bg-muted/30">
+      <DialogContent className="sm:max-w-[480px] max-h-[calc(100dvh-2rem)] flex flex-col p-0 overflow-hidden gap-0">
+        <div className="shrink-0 px-6 pt-6 pb-4 bg-muted/30">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted">
@@ -59,7 +59,7 @@ export function VentaReembolsoDialog({
           </div>
         </div>
 
-        <div className="px-6 py-4">
+        <div className="min-h-0 overflow-y-auto px-6 py-4">
           {step === 'accion' ? (
             <div className="space-y-3">
               <p className="text-sm font-medium text-muted-foreground">Que accion deseas realizar?</p>
@@ -133,9 +133,9 @@ export function VentaReembolsoDialog({
               </div>
 
               <div className="grid gap-2">
-                <Label>Metodo de reembolso</Label>
+                <Label htmlFor="refund-method">Metodo de reembolso</Label>
                 <Select value={metodoPagoId} onValueChange={setMetodoPagoId}>
-                  <SelectTrigger>
+                  <SelectTrigger id="refund-method">
                     <SelectValue placeholder="Seleccionar metodo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -208,7 +208,7 @@ export function VentaReembolsoDialog({
           )}
         </div>
 
-        <DialogFooter className="px-6 pb-5 pt-2 flex gap-2">
+        <DialogFooter className="shrink-0 px-6 pb-5 pt-2 flex gap-2">
           <Button type="button" variant="outline" onClick={step === 'accion' ? handleClose : () => setStep('accion')} disabled={isSubmitting} className="flex-1">
             {step === 'accion' ? 'Cancelar' : 'Atras'}
           </Button>

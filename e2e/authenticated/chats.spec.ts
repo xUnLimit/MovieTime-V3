@@ -16,12 +16,24 @@ test('fijar, archivar y filtrar conversaciones; Realtime entrante @auth', async 
     await page.getByRole('list', { name: 'Conversaciones' }).getByText(name, { exact: true }).click();
     await page.getByRole('button', { name: 'Más opciones' }).click();
     await page.getByRole('menuitem', { name: 'Fijar conversación' }).click();
-    await expect(page.getByRole('list', { name: 'Conversaciones' }).getByLabel('Fijado')).toBeVisible();
+    await expect.poll(async () => {
+      const flags = assertOk(await admin.from('whatsapp_conversation_flags').select('pinned_at').eq('wa_id', first).maybeSingle(), 'verificar fijado');
+      return flags.data?.pinned_at ?? null;
+    }).not.toBeNull();
+    await expect(page.getByRole('list', { name: 'Conversaciones' }).getByText(name, { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /Más filtros/ }).click();
+    await page.getByRole('menuitem', { name: /Fijados/ }).click();
+    await expect(page.getByRole('list', { name: 'Conversaciones' }).getByText(name, { exact: true })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Conversaciones' }).getByText(`${name} dos`, { exact: true })).toHaveCount(0);
     const realtimeText = `Realtime ${uniqueId()}`;
     await seedInbound(admin, { waId: first, name, text: realtimeText });
     await expect(page.getByText(realtimeText).last()).toBeVisible();
     await page.getByRole('button', { name: 'Más opciones' }).click();
     await page.getByRole('menuitem', { name: 'Archivar conversación' }).click();
+    await expect.poll(async () => {
+      const flags = assertOk(await admin.from('whatsapp_conversation_flags').select('archived_at').eq('wa_id', first).maybeSingle(), 'verificar archivado');
+      return flags.data?.archived_at ?? null;
+    }).not.toBeNull();
     await page.getByRole('button', { name: /Más filtros/ }).click();
     await page.getByRole('menuitem', { name: /Archivados/ }).click();
     await expect(page.getByRole('list', { name: 'Conversaciones' }).getByText(name, { exact: true })).toBeVisible();

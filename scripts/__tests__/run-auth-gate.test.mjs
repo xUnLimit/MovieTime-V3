@@ -8,9 +8,23 @@ import {
   missingE2eVars,
   missingE2eVarsMessage,
   resolvePort,
+  resolveTaskkillExecutable,
 } from '../lib/auth-gate.mjs';
 
 const fullEnv = Object.fromEntries(REQUIRED_E2E_VARS.map((name) => [name, `valor-${name}`]));
+
+describe('resolveTaskkillExecutable', () => {
+  it('uses the absolute system executable independently of PATH', () => {
+    expect(resolveTaskkillExecutable({ PATH: 'D:\\checkout' })).toBe('C:\\Windows\\System32\\taskkill.exe');
+    expect(resolveTaskkillExecutable({ SystemRoot: 'D:\\Windows', PATH: 'D:\\checkout' })).toBe('D:\\Windows\\System32\\taskkill.exe');
+  });
+
+  it('rejects relative directories, traversal and arbitrary executable locations', () => {
+    for (const SystemRoot of ['Windows', 'C:\\Windows\\..\\checkout', 'C:\\checkout', '\\\\server\\Windows']) {
+      expect(() => resolveTaskkillExecutable({ SystemRoot })).toThrow('trusted absolute system directory');
+    }
+  });
+});
 
 describe('missingE2eVars', () => {
   it('no reporta nada cuando el contrato esta completo', () => {

@@ -7,6 +7,7 @@ import {
   missingE2eVars,
   missingE2eVarsMessage,
   resolvePort,
+  resolveTaskkillExecutable,
 } from './lib/auth-gate.mjs';
 
 // Gate E2E autenticado: arranca `next start` (build de produccion previo, con las NEXT_PUBLIC_*
@@ -69,7 +70,7 @@ function terminateServer(processHandle) {
   if (!processHandle || processHandle.exitCode !== null) return;
   if (process.platform === 'win32') {
     try {
-      execFileSync('taskkill', ['/pid', String(processHandle.pid), '/T', '/F'], { stdio: 'ignore' });
+      execFileSync(resolveTaskkillExecutable(), ['/pid', String(processHandle.pid), '/T', '/F'], { stdio: 'ignore' });
     } catch {
       processHandle.kill();
     }

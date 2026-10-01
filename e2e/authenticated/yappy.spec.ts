@@ -28,8 +28,15 @@ test('conciliacion manual Yappy de aviso sembrado @auth', async ({ page }) => {
     await expect(row).toBeVisible();
     await row.getByRole('button', { name: 'Revisar' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Marcar como registrado' }).click();
-    await expect.poll(async () => (await admin.from('yappy_payments').select('match_status,matched_venta_id').eq('id', paymentId).single()).data?.match_status).toBe('registrado');
-    await expect(page.getByRole('link', { name: 'Ver venta registrada' })).toBeVisible();
+    await expect.poll(async () => {
+      const payment = assertRow(await admin.from('yappy_payments').select('match_status,matched_venta_id').eq('id', paymentId).single(), 'verificar conciliacion');
+      return payment.data;
+    }).toEqual({ match_status: 'registrado', matched_venta_id: ventaId });
+    await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const registeredSale = row.getByRole('link', { name: 'Ver venta registrada' });
+    await expect(registeredSale).toBeVisible();
+    await expect(registeredSale).toHaveAttribute('href', `/ventas/${ventaId}`);
   } finally {
     if (paymentId) await bestEffort('borrar pago Yappy', async () => assertOk(await admin.from('yappy_payments').delete().eq('id', paymentId), 'pago Yappy'));
     if (mailId) await bestEffort('borrar correo Yappy', async () => assertOk(await admin.from('yappy_mail_messages').delete().eq('id', mailId), 'correo Yappy'));

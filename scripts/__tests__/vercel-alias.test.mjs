@@ -60,10 +60,21 @@ describe('assertDeploymentId', () => {
     expect(() => assertDeploymentId('')).toThrow('Invalid Vercel deployment ID');
     expect(() => assertDeploymentId(undefined)).toThrow('Invalid Vercel deployment ID');
     expect(() => assertDeploymentId('https://evil.example')).toThrow('Invalid Vercel deployment ID');
+    expect(() => assertDeploymentId('dpl_abc123\n')).toThrow('Invalid Vercel deployment ID');
+    expect(() => assertDeploymentId({ toString: () => 'dpl_abc123' })).toThrow('Invalid Vercel deployment ID');
   });
 });
 
 describe('createVercelClient', () => {
+  it.each(['promote', 'rollback', 'remove'])('%s rejects log injection IDs from Vercel before mutating', async (operation) => {
+    const fake = fakeVercel({ deployments: {
+      [STAGED]: { id: 'dpl_staged1\n::error::forged log', projectId: PROJECT, ownerId: TEAM, readyState: 'READY' },
+    } });
+    await expect(client(fake)[operation](STAGED)).rejects.toThrow('Invalid Vercel deployment ID');
+    expect(fake.state.calls.every((call) => call.startsWith('GET '))).toBe(true);
+    expect(fake.state.production).toBe(PREVIOUS);
+  });
+
   it('currentProductionId devuelve el despliegue de produccion validado', async () => {
     expect(await client(fakeVercel()).currentProductionId()).toBe(PREVIOUS);
     await expect(client(fakeVercel({ production: 'no-valido' })).currentProductionId()).rejects.toThrow('Invalid Vercel deployment ID');

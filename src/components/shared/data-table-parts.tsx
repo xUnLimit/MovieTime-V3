@@ -47,13 +47,23 @@ type SortableValue = string | number | boolean | Date | null | undefined;
  * Las columnas secundarias aparecen segun el ancho de la propia tabla (container query) y no el de la ventana:
  * asi el menu lateral, que ocupa parte del ancho, no rompe el calculo.
  */
-export const HIDE_BELOW: Record<Breakpoint, string> = {
+const HIDE_BELOW: Record<Breakpoint, string> = {
   sm: 'hidden @min-[30rem]:table-cell',
   md: 'hidden @min-[40rem]:table-cell',
   lg: 'hidden @min-[50rem]:table-cell',
   xl: 'hidden @min-[60rem]:table-cell',
   '2xl': 'hidden @min-[72rem]:table-cell',
   '3xl': 'hidden @min-[100rem]:table-cell',
+};
+
+// Un <col> debe conservar display: table-column, no el display de una celda.
+export const HIDE_COLUMN: Record<Breakpoint, string> = {
+  sm: 'hidden @min-[30rem]:table-column',
+  md: 'hidden @min-[40rem]:table-column',
+  lg: 'hidden @min-[50rem]:table-column',
+  xl: 'hidden @min-[60rem]:table-column',
+  '2xl': 'hidden @min-[72rem]:table-column',
+  '3xl': 'hidden @min-[100rem]:table-column',
 };
 
 /** Clase para ocultar una celda de una tabla propia por debajo de cierto ancho de su contenedor. */
@@ -96,7 +106,6 @@ function DataTableRow<T extends object>({
   columns: Column<T>[];
   actions?: (item: T) => React.ReactNode;
   onRowClick?: (item: T) => void;
-  index: number;
 }) {
   return (
     <TableRow

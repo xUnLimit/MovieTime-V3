@@ -64,11 +64,13 @@ test('editar pago de renovacion @auth', async ({ page }) => {
   }
 });
 
-test('reembolso con corte inactiva la venta @auth', async ({ page }) => {
+for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+test(`reembolso con corte inactiva la venta ${viewport.width}px @auth`, async ({ page }) => {
   const admin = serviceClient();
   const user = await adminUserClient();
   const catalog = await seedCatalog(admin);
   try {
+    await page.setViewportSize(viewport);
     const id = await createVentaRpc(user, catalog, { perfil: 1 });
     await page.goto(`/ventas/${id}`);
     await page.getByRole('button', { name: 'Reembolso' }).click();
@@ -78,9 +80,16 @@ test('reembolso con corte inactiva la venta @auth', async ({ page }) => {
     await dialog.getByLabel('Cuenta destino del cliente').fill('E2E Yappy');
     await dialog.getByRole('radio', { name: /^Cortar solo la venta/ }).check();
     await dialog.getByLabel('Motivo de corte').fill('Corte E2E');
-    await dialog.getByRole('button', { name: 'Reembolsar y cortar' }).click();
+    const confirm = dialog.getByRole('button', { name: 'Reembolsar y cortar' });
+    await expect(confirm).toBeInViewport();
+    const bounds = await dialog.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
+    await confirm.click();
     await expect.poll(async () => (await admin.from('ventas').select('estado').eq('id', id).single()).data?.estado).toBe('inactivo');
   } finally {
     await cleanupCatalog(admin, user, catalog);
   }
 });
+}

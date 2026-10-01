@@ -1,7 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { DevicePushSection } from './BasicSections';
+import { DashboardViewSection, DevicePushSection } from './BasicSections';
+
+describe('DashboardViewSection', () => {
+  it('names the year selector while its options are loading', () => {
+    render(<DashboardViewSection availableYears={[]} selectedYear={2026} setSelectedYear={vi.fn()} />);
+    expect(screen.getByRole('combobox', { name: 'Ano del dashboard' })).toBeTruthy();
+  });
+});
 
 describe('DevicePushSection', () => {
   it('lets a subscribed device test push independently of executive reminders', async () => {

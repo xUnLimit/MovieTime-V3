@@ -170,6 +170,9 @@ describe('DataTable estandar', () => {
   it('ordena en ambos sentidos y conserva las columnas del layout fijo', async () => {
     const { container } = render(<DataTable fixedLayout data={rows} columns={columns} />);
     expect(container.querySelector('colgroup col')).toBeTruthy();
+    const responsiveColumn = container.querySelectorAll('colgroup col')[1];
+    expect(responsiveColumn?.className).toContain('@min-[50rem]:table-column');
+    expect(responsiveColumn?.className).not.toContain(':table-cell');
     const sort = screen.getByRole('button', { name: /Nombre/ });
     await userEvent.click(sort);
     expect(screen.getAllByRole('row')[2].textContent).toContain('Luis');

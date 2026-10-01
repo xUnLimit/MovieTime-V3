@@ -9,7 +9,7 @@ const DEFAULTS = {
 };
 
 export function assertDeploymentId(value) {
-  if (!/^dpl_[A-Za-z0-9]+$/.test(value ?? '')) throw new Error('Invalid Vercel deployment ID');
+  if (typeof value !== 'string' || !/^dpl_[A-Za-z0-9]+$/.test(value)) throw new Error('Invalid Vercel deployment ID');
   return value;
 }
 
@@ -59,6 +59,7 @@ export function createVercelClient({ token, teamId, projectId, fetchImpl = fetch
   async function loadDeployment(reference, { requireReady = true } = {}) {
     const normalized = reference.startsWith('http') ? new URL(reference).hostname : reference;
     const deployment = await request(`/v13/deployments/${encodeURIComponent(normalized)}`);
+    assertDeploymentId(deployment?.id);
 
     if (deployment.projectId !== projectId || deployment.ownerId !== teamId) {
       throw new Error('Deployment does not belong to the configured production project');

@@ -80,19 +80,18 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "cliente",
     header: "Cliente",
     sortable: true,
-    width: "16%",
     render: (item) => (
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <User
           className={cn(
-            "h-4 w-4",
+            "h-4 w-4 shrink-0",
             item.estado === "inactiva" ? "text-danger" : "text-success",
           )}
         />
-        <div>
-          <p className="whitespace-nowrap font-medium">{item.cliente}</p>
+        <div className="min-w-0 leading-tight">
+          <p className="truncate font-medium" title={item.cliente}>{item.cliente}</p>
           {item.clienteDetalle ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="truncate text-xs text-muted-foreground">
               {item.clienteDetalle}
             </p>
           ) : null}
@@ -104,19 +103,18 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "servicio",
     header: "Servicio",
     sortable: true,
-    width: "18%",
     hideBelow: "sm",
     render: (item) => (
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <Monitor
           className={cn(
-            "h-4 w-4",
+            "h-4 w-4 shrink-0",
             item.estado === "inactiva" ? "text-danger" : "text-success",
           )}
         />
-        <div className="max-w-64 leading-tight">
-          <p className="truncate font-medium">{item.servicio}</p>
-          <p className="truncate text-xs text-muted-foreground">{item.servicioDetalle}</p>
+        <div className="min-w-0 leading-tight">
+          <p className="truncate font-medium" title={item.servicio}>{item.servicio}</p>
+          <p className="truncate text-xs text-muted-foreground" title={item.servicioDetalle}>{item.servicioDetalle}</p>
         </div>
       </div>
     ),
@@ -125,13 +123,12 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "cicloPago",
     header: "Ciclo de Pago",
     sortable: true,
-    width: "12%",
     align: "center",
     hideBelow: "2xl",
     render: (item) => (
       <div className="flex items-center justify-center gap-2">
-        <Clock className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{getCicloPagoLabel(item.cicloPago)}</span>
+        <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="truncate font-medium">{getCicloPagoLabel(item.cicloPago)}</span>
       </div>
     ),
   },
@@ -139,7 +136,6 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "fechaInicio",
     header: "Fecha de Inicio",
     sortable: true,
-    width: "12%",
     align: "center",
     hideBelow: "2xl",
     render: (item) => (
@@ -152,7 +148,6 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "fechaVencimiento",
     header: "Fecha de Vencimiento",
     sortable: true,
-    width: "12%",
     align: "center",
     hideBelow: "md",
     render: (item) => (
@@ -165,10 +160,9 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "monto",
     header: "Monto",
     sortable: true,
-    width: "10%",
     align: "center",
     render: (item) => (
-      <div className="text-center font-medium">
+      <div className="whitespace-nowrap text-center font-medium">
         <span className="text-success">{getCurrencySymbol(item.moneda)}</span>
         <span className="text-foreground"> {item.monto.toFixed(2)}</span>
       </div>
@@ -178,11 +172,10 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "consumoPorcentaje",
     header: "Consumo del Pago",
     sortable: true,
-    width: "14%",
     align: "center",
     hideBelow: "xl",
     render: (item) => (
-      <div className="min-w-24 text-center">
+      <div className="text-center">
         <span className="text-xs text-muted-foreground">
           {item.consumoPorcentaje}%
         </span>
@@ -206,11 +199,10 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "montoSinConsumir",
     header: "Monto Sin Consumir",
     sortable: true,
-    width: "12%",
     align: "center",
     hideBelow: "lg",
     render: (item) => (
-      <div className="text-center font-medium">
+      <div className="whitespace-nowrap text-center font-medium">
         <span className="text-success">{getCurrencySymbol(item.moneda)}</span>
         <span className="text-foreground">
           {" "}
@@ -223,7 +215,6 @@ export const ventasTableColumns: Column<VentaRow>[] = [
     key: "renovaciones",
     header: "Renovaciones",
     sortable: true,
-    width: "9%",
     align: "center",
     hideBelow: "xl",
     render: (item) => (

@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Require production configuration
         shell: bash
         env:
@@ -70,8 +70,9 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
         run: |
-          npx --no-install supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}"
+          npx --no-install supabase link --project-ref "$SUPABASE_PROJECT_ID"
           npx --no-install supabase db push --linked --dry-run
           npx --no-install supabase db push --linked
       - name: Validate production database and environment
@@ -88,11 +89,12 @@ jobs:
       - name: Create staged production deployment
         id: deploy
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         shell: bash
         run: |
-          url="$(npx --yes vercel@59.23.2 --prod --skip-domain --force --yes --token '${{ secrets.VERCEL_TOKEN }}')"
+          url="$(npx --ignore-scripts --yes vercel@59.23.2 --prod --skip-domain --force --yes --token "$VERCEL_TOKEN")"
           [[ "$url" =~ ^https://[A-Za-z0-9.-]+$ ]] || { echo "Vercel did not return a deployment URL"; exit 1; }
           echo "url=$url" >> "$GITHUB_OUTPUT"
       - name: Resolve staged deployment id

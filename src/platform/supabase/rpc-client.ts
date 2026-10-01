@@ -17,7 +17,7 @@ export async function callRpc<Name extends keyof Database['public']['Functions']
 ): Promise<RpcResult> {
   // PostgreSQL acepta NULL en cada argumento; los tipos generados no lo expresan.
   // Nombre, claves y tipos permanecen ligados a Database y fallan al cambiar el esquema.
-  return supabase.rpc(name, args as Database['public']['Functions'][Name]['Args']);
+  return await supabase.rpc(name, args as Database['public']['Functions'][Name]['Args']);
 }
 
 export function assertRpcVoidResult(data: unknown, operation: string): void {

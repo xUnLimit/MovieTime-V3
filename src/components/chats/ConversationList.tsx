@@ -84,7 +84,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
             <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-sm border border-chat-line px-[5px] py-px text-xs text-chat-quiet sm:inline">/</kbd>
           )}
         </div>
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Filtrar conversaciones">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar conversaciones">
           {CHAT_FIXED_FILTERS.map((item) => {
             const active = filter === item.id;
             const count = counts[item.id];
@@ -92,8 +92,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
               <button
                 key={item.id}
                 type="button"
-                role="tab"
-                aria-selected={active}
+                aria-pressed={active}
                 aria-label={item.id !== 'todos' && count > 0 ? `${item.label} (${count})` : item.label}
                 onClick={() => onFilterChange(item.id)}
                 className={cn(

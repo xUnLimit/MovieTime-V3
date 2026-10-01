@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const reportPath = path.resolve(process.env.COVERAGE_REPORT_DIR ?? 'coverage', 'coverage-summary.json');
@@ -45,13 +45,24 @@ export function compareBaseline(current, baseline, update = false) {
   return { next, failures };
 }
 
+function readJson(file) {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return undefined;
+    throw error;
+  }
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename)) {
-  if (!existsSync(reportPath)) {
+  const report = readJson(reportPath);
+  if (report === undefined) {
     console.error('Falta coverage/coverage-summary.json. Ejecuta npm run test:coverage.');
     process.exitCode = 1;
   } else {
-    const current = aggregateSummary(JSON.parse(readFileSync(reportPath, 'utf8')));
-    const baseline = existsSync(baselinePath) ? JSON.parse(readFileSync(baselinePath, 'utf8')) : {};
+    const current = aggregateSummary(report);
+    const loadedBaseline = readJson(baselinePath);
+    const baseline = loadedBaseline === undefined ? {} : loadedBaseline;
     const update = process.argv.includes('--update');
     const { next, failures } = compareBaseline(current, baseline, update);
     if (update) {

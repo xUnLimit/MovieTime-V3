@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Secret scan (complete repository)
         run: npm run secrets:scan:all
       - name: Dependency policy
@@ -61,7 +61,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Tests and coverage
         run: npm run test:coverage
       - name: Coverage baseline (never goes down)
@@ -85,7 +85,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Production build
         run: npm run build:verify
       - name: Install Chromium
@@ -111,7 +111,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run build:verify
       - uses: treosh/lighthouse-ci-action@512cc908a55bfb0ad231facca52adf3d3a651df4 # v12
         env:
@@ -136,7 +136,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Start clean local Supabase and apply every migration
         run: npx --no-install supabase start
       - name: Validate local database invariants
@@ -172,7 +172,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Start clean local Supabase
         run: npx --no-install supabase start
       - name: Install Chromium

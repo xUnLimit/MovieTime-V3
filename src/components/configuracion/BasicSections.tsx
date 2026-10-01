@@ -27,8 +27,9 @@ export function DashboardViewSection({
           Los widgets mostraran ingresos y gastos acumulados del ano seleccionado.
         </p>
       </div>
+      <Label htmlFor="dashboard-year">Ano del dashboard</Label>
       <Select value={String(selectedYear)} onValueChange={(value) => setSelectedYear(parseInt(value, 10))}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger id="dashboard-year" className="w-full">
           <SelectValue placeholder="Seleccionar ano" />
         </SelectTrigger>
         <SelectContent>

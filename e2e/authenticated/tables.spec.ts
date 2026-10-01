@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { cleanupCatalog, createVentaRpc, seedCatalog } from './helpers/seed';
+import { cleanupCatalog, createVentaRpc, isoDate, seedCatalog } from './helpers/seed';
 import { adminUserClient, serviceClient } from './helpers/supabase';
 
 async function assertNoHorizontalScroll(page: Page, table: Locator) {
@@ -51,7 +51,7 @@ for (const route of ['/servicios', '/terceros', '/categorias', '/gastos', '/meto
     const user = await adminUserClient();
     const catalog = await seedCatalog(admin);
     try {
-      await createVentaRpc(user, catalog, { perfil: 1 });
+      await createVentaRpc(user, catalog, { perfil: 1, ...(route === '/notificaciones' ? { fechaFin: isoDate(0) } : {}) });
       await page.setViewportSize({ width: 1280, height: 800 });
       await page.goto(route);
       const tables = page.getByRole('table');

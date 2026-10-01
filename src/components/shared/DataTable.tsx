@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from './EmptyState';
 import { PaginationFooter } from './PaginationFooter';
 
-import { HIDE_BELOW, columnClass, getCellValue, getRowKey, toSortableValue, MemoizedTableRow, type DataTableProps, type SortDirection } from './data-table-parts';
+import { HIDE_COLUMN, columnClass, getCellValue, getRowKey, toSortableValue, MemoizedTableRow, type DataTableProps, type SortDirection } from './data-table-parts';
 export { defineDataTableColumns, hideBelowClass } from './data-table-parts';
 export type { Column, DataTableProps } from './data-table-parts';
 
@@ -142,7 +142,7 @@ function DataTableComponent<T extends object>({
           {fixedLayout ? (
             <colgroup>
               {columns.map((column) => (
-                <col key={column.key} className={column.hideBelow ? HIDE_BELOW[column.hideBelow] : undefined} style={{ width: column.width }} />
+                <col key={column.key} className={column.hideBelow ? HIDE_COLUMN[column.hideBelow] : undefined} style={{ width: column.width }} />
               ))}
               {actions ? <col className="w-14" /> : null}
             </colgroup>
@@ -162,13 +162,13 @@ function DataTableComponent<T extends object>({
                       variant="ghost"
                       onClick={() => handleSort(column.key)}
                       className={cn(
-                        'h-8 -ml-3 px-3 text-xs font-medium',
+                        'h-8 min-w-0 max-w-full -ml-3 px-3 text-xs font-medium',
                         column.align === 'center' && 'ml-0 w-full justify-center',
                         column.align === 'right' && '-mr-3 ml-auto',
                         sortKey === column.key ? 'text-primary hover:text-primary' : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      {column.header}
+                      <span className="truncate">{column.header}</span>
                       {getSortIcon(column.key)}
                     </Button>
                   ) : (
@@ -176,7 +176,7 @@ function DataTableComponent<T extends object>({
                   )}
                 </TableHead>
               ))}
-              {actions && <TableHead className="w-14 pr-4 text-center text-muted-foreground">Acciones</TableHead>}
+              {actions && <TableHead className="w-14 pr-4 text-center text-muted-foreground"><span className="block truncate">Acciones</span></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -188,7 +188,6 @@ function DataTableComponent<T extends object>({
                   columns={columns}
                   actions={actions}
                   onRowClick={onRowClick}
-                  index={index}
                 />
               ))
             ) : (

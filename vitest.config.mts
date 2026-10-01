@@ -13,6 +13,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // Evita agotar memoria al instrumentar cientos de modulos con cobertura.
+    maxWorkers: 4,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'scripts/**/*.test.{mjs,ts}'],
     exclude: ['e2e/**', 'node_modules/**', '.next/**', 'src/**/*.integration.test.ts'],

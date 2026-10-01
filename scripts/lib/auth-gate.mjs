@@ -1,5 +1,15 @@
 // Funciones puras del gate E2E autenticado (`run-auth-gate.mjs`): contrato de entorno,
 // variables del servidor `next start` y argumentos de Playwright. Sin efectos secundarios.
+import { win32 } from 'node:path';
+
+/** No resuelve ejecutables desde PATH ni desde el checkout. */
+export function resolveTaskkillExecutable(environment = process.env) {
+  const systemRoot = environment.SystemRoot ?? 'C:\\Windows';
+  if (typeof systemRoot !== 'string' || !/^[A-Za-z]:\\(?:Windows|WINNT)$/i.test(systemRoot)) {
+    throw new Error('Windows SystemRoot must name a trusted absolute system directory.');
+  }
+  return win32.join(systemRoot, 'System32', 'taskkill.exe');
+}
 
 /** Variables que define el CI (`supabase start` + usuarios de prueba). Todas son obligatorias. */
 export const REQUIRED_E2E_VARS = [
