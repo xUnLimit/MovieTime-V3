@@ -6,6 +6,27 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+// Append-only contracts for 20261003060000_catalog_holds_interests.sql.
+type CatalogConfigRow = {
+  id: string; categoria_id: string; plan_id: string | null; visible_en_bot: boolean;
+  orden: number; umbral_stock_bajo: number; alternativa_categoria_id: string | null;
+  alternativa_plan_id: string | null; reserva_ttl_minutos: number | null; moneda: string | null;
+}
+type CatalogHoldRow = {
+  id: string; servicio_id: string; perfil_numero: number; owner_ref: string;
+  expira_at: string; created_at: string; cerrada_at: string | null;
+}
+type CatalogInterestRow = {
+  id: string; contact_id: string; categoria_id: string; plan_id: string | null;
+  origen: string; estado: string; created_at: string; avisado_at: string | null;
+}
+type CatalogItemRow = {
+  categoria_id: string; categoria_nombre: string; plan_id: string; plan_nombre: string;
+  plan_tipo_id: string; precio: number; moneda: string;
+  ciclos: Database['public']['Enums']['ciclo_pago_enum'][]; perfiles_libres: number;
+  estado: string; orden: number; alternativa_categoria_id: string | null; alternativa_plan_id: string | null;
+}
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -14,6 +35,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogo_ajustes: {
+        Row: { id: string; reserva_ttl_minutos: number; moneda: string; resumen_template: string }
+        Insert: { id?: string; reserva_ttl_minutos?: number; moneda?: string; resumen_template?: string }
+        Update: { id?: string; reserva_ttl_minutos?: number; moneda?: string; resumen_template?: string }
+        Relationships: [{ foreignKeyName: "catalogo_ajustes_moneda_fkey"; columns: ["moneda"]; isOneToOne: false; referencedRelation: "currencies"; referencedColumns: ["code"] }]
+      }
+      catalogo_config: {
+        Row: CatalogConfigRow
+        Insert: Pick<CatalogConfigRow, "categoria_id"> & Partial<Omit<CatalogConfigRow, "categoria_id">>
+        Update: Partial<CatalogConfigRow>
+        Relationships: [
+          { foreignKeyName: "catalogo_config_categoria_id_fkey"; columns: ["categoria_id"]; isOneToOne: false; referencedRelation: "categorias"; referencedColumns: ["id"] },
+          { foreignKeyName: "catalogo_config_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "planes"; referencedColumns: ["id"] },
+          { foreignKeyName: "catalogo_config_alternativa_categoria_id_fkey"; columns: ["alternativa_categoria_id"]; isOneToOne: false; referencedRelation: "categorias"; referencedColumns: ["id"] },
+          { foreignKeyName: "catalogo_config_alternativa_plan_id_fkey"; columns: ["alternativa_plan_id"]; isOneToOne: false; referencedRelation: "planes"; referencedColumns: ["id"] },
+          { foreignKeyName: "catalogo_config_moneda_fkey"; columns: ["moneda"]; isOneToOne: false; referencedRelation: "currencies"; referencedColumns: ["code"] }
+        ]
+      }
+      reservas_perfil: {
+        Row: CatalogHoldRow
+        Insert: Pick<CatalogHoldRow, "servicio_id" | "perfil_numero" | "owner_ref" | "expira_at"> & Partial<Omit<CatalogHoldRow, "servicio_id" | "perfil_numero" | "owner_ref" | "expira_at">>
+        Update: Partial<CatalogHoldRow>
+        Relationships: [{ foreignKeyName: "reservas_perfil_servicio_id_fkey"; columns: ["servicio_id"]; isOneToOne: false; referencedRelation: "servicios"; referencedColumns: ["id"] }]
+      }
+      intereses: {
+        Row: CatalogInterestRow
+        Insert: Pick<CatalogInterestRow, "contact_id" | "categoria_id" | "origen"> & Partial<Omit<CatalogInterestRow, "contact_id" | "categoria_id" | "origen">>
+        Update: Partial<CatalogInterestRow>
+        Relationships: [
+          { foreignKeyName: "intereses_categoria_id_fkey"; columns: ["categoria_id"]; isOneToOne: false; referencedRelation: "categorias"; referencedColumns: ["id"] },
+          { foreignKeyName: "intereses_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "planes"; referencedColumns: ["id"] }
+        ]
+      }
       yappy_mail_sync_state: {
         Row: { id: boolean; mailbox: string; uid_validity: number | null; last_uid: number; last_synced_at: string | null; last_error_code: string | null; sync_locked_until: string | null; updated_at: string }
         Insert: { id?: boolean; mailbox?: string; uid_validity?: number | null; last_uid?: number; last_synced_at?: string | null; last_error_code?: string | null; sync_locked_until?: string | null; updated_at?: string }
@@ -2809,6 +2863,10 @@ export type Database = {
       }
     }
     Views: {
+      v_demanda_sin_stock: {
+        Row: { categoria_id: string | null; plan_id: string | null; cantidad_esperando: number | null; esperando_desde: string | null }
+        Relationships: []
+      }
       v_yappy_candidate_ventas: {
         Row: { id: string | null; cliente: string | null; servicio: string | null; perfil_numero: number | null; perfil_nombre: string | null; fecha_fin: string | null; total_original: number | null; moneda_original: string | null }
         Relationships: []
@@ -4231,6 +4289,12 @@ export type Database = {
       }
     }
     Functions: {
+      catalogo_disponible: { Args: Record<PropertyKey, never>; Returns: CatalogItemRow[] }
+      reservar_perfil: { Args: { p_servicio_id: string; p_owner_ref: string; p_plan_id?: string | null }; Returns: CatalogHoldRow[] }
+      liberar_reserva: { Args: { p_reserva_id: string; p_owner_ref: string }; Returns: boolean }
+      expirar_reservas: { Args: Record<PropertyKey, never>; Returns: number }
+      registrar_interes: { Args: { p_contact_id: string; p_categoria_id: string; p_plan_id?: string | null; p_origen?: string }; Returns: string }
+      siguiente_interesado: { Args: { p_categoria_id: string; p_plan_id?: string | null }; Returns: CatalogInterestRow[] }
       publish_whatsapp_bot_version: { Args: { p_definition: Json; p_note: string }; Returns: number }
       set_whatsapp_bot_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
       record_whatsapp_bot_event: { Args: { p_wa_id: string; p_cliente_id: string | null; p_type: string; p_node_id: string | null; p_option_id: string | null; p_detail: Json }; Returns: string }
