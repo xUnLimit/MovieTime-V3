@@ -60,6 +60,18 @@ export type Database = {
         Update: { id?: string; pedido_id?: string; source?: 'yappy' | 'manual'; yappy_payment_id?: string | null; monto?: number; created_at?: string }
         Relationships: []
       }
+      pedido_pago_ajustes: {
+        Row: { id: string; tolerancia: number; ventana_horas: number; max_intentos: number; margen_minutos: number; updated_at: string }
+        Insert: { id?: string; tolerancia?: number; ventana_horas?: number; max_intentos?: number; margen_minutos?: number; updated_at?: string }
+        Update: { id?: string; tolerancia?: number; ventana_horas?: number; max_intentos?: number; margen_minutos?: number; updated_at?: string }
+        Relationships: []
+      }
+      intentos_comprobante: {
+        Row: { id: string; pedido_id: string; wa_id: string | null; codigo: string; resultado: string; pendiente: boolean; reintento: boolean; idempotency_key: string; respuesta: Json; created_at: string }
+        Insert: { id?: string; pedido_id: string; wa_id?: string | null; codigo: string; resultado: string; pendiente?: boolean; reintento?: boolean; idempotency_key: string; respuesta?: Json; created_at?: string }
+        Update: { id?: string; pedido_id?: string; wa_id?: string | null; codigo?: string; resultado?: string; pendiente?: boolean; reintento?: boolean; idempotency_key?: string; respuesta?: Json; created_at?: string }
+        Relationships: []
+      }
       catalogo_ajustes: {
         Row: { id: string; reserva_ttl_minutos: number; moneda: string; resumen_template: string }
         Insert: { id?: string; reserva_ttl_minutos?: number; moneda?: string; resumen_template?: string }
@@ -112,9 +124,9 @@ export type Database = {
         Relationships: []
       }
       yappy_payments: {
-        Row: { id: string; confirmation_code: string; amount: number; currency: string; payer_name_short: string; payer_phone_last4: string; paid_at: string; mail_message_id: string; match_status: string; candidate_venta_ids: string[]; matched_venta_id: string | null; resolved_by: string | null; resolved_at: string | null; resolution_note: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; confirmation_code: string; amount: number; currency?: string; payer_name_short: string; payer_phone_last4: string; paid_at: string; mail_message_id: string; match_status?: string; candidate_venta_ids?: string[]; matched_venta_id?: string | null; resolved_by?: string | null; resolved_at?: string | null; resolution_note?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; confirmation_code?: string; amount?: number; currency?: string; payer_name_short?: string; payer_phone_last4?: string; paid_at?: string; mail_message_id?: string; match_status?: string; candidate_venta_ids?: string[]; matched_venta_id?: string | null; resolved_by?: string | null; resolved_at?: string | null; resolution_note?: string | null; created_at?: string; updated_at?: string }
+        Row: { id: string; confirmation_code: string; amount: number; currency: string; payer_name_short: string; payer_phone_last4: string; paid_at: string; mail_message_id: string; match_status: string; candidate_venta_ids: string[]; matched_venta_id: string | null; resolved_by: string | null; resolved_at: string | null; resolution_note: string | null; created_at: string; updated_at: string; requiere_revision: boolean; revision_pedido_id: string | null; revision_motivo: string | null }
+        Insert: { id?: string; confirmation_code: string; amount: number; currency?: string; payer_name_short: string; payer_phone_last4: string; paid_at: string; mail_message_id: string; match_status?: string; candidate_venta_ids?: string[]; matched_venta_id?: string | null; resolved_by?: string | null; resolved_at?: string | null; resolution_note?: string | null; created_at?: string; updated_at?: string; requiere_revision?: boolean; revision_pedido_id?: string | null; revision_motivo?: string | null }
+        Update: { id?: string; confirmation_code?: string; amount?: number; currency?: string; payer_name_short?: string; payer_phone_last4?: string; paid_at?: string; mail_message_id?: string; match_status?: string; candidate_venta_ids?: string[]; matched_venta_id?: string | null; resolved_by?: string | null; resolved_at?: string | null; resolution_note?: string | null; created_at?: string; updated_at?: string; requiere_revision?: boolean; revision_pedido_id?: string | null; revision_motivo?: string | null }
         Relationships: []
       }
       activity_log: {
@@ -4433,6 +4445,8 @@ export type Database = {
         Args: { p_pedido_id: string; p_idempotency_key: string }
         Returns: string
       }
+      reclamar_pago_yappy_para_pedido: { Args: { p_pedido_id: string; p_confirmation_code: string; p_idempotency_key: string; p_wa_id?: string | null; p_reintento?: boolean }; Returns: Json }
+      listar_comprobantes_pendientes: { Args: { p_limit?: number }; Returns: { pedido_id: string; wa_id: string | null; codigo: string }[] }
       expirar_pedidos: { Args: Record<PropertyKey, never>; Returns: number }
       catalogo_disponible: { Args: Record<PropertyKey, never>; Returns: CatalogItemRow[] }
       reservar_perfil: { Args: { p_servicio_id: string; p_owner_ref: string; p_plan_id?: string | null }; Returns: CatalogHoldRow[] }

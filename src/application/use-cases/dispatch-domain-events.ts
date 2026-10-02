@@ -15,6 +15,7 @@ export function createDomainEventHandlers(): DomainEventHandlers {
   return {
     'venta.creada': [], 'venta.pago_registrado': [], 'venta.reembolsada': [], 'venta.transferida': [],
     'servicio.credenciales_cambiadas': [], 'yappy.pago_detectado': [], 'yappy.pago_resuelto': [],
+    'pedido.pago_reclamado': [], 'pedido.pago_en_revision': [],
   };
 }
 
@@ -27,6 +28,8 @@ async function runHandlers(event: DomainEvent, handlers: DomainEventHandlers): P
     case 'servicio.credenciales_cambiadas': for (const h of handlers[event.type]) await h(event); return;
     case 'yappy.pago_detectado': for (const h of handlers[event.type]) await h(event); return;
     case 'yappy.pago_resuelto': for (const h of handlers[event.type]) await h(event); return;
+    case 'pedido.pago_reclamado': for (const h of handlers[event.type]) await h(event); return;
+    case 'pedido.pago_en_revision': for (const h of handlers[event.type]) await h(event); return;
   }
 }
 

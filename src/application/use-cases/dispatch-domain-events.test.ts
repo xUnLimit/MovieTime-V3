@@ -68,6 +68,8 @@ describe('dispatchDomainEvents', () => {
       ['servicio.credenciales_cambiadas', { servicio_id: 's', correo_cambiado: true, contrasena_cambiada: false }],
       ['yappy.pago_detectado', { payment_id: 'y', match_status: 'sin_match', amount: 1 }],
       ['yappy.pago_resuelto', { payment_id: 'y', venta_id: 'v', amount: 1, resolved_by: null }],
+      ['pedido.pago_reclamado', { pedido_id: 'p', payment_id: 'y', resultado: 'confirmado', monto: 1, faltante: 0, estado: 'entregado' }],
+      ['pedido.pago_en_revision', { pedido_id: 'p', motivo: 'monto_menor', faltante: 1 }],
     ];
     const rows = payloads.map(([type, payload], i) => ({ ...created, id: `x${i}`, type, payload }));
     await dispatchDomainEvents({ store: store(rows), handlers }, 10, 60);
