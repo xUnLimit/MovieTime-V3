@@ -4,7 +4,10 @@ SELECT no_plan();
 INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at) VALUES
  ('00000000-0000-0000-0000-000000000000', '71111111-1111-4111-8111-111111111111', 'authenticated', 'authenticated', 'catalog-admin@example.test', '', now()),
  ('00000000-0000-0000-0000-000000000000', '72222222-2222-4222-8222-222222222222', 'authenticated', 'authenticated', 'catalog-operator@example.test', '', now());
-UPDATE public.usuarios SET role = 'admin' WHERE id = '71111111-1111-4111-8111-111111111111';
+INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at) VALUES
+ ('00000000-0000-0000-0000-000000000000', '71999999-9999-4999-8999-999999999999', 'authenticated', 'authenticated', 'catalog-admin2@example.test', '', now());
+-- Segundo admin: el guard impide desactivar al unico administrador activo.
+UPDATE public.usuarios SET role = 'admin' WHERE id IN ('71111111-1111-4111-8111-111111111111', '71999999-9999-4999-8999-999999999999');
 INSERT INTO public.categorias (id, nombre, tipo) VALUES
  ('73333333-3333-4333-8333-333333333333', 'Catalog fixture', 'cliente'),
  ('73444444-4444-4444-8444-444444444444', 'Other fixture', 'cliente');

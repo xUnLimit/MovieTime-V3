@@ -34,35 +34,35 @@ SELECT throws_ok($$SELECT public.emit_domain_event('venta.creada', 'venta', 'x',
 SELECT throws_ok($$SELECT public.emit_domain_event('Tipo Invalido', 'venta', 'x', '{}'::jsonb)$$, '23514', NULL, 'el tipo respeta el formato');
 
 -- Fixtures sinteticos
-INSERT INTO public.categorias (id, nombre, tipo) VALUES ('cat-outbox', 'Categoria Outbox', 'cliente');
+INSERT INTO public.categorias (id, nombre, tipo) VALUES ('e3000000-0000-4000-8000-000000000001', 'Categoria Outbox', 'cliente');
 INSERT INTO public.servicios (id, categoria_id, nombre, correo, contrasena)
-VALUES ('srv-outbox-1', 'cat-outbox', 'Servicio 1', 'cuenta1@example.test', 'clave-original-1'),
-       ('srv-outbox-2', 'cat-outbox', 'Servicio 2', 'cuenta2@example.test', 'clave-original-2');
+VALUES ('e3000000-0000-4000-8000-000000000002', 'e3000000-0000-4000-8000-000000000001', 'Servicio 1', 'cuenta1@example.test', 'clave-original-1'),
+       ('e3000000-0000-4000-8000-000000000003', 'e3000000-0000-4000-8000-000000000001', 'Servicio 2', 'cuenta2@example.test', 'clave-original-2');
 INSERT INTO public.terceros (id, nombre, apellido, telefono, tipo)
-VALUES ('ter-outbox', 'Cliente', 'Outbox', '50760007788', 'cliente');
+VALUES ('e3000000-0000-4000-8000-000000000004', 'Cliente', 'Outbox', '50760007788', 'cliente');
 
 -- Triggers
 INSERT INTO public.ventas (id, categoria_id, servicio_id, cliente_id, estado)
-VALUES ('ven-outbox', 'cat-outbox', 'srv-outbox-1', 'ter-outbox', 'activo');
-SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.creada' AND aggregate_id = 'ven-outbox'), 1::bigint,
+VALUES ('e3000000-0000-4000-8000-000000000005', 'e3000000-0000-4000-8000-000000000001', 'e3000000-0000-4000-8000-000000000002', 'e3000000-0000-4000-8000-000000000004', 'activo');
+SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.creada' AND aggregate_id = 'e3000000-0000-4000-8000-000000000005'), 1::bigint,
   'insertar una venta emite exactamente un venta.creada');
-SELECT is((SELECT payload ->> 'servicio_id' FROM public.domain_events WHERE type = 'venta.creada' AND aggregate_id = 'ven-outbox'),
-  'srv-outbox-1', 'venta.creada lleva el servicio');
+SELECT is((SELECT payload ->> 'servicio_id' FROM public.domain_events WHERE type = 'venta.creada' AND aggregate_id = 'e3000000-0000-4000-8000-000000000005'),
+  'e3000000-0000-4000-8000-000000000002', 'venta.creada lleva el servicio');
 
-UPDATE public.ventas SET notas = 'nota irrelevante' WHERE id = 'ven-outbox';
+UPDATE public.ventas SET notas = 'nota irrelevante' WHERE id = 'e3000000-0000-4000-8000-000000000005';
 SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.transferida'), 0::bigint,
   'cambiar otras columnas no emite venta.transferida');
-UPDATE public.ventas SET servicio_id = 'srv-outbox-2' WHERE id = 'ven-outbox';
-SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.transferida' AND aggregate_id = 'ven-outbox'), 1::bigint,
+UPDATE public.ventas SET servicio_id = 'e3000000-0000-4000-8000-000000000003' WHERE id = 'e3000000-0000-4000-8000-000000000005';
+SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.transferida' AND aggregate_id = 'e3000000-0000-4000-8000-000000000005'), 1::bigint,
   'cambiar servicio_id emite exactamente un venta.transferida');
-SELECT is((SELECT payload ->> 'to_servicio_id' FROM public.domain_events WHERE type = 'venta.transferida'), 'srv-outbox-2',
+SELECT is((SELECT payload ->> 'to_servicio_id' FROM public.domain_events WHERE type = 'venta.transferida'), 'e3000000-0000-4000-8000-000000000003',
   'venta.transferida lleva el servicio destino');
 
-UPDATE public.servicios SET nombre = 'Otro nombre' WHERE id = 'srv-outbox-1';
+UPDATE public.servicios SET nombre = 'Otro nombre' WHERE id = 'e3000000-0000-4000-8000-000000000002';
 SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'servicio.credenciales_cambiadas'), 0::bigint,
   'cambiar el nombre no emite credenciales_cambiadas');
-UPDATE public.servicios SET contrasena = 'clave-nueva-secreta' WHERE id = 'srv-outbox-1';
-SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'servicio.credenciales_cambiadas' AND aggregate_id = 'srv-outbox-1'), 1::bigint,
+UPDATE public.servicios SET contrasena = 'clave-nueva-secreta' WHERE id = 'e3000000-0000-4000-8000-000000000002';
+SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'servicio.credenciales_cambiadas' AND aggregate_id = 'e3000000-0000-4000-8000-000000000002'), 1::bigint,
   'cambiar la contrasena emite exactamente un evento');
 SELECT ok((SELECT payload ->> 'contrasena_cambiada' = 'true' AND payload ->> 'correo_cambiado' = 'false'
   FROM public.domain_events WHERE type = 'servicio.credenciales_cambiadas'), 'el payload solo trae banderas');
@@ -74,23 +74,23 @@ SELECT set_config('request.jwt.claims',
   '{"sub":"61111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
 SELECT ok(public.create_venta_payment(
-  'ven-outbox', current_date, current_date + 30, 'mensual', 10, 0, 10, 'USD', 10, 1, '', '', now(), NULL, NULL, NULL, NULL,
+  'e3000000-0000-4000-8000-000000000005', current_date, current_date + 30, 'mensual', 10, 0, 10, 'USD', 10, 1, '', 'Efectivo', now(), NULL, NULL, NULL, NULL,
   NULL, '71111111-1111-4111-8111-111111111111') IS NOT NULL, 'create_venta_payment sigue funcionando');
 SELECT is(public.create_venta_payment(
-  'ven-outbox', current_date, current_date + 30, 'mensual', 10, 0, 10, 'USD', 10, 1, '', '', now(), NULL, NULL, NULL, NULL,
+  'e3000000-0000-4000-8000-000000000005', current_date, current_date + 30, 'mensual', 10, 0, 10, 'USD', 10, 1, '', 'Efectivo', now(), NULL, NULL, NULL, NULL,
   NULL, '71111111-1111-4111-8111-111111111111'),
   (SELECT result_id FROM public.rpc_idempotency_keys WHERE idempotency_key = '71111111-1111-4111-8111-111111111111'),
   'la repeticion idempotente devuelve el mismo pago');
 RESET ROLE;
-SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.pago_registrado' AND aggregate_id = 'ven-outbox'), 1::bigint,
+SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.pago_registrado' AND aggregate_id = 'e3000000-0000-4000-8000-000000000005'), 1::bigint,
   'create_venta_payment emite exactamente un evento y la repeticion idempotente no emite otro');
 
 SET LOCAL ROLE authenticated;
 SELECT ok(public.create_venta_refund(
-  'ven-outbox', 4, 'USD', 4, 1, '', '', 'cuenta destino', now(), 'nota', false, NULL,
+  'e3000000-0000-4000-8000-000000000005', 4, 'USD', 4, 1, '', 'Efectivo', 'cuenta destino', now(), 'nota', false, NULL,
   NULL, '72222222-2222-4222-8222-222222222222') IS NOT NULL, 'create_venta_refund sigue funcionando');
 RESET ROLE;
-SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.reembolsada' AND aggregate_id = 'ven-outbox'), 1::bigint,
+SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'venta.reembolsada' AND aggregate_id = 'e3000000-0000-4000-8000-000000000005'), 1::bigint,
   'create_venta_refund emite exactamente un evento');
 
 -- Yappy: ingest como service_role y resolve como administrador
@@ -112,10 +112,10 @@ SELECT set_config('request.jwt.claims',
   '{"sub":"61111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
 SELECT is(public.resolve_yappy_payment(
-  (SELECT id FROM public.yappy_payments WHERE confirmation_code = 'OUTBOXCODE1'), 'ven-outbox', 'nota'), 'registrado',
+  (SELECT id FROM public.yappy_payments WHERE confirmation_code = 'OUTBOXCODE1'), 'e3000000-0000-4000-8000-000000000005', 'nota'), 'registrado',
   'resolve_yappy_payment sigue funcionando');
 SELECT is(public.resolve_yappy_payment(
-  (SELECT id FROM public.yappy_payments WHERE confirmation_code = 'OUTBOXCODE1'), 'ven-outbox', 'nota'), 'registrado',
+  (SELECT id FROM public.yappy_payments WHERE confirmation_code = 'OUTBOXCODE1'), 'e3000000-0000-4000-8000-000000000005', 'nota'), 'registrado',
   'resolver de nuevo es idempotente');
 RESET ROLE;
 SELECT is((SELECT count(*) FROM public.domain_events WHERE type = 'yappy.pago_resuelto'), 1::bigint,

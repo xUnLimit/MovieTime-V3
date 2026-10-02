@@ -313,7 +313,7 @@ BEGIN
 
   RETURN v_pago_id;
 END;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.create_venta_refund(
   p_venta_id TEXT,
@@ -464,7 +464,7 @@ BEGIN
 
   RETURN v_pago_id;
 END;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.resolve_yappy_payment(p_payment_id uuid, p_venta_id text, p_note text DEFAULT NULL) RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
@@ -486,7 +486,7 @@ BEGIN
     'payment_id', p_payment_id, 'venta_id', p_venta_id, 'amount', v_payment.amount, 'resolved_by', auth.uid()));
   RETURN 'registrado';
 END;
-$;
+$$;
 
 CREATE OR REPLACE FUNCTION public.ingest_yappy_payment(
   p_uid_validity bigint, p_imap_uid bigint, p_internet_message_id text,
