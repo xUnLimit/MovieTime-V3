@@ -10,7 +10,7 @@ describe('ServicioSummaryCards', () => {
       configurable: true,
       value: { writeText },
     });
-    const { container } = render(<ServicioSummaryCards
+    render(<ServicioSummaryCards
       categoria={{ id: 'categoria-1', nombre: 'Streaming' } as never}
       currencySymbol="$"
       getCicloPagoLabel={vi.fn(() => 'Mensual')}
@@ -31,7 +31,7 @@ describe('ServicioSummaryCards', () => {
     />);
 
     expect(screen.getByText(/días restantes$/)).not.toBeNull();
-    fireEvent.click(container.querySelector('button')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar email' }));
     expect(writeText).toHaveBeenCalledWith('cuenta@example.com');
   });
 });

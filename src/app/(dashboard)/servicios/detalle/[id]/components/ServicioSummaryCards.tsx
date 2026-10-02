@@ -128,6 +128,7 @@ export function ServicioSummaryCards({
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6"
+                  aria-label="Copiar email"
                   onClick={() => {
                     navigator.clipboard.writeText(servicio.correo!);
                     toast.success('Email copiado', { description: 'El email se ha copiado al portapapeles.' });
