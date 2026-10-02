@@ -91,6 +91,11 @@ export type Database = {
           { foreignKeyName: "intereses_categoria_id_fkey"; columns: ["categoria_id"]; isOneToOne: false; referencedRelation: "categorias"; referencedColumns: ["id"] },
           { foreignKeyName: "intereses_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "planes"; referencedColumns: ["id"] }
         ]
+      whatsapp_conversation_state: {
+        Row: { wa_id: string; flow_version: number; node_id: string; variables: Json; awaiting: Json | null; owner: string; revision: number; updated_at: string; expires_at: string }
+        Insert: { wa_id: string; flow_version: number; node_id: string; variables?: Json; awaiting?: Json | null; owner?: string; revision?: number; updated_at?: string; expires_at: string }
+        Update: { wa_id?: string; flow_version?: number; node_id?: string; variables?: Json; awaiting?: Json | null; owner?: string; revision?: number; updated_at?: string; expires_at?: string }
+        Relationships: [{ foreignKeyName: "whatsapp_conversation_state_flow_version_fkey"; columns: ["flow_version"]; isOneToOne: false; referencedRelation: "whatsapp_bot_versions"; referencedColumns: ["version"] }]
       }
       yappy_mail_sync_state: {
         Row: { id: boolean; mailbox: string; uid_validity: number | null; last_uid: number; last_synced_at: string | null; last_error_code: string | null; sync_locked_until: string | null; updated_at: string }
@@ -4433,6 +4438,9 @@ export type Database = {
       expirar_reservas: { Args: Record<PropertyKey, never>; Returns: number }
       registrar_interes: { Args: { p_contact_id: string; p_categoria_id: string; p_plan_id?: string | null; p_origen?: string }; Returns: string }
       siguiente_interesado: { Args: { p_categoria_id: string; p_plan_id?: string | null }; Returns: CatalogInterestRow[] }
+      set_conversation_state: { Args: { p_wa_id: string; p_expected_revision: number | null; p_state: Json; p_expires_at: string }; Returns: boolean }
+      take_over_conversation: { Args: { p_wa_id: string }; Returns: boolean }
+      hand_back_conversation: { Args: { p_wa_id: string }; Returns: boolean }
       publish_whatsapp_bot_version: { Args: { p_definition: Json; p_note: string }; Returns: number }
       set_whatsapp_bot_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
       upsert_whatsapp_contact: { Args: { p_wa_id: string; p_nombre_perfil: string | null }; Returns: { wa_id: string; tercero_id: string | null; estado: string }[] }

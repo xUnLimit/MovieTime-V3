@@ -245,3 +245,52 @@ Decisiones del runtime (`webhook/route.ts`, `webhook/bot-runtime.ts`, `whatsapp-
   caso de uso (simulado) para el interruptor y la publicacion.
 - **Pendiente para el usuario:** borrar `WHATSAPP_BOT_ENABLED` de Vercel y de `.env.local`; encender el bot desde `/bot`; comprobar que el nombre de perfil
   de cada venta de Netflix coincide con el de Netflix (sin eso el cruce por perfil bloquea el codigo de viaje).
+
+## 12. Conversation Engine v2 (núcleo, sin UI ni conexión al webhook)
+
+v1 sigue válido; `defaultDefinition()` y el editor conservan v1. `upgradeDefinition(def)` clona y cambia
+solo schemaVersion a 2, explícita e idempotentemente. El loader actual rechaza v2 hasta conectar su ejecutor:
+**publicar v2 ahora deja el bot en silencio**, sin ejecutar parcialmente sus acciones.
+
+Los nodos nuevos conservan id/name/body y `options: []`:
+
+- `input`: `input: { tipo: 'text'|'number'|'image', variable, next, timeoutSeconds, rules }`.
+  rules permite pattern digits/letters/alphanumeric y minLength/maxLength para texto, min/max para números.
+  No admite regex del administrador. Imagen guarda solo un ID numérico de media, sin bytes ni URL.
+  Espera 1–86400 segundos y guarda una respuesta válida en la variable indicada.
+- `condition`: `condition: { predicate, yes, no }`. Predicados: contact_is (value lead/cliente),
+  active_service (UUID categoria), pending_order, variable_equals (variable/value), variable_matches
+  (variable/pattern cerrado). El contexto de identidad/servicios/pedidos procede del servidor; sin él se bloquea.
+- `action`: clave de `ACTION_REGISTRY` y actionParams con UUID requeridos o referencias exactas
+  `{{variable}}` permitidas por la acción. Las tres acciones originales siguen disponibles.
+  show_catalog, register_interest, request_payment, verify_payment, deliver_credentials, send_code,
+  renew_services y send_template están declaradas: validación avisa y el reductor bloquea sin efectos.
+  Extender el registro exige código; pagos, credenciales e identidad nunca son configurables.
+
+`advance(def, state, { flowVersion, now, context?, event })` es puro y devuelve state/status/effects.
+event es enter, option (optionId) o answer (tipo/value). flowVersion fija la versión publicada, no schemaVersion.
+Rechaza respuestas no solicitadas, versiones distintas y entradas inválidas; limpia esperas vencidas,
+no prolonga esperas al reentrar y limita ciclos automáticos. Con owner humano no produce efectos.
+El futuro ejecutor debe aportar contexto autorizado e idempotencia. El simulador v2 usa este reductor,
+reloj fijo y contexto de ejemplo opcional. El estado es `{ flowVersion, nodeId, variables,
+awaiting: { tipo, ref, expiresAt } | null, owner: 'bot'|'humano' }`.
+
+Variables: 32 escalares, texto hasta 512 caracteres, objeto hasta 4 KB; nombres sensibles e indicadores
+de credenciales/enlaces están prohibidos. Nunca solicitar ni guardar contraseñas, códigos, tokens o datos
+de pago. Los filtros no reconocen todo secreto escrito espontáneamente; la futura integración debe
+filtrar estos mensajes antes de persistirlos. Esa política es fija.
+
+El codec encodeEntityReplyId/decodeEntityReplyId usa ENTITY_REPLY_REGISTRY (CODE, ORDER, SERVICE), UUID
+y límite de 256 bytes: `BOT:CODE:<ventaId>`. No autoriza acceso: el ejecutor verifica pertenencia.
+Opciones, ACC y alias v1 conservan sus formatos.
+
+La migración 20261003070000 añade whatsapp_conversation_state, RLS, lectura admin/service role y escritura
+solo por RPC. set_conversation_state(waId, expectedRevision, state, expiresAt) crea con revisión null o
+actualiza por CAS; false significa conflicto. revision aumenta también al cambiar dueño para evitar ABA.
+El bot puede entregar a humano, pero no escribir una fila humana ni recuperarla. Solo admin activo usa
+take_over_conversation/hand_back_conversation; limpian awaiting y conservan variables. Chat inexistente:
+false. Definers con search_path vacío, grants mínimos y auditoría canónica ampliada.
+
+createConversationStateStore valida ambos límites y devuelve state/revision/updatedAt/expiresAt, incluso
+si expiró: el futuro orquestador reinicia usando esa revisión, sin borrar/recrear filas. TTL máximo: 30 días;
+sin purga todavía. pgTAP cubre permisos, validación, CAS y control humano; Chats permanece sin conectar.
