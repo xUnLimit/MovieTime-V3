@@ -1,10 +1,15 @@
 import { after } from 'next/server';
 
 import { env } from '@/platform/config';
+import { getNetflixMailConfig } from '@/platform/config/netflix-server';
 import { createLogger } from '@/platform/observability/logger';
 import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/platform/server/api-response';
+import { openNetflixInbox } from '@/platform/server/netflix-imap';
+import { fetchTravelPageHtml } from '@/platform/server/netflix-travel-page';
 import { z } from '@/platform/validation/zod';
 import { handleNoticeReply } from '@/application/use-cases/notice-reply-use-case';
+import { handleBotMessage } from '@/application/use-cases/whatsapp-bot-use-case';
+import { createBotStore } from '@/modules/messaging/bot-store';
 import { createNoticeReplyStore } from '@/modules/messaging/notice-reply-store';
 import { createNoticeStore } from '@/modules/messaging/notice-store';
 import { notifyWhatsAppMessages } from '@/modules/notifications/whatsapp-message-push';
@@ -110,9 +115,22 @@ export async function POST(request: Request) {
                 }),
               });
               if (result === 'failed') logger.warn('WhatsApp notice reply action failed', { requestId });
+              if (result === 'ignored' && env.whatsappBotEnabled && insertedIds.has(message.waMessageId)) {
+                await handleBotMessage(message, {
+                  store: createBotStore(), fetchTravelPage: fetchTravelPageHtml,
+                  openInbox: async () => {
+                    const mailbox = getNetflixMailConfig();
+                    return mailbox ? openNetflixInbox(mailbox.user, mailbox.password) : null;
+                  },
+                  send: (outbound) => sendOutboundMessage(outbound, {
+                    store: outboundStore, catalog,
+                    send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload),
+                  }),
+                });
+              }
             } catch {
               // Never log the inbound payload or rendered credentials.
-              logger.warn('WhatsApp notice reply could not be processed', { requestId });
+              logger.warn('WhatsApp message automation could not be processed', { requestId });
             }
           }
         }

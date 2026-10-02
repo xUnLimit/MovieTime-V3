@@ -40,8 +40,9 @@ El proposito, los usuarios y los principios del producto estan en [`PRODUCT.md`]
 | App | `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ENABLE_SW_DEV` | URL en produccion |
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Si |
 | Push | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUSH_CRON_SECRET` o `CRON_SECRET` | En produccion |
-| WhatsApp | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_AUTO_NOTICES_SECRET` | Solo para usar WhatsApp |
+| WhatsApp | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_AUTO_NOTICES_SECRET`, `WHATSAPP_BOT_ENABLED` | Solo para usar WhatsApp |
 | Yappy | `YAPPY_IMAP_USER`, `YAPPY_IMAP_PASSWORD`, `YAPPY_SYNC_SECRET` | Solo para detectar pagos |
+| Codigos de Netflix | `NETFLIX_IMAP_USER`, `NETFLIX_IMAP_PASSWORD` | Solo para el bot de codigos |
 
 Todas las variables sin prefijo `NEXT_PUBLIC_` son solo de servidor y nunca deben exponerse al navegador.
 

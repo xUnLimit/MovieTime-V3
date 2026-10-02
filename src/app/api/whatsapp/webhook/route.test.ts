@@ -6,12 +6,16 @@ const notifyWhatsAppMessages = vi.hoisted(() => vi.fn());
 const handleNoticeReply = vi.hoisted(() => vi.fn());
 const sendOutboundMessage = vi.hoisted(() => vi.fn());
 const sendCloudApiMessage = vi.hoisted(() => vi.fn());
+const handleBotMessage = vi.hoisted(() => vi.fn());
+const openNetflixInbox = vi.hoisted(() => vi.fn());
+const getNetflixMailConfig = vi.hoisted(() => vi.fn());
 const afterCallbacks = vi.hoisted(() => [] as Array<() => Promise<void>>);
 const env = vi.hoisted(() => ({
   whatsappVerifyToken: 'verify-token-123456',
   whatsappAppSecret: '',
   whatsappAccessToken: '',
   whatsappPhoneNumberId: '',
+  whatsappBotEnabled: false,
 }));
 
 vi.mock('@/platform/config', () => ({ env }));
@@ -22,6 +26,11 @@ vi.mock('@/modules/whatsapp/outbound-messages', () => ({ sendOutboundMessage }))
 vi.mock('@/modules/whatsapp/cloud-api-client', () => ({ sendCloudApiMessage }));
 vi.mock('@/modules/messaging/notice-reply-store', () => ({ createNoticeReplyStore: () => ({}) }));
 vi.mock('@/modules/messaging/notice-store', () => ({ createNoticeStore: () => ({}) }));
+vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({ handleBotMessage }));
+vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({ kind: 'bot-store' }) }));
+vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox }));
+vi.mock('@/platform/server/netflix-travel-page', () => ({ fetchTravelPageHtml: vi.fn() }));
+vi.mock('@/platform/config/netflix-server', () => ({ getNetflixMailConfig }));
 vi.mock('@/modules/whatsapp/template-catalog', () => ({ createTemplateCatalog: () => ({}) }));
 vi.mock('@/modules/whatsapp/outbound-store', () => ({ createOutboundStore: () => ({}) }));
 vi.mock('next/server', async (importOriginal) => ({
@@ -71,6 +80,10 @@ beforeEach(() => {
   handleNoticeReply.mockReset();
   sendOutboundMessage.mockReset();
   sendCloudApiMessage.mockReset();
+  handleBotMessage.mockReset();
+  openNetflixInbox.mockReset();
+  getNetflixMailConfig.mockReset();
+  env.whatsappBotEnabled = false;
   afterCallbacks.length = 0;
   env.whatsappVerifyToken = 'verify-token-123456';
   env.whatsappAppSecret = APP_SIGNING_FIXTURE;
@@ -208,6 +221,74 @@ describe('POST /api/whatsapp/webhook', () => {
     await POST(signedPost(textMessageEvent));
     await Promise.all(afterCallbacks.map((callback) => callback()));
     expect(sendCloudApiMessage).toHaveBeenCalledTimes(1);
+  });
+
+  describe('menu bot', () => {
+    beforeEach(() => {
+      env.whatsappAccessToken = 'test-token';
+      env.whatsappPhoneNumberId = '123456';
+      env.whatsappBotEnabled = true;
+      handleNoticeReply.mockResolvedValue('ignored');
+      notifyWhatsAppMessages.mockResolvedValue({ sent: 0, failed: 0 });
+    });
+
+    it('hands a new message that is not a notice reply to the bot, wired to the mailbox and the Cloud API', async () => {
+      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
+      getNetflixMailConfig.mockReturnValue({ user: 'owner@gmail.com', password: 'app-password' });
+      openNetflixInbox.mockResolvedValue({ recent: vi.fn(), close: vi.fn() });
+      sendOutboundMessage.mockImplementation(async (_message, deps: { send: (to: string, payload: object) => Promise<unknown> }) => {
+        await deps.send('50760000000', { kind: 'text', text: 'Hola' });
+      });
+      sendCloudApiMessage.mockResolvedValue({ waMessageId: 'wamid.OUT' });
+      handleBotMessage.mockImplementation(async (_message, deps: {
+        store: unknown; openInbox: () => Promise<unknown>; send: (message: object) => Promise<unknown>;
+      }) => {
+        expect(deps.store).toEqual({ kind: 'bot-store' });
+        await expect(deps.openInbox()).resolves.toBeTruthy();
+        await deps.send({ idempotencyKey: 'key' });
+        return 'menu';
+      });
+      await POST(signedPost(textMessageEvent));
+      await Promise.all(afterCallbacks.map((callback) => callback()));
+      expect(handleBotMessage).toHaveBeenCalledWith(expect.objectContaining({ waMessageId: 'wamid.IN' }), expect.anything());
+      expect(openNetflixInbox).toHaveBeenCalledWith('owner@gmail.com', 'app-password');
+      expect(sendCloudApiMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports an unconfigured mailbox to the bot as unavailable', async () => {
+      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
+      getNetflixMailConfig.mockReturnValue(null);
+      let inbox: unknown = 'unset';
+      handleBotMessage.mockImplementation(async (_message, deps: { openInbox: () => Promise<unknown> }) => {
+        inbox = await deps.openInbox();
+        return 'unavailable';
+      });
+      await POST(signedPost(textMessageEvent));
+      await Promise.all(afterCallbacks.map((callback) => callback()));
+      expect(inbox).toBeNull();
+      expect(openNetflixInbox).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['the bot is switched off', () => { env.whatsappBotEnabled = false; }, ['wamid.IN']],
+      ['Meta redelivers a message already stored', () => undefined, []],
+      ['the message was a notice reply', () => { handleNoticeReply.mockResolvedValue('accepted'); }, ['wamid.IN']],
+    ])('does not run the bot when %s', async (_label, arrange, inserted) => {
+      arrange();
+      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: inserted });
+      await POST(signedPost(textMessageEvent));
+      await Promise.all(afterCallbacks.map((callback) => callback()));
+      expect(handleBotMessage).not.toHaveBeenCalled();
+    });
+
+    it('keeps the acknowledgement when the bot fails', async () => {
+      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
+      handleBotMessage.mockRejectedValue(new Error('bot failed'));
+      const response = await POST(signedPost(textMessageEvent));
+      expect(response.status).toBe(200);
+      await expect(Promise.all(afterCallbacks.map((callback) => callback()))).resolves.toBeDefined();
+      expect(notifyWhatsAppMessages).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('rejects an event signed with another secret without storing it', async () => {
