@@ -100,6 +100,17 @@ describe('handleNoticeReply', () => {
     expect(deps.send).not.toHaveBeenCalled();
   });
 
+  it('preserves whole-group RENOVAR and NO_CONTINUAR for multiple linked services', async () => {
+    const deps = fixture();
+    deps.replies.ventaIds.mockResolvedValue(['sale-1', 'sale-2']);
+    deps.notices.loadVentas.mockResolvedValue([venta, { ...venta, ventaId: 'sale-2' }]);
+    expect(await handleNoticeReply(inbound, deps)).toBe('accepted');
+    expect(deps.notices.loadTemplate).toHaveBeenCalledWith('datos_pago');
+    expect(deps.replies.declineVentas).not.toHaveBeenCalled();
+    expect(await handleNoticeReply({ ...inbound, payload: { type: 'template_button', payload: `NO_CONTINUAR:${ID}` } }, deps)).toBe('accepted');
+    expect(deps.replies.declineVentas).toHaveBeenCalledWith(['sale-1', 'sale-2'], NOW.toISOString());
+  });
+
   it('marks only linked sales and sends a farewell without cutting sales', async () => {
     const deps = fixture();
     const message = { ...inbound, payload: { type: 'template_button', payload: `NO_CONTINUAR:${ID}`, text: 'No deseo continuar' } };
