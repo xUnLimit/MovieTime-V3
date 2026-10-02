@@ -315,6 +315,8 @@ BEGIN
     RETURN;
   END IF;
   v_status := public.match_yappy_payment(v_payment_id);
+  PERFORM public.emit_domain_event('yappy.pago_detectado', 'yappy_payment', v_payment_id::text, jsonb_build_object(
+    'payment_id', v_payment_id, 'match_status', v_status, 'amount', p_amount));
   RETURN QUERY SELECT 'nuevo'::text, v_payment_id, v_status;
 END;
 $$;
