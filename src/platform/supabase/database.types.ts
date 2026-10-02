@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      pedidos: {
+        Row: { id: string; tercero_id: string | null; contact_id: string | null; canal: 'panel' | 'whatsapp'; moneda: string; total: number; estado: 'borrador' | 'esperando_pago' | 'pago_en_revision' | 'pagado' | 'entregado' | 'expirado' | 'cancelado'; expira_at: string; notice_id: string | null; created_by: string; created_at: string; updated_at: string; exchange_rate: number; notas: string | null }
+        Insert: { id?: string; tercero_id?: string | null; contact_id?: string | null; canal: 'panel' | 'whatsapp'; moneda: string; total?: number; estado?: 'borrador' | 'esperando_pago' | 'pago_en_revision' | 'pagado' | 'entregado' | 'expirado' | 'cancelado'; expira_at: string; notice_id?: string | null; created_by?: string; created_at?: string; updated_at?: string; exchange_rate: number; notas?: string | null }
+        Update: { id?: string; tercero_id?: string | null; contact_id?: string | null; canal?: 'panel' | 'whatsapp'; moneda?: string; total?: number; estado?: 'borrador' | 'esperando_pago' | 'pago_en_revision' | 'pagado' | 'entregado' | 'expirado' | 'cancelado'; expira_at?: string; notice_id?: string | null; created_by?: string; created_at?: string; updated_at?: string; exchange_rate?: number; notas?: string | null }
+        Relationships: []
+      }
+      pedido_items: {
+        Row: { id: string; pedido_id: string; tipo: 'nueva' | 'renovacion'; venta_id: string | null; plan_id: string | null; categoria_id: string | null; servicio_id: string; perfil_numero: number | null; ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]; precio: number; descuento: number; total: number; estado: 'pendiente' | 'aplicado' | 'sin_stock' | 'cancelado'; venta_id_resultante: string | null; plan_nombre_snapshot: string; plan_tipo_nombre_snapshot: string }
+        Insert: { id?: string; pedido_id: string; tipo: 'nueva' | 'renovacion'; venta_id?: string | null; plan_id?: string | null; categoria_id?: string | null; servicio_id: string; perfil_numero?: number | null; ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]; precio: number; descuento?: number; total: number; estado?: 'pendiente' | 'aplicado' | 'sin_stock' | 'cancelado'; venta_id_resultante?: string | null; plan_nombre_snapshot: string; plan_tipo_nombre_snapshot: string }
+        Update: { id?: string; pedido_id?: string; tipo?: 'nueva' | 'renovacion'; venta_id?: string | null; plan_id?: string | null; categoria_id?: string | null; servicio_id?: string; perfil_numero?: number | null; ciclo_pago?: Database["public"]["Enums"]["ciclo_pago_enum"]; precio?: number; descuento?: number; total?: number; estado?: 'pendiente' | 'aplicado' | 'sin_stock' | 'cancelado'; venta_id_resultante?: string | null; plan_nombre_snapshot?: string; plan_tipo_nombre_snapshot?: string }
+        Relationships: []
+      }
+      pedido_pagos: {
+        Row: { id: string; pedido_id: string; source: 'yappy' | 'manual'; yappy_payment_id: string | null; monto: number; created_at: string }
+        Insert: { id?: string; pedido_id: string; source: 'yappy' | 'manual'; yappy_payment_id?: string | null; monto: number; created_at?: string }
+        Update: { id?: string; pedido_id?: string; source?: 'yappy' | 'manual'; yappy_payment_id?: string | null; monto?: number; created_at?: string }
+        Relationships: []
+      }
       yappy_mail_sync_state: {
         Row: { id: boolean; mailbox: string; uid_validity: number | null; last_uid: number; last_synced_at: string | null; last_error_code: string | null; sync_locked_until: string | null; updated_at: string }
         Insert: { id?: boolean; mailbox?: string; uid_validity?: number | null; last_uid?: number; last_synced_at?: string | null; last_error_code?: string | null; sync_locked_until?: string | null; updated_at?: string }
@@ -4231,6 +4249,19 @@ export type Database = {
       }
     }
     Functions: {
+      crear_pedido: {
+        Args: { p_tercero_id: string | null; p_contact_id: string | null; p_canal: string; p_moneda: string; p_items: Json; p_expira_at: string; p_exchange_rate: number; p_idempotency_key: string }
+        Returns: string
+      }
+      confirmar_pedido: {
+        Args: { p_pedido_id: string; p_idempotency_key: string; p_source: string; p_monto: number; p_yappy_payment_id?: string | null }
+        Returns: string
+      }
+      cancelar_pedido: {
+        Args: { p_pedido_id: string; p_idempotency_key: string }
+        Returns: string
+      }
+      expirar_pedidos: { Args: Record<PropertyKey, never>; Returns: number }
       publish_whatsapp_bot_version: { Args: { p_definition: Json; p_note: string }; Returns: number }
       set_whatsapp_bot_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
       record_whatsapp_bot_event: { Args: { p_wa_id: string; p_cliente_id: string | null; p_type: string; p_node_id: string | null; p_option_id: string | null; p_detail: Json }; Returns: string }
