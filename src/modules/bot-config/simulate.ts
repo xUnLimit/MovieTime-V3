@@ -93,7 +93,7 @@ export function stepSimulation(def: BotDefinition, state: SimulationState, optio
   if (def.schemaVersion === 2 && state.conversation) {
     const awaiting = state.conversation.awaiting;
     const event: ConversationInput['event'] = awaiting
-      ? { kind: 'answer', tipo: awaiting.tipo, value: awaiting.tipo === 'number' && /^-?\d+(\.\d+)?$/.test(optionId) ? Number(optionId) : optionId }
+      ? { kind: 'answer', tipo: awaiting.tipo, value: awaiting.tipo === 'number' && (/^-?\d+$/.test(optionId) || /^-?\d+\.\d+$/.test(optionId)) ? Number(optionId) : optionId }
       : { kind: 'option', optionId };
     return v2Turns(def, advance(def, state.conversation, { now: SAMPLE_NOW, flowVersion: state.conversation.flowVersion, context: state.sampleContext, event }),
       [...state.turns, { from: 'customer', text: optionId }], state.sampleContext);

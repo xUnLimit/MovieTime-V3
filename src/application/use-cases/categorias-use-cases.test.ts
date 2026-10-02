@@ -65,6 +65,7 @@ describe('createCategoriaUseCase', () => {
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
       created_by: null,
+      code_provider: null,
     };
     const builtCategoria: Categoria = {
       ...baseCategoria,

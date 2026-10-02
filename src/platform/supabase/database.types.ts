@@ -59,6 +59,7 @@ export type Database = {
         Insert: { id?: string; pedido_id: string; source: 'yappy' | 'manual'; yappy_payment_id?: string | null; monto: number; created_at?: string }
         Update: { id?: string; pedido_id?: string; source?: 'yappy' | 'manual'; yappy_payment_id?: string | null; monto?: number; created_at?: string }
         Relationships: []
+      }
       catalogo_ajustes: {
         Row: { id: string; reserva_ttl_minutos: number; moneda: string; resumen_template: string }
         Insert: { id?: string; reserva_ttl_minutos?: number; moneda?: string; resumen_template?: string }
@@ -91,6 +92,7 @@ export type Database = {
           { foreignKeyName: "intereses_categoria_id_fkey"; columns: ["categoria_id"]; isOneToOne: false; referencedRelation: "categorias"; referencedColumns: ["id"] },
           { foreignKeyName: "intereses_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "planes"; referencedColumns: ["id"] }
         ]
+      }
       whatsapp_conversation_state: {
         Row: { wa_id: string; flow_version: number; node_id: string; variables: Json; awaiting: Json | null; owner: string; revision: number; updated_at: string; expires_at: string }
         Insert: { wa_id: string; flow_version: number; node_id: string; variables?: Json; awaiting?: Json | null; owner?: string; revision?: number; updated_at?: string; expires_at: string }
