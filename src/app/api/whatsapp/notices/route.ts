@@ -10,6 +10,7 @@ import { sendCloudApiMessage } from '@/modules/whatsapp/cloud-api-client';
 import { sendOutboundMessage } from '@/modules/whatsapp/outbound-messages';
 import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
 import { createTemplateCatalog } from '@/modules/whatsapp/template-catalog';
+import { codeWelcome } from './code-welcome';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     const outboundStore = createOutboundStore();
     const config = { accessToken: env.whatsappAccessToken, phoneNumberId: env.whatsappPhoneNumberId };
     const results = await sendNotice({ ...notice, origin: automatic ? 'auto' : 'manual', sentBy: user.id, now: new Date() }, {
-      store: createNoticeStore(), catalog,
+      store: createNoticeStore(), catalog, codeWelcome,
       send: (message) => sendOutboundMessage(message, {
         store: outboundStore, catalog,
         send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload),

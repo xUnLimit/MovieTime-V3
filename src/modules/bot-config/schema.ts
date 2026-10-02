@@ -2,6 +2,7 @@ import { z } from '@/platform/validation/zod';
 import type { BotDefinition, BotIssue } from '@/types/bot';
 import { isActionKey, type RegisteredActionKey } from './action-registry';
 import { conditionSpecSchema, inputSpecSchema } from './v2-schema';
+import { catalogMessagesSchema } from './catalog-messages';
 
 // El esquema solo comprueba forma y topes generosos (defensa ante entrada hostil).
 // Los limites de negocio y de WhatsApp los aplica `validateDefinition`.
@@ -47,6 +48,7 @@ const botDefinitionSchema = z.object({
     travelWindowMinutes: paramSchema, maxTaps: paramSchema, tapWindowMinutes: paramSchema,
   }),
   keywords: z.array(z.string().max(200)).max(500),
+  catalogMessages: catalogMessagesSchema.optional(),
 }).superRefine((def, ctx) => {
   def.nodes.forEach((node, index) => {
     if (def.schemaVersion === 1 && (node.kind === 'input' || node.kind === 'condition' || node.input || node.condition || node.actionParams ||

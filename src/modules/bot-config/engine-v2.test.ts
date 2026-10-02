@@ -21,6 +21,14 @@ const state = (nodeId = 'ask'): ConversationState => ({ flowVersion: 7, nodeId, 
 const enter: ConversationInput = { now, flowVersion: 7, context, event: { kind: 'enter' } };
 
 describe('definition v2', () => {
+  it('exposes only the connected catalog, interest and sale-code capabilities', () => {
+    expect(ACTION_REGISTRY.show_catalog.implemented).toBe(true);
+    expect(ACTION_REGISTRY.register_interest.implemented).toBe(true);
+    expect(ACTION_REGISTRY.send_code.implemented).toBe(true);
+    for (const key of ['request_payment', 'verify_payment', 'deliver_credentials', 'renew_services'] as const) {
+      expect(ACTION_REGISTRY[key].implemented).toBe(false);
+    }
+  });
   it('keeps serialized v1 definitions and upgrade is explicit, deep and idempotent', () => {
     const v1 = defaultDefinition();
     expect(parseDefinition(JSON.parse(JSON.stringify(v1)))).toEqual({ success: true, definition: v1 });

@@ -6,6 +6,8 @@ import type { NoticeStore, NoticeTipo } from '@/modules/messaging/notice-store';
 import { isWindowOpen, type OutboundResult } from '@/modules/whatsapp/outbound-messages';
 import { WHATSAPP_TEMPLATE_LANGUAGE, type TemplateCatalog } from '@/modules/whatsapp/template-catalog';
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
+import type { CodeWelcome } from './bot-v2/code-welcome';
+import { createLogger } from '@/platform/observability/logger';
 
 export type SendNoticeInput = {
   tipo: NoticeTipo; ventaIds: string[]; origin: 'manual' | 'auto'; sentBy: string | null; now: Date;
@@ -20,6 +22,7 @@ export type NoticeResult = {
 };
 export type SendNoticeDeps = {
   store: NoticeStore; catalog: TemplateCatalog;
+  codeWelcome?: CodeWelcome;
   send: (message: { idempotencyKey: string; toWaId: string; payload: OutboundPayload; sentBy: string | null }) => Promise<OutboundResult>;
 };
 
@@ -151,10 +154,16 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
     }) };
   }
   let result: OutboundResult;
+  const welcome = input.tipo === 'suscripcion' ? await deps.codeWelcome?.(group, waId, payload, input.now, buttonTexts) : null;
+  if (welcome) payload = welcome.payload;
   try { result = await deps.send({ idempotencyKey, toWaId: waId, payload, sentBy: input.sentBy }); }
   catch { return { ...common, status: 'uncertain', error: 'envio_incierto' }; }
   if (result.sendStatus === 'pending') return { ...common, status: 'uncertain', error: 'envio_incierto' };
   await deps.store.finish(record.id, result.sendStatus, result.id, result.waMessageId);
+  if (result.sendStatus === 'accepted' && welcome) {
+    try { await welcome.accepted(); }
+    catch { createLogger('SendNotice').warn('Code request state could not be saved'); }
+  }
   return result.sendStatus === 'accepted' ? { ...common, status: 'accepted' }
     : { ...common, status: 'failed', error: 'envio_fallido' };
 }
