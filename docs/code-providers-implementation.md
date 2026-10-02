@@ -10,7 +10,7 @@ La documentacion para agregar plataformas esta en `src/modules/code-providers/RE
 
 ## Migracion
 
-`supabase/migrations/20261003040000_code_providers.sql` es expand-only:
+`supabase/migrations/20261003045000_code_providers.sql` es expand-only:
 
 - `categorias.code_provider` nullable con backfill de nombres Netflix; claves validadas en la aplicacion.
 - `servicios.acceso_por_codigo` boolean NOT NULL DEFAULT false.
@@ -74,7 +74,7 @@ No hubo commit, push ni despliegue.
 - `src/platform/supabase/code-providers-contract.test.ts`
 - `src/platform/utils/code-access.test.ts`
 - `src/platform/utils/code-access.ts`
-- `supabase/migrations/20261003040000_code_providers.sql`
+- `supabase/migrations/20261003045000_code_providers.sql`
 
 ## Archivos modificados
 

@@ -6,7 +6,7 @@ import { mapReadRow } from './read-models';
 import { ENTITIES } from './entities';
 import { vi } from 'vitest';
 vi.mock('./client', () => ({ supabase: {} }));
-const sql = readFileSync('supabase/migrations/20261003040000_code_providers.sql', 'utf8').replaceAll('\r\n', '\n');
+const sql = readFileSync('supabase/migrations/20261003045000_code_providers.sql', 'utf8').replaceAll('\r\n', '\n');
 describe('code provider DB contracts', () => {
   it('maps and persists the flag without treating it as a payment-period property', () => {
     expect(mapReadRow(ENTITIES.SERVICIOS, { acceso_por_codigo: true })).toMatchObject({ accesoPorCodigo: true });
