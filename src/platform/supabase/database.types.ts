@@ -2711,6 +2711,45 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_events: {
+        Row: {
+          aggregate_id: string
+          aggregate_type: string
+          attempts: number
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          occurred_at: string
+          payload: Json
+          processed_at: string | null
+          type: string
+        }
+        Insert: {
+          aggregate_id: string
+          aggregate_type: string
+          attempts?: number
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          occurred_at?: string
+          payload?: Json
+          processed_at?: string | null
+          type: string
+        }
+        Update: {
+          aggregate_id?: string
+          aggregate_type?: string
+          attempts?: number
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          occurred_at?: string
+          payload?: Json
+          processed_at?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       whatsapp_inbound_messages: {
         Row: {
           context_wa_message_id: string | null
@@ -2725,6 +2764,9 @@ export type Database = {
           message_type: string
           phone_number_id: string
           processed_at: string | null
+          processing_attempts: number
+          processing_error: string | null
+          processing_locked_until: string | null
           received_at: string
           sent_at: string
           text_body: string | null
@@ -2745,6 +2787,9 @@ export type Database = {
           message_type: string
           phone_number_id: string
           processed_at?: string | null
+          processing_attempts?: number
+          processing_error?: string | null
+          processing_locked_until?: string | null
           received_at?: string
           sent_at: string
           text_body?: string | null
@@ -2765,6 +2810,9 @@ export type Database = {
           message_type?: string
           phone_number_id?: string
           processed_at?: string | null
+          processing_attempts?: number
+          processing_error?: string | null
+          processing_locked_until?: string | null
           received_at?: string
           sent_at?: string
           text_body?: string | null
@@ -4240,6 +4288,12 @@ export type Database = {
       finish_whatsapp_notice_reply: { Args: { p_reply_id: number; p_attempt: number; p_result: string; p_error_label?: string | null }; Returns: boolean }
       list_retryable_whatsapp_notice_replies: { Args: { p_limit: number }; Returns: { reply_id: number; notice_id: string; action: string; inbound_wa_message_id: string }[] }
       trigger_notice_reply_retries: { Args: never; Returns: number }
+      claim_domain_events: { Args: { p_limit: number; p_lock_seconds: number }; Returns: { id: string; type: string; aggregate_type: string; aggregate_id: string; payload: Json; occurred_at: string; attempts: number }[] }
+      finish_domain_event: { Args: { p_id: string; p_error?: string | null }; Returns: boolean }
+      trigger_domain_events_dispatch: { Args: never; Returns: number }
+      claim_whatsapp_inbound_batch: { Args: { p_limit: number; p_lock_seconds: number }; Returns: { id: string; wa_message_id: string; phone_number_id: string; from_wa_id: string; contact_name: string | null; message_type: string; text_body: string | null; sent_at: string; media_id: string | null; media_mime_type: string | null; media_filename: string | null; context_wa_message_id: string | null; reaction_emoji: string | null; payload: Json }[] }
+      finish_whatsapp_inbound: { Args: { p_id: string; p_error?: string | null }; Returns: boolean }
+      trigger_whatsapp_inbound_retries: { Args: never; Returns: number }
       trigger_auto_notices: { Args: never; Returns: number }
       ingest_yappy_payment: { Args: { p_uid_validity: number; p_imap_uid: number; p_internet_message_id: string | null; p_received_at: string; p_subject: string | null; p_dmarc_pass: boolean | null; p_parser_version: number; p_confirmation_code: string; p_amount: number; p_payer_name_short: string; p_payer_phone_last4: string; p_paid_at: string; p_reject_reason?: string | null }; Returns: { outcome: string; payment_id: string | null; match_status: string | null }[] }
       record_invalid_yappy_mail: { Args: { p_uid_validity: number; p_imap_uid: number; p_received_at: string; p_parser_version: number; p_failure_reason: string }; Returns: undefined }

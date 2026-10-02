@@ -7,6 +7,8 @@ export type InboxWriteResult = {
   messages: number;
   statuses: number;
   insertedWaMessageIds: string[];
+  // Fila de la cola de procesamiento de cada mensaje nuevo (wa_message_id -> id).
+  insertedRowIds?: Record<string, string>;
 };
 
 // Meta reintenta entregas: los ids naturales son unicos y los duplicados se ignoran,
@@ -16,6 +18,7 @@ export async function storeWebhookBatch(
   client: ServiceClient = createServiceRoleClient()
 ): Promise<InboxWriteResult> {
   let insertedWaMessageIds: string[] = [];
+  const insertedRowIds: Record<string, string> = {};
   if (batch.messages.length > 0) {
     const { data, error } = await client
       .from('whatsapp_inbound_messages')
@@ -36,9 +39,10 @@ export async function storeWebhookBatch(
           payload: message.payload,
         })),
         { onConflict: 'wa_message_id', ignoreDuplicates: true }
-      ).select('wa_message_id');
+      ).select('id, wa_message_id');
     if (error) throw new Error(`No se pudieron guardar los mensajes de WhatsApp: ${error.code}`);
     insertedWaMessageIds = (data ?? []).map((row) => row.wa_message_id);
+    for (const row of data ?? []) insertedRowIds[row.wa_message_id] = row.id;
   }
 
   if (batch.statuses.length > 0) {
@@ -58,5 +62,5 @@ export async function storeWebhookBatch(
     if (error) throw new Error(`No se pudieron guardar los estados de WhatsApp: ${error.code}`);
   }
 
-  return { messages: batch.messages.length, statuses: batch.statuses.length, insertedWaMessageIds };
+  return { messages: batch.messages.length, statuses: batch.statuses.length, insertedWaMessageIds, insertedRowIds };
 }
