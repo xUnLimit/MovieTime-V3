@@ -221,3 +221,14 @@ describe("servicio-form-helpers", () => {
     const invalid = keyEvent('.'); handleIntegerInputKeyDown(invalid); expect(invalid.preventDefault).toHaveBeenCalledOnce();
   });
 });
+
+it('persists the checkbox only with a registered category provider', () => {
+  const data = buildServicioFormData({ accesoPorCodigo: true });
+  const args = { data, tipoPlan: { id: 'premium', nombre: 'Premium' } };
+  expect(() => buildServicioFormPayload(args)).toThrow();
+  const categoria: Categoria = { id: 'cat-1', nombre: 'Cuenta', codeProvider: 'netflix', tipo: 'cliente',
+    activo: true, totalServicios: 0, serviciosActivos: 0, perfilesDisponiblesTotal: 0, ventasTotales: 0,
+    ingresosTotales: 0, gastosTotal: 0, createdAt: fechaInicio, updatedAt: fechaInicio };
+  expect(buildServicioFormPayload({ ...args, categoria }).accesoPorCodigo).toBe(true);
+  expect(buildServicioFormPayload({ ...args, data: buildServicioFormData() }).accesoPorCodigo).toBe(false);
+});

@@ -3,6 +3,7 @@
 // ===========================
 
 export interface Servicio {
+  accesoPorCodigo?: boolean;
   id: string;
   categoriaId: string;
   categoriaNombre: string;

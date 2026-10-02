@@ -24,6 +24,7 @@ export interface Plan {
 }
 
 export interface Categoria {
+  codeProvider?: string | null;
   id: string;
   nombre: string;
   tipo: 'cliente' | 'revendedor';

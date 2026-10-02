@@ -17,6 +17,8 @@ export function ServicioForm({
   returnTo = "/servicios",
 }: ServicioFormProps) {
   const {
+    accesoPorCodigoValue,
+    codeProviderKey,
     activeTab,
     isDatosTabComplete,
     handleSubmit,
@@ -78,6 +80,8 @@ export function ServicioForm({
         </TabsList>
 
         <ServicioDatosTab
+          accesoPorCodigoValue={accesoPorCodigoValue}
+          codeProviderKey={codeProviderKey}
           categoriaNombre={categoriaNombre}
           categoriasActivas={categoriasActivas}
           cicloPagoValue={cicloPagoValue}

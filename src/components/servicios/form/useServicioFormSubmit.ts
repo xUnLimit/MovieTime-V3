@@ -160,6 +160,7 @@ export function useServicioFormSubmit({
               categoriaNombre: categoria?.nombre || servicio.categoriaNombre,
               correo: data.correo,
               contrasena: data.contrasena,
+              accesoPorCodigo: data.accesoPorCodigo ?? false,
             };
             const messages = buildCredentialUpdateWhatsAppMessages({
               changes: credentialChanges,

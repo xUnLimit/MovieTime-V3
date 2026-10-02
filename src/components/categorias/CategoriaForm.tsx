@@ -12,6 +12,7 @@ import {
 } from "@/application/client-domain-mutations";
 import type { Categoria } from "@/types";
 
+import { CategoryCodeProviderSelect } from "./form/CategoryCodeProviderSelect";
 import { CategoriaBasicInfoSection } from "./form/CategoriaBasicInfoSection";
 import { CategoriaPlansSection } from "./form/CategoriaPlansSection";
 import {
@@ -83,12 +84,14 @@ export function CategoriaForm({
     defaultValues:
       mode === "edit" && categoria
         ? {
+            codeProvider: categoria.codeProvider ?? null,
             nombre: categoria.nombre,
             tipo: categoria.tipo,
             tipoCategoria: categoria.tipoCategoria,
             notas: categoria.notas || "",
           }
         : {
+            codeProvider: null,
             nombre: "",
             tipo: "" as "cliente" | "revendedor",
             tipoCategoria: "" as "plataforma_streaming" | "otros",
@@ -96,12 +99,13 @@ export function CategoriaForm({
           },
   });
 
+  const codeProviderValue = watch("codeProvider");
   const nombreValue = watch("nombre");
   const tipoValue = watch("tipo");
   const tipoCategoriaValue = watch("tipoCategoria");
   const notasValue = watch("notas");
 
-  const hasChanges = useMemo(
+  const existingChanges = useMemo(
     () =>
       hasCategoriaChanges({
         categoria,
@@ -124,6 +128,8 @@ export function CategoriaForm({
       tiposPlanes,
     ],
   );
+
+  const hasChanges = existingChanges || (codeProviderValue ?? null) !== (categoria?.codeProvider ?? null);
 
   useEffect(() => {
     if (nombreValue && nombreValue.length >= 2 && errors.nombre) {
@@ -197,6 +203,8 @@ export function CategoriaForm({
         </TabsList>
 
         <TabsContent value="general">
+          <CategoryCodeProviderSelect value={codeProviderValue}
+            onChange={(key) => setValue("codeProvider", key, { shouldDirty: true, shouldValidate: true })} />
           <CategoriaBasicInfoSection
             errors={errors}
             register={register}

@@ -40,10 +40,10 @@ describe('createBotStore.customerServices', () => {
     const { client } = fakeClient({
       terceros: { data: [person, { id: 'p2', telefono: '6000-0000' }] },
       v_ventas_full: { data: [netflix(), netflix({ perfil_nombre: 'Perfil 2' }), netflix({ servicio_id: 's2', servicio_correo: 'x@y.test', categoria_nombre: 'Disney', servicio_nombre: 'Disney+' })] },
-      servicios: { data: [{ id: 's1', activo: true }] },
+      servicios: { data: [{ id: 's1', activo: true, categorias: { code_provider: 'netflix' } }] },
     });
     await expect(createBotStore(client).customerServices(waId)).resolves.toEqual({
-      known: true, clienteId: 'p1', services: [{ serviceId: 's1', email: 'netflix008@movietimepty.top', profiles: ['Perfil 1', 'Perfil 2'] }],
+      known: true, clienteId: 'p1', services: [{ serviceId: 's1', providerKey: 'netflix', email: 'netflix008@movietimepty.top', profiles: ['Perfil 1', 'Perfil 2'] }],
     });
   });
 
@@ -51,16 +51,16 @@ describe('createBotStore.customerServices', () => {
     const { client } = fakeClient({
       terceros: { data: [person] },
       v_ventas_full: { data: [netflix({ perfil_nombre: ' Perfil 1 ' }), netflix({ perfil_nombre: 'Perfil 1' }), netflix({ perfil_nombre: '  ' }), netflix({ perfil_nombre: null })] },
-      servicios: { data: [{ id: 's1', activo: true }] },
+      servicios: { data: [{ id: 's1', activo: true, categorias: { code_provider: 'netflix' } }] },
     });
     await expect(createBotStore(client).customerServices(waId)).resolves.toEqual({
-      known: true, clienteId: 'p1', services: [{ serviceId: 's1', email: 'netflix008@movietimepty.top', profiles: ['Perfil 1'] }],
+      known: true, clienteId: 'p1', services: [{ serviceId: 's1', providerKey: 'netflix', email: 'netflix008@movietimepty.top', profiles: ['Perfil 1'] }],
     });
     const blank = fakeClient({
-      terceros: { data: [person] }, v_ventas_full: { data: [netflix({ perfil_nombre: null })] }, servicios: { data: [{ id: 's1', activo: true }] },
+      terceros: { data: [person] }, v_ventas_full: { data: [netflix({ perfil_nombre: null })] }, servicios: { data: [{ id: 's1', activo: true, categorias: { code_provider: 'netflix' } }] },
     });
     await expect(createBotStore(blank.client).customerServices(waId)).resolves.toEqual({
-      known: true, clienteId: 'p1', services: [{ serviceId: 's1', email: 'netflix008@movietimepty.top', profiles: [] }],
+      known: true, clienteId: 'p1', services: [{ serviceId: 's1', providerKey: 'netflix', email: 'netflix008@movietimepty.top', profiles: [] }],
     });
   });
 
@@ -78,7 +78,7 @@ describe('createBotStore.customerServices', () => {
     await expect(createBotStore(noSales.client).customerServices(waId)).resolves.toEqual({ known: true, clienteId: 'p1', services: [] });
     const inactive = fakeClient({
       terceros: { data: [person] }, v_ventas_full: { data: [netflix(), netflix({ servicio_id: null }), netflix({ servicio_correo: '' })] },
-      servicios: { data: [{ id: 's1', activo: false }] },
+      servicios: { data: [{ id: 's1', activo: false, categorias: { code_provider: 'netflix' } }] },
     });
     await expect(createBotStore(inactive.client).customerServices(waId)).resolves.toEqual({ known: true, clienteId: 'p1', services: [] });
   });
@@ -138,4 +138,15 @@ describe('createBotStore activity lookups', () => {
     await expect(createBotStore(fakeClient({ whatsapp_outbound_messages: { error } }).client).operatorRepliedSince(waId, 'x')).rejects.toThrow('XX000');
     await expect(createBotStore(fakeClient({ whatsapp_inbound_messages: { error } }).client).menuTapsSince(waId, 'x')).rejects.toThrow('XX000');
   });
+});
+
+it('uses category provider data independently of names and the access flag', async () => {
+  for (const provider of ['netflix', null]) {
+    const { client } = fakeClient({ terceros: { data: [person] },
+      v_ventas_full: { data: [netflix({ categoria_nombre: 'Cuenta', servicio_nombre: 'Otro nombre' })] },
+      servicios: { data: [{ id: 's1', activo: true, acceso_por_codigo: false, categorias: { code_provider: provider } }] },
+    });
+    const result = await createBotStore(client).customerServices(waId);
+    expect(result.services).toHaveLength(provider ? 1 : 0);
+  }
 });

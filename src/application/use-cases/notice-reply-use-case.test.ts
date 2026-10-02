@@ -234,3 +234,15 @@ describe('handleNoticeReply', () => {
     });
   });
 });
+
+it.each(['actualizacion_credenciales', 'transferencia_servicio'] as const)
+('never sends a code-access password in DATOS replies for %s', async (tipo) => {
+  const deps = fixture();
+  deps.replies.findNotice.mockResolvedValue({ ...notice, tipo });
+  deps.notices.loadVentas.mockResolvedValue([{ ...venta, accesoPorCodigo: true }]);
+  const message = { ...inbound, payload: { type: 'template_button', payload: `DATOS:${ID}` } };
+  expect(await handleNoticeReply(message, deps)).toBe('accepted');
+  const sent = deps.send.mock.calls[0]![0];
+  expect(sent.payload).toMatchObject({ text: expect.not.stringContaining(venta.contrasena) });
+  expect(sent.storedTextBody).not.toContain(venta.contrasena);
+});
