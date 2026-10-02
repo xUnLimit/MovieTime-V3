@@ -371,6 +371,25 @@ describe('TemplateEditor', () => {
     }));
   });
 
+  it('opens on the requested tipo (deep link) and still lets the user switch', async () => {
+    const user = userEvent.setup();
+    const client = new QueryClient();
+    render(
+      <QueryClientProvider client={client}>
+        <TemplateEditor templates={[makeTemplate({ id: 't2', tipo: 'despedida', contenido: 'Gracias por todo' })]} initialTipo="despedida" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole('heading', { name: 'Despedida' })).toBeTruthy();
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('Gracias por todo');
+    await user.click(tipoButton('dia_pago'));
+    expect(screen.getByRole('heading', { name: 'Aviso de vencimiento' })).toBeTruthy();
+  });
+
+  it('opens on the expiry notice when no tipo is requested', () => {
+    render(wrap([]));
+    expect(screen.getByRole('heading', { name: 'Aviso de vencimiento' })).toBeTruthy();
+  });
+
   it('warns when a linked template is no longer in Meta', async () => {
     const user = userEvent.setup();
     state.metas = [makeMeta({ name: 'otra' })];

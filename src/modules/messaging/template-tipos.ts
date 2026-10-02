@@ -30,6 +30,11 @@ export const TEMPLATE_GROUPS: readonly { id: string; label: string; tipos: reado
   { id: 'cuentas', label: 'Cuentas', tipos: ['actualizacion_credenciales', 'transferencia_servicio'] },
 ];
 
+/** Reconoce un tipo editable; sirve para validar entradas externas como `?tipo=` en la URL. */
+export function isEditableTipo(value: unknown): value is EditableTipoKey {
+  return typeof value === 'string' && TEMPLATE_TIPOS.some((item) => item.value === value);
+}
+
 export function tipoLabel(tipo: string): string {
   return TEMPLATE_TIPOS.find((item) => item.value === tipo)?.label ?? tipo;
 }

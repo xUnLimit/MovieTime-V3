@@ -31,10 +31,12 @@ import { useTemplateSave } from './useTemplateSave';
 interface TemplateEditorProps {
   templates: TemplateMensaje[];
   onTemplateSaved?: () => void | Promise<void>;
+  /** Mensaje seleccionado al abrir (enlace profundo `?tipo=`); sin él abre en el aviso de vencimiento. */
+  initialTipo?: EditableTipoKey;
 }
 
-export function TemplateEditor({ templates, onTemplateSaved }: TemplateEditorProps) {
-  const [selectedTipo, setSelectedTipo] = useState<EditableTipoKey>('dia_pago');
+export function TemplateEditor({ templates, onTemplateSaved, initialTipo }: TemplateEditorProps) {
+  const [selectedTipo, setSelectedTipo] = useState<EditableTipoKey>(initialTipo ?? 'dia_pago');
   const [pendingTipo, setPendingTipo] = useState<EditableTipoKey | null>(null);
   const [modes, setModes] = useState<Partial<Record<EditableTipoKey, SendMode>>>({});
   const { data: metaTemplates = [], isLoading: metaLoading } = useMetaTemplates();

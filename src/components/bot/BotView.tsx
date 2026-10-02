@@ -9,17 +9,19 @@ import { FlowTab } from './FlowTab';
 import { MessagesTab } from './MessagesTab';
 import { RulesTab } from './RulesTab';
 import { ActivityTab } from './ActivityTab';
+import { AutomationsTab } from './AutomationsTab';
 import { VersionsTab } from './VersionsTab';
 import { PublishBar } from './PublishBar';
 
 const tabs = [
-  { id: 'resumen', label: 'Resumen', Component: OverviewTab },
-  { id: 'flujo', label: 'Flujo', Component: FlowTab },
-  { id: 'mensajes', label: 'Mensajes', Component: MessagesTab },
-  { id: 'reglas', label: 'Reglas', Component: RulesTab },
-  { id: 'actividad', label: 'Actividad', Component: ActivityTab },
-  { id: 'versiones', label: 'Versiones', Component: VersionsTab },
-] as const;
+  { id: 'resumen', label: 'Resumen', render: (api: BotAdminApi) => <OverviewTab api={api} /> },
+  { id: 'flujo', label: 'Flujo', render: (api: BotAdminApi) => <FlowTab api={api} /> },
+  { id: 'mensajes', label: 'Mensajes', render: (api: BotAdminApi) => <MessagesTab api={api} /> },
+  { id: 'reglas', label: 'Reglas', render: (api: BotAdminApi) => <RulesTab api={api} /> },
+  { id: 'automatizaciones', label: 'Automatizaciones', render: () => <AutomationsTab /> },
+  { id: 'actividad', label: 'Actividad', render: (api: BotAdminApi) => <ActivityTab api={api} /> },
+  { id: 'versiones', label: 'Versiones', render: (api: BotAdminApi) => <VersionsTab api={api} /> },
+];
 
 export function BotView({ api }: { api: BotAdminApi }) {
   useEffect(() => {
@@ -47,7 +49,7 @@ export function BotView({ api }: { api: BotAdminApi }) {
       <TabsList className="max-w-full overflow-x-auto" aria-label="Secciones del bot">
         {tabs.map(tab => <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>)}
       </TabsList>
-      {tabs.map(({ id, Component }) => <TabsContent key={id} value={id}><Component api={api} /></TabsContent>)}
+      {tabs.map(({ id, render }) => <TabsContent key={id} value={id}>{render(api)}</TabsContent>)}
     </Tabs>
     <PublishBar api={api} />
   </div>;
