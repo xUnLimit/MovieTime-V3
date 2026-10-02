@@ -314,3 +314,23 @@ describe('sendNotice new sale confirmation', () => {
     expect(send).not.toHaveBeenCalled();
   });
 });
+
+it('sends code-access buttons in the open window without credentials, even with a payment promise', async () => {
+  vi.mocked(store.loadTemplate).mockResolvedValueOnce(null);
+  sales = [venta({ accesoPorCodigo: true, respuestaCliente: 'no_continuar', promesaPagoHasta: new Date('2026-10-01T00:00:00Z') })];
+  vi.mocked(store.lastInboundAt).mockResolvedValue('2026-09-28T13:00:00Z');
+  await sendNotice({ ...input, tipo: 'actualizacion_credenciales' }, { store, catalog, send });
+  expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: {
+    kind: 'buttons', body: 'Hola Ana Perez, tu acceso ahora es por código. Solicita un código en este chat para ingresar.',
+    buttons: [{ id: 'BOT:NFX:LOGIN', title: 'Solicitar código' }],
+  } }));
+  expect(JSON.stringify(vi.mocked(send).mock.calls)).not.toContain('secret');
+});
+it('requires the approved code-request button with a closed window', async () => {
+  sales = [venta({ accesoPorCodigo: true })];
+  const result = await sendNotice({ ...input, tipo: 'actualizacion_credenciales', origin: 'auto' }, { store, catalog, send });
+  expect(result[0].status).toBe('skipped'); expect(send).not.toHaveBeenCalled();
+  vi.mocked(catalog.getApproved).mockResolvedValueOnce({ paramCount: 4, buttons: [{ type: 'QUICK_REPLY', text: 'Solicitar código' }] });
+  await sendNotice({ ...input, tipo: 'actualizacion_credenciales', eventId: 'code-flag' }, { store, catalog, send });
+  expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({ kind: 'template', buttonPayloads: ['BOT:NFX:LOGIN'] }) }));
+});

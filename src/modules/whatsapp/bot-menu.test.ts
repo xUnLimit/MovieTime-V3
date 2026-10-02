@@ -89,3 +89,9 @@ describe('BOT_STORED_TEXT', () => {
     expect(BOT_STORED_TEXT.link).not.toMatch(/https?:/);
   });
 });
+
+it('routes the code-request button from an approved template but rejects other template payloads', () => {
+  const message = reply('', 'template_button', 'button');
+  expect(readBotAction({ ...message, payload: { type: 'template_button', payload: 'BOT:NFX:LOGIN' } })).toEqual({ kind: 'legacy', target: 'login' });
+  expect(readBotAction({ ...message, payload: { type: 'template_button', payload: 'BOT:SUPPORT' } })).toBeNull();
+});

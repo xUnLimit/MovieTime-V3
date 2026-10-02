@@ -26,6 +26,7 @@ import {
   useServicioFormHasChanges,
 } from "./useServicioFormComputedState";
 import { useServicioFormStepNavigation } from "./useServicioFormStepNavigation";
+import { useCodeAccessNotice } from '@/hooks/use-code-access-notice';
 import { useServicioFormSubmit } from "./useServicioFormSubmit";
 interface UseServicioFormControllerParams {
   servicio?: Servicio;
@@ -180,7 +181,9 @@ export function useServicioFormController({
       servicio,
       setValue,
     });
+  const codeAccessNotice = useCodeAccessNotice(servicio?.id);
   const { onSubmit } = useServicioFormSubmit({
+    codeAccessNoticeConfirmed: () => codeAccessNotice.send.current,
     categorias,
     createServicio: createServicioMutation,
     credentialTemplateContent: credentialTemplate?.contenido,
@@ -213,6 +216,7 @@ export function useServicioFormController({
     metodosPago,
   });
   return {
+    codeAccessNotice,
     accesoPorCodigoValue,
     codeProviderKey: categorias.find((categoria) => categoria.id === categoriaIdValue)?.codeProvider,
     activeTab,

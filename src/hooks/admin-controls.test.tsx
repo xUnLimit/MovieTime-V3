@@ -1,0 +1,92 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+import { beforeEach, it, expect, vi } from 'vitest';
+import { catalogSnapshot } from '@/test/catalog-admin-fixtures';
+const mocks = vi.hoisted(() => ({ role: 'admin' as string | undefined, load: vi.fn(), saveSettings: vi.fn(), saveConfig: vi.fn(), closeInterest: vi.fn(), owner: vi.fn(), change: vi.fn(), sales: vi.fn() }));
+vi.mock('@/store/authStore', () => ({ useAuthStore: (selector: (state: { user: { role: string | undefined } }) => unknown) => selector({ user: { role: mocks.role } }) }));
+vi.mock('@/application/use-cases/catalog-admin-use-cases', () => ({ catalogAdminUseCases: { load: mocks.load, saveSettings: mocks.saveSettings, saveConfig: mocks.saveConfig, closeInterest: mocks.closeInterest } }));
+vi.mock('@/application/use-cases/conversation-control-use-cases', () => ({ conversationControlUseCases: { owner: mocks.owner, change: mocks.change } }));
+vi.mock('@/application/use-cases/servicios/servicio-credential-notification-use-case', () => ({ getVentasActivasParaCredenciales: mocks.sales }));
+import { useCatalogAdmin } from './use-catalog-admin';
+import { useConversationControl } from './use-conversation-control';
+import { useCodeAccessNotice } from './use-code-access-notice';
+function wrapper() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  return function Wrapper({ children }: { children: ReactNode }) { return <QueryClientProvider client={client}>{children}</QueryClientProvider>; };
+}
+beforeEach(() => { vi.clearAllMocks(); mocks.role = 'admin'; mocks.load.mockResolvedValue(catalogSnapshot()); mocks.owner.mockResolvedValue('bot'); mocks.sales.mockResolvedValue([]); });
+it('catalog loads, saves each resource and refreshes its snapshot', async () => {
+  const { result } = renderHook(useCatalogAdmin, { wrapper: wrapper() });
+  expect(result.current.snapshot.isLoading).toBe(true);
+  await waitFor(() => expect(result.current.snapshot.isSuccess).toBe(true));
+  await act(() => result.current.settings.mutateAsync(catalogSnapshot().settings));
+  await act(() => result.current.config.mutateAsync({ categoria_id: catalogSnapshot().categories[0].id, plan_id: null, visible_en_bot: true, orden: 0, umbral_stock_bajo: 2, alternativa_categoria_id: null, alternativa_plan_id: null }));
+  await act(() => result.current.interest.mutateAsync({ id: catalogSnapshot().interests[0].id, state: 'convertido' }));
+  expect(mocks.load.mock.calls.length).toBeGreaterThan(1);
+  expect(mocks.saveSettings).toHaveBeenCalledWith('admin', catalogSnapshot().settings);
+  expect(mocks.closeInterest).toHaveBeenCalledWith('admin', catalogSnapshot().interests[0].id, 'convertido');
+});
+it('catalog exposes empty and error snapshots and write failures', async () => {
+  mocks.load.mockResolvedValueOnce({ ...catalogSnapshot(), interests: [] });
+  const { result } = renderHook(useCatalogAdmin, { wrapper: wrapper() });
+  await waitFor(() => expect(result.current.snapshot.data?.interests).toEqual([]));
+  await waitFor(() => expect(result.current.snapshot.isFetching).toBe(false));
+  mocks.load.mockRejectedValue(new Error('Read failure'));
+  await act(async () => { await result.current.snapshot.refetch(); });
+  await waitFor(() => expect(result.current.snapshot.isError).toBe(true));
+  mocks.saveSettings.mockRejectedValueOnce(new Error('Write failure'));
+  await act(async () => { await expect(result.current.settings.mutateAsync(catalogSnapshot().settings)).rejects.toThrow('Write failure'); });
+  await waitFor(() => expect(result.current.settings.isError).toBe(true));
+});
+it('never loads administrative data for a seller', () => {
+  mocks.role = 'vendedor';
+  renderHook(useCatalogAdmin, { wrapper: wrapper() });
+  const control = renderHook(() => useConversationControl('50760000001'), { wrapper: wrapper() });
+  const notice = renderHook(() => useCodeAccessNotice('service'), { wrapper: wrapper() });
+  act(() => notice.result.current.request(true, vi.fn()));
+  expect(control.result.current.allowed).toBe(false);
+  expect(notice.result.current.pending).toBeNull();
+  expect(mocks.load).not.toHaveBeenCalled(); expect(mocks.owner).not.toHaveBeenCalled(); expect(mocks.sales).not.toHaveBeenCalled();
+});
+it('conversation control exposes loading, empty, errors and both ownership changes', async () => {
+  mocks.owner.mockResolvedValueOnce(null);
+  const { result } = renderHook(() => useConversationControl('50760000001'), { wrapper: wrapper() });
+  expect(result.current.owner.isLoading).toBe(true);
+  await waitFor(() => expect(result.current.owner.isSuccess).toBe(true));
+  expect(result.current.owner.data).toBeNull();
+  await act(() => result.current.change.mutateAsync('humano'));
+  await act(() => result.current.change.mutateAsync('bot'));
+  expect(mocks.change).toHaveBeenLastCalledWith('admin', '50760000001', 'bot');
+  mocks.owner.mockRejectedValueOnce(new Error('Unavailable'));
+  await act(() => result.current.owner.refetch());
+  await waitFor(() => expect(result.current.owner.isError).toBe(true));
+  mocks.change.mockRejectedValueOnce(new Error('Write failure'));
+  await act(async () => { await expect(result.current.change.mutateAsync('bot')).rejects.toThrow('Write failure'); });
+});
+it('code-access changes require explicit confirmation when customers exist, including disable', async () => {
+  mocks.sales.mockResolvedValue([{ id: 'sale' }]);
+  const apply = vi.fn();
+  const { result } = renderHook(() => useCodeAccessNotice('service'), { wrapper: wrapper() });
+  act(() => result.current.request(true, apply)); expect(apply).not.toHaveBeenCalled();
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  act(() => result.current.request(true, apply));
+  expect(result.current.pending?.enabled).toBe(true); expect(apply).not.toHaveBeenCalled();
+  act(() => result.current.cancel()); expect(apply).not.toHaveBeenCalled();
+  act(() => result.current.request(true, apply)); act(() => result.current.confirm(true));
+  expect(apply).toHaveBeenCalledTimes(1); expect(result.current.send.current).toBe(true);
+  act(() => result.current.request(false, apply)); act(() => result.current.confirm(false));
+  expect(result.current.send.current).toBe(false); expect(apply).toHaveBeenCalledTimes(2);
+});
+it('empty/new accounts need no notice; lookup errors block changing the flag and can retry', async () => {
+  const apply = vi.fn();
+  const newAccount = renderHook(() => useCodeAccessNotice(undefined), { wrapper: wrapper() });
+  act(() => newAccount.result.current.request(true, apply)); expect(apply).toHaveBeenCalledTimes(1);
+  const { result } = renderHook(() => useCodeAccessNotice('service'), { wrapper: wrapper() });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  act(() => result.current.request(true, apply)); expect(apply).toHaveBeenCalledTimes(2);
+  mocks.sales.mockRejectedValueOnce(new Error('Read failure'));
+  await act(() => result.current.retry()); await waitFor(() => expect(result.current.error).toBe(true));
+  act(() => result.current.request(false, apply)); expect(apply).toHaveBeenCalledTimes(2);
+  await act(() => result.current.retry()); await waitFor(() => expect(result.current.error).toBe(false));
+});

@@ -204,3 +204,31 @@ it('routes every active sale through the automatic rule even without a linked Me
   }));
   expect(enqueue).not.toHaveBeenCalled();
 });
+
+it.each([true, false])('notifies code-access toggle only with dialog confirmation (%s)', async confirmed => {
+  submitMocks.announce.mockClear();
+  submitMocks.getVentasActivasParaCredenciales.mockResolvedValue([{ id: 'venta-1', clienteNombre: 'Ana', clienteTelefono: '60000001' }]);
+  const { result } = renderHook(() => useServicioFormSubmit({
+    categorias: [{ ...categoria, codeProvider: 'netflix' }], createServicio: vi.fn(), enqueueWhatsAppMessages: vi.fn(),
+    metodosPago: [metodoPago], onSaved: vi.fn(), perfilesOcupadosReal: 1,
+    queryClient: new QueryClient(), refreshPagos: vi.fn(), servicio,
+    setError: vi.fn(), terceros: [], updateServicio: vi.fn(), codeAccessNoticeConfirmed: () => confirmed,
+  }));
+  await act(() => result.current.onSubmit({ ...formData, accesoPorCodigo: true, contrasena: 'new-test-password' }));
+  if (!confirmed) { expect(submitMocks.announce).not.toHaveBeenCalled(); return; }
+  expect(submitMocks.announce).toHaveBeenCalledTimes(1);
+  const text = JSON.stringify(submitMocks.announce.mock.calls[0][0].items);
+  expect(text).not.toContain('new-test-password'); expect(text).toContain('código');
+});
+it('offers credentials after disabling code access', async () => {
+  submitMocks.announce.mockClear();
+  submitMocks.getVentasActivasParaCredenciales.mockResolvedValue([{ id: 'venta-1', clienteNombre: 'Ana', clienteTelefono: '60000001' }]);
+  const { result } = renderHook(() => useServicioFormSubmit({
+    categorias: [categoria], createServicio: vi.fn(), enqueueWhatsAppMessages: vi.fn(),
+    metodosPago: [metodoPago], onSaved: vi.fn(), perfilesOcupadosReal: 1,
+    queryClient: new QueryClient(), refreshPagos: vi.fn(), servicio: { ...servicio, accesoPorCodigo: true },
+    setError: vi.fn(), terceros: [], updateServicio: vi.fn(), codeAccessNoticeConfirmed: () => true,
+  }));
+  await act(() => result.current.onSubmit({ ...formData, accesoPorCodigo: false }));
+  expect(submitMocks.announce).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'actualizacion_credenciales' }));
+});

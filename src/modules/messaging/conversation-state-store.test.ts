@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 const backend = vi.hoisted(() => {
   const readResult: { data: unknown; error: { code: string } | null } = { data: null, error: null };
-  const eq = vi.fn(() => ({ maybeSingle: async () => readResult }));
-  const rpc = vi.fn(async () => ({ data: true, error: null }));
+  const eq = vi.fn(() => ({ abortSignal: () => ({ maybeSingle: async () => readResult }) }));
+  const rpc = vi.fn(() => ({ abortSignal: async () => ({ data: true, error: null }) }));
   const from = vi.fn(() => ({ select: vi.fn(() => ({ eq })) }));
   return { readResult, eq, rpc, from };
 });

@@ -50,7 +50,7 @@ function panamaWallClock(now: Date): Date {
 }
 // La renovacion siempre se confirma (el cliente pago), aunque antes hubiera dicho "no continuar".
 function eligibilityMode(input: SendNoticeInput): NoticeEligibilityMode {
-  return input.tipo === 'renovacion' ? 'renewal' : 'regular';
+  return input.tipo === 'renovacion' || input.tipo === 'actualizacion_credenciales' ? 'renewal' : 'regular';
 }
 function skipReason(venta: NoticeVenta, mode: NoticeEligibilityMode): string {
   if (mode !== 'renewal' && venta.respuestaCliente) return 'no_continuar';
@@ -93,26 +93,33 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
   if (await deps.store.isAmbiguousPhone(waId, group.clienteId)) {
     return recordSkipped(group, input, deps, 'telefono_ambiguo', waId);
   }
-  const template = await deps.store.loadTemplate(input.tipo);
+  const codeAccess = input.tipo === 'actualizacion_credenciales' && group.ventas.some(venta => venta.accesoPorCodigo);
+  const template = await deps.store.loadTemplate(input.tipo) ?? (codeAccess
+    ? { contenido: '', metaTemplateName: null, metaParamMap: [], metaButtonActions: [] } : null);
   if (!template) return recordSkipped(group, input, deps, 'plantilla_no_configurada', waId);
   // getSaludo ya convierte a hora de Panamá: hay que pasarle el instante real, no el "reloj de pared".
   const data = buildMessageData(group, { now: input.now });
-  const freeText = renderFreeText(template.contenido, data);
+  const freeText = codeAccess
+    ? `Hola ${group.clienteNombre}, tu acceso ahora es por código. Solicita un código en este chat para ingresar.`
+    : renderFreeText(template.contenido, data);
   const waMe = (): NoticeResult => ({ ...base, waId, status: 'wa_me', channel: 'wa_me', waMeText: freeText });
   let payload: OutboundPayload;
   let channel: 'template' | 'text';
   let buttonTexts: string[] = [];
   // Las confirmaciones (renovacion, suscripcion) van como texto libre mientras la ventana de 24 h siga
   // abierta; con la ventana cerrada necesitan la plantilla de Meta vinculada.
-  const templateOnly = TEMPLATE_TYPES.includes(input.tipo);
+  const templateOnly = TEMPLATE_TYPES.includes(input.tipo) && !codeAccess;
   const windowOpen = templateOnly ? false : isWindowOpen(await deps.store.lastInboundAt(waId), input.now);
-  if (templateOnly || (TEMPLATE_FALLBACK_TYPES.includes(input.tipo) && !windowOpen)) {
+  if (templateOnly || ((codeAccess || TEMPLATE_FALLBACK_TYPES.includes(input.tipo)) && !windowOpen)) {
     const metaName = template.metaTemplateName;
     if (!metaName) return input.origin === 'auto'
       ? recordSkipped(group, input, deps, 'plantilla_no_aprobada', waId) : waMe();
     const approved = await deps.catalog.getApproved(metaName, WHATSAPP_TEMPLATE_LANGUAGE);
     if (!approved || template.metaParamMap.some((key) => UNSAFE_META_KEYS.has(key))) return input.origin === 'auto'
       ? recordSkipped(group, input, deps, 'plantilla_no_aprobada', waId) : waMe();
+    if (codeAccess && (approved.buttons.length !== 1 || approved.buttons[0].text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() !== 'solicitar codigo')) {
+      return input.origin === 'auto' ? recordSkipped(group, input, deps, 'plantilla_no_aprobada', waId) : waMe();
+    }
     let params: string[];
     try { params = metaParamsFromMap(template.metaParamMap, data); }
     catch { return input.origin === 'auto'
@@ -126,7 +133,7 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
   } else {
     if (!windowOpen) return waMe();
     channel = 'text';
-    payload = { kind: 'text', text: freeText };
+    payload = codeAccess ? { kind: 'buttons', body: freeText, buttons: [{ id: 'BOT:NFX:LOGIN', title: 'Solicitar código' }] } : { kind: 'text', text: freeText };
   }
   const idempotencyKey = randomUUID();
   const record = await deps.store.reserve({
@@ -145,6 +152,7 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
   }
   if (payload.kind === 'template') {
     payload = { ...payload, buttonPayloads: buttonTexts.map((button, index) => {
+      if (codeAccess) return 'BOT:NFX:LOGIN';
       const configured = template.metaButtonActions[index];
       const action = configured === 'NINGUNA' ? `BTN${index}` : configured ?? actionFor(button, index);
       return `${action}:${record.id}`;

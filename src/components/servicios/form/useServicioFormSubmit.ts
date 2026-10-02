@@ -37,6 +37,7 @@ import {
 type ServicioPayload = ReturnType<typeof buildServicioFormPayload>;
 
 interface UseServicioFormSubmitParams {
+  codeAccessNoticeConfirmed?: () => boolean;
   categorias: Categoria[];
   createServicio: (servicio: ServicioPayload, idempotencyKey?: string) => Promise<void>;
   credentialTemplateContent?: string;
@@ -54,6 +55,7 @@ interface UseServicioFormSubmitParams {
 }
 
 export function useServicioFormSubmit({
+  codeAccessNoticeConfirmed = () => false,
   categorias,
   createServicio,
   credentialTemplateContent,
@@ -76,6 +78,7 @@ export function useServicioFormSubmit({
     submitting.current = true;
     let created = false;
     try {
+      const codeAccessChanged = !!servicio?.id && (servicio.accesoPorCodigo ?? false) !== (data.accesoPorCodigo ?? false);
       const credentialChanges = servicio?.id
         ? hasCredentialChanges(servicio, data)
         : { correo: false, contrasena: false };
@@ -147,7 +150,7 @@ export function useServicioFormSubmit({
         });
         refreshPagos();
 
-        if (changedCredentialsCount(credentialChanges) > 0) {
+        if ((codeAccessChanged && codeAccessNoticeConfirmed()) || (!codeAccessChanged && changedCredentialsCount(credentialChanges) > 0)) {
           const ventasActivas = await getVentasActivasParaCredenciales(servicio.id);
 
           if (ventasActivas.length > 0) {
@@ -162,7 +165,7 @@ export function useServicioFormSubmit({
             const messages = buildCredentialUpdateWhatsAppMessages({
               changes: credentialChanges,
               servicio: servicioActualizado,
-              template: credentialTemplateContent,
+              template: data.accesoPorCodigo ? "Hola {nombre_cliente}, tu acceso a {servicio} ahora es por código. Escribe código en este chat para solicitarlo." : credentialTemplateContent,
               terceros,
               ventas: ventasActivas,
             });
@@ -174,7 +177,7 @@ export function useServicioFormSubmit({
               tipo: "actualizacion_credenciales",
               items: messages.map((message) => ({ ventaId: message.id, message })),
               enqueueWhatsAppMessages,
-              eventId: intent.current.keyFor({ servicioId: servicio.id, correo: data.correo, contrasena: data.contrasena }),
+              eventId: intent.current.keyFor({ servicioId: servicio.id, correo: data.correo, contrasena: data.contrasena, accesoPorCodigo: data.accesoPorCodigo }),
               copy: {
                 loading: "Credenciales actualizadas. Avisando a los clientes...",
                 sent: "Credenciales actualizadas y clientes avisados por WhatsApp",
