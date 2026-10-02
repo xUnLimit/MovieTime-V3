@@ -55,7 +55,7 @@ SELECT is(public.take_over_conversation('50760000001'),true,'admin takes control
 SELECT is((SELECT owner FROM public.whatsapp_conversation_state WHERE wa_id='50760000001'),'humano','human ownership persisted');
 SELECT is((SELECT revision FROM public.whatsapp_conversation_state WHERE wa_id='50760000001'),4,'takeover increments revision');
 SELECT throws_ok($$SELECT public.take_over_conversation('invalid')$$,'22023','invalid conversation id','admin identity validated');
-SELECT is(public.take_over_conversation('50760000999'),false,'missing chat not created implicitly');
+SELECT is(public.take_over_conversation('50760000999'),true,'a chat without state is created for a human from the published flow');
 RESET ROLE;
 SET LOCAL ROLE service_role;
 SELECT is(public.set_conversation_state('50760000001',4,'{"flowVersion":1,"nodeId":"menu","variables":{},"awaiting":null,"owner":"bot"}',now()+interval '1 day'),false,'bot cannot overwrite human even with current revision');
