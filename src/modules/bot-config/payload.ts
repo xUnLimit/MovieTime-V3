@@ -7,7 +7,7 @@ export type BotOutboundMessage =
   | { kind: 'list'; body: string; buttonLabel: string; rows: { id: string; title: string; description?: string }[] };
 
 const REPLY_PREFIX = 'BOT:';
-const REPLY_ID_MAX = 200;
+const REPLY_ID_MAX = 256;
 const REPLY_ID_PATTERN = /^BOT:([a-z][a-z0-9_]{1,31}):([a-z][a-z0-9_]{0,31})$/;
 
 // Recorta sin partir un par sustituto (WhatsApp rechaza JSON con medios pares).
@@ -23,7 +23,7 @@ export function optionReplyId(nodeId: string, optionId: string): string {
 
 /** Devuelve null ante cualquier id ajeno, mal formado o demasiado largo; nunca lanza. */
 export function parseOptionReplyId(id: string): { nodeId: string; optionId: string } | null {
-  if (typeof id !== 'string' || id.length > REPLY_ID_MAX) return null;
+  if (typeof id !== 'string' || new TextEncoder().encode(id).length > REPLY_ID_MAX) return null;
   const match = REPLY_ID_PATTERN.exec(id);
   return match ? { nodeId: match[1], optionId: match[2] } : null;
 }

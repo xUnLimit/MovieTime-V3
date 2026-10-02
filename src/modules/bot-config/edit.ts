@@ -4,7 +4,7 @@ import { normalizeText } from './render';
 
 const ID_MAX = 32;
 const KIND_LABEL: Record<BotNodeKind, string> = {
-  buttons: 'botones', list: 'lista', text: 'texto', action: 'accion',
+  buttons: 'botones', list: 'lista', text: 'texto', action: 'accion', input: 'entrada', condition: 'condicion',
 };
 const DEFAULT_BODY = 'Escribe aquí el mensaje para el cliente.';
 const DEFAULT_LIST_LABEL = 'Ver opciones';

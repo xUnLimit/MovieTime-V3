@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      whatsapp_conversation_state: {
+        Row: { wa_id: string; flow_version: number; node_id: string; variables: Json; awaiting: Json | null; owner: string; revision: number; updated_at: string; expires_at: string }
+        Insert: { wa_id: string; flow_version: number; node_id: string; variables?: Json; awaiting?: Json | null; owner?: string; revision?: number; updated_at?: string; expires_at: string }
+        Update: { wa_id?: string; flow_version?: number; node_id?: string; variables?: Json; awaiting?: Json | null; owner?: string; revision?: number; updated_at?: string; expires_at?: string }
+        Relationships: [{ foreignKeyName: "whatsapp_conversation_state_flow_version_fkey"; columns: ["flow_version"]; isOneToOne: false; referencedRelation: "whatsapp_bot_versions"; referencedColumns: ["version"] }]
+      }
       yappy_mail_sync_state: {
         Row: { id: boolean; mailbox: string; uid_validity: number | null; last_uid: number; last_synced_at: string | null; last_error_code: string | null; sync_locked_until: string | null; updated_at: string }
         Insert: { id?: boolean; mailbox?: string; uid_validity?: number | null; last_uid?: number; last_synced_at?: string | null; last_error_code?: string | null; sync_locked_until?: string | null; updated_at?: string }
@@ -4231,6 +4237,9 @@ export type Database = {
       }
     }
     Functions: {
+      set_conversation_state: { Args: { p_wa_id: string; p_expected_revision: number | null; p_state: Json; p_expires_at: string }; Returns: boolean }
+      take_over_conversation: { Args: { p_wa_id: string }; Returns: boolean }
+      hand_back_conversation: { Args: { p_wa_id: string }; Returns: boolean }
       publish_whatsapp_bot_version: { Args: { p_definition: Json; p_note: string }; Returns: number }
       set_whatsapp_bot_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
       record_whatsapp_bot_event: { Args: { p_wa_id: string; p_cliente_id: string | null; p_type: string; p_node_id: string | null; p_option_id: string | null; p_detail: Json }; Returns: string }

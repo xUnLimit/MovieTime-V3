@@ -1,4 +1,5 @@
 import type { BotActionKey, BotMessageKey, BotNodeKind, BotParams } from '@/types/bot';
+import { ACTION_REGISTRY, isActionKey } from './action-registry';
 
 // Limites de WhatsApp Cloud API y topes del editor.
 export const NODE_LIMITS = {
@@ -18,10 +19,11 @@ export const OPTION_ID_PATTERN = /^[a-z][a-z0-9_]{0,31}$/;
 export const KEYWORD_MAX_LENGTH = 40;
 export const NODE_NAME_MAX_LENGTH = 60;
 
-export const NODE_KINDS: readonly BotNodeKind[] = ['buttons', 'list', 'text', 'action'];
-export const ACTION_KEYS: readonly BotActionKey[] = ['netflix_login_code', 'netflix_travel_code', 'handoff'];
+export const NODE_KINDS: readonly BotNodeKind[] = ['buttons', 'list', 'text', 'action', 'input', 'condition'];
+export const ACTION_KEYS: readonly BotActionKey[] = Object.keys(ACTION_REGISTRY).filter(isActionKey);
 
-export const ACTION_CATALOG: Record<BotActionKey, { label: string; description: string }> = {
+// Legacy editor catalog stays unchanged until a v2 editor is provided.
+export const ACTION_CATALOG: Pick<Record<BotActionKey, { label: string; description: string }>, 'netflix_login_code' | 'netflix_travel_code' | 'handoff'> = {
   netflix_login_code: {
     label: 'Enviar código de inicio de sesión',
     description: 'Busca en el buzón el código que Netflix envió para iniciar sesión y se lo entrega al cliente.',
