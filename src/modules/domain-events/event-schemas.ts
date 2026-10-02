@@ -24,6 +24,12 @@ export const DOMAIN_EVENT_SCHEMAS = {
   'yappy.pago_resuelto': z.object({
     payment_id: id, venta_id: id, amount: z.number(), resolved_by: id.nullable(),
   }),
+  // Sin telefonos ni codigos: solo ids, resultado e importes.
+  'pedido.pago_reclamado': z.object({
+    pedido_id: id, payment_id: id, resultado: z.string().max(32), monto: z.number(), faltante: z.number(),
+    estado: z.string().max(32),
+  }),
+  'pedido.pago_en_revision': z.object({ pedido_id: id, motivo: z.string().max(32), faltante: z.number() }),
 } as const;
 
 export type DomainEventType = keyof typeof DOMAIN_EVENT_SCHEMAS;
@@ -80,6 +86,14 @@ export function parseDomainEvent(raw: RawDomainEvent): DomainEvent | null {
     case 'yappy.pago_resuelto': {
       const p = DOMAIN_EVENT_SCHEMAS['yappy.pago_resuelto'].safeParse(raw.payload);
       return p.success ? { ...base, type: 'yappy.pago_resuelto', payload: p.data } : null;
+    }
+    case 'pedido.pago_reclamado': {
+      const p = DOMAIN_EVENT_SCHEMAS['pedido.pago_reclamado'].safeParse(raw.payload);
+      return p.success ? { ...base, type: 'pedido.pago_reclamado', payload: p.data } : null;
+    }
+    case 'pedido.pago_en_revision': {
+      const p = DOMAIN_EVENT_SCHEMAS['pedido.pago_en_revision'].safeParse(raw.payload);
+      return p.success ? { ...base, type: 'pedido.pago_en_revision', payload: p.data } : null;
     }
   }
 }

@@ -19,6 +19,8 @@ describe('parseDomainEvent', () => {
       'servicio.credenciales_cambiadas': { servicio_id: 's1', correo_cambiado: false, contrasena_cambiada: true },
       'yappy.pago_detectado': { payment_id: 'y1', match_status: 'match_unico', amount: 5 },
       'yappy.pago_resuelto': { payment_id: 'y1', venta_id: 'v1', amount: 5, resolved_by: null },
+      'pedido.pago_reclamado': { pedido_id: 'p1', payment_id: 'y1', resultado: 'confirmado', monto: 5, faltante: 0, estado: 'entregado' },
+      'pedido.pago_en_revision': { pedido_id: 'p1', motivo: 'monto_menor', faltante: 2 },
     };
     for (const [type, payload] of Object.entries(payloads)) {
       expect(parseDomainEvent(raw(type, payload))?.type).toBe(type);
