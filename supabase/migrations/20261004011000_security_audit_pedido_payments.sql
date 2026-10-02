@@ -19,7 +19,7 @@ AS $$
       ('notificaciones_servicio'), ('notificaciones_reposo'),
       ('yappy_mail_sync_state'), ('yappy_mail_messages'), ('yappy_payments'),
       ('netflix_code_claims'), ('whatsapp_bot_config'), ('whatsapp_bot_versions'), ('whatsapp_bot_events'), ('whatsapp_conversation_state'),
-      ('whatsapp_contacts'), ('domain_events'), ('code_claims'), ('pedidos'), ('pedido_items'), ('pedido_pagos'), ('catalogo_ajustes'), ('catalogo_config'), ('reservas_perfil'), ('intereses'), ('pedido_pago_ajustes'), ('intentos_comprobante')
+      ('whatsapp_contacts'), ('domain_events'), ('code_claims'), ('pedidos'), ('pedido_items'), ('pedido_pagos'), ('catalogo_ajustes'), ('catalogo_config'), ('reservas_perfil'), ('intereses'), ('pedido_pago_ajustes'), ('intentos_comprobante'), ('renovacion_ajustes')
   ),
   allowed_authenticated_security_definer(function_name) AS (
     VALUES
@@ -43,7 +43,8 @@ AS $$
       ('publish_whatsapp_bot_version'),
       ('set_whatsapp_bot_enabled'),
       ('take_over_conversation'), ('hand_back_conversation'),
-      ('crear_pedido'), ('confirmar_pedido'), ('cancelar_pedido'), ('expirar_pedidos')
+      ('crear_pedido'), ('confirmar_pedido'), ('cancelar_pedido'), ('expirar_pedidos'),
+      ('catalogo_disponible'), ('reservar_perfil'), ('liberar_reserva'), ('expirar_reservas')
   ),
   required_authenticated_rpcs(function_name) AS (
     VALUES
