@@ -43,7 +43,7 @@ AS $$
       ('publish_whatsapp_bot_version'),
       ('set_whatsapp_bot_enabled'),
       ('take_over_conversation'), ('hand_back_conversation'),
-      ('crear_pedido'), ('confirmar_pedido'), ('cancelar_pedido'), ('expirar_pedidos'),
+      ('crear_pedido'), ('crear_pedido_renovacion'), ('confirmar_pedido'), ('cancelar_pedido'), ('expirar_pedidos'),
       ('catalogo_disponible'), ('reservar_perfil'), ('liberar_reserva'), ('expirar_reservas')
   ),
   required_authenticated_rpcs(function_name) AS (

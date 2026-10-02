@@ -38,7 +38,10 @@ LANGUAGE sql AS $$ SELECT public.crear_pedido_renovacion(
 SELECT set_config('request.jwt.claims','{"sub":"f7100000-0000-4000-8000-000000000002","role":"authenticated"}',true);
 SET LOCAL ROLE authenticated;
 SELECT is((SELECT count(*) FROM public.renovacion_ajustes),0::bigint,'operator cannot read settings');
-SELECT is((WITH changed AS (UPDATE public.renovacion_ajustes SET renovacion_parcial_enabled=true RETURNING *) SELECT count(*) FROM changed),0::bigint,'operator cannot enable feature');
+UPDATE public.renovacion_ajustes SET renovacion_parcial_enabled=true;
+RESET ROLE;
+SELECT is((SELECT renovacion_parcial_enabled FROM public.renovacion_ajustes),false,'operator cannot enable feature');
+SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"sub":"f7100000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 SELECT throws_ok($$SELECT pg_temp.renew(gen_random_uuid())$$,'P0001','renewal_disabled','OFF prevents writes');
 UPDATE public.renovacion_ajustes SET renovacion_parcial_enabled=true;
