@@ -7,6 +7,7 @@ const handleNoticeReply = vi.hoisted(() => vi.fn());
 const sendOutboundMessage = vi.hoisted(() => vi.fn());
 const sendCloudApiMessage = vi.hoisted(() => vi.fn());
 const handleBotMessage = vi.hoisted(() => vi.fn());
+const registerInboundContacts = vi.hoisted(() => vi.fn());
 const openNetflixInbox = vi.hoisted(() => vi.fn());
 const getNetflixMailConfig = vi.hoisted(() => vi.fn());
 const loadBotConfig = vi.hoisted(() => vi.fn());
@@ -20,6 +21,7 @@ const env = vi.hoisted(() => ({
 }));
 
 vi.mock('@/platform/config', () => ({ env }));
+vi.mock('@/modules/messaging/contact-store', () => ({ registerInboundContacts }));
 vi.mock('@/modules/whatsapp/webhook-inbox', () => ({ storeWebhookBatch }));
 vi.mock('@/modules/notifications/whatsapp-message-push', () => ({ notifyWhatsAppMessages }));
 vi.mock('@/application/use-cases/notice-reply-use-case', () => ({ handleNoticeReply }));
@@ -85,6 +87,8 @@ beforeEach(() => {
   sendOutboundMessage.mockReset();
   sendCloudApiMessage.mockReset();
   handleBotMessage.mockReset();
+  registerInboundContacts.mockReset();
+  registerInboundContacts.mockResolvedValue(undefined);
   openNetflixInbox.mockReset();
   getNetflixMailConfig.mockReset();
   loadBotConfig.mockReset();
@@ -180,6 +184,13 @@ describe('POST /api/whatsapp/webhook', () => {
     expect(notifyWhatsAppMessages).toHaveBeenCalledWith([
       expect.objectContaining({ fromWaId: '50760000000', contactName: 'Cliente', textBody: 'Hola' }),
     ]);
+  });
+
+  it('registers the sender of new messages as a contact', async () => {
+    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
+    await POST(signedPost(textMessageEvent));
+    await Promise.all(afterCallbacks.map((callback) => callback()));
+    expect(registerInboundContacts).toHaveBeenCalledWith([expect.objectContaining({ fromWaId: '50760000000' })], expect.any(String));
   });
 
   it('keeps the acknowledgement when the push alert fails', async () => {

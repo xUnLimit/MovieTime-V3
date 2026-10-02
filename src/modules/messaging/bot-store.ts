@@ -19,9 +19,13 @@ function check(error: { code?: string } | null, action: string): void {
 export function createBotStore(client: ServiceClient = createServiceRoleClient()): BotStore {
   return {
     async customerServices(waId) {
-      const { data: people, error } = await client.from('terceros').select('id,telefono').eq('active', true);
+      // terceros.wa_id es la columna generada con la misma regla que normalizePanamaWaId; limit(2) basta para
+      // distinguir "exactamente uno" de un numero compartido sin traer a todos los clientes.
+      if (normalizePanamaWaId(waId) !== waId) return { known: false, clienteId: null, services: [] };
+      const { data: people, error } = await client.from('terceros').select('id')
+        .eq('wa_id', waId).eq('active', true).limit(2);
       check(error, 'customer lookup');
-      const matches = (people ?? []).filter((row) => normalizePanamaWaId(row.telefono ?? '') === waId);
+      const matches = people ?? [];
       if (matches.length !== 1) return { known: false, clienteId: null, services: [] };
       const { data: ventas, error: ventasError } = await client.from('v_ventas_full')
         .select('servicio_id,servicio_correo,perfil_nombre,categoria_nombre,servicio_nombre')

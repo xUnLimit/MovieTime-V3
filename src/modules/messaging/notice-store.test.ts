@@ -94,11 +94,14 @@ describe('notice store Supabase adapter', () => {
     responses.set('templates', { data: null, error: null });
     expect(await createNoticeStore().loadTemplate('dia_pago')).toBeNull();
   });
-  it('normalizes all active tercero phones to detect ambiguity', async () => {
-    responses.set('terceros', { data: [{ id: ID, telefono: '6000-0000' }, { id: ID2, telefono: '+507 6000 0000' }], error: null });
+  it('detects ambiguity through the canonical terceros.wa_id column', async () => {
+    responses.set('terceros', { data: [{ id: ID }, { id: ID2 }], error: null });
     expect(await createNoticeStore().isAmbiguousPhone('50760000000', ID)).toBe(true);
-    expect(await createNoticeStore().isAmbiguousPhone('50760000001', ID)).toBe(false);
+    expect(calls).toContainEqual({ table: 'terceros', operation: 'eq', args: ['wa_id', '50760000000'] });
     expect(calls).toContainEqual({ table: 'terceros', operation: 'eq', args: ['active', true] });
+    expect(calls).toContainEqual({ table: 'terceros', operation: 'limit', args: [2] });
+    responses.set('terceros', { data: [{ id: ID }], error: null });
+    expect(await createNoticeStore().isAmbiguousPhone('50760000000', ID)).toBe(false);
     responses.set('terceros', { data: null, error: null });
     expect(await createNoticeStore().isAmbiguousPhone('50760000000', ID)).toBe(false);
   });

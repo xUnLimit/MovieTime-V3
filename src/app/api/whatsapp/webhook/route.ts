@@ -6,6 +6,7 @@ import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/pla
 import { z } from '@/platform/validation/zod';
 import { handleNoticeReply } from '@/application/use-cases/notice-reply-use-case';
 import { createNoticeReplyStore } from '@/modules/messaging/notice-reply-store';
+import { registerInboundContacts } from '@/modules/messaging/contact-store';
 import { createNoticeStore } from '@/modules/messaging/notice-store';
 import { notifyWhatsAppMessages } from '@/modules/notifications/whatsapp-message-push';
 import { sendCloudApiMessage } from '@/modules/whatsapp/cloud-api-client';
@@ -97,6 +98,8 @@ export async function POST(request: Request) {
     if (messages.length > 0) {
       // El aviso push corre despues de responder para no retrasar a Meta.
       after(async () => {
+        // Nunca lanza: registrar el contacto no debe frenar al bot ni al aviso push.
+        await registerInboundContacts(messages.filter((m) => insertedIds.has(m.waMessageId)), requestId);
         if (env.whatsappAccessToken && env.whatsappPhoneNumberId) {
           const config = { accessToken: env.whatsappAccessToken, phoneNumberId: env.whatsappPhoneNumberId };
           const catalog = createTemplateCatalog();

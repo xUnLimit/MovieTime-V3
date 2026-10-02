@@ -1,7 +1,7 @@
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
 import { z } from '@/platform/validation/zod';
 import type { Database } from '@/platform/supabase/database.types';
-import { normalizePanamaWaId, type NoticeVenta } from './message-data';
+import type { NoticeVenta } from './message-data';
 
 export type NoticeTipo = Database['public']['Enums']['tipo_template_enum'];
 export type NoticeTemplate = { contenido: string; metaTemplateName: string | null; metaParamMap: string[];
@@ -89,9 +89,11 @@ export function createNoticeStore(client: ServiceClient = createServiceRoleClien
         metaButtonActions: buttonActionsSchema.parse(data.meta_button_actions) } : null;
     },
     async isAmbiguousPhone(waId, terceroId) {
-      const { data, error } = await client.from('terceros').select('id,telefono').eq('active', true);
+      // terceros.wa_id es la forma canonica del telefono; dos filas bastan para ver si hay otro tercero.
+      const { data, error } = await client.from('terceros').select('id')
+        .eq('wa_id', waId).eq('active', true).limit(2);
       check(error, 'check phone ambiguity');
-      return (data ?? []).some((row) => row.id !== terceroId && normalizePanamaWaId(row.telefono) === waId);
+      return (data ?? []).some((row) => row.id !== terceroId);
     },
     async lastInboundAt(waId) {
       const { data, error } = await client.from('whatsapp_inbound_messages')
