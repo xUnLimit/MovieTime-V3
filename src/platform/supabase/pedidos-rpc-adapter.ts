@@ -4,8 +4,8 @@ import { executeIdempotentRpc } from './idempotent-rpc';
 import { assertOnlineMutation } from './online-mutation';
 import { callRpc } from './rpc-client';
 import {
-  cancelarPedidoSchema, confirmarPedidoSchema, crearPedidoSchema,
-  type CancelarPedidoInput, type ConfirmarPedidoInput, type CrearPedidoInput,
+  cancelarPedidoSchema, confirmarPedidoSchema, crearPedidoSchema, confirmarPedidoPanelSchema,
+  type CancelarPedidoInput, type ConfirmarPedidoInput, type CrearPedidoInput, type ConfirmarPedidoPanelInput,
 } from './pedidos-schemas';
 
 async function publicResult(operation: string, send: () => Promise<string>): Promise<string> {
@@ -38,4 +38,11 @@ export async function cancelarPedidoRpc(input: CancelarPedidoInput): Promise<str
   assertOnlineMutation();
   return publicResult('cancelar_pedido', () => executeIdempotentRpc('cancelar_pedido', payload,
     request => callRpc('cancelar_pedido', request)));
+}
+
+export async function confirmarPedidoPanelRpc(input: ConfirmarPedidoPanelInput): Promise<string> {
+  const payload = confirmarPedidoPanelSchema.parse(input);
+  assertOnlineMutation();
+  return publicResult('confirmar_pedido_panel', () => executeIdempotentRpc('confirmar_pedido_panel', payload,
+    request => callRpc('confirmar_pedido', request)));
 }
