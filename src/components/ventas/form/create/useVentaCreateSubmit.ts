@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { createMutationIntent } from '@/platform/utils/mutation-intent';
 import { toast } from 'sonner';
+import { announceNotice } from '@/components/shared/announce-notice';
+import { useWhatsAppToastStore } from '@/store/whatsappToastStore';
 import { notifyCommittedMutation } from '@/components/shared/notify-committed-mutation';
 import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
@@ -24,7 +26,7 @@ type MetodoPagoResumen = {
 type UseVentaCreateSubmitParams = {
   clienteId: string | undefined;
   clienteSeleccionado: Tercero | undefined;
-  createVenta: (venta: CreateVentaInput, idempotencyKey?: string) => Promise<void>;
+  createVenta: (venta: CreateVentaInput, idempotencyKey?: string) => Promise<string>;
   editedMessage: string;
   estadoVenta: string | undefined;
   fechaFin: Date | undefined;
@@ -72,6 +74,8 @@ export function useVentaCreateSubmit({
   const submitting = useRef(false);
   const intent = useRef(createMutationIntent());
   const completed = useRef(new Set<string>());
+  const createdIds = useRef(new Map<string, string>());
+  const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
 
   const handleGuardarVenta = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -100,6 +104,7 @@ export function useVentaCreateSubmit({
     try {
       submitting.current = true;
       setSaving(true);
+      const batchKeys: string[] = [];
       const writes = buildVentaCreateBatchInputs({
         clienteId,
         clienteNombre,
@@ -116,11 +121,14 @@ export function useVentaCreateSubmit({
         const key = intent.current.keyFor([
           items[index], clienteId, metodoPagoId, moneda, fechaInicio, fechaFin, normalizedEstado,
         ]);
+        batchKeys.push(key);
         if (completed.current.has(key)) return;
         try {
-          await createVenta(input, key);
+          const ventaId = await createVenta(input, key);
+          createdIds.current.set(key, ventaId);
         } catch (error) {
           if (!notifyCommittedMutation(error)) throw error;
+          if (error instanceof MutationCommittedError) createdIds.current.set(key, error.operationId);
           reportError('VentaCreateSubmit', 'Venta guardada con error secundario', error);
         }
         completed.current.add(key);
@@ -153,25 +161,45 @@ export function useVentaCreateSubmit({
           ),
         );
       }
-      if (notifyCliente && normalizedEstado !== 'inactivo' && editedMessage) {
-        const sent = sendDirectMessage ? await sendDirectMessage(editedMessage) : null;
-        if (sent?.ok) {
-          toast.success('Venta registrada', {
-            description: 'La venta se guardó y el mensaje se envió al cliente por WhatsApp.',
-          });
-        } else {
-          if (sent && !sent.ok) {
-            toast.warning('No se pudo enviar el mensaje automáticamente', { description: sent.reason });
-          }
-          const phoneRaw = clienteSeleccionado?.telefono || '';
-          const phone = phoneRaw.replace(/[^\d+]/g, '');
-          setPendingWhatsApp({
-            phone,
-            message: editedMessage,
-            title: 'Venta registrada',
-            description: 'La venta ha sido guardada correctamente en el sistema.',
-          });
-        }
+      if (notifyCliente && normalizedEstado !== 'inactivo') {
+        const pending = editedMessage ? {
+          phone: (clienteSeleccionado?.telefono || '').replace(/[^\d+]/g, ''),
+          message: editedMessage,
+          title: 'Venta registrada',
+          description: 'La venta ha sido guardada correctamente en el sistema.',
+        } : null;
+        await announceNotice({
+          tipo: 'suscripcion',
+          items: batchKeys.flatMap((key) => {
+            const ventaId = createdIds.current.get(key);
+            return ventaId ? [{ ventaId, message: pending }] : [];
+          }),
+          enqueueWhatsAppMessages,
+          copy: {
+            loading: 'Venta registrada. Avisando al cliente...',
+            sent: 'Venta registrada y cliente avisado por WhatsApp',
+            notSent: 'Venta registrada, pero no se pudo avisar por la API',
+            offerTitle: 'Venta registrada',
+            offerDescription: 'Notificar al cliente',
+          },
+          onAutoDisabled: async () => {
+            if (!pending) {
+              toast.success('Venta registrada');
+              return;
+            }
+            const sent = sendDirectMessage ? await sendDirectMessage(editedMessage) : null;
+            if (sent?.ok) {
+              toast.success('Venta registrada', {
+                description: 'La venta se guardó y el mensaje se envió al cliente por WhatsApp.',
+              });
+            } else {
+              if (sent && !sent.ok) {
+                toast.warning('No se pudo enviar el mensaje automáticamente', { description: sent.reason });
+              }
+              setPendingWhatsApp(pending);
+            }
+          },
+        });
       } else {
         toast.success('Venta registrada', {
           description: 'La venta ha sido guardada correctamente en el sistema.',

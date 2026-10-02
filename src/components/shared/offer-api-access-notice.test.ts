@@ -132,3 +132,16 @@ describe('offerApiAccessNotice onApiSettled', () => {
     expect(mocks.send).toHaveBeenCalledWith({ tipo: 'dia_pago', ventaIds: ['v1'], eventId: expect.stringMatching(UUID) });
   });
 });
+
+
+it('preserves the action event id across automatic and manual attempts', async () => {
+  mocks.send.mockResolvedValue([{ status: 'accepted', ventaIds: ['v1', 'v2'] }]);
+  offerApiAccessNotice({
+    tipo: 'actualizacion_credenciales', items, enqueueWhatsAppMessages: vi.fn(),
+    title: 'T', description: 'D', eventId: 'action-event',
+  });
+  await mocks.info.mock.calls.at(-1)?.[1].action.onClick();
+  expect(mocks.send).toHaveBeenLastCalledWith({
+    tipo: 'actualizacion_credenciales', ventaIds: ['v1', 'v2'], eventId: 'action-event',
+  });
+});

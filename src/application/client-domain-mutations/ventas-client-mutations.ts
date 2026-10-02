@@ -18,6 +18,7 @@ export async function createVentaMutation(venta: Omit<VentaDoc, 'id' | 'createdA
   return afterCommit(created.id, async () => {
     await afterVentaCreated(created.id);
     await invalidateStoreQueries(['ventas', 'servicios', 'terceros', 'pagination']);
+    return created.id;
   });
 }
 
