@@ -3,7 +3,7 @@ import { normalizePanamaWaId } from './message-data';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 // profiles lists the Netflix profile names noted on the customer's sales of this account.
-export type BotService = { serviceId: string; email: string; profiles: string[] };
+export type BotService = { serviceId: string; email: string; profiles: string[]; providerKey?: string };
 export type BotStore = {
   // services is empty for a number that is not exactly one active customer.
   customerServices(waId: string): Promise<{ known: boolean; clienteId: string | null; services: BotService[] }>;
@@ -31,21 +31,24 @@ export function createBotStore(client: ServiceClient = createServiceRoleClient()
         .select('servicio_id,servicio_correo,perfil_nombre,categoria_nombre,servicio_nombre')
         .eq('cliente_id', matches[0].id).eq('estado', 'activo');
       check(ventasError, 'sales lookup');
-      const netflix = (ventas ?? []).filter((venta) => venta.servicio_id && venta.servicio_correo
-        && /netflix/i.test(`${venta.categoria_nombre ?? ''} ${venta.servicio_nombre ?? ''}`));
-      const ids = [...new Set(netflix.flatMap((venta) => venta.servicio_id ? [venta.servicio_id] : []))];
+      const sales = (ventas ?? []).filter((venta) => venta.servicio_id && venta.servicio_correo);
+      const ids = [...new Set(sales.flatMap((venta) => venta.servicio_id ? [venta.servicio_id] : []))];
       if (ids.length === 0) return { known: true, clienteId: matches[0].id, services: [] };
-      const { data: states, error: statesError } = await client.from('servicios').select('id,activo').in('id', ids);
+      const { data: states, error: statesError } = await client.from('servicios').select('id,activo,categorias!servicios_categoria_id_fkey(code_provider)').in('id', ids);
       check(statesError, 'service state lookup');
-      const active = new Set((states ?? []).filter((row) => row.activo).map((row) => row.id));
+      const active = new Map((states ?? []).filter((row) => row.activo && row.categorias?.code_provider)
+        .map((row) => [row.id, row.categorias?.code_provider]));
       const byEmail = new Map<string, BotService>();
-      for (const venta of netflix) {
+      for (const venta of sales) {
         const email = venta.servicio_correo?.trim().toLowerCase();
         if (!venta.servicio_id || !email || !active.has(venta.servicio_id)) continue;
-        const service = byEmail.get(email) ?? { serviceId: venta.servicio_id, email, profiles: [] };
+        const providerKey = active.get(venta.servicio_id);
+        if (!providerKey) continue;
+        const accountKey = `${providerKey}:${email}`;
+        const service: BotService = byEmail.get(accountKey) ?? { serviceId: venta.servicio_id, email, profiles: [], providerKey };
         const profile = venta.perfil_nombre?.trim();
         if (profile && !service.profiles.includes(profile)) service.profiles.push(profile);
-        byEmail.set(email, service);
+        byEmail.set(accountKey, service);
       }
       return { known: true, clienteId: matches[0].id, services: [...byEmail.values()] };
     },

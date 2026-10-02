@@ -1,3 +1,4 @@
+import { deliveryPassword } from '@/platform/utils/code-access';
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
 import { z } from '@/platform/validation/zod';
 import type { Database } from '@/platform/supabase/database.types';
@@ -37,7 +38,7 @@ export function createNoticeStore(client: ServiceClient = createServiceRoleClien
   return {
     async loadVentas(ids) {
       const { data: ventas, error } = await client.from('v_ventas_full')
-        .select('id,cliente_id,cliente_nombre,cliente_telefono,categoria_nombre,servicio_nombre,perfil_nombre,servicio_correo,servicio_contrasena,codigo,ultima_fecha_fin,ultimo_total_original,ultima_moneda,estado,servicio_id,ultimo_periodo_id')
+        .select('id,cliente_id,cliente_nombre,cliente_telefono,categoria_nombre,servicio_nombre,perfil_nombre,servicio_correo,servicio_contrasena,codigo,ultima_fecha_fin,ultimo_total_original,ultima_moneda,estado,servicio_id,ultimo_periodo_id,acceso_por_codigo')
         .in('id', ids);
       check(error, 'load sales');
       if (!ventas?.length) return [];
@@ -69,7 +70,8 @@ export function createNoticeStore(client: ServiceClient = createServiceRoleClien
           clienteNombre: venta.cliente_nombre ?? '', telefono: venta.cliente_telefono ?? '',
           categoriaNombre: venta.categoria_nombre ?? '', servicioNombre: venta.servicio_nombre ?? '',
           perfilNombre: venta.perfil_nombre ?? '', correo: venta.servicio_correo ?? '',
-          contrasena: venta.servicio_contrasena ?? '', codigo: venta.codigo ?? '',
+          accesoPorCodigo: venta.acceso_por_codigo === true,
+          contrasena: deliveryPassword(venta.servicio_contrasena, venta.acceso_por_codigo === true), codigo: venta.codigo ?? '',
           fechaVencimiento: dateOnly(venta.ultima_fecha_fin), monto: venta.ultimo_total_original ?? 0,
           moneda: venta.ultima_moneda ?? '', activa: venta.estado === 'activo' && service?.activo === true,
           reembolsada: !!venta.ultimo_periodo_id && refunded.has(venta.ultimo_periodo_id),

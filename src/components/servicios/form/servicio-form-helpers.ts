@@ -1,3 +1,4 @@
+import { assertCodeAccess } from "@/modules/code-providers";
 import { addDays } from "date-fns";
 
 import { CURRENCY_SYMBOLS, CYCLE_MONTHS } from "@/platform/constants";
@@ -118,7 +119,9 @@ export function buildServicioFormPayload({
   servicio?: Servicio;
   tipoPlan: TipoPlanConfig;
 }) {
+  assertCodeAccess(data.accesoPorCodigo, categoria?.codeProvider);
   return {
+    accesoPorCodigo: data.accesoPorCodigo ?? false,
     nombre: data.nombre,
     categoriaId: data.categoriaId,
     categoriaNombre: categoria?.nombre || "",
@@ -161,7 +164,7 @@ export function buildCredentialUpdateWhatsAppMessages({
   changes: CredentialChangeFlags;
   servicio: Pick<
     Servicio,
-    "categoriaNombre" | "contrasena" | "correo" | "nombre"
+    "categoriaNombre" | "contrasena" | "correo" | "nombre" | "accesoPorCodigo"
   >;
   template?: string;
   terceros: Tercero[];

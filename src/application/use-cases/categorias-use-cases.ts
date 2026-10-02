@@ -1,3 +1,4 @@
+import { assertCodeProviderKey } from '@/modules/code-providers';
 import {
   buildCategorias,
   createCategoriaRecord,
@@ -23,6 +24,7 @@ export async function createCategoriaUseCase(
   categoriaData: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>,
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog }
 ): Promise<Categoria> {
+  assertCodeProviderKey(categoriaData.codeProvider);
   const data = await createCategoriaRecord(categoriaData);
   await upsertCategoriaPlanes(data.id, categoriaData.tiposPlanes ?? [], categoriaData.planes ?? []);
   const [newCategoria] = await buildCategorias([data]);
@@ -48,6 +50,7 @@ export async function updateCategoriaUseCase(
     recordActivityLog?: RecordActivityLog;
   }
 ): Promise<Categoria> {
+  assertCodeProviderKey(updates.codeProvider);
   const data = await updateCategoriaRecord(id, updates);
 
   if (updates.tiposPlanes || updates.planes) {

@@ -14,6 +14,13 @@ export type Database = {
   }
   public: {
     Tables: {
+      code_claims: {
+        Row: { provider: string; mail_key: string; wa_id: string; created_at: string }
+        Insert: { provider: string; mail_key: string; wa_id: string; created_at?: string }
+        Update: { provider?: string; mail_key?: string; wa_id?: string; created_at?: string }
+        Relationships: []
+      }
+
       yappy_mail_sync_state: {
         Row: { id: boolean; mailbox: string; uid_validity: number | null; last_uid: number; last_synced_at: string | null; last_error_code: string | null; sync_locked_until: string | null; updated_at: string }
         Insert: { id?: boolean; mailbox?: string; uid_validity?: number | null; last_uid?: number; last_synced_at?: string | null; last_error_code?: string | null; sync_locked_until?: string | null; updated_at?: string }
@@ -98,6 +105,7 @@ export type Database = {
             | Database["public"]["Enums"]["categoria_tipo_cat_enum"]
             | null
           updated_at: string
+          code_provider: string | null
         }
         Insert: {
           activo?: boolean
@@ -111,6 +119,7 @@ export type Database = {
             | Database["public"]["Enums"]["categoria_tipo_cat_enum"]
             | null
           updated_at?: string
+          code_provider?: string | null
         }
         Update: {
           activo?: boolean
@@ -124,6 +133,7 @@ export type Database = {
             | Database["public"]["Enums"]["categoria_tipo_cat_enum"]
             | null
           updated_at?: string
+          code_provider?: string | null
         }
         Relationships: [
           {
@@ -1632,6 +1642,7 @@ export type Database = {
           perfiles_ocupados: number
           plan_tipo_id: string | null
           updated_at: string
+          acceso_por_codigo: boolean
         }
         Insert: {
           activo?: boolean
@@ -1657,6 +1668,7 @@ export type Database = {
           perfiles_ocupados?: number
           plan_tipo_id?: string | null
           updated_at?: string
+          acceso_por_codigo?: boolean
         }
         Update: {
           activo?: boolean
@@ -1682,6 +1694,7 @@ export type Database = {
           perfiles_ocupados?: number
           plan_tipo_id?: string | null
           updated_at?: string
+          acceso_por_codigo?: boolean
         }
         Relationships: [
           {
@@ -3208,6 +3221,7 @@ export type Database = {
           updated_at: string | null
           venta_id: string | null
           venta_periodo_id: string | null
+          acceso_por_codigo: boolean | null
         }
         Relationships: [
           {
@@ -3859,6 +3873,7 @@ export type Database = {
           ultimo_numero_periodo: number | null
           ultimo_periodo_id: string | null
           updated_at: string | null
+          acceso_por_codigo: boolean | null
         }
         Relationships: [
           {
@@ -4173,6 +4188,7 @@ export type Database = {
           ultimo_total_original: number | null
           ultimo_total_usd: number | null
           updated_at: string | null
+          acceso_por_codigo: boolean | null
         }
         Relationships: [
           {
@@ -4471,6 +4487,39 @@ export type Database = {
             }
             Returns: string
           }
+      create_servicio_with_code_access: {
+        Args: {
+          p_acceso_por_codigo: boolean
+          p_activo: boolean
+          p_categoria_id: string
+          p_ciclo_pago: Database["public"]["Enums"]["ciclo_pago_enum"]
+          p_contrasena: string
+          p_correo: string
+          p_costo_original: number
+          p_costo_usd: number
+          p_created_by?: string
+          p_dias_reposo: number
+          p_en_reposo: boolean
+          p_exchange_rate: number
+          p_fecha_fin_reposo: string
+          p_fecha_inicio: string
+          p_fecha_inicio_reposo: string
+          p_fecha_pago?: string
+          p_fecha_vencimiento: string
+          p_idempotency_key?: string
+          p_metodo_pago_id: string
+          p_metodo_pago_nombre_snapshot: string
+          p_moneda_original: string
+          p_nombre: string
+          p_notas: string
+          p_pago_notas?: string
+          p_perfiles_disponibles: number
+          p_perfiles_ocupados: number
+          p_plan_tipo_id: string
+          p_renovacion_automatica: boolean
+        }
+        Returns: string
+      }
       create_servicio_with_initial_payment:
         | {
             Args: {

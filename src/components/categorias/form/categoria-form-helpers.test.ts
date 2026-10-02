@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Categoria } from '@/types';
 import {
+  categoriaSchema,
   getAsociadoLabel,
   getCicloPagoLabel,
   getCreatePlanesValidationError,
@@ -125,4 +126,12 @@ describe('categoria form helpers', () => {
     expect(changes({ planes: [{ ...categoria.planes![0], tipoPlan: 'other' }] })).toBe(true);
     expect(changes({ categoria: { ...categoria, planes: undefined, tiposPlanes: undefined }, planes: [], tiposPlanes: [] })).toBe(false);
   });
+});
+
+it('validates nullable registered category providers', () => {
+  const base = { nombre: 'Cuenta', tipo: 'cliente', tipoCategoria: 'plataforma_streaming' };
+  for (const codeProvider of [null, undefined, 'netflix']) {
+    expect(categoriaSchema.safeParse({ ...base, codeProvider }).success).toBe(true);
+  }
+  expect(categoriaSchema.safeParse({ ...base, codeProvider: 'fake' }).success).toBe(false);
 });

@@ -1,3 +1,4 @@
+import { deliveryPassword } from '@/platform/utils/code-access';
 import { supabase } from './client';
 import { toCamelCase } from './mappers';
 import { reviveDates, toNullableDateOnly } from './dates';
@@ -13,7 +14,6 @@ export const createNotificacion = <T extends Record<string, unknown>>(payload: O
 export const updateNotificacion = <T extends Record<string, unknown>>(id: string, payload: Partial<T>) =>
   updateNotification(id, payload as Record<string, unknown>);
 export const removeNotificacion = (id: string) => coreRemove(ENTITIES.NOTIFICACIONES, id);
-
 export async function queryNotifications<T>(filters: QueryFilter[]): Promise<T[]> {
   const entidad = filters.find((filter) => filter.field === 'entidad' && filter.operator === '==')
     ?.value as string | undefined;
@@ -24,7 +24,6 @@ export async function queryNotifications<T>(filters: QueryFilter[]): Promise<T[]
         data: unknown[] | null;
         error: Error | null;
       }>;
-
       for (const filter of filters) {
         const field = notificationReadField(filter.field);
         if (!field) continue;
@@ -36,13 +35,11 @@ export async function queryNotifications<T>(filters: QueryFilter[]): Promise<T[]
         if (filter.operator === '>=') query = query.gte(field, filter.value) as typeof query;
         if (filter.operator === 'in') query = query.in(field, filter.value) as typeof query;
       }
-
       const { data, error } = await query;
       if (error) throw new Error(error.message);
       return (data ?? []).map((row) => mapNotificationRow(row));
     })
   );
-
   return rows.flat().sort((a, b) => {
     const left = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
     const right = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
@@ -242,7 +239,8 @@ function mapNotificationRow(row: unknown): Record<string, unknown> {
       clienteTelefono: item.clienteTelefonoSnapshot,
       servicioNombre: item.servicioNombreSnapshot,
       servicioCorreo: item.servicioCorreoSnapshot,
-      servicioContrasena: item.servicioContrasenaSnapshot,
+      servicioContrasena: item.accesoPorCodigo === true ? deliveryPassword('', true) : item.servicioContrasenaSnapshot,
+      accesoPorCodigo: item.accesoPorCodigo === true,
       categoriaNombre: item.categoriaNombreSnapshot,
       perfilNombre: item.perfilNombreSnapshot,
       codigo: item.codigoSnapshot,

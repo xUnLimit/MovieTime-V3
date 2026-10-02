@@ -117,3 +117,10 @@ describe('deleteCategoriaUseCase', () => {
     expect(deleteCategoriaRecord).toHaveBeenCalledWith('categoria-1');
   });
 });
+
+it('rejects unknown provider keys before creating a category', async () => {
+  vi.mocked(createCategoriaRecord).mockClear();
+  await expect(createCategoriaUseCase({ ...baseCategoria, codeProvider: 'fake' },
+    { logContext: { usuarioId: 'u1', usuarioEmail: 'u@example.test' } })).rejects.toThrow();
+  expect(createCategoriaRecord).not.toHaveBeenCalled();
+});

@@ -265,3 +265,18 @@ describe('maskCredentials', () => {
     expect(filled.contrasena).toBe('x');
   });
 });
+
+describe('code access password omission', () => {
+  it('omits the password in top-level, item, masked and mixed service data', () => {
+    const group = groupNoticeVentas([venta({ accesoPorCodigo: true, contrasena: 'never-send-this' }),
+      venta({ ventaId: 'v2', contrasena: 'regular-password' })])[0]!;
+    const data = buildMessageData(group, { now: day(2026, 10, 1, 9) });
+    expect(data.contrasena).toBe('');
+    expect(data.itemRows.map((row) => row.contrasena)).toEqual(['', 'regular-password']);
+    const template = '{contrasena}\n{{#items}}{correo}: {contrasena}{{/items}}';
+    expect(renderFreeText(template, data)).not.toContain('never-send-this');
+    expect(renderFreeText(template, data)).toContain('regular-password');
+    expect(renderFreeText(template, maskCredentials(data))).not.toContain('never-send-this');
+    expect(group.ventas[0].contrasena).toBe('never-send-this');
+  });
+});

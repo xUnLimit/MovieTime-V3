@@ -133,3 +133,10 @@ describe('notice store Supabase adapter', () => {
     await expect(createNoticeStore().isAmbiguousPhone('50760000000', ID)).rejects.toThrow('check phone ambiguity failed');
   });
 });
+
+it('never exposes a code-access password in current notice credential data', async () => {
+  responses.set('v_ventas_full', { data: [{ id: ID, cliente_id: ID2, acceso_por_codigo: true,
+    servicio_contrasena: 'never-send-this', servicio_correo: 'a@example.test' }], error: null });
+  const rows = await createNoticeStore().loadVentas([ID]);
+  expect(rows[0]).toMatchObject({ accesoPorCodigo: true, contrasena: '', correo: 'a@example.test' });
+});

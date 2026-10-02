@@ -1,12 +1,16 @@
+import { ServicioCodeAccessCheckbox } from "./ServicioCodeAccessCheckbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import type { ServicioFormBindings } from "./types";
 
 export function ServicioSeguridadSection({
+  accesoPorCodigoValue,
+  codeProviderKey,
+  setValue,
   errors,
   register,
-}: ServicioFormBindings) {
+}: ServicioFormBindings & { accesoPorCodigoValue: boolean; codeProviderKey?: string | null }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       <div className="space-y-1.5">
@@ -33,6 +37,10 @@ export function ServicioSeguridadSection({
         {errors.contrasena && (
           <p className="text-sm text-danger">{errors.contrasena.message}</p>
         )}
+      </div>
+      <div className="md:col-span-2">
+        <ServicioCodeAccessCheckbox checked={accesoPorCodigoValue} providerKey={codeProviderKey}
+          onChange={(value) => setValue("accesoPorCodigo", value, { shouldDirty: true, shouldValidate: true })} />
       </div>
     </div>
   );
