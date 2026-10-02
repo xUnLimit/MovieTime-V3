@@ -7,7 +7,9 @@ const mocks = vi.hoisted(() => ({
   success: vi.fn(),
   warning: vi.fn(),
   error: vi.fn(),
+  openWhatsApp: vi.fn(),
 }));
+vi.mock('@/platform/utils/whatsapp', () => ({ openWhatsApp: mocks.openWhatsApp }));
 vi.mock('sonner', () => ({
   toast: { info: mocks.info, loading: mocks.loading, success: mocks.success, warning: mocks.warning, error: mocks.error },
 }));
@@ -42,10 +44,20 @@ describe('offerApiAccessNotice', () => {
     expect(enqueue).not.toHaveBeenCalled();
   });
 
-  it('enqueues everything when the user prefers WhatsApp', () => {
+  it('opens WhatsApp right away with the first message and queues the rest when the user prefers WhatsApp', () => {
     const { enqueue, options } = offer();
     options.cancel.onClick();
-    expect(enqueue).toHaveBeenCalledWith(items.map((item) => item.message));
+    expect(mocks.openWhatsApp).toHaveBeenCalledTimes(1);
+    expect(mocks.openWhatsApp).toHaveBeenCalledWith('507', 'm');
+    expect(enqueue).toHaveBeenCalledWith([items[1]!.message]);
+  });
+
+  it('opens a single message without queuing anything', () => {
+    const enqueue = vi.fn();
+    offerApiAccessNotice({ tipo: 'dia_pago', items: [items[0]!], enqueueWhatsAppMessages: enqueue, title: 'T', description: 'D' });
+    mocks.info.mock.calls.at(-1)?.[1].cancel.onClick();
+    expect(mocks.openWhatsApp).toHaveBeenCalledWith('507', 'm');
+    expect(enqueue).not.toHaveBeenCalled();
   });
 
   it('sends by API and enqueues only the ventas that were not accepted', async () => {

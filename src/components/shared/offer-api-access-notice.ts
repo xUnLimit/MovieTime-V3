@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 
 import { isNoticeDelivered, sendWhatsAppNoticesUseCase } from '@/application/use-cases/whatsapp-notices-use-cases';
+import { openWhatsAppNow } from '@/components/shared/open-whatsapp-now';
 import { reportError } from '@/platform/observability/logger';
 import type { PendingWhatsAppToast } from '@/store/whatsappToastStore';
 
@@ -61,6 +62,6 @@ export function offerApiAccessNotice({
     description,
     duration: Infinity,
     action: { label: 'Enviar por WhatsApp API', onClick: () => { void sendViaApi(); } },
-    cancel: { label: 'Abrir en WhatsApp', onClick: () => enqueueWhatsAppMessages(items.map((item) => item.message)) },
+    cancel: { label: 'Abrir en WhatsApp', onClick: () => openWhatsAppNow(items.map((item) => item.message), enqueueWhatsAppMessages) },
   });
 }

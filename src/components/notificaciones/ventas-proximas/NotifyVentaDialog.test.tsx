@@ -13,6 +13,11 @@ const mocks = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
   toastWarning: vi.fn(),
   toastError: vi.fn(),
+  openWhatsApp: vi.fn(),
+}));
+vi.mock('@/platform/utils/whatsapp', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/platform/utils/whatsapp')>()),
+  openWhatsApp: mocks.openWhatsApp,
 }));
 vi.mock('@/hooks/use-templates', () => ({
   useTemplates: mocks.templates,
@@ -146,7 +151,8 @@ describe('NotifyVentaDialog', () => {
       const [title, options] = mocks.toastWarning.mock.calls.at(-1)!;
       expect(title).toBe('El aviso no se pudo enviar por la API');
       options.action.onClick();
-      expect(mocks.enqueue).toHaveBeenCalledWith([expect.objectContaining({ phone: '6000-0000', message: expect.stringContaining('Hola Ana Pérez') })]);
+      expect(mocks.openWhatsApp).toHaveBeenCalledWith('6000-0000', expect.stringContaining('Hola Ana Pérez'));
+      expect(mocks.enqueue).not.toHaveBeenCalled();
       expect(mocks.toastSuccess).not.toHaveBeenCalled();
       expect(props.onOpenChange).toHaveBeenCalledWith(false);
     });

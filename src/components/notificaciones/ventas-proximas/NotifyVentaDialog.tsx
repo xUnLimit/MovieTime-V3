@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { isNoticeDelivered } from '@/application/use-cases/whatsapp-notices-use-cases';
 import { offerApiAccessNotice } from '@/components/shared/offer-api-access-notice';
+import { openWhatsAppNow } from '@/components/shared/open-whatsapp-now';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -82,7 +83,7 @@ export function NotifyVentaDialog({ notification, open, onOpenChange }: NotifyVe
   const warnNotSent = (description: string) => toast.warning('El aviso no se pudo enviar por la API', {
     description,
     duration: Infinity,
-    ...(waMessage ? { action: { label: 'Abrir en WhatsApp', onClick: () => enqueueWhatsAppMessages([waMessage]) } } : {}),
+    ...(waMessage ? { action: { label: 'Abrir en WhatsApp', onClick: () => openWhatsAppNow([waMessage], enqueueWhatsAppMessages) } } : {}),
   });
 
   const handleSend = async () => {

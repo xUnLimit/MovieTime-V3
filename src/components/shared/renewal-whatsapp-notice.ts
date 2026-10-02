@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 
 import { sendAutomaticRenewalNoticeUseCase } from '@/application/use-cases/whatsapp-notices-use-cases';
 import { offerApiAccessNotice } from '@/components/shared/offer-api-access-notice';
+import { openWhatsAppNow } from '@/components/shared/open-whatsapp-now';
 import { reportError } from '@/platform/observability/logger';
 import type { PendingWhatsAppToast } from '@/store/whatsappToastStore';
 
@@ -59,6 +60,6 @@ export async function announceRenewal({ ventaId, clienteNombre, waMessage, enque
     id: toastId,
     duration: Infinity,
     description: pending ? 'Puedes enviar la confirmación abriendo WhatsApp.' : 'Escríbele desde el chat.',
-    ...(pending ? { action: { label: 'Abrir en WhatsApp', onClick: () => enqueueWhatsAppMessages([pending]) } } : {}),
+    ...(pending ? { action: { label: 'Abrir en WhatsApp', onClick: () => openWhatsAppNow([pending], enqueueWhatsAppMessages) } } : {}),
   });
 }

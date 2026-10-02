@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  send: vi.fn(), offer: vi.fn(), reportError: vi.fn(),
+  send: vi.fn(), offer: vi.fn(), reportError: vi.fn(), openWhatsApp: vi.fn(),
   loading: vi.fn().mockReturnValue('t1'), success: vi.fn(), warning: vi.fn(), dismiss: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { loading: mocks.loading, success: mocks.success, warning: mocks.warning, dismiss: mocks.dismiss } }));
 vi.mock('@/platform/observability/logger', () => ({ reportError: mocks.reportError }));
+vi.mock('@/platform/utils/whatsapp', () => ({ openWhatsApp: mocks.openWhatsApp }));
 vi.mock('@/application/use-cases/whatsapp-notices-use-cases', () => ({ sendAutomaticRenewalNoticeUseCase: mocks.send }));
 vi.mock('@/components/shared/offer-api-access-notice', () => ({ offerApiAccessNotice: mocks.offer }));
 
@@ -54,7 +55,8 @@ describe('announceRenewal', () => {
     const options = mocks.warning.mock.calls.at(-1)?.[1];
     expect(mocks.warning).toHaveBeenCalledWith('Venta renovada, pero no se pudo avisar por la API', expect.objectContaining({ id: 't1' }));
     options.action.onClick();
-    expect(enqueue).toHaveBeenCalledWith([expect.objectContaining({ phone: '60000000', message: 'Renovado' })]);
+    expect(mocks.openWhatsApp).toHaveBeenCalledWith('60000000', 'Renovado');
+    expect(enqueue).not.toHaveBeenCalled();
     expect(mocks.reportError).toHaveBeenCalledTimes(kind === 'error' ? 1 : 0);
   });
 
