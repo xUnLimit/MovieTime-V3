@@ -1,41 +1,60 @@
-import { beforeEach, it, expect, vi } from 'vitest';
-import { defaultDefinition } from '@/modules/bot-config';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defaultDefinition, defaultDefinitionV2 } from '@/modules/bot-config';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
-import type { BotDeps } from '@/application/use-cases/bot-reply';
-const mocks = vi.hoisted(() => ({ config: vi.fn(), load: vi.fn(), record: vi.fn(), handle: vi.fn(), mailbox: vi.fn(), inbox: vi.fn() }));
-vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: () => ({ load: mocks.config }) }));
-vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: mocks.record }) }));
+
+const fakes = vi.hoisted(() => ({ load: vi.fn(), state: vi.fn(), v1: vi.fn(), v2: vi.fn(), record: vi.fn() }));
+vi.mock('@/platform/config/netflix-server', () => ({ getNetflixMailConfig: () => null }));
+vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox: vi.fn() }));
+vi.mock('@/platform/server/netflix-travel-page', () => ({ fetchTravelPageHtml: vi.fn() }));
+vi.mock('@/platform/server/supabase-server', () => ({ createServiceRoleClient: () => ({ rpc: vi.fn() }) }));
+vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: () => ({ load: fakes.load }) }));
+vi.mock('@/modules/messaging/conversation-state-store', () => ({ createConversationStateStore: () => ({ load: fakes.state }) }));
+vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: fakes.record }) }));
 vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({}) }));
 vi.mock('@/modules/messaging/netflix-claim-store', () => ({ createNetflixClaimStore: () => ({}) }));
-vi.mock('@/modules/messaging/conversation-state-store', () => ({ createConversationStateStore: () => ({ load: mocks.load }) }));
-vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({ handleBotMessage: mocks.handle }));
-vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox: mocks.inbox }));
-vi.mock('@/platform/config/netflix-server', () => ({ getNetflixMailConfig: mocks.mailbox }));
+vi.mock('@/modules/messaging/contact-store', () => ({ createContactStore: () => ({}) }));
+vi.mock('@/modules/messaging/bot-v2-identity-store', () => ({ createBotV2IdentityStore: () => ({}) }));
+vi.mock('@/modules/whatsapp/outbound-store', () => ({ createOutboundStore: () => ({}) }));
+vi.mock('@/modules/messaging/bot-catalog-store', () => ({ createBotCatalogStore: () => ({}) }));
+vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({ handleBotMessage: fakes.v1 }));
+vi.mock('@/application/use-cases/bot-v2/runtime', () => ({ handleV2Message: fakes.v2 }));
 import { createBotRuntime } from './bot-runtime';
-const message: InboundMessage = { waMessageId: 'wamid.test', phoneNumberId: '1', fromWaId: '50760000001', contactName: null,
-  messageType: 'text', textBody: 'hola', sentAt: '2026-10-02T12:00:00Z', mediaId: null, mediaMimeType: null, mediaFilename: null,
-  contextWaMessageId: null, reactionEmoji: null, payload: {} };
-beforeEach(() => { vi.clearAllMocks(); mocks.config.mockResolvedValue({ ready: true, definition: defaultDefinition() }); mocks.load.mockResolvedValue(null); });
-it('injects the canonical persisted owner lookup into the bot use case', async () => {
-  mocks.handle.mockImplementation(async (_message: InboundMessage, deps: BotDeps) => {
-    expect(deps.conversationOwner).toBeDefined();
-    expect(await deps.conversationOwner?.(message.fromWaId)).toBe('humano'); return 'ignored';
-  });
-  mocks.load.mockResolvedValue({ state: { owner: 'humano' } });
-  expect(await createBotRuntime('request-id').handle(message, vi.fn())).toBe('ignored');
-  expect(mocks.load).toHaveBeenCalledWith(message.fromWaId);
+
+const message: InboundMessage = { waMessageId: 'fixture', phoneNumberId: '1', fromWaId: '50760000000', contactName: null,
+  messageType: 'text', textBody: 'hola', sentAt: '2026-10-04T04:00:00Z', mediaId: null, mediaMimeType: null,
+  mediaFilename: null, contextWaMessageId: null, reactionEmoji: null, payload: {} };
+const send = vi.fn();
+beforeEach(() => {
+  vi.clearAllMocks();
+  fakes.state.mockResolvedValue(null); fakes.v1.mockResolvedValue('menu'); fakes.v2.mockResolvedValue('node');
+  fakes.load.mockResolvedValue({ ready: true, definition: defaultDefinition(), version: 19 });
 });
-it('handles absent state and records controlled errors without swallowing them', async () => {
-  mocks.handle.mockImplementation(async (_message: InboundMessage, deps: BotDeps) => {
-    expect(await deps.conversationOwner?.(message.fromWaId)).toBeNull(); return 'menu';
+describe('live schema dispatch', () => {
+  it('keeps v1 on its existing handler and reads the definition once per delivery', async () => {
+    const runtime = createBotRuntime('request');
+    await runtime.handle(message, send); await runtime.handle({ ...message, waMessageId: 'next' }, send);
+    expect(fakes.v1).toHaveBeenCalledTimes(2); expect(fakes.v2).not.toHaveBeenCalled();
+    expect(fakes.load).toHaveBeenCalledTimes(1);
+    expect(fakes.v1).toHaveBeenCalledWith(message, expect.objectContaining({ definition: defaultDefinition(), send }));
   });
-  const runtime = createBotRuntime('request-id'); expect(await runtime.handle(message, vi.fn())).toBe('menu');
-  mocks.load.mockRejectedValueOnce(new Error('Unavailable'));
-  await expect(runtime.handle(message, vi.fn())).rejects.toThrow('Unavailable');
-  expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', detail: { motivo: 'respuesta_fallida' } }));
-});
-it('keeps a disabled bot silent', async () => {
-  mocks.config.mockResolvedValue({ ready: false, reason: 'disabled' });
-  expect(await createBotRuntime('request-id').handle(message, vi.fn())).toBe('off');
-  expect(mocks.handle).not.toHaveBeenCalled();
+  it('routes v2 with the published flow version and its dependency bindings', async () => {
+    fakes.load.mockResolvedValue({ ready: true, definition: defaultDefinitionV2(), version: 19 });
+    await createBotRuntime('request').handle(message, send);
+    expect(fakes.v1).not.toHaveBeenCalled();
+    expect(fakes.v2).toHaveBeenCalledWith(message, expect.objectContaining({ version: 19, definition: defaultDefinitionV2(), send }));
+  });
+  it('keeps v1 silent while owned by a human', async () => {
+    fakes.state.mockResolvedValue({ state: { owner: 'humano' } });
+    expect(await createBotRuntime('request').handle(message, send)).toBe('ignored');
+    expect(fakes.v1).not.toHaveBeenCalled();
+  });
+  it('fails closed when the bot is disabled and records execution errors without payloads', async () => {
+    fakes.load.mockResolvedValue({ ready: false, reason: 'disabled' });
+    expect(await createBotRuntime('request').handle(message, send)).toBe('off');
+    expect(fakes.record).not.toHaveBeenCalled();
+    fakes.load.mockResolvedValue({ ready: true, definition: defaultDefinitionV2(), version: 19 });
+    fakes.v2.mockRejectedValue(new Error('internal'));
+    await expect(createBotRuntime('request').handle(message, send)).rejects.toThrow('internal');
+    expect(fakes.record).toHaveBeenCalledWith({ waId: message.fromWaId, type: 'error', detail: { motivo: 'respuesta_fallida' } });
+  });
 });

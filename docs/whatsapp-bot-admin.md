@@ -246,11 +246,11 @@ Decisiones del runtime (`webhook/route.ts`, `webhook/bot-runtime.ts`, `whatsapp-
 - **Pendiente para el usuario:** borrar `WHATSAPP_BOT_ENABLED` de Vercel y de `.env.local`; encender el bot desde `/bot`; comprobar que el nombre de perfil
   de cada venta de Netflix coincide con el de Netflix (sin eso el cruce por perfil bloquea el codigo de viaje).
 
-## 12. Conversation Engine v2 (núcleo, sin UI ni conexión al webhook)
+## 12. Conversation Engine v2
 
 v1 sigue válido; `defaultDefinition()` y el editor conservan v1. `upgradeDefinition(def)` clona y cambia
-solo schemaVersion a 2, explícita e idempotentemente. El loader actual rechaza v2 hasta conectar su ejecutor:
-**publicar v2 ahora deja el bot en silencio**, sin ejecutar parcialmente sus acciones.
+solo schemaVersion a 2, explícita e idempotentemente. El loader acepta definiciones validadas de ambas versiones;
+el webhook selecciona el ejecutor por schemaVersion y conserva la versión publicada como flowVersion.
 
 Los nodos nuevos conservan id/name/body y `options: []`:
 
@@ -263,8 +263,9 @@ Los nodos nuevos conservan id/name/body y `options: []`:
   (variable/pattern cerrado). El contexto de identidad/servicios/pedidos procede del servidor; sin él se bloquea.
 - `action`: clave de `ACTION_REGISTRY` y actionParams con UUID requeridos o referencias exactas
   `{{variable}}` permitidas por la acción. Las tres acciones originales siguen disponibles.
-  show_catalog, register_interest, request_payment, verify_payment, deliver_credentials, send_code,
-  renew_services y send_template están declaradas: validación avisa y el reductor bloquea sin efectos.
+  show_catalog, register_interest y send_code tienen handlers en el ejecutor de aplicación.
+  request_payment, verify_payment, deliver_credentials, renew_services y send_template
+  permanecen declaradas: validación avisa y el reductor bloquea sin efectos.
   Extender el registro exige código; pagos, credenciales e identidad nunca son configurables.
 
 `advance(def, state, { flowVersion, now, context?, event })` es puro y devuelve state/status/effects.
@@ -294,3 +295,44 @@ false. Definers con search_path vacío, grants mínimos y auditoría canónica a
 createConversationStateStore valida ambos límites y devuelve state/revision/updatedAt/expiresAt, incluso
 si expiró: el futuro orquestador reinicia usando esa revisión, sin borrar/recrear filas. TTL máximo: 30 días;
 sin purga todavía. pgTAP cubre permisos, validación, CAS y control humano; Chats permanece sin conectar.
+
+### Ejecutor v2 y catálogo
+
+`application/use-cases/bot-v2/runtime.ts` carga identidad y estado, llama `advance`, prepara un handler,
+reserva el turno por CAS y usa `bot-reply.reply` (la misma clave derivada de waMessageId que v1).
+Un turno pendiente conserva el estado de origen para reconstruir la respuesta al reintentar;
+los turnos completados y las respuestas ya aceptadas se deduplican. Los metadatos `runtime_*`,
+`catalog_*` y `solicitud_venta` están reservados y no pueden ser variables de nodos input.
+El estado humano tiene precedencia incluso tras vencer su TTL. v1 conserva su ruta y
+operatorQuietMinutes, con la comprobación adicional de dueño humano antes de invocarla.
+
+`defaultDefinitionV2()` genera un borrador con el menú existente y una entrada de catálogo;
+no escribe ni publica versiones. `catalogMessages` es un campo opcional de BotDefinition v2:
+summary admite `{{disponibles}}`/`{{agotados}}`, interest/registered admiten `{{servicio}}`,
+y platforms/plans/empty no admiten marcadores. Si se omite, se usan los valores por defecto.
+La edición se hace en la definición publicada; la UI de edición v2 pertenece al trabajo de administración.
+
+El catálogo consulta catalogo_disponible y usa plataforma → plan, con nueve filas y una fila
+«Ver más» cuando hace falta. El botón «Me interesa agotado» abre los agotados (20 caracteres
+como máximo por botón). Un plan disponible pasa al asesor; no reserva, cobra ni entrega accesos.
+Un plan agotado registra interés por registrar_interes, de forma idempotente, y permite aviso,
+asesor o una alternativa vigente configurada en catálogo. El asesor recibe el estado humano y
+la marca `interesado en <servicio> (agotado)` en variables. Los leads siguen el grafo publicado,
+pero sus menús solo muestran opciones que alcanzan catálogo/interés, y nunca ejecutan entradas
+input ni acciones de acceso, credenciales o pagos. No se inventa una entrada de catálogo si el administrador la quitó.
+
+`BOT:CODE:<ventaId>` exige una única identidad activa por terceros.wa_id, venta activa propia,
+servicio activo con acceso_por_codigo y proveedor Netflix. Reutiliza netflix-code-flow y su
+registro de proveedores, claims, cruce por perfil y límite de pulsaciones.
+Para send_code, el contador incluye todos los mensajes entrantes de la ventana para que
+mayúsculas, espacios o variantes de «ya» no permitan eludir el límite; los parámetros son los publicados.
+Otros proveedores no tienen un transporte de buzón conectado y fallan cerrado. Nunca se guarda el acceso en estado.
+Las bienvenidas de suscripción para una sola venta habilitada añaden «Solicitar código» en
+texto libre; las plantillas requieren ese botón ya aprobado por Meta. Tras aceptar el envío,
+se guarda la espera de esa venta por 24 horas y se aceptan «ya», «el código» y «listo»;
+si no hay entrega, la espera se conserva. Un fallo al guardar esta espera no invalida la bienvenida;
+el botón sigue autorizándose por identidad en cada pulsación.
+
+Se añaden `catalog_shown` e `interest_registered` a BotEventType. La restricción SQL existente
+valida el formato del tipo (no una enumeración), por lo que no necesita migración para estos eventos.
+No se publican definiciones automáticamente y pagos/renovación/credenciales siguen indisponibles.

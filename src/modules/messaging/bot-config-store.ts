@@ -34,8 +34,7 @@ export function createBotConfigStore(client: ServiceClient = createServiceRoleCl
       check(versionError, 'version lookup');
       if (!row) return { ready: false, enabled: true, version, reason: 'no_published_version' };
       const parsed = parseDefinition(row.definition);
-      // v2 has no webhook executor yet: do not interpret it with the stateless v1 runtime.
-      if (!parsed.success || parsed.definition.schemaVersion !== 1 || hasBlockingIssues(validateDefinition(parsed.definition))) return { ready: false, enabled: true, version, reason: 'invalid_definition' };
+      if (!parsed.success || hasBlockingIssues(validateDefinition(parsed.definition))) return { ready: false, enabled: true, version, reason: 'invalid_definition' };
       return { ready: true, enabled: true, version, definition: parsed.definition };
     },
   };

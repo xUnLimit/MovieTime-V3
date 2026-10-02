@@ -65,6 +65,8 @@ export type BotDefinition = {
   params: BotParams;
   /** Palabras (sin acentos, minusculas) que fuerzan el menu. */
   keywords: string[];
+  /** v2 catalog text templates, edited/published with the definition. */
+  catalogMessages?: import('@/modules/bot-config/catalog-messages').CatalogMessages;
 };
 
 export type BotIssue = {
@@ -77,7 +79,7 @@ export type BotIssue = {
 export type BotEventType =
   | 'menu_shown' | 'option_selected' | 'code_sent' | 'link_sent' | 'not_found'
   | 'already_sent' | 'profile_blocked' | 'rate_limited' | 'mailbox_unavailable'
-  | 'handoff' | 'option_unavailable' | 'error';
+  | 'handoff' | 'option_unavailable' | 'error' | 'catalog_shown' | 'interest_registered';
 
 /** Nunca contiene codigos, enlaces con token ni contrasenas. */
 export type BotEventDetail = Record<string, string | number | boolean | null>;

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/platform/server/supabase-server', () => ({ createServiceRoleClient: vi.fn() }));
 
-import { defaultDefinition } from '@/modules/bot-config';
+import { defaultDefinition, defaultDefinitionV2 } from '@/modules/bot-config';
 import { createBotConfigStore } from './bot-config-store';
 
 type Result = { data: unknown; error: { code: string } | null };
@@ -26,6 +26,10 @@ const config = (overrides: object = {}) => ({ data: { enabled: true, published_v
 const version = (definition: unknown) => ({ data: { version: 3, definition }, error: null });
 
 describe('createBotConfigStore.load', () => {
+  it('loads validated v2 definitions for the v2 executor', async () => {
+    const { client } = fakeClient({ whatsapp_bot_config: config(), whatsapp_bot_versions: version(defaultDefinitionV2()) });
+    expect(await createBotConfigStore(client).load()).toEqual({ ready: true, enabled: true, version: 3, definition: defaultDefinitionV2() });
+  });
   it('returns the validated published definition when the bot is on', async () => {
     const { client, filters } = fakeClient({
       whatsapp_bot_config: config(), whatsapp_bot_versions: version(defaultDefinition()),

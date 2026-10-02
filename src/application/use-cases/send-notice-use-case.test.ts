@@ -47,6 +47,23 @@ beforeEach(() => {
 const input = { tipo: 'dia_pago' as const, ventaIds: [ID], origin: 'manual' as const, sentBy: ID, now: NOW };
 
 describe('sendNotice', () => {
+  it('persists the code-request state only after a welcome is accepted', async () => {
+    store.lastInboundAt = vi.fn(async () => NOW.toISOString());
+    const accepted = vi.fn(async () => undefined);
+    const codeWelcome = vi.fn(async () => ({ payload: { kind: 'buttons' as const, body: 'Bienvenido', buttons: [{ id: `BOT:CODE:${ID}`, title: 'Solicitar código' }] }, accepted }));
+    const result = await sendNotice({ ...input, tipo: 'suscripcion' }, { store, catalog, send, codeWelcome });
+    expect(result[0].status).toBe('accepted');
+    expect(accepted).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({ kind: 'buttons' }) }));
+  });
+  it('does not start code awaiting when the welcome send fails', async () => {
+    store.lastInboundAt = vi.fn(async () => NOW.toISOString());
+    const accepted = vi.fn(async () => undefined);
+    const codeWelcome = vi.fn(async () => ({ payload: { kind: 'text' as const, text: 'Bienvenido' }, accepted }));
+    vi.mocked(send).mockResolvedValue({ id: ID, waMessageId: null, sendStatus: 'failed', errorTitle: 'Failed', replayed: false });
+    await sendNotice({ ...input, tipo: 'suscripcion' }, { store, catalog, send, codeWelcome });
+    expect(accepted).not.toHaveBeenCalled();
+  });
   it('groups matching sales and sends one approved template with ordered notice buttons', async () => {
     sales.push(venta({ ventaId: ID2, categoriaNombre: 'Disney+' }));
     const results = await sendNotice({ ...input, ventaIds: [ID, ID2] }, { store, catalog, send });

@@ -3,7 +3,8 @@ import { sessionValueSchema, variableNameSchema } from '@/platform/validation/co
 
 export const safePatternSchema = z.enum(['digits', 'letters', 'alphanumeric']);
 export const inputSpecSchema = z.object({
-  tipo: z.enum(['text', 'number', 'image']), variable: variableNameSchema,
+  tipo: z.enum(['text', 'number', 'image']), variable: variableNameSchema.refine(name =>
+    !name.startsWith('runtime_') && !name.startsWith('catalog_') && name !== 'solicitud_venta'),
   next: z.string().regex(/^[a-z][a-z0-9_]{1,31}$/), timeoutSeconds: z.number().int().min(1).max(86400),
   rules: z.object({
     pattern: safePatternSchema.optional(), minLength: z.number().int().min(0).max(512).optional(),
