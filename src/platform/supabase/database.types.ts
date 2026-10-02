@@ -35,6 +35,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      renovacion_ajustes: {
+        Row: { id: string; renovacion_parcial_enabled: boolean; notice_max_age_days: number; selection_ttl_minutes: number; resumen_template: string }
+        Insert: { id?: string; renovacion_parcial_enabled?: boolean; notice_max_age_days?: number; selection_ttl_minutes?: number; resumen_template?: string }
+        Update: { id?: string; renovacion_parcial_enabled?: boolean; notice_max_age_days?: number; selection_ttl_minutes?: number; resumen_template?: string }
+        Relationships: []
+      }
       code_claims: {
         Row: { provider: string; mail_key: string; wa_id: string; created_at: string }
         Insert: { provider: string; mail_key: string; wa_id: string; created_at?: string }
@@ -4433,6 +4439,10 @@ export type Database = {
       }
     }
     Functions: {
+      crear_pedido_renovacion: {
+        Args: { p_tercero_id: string | null; p_contact_id: string | null; p_canal: string; p_moneda: string; p_items: Json; p_expira_at: string; p_exchange_rate: number; p_idempotency_key: string; p_notice_id: string; p_wa_id: string; p_expected: Json }
+        Returns: string
+      }
       crear_pedido: {
         Args: { p_tercero_id: string | null; p_contact_id: string | null; p_canal: string; p_moneda: string; p_items: Json; p_expira_at: string; p_exchange_rate: number; p_idempotency_key: string }
         Returns: string
