@@ -276,3 +276,41 @@ describe('sendNotice renewal confirmation', () => {
     expect(send).not.toHaveBeenCalled();
   });
 });
+
+describe('sendNotice new sale confirmation', () => {
+  const subscription = { ...input, tipo: 'suscripcion' as const, origin: 'auto' as const, sentBy: ID };
+  const subscriptionTemplate = (metaTemplateName: string | null): NoticeTemplate => ({
+    contenido: 'Bienvenido {categoria}', metaTemplateName,
+    metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento'], metaButtonActions: [],
+  });
+
+  it('sends free text while the 24-hour window is open', async () => {
+    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate('bienvenida'));
+    vi.mocked(store.lastInboundAt).mockResolvedValue('2026-09-28T13:00:00Z');
+    const [result] = await sendNotice(subscription, { store, catalog, send });
+    expect(result).toMatchObject({ status: 'accepted', channel: 'text' });
+    expect(catalog.getApproved).not.toHaveBeenCalled();
+  });
+  it('uses the linked Meta template when the window is closed', async () => {
+    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate('bienvenida'));
+    vi.mocked(catalog.getApproved).mockResolvedValue({ paramCount: 3, buttons: [] });
+    vi.mocked(store.lastInboundAt).mockResolvedValue('2026-09-26T13:00:00Z');
+    const [result] = await sendNotice(subscription, { store, catalog, send });
+    expect(result).toMatchObject({ status: 'accepted', channel: 'template' });
+    expect(store.reserve).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'suscripcion', origin: 'auto', metaTemplateName: 'bienvenida' }));
+  });
+  it('records an automatic notice without a linked template as skipped', async () => {
+    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate(null));
+    const [result] = await sendNotice(subscription, { store, catalog, send });
+    expect(result).toMatchObject({ status: 'skipped', error: 'plantilla_no_aprobada' });
+    expect(send).not.toHaveBeenCalled();
+  });
+  it('does not send a rejected subscription template outside the 24-hour window', async () => {
+    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate('bienvenida'));
+    vi.mocked(store.lastInboundAt).mockResolvedValue(null);
+    vi.mocked(catalog.getApproved).mockResolvedValue(null);
+    const [result] = await sendNotice(subscription, { store, catalog, send });
+    expect(result).toMatchObject({ status: 'skipped', error: 'plantilla_no_aprobada' });
+    expect(send).not.toHaveBeenCalled();
+  });
+});

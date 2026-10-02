@@ -26,6 +26,8 @@ export type SendNoticeDeps = {
 const TEMPLATE_TYPES: readonly NoticeTipo[] = [
   'notificacion_regular', 'dia_pago', 'cancelacion', 'actualizacion_credenciales', 'transferencia_servicio',
 ];
+// Texto libre con la ventana abierta; con la ventana cerrada, plantilla de Meta.
+const TEMPLATE_FALLBACK_TYPES: readonly NoticeTipo[] = ['renovacion', 'suscripcion'];
 // Cada cambio de acceso es un evento nuevo aunque sea el mismo cliente, venta y vencimiento.
 const EVENT_TYPES: readonly NoticeTipo[] = ['actualizacion_credenciales', 'transferencia_servicio'];
 function dedupeKeyFor(input: SendNoticeInput, group: NoticeGroup, ventaIds: string[]): string {
@@ -100,11 +102,11 @@ async function sendGroup(group: NoticeGroup, input: SendNoticeInput, deps: SendN
   let payload: OutboundPayload;
   let channel: 'template' | 'text';
   let buttonTexts: string[] = [];
-  // La confirmacion de renovacion va como texto libre mientras la ventana de 24 h siga abierta;
-  // con la ventana cerrada necesita la plantilla de Meta vinculada.
+  // Las confirmaciones (renovacion, suscripcion) van como texto libre mientras la ventana de 24 h siga
+  // abierta; con la ventana cerrada necesitan la plantilla de Meta vinculada.
   const templateOnly = TEMPLATE_TYPES.includes(input.tipo);
   const windowOpen = templateOnly ? false : isWindowOpen(await deps.store.lastInboundAt(waId), input.now);
-  if (templateOnly || (input.tipo === 'renovacion' && !windowOpen)) {
+  if (templateOnly || (TEMPLATE_FALLBACK_TYPES.includes(input.tipo) && !windowOpen)) {
     const metaName = template.metaTemplateName;
     if (!metaName) return input.origin === 'auto'
       ? recordSkipped(group, input, deps, 'plantilla_no_aprobada', waId) : waMe();

@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { QueryClient } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import type { Categoria, MetodoPago, PagoServicio, Servicio } from '@/types';
 import type { ServicioFormData } from '@/components/servicios/form/servicio-form-schema';
 
 const submitMocks = vi.hoisted(() => ({
   updateServicioPagoUseCase: vi.fn(),
   getVentasActivasParaCredenciales: vi.fn(),
+  announce: vi.fn(),
   toastSuccess: vi.fn(),
   toastInfo: vi.fn(),
   toastError: vi.fn(),
@@ -31,6 +32,8 @@ vi.mock('sonner', () => ({
 vi.mock('@/platform/observability/logger', () => ({
   reportError: vi.fn(),
 }));
+
+vi.mock('@/components/shared/announce-notice', () => ({ announceNotice: submitMocks.announce }));
 
 import { useServicioFormSubmit } from './useServicioFormSubmit';
 
@@ -176,4 +179,28 @@ describe('useServicioFormSubmit', () => {
       expect.any(Object),
     );
   });
+});
+
+
+it('routes every active sale through the automatic rule even without a linked Meta template', async () => {
+  submitMocks.getVentasActivasParaCredenciales.mockResolvedValue([
+    { id: 'venta-1', clienteNombre: 'Ana', clienteTelefono: '60000001' },
+    { id: 'venta-2', clienteNombre: 'Beto', clienteTelefono: '60000002' },
+  ]);
+  const enqueue = vi.fn();
+  const { result } = renderHook(() => useServicioFormSubmit({
+    categorias: [categoria], createServicio: vi.fn(), enqueueWhatsAppMessages: enqueue,
+    metodosPago: [metodoPago], onSaved: vi.fn(), perfilesOcupadosReal: 1,
+    queryClient: new QueryClient(), refreshPagos: vi.fn(), servicio,
+    setError: vi.fn(), terceros: [], updateServicio: vi.fn(),
+  }));
+  await act(() => result.current.onSubmit({ ...formData, contrasena: 'new-test-password' }));
+  expect(submitMocks.announce).toHaveBeenCalledWith(expect.objectContaining({
+    tipo: 'actualizacion_credenciales', eventId: expect.any(String),
+    items: [
+      { ventaId: 'venta-1', message: expect.objectContaining({ phone: '60000001' }) },
+      { ventaId: 'venta-2', message: expect.objectContaining({ phone: '60000002' }) },
+    ],
+  }));
+  expect(enqueue).not.toHaveBeenCalled();
 });
