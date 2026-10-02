@@ -13,6 +13,7 @@ import type { BotDefinition, BotEventType } from '@/types/bot';
 const log = createLogger('WhatsAppBot');
 
 export type BotDeps = {
+  conversationOwner?: (waId: string) => Promise<'bot' | 'humano' | null>;
   store: BotStore;
   claims: NetflixClaimStore;
   events: Pick<BotEventsStore, 'record'>;

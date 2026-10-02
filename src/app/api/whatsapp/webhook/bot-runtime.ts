@@ -1,3 +1,4 @@
+import { createConversationStateStore } from '@/modules/messaging/conversation-state-store';
 import { getNetflixMailConfig } from '@/platform/config/netflix-server';
 import { createLogger } from '@/platform/observability/logger';
 import { openNetflixInbox } from '@/platform/server/netflix-imap';
@@ -54,6 +55,7 @@ export function createBotRuntime(requestId: string) {
       if (!published) return 'off';
       try {
         return await handleBotMessage(message, {
+          conversationOwner: async waId => (await createConversationStateStore().load(waId))?.state.owner ?? null,
           store: createBotStore(), claims: createNetflixClaimStore(), events: eventsStore, definition: published,
           fetchTravelPage: fetchTravelPageHtml,
           openInbox: async () => {

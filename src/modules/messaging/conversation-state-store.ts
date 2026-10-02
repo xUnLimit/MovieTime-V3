@@ -14,8 +14,8 @@ function serviceClient(): StateClient {
   const client = createServiceRoleClient();
   return {
     read: waId => client.from('whatsapp_conversation_state')
-      .select('flow_version,node_id,variables,awaiting,owner,revision,updated_at,expires_at').eq('wa_id', waId).maybeSingle(),
-    cas: args => client.rpc('set_conversation_state', args),
+      .select('flow_version,node_id,variables,awaiting,owner,revision,updated_at,expires_at').eq('wa_id', waId).abortSignal(AbortSignal.timeout(10000)).maybeSingle(),
+    cas: args => client.rpc('set_conversation_state', args).abortSignal(AbortSignal.timeout(10000)),
   };
 }
 const waIdSchema = z.string().regex(/^[0-9]{7,15}$/);
