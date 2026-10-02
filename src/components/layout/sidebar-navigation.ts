@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import {
   Bell,
+  Bot,
   CreditCard,
   DollarSign,
   FileText,
@@ -32,6 +33,7 @@ export type SidebarNavSection = {
 
 const adminOnlyPaths = [
   '/chats',
+  '/bot',
   '/pagos-yappy',
   '/gastos',
   '/editor-mensajes',
@@ -89,6 +91,11 @@ const navigationSections: SidebarNavSection[] = [
         name: 'Chats',
         href: '/chats',
         icon: MessageCircle,
+      },
+      {
+        name: 'Bot',
+        href: '/bot',
+        icon: Bot,
       },
       {
         name: 'Pagos Yappy',

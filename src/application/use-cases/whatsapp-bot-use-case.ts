@@ -1,130 +1,99 @@
-import { createHash } from 'node:crypto';
-
-import { createLogger } from '@/platform/observability/logger';
-import type { NetflixInbox } from '@/platform/server/netflix-imap';
-import type { BotService, BotStore } from '@/modules/messaging/bot-store';
-import { latestMailByAccount, NETFLIX_CODE_MAX_AGE_MS, type DatedNetflixMail } from '@/modules/netflix/latest-mails';
-import { parseNetflixMail } from '@/modules/netflix/parse-mail';
-import { parseTravelCode } from '@/modules/netflix/travel-code';
-import {
-  accountListMessage, BOT_OPERATOR_QUIET_MS, botTexts, menuMessage, readBotAction, retryMessage, shouldShowMenu,
-  type BotAction,
-} from '@/modules/whatsapp/bot-menu';
-import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
-import type { NewOutboundMessage, OutboundResult } from '@/modules/whatsapp/outbound-messages';
+import { buildNodeMessage, resolveOption, shouldOfferMenu } from '@/modules/bot-config';
+import type { BotService } from '@/modules/messaging/bot-store';
+import { readBotAction, type BotAction, type LegacyTarget } from '@/modules/whatsapp/bot-menu';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
+import type { BotActionKey, BotNode } from '@/types/bot';
+import { renderBotMessage, sayMessage } from './bot-messages';
+import { reply, trackEvent, type BotDeps, type BotResult, type BotRun } from './bot-reply';
+import { requestNetflixCode } from './netflix-code-flow';
 
-const log = createLogger('WhatsAppBot');
-const MAX_MENU_TAPS = 6;
-const TAP_WINDOW_MS = 10 * 60 * 1000;
-
-export type BotDeps = {
-  store: BotStore;
-  // null when the mailbox is not configured.
-  openInbox: () => Promise<NetflixInbox | null>;
-  fetchTravelPage: (url: string) => Promise<string | null>;
-  send: (message: NewOutboundMessage) => Promise<OutboundResult>;
-  now?: () => Date;
+const MINUTE_MS = 60_000;
+const LEGACY_ACTIONS: Record<Exclude<LegacyTarget, 'entry'>, BotActionKey> = {
+  login: 'netflix_login_code', travel: 'netflix_travel_code', handoff: 'handoff',
 };
 
-export type BotResult = 'ignored' | 'menu' | 'support' | 'limited' | 'none' | 'unavailable'
-  | 'retry' | 'list' | 'code' | 'link';
-
-function replyKey(waMessageId: string): string {
-  const hex = createHash('sha256').update(`bot-reply:${waMessageId}`).digest('hex');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+// The built-in actions an action node can connect: the code says how, the administrator says where.
+async function runAction(run: BotRun, action: BotActionKey | undefined, services: BotService[]): Promise<BotResult | null> {
+  if (action === 'netflix_login_code') return requestNetflixCode(run, services, { type: 'login', serviceId: null });
+  if (action === 'netflix_travel_code') return requestNetflixCode(run, services, { type: 'travel', serviceId: null });
+  if (action === 'handoff') {
+    await sayMessage(run, 'handoff_ack');
+    await trackEvent(run, 'handoff');
+    return 'handoff';
+  }
+  return null;
 }
 
-async function reply(
-  deps: BotDeps, message: InboundMessage, payload: OutboundPayload, storedTextBody?: string,
-): Promise<void> {
-  await deps.send({
-    idempotencyKey: replyKey(message.waMessageId), toWaId: message.fromWaId, payload, sentBy: null,
-    ...(storedTextBody ? { storedTextBody } : {}),
-  });
+// Sends a node; an action node runs its action instead. The prefix lets the "option no
+// longer exists" notice and the menu travel in one reply (each inbound message gets one).
+async function deliverNode(run: BotRun, node: BotNode, services: BotService[], prefix?: string): Promise<BotResult> {
+  if (node.kind === 'action') return (await runAction(run, node.action, services)) ?? 'ignored';
+  const shown = prefix ? { ...node, body: `${prefix}\n\n${node.body}` } : node;
+  await reply(run.deps, run.message, buildNodeMessage(shown));
+  return 'node';
 }
 
-async function readRecentMails(inbox: NetflixInbox, since: Date): Promise<DatedNetflixMail[]> {
-  const mails: DatedNetflixMail[] = [];
-  for (const raw of await inbox.recent(since)) {
-    const mail = parseNetflixMail(raw.html);
-    if (mail) mails.push({ receivedAt: raw.receivedAt, mail });
+async function optionUnavailable(run: BotRun, action: Extract<BotAction, { kind: 'option' }>, services: BotService[]): Promise<BotResult> {
+  const { definition } = run.deps;
+  await trackEvent(run, 'option_unavailable', { nodeId: action.nodeId, optionId: action.optionId });
+  const notice = renderBotMessage(definition, 'option_unavailable');
+  const entry = definition.nodes.find((node) => node.id === definition.entryNodeId);
+  if (!entry || entry.kind === 'action') {
+    await sayMessage(run, 'option_unavailable');
+    return 'option_unavailable';
   }
-  return mails;
+  await deliverNode(run, entry, services, notice);
+  return 'option_unavailable';
 }
 
-async function deliver(deps: BotDeps, message: InboundMessage, item: DatedNetflixMail): Promise<BotResult> {
-  if (item.mail.kind === 'login_code') {
-    await reply(deps, message, { kind: 'text', text: botTexts.code(item.mail.code), replyTo: message.waMessageId }, botTexts.codeStored);
-    return 'code';
-  }
-  let code: string | null = null;
-  try {
-    const page = await deps.fetchTravelPage(item.mail.verifyUrl);
-    code = page ? parseTravelCode(page) : null;
-  } catch {
-    log.warn('Netflix travel page could not be read');
-  }
-  if (code) {
-    await reply(deps, message, { kind: 'text', text: botTexts.code(code), replyTo: message.waMessageId }, botTexts.codeStored);
-    return 'code';
-  }
-  // The page was not readable from the server; the customer opens the link himself.
-  await reply(deps, message, { kind: 'text', text: botTexts.link(item.mail.verifyUrl), replyTo: message.waMessageId }, botTexts.linkStored);
-  return 'link';
+async function handleOption(run: BotRun, action: Extract<BotAction, { kind: 'option' }>, services: BotService[]): Promise<BotResult> {
+  const resolved = resolveOption(run.deps.definition, action.nodeId, action.optionId);
+  if (!resolved) return optionUnavailable(run, action, services);
+  const { node, option, target } = resolved;
+  await trackEvent(run, 'option_selected', { nodeId: node.id, optionId: option.id, detail: { destino: target.id } });
+  return deliverNode(run, target, services);
 }
 
-async function requestNetflixCode(
-  deps: BotDeps, message: InboundMessage, services: BotService[], serviceId: string | null, now: Date,
-): Promise<BotResult> {
-  const taps = await deps.store.menuTapsSince(message.fromWaId, new Date(now.getTime() - TAP_WINDOW_MS).toISOString());
-  if (taps > MAX_MENU_TAPS) {
-    await reply(deps, message, { kind: 'text', text: botTexts.limited });
-    return 'limited';
+async function handleLegacy(run: BotRun, target: LegacyTarget, services: BotService[]): Promise<BotResult> {
+  await trackEvent(run, 'option_selected', { detail: { destino: target, compatibilidad: true } });
+  if (target === 'entry') {
+    const { definition } = run.deps;
+    const entry = definition.nodes.find((node) => node.id === definition.entryNodeId);
+    return entry ? deliverNode(run, entry, services) : 'ignored';
   }
-  const owned = serviceId ? services.filter((service) => service.serviceId === serviceId) : services;
-  if (owned.length === 0) {
-    await reply(deps, message, { kind: 'text', text: botTexts.none });
-    return 'none';
-  }
-  let latest: Map<string, DatedNetflixMail>;
-  try {
-    const inbox = await deps.openInbox();
-    if (!inbox) throw new Error('Netflix mailbox is not configured');
-    try {
-      const mails = await readRecentMails(inbox, new Date(now.getTime() - NETFLIX_CODE_MAX_AGE_MS - 60_000));
-      latest = latestMailByAccount(mails, new Set(owned.map((service) => service.email)), now);
-    } finally {
-      await inbox.close().catch(() => log.warn('Netflix mailbox did not close cleanly'));
-    }
-  } catch {
-    log.warn('Netflix mailbox could not be read');
-    await reply(deps, message, { kind: 'text', text: botTexts.unavailable });
-    return 'unavailable';
-  }
-  const candidates = owned.flatMap((service) => {
-    const item = latest.get(service.email);
-    return item ? [{ service, item }] : [];
-  });
-  if (candidates.length === 0) {
-    await reply(deps, message, retryMessage);
-    return 'retry';
-  }
-  if (candidates.length > 1) {
-    await reply(deps, message, accountListMessage(candidates.map((candidate) => candidate.service)));
-    return 'list';
-  }
-  return deliver(deps, message, candidates[0].item);
+  return (await runAction(run, LEGACY_ACTIONS[target], services)) ?? 'ignored';
 }
 
-async function handleAction(
-  deps: BotDeps, message: InboundMessage, action: BotAction, services: BotService[], now: Date,
-): Promise<BotResult> {
-  if (action.kind === 'support') {
-    await reply(deps, message, { kind: 'text', text: botTexts.support });
-    return 'support';
+async function handleAction(run: BotRun, action: BotAction, services: BotService[]): Promise<BotResult> {
+  if (action.kind === 'option') return handleOption(run, action, services);
+  if (action.kind === 'legacy') return handleLegacy(run, action.target, services);
+  await trackEvent(run, 'option_selected', { detail: { destino: 'elegir_cuenta', tipo: action.type } });
+  return requestNetflixCode(run, services, { type: action.type, serviceId: action.serviceId });
+}
+
+async function offerMenu(run: BotRun, text: string | null, services: BotService[]): Promise<BotResult> {
+  const { deps, message, now } = run;
+  const { definition } = deps;
+  // Without a Netflix account the only menu option left would be support.
+  if (services.length === 0) return 'ignored';
+  const quietMs = definition.params.operatorQuietMinutes * MINUTE_MS;
+  const [lastActivityAt, operatorRepliedRecently] = await Promise.all([
+    deps.store.lastActivityAt(message.fromWaId, message.waMessageId),
+    quietMs > 0
+      ? deps.store.operatorRepliedSince(message.fromWaId, new Date(now.getTime() - quietMs).toISOString())
+      : Promise.resolve(false),
+  ]);
+  if (!shouldOfferMenu({
+    text, lastActivityAt, operatorRepliedRecently, now, params: definition.params, keywords: definition.keywords,
+  })) return 'ignored';
+  const entry = definition.nodes.find((node) => node.id === definition.entryNodeId);
+  if (!entry) return 'ignored';
+  const result = await deliverNode(run, entry, services);
+  if (result === 'node') {
+    await trackEvent(run, 'menu_shown', { nodeId: entry.id });
+    return 'menu';
   }
-  return requestNetflixCode(deps, message, services, action.serviceId, now);
+  return result;
 }
 
 // Answers a registered customer's menu taps and, when it is appropriate, offers the
@@ -133,17 +102,8 @@ export async function handleBotMessage(message: InboundMessage, deps: BotDeps): 
   const action = readBotAction(message);
   const text = message.messageType === 'text' ? message.textBody : null;
   if (!action && text === null) return 'ignored';
-  const { known, services } = await deps.store.customerServices(message.fromWaId);
+  const { known, clienteId, services } = await deps.store.customerServices(message.fromWaId);
   if (!known) return 'ignored';
-  const now = deps.now?.() ?? new Date();
-  if (action) return handleAction(deps, message, action, services, now);
-  // Without a Netflix account the only menu option left would be support.
-  if (services.length === 0) return 'ignored';
-  const [lastActivityAt, operatorRepliedRecently] = await Promise.all([
-    deps.store.lastActivityAt(message.fromWaId, message.waMessageId),
-    deps.store.operatorRepliedSince(message.fromWaId, new Date(now.getTime() - BOT_OPERATOR_QUIET_MS).toISOString()),
-  ]);
-  if (!shouldShowMenu({ text, lastActivityAt, operatorRepliedRecently, now })) return 'ignored';
-  await reply(deps, message, menuMessage);
-  return 'menu';
+  const run: BotRun = { deps, message, now: deps.now?.() ?? new Date(), clienteId };
+  return action ? handleAction(run, action, services) : offerMenu(run, text, services);
 }

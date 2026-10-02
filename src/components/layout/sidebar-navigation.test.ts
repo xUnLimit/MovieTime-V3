@@ -8,6 +8,7 @@ describe('findNavItem', () => {
     expect(findNavItem('/ventas/abc/editar')?.name).toBe('Ventas');
     expect(findNavItem('/servicios/detalle/x')?.name).toBe('Servicios');
     expect(findNavItem('/editor-mensajes')?.name).toBe('Plantillas de Mensajes');
+    expect(findNavItem('/bot/flujo')?.name).toBe('Bot');
   });
 
   it('devuelve undefined para rutas fuera del menu', () => {
@@ -35,6 +36,8 @@ describe('getSidebarNavigationSections', () => {
   it('oculta apartados de administrador a otros roles', () => {
     expect(names('vendedor')).not.toContain('Chats');
     expect(names('admin')).toContain('Chats');
+    expect(names('admin')).toContain('Bot');
+    expect(names('vendedor')).not.toContain('Bot');
   });
 
   it('usa iconos distintos para Pagos Yappy y Metodos de Pago', () => {

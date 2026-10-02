@@ -10,8 +10,9 @@ const loginMail = (code: string, email = 'Cuenta008@Ejemplo.test') =>
    <a href="https://www.netflix.com/accountaccess?g=1&amp;lkid=A">actividad</a>${footer(email)}</body></html>`;
 
 const verify = 'https://www.netflix.com/account/travel/verify?nftoken=Bgi+v/AB==&amp;messageGuid=abc';
-const travelMail = (button = verify, email = 'cuenta008@ejemplo.test') =>
-  `<html><body><a href="https://www.netflix.com/ManageAccountAccess?nftoken=SIGNOUT%2B">cerrar sesion</a>
+const greeting = (name: string) => `<p>Hola, <span class="break-word" style="x: y;">${name}</span>:</p>`;
+const travelMail = (button = verify, email = 'cuenta008@ejemplo.test', profile = 'Perfil Uno') =>
+  `<html><body>${greeting(profile)}<a href="https://www.netflix.com/ManageAccountAccess?nftoken=SIGNOUT%2B">cerrar sesion</a>
    <a href="https://www.netflix.com/password?nftoken=PASS">password</a>
    <a class="h5" href="${button}">Obtener codigo</a>${footer(email)}</body></html>`;
 
@@ -31,7 +32,31 @@ describe('parseNetflixMail', () => {
     expect(parsed).toEqual({
       kind: 'travel_link', accountEmail: 'cuenta008@ejemplo.test',
       verifyUrl: 'https://www.netflix.com/account/travel/verify?nftoken=Bgi+v/AB==&messageGuid=abc',
+      profileName: 'Perfil Uno',
     });
+  });
+
+  it('reads the profile that made the travel request, decoded and trimmed', () => {
+    expect(parseNetflixMail(travelMail(verify, undefined, '  Mar&iacute;a &amp; Co &lt;1&gt; &quot;x&quot; &#39;y&#39; &apos;z&apos;&nbsp;'))).toMatchObject({
+      profileName: 'Mar&iacute;a & Co <1> "x" \'y\' \'z\'',
+    });
+    expect(parseNetflixMail(travelMail(verify, undefined, 'Ñandú'))).toMatchObject({ profileName: 'Ñandú' });
+  });
+
+  it('limits the profile name to 64 characters and takes the first break-word span', () => {
+    const long = parseNetflixMail(travelMail(verify, undefined, 'x'.repeat(100)));
+    expect(long).toMatchObject({ profileName: 'x'.repeat(64) });
+    const two = travelMail(verify, undefined, 'Primero').replace('<a class="h5"', `${greeting('Segundo')}<a class="h5"`);
+    expect(parseNetflixMail(two)).toMatchObject({ profileName: 'Primero' });
+  });
+
+  it.each(['', '   ', '&nbsp;'])('reports no profile when the name is empty (%j)', (name) => {
+    expect(parseNetflixMail(travelMail(verify, undefined, name))).toMatchObject({ profileName: null });
+  });
+
+  it('reports no profile when the greeting is missing', () => {
+    const html = travelMail().replace(/<p>Hola[^]*?<\/p>/, '');
+    expect(parseNetflixMail(html)).toMatchObject({ kind: 'travel_link', profileName: null });
   });
 
   it('never returns the sign-out or password links', () => {

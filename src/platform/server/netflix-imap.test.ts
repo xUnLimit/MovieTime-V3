@@ -25,7 +25,7 @@ import { openNetflixInbox } from './netflix-imap';
 
 const since = new Date('2026-10-02T03:45:00Z');
 const body = '<html><body><td class="lrg-number">3916</td></body></html>';
-const source = `From: Netflix <info@account.netflix.com>\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${body}`;
+const source = `From: Netflix <info@account.netflix.com>\r\nMessage-ID: <abc123@ejemplo.test>\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${body}`;
 type Query = { envelope?: boolean; source?: boolean };
 const envelope = (address: string, date: Date | null = new Date('2026-10-02T03:55:00Z'), size = 1000) =>
   ({ envelope: { from: [{ address }] }, internalDate: date, size });
@@ -57,7 +57,7 @@ describe('read-only Netflix mailbox adapter', () => {
     const mails = await inbox.recent(since);
     expect(driver.search).toHaveBeenCalledWith({ from: 'netflix.com', since }, { uid: true });
     expect(mails).toHaveLength(2);
-    expect(mails[0]).toEqual({ receivedAt: '2026-10-02T03:55:00.000Z', html: expect.stringContaining('3916') });
+    expect(mails[0]).toEqual({ receivedAt: '2026-10-02T03:55:00.000Z', messageId: '<abc123@ejemplo.test>', html: expect.stringContaining('3916') });
     expect(driver.fetchOne.mock.calls[0][0]).toBe(9);
     await inbox.close();
   });
@@ -86,6 +86,15 @@ describe('read-only Netflix mailbox adapter', () => {
     expect(await inbox.recent(since)).toHaveLength(1);
     mime.fail = true;
     expect(await inbox.recent(since)).toEqual([]);
+    await inbox.close();
+  });
+
+  it('reports no message id when the header is missing', async () => {
+    driver.search.mockResolvedValue([1]);
+    driver.fetchOne.mockImplementation(async (_uid: number, query: Query) =>
+      query.envelope ? envelope('info@account.netflix.com') : { source: Buffer.from(source.replace(/Message-ID:[^\r]*\r\n/, '')) });
+    const inbox = await openNetflixInbox('owner@gmail.com', 'app-password');
+    expect(await inbox.recent(since)).toEqual([expect.objectContaining({ messageId: null })]);
     await inbox.close();
   });
 

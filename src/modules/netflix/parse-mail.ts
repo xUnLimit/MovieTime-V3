@@ -1,6 +1,6 @@
 export type NetflixMail =
   | { kind: 'login_code'; accountEmail: string | null; code: string }
-  | { kind: 'travel_link'; accountEmail: string | null; verifyUrl: string };
+  | { kind: 'travel_link'; accountEmail: string | null; verifyUrl: string; profileName: string | null };
 
 const maxSourceLength = 262_144;
 const allowedHosts = new Set(['www.netflix.com', 'netflix.com']);
@@ -41,11 +41,23 @@ function findAccountEmail(html: string): string | null {
   return found ? found[1].toLowerCase() : null;
 }
 
+const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', '#39': "'" };
+
+// The greeting "Hola, <span class="break-word">PERFIL</span>:" names the Netflix
+// profile that made the request.
+function findProfileName(html: string): string | null {
+  const raw = /<span\b[^>]*\bclass="[^"]*\bbreak-word\b[^"]*"[^>]*>([^<]{1,200})<\/span>/i.exec(html)?.[1];
+  if (!raw) return null;
+  const name = raw.replace(/&(amp|lt|gt|quot|apos|nbsp|#39);/gi, (_match, entity: string) => entities[entity.toLowerCase()])
+    .trim().slice(0, 64).trim();
+  return name || null;
+}
+
 export function parseNetflixMail(html: string): NetflixMail | null {
   if (!html || html.length > maxSourceLength) return null;
   const accountEmail = findAccountEmail(html);
   const verifyUrl = findVerifyUrl(html);
-  if (verifyUrl) return { kind: 'travel_link', accountEmail, verifyUrl };
+  if (verifyUrl) return { kind: 'travel_link', accountEmail, verifyUrl, profileName: findProfileName(html) };
   const code = findLoginCode(html);
   return code ? { kind: 'login_code', accountEmail, code } : null;
 }

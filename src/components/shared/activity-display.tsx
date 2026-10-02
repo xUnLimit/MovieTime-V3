@@ -153,7 +153,7 @@ export function getActivityDisplayConfig(log: ActivityLog): ActivityDisplayConfi
   const entidadLabels: Record<string, string> = {
     venta: 'Venta', servicio: 'Servicio', tercero: 'Tercero',
     cliente: 'Cliente', revendedor: 'Revendedor', categoria: 'Categoría',
-    metodo_pago: 'Método de pago', template: 'Template',
+    metodo_pago: 'Método de pago', template: 'Template', bot: 'Bot de WhatsApp',
   };
   const label = entidadLabels[log.entidad] ?? log.entidad;
 

@@ -2242,6 +2242,118 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_bot_config: {
+        Row: {
+          enabled: boolean
+          id: string
+          published_version: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          id: string
+          published_version?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          published_version?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_bot_config_published_version_fkey"
+            columns: ["published_version"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_bot_versions"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "whatsapp_bot_config_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_bot_events: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          node_id: string | null
+          option_id: string | null
+          type: string
+          wa_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          node_id?: string | null
+          option_id?: string | null
+          type: string
+          wa_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          node_id?: string | null
+          option_id?: string | null
+          type?: string
+          wa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_bot_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "terceros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_bot_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          definition: Json
+          note: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          definition: Json
+          note?: string
+          version?: never
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          note?: string
+          version?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_bot_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_conversation_flags: {
         Row: {
           archived_at: string | null
@@ -2413,6 +2525,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      netflix_code_claims: {
+        Row: {
+          mail_key: string
+          wa_id: string
+          created_at: string
+        }
+        Insert: {
+          mail_key: string
+          wa_id: string
+          created_at?: string
+        }
+        Update: {
+          mail_key?: string
+          wa_id?: string
+          created_at?: string
+        }
+        Relationships: []
       }
       whatsapp_notice_replies: {
         Row: {
@@ -4101,6 +4231,11 @@ export type Database = {
       }
     }
     Functions: {
+      publish_whatsapp_bot_version: { Args: { p_definition: Json; p_note: string }; Returns: number }
+      set_whatsapp_bot_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
+      record_whatsapp_bot_event: { Args: { p_wa_id: string; p_cliente_id: string | null; p_type: string; p_node_id: string | null; p_option_id: string | null; p_detail: Json }; Returns: string }
+      claim_netflix_code: { Args: { p_mail_key: string; p_wa_id: string }; Returns: string }
+      release_netflix_code: { Args: { p_mail_key: string; p_wa_id: string }; Returns: boolean }
       claim_whatsapp_notice_reply: { Args: { p_notice_id: string; p_action: string; p_inbound_wa_message_id: string }; Returns: { reply_id: number; attempts: number; outcome: string }[] }
       finish_whatsapp_notice_reply: { Args: { p_reply_id: number; p_attempt: number; p_result: string; p_error_label?: string | null }; Returns: boolean }
       list_retryable_whatsapp_notice_replies: { Args: { p_limit: number }; Returns: { reply_id: number; notice_id: string; action: string; inbound_wa_message_id: string }[] }
@@ -4594,6 +4729,7 @@ export type Database = {
         | "gasto"
         | "venta"
         | "template"
+        | "bot"
       metodo_pago_tipo_enum:
         | "banco"
         | "yappy"
@@ -4766,6 +4902,7 @@ export const Constants = {
         "gasto",
         "venta",
         "template",
+        "bot",
       ],
       metodo_pago_tipo_enum: [
         "banco",

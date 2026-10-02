@@ -9,13 +9,14 @@ const sendCloudApiMessage = vi.hoisted(() => vi.fn());
 const handleBotMessage = vi.hoisted(() => vi.fn());
 const openNetflixInbox = vi.hoisted(() => vi.fn());
 const getNetflixMailConfig = vi.hoisted(() => vi.fn());
+const loadBotConfig = vi.hoisted(() => vi.fn());
+const recordBotEvent = vi.hoisted(() => vi.fn());
 const afterCallbacks = vi.hoisted(() => [] as Array<() => Promise<void>>);
 const env = vi.hoisted(() => ({
   whatsappVerifyToken: 'verify-token-123456',
   whatsappAppSecret: '',
   whatsappAccessToken: '',
   whatsappPhoneNumberId: '',
-  whatsappBotEnabled: false,
 }));
 
 vi.mock('@/platform/config', () => ({ env }));
@@ -28,6 +29,9 @@ vi.mock('@/modules/messaging/notice-reply-store', () => ({ createNoticeReplyStor
 vi.mock('@/modules/messaging/notice-store', () => ({ createNoticeStore: () => ({}) }));
 vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({ handleBotMessage }));
 vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({ kind: 'bot-store' }) }));
+vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: () => ({ load: loadBotConfig }) }));
+vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: recordBotEvent }) }));
+vi.mock('@/modules/messaging/netflix-claim-store', () => ({ createNetflixClaimStore: () => ({ kind: 'claim-store' }) }));
 vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox }));
 vi.mock('@/platform/server/netflix-travel-page', () => ({ fetchTravelPageHtml: vi.fn() }));
 vi.mock('@/platform/config/netflix-server', () => ({ getNetflixMailConfig }));
@@ -83,7 +87,8 @@ beforeEach(() => {
   handleBotMessage.mockReset();
   openNetflixInbox.mockReset();
   getNetflixMailConfig.mockReset();
-  env.whatsappBotEnabled = false;
+  loadBotConfig.mockReset();
+  recordBotEvent.mockReset();
   afterCallbacks.length = 0;
   env.whatsappVerifyToken = 'verify-token-123456';
   env.whatsappAppSecret = APP_SIGNING_FIXTURE;
@@ -224,16 +229,25 @@ describe('POST /api/whatsapp/webhook', () => {
   });
 
   describe('menu bot', () => {
+    const published = { ready: true, enabled: true, version: 4, definition: { kind: 'published-definition' } };
+
     beforeEach(() => {
       env.whatsappAccessToken = 'test-token';
       env.whatsappPhoneNumberId = '123456';
-      env.whatsappBotEnabled = true;
       handleNoticeReply.mockResolvedValue('ignored');
       notifyWhatsAppMessages.mockResolvedValue({ sent: 0, failed: 0 });
+      loadBotConfig.mockResolvedValue(published);
+      recordBotEvent.mockResolvedValue(undefined);
     });
 
-    it('hands a new message that is not a notice reply to the bot, wired to the mailbox and the Cloud API', async () => {
-      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
+    async function deliver(inserted = ['wamid.IN']) {
+      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: inserted });
+      const response = await POST(signedPost(textMessageEvent));
+      await Promise.all(afterCallbacks.map((callback) => callback()));
+      return response;
+    }
+
+    it('hands a new message that is not a notice reply to the bot with the published definition, wired to the mailbox and the Cloud API', async () => {
       getNetflixMailConfig.mockReturnValue({ user: 'owner@gmail.com', password: 'app-password' });
       openNetflixInbox.mockResolvedValue({ recent: vi.fn(), close: vi.fn() });
       sendOutboundMessage.mockImplementation(async (_message, deps: { send: (to: string, payload: object) => Promise<unknown> }) => {
@@ -241,52 +255,95 @@ describe('POST /api/whatsapp/webhook', () => {
       });
       sendCloudApiMessage.mockResolvedValue({ waMessageId: 'wamid.OUT' });
       handleBotMessage.mockImplementation(async (_message, deps: {
-        store: unknown; openInbox: () => Promise<unknown>; send: (message: object) => Promise<unknown>;
+        store: unknown; claims: unknown; events: { record: (event: object) => Promise<void> }; definition: unknown;
+        openInbox: () => Promise<unknown>; send: (message: object) => Promise<unknown>;
       }) => {
         expect(deps.store).toEqual({ kind: 'bot-store' });
+        expect(deps.claims).toEqual({ kind: 'claim-store' });
+        expect(deps.definition).toEqual({ kind: 'published-definition' });
+        await deps.events.record({ waId: '50760000000', type: 'menu_shown' });
         await expect(deps.openInbox()).resolves.toBeTruthy();
         await deps.send({ idempotencyKey: 'key' });
         return 'menu';
       });
-      await POST(signedPost(textMessageEvent));
-      await Promise.all(afterCallbacks.map((callback) => callback()));
+      await deliver();
       expect(handleBotMessage).toHaveBeenCalledWith(expect.objectContaining({ waMessageId: 'wamid.IN' }), expect.anything());
       expect(openNetflixInbox).toHaveBeenCalledWith('owner@gmail.com', 'app-password');
       expect(sendCloudApiMessage).toHaveBeenCalledTimes(1);
+      expect(recordBotEvent).toHaveBeenCalledWith({ waId: '50760000000', type: 'menu_shown' });
     });
 
     it('reports an unconfigured mailbox to the bot as unavailable', async () => {
-      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
       getNetflixMailConfig.mockReturnValue(null);
       let inbox: unknown = 'unset';
       handleBotMessage.mockImplementation(async (_message, deps: { openInbox: () => Promise<unknown> }) => {
         inbox = await deps.openInbox();
         return 'unavailable';
       });
-      await POST(signedPost(textMessageEvent));
-      await Promise.all(afterCallbacks.map((callback) => callback()));
+      await deliver();
       expect(inbox).toBeNull();
       expect(openNetflixInbox).not.toHaveBeenCalled();
     });
 
+    it('loads the configuration once per delivery, however many messages it carries', async () => {
+      const event = structuredClone(textMessageEvent);
+      event.entry[0].changes[0].value.messages.push({ id: 'wamid.TWO', from: '50760000000', timestamp: '1790000001', type: 'text', text: { body: 'Hola otra vez' } });
+      storeWebhookBatch.mockResolvedValueOnce({ messages: 2, statuses: 0, insertedWaMessageIds: ['wamid.IN', 'wamid.TWO'] });
+      handleBotMessage.mockResolvedValue('menu');
+      await POST(signedPost(event));
+      await Promise.all(afterCallbacks.map((callback) => callback()));
+      expect(handleBotMessage).toHaveBeenCalledTimes(2);
+      expect(loadBotConfig).toHaveBeenCalledTimes(1);
+    });
+
     it.each([
-      ['the bot is switched off', () => { env.whatsappBotEnabled = false; }, ['wamid.IN']],
       ['Meta redelivers a message already stored', () => undefined, []],
       ['the message was a notice reply', () => { handleNoticeReply.mockResolvedValue('accepted'); }, ['wamid.IN']],
     ])('does not run the bot when %s', async (_label, arrange, inserted) => {
       arrange();
-      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: inserted });
-      await POST(signedPost(textMessageEvent));
-      await Promise.all(afterCallbacks.map((callback) => callback()));
+      await deliver(inserted);
       expect(handleBotMessage).not.toHaveBeenCalled();
+      expect(loadBotConfig).not.toHaveBeenCalled();
     });
 
-    it('keeps the acknowledgement when the bot fails', async () => {
-      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
-      handleBotMessage.mockRejectedValue(new Error('bot failed'));
-      const response = await POST(signedPost(textMessageEvent));
+    it('stays silent and quiet while the bot is switched off', async () => {
+      loadBotConfig.mockResolvedValue({ ready: false, enabled: false, version: 4, reason: 'disabled' });
+      await deliver();
+      expect(handleBotMessage).not.toHaveBeenCalled();
+      expect(recordBotEvent).not.toHaveBeenCalled();
+    });
+
+    it.each(['missing_config', 'no_published_version', 'invalid_definition'])('does not answer and records an error event when the configuration is %s', async (reason) => {
+      loadBotConfig.mockResolvedValue({ ready: false, enabled: true, version: null, reason });
+      const response = await deliver();
       expect(response.status).toBe(200);
-      await expect(Promise.all(afterCallbacks.map((callback) => callback()))).resolves.toBeDefined();
+      expect(handleBotMessage).not.toHaveBeenCalled();
+      expect(recordBotEvent).toHaveBeenCalledWith({ waId: '50760000000', type: 'error', detail: { motivo: reason } });
+      expect(notifyWhatsAppMessages).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the acknowledgement and the push when the configuration cannot be read', async () => {
+      loadBotConfig.mockRejectedValue(new Error('database unavailable'));
+      const response = await deliver();
+      expect(response.status).toBe(200);
+      expect(handleBotMessage).not.toHaveBeenCalled();
+      expect(recordBotEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', detail: { motivo: 'config_no_disponible' } }));
+      expect(notifyWhatsAppMessages).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fail when the error event cannot be recorded either', async () => {
+      loadBotConfig.mockRejectedValue(new Error('database unavailable'));
+      recordBotEvent.mockRejectedValue(new Error('database unavailable'));
+      const response = await deliver();
+      expect(response.status).toBe(200);
+      expect(notifyWhatsAppMessages).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the acknowledgement and records an error event when the bot fails', async () => {
+      handleBotMessage.mockRejectedValue(new Error('bot failed'));
+      const response = await deliver();
+      expect(response.status).toBe(200);
+      expect(recordBotEvent).toHaveBeenCalledWith({ waId: '50760000000', type: 'error', detail: { motivo: 'respuesta_fallida' } });
       expect(notifyWhatsAppMessages).toHaveBeenCalledTimes(1);
     });
   });

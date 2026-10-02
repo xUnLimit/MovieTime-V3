@@ -43,27 +43,44 @@ describe('createBotStore.customerServices', () => {
       servicios: { data: [{ id: 's1', activo: true }] },
     });
     await expect(createBotStore(client).customerServices(waId)).resolves.toEqual({
-      known: true, services: [{ serviceId: 's1', email: 'netflix008@movietimepty.top', profile: 'Perfil 1' }],
+      known: true, clienteId: 'p1', services: [{ serviceId: 's1', email: 'netflix008@movietimepty.top', profiles: ['Perfil 1', 'Perfil 2'] }],
+    });
+  });
+
+  it('keeps each distinct profile noted on the customer sales, and none when they are blank', async () => {
+    const { client } = fakeClient({
+      terceros: { data: [person] },
+      v_ventas_full: { data: [netflix({ perfil_nombre: ' Perfil 1 ' }), netflix({ perfil_nombre: 'Perfil 1' }), netflix({ perfil_nombre: '  ' }), netflix({ perfil_nombre: null })] },
+      servicios: { data: [{ id: 's1', activo: true }] },
+    });
+    await expect(createBotStore(client).customerServices(waId)).resolves.toEqual({
+      known: true, clienteId: 'p1', services: [{ serviceId: 's1', email: 'netflix008@movietimepty.top', profiles: ['Perfil 1'] }],
+    });
+    const blank = fakeClient({
+      terceros: { data: [person] }, v_ventas_full: { data: [netflix({ perfil_nombre: null })] }, servicios: { data: [{ id: 's1', activo: true }] },
+    });
+    await expect(createBotStore(blank.client).customerServices(waId)).resolves.toEqual({
+      known: true, clienteId: 'p1', services: [{ serviceId: 's1', email: 'netflix008@movietimepty.top', profiles: [] }],
     });
   });
 
   it('treats an unknown or shared number as not a customer', async () => {
     const none = fakeClient({ terceros: { data: [{ id: 'p9', telefono: '6000-0000' }] } });
-    await expect(createBotStore(none.client).customerServices(waId)).resolves.toEqual({ known: false, services: [] });
+    await expect(createBotStore(none.client).customerServices(waId)).resolves.toEqual({ known: false, clienteId: null, services: [] });
     const shared = fakeClient({ terceros: { data: [person, { id: 'p3', telefono: '507 6533 1751' }] } });
-    await expect(createBotStore(shared.client).customerServices(waId)).resolves.toEqual({ known: false, services: [] });
+    await expect(createBotStore(shared.client).customerServices(waId)).resolves.toEqual({ known: false, clienteId: null, services: [] });
     const missing = fakeClient({ terceros: { data: [{ id: 'p4', telefono: null }, { id: 'p5', telefono: 'abc' }] } });
-    await expect(createBotStore(missing.client).customerServices(waId)).resolves.toEqual({ known: false, services: [] });
+    await expect(createBotStore(missing.client).customerServices(waId)).resolves.toEqual({ known: false, clienteId: null, services: [] });
   });
 
   it('knows the customer but offers nothing without an active Netflix account', async () => {
     const noSales = fakeClient({ terceros: { data: [person] }, v_ventas_full: { data: [] } });
-    await expect(createBotStore(noSales.client).customerServices(waId)).resolves.toEqual({ known: true, services: [] });
+    await expect(createBotStore(noSales.client).customerServices(waId)).resolves.toEqual({ known: true, clienteId: 'p1', services: [] });
     const inactive = fakeClient({
       terceros: { data: [person] }, v_ventas_full: { data: [netflix(), netflix({ servicio_id: null }), netflix({ servicio_correo: '' })] },
       servicios: { data: [{ id: 's1', activo: false }] },
     });
-    await expect(createBotStore(inactive.client).customerServices(waId)).resolves.toEqual({ known: true, services: [] });
+    await expect(createBotStore(inactive.client).customerServices(waId)).resolves.toEqual({ known: true, clienteId: 'p1', services: [] });
   });
 
   it('fails loudly when a lookup fails', async () => {

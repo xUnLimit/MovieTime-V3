@@ -1,7 +1,7 @@
 import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
 
-type NetflixInboxMail = { receivedAt: string; html: string };
+type NetflixInboxMail = { receivedAt: string; messageId: string | null; html: string };
 export type NetflixInbox = {
   recent(since: Date): Promise<NetflixInboxMail[]>;
   close(): Promise<void>;
@@ -53,7 +53,9 @@ export async function openNetflixInbox(user: string, password: string): Promise<
           if (!message || !message.source) continue;
           try {
             const parsed = await simpleParser(message.source, { skipImageLinks: true });
-            if (typeof parsed.html === 'string') mails.push({ receivedAt: received.toISOString(), html: parsed.html });
+            if (typeof parsed.html === 'string') {
+              mails.push({ receivedAt: received.toISOString(), messageId: parsed.messageId?.trim() || null, html: parsed.html });
+            }
           } catch {
             // A message that cannot be decoded is skipped; it must not block the newer ones.
           }

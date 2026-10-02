@@ -4,7 +4,7 @@
 
 // Activity Log Types
 type AccionLog = 'creacion' | 'actualizacion' | 'corte' | 'eliminacion' | 'renovacion' | 'reembolso';
-type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'tercero' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template';
+type EntidadLog = 'cliente' | 'revendedor' | 'servicio' | 'tercero' | 'categoria' | 'metodo_pago' | 'gasto' | 'venta' | 'template' | 'bot';
 
 export interface CambioLog {
   campo: string;        // Nombre del campo en español (ej: "Precio", "Estado")

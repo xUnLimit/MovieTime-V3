@@ -50,7 +50,6 @@ const serverEnvSchema = z.object({
   NETFLIX_IMAP_PASSWORD: z.string().min(1).optional(),
   YAPPY_SYNC_SECRET: z.string().trim().min(16).optional(),
   WHATSAPP_AUTO_NOTICES_SECRET: z.string().trim().min(16).optional(),
-  WHATSAPP_BOT_ENABLED: z.enum(['true', 'false']).optional(),
 }).superRefine((value, ctx) => {
   if (!isProduction) return;
   const cronSecret = value.PUSH_CRON_SECRET || value.CRON_SECRET;
@@ -138,8 +137,6 @@ export const env = {
   yappySyncSecret: 'YAPPY_SYNC_SECRET' in serverEnv && typeof serverEnv.YAPPY_SYNC_SECRET === 'string' ? serverEnv.YAPPY_SYNC_SECRET : '',
   whatsappAutoNoticesSecret: 'WHATSAPP_AUTO_NOTICES_SECRET' in serverEnv
     && typeof serverEnv.WHATSAPP_AUTO_NOTICES_SECRET === 'string' ? serverEnv.WHATSAPP_AUTO_NOTICES_SECRET : '',
-  // El bot de menus responde mensajes libres; nace apagado hasta activarlo a proposito.
-  whatsappBotEnabled: 'WHATSAPP_BOT_ENABLED' in serverEnv && serverEnv.WHATSAPP_BOT_ENABLED === 'true',
   // Identificador publico del numero +507 6533-1751 en la Cloud API (no es un
   // secreto); la variable de entorno permite cambiar de numero sin desplegar.
   whatsappPhoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID' in serverEnv && typeof serverEnv.WHATSAPP_PHONE_NUMBER_ID === 'string'

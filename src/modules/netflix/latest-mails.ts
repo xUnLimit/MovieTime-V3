@@ -1,24 +1,26 @@
 import type { NetflixMail } from './parse-mail';
 
-export const NETFLIX_CODE_MAX_AGE_MS = 15 * 60 * 1000;
+export type DatedNetflixMail = { receivedAt: string; messageId: string | null; mail: NetflixMail };
 
-export type DatedNetflixMail = { receivedAt: string; mail: NetflixMail };
-
-// Newest usable mail per account, only for the accounts the customer owns and
-// only while Netflix still honours the code.
-export function latestMailByAccount(
+// Every recent mail of one kind per owned account, newest first, so the caller can
+// drop the ones already delivered to someone else. The window is a short, configurable
+// age: Netflix sends the sign-in code to whoever asked without saying who that was, so
+// the shorter it is the less likely it reaches somebody else.
+export function recentMailsByAccount(
   mails: readonly DatedNetflixMail[],
   accountEmails: ReadonlySet<string>,
+  kind: NetflixMail['kind'],
   now: Date,
-  maxAgeMs = NETFLIX_CODE_MAX_AGE_MS,
-): Map<string, DatedNetflixMail> {
-  const latest = new Map<string, DatedNetflixMail>();
+  maxAgeMs: number,
+): Map<string, DatedNetflixMail[]> {
+  const byAccount = new Map<string, DatedNetflixMail[]>();
   for (const item of mails) {
     const account = item.mail.accountEmail;
     const age = now.getTime() - Date.parse(item.receivedAt);
-    if (!account || !accountEmails.has(account) || !Number.isFinite(age) || age < 0 || age > maxAgeMs) continue;
-    const current = latest.get(account);
-    if (!current || Date.parse(item.receivedAt) > Date.parse(current.receivedAt)) latest.set(account, item);
+    if (item.mail.kind !== kind || !account || !accountEmails.has(account)
+      || !Number.isFinite(age) || age < 0 || age > maxAgeMs) continue;
+    byAccount.set(account, [...(byAccount.get(account) ?? []), item]);
   }
-  return latest;
+  for (const list of byAccount.values()) list.sort((a, b) => Date.parse(b.receivedAt) - Date.parse(a.receivedAt));
+  return byAccount;
 }

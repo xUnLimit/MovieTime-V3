@@ -49,6 +49,7 @@ const entityLabels: Record<string, string> = {
   metodo_pago: 'Método de Pago',
   gasto: 'Gasto',
   template: 'Template',
+  bot: 'Bot de WhatsApp',
 };
 
 const ENTIDAD_OPTIONS = [

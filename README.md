@@ -7,6 +7,7 @@ Cubre:
 - **Operacion:** terceros (clientes y revendedores), servicios (cuentas de proveedor), ventas y sus periodos, renovaciones, reembolsos, cortes y reposo.
 - **Finanzas:** pagos de ventas y servicios, gastos, categorias, metodos de pago y un dashboard financiero con pronostico.
 - **WhatsApp (Cloud API de Meta):** bandeja de chats en `/chats` que se actualiza en tiempo real con Supabase Realtime (con sondeo lento de respaldo), plantillas aprobadas por Meta, avisos de vencimiento manuales y automaticos con botones de respuesta.
+- **Bot de WhatsApp administrable:** la pantalla `/bot` (solo administradores) enciende y apaga el bot, edita su flujo, mensajes y tiempos, y muestra su actividad; el webhook usa siempre la ultima version publicada (ver `docs/whatsapp-bot-admin.md`).
 - **Pagos Yappy:** deteccion de avisos de pago por correo (IMAP) en `/pagos-yappy` para conciliarlos.
 - **Notificaciones:** vencimientos de ventas y servicios, push web y resumen ejecutivo programado.
 
@@ -40,7 +41,7 @@ El proposito, los usuarios y los principios del producto estan en [`PRODUCT.md`]
 | App | `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ENABLE_SW_DEV` | URL en produccion |
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Si |
 | Push | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `PUSH_CRON_SECRET` o `CRON_SECRET` | En produccion |
-| WhatsApp | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_AUTO_NOTICES_SECRET`, `WHATSAPP_BOT_ENABLED` | Solo para usar WhatsApp |
+| WhatsApp | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_AUTO_NOTICES_SECRET` | Solo para usar WhatsApp |
 | Yappy | `YAPPY_IMAP_USER`, `YAPPY_IMAP_PASSWORD`, `YAPPY_SYNC_SECRET` | Solo para detectar pagos |
 | Codigos de Netflix | `NETFLIX_IMAP_USER`, `NETFLIX_IMAP_PASSWORD` | Solo para el bot de codigos |
 

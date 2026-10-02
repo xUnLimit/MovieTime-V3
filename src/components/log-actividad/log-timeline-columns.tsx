@@ -60,6 +60,7 @@ function getEntityLabel(entidad: ActivityLog["entidad"]) {
     gasto: "Gasto",
     venta: "Venta",
     template: "Template",
+    bot: "Bot de WhatsApp",
   };
   return labels[entidad];
 }

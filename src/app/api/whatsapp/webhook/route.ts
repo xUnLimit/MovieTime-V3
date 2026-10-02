@@ -1,15 +1,10 @@
 import { after } from 'next/server';
 
 import { env } from '@/platform/config';
-import { getNetflixMailConfig } from '@/platform/config/netflix-server';
 import { createLogger } from '@/platform/observability/logger';
 import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/platform/server/api-response';
-import { openNetflixInbox } from '@/platform/server/netflix-imap';
-import { fetchTravelPageHtml } from '@/platform/server/netflix-travel-page';
 import { z } from '@/platform/validation/zod';
 import { handleNoticeReply } from '@/application/use-cases/notice-reply-use-case';
-import { handleBotMessage } from '@/application/use-cases/whatsapp-bot-use-case';
-import { createBotStore } from '@/modules/messaging/bot-store';
 import { createNoticeReplyStore } from '@/modules/messaging/notice-reply-store';
 import { createNoticeStore } from '@/modules/messaging/notice-store';
 import { notifyWhatsAppMessages } from '@/modules/notifications/whatsapp-message-push';
@@ -19,6 +14,7 @@ import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
 import { createTemplateCatalog } from '@/modules/whatsapp/template-catalog';
 import { storeWebhookBatch } from '@/modules/whatsapp/webhook-inbox';
 import { parseWebhookPayload } from '@/modules/whatsapp/webhook-payload';
+import { createBotRuntime } from './bot-runtime';
 import { isValidVerifyToken, isValidWebhookSignature } from '@/modules/whatsapp/webhook-signature';
 
 export const runtime = 'nodejs';
@@ -105,6 +101,7 @@ export async function POST(request: Request) {
           const config = { accessToken: env.whatsappAccessToken, phoneNumberId: env.whatsappPhoneNumberId };
           const catalog = createTemplateCatalog();
           const outboundStore = createOutboundStore();
+          const bot = createBotRuntime(requestId);
           for (const message of messages) {
             try {
               const result = await handleNoticeReply(message, {
@@ -115,18 +112,11 @@ export async function POST(request: Request) {
                 }),
               });
               if (result === 'failed') logger.warn('WhatsApp notice reply action failed', { requestId });
-              if (result === 'ignored' && env.whatsappBotEnabled && insertedIds.has(message.waMessageId)) {
-                await handleBotMessage(message, {
-                  store: createBotStore(), fetchTravelPage: fetchTravelPageHtml,
-                  openInbox: async () => {
-                    const mailbox = getNetflixMailConfig();
-                    return mailbox ? openNetflixInbox(mailbox.user, mailbox.password) : null;
-                  },
-                  send: (outbound) => sendOutboundMessage(outbound, {
-                    store: outboundStore, catalog,
-                    send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload),
-                  }),
-                });
+              if (result === 'ignored' && insertedIds.has(message.waMessageId)) {
+                await bot.handle(message, (outbound) => sendOutboundMessage(outbound, {
+                  store: outboundStore, catalog,
+                  send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload),
+                }));
               }
             } catch {
               // Never log the inbound payload or rendered credentials.
