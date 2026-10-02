@@ -1,3 +1,4 @@
+import { calculateDiscountedAmount } from '@/platform/utils/calculations';
 import { z } from '@/platform/validation/zod';
 
 const uuid = z.string().uuid();
@@ -35,3 +36,32 @@ export const confirmarPedidoSchema = cancelarPedidoSchema.extend({
 export type CrearPedidoInput = z.input<typeof crearPedidoSchema>;
 export type ConfirmarPedidoInput = z.input<typeof confirmarPedidoSchema>;
 export type CancelarPedidoInput = z.input<typeof cancelarPedidoSchema>;
+
+const panelSnapshot = z.object({
+  item_id: z.string().min(1).max(100),
+  precio: z.number().finite().nonnegative().multipleOf(0.01),
+  total: z.number().finite().nonnegative().multipleOf(0.01),
+  estado: z.enum(['activo', 'inactivo']),
+  fecha_inicio: z.iso.date(), fecha_fin: z.iso.date(),
+  perfil_nombre: z.string().max(200), codigo: z.string().max(200), notas: z.string().max(5000),
+  metodo_pago_id: uuid.nullable(), metodo_pago_nombre: z.string().max(200),
+}).strict().refine(p => p.fecha_fin >= p.fecha_inicio, 'Las fechas de la venta no son validas.');
+const panelItem = z.object({
+  ...itemBase, tipo: z.literal('nueva'), plan_id: uuid, servicio_id: uuid,
+  categoria_id: uuid, perfil_numero: z.number().int().positive().optional(), panel: panelSnapshot,
+}).strict().refine(i => calculateDiscountedAmount(i.panel.precio, i.descuento ?? 0) === i.panel.total, 'El total del item no coincide con su precio y descuento.');
+export const confirmarPedidoPanelSchema = z.object({
+  p_idempotency_key: uuid,
+  p_panel_pedidos: z.array(z.object({
+    cliente_id: uuid, moneda: z.string().regex(/^[A-Z]{3}$/),
+    exchange_rate: z.number().finite().positive(), monto: z.number().finite().nonnegative().multipleOf(0.01),
+    crear_key: uuid, confirmar_key: uuid, items: z.array(panelItem).min(1).max(100),
+  }).strict().refine(g => g.moneda !== 'USD' || g.exchange_rate === 1, 'USD requiere tasa 1.')
+    .refine(g => Math.round(g.items.reduce((sum, i) => sum + i.panel.total, 0) * 100) ===
+      Math.round(g.monto * 100), 'El monto no coincide con el carrito.')).min(1).max(100),
+}).strict().refine(p => p.p_panel_pedidos.reduce((sum, g) => sum + g.items.length, 0) <= 100,
+  'El carrito admite hasta 100 items.')
+  .refine(p => new Set(p.p_panel_pedidos.map(g => g.moneda)).size === p.p_panel_pedidos.length,
+    'Cada moneda requiere un solo pedido.')
+  .refine(p => new Set(p.p_panel_pedidos.map(g => g.cliente_id)).size === 1, 'El carrito requiere un solo cliente.');
+export type ConfirmarPedidoPanelInput = z.input<typeof confirmarPedidoPanelSchema>;

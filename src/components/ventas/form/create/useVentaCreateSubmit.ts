@@ -7,17 +7,16 @@ import { notifyCommittedMutation } from '@/components/shared/notify-committed-mu
 import { MutationCommittedError } from '@/platform/errors/mutation-committed-error';
 
 import type { VentaItem } from '@/components/ventas/form/ventas-form-shared';
-import { syncTerceroMetodoPagoUseCase } from '@/application/use-cases/terceros/tercero-metodo-pago-use-cases';
+import { createCartSession } from '@/application/use-cases/ventas/create-ventas-from-cart-use-case';
+import type { createVentasFromCartMutation } from '@/application/client-domain-mutations/ventas-client-mutations';
 import { reportError } from '@/platform/observability/logger';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
-import type { Tercero, VentaDoc } from '@/types';
+import type { Tercero } from '@/types';
 
 import {
   buildVentaCreateBatchInputs,
-  getServicioIdsConPerfil,
 } from './venta-create-submit-helpers';
 
-type CreateVentaInput = Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'>;
 type MetodoPagoResumen = {
   nombre?: string;
   moneda?: string;
@@ -26,7 +25,7 @@ type MetodoPagoResumen = {
 type UseVentaCreateSubmitParams = {
   clienteId: string | undefined;
   clienteSeleccionado: Tercero | undefined;
-  createVenta: (venta: CreateVentaInput, idempotencyKey?: string) => Promise<string>;
+  createCart: typeof createVentasFromCartMutation;
   editedMessage: string;
   estadoVenta: string | undefined;
   fechaFin: Date | undefined;
@@ -49,13 +48,12 @@ type UseVentaCreateSubmitParams = {
   // flujo por defecto (setPendingWhatsApp).
   sendDirectMessage?: (message: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
   totalFinal: number;
-  updatePerfilOcupado: (id: string, shouldIncrement: boolean) => Promise<void>;
 };
 
 export function useVentaCreateSubmit({
   clienteId,
   clienteSeleccionado,
-  createVenta,
+  createCart,
   editedMessage,
   estadoVenta,
   fechaFin,
@@ -68,13 +66,12 @@ export function useVentaCreateSubmit({
   setPendingWhatsApp,
   sendDirectMessage,
   totalFinal,
-  updatePerfilOcupado,
 }: UseVentaCreateSubmitParams) {
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
   const intent = useRef(createMutationIntent());
-  const completed = useRef(new Set<string>());
-  const createdIds = useRef(new Map<string, string>());
+  const session = useRef(createCartSession());
+  const finalized = useRef(new Set<string>());
   const enqueueWhatsAppMessages = useWhatsAppToastStore((state) => state.enqueueMany);
 
   const handleGuardarVenta = async (event: FormEvent<HTMLFormElement>) => {
@@ -104,7 +101,6 @@ export function useVentaCreateSubmit({
     try {
       submitting.current = true;
       setSaving(true);
-      const batchKeys: string[] = [];
       const writes = buildVentaCreateBatchInputs({
         clienteId,
         clienteNombre,
@@ -117,51 +113,20 @@ export function useVentaCreateSubmit({
         metodoPagoNombre,
         moneda,
         totalFinal,
-      }).map(async (input, index) => {
-        const key = intent.current.keyFor([
-          items[index], clienteId, metodoPagoId, moneda, fechaInicio, fechaFin, normalizedEstado,
-        ]);
-        batchKeys.push(key);
-        if (completed.current.has(key)) return;
-        try {
-          const ventaId = await createVenta(input, key);
-          createdIds.current.set(key, ventaId);
-        } catch (error) {
-          if (!notifyCommittedMutation(error)) throw error;
-          if (error instanceof MutationCommittedError) createdIds.current.set(key, error.operationId);
-          reportError('VentaCreateSubmit', 'Venta guardada con error secundario', error);
-        }
-        completed.current.add(key);
       });
-      const results = await Promise.allSettled(writes);
-      const failed = results.find((result) => result.status === 'rejected');
-      if (failed?.status === 'rejected') throw failed.reason;
+      const key = intent.current.keyFor([items, clienteId, metodoPagoId, moneda, fechaInicio, fechaFin, normalizedEstado]);
+      if (finalized.current.has(key)) return;
+      const result = await createCart(writes, { idempotencyKey: key, session: session.current });
       batchCommitted = true;
-
-      try {
-        await syncTerceroMetodoPagoUseCase({
-          terceroId: clienteId,
-          metodoPagoId,
-          metodoPagoNombre,
-          moneda,
-        });
-      } catch (syncError) {
-        reportError('VentaCreateSubmit', 'Error sincronizando metodo de pago del tercero', syncError);
-        toast.warning('Venta guardada con advertencia', {
-          description:
-            'La venta se creo, pero no se pudo actualizar el metodo de pago en terceros.',
-        });
-      }
-
-      if (normalizedEstado !== 'inactivo') {
-        const servicioIdsConPerfil = getServicioIdsConPerfil(items);
-        await Promise.all(
-          servicioIdsConPerfil.map((servicioId) =>
-            updatePerfilOcupado(servicioId, true),
-          ),
-        );
-      }
-      if (notifyCliente && normalizedEstado !== 'inactivo') {
+      finalized.current.add(key);
+      if (result.monedas.length > 1) toast.info('Carrito dividido por moneda', {
+        description: `Se confirmo un pedido por moneda: ${result.monedas.join(', ')}.`,
+      });
+      if (result.sinStock.length) toast.warning('Items sin stock', {
+        description: `Pendientes de entrega: ${result.sinStock.join(', ')}. El pedido conserva el cobro para conciliacion.`,
+      });
+      for (const warning of new Set(result.warnings)) toast.warning('Pedido guardado con advertencia', { description: warning });
+      if (notifyCliente && normalizedEstado !== 'inactivo' && result.ventaIds.length > 0) {
         const pending = editedMessage ? {
           phone: (clienteSeleccionado?.telefono || '').replace(/[^\d+]/g, ''),
           message: editedMessage,
@@ -170,10 +135,8 @@ export function useVentaCreateSubmit({
         } : null;
         await announceNotice({
           tipo: 'suscripcion',
-          items: batchKeys.flatMap((key) => {
-            const ventaId = createdIds.current.get(key);
-            return ventaId ? [{ ventaId, message: pending }] : [];
-          }),
+          eventId: key,
+          items: result.ventaIds.map(ventaId => ({ ventaId, message: pending })),
           enqueueWhatsAppMessages,
           copy: {
             loading: 'Venta registrada. Avisando al cliente...',
@@ -214,9 +177,7 @@ export function useVentaCreateSubmit({
         return;
       }
       toast.error('Error al guardar la venta', {
-        description: completed.current.size > 0
-          ? 'Parte del lote ya se guardo. Reintenta sin cambiar los datos para completar las ventas pendientes sin duplicarlas.'
-          : getPublicErrorMessage(error, 'No se pudo guardar la venta.'),
+        description: getPublicErrorMessage(error, 'No se pudo confirmar el pedido. Reintenta con los mismos datos.'),
       });
     } finally {
       submitting.current = false;

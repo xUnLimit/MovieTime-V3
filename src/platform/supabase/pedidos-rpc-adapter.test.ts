@@ -6,8 +6,8 @@ vi.mock('./client', () => ({ supabase: {
   auth: { getSession: async () => ({ data: { session: { user: { id: 'pedidos-test' } } }, error: null }) },
   from: query,
 } }));
-import { cancelarPedidoRpc, confirmarPedidoRpc, crearPedidoRpc } from './pedidos-rpc-adapter';
-import { cancelarPedido, confirmarPedido, crearPedido, getPedido } from './pedidos-repository';
+import { cancelarPedidoRpc, confirmarPedidoRpc, crearPedidoRpc, confirmarPedidoPanelRpc } from './pedidos-rpc-adapter';
+import { cancelarPedido, confirmarPedido, crearPedido, getPedido, getPedidoPanelItems } from './pedidos-repository';
 import type { CrearPedidoInput } from './pedidos-schemas';
 
 const id = '10000000-0000-4000-8000-000000000001';
@@ -89,5 +89,50 @@ describe('pedidos typed adapters and repository', () => {
     await expect(getPedido(id)).resolves.toBeNull();
     read.mockResolvedValueOnce({ data: null, error: { message: 'private SQL' } });
     await expect(getPedido(id)).rejects.toMatchObject({ code: 'PEDIDO_READ_FAILED' });
+  });
+});
+
+const panel = {
+  p_idempotency_key: key,
+  p_panel_pedidos: [{ cliente_id: id, moneda: 'USD', exchange_rate: 1, monto: 9, crear_key: key, confirmar_key: id,
+    items: [{ tipo: 'nueva' as const, plan_id: id, servicio_id: id, categoria_id: id, ciclo_pago: 'mensual' as const, descuento: 25,
+      panel: { item_id: 'one', precio: 12, total: 9, estado: 'activo' as const, fecha_inicio: '2026-10-01', fecha_fin: '2026-11-01',
+        perfil_nombre: 'Perfil', codigo: '1234', notas: 'Nota', metodo_pago_id: null, metodo_pago_nombre: 'Banco' } }] }],
+};
+describe('atomic panel contract', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
+    rpc.mockResolvedValue({ data: id, error: null });
+  });
+  it('calls the additive overload and retains its key on an ambiguous failure', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'private SQL' } });
+    await expect(confirmarPedidoPanelRpc(panel)).rejects.toMatchObject({ code: 'PEDIDO_RPC_FAILED' });
+    await expect(confirmarPedidoPanelRpc(panel)).resolves.toBe(id);
+    expect(rpc).toHaveBeenCalledWith('confirmar_pedido', panel);
+    expect(rpc.mock.calls[0][1].p_idempotency_key).toBe(rpc.mock.calls[1][1].p_idempotency_key);
+  });
+  it('validates totals, dates, currencies and connectivity before writing', async () => {
+    const group = panel.p_panel_pedidos[0];
+    await expect(confirmarPedidoPanelRpc({ ...panel, p_panel_pedidos: [{ ...group, monto: 8 }] })).rejects.toThrow();
+    await expect(confirmarPedidoPanelRpc({ ...panel, p_panel_pedidos: [group, group] })).rejects.toThrow();
+    await expect(confirmarPedidoPanelRpc({ ...panel, p_panel_pedidos: [{ ...group, items: [{ ...group.items[0], panel: { ...group.items[0].panel, total: 8 } }] }] })).rejects.toThrow();
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    await expect(confirmarPedidoPanelRpc(panel)).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it('reads all currency orders and stock outcomes through a validated batch ID', async () => {
+    query.mockReturnValueOnce({ select: () => ({ eq: read }) }).mockReturnValueOnce({ select: () => ({ in: read }) });
+    read.mockResolvedValueOnce({ data: [{ id, moneda: 'USD' }], error: null }).mockResolvedValueOnce({ data: [{ estado: 'sin_stock' }], error: null });
+    await expect(getPedidoPanelItems('invalid')).rejects.toThrow();
+    expect(query).not.toHaveBeenCalled();
+    await expect(getPedidoPanelItems(id)).resolves.toEqual({ pedidos: [{ id, moneda: 'USD' }], items: [{ estado: 'sin_stock' }] });
+  });
+  it.each([true, false])('sanitizes failed postcommit reads (orders: %s)', async orderFailure => {
+    query.mockReturnValue({ select: () => ({ eq: read, in: read }) });
+    if (!orderFailure) read.mockResolvedValueOnce({ data: [{ id, moneda: 'USD' }], error: null });
+    read.mockResolvedValueOnce({ data: null, error: { message: 'private SQL' } });
+    await expect(getPedidoPanelItems(id)).rejects.toMatchObject({ code: 'PEDIDO_READ_FAILED' });
   });
 });

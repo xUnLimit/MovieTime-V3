@@ -70,3 +70,43 @@ se ejecutan sobre ninguna base remota. La prueba de rollback usa dos servicios
 para verificar que la aplicación del primer ítem se deshace al fallar el segundo.
 Los bloqueos están presentes en SQL; la carrera entre sesiones requiere además
 una prueba concurrente de integración antes del release.
+
+## Carrito del panel
+
+La migracion aditiva `20261004020000_pedidos_panel.sql` mantiene las firmas
+anteriores y agrega el overload `confirmar_pedido(p_panel_pedidos jsonb,
+p_idempotency_key uuid)`. El caso de uso `createVentasFromCartUseCase` agrupa
+los items por moneda y prepara una clave estable para el envio completo y
+claves para crear/confirmar cada pedido. Un solo RPC ejecuta `crear_pedido` y
+`confirmar_pedido` por grupo dentro de la misma transaccion: un error revierte
+pedidos, items, cobros, ventas, periodos, ocupacion y ledger de todas las monedas.
+Dos llamadas HTTP independientes no ofrecerian esta garantia.
+
+Cada item nuevo del panel lleva `panel`: `item_id`, `precio`, `total`, `estado`,
+`fecha_inicio`, `fecha_fin`, `perfil_nombre`, `codigo`, `notas`, `metodo_pago_id`
+y `metodo_pago_nombre`. SQL valida el precio y total contra el descuento y
+congela los datos en `pedido_items.panel_snapshot`; el ciclo sigue siendo el
+contratado en el plan. Los llamadores anteriores conservan el precio del
+catalogo, las fechas calculadas y sus valores por defecto. Las ventas inactivas
+conservan su estado y no ocupan perfiles. Los carritos gratuitos crean su pago
+inicial de valor cero sin inventar un recibo positivo en `pedido_pagos`.
+
+`pedidos.panel_batch_id` vincula los pedidos por moneda al primer pedido del
+carrito. El overload devuelve ese ID y el repositorio consulta pedidos e items
+para recuperar todas las ventas resultantes y los faltantes. `sin_stock` sigue
+siendo un resultado de entrega pendiente, no un error transaccional: conserva
+el cobro y aplica los items disponibles. El operador recibe un aviso por item;
+solo las ventas efectivamente creadas producen actividad, eventos y avisos al
+cliente. Los pedidos de varias monedas se informan con un aviso al operador.
+
+La sesion del formulario conserva payloads congelados y resultados por clave;
+un reintento no repite cobros ni ventas y un envio ya completado no repite el
+aviso al cliente. Un fallo de transporte o lectura posterior puede ocurrir
+despues del commit: se reintenta con la misma clave, sin cancelar ni compensar
+un cobro cuyo resultado es ambiguo. Los errores de actividad, sincronizacion
+del metodo del tercero o refresco de consultas se comunican como advertencias
+tras el commit. La ocupacion solo se actualiza mediante el trigger SQL.
+
+Las pruebas adicionales de atomicidad y snapshots estan en
+`supabase/tests/database/pedidos-panel.sql`. Deben ejecutarse en base local/CI
+antes del release, junto con las pruebas existentes y las carreras concurrentes.

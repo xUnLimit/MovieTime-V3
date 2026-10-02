@@ -1,3 +1,5 @@
+import { createVentasFromCartUseCase } from '@/application/use-cases/ventas/create-ventas-from-cart-use-case';
+import { reportError } from '@/platform/observability/logger';
 import {
   afterVentaCreated,
   afterVentaDeleted,
@@ -37,4 +39,19 @@ export async function deleteVentaMutation(id: string, servicioId?: string, perfi
   });
   await afterVentaDeleted(id, serviceProfileDelta);
   await invalidateStoreQueries(['ventas', 'servicios', 'terceros', 'notificaciones', 'pagination']);
+}
+
+export async function createVentasFromCartMutation(
+  ventas: Parameters<typeof createVentasFromCartUseCase>[0],
+  options: Pick<Parameters<typeof createVentasFromCartUseCase>[1], 'idempotencyKey' | 'session'>,
+) {
+  const result = await createVentasFromCartUseCase(ventas, { ...getActivityLogOptions(), ...options });
+  try {
+    for (const ventaId of result.ventaIds) await afterVentaCreated(ventaId);
+    await invalidateStoreQueries(['ventas', 'servicios', 'terceros', 'notificaciones', 'pagination']);
+  } catch (error) {
+    reportError('CreateVentasFromCart', 'Error actualizando datos del pedido confirmado', error);
+    result.warnings.push('No se pudieron actualizar los datos de la pantalla.');
+  }
+  return result;
 }
