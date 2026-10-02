@@ -1864,6 +1864,7 @@ export type Database = {
           telefono: string
           tipo: Database["public"]["Enums"]["tercero_tipo_enum"]
           updated_at: string
+          wa_id: string | null
         }
         Insert: {
           active?: boolean
@@ -1878,6 +1879,7 @@ export type Database = {
           telefono: string
           tipo: Database["public"]["Enums"]["tercero_tipo_enum"]
           updated_at?: string
+          wa_id?: never
         }
         Update: {
           active?: boolean
@@ -1892,6 +1894,7 @@ export type Database = {
           telefono?: string
           tipo?: Database["public"]["Enums"]["tercero_tipo_enum"]
           updated_at?: string
+          wa_id?: never
         }
         Relationships: [
           {
@@ -2350,6 +2353,47 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_contacts: {
+        Row: {
+          created_at: string
+          estado: string
+          first_seen_at: string
+          last_seen_at: string
+          nombre_perfil: string | null
+          tercero_id: string | null
+          updated_at: string
+          wa_id: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          first_seen_at?: string
+          last_seen_at?: string
+          nombre_perfil?: string | null
+          tercero_id?: string | null
+          updated_at?: string
+          wa_id: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          first_seen_at?: string
+          last_seen_at?: string
+          nombre_perfil?: string | null
+          tercero_id?: string | null
+          updated_at?: string
+          wa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_contacts_tercero_id_fkey"
+            columns: ["tercero_id"]
+            isOneToOne: false
+            referencedRelation: "terceros"
             referencedColumns: ["id"]
           },
         ]
@@ -4233,6 +4277,8 @@ export type Database = {
     Functions: {
       publish_whatsapp_bot_version: { Args: { p_definition: Json; p_note: string }; Returns: number }
       set_whatsapp_bot_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
+      upsert_whatsapp_contact: { Args: { p_wa_id: string; p_nombre_perfil: string | null }; Returns: { wa_id: string; tercero_id: string | null; estado: string }[] }
+      normalize_panama_wa_id: { Args: { p_telefono: string }; Returns: string | null }
       record_whatsapp_bot_event: { Args: { p_wa_id: string; p_cliente_id: string | null; p_type: string; p_node_id: string | null; p_option_id: string | null; p_detail: Json }; Returns: string }
       claim_netflix_code: { Args: { p_mail_key: string; p_wa_id: string }; Returns: string }
       release_netflix_code: { Args: { p_mail_key: string; p_wa_id: string }; Returns: boolean }
