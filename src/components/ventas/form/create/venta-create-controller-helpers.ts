@@ -1,3 +1,4 @@
+import { deliveryPassword } from '@/platform/utils/code-access';
 import {
   SERVICIOS_DROPDOWN_VISIBLE_ROWS,
   type TipoVentaItem,
@@ -228,7 +229,7 @@ export function buildVentaItem({
     servicioId,
     servicioNombre: servicioSeleccionado?.nombre || plan.nombre,
     servicioCorreo: servicioSeleccionado?.correo,
-    servicioContrasena: servicioSeleccionado?.contrasena,
+    servicioContrasena: deliveryPassword(servicioSeleccionado?.contrasena, servicioSeleccionado?.accesoPorCodigo),
     cicloPago: plan.cicloPago,
     fechaInicio,
     fechaFin,

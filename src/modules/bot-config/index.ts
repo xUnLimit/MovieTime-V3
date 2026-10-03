@@ -2,6 +2,7 @@ export {
   ACTION_CATALOG, MESSAGE_CATALOG, NODE_LIMITS, PARAM_CATALOG, VARIABLE_CATALOG,
 } from './catalog';
 export { defaultDefinition } from './defaults';
+export { defaultDefinitionV2 } from './defaults-v2';
 export { parseDefinition } from './schema';
 export { hasBlockingIssues, validateDefinition } from './validate';
 export {
@@ -14,3 +15,4 @@ export {
 export { diffDefinitions } from './diff';
 export { buildFlowGraph } from './graph';
 export { startSimulation, stepSimulation } from './simulate';
+export { mergePurchaseMessages, type PurchaseMessages } from './purchase-messages';

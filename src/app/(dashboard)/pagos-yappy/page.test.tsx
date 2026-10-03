@@ -10,7 +10,8 @@ const sync = vi.hoisted(() => vi.fn());
 const queryData = vi.hoisted<{ payments: YappyPayment[]; ventas: YappyCandidateVenta[] }>(() => ({
   payments: [{ id: '123e4567-e89b-12d3-a456-426614174002', confirmationCode: 'GZCSS-20613095', amount: 2,
     payerNameShort: 'Emmanuel S.', payerPhoneLast4: '0268', paidAt: '2026-09-27T18:07:00.000Z',
-    matchStatus: 'match_unico', candidateVentaIds: ['123e4567-e89b-12d3-a456-426614174004'], matchedVentaId: null }],
+    matchStatus: 'match_unico', candidateVentaIds: ['123e4567-e89b-12d3-a456-426614174004'], matchedVentaId: null,
+    requiereRevision: false, revisionPedidoId: null, revisionMotivo: null }],
   ventas: [{ id: '123e4567-e89b-12d3-a456-426614174004', cliente: 'Ana P.', servicio: 'Netflix',
     perfil: 'Perfil 1', fechaFin: '2026-10-01', precio: 2 }],
 }));
@@ -78,6 +79,19 @@ describe('Yappy review queue', () => {
     fireEvent.change(screen.getByLabelText('Motivo para descartar'), { target: { value: 'Aviso repetido' } });
     fireEvent.click(confirm);
     expect(dismiss).toHaveBeenCalledWith({ paymentId: queryData.payments[0].id, note: 'Aviso repetido' });
+  });
+  it('changes the selected candidate and closes the review dialog', () => {
+    const original = queryData.ventas;
+    queryData.ventas = [queryData.ventas[0], { ...queryData.ventas[0], id: '123e4567-e89b-12d3-a456-426614174005', cliente: 'Luis R.' }];
+    queryData.payments[0].candidateVentaIds = queryData.ventas.map((venta) => venta.id);
+    render(<YappyPage />);
+    review();
+    fireEvent.click(screen.getByRole('button', { name: 'Seleccionar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como registrado' }));
+    expect(resolve).toHaveBeenCalledWith({ paymentId: queryData.payments[0].id, ventaId: '123e4567-e89b-12d3-a456-426614174005' });
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    queryData.ventas = original;
   });
   it('lets an admin find a sale manually when no match was found', () => {
     queryData.payments[0].matchStatus = 'sin_match';
@@ -168,5 +182,27 @@ describe('Yappy review queue', () => {
     review();
     fireEvent.change(screen.getByLabelText('Buscar venta para conciliación manual'), { target: { value: 'Sin servicio' } });
     expect(screen.getByText('No hay ventas con ese criterio.')).toBeTruthy();
+  });
+  it('flags payments needing review with reason and order, and filters them', async () => {
+    queryData.payments[0].matchStatus = 'registrado';
+    queryData.payments[0].requiereRevision = true;
+    queryData.payments[0].revisionMotivo = 'monto_menor';
+    queryData.payments[0].revisionPedidoId = '123e4567-e89b-12d3-a456-426614174099';
+    render(<YappyPage />);
+    expect(screen.getAllByText('Monto menor al pedido').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Pedido 123e4567').length).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole('button', { name: 'Estado' }));
+    await userEvent.click(await screen.findByText('En revisión (1)'));
+    expect(screen.getAllByText(/Emmanuel S./).length).toBeGreaterThan(0);
+  });
+  it('falls back to a generic label for unknown or missing review reasons', () => {
+    queryData.payments[0].requiereRevision = true;
+    queryData.payments[0].revisionMotivo = 'otro_motivo';
+    const { unmount } = render(<YappyPage />);
+    expect(screen.getAllByText('otro_motivo').length).toBeGreaterThan(0);
+    unmount();
+    queryData.payments[0].revisionMotivo = null;
+    render(<YappyPage />);
+    expect(screen.getAllByText('Requiere revisión').length).toBeGreaterThan(0);
   });
 });

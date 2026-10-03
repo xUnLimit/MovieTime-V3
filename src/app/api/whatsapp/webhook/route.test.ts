@@ -7,10 +7,12 @@ const handleNoticeReply = vi.hoisted(() => vi.fn());
 const sendOutboundMessage = vi.hoisted(() => vi.fn());
 const sendCloudApiMessage = vi.hoisted(() => vi.fn());
 const handleBotMessage = vi.hoisted(() => vi.fn());
+const registerInboundContacts = vi.hoisted(() => vi.fn());
 const openNetflixInbox = vi.hoisted(() => vi.fn());
 const getNetflixMailConfig = vi.hoisted(() => vi.fn());
 const loadBotConfig = vi.hoisted(() => vi.fn());
 const recordBotEvent = vi.hoisted(() => vi.fn());
+const finishInbound = vi.hoisted(() => vi.fn());
 const afterCallbacks = vi.hoisted(() => [] as Array<() => Promise<void>>);
 const env = vi.hoisted(() => ({
   whatsappVerifyToken: 'verify-token-123456',
@@ -20,9 +22,11 @@ const env = vi.hoisted(() => ({
 }));
 
 vi.mock('@/platform/config', () => ({ env }));
+vi.mock('@/modules/messaging/contact-store', () => ({ registerInboundContacts }));
 vi.mock('@/modules/whatsapp/webhook-inbox', () => ({ storeWebhookBatch }));
 vi.mock('@/modules/notifications/whatsapp-message-push', () => ({ notifyWhatsAppMessages }));
 vi.mock('@/application/use-cases/notice-reply-use-case', () => ({ handleNoticeReply }));
+vi.mock('@/modules/whatsapp/inbound-queue-store', () => ({ createInboundQueueStore: () => ({ finish: finishInbound }) }));
 vi.mock('@/modules/whatsapp/outbound-messages', () => ({ sendOutboundMessage }));
 vi.mock('@/modules/whatsapp/cloud-api-client', () => ({ sendCloudApiMessage }));
 vi.mock('@/modules/messaging/notice-reply-store', () => ({ createNoticeReplyStore: () => ({}) }));
@@ -30,6 +34,7 @@ vi.mock('@/modules/messaging/notice-store', () => ({ createNoticeStore: () => ({
 vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({ handleBotMessage }));
 vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({ kind: 'bot-store' }) }));
 vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: () => ({ load: loadBotConfig }) }));
+vi.mock('@/modules/messaging/conversation-state-store', () => ({ createConversationStateStore: () => ({ load: async () => null }) }));
 vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: recordBotEvent }) }));
 vi.mock('@/modules/messaging/netflix-claim-store', () => ({ createNetflixClaimStore: () => ({ kind: 'claim-store' }) }));
 vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox }));
@@ -85,6 +90,8 @@ beforeEach(() => {
   sendOutboundMessage.mockReset();
   sendCloudApiMessage.mockReset();
   handleBotMessage.mockReset();
+  registerInboundContacts.mockReset();
+  registerInboundContacts.mockResolvedValue(undefined);
   openNetflixInbox.mockReset();
   getNetflixMailConfig.mockReset();
   loadBotConfig.mockReset();
@@ -182,6 +189,13 @@ describe('POST /api/whatsapp/webhook', () => {
     ]);
   });
 
+  it('registers the sender of new messages as a contact', async () => {
+    storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
+    await POST(signedPost(textMessageEvent));
+    await Promise.all(afterCallbacks.map((callback) => callback()));
+    expect(registerInboundContacts).toHaveBeenCalledWith([expect.objectContaining({ fromWaId: '50760000000' })], expect.any(String));
+  });
+
   it('keeps the acknowledgement when the push alert fails', async () => {
     storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: ['wamid.IN'] });
     notifyWhatsAppMessages.mockRejectedValueOnce(new Error('push down'));
@@ -226,6 +240,42 @@ describe('POST /api/whatsapp/webhook', () => {
     await POST(signedPost(textMessageEvent));
     await Promise.all(afterCallbacks.map((callback) => callback()));
     expect(sendCloudApiMessage).toHaveBeenCalledTimes(1);
+  });
+
+  describe('cola de procesamiento', () => {
+    beforeEach(() => {
+      afterCallbacks.length = 0;
+      finishInbound.mockReset();
+      env.whatsappAccessToken = 'test-token';
+      env.whatsappPhoneNumberId = '123456';
+      handleNoticeReply.mockResolvedValue('accepted');
+      notifyWhatsAppMessages.mockResolvedValue({ sent: 0, failed: 0 });
+      finishInbound.mockResolvedValue(undefined);
+    });
+
+    async function deliver(inserted: string[], rows: Record<string, string>) {
+      storeWebhookBatch.mockResolvedValueOnce({ messages: 1, statuses: 0, insertedWaMessageIds: inserted, insertedRowIds: rows });
+      const response = await POST(signedPost(textMessageEvent));
+      await Promise.all(afterCallbacks.map((callback) => callback()));
+      return response;
+    }
+
+    it('marca como procesado un mensaje nuevo y no expone los ids internos', async () => {
+      const response = await deliver(['wamid.IN'], { 'wamid.IN': 'row-1' });
+      expect(finishInbound).toHaveBeenCalledWith('row-1', null);
+      expect(JSON.stringify(await response.json())).not.toContain('row-1');
+    });
+
+    it('deja el mensaje en la cola cuando el procesamiento falla', async () => {
+      handleNoticeReply.mockRejectedValueOnce(new Error('boom'));
+      await deliver(['wamid.IN'], { 'wamid.IN': 'row-1' });
+      expect(finishInbound).toHaveBeenCalledWith('row-1', 'NOTICE_REPLY_ERROR');
+    });
+
+    it('no marca una reentrega de Meta', async () => {
+      await deliver([], {});
+      expect(finishInbound).not.toHaveBeenCalled();
+    });
   });
 
   describe('menu bot', () => {

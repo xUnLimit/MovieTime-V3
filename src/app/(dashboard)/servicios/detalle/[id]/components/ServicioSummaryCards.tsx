@@ -1,3 +1,4 @@
+import { ServicioCodeAccessCheckbox } from '@/components/servicios/form/ServicioCodeAccessCheckbox';
 import { DollarSign, Monitor, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -116,6 +117,8 @@ export function ServicioSummaryCards({
       <Card className="min-w-0 p-6">
         <h2 className="text-base font-semibold mb-0.5">Información Adicional</h2>
         <div className="space-y-3">
+          <ServicioCodeAccessCheckbox checked={servicio.accesoPorCodigo ?? false}
+            providerKey={categoria?.codeProvider} readOnly />
           <div>
             <p className="text-sm text-muted-foreground mb-1">Email</p>
             <p className="flex min-w-0 items-center gap-2 text-sm font-medium">
@@ -125,6 +128,7 @@ export function ServicioSummaryCards({
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6"
+                  aria-label="Copiar email"
                   onClick={() => {
                     navigator.clipboard.writeText(servicio.correo!);
                     toast.success('Email copiado', { description: 'El email se ha copiado al portapapeles.' });

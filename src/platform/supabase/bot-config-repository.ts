@@ -9,7 +9,7 @@ const BOT_EVENTS_PAGE_SIZE = 10;
 const VERSIONS_LIMIT = 100;
 const EVENT_TYPES: ReadonlySet<string> = new Set<BotEventType>([
   'menu_shown', 'option_selected', 'code_sent', 'link_sent', 'not_found', 'already_sent', 'profile_blocked',
-  'rate_limited', 'mailbox_unavailable', 'handoff', 'option_unavailable', 'error',
+  'rate_limited', 'mailbox_unavailable', 'handoff', 'option_unavailable', 'error', 'catalog_shown', 'interest_registered',
 ]);
 
 /** La definicion viaja sin validar: quien la consume la valida con el esquema del modulo bot-config. */

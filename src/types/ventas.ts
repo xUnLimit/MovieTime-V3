@@ -83,6 +83,7 @@ export interface VentaReembolsoResult {
  * - Para obtener datos actuales, usar `getVentaConUltimoPagoUseCase()` de venta-current-payment-use-cases
  */
 export interface VentaDoc {
+  accesoPorCodigo?: boolean;
   id: string;
   renovaciones?: number;             // Live SQL count; excludes the initial period.
   clienteId?: string;

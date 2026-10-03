@@ -187,3 +187,9 @@ describe('WhatsApp chat use cases', () => {
   });
 
 });
+
+it('omits code-access passwords even when the manual context receives both credential sources', async () => {
+  deps.fetchVentaDetalleQuery.mockResolvedValueOnce({ venta: { clienteNombre: 'Ana', servicioNombre: 'Cuenta',
+    accesoPorCodigo: true, servicioContrasena: 'stale-password' }, servicioContrasena: 'current-password' });
+  expect(await fetchVentaMessageContextUseCase('v1')).toMatchObject({ contrasena: '' });
+});

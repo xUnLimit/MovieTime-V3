@@ -3,6 +3,9 @@ import { openYappyInbox, UnreadableYappyMailError, type YappyInbox, type YappyIn
 import { parseYappyMail, YAPPY_PARSER_VERSION } from '@/modules/yappy/parse-mail';
 import { createLogger } from '@/platform/observability/logger';
 import { z } from '@/platform/validation/zod';
+import { createPedidoPaymentRepository } from '@/platform/supabase/pedido-payment-repository';
+import { retryPendingReceipts } from './pedido-payment-use-cases';
+import { createReceiptNotifierFromEnv } from './payment-wiring';
 
 type Config = { user: string; password: string };
 type Counts = { scanned: number; extracted: number; invalid: number; duplicate: number; discarded: number; ignored: number; deferred: number; errorCode: string | null };
@@ -13,6 +16,12 @@ const resultSchema = z.object({ outcome: z.enum(['ignorado', 'nuevo', 'duplicado
   match_status: z.string().nullable() });
 const stateSchema = z.object({ mailbox: z.string(), uid_validity: z.number().int().positive().nullable(),
   last_uid: z.number().int().nonnegative(), last_error_code: z.string().nullable() });
+
+// Tras cada sincronizacion con pagos nuevos se reintentan los comprobantes que esperaban el correo.
+async function retryReceiptsAfterSync(): Promise<void> {
+  await retryPendingReceipts({ repository: createPedidoPaymentRepository(createServiceRoleClient()), newKey: () => crypto.randomUUID() },
+    createReceiptNotifierFromEnv());
+}
 
 function isAuthFailure(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
@@ -76,7 +85,9 @@ async function processMail(inbox: YappyInbox, uid: number, validity: number, cou
   else counts.extracted++;
 }
 
-export async function syncYappyUseCase(config: Config, openInbox = openYappyInbox, retryAuth = false): Promise<Counts> {
+export async function syncYappyUseCase(
+  config: Config, openInbox = openYappyInbox, retryAuth = false, afterSync: () => Promise<void> = retryReceiptsAfterSync,
+): Promise<Counts> {
   const db = createServiceRoleClient();
   const counts: Counts = { scanned: 0, extracted: 0, invalid: 0, duplicate: 0, discarded: 0, ignored: 0, deferred: 0, errorCode: null };
   const { data: claimed, error: claimError } = await db.rpc('claim_yappy_mail_sync');
@@ -127,6 +138,10 @@ export async function syncYappyUseCase(config: Config, openInbox = openYappyInbo
     }
     const { error } = await db.from('yappy_mail_sync_state').update({ sync_locked_until: null }).eq('id', true);
     if (error) logger.warn('Could not release Yappy sync lock', { errorCode: error.code });
+  }
+  if (counts.extracted > 0) {
+    try { await afterSync(); }
+    catch { logger.warn('Pending receipt retry failed after Yappy sync', { errorCode: 'receipt_retry_failed' }); }
   }
   return counts;
 }

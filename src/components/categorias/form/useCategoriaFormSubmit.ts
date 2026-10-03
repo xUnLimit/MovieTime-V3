@@ -61,6 +61,7 @@ export function useCategoriaFormSubmit({
       setPlanesError("");
       if (mode === "create") {
         await createCategoria({
+          codeProvider: data.codeProvider ?? null,
           nombre: data.nombre,
           tipo: data.tipo,
           tipoCategoria: data.tipoCategoria,
@@ -80,6 +81,7 @@ export function useCategoriaFormSubmit({
         });
       } else if (categoria) {
         await updateCategoria(categoria.id, {
+          codeProvider: data.codeProvider ?? null,
           nombre: data.nombre,
           tipo: data.tipo,
           tipoCategoria: data.tipoCategoria,

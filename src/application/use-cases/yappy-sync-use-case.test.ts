@@ -172,4 +172,17 @@ describe('Yappy IMAP synchronization', () => {
     await syncYappyUseCase(config, open);
     expect(updates).toContainEqual({ sync_locked_until: null });
   });
+  it('retries pending receipts only when the sync stored new payments', async () => {
+    const afterSync = vi.fn(async () => undefined);
+    await syncYappyUseCase(config, open, false, afterSync);
+    expect(afterSync).toHaveBeenCalledTimes(1);
+    afterSync.mockClear();
+    outcome = 'duplicado';
+    await syncYappyUseCase(config, open, false, afterSync);
+    expect(afterSync).not.toHaveBeenCalled();
+  });
+  it('does not fail the sync when the receipt retry fails', async () => {
+    const afterSync = vi.fn(async () => { throw new Error('retry failed'); });
+    expect(await syncYappyUseCase(config, open, false, afterSync)).toMatchObject({ extracted: 2, errorCode: null });
+  });
 });

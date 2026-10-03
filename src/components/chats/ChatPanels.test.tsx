@@ -9,6 +9,8 @@ import { CustomerPanel, sortVentasForChat } from './CustomerPanel';
 import type { TemplateOption } from './chat-templates';
 import { TemplateSendDialog } from './TemplateSendDialog';
 
+vi.mock('./ConversationControl', () => ({ ConversationControl: () => <span>Control de atención</span> }));
+
 const NOW = new Date(2026, 8, 27, 15, 30);
 
 const conversation: WhatsAppConversation = {

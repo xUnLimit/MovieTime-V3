@@ -3,11 +3,18 @@ import { createLogger } from '@/platform/observability/logger';
 import { openNetflixInbox } from '@/platform/server/netflix-imap';
 import { fetchTravelPageHtml } from '@/platform/server/netflix-travel-page';
 import { handleBotMessage } from '@/application/use-cases/whatsapp-bot-use-case';
-import type { BotDeps, BotResult } from '@/application/use-cases/bot-reply';
+import { replyKey, type BotDeps, type BotResult } from '@/application/use-cases/bot-reply';
 import { createBotConfigStore } from '@/modules/messaging/bot-config-store';
 import { createBotEventsStore, type BotEventsStore } from '@/modules/messaging/bot-events-store';
 import { createBotStore } from '@/modules/messaging/bot-store';
 import { createNetflixClaimStore } from '@/modules/messaging/netflix-claim-store';
+import { createConversationStateStore } from '@/modules/messaging/conversation-state-store';
+import { createContactStore } from '@/modules/messaging/contact-store';
+import { createBotV2IdentityStore } from '@/modules/messaging/bot-v2-identity-store';
+import { createBotCatalogStore } from '@/modules/messaging/bot-catalog-store';
+import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
+import { createBotV2Extras } from './bot-v2-wiring';
+import { handleV2Message } from '@/application/use-cases/bot-v2/runtime';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { BotDefinition } from '@/types/bot';
 
@@ -19,7 +26,7 @@ export function createBotRuntime(requestId: string) {
   let events: BotEventsStore | undefined;
   // Created on first use: a missing database setting must not break the delivery.
   const eventsStore: BotEventsStore = { record: (event) => (events ??= createBotEventsStore()).record(event) };
-  let definition: Promise<BotDefinition | null> | undefined;
+  let definition: Promise<{ definition: BotDefinition; version: number } | null> | undefined;
 
   // The event is for the audit trail only: failing to write it changes nothing else.
   async function recordError(message: InboundMessage, detail: Record<string, string>): Promise<void> {
@@ -30,10 +37,10 @@ export function createBotRuntime(requestId: string) {
     }
   }
 
-  async function loadDefinition(message: InboundMessage): Promise<BotDefinition | null> {
+  async function loadDefinition(message: InboundMessage): Promise<{ definition: BotDefinition; version: number } | null> {
     try {
       const snapshot = await createBotConfigStore().load();
-      if (snapshot.ready) return snapshot.definition;
+      if (snapshot.ready) return { definition: snapshot.definition, version: snapshot.version };
       // A switched-off bot is a decision, not a fault.
       if (snapshot.reason !== 'disabled') {
         logger.warn('WhatsApp bot configuration is not usable', { requestId, reason: snapshot.reason });
@@ -53,15 +60,25 @@ export function createBotRuntime(requestId: string) {
       const published = await definition;
       if (!published) return 'off';
       try {
-        return await handleBotMessage(message, {
-          store: createBotStore(), claims: createNetflixClaimStore(), events: eventsStore, definition: published,
+        const deps: BotDeps = {
+          store: createBotStore(), claims: createNetflixClaimStore(), events: eventsStore, definition: published.definition,
           fetchTravelPage: fetchTravelPageHtml,
           openInbox: async () => {
             const mailbox = getNetflixMailConfig();
             return mailbox ? openNetflixInbox(mailbox.user, mailbox.password) : null;
           },
           send,
-        });
+        };
+        const states = createConversationStateStore();
+        if (published.definition.schemaVersion === 2) {
+          return await handleV2Message(message, {
+            ...deps, version: published.version, states, contacts: createContactStore(), identity: createBotV2IdentityStore(),
+            replied: async id => (await createOutboundStore().findByIdempotencyKey(replyKey(id)))?.sendStatus === 'accepted',
+            catalog: createBotCatalogStore(), ...createBotV2Extras(),
+          });
+        }
+        if ((await states.load(message.fromWaId))?.state.owner === 'humano') return 'ignored';
+        return await handleBotMessage(message, deps);
       } catch (error) {
         await recordError(message, { motivo: 'respuesta_fallida' });
         throw error;

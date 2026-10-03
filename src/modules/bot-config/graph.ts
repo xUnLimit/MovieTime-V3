@@ -1,4 +1,5 @@
 import type { BotDefinition, BotNodeKind } from '@/types/bot';
+import { nodeEdges } from './node-edges';
 
 type FlowGraphNode = {
   id: string; name: string; kind: BotNodeKind; x: number; y: number;
@@ -25,7 +26,8 @@ export function flowLevels(def: BotDefinition): string[][] {
     levels.push(current);
     const next: string[] = [];
     for (const id of current) {
-      for (const option of byId.get(id)?.options ?? []) {
+      const node = byId.get(id);
+      for (const option of node ? nodeEdges(node) : []) {
         if (!byId.has(option.next) || seen.has(option.next)) continue;
         seen.add(option.next);
         next.push(option.next);
@@ -69,7 +71,7 @@ export function buildFlowGraph(def: BotDefinition): FlowGraph {
       });
     });
   });
-  const edges: FlowGraphEdge[] = def.nodes.flatMap((node) => node.options
+  const edges: FlowGraphEdge[] = def.nodes.flatMap((node) => nodeEdges(node)
     .filter((option) => byId.has(option.next))
     .map((option) => ({ from: node.id, to: option.next, label: option.title })));
   const empty = rows.length === 0;

@@ -9,7 +9,7 @@ vi.mock('@/platform/api/whatsapp-notices-client', () => ({ postWhatsAppNotices: 
 vi.mock('@/platform/supabase/auth', () => ({ getCurrentSession: mocks.session }));
 
 import {
-  getVentaNoticeStatusUseCase, isNoticeDelivered, mapNoticeBadge, sendAutomaticRenewalNoticeUseCase, sendWhatsAppNoticesUseCase,
+  getVentaNoticeStatusUseCase, isNoticeDelivered, mapNoticeBadge, notifyCustomerUseCase, sendWhatsAppNoticesUseCase,
 } from './whatsapp-notices-use-cases';
 
 describe('mapNoticeBadge', () => {
@@ -74,31 +74,41 @@ describe('sendWhatsAppNoticesUseCase', () => {
   });
 });
 
-describe('sendAutomaticRenewalNoticeUseCase', () => {
+describe('notifyCustomerUseCase', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('requires a session', async () => {
     mocks.session.mockResolvedValue(null);
-    await expect(sendAutomaticRenewalNoticeUseCase('v1')).rejects.toThrow('sesión');
+    await expect(notifyCustomerUseCase({ tipo: 'renovacion', ventaIds: ['v1'] })).rejects.toThrow('sesión');
+    expect(mocks.post).not.toHaveBeenCalled();
   });
 
-  it('asks the server for an automatic renewal notice and reports what happened', async () => {
+  it('asks the server for an automatic notice with the event id and reports it as sent', async () => {
     mocks.session.mockResolvedValue({ access_token: 'tok' });
-    mocks.post.mockResolvedValueOnce({ results: [{ status: 'accepted' }] });
-    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('sent');
-    expect(mocks.post).toHaveBeenCalledWith('tok', { tipo: 'renovacion', ventaIds: ['v1'], automatic: true });
+    mocks.post.mockResolvedValueOnce({ results: [{ status: 'accepted', ventaIds: ['v1', 'v2'] }] });
+    await expect(notifyCustomerUseCase({ tipo: 'actualizacion_credenciales', ventaIds: ['v1', 'v2'], eventId: 'e1' }))
+      .resolves.toEqual({ status: 'sent', deliveredVentaIds: ['v1', 'v2'] });
+    expect(mocks.post).toHaveBeenCalledWith('tok', { tipo: 'actualizacion_credenciales', ventaIds: ['v1', 'v2'], eventId: 'e1', automatic: true });
 
-    mocks.post.mockResolvedValueOnce({ results: [{ status: 'already_sent' }] });
-    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('sent');
-    mocks.post.mockResolvedValueOnce({ results: [{ status: 'skipped' }] });
-    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('not_sent');
-    mocks.post.mockResolvedValueOnce({ results: [{ status: 'failed' }, { status: 'wa_me' }] });
-    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('not_sent');
+    mocks.post.mockResolvedValueOnce({ results: [{ status: 'already_sent', ventaIds: ['v1'] }] });
+    await expect(notifyCustomerUseCase({ tipo: 'renovacion', ventaIds: ['v1'] })).resolves.toEqual({ status: 'sent', deliveredVentaIds: ['v1'] });
+  });
+
+  it('reports not_sent with the ventas that did get the notice', async () => {
+    mocks.session.mockResolvedValue({ access_token: 'tok' });
+    mocks.post.mockResolvedValueOnce({ results: [
+      { status: 'accepted', ventaIds: ['v1'] }, { status: 'wa_me', ventaIds: ['v2'] }, { status: 'skipped', ventaIds: ['v3'] },
+    ] });
+    await expect(notifyCustomerUseCase({ tipo: 'suscripcion', ventaIds: ['v1', 'v2', 'v3'] }))
+      .resolves.toEqual({ status: 'not_sent', deliveredVentaIds: ['v1'] });
+    mocks.post.mockResolvedValueOnce({ results: [{ status: 'failed', ventaIds: ['v1'] }] });
+    await expect(notifyCustomerUseCase({ tipo: 'transferencia_servicio', ventaIds: ['v1'] }))
+      .resolves.toEqual({ status: 'not_sent', deliveredVentaIds: [] });
   });
 
   it('tells the caller when the automatic switch is off', async () => {
     mocks.session.mockResolvedValue({ access_token: 'tok' });
     mocks.post.mockResolvedValue({ results: [], skipped: 'auto_disabled' });
-    await expect(sendAutomaticRenewalNoticeUseCase('v1')).resolves.toBe('auto_disabled');
+    await expect(notifyCustomerUseCase({ tipo: 'dia_pago', ventaIds: ['v1'] })).resolves.toEqual({ status: 'auto_disabled', deliveredVentaIds: [] });
   });
 });

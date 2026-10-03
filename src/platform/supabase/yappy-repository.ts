@@ -7,6 +7,7 @@ export type YappyPayment = {
   id: string; confirmationCode: string; amount: number; payerNameShort: string;
   payerPhoneLast4: string; paidAt: string; matchStatus: string;
   candidateVentaIds: string[]; matchedVentaId: string | null;
+  requiereRevision: boolean; revisionPedidoId: string | null; revisionMotivo: string | null;
 };
 export type YappyConnectionStatus = { mailbox: string; status: string; lastSyncedAt: string | null; lastErrorCode: string | null };
 export type YappyCandidateVenta = { id: string; cliente: string; servicio: string; perfil: string; fechaFin: string; precio: number };
@@ -20,12 +21,13 @@ function mapCandidateVentas(rows: CandidateRow[]): YappyCandidateVenta[] {
 }
 
 export async function listYappyPayments(): Promise<YappyPayment[]> {
-  const { data, error } = await supabase.from('yappy_payments').select('id,confirmation_code,amount,payer_name_short,payer_phone_last4,paid_at,match_status,candidate_venta_ids,matched_venta_id').order('paid_at', { ascending: false }).limit(200);
+  const { data, error } = await supabase.from('yappy_payments').select('id,confirmation_code,amount,payer_name_short,payer_phone_last4,paid_at,match_status,candidate_venta_ids,matched_venta_id,requiere_revision,revision_pedido_id,revision_motivo').order('paid_at', { ascending: false }).limit(200);
   if (error) throw error;
   return (data ?? []).map((row) => ({ id: row.id, confirmationCode: row.confirmation_code,
     amount: row.amount, payerNameShort: row.payer_name_short, payerPhoneLast4: row.payer_phone_last4,
     paidAt: row.paid_at, matchStatus: row.match_status, candidateVentaIds: row.candidate_venta_ids,
-    matchedVentaId: row.matched_venta_id }));
+    matchedVentaId: row.matched_venta_id, requiereRevision: row.requiere_revision,
+    revisionPedidoId: row.revision_pedido_id, revisionMotivo: row.revision_motivo }));
 }
 
 export async function listYappyConnections(): Promise<YappyConnectionStatus[]> {

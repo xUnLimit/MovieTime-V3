@@ -34,6 +34,7 @@ export function normalizeServicioPagoInput(
 }
 
 const SERVICIO_TABLE_UPDATE_KEYS = [
+  'accesoPorCodigo',
   'categoriaId',
   'tipo',
   'nombre',

@@ -29,6 +29,7 @@ function toVentaDoc(record: VentaRecord): VentaDoc {
     servicioNombre: record.servicioNombre || 'Servicio',
     servicioCorreo: record.servicioCorreo || undefined,
     servicioContrasena: record.servicioContrasena || undefined,
+    accesoPorCodigo: record.accesoPorCodigo,
     clienteTelefono: record.clienteTelefono || undefined,
     estado: record.estado ?? 'activo',
     cortadaAt: toNullableDate(record.cortadaAt),

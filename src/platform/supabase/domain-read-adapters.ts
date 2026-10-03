@@ -1,3 +1,4 @@
+import { deliveryPassword } from '@/platform/utils/code-access';
 import { queryMetodosPago, getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
 import { queryNotifications } from '@/platform/supabase/notifications-repository';
 import { getCategoriaById } from '@/platform/supabase/categorias-repository';
@@ -65,7 +66,7 @@ export async function getServicioTipoRead(id: string): Promise<string | undefine
 
 export async function getServicioContrasenaRead(id: string): Promise<string> {
   const servicio = await getServicioRead(id);
-  return servicio?.contrasena ?? '';
+  return deliveryPassword(servicio?.contrasena, servicio?.accesoPorCodigo);
 }
 
 export async function getVentaDetalleRead(id: string): Promise<VentaDoc | null> {
@@ -80,6 +81,7 @@ export async function getVentaDetalleRead(id: string): Promise<VentaDoc | null> 
     categoriaNombre: (doc.categoriaNombre as string) || undefined,
     servicioId: (doc.servicioId as string) || '',
     servicioNombre: (doc.servicioNombre as string) || 'Servicio',
+    accesoPorCodigo: doc.accesoPorCodigo === true,
     servicioCorreo: (doc.servicioCorreo as string) || '',
     clienteTelefono: (doc.clienteTelefono as string) || undefined,
     perfilNumero: (doc.perfilNumero as number | null | undefined) ?? null,

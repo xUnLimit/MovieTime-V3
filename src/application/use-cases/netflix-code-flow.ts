@@ -3,16 +3,19 @@ import { createHash } from 'node:crypto';
 import { createLogger } from '@/platform/observability/logger';
 import type { NetflixInbox } from '@/platform/server/netflix-imap';
 import type { BotService } from '@/modules/messaging/bot-store';
-import { recentMailsByAccount, type DatedNetflixMail } from '@/modules/netflix/latest-mails';
-import { parseNetflixMail } from '@/modules/netflix/parse-mail';
-import { profileMatches } from '@/modules/netflix/profile-match';
-import { parseTravelCode } from '@/modules/netflix/travel-code';
+import type { DatedCodeMail as DatedNetflixMail } from '@/modules/code-providers';
+import { getCodeProvider } from '@/modules/code-providers';
 import { accountListMessage, BOT_STORED_TEXT, type BotCodeType } from '@/modules/whatsapp/bot-menu';
 import { messageWithRetryButton, renderBotMessage, sayMessage } from './bot-messages';
 import { reply, trackEvent, type BotResult, type BotRun } from './bot-reply';
 
 const log = createLogger('WhatsAppBot');
 const MINUTE_MS = 60_000;
+function netflixProvider() {
+  const provider = getCodeProvider('netflix');
+  if (!provider) throw new Error('Netflix provider is not registered');
+  return provider;
+}
 
 type Candidate = { service: BotService; item: DatedNetflixMail; key: string };
 type Found = { candidates: Candidate[]; blocked: number };
@@ -27,7 +30,7 @@ function mailKey(item: DatedNetflixMail): string {
 async function readRecentMails(inbox: NetflixInbox, since: Date): Promise<DatedNetflixMail[]> {
   const mails: DatedNetflixMail[] = [];
   for (const raw of await inbox.recent(since)) {
-    const mail = parseNetflixMail(raw.html);
+    const mail = netflixProvider().parse(raw);
     if (mail) mails.push({ receivedAt: raw.receivedAt, messageId: raw.messageId, mail });
   }
   return mails;
@@ -51,12 +54,12 @@ async function findCandidates(
         log.warn('Netflix mailbox did not close cleanly');
       }
     }
-    const byAccount = recentMailsByAccount(mails, new Set(eligible.map((service) => service.email)), kind, run.now, windowMs);
+    const byAccount = netflixProvider().recentMails(mails, new Set(eligible.map((service) => service.email)), kind, run.now, windowMs);
     let blocked = 0;
     const candidates = eligible.flatMap((service) => (byAccount.get(service.email) ?? [])
       // A travel request belongs to the profile that made it; sign-in mails do not say who asked.
       .filter(({ mail }) => {
-        const mine = mail.kind !== 'travel_link' || profileMatches(mail.profileName, service.profiles);
+        const mine = netflixProvider().belongsTo(mail, service, service);
         if (!mine) blocked += 1;
         return mine;
       })
@@ -76,24 +79,20 @@ async function sendText(
 }
 
 async function sendCode(run: BotRun, item: DatedNetflixMail, minutes: string): Promise<Sent> {
-  const { definition } = run.deps;
+  const provider = netflixProvider();
   const mail = item.mail;
-  if (mail.kind === 'login_code') {
-    return sendText(run, renderBotMessage(definition, 'login_code_sent', { codigo: mail.code, minutos: minutes }), BOT_STORED_TEXT.code, 'code');
+  let travelCode: string | null = null;
+  if (mail.kind === 'travel_link') {
+    try {
+      const page = await run.deps.fetchTravelPage(mail.verifyUrl);
+      travelCode = page ? provider.parseTravelPage(page) : null;
+    } catch {
+      log.warn('Netflix travel page could not be read');
+    }
   }
-  let code: string | null = null;
-  try {
-    const page = await run.deps.fetchTravelPage(mail.verifyUrl);
-    code = page ? parseTravelCode(page) : null;
-  } catch {
-    log.warn('Netflix travel page could not be read');
-  }
-  if (code) {
-    const text = renderBotMessage(definition, 'travel_code_sent', { codigo: code, perfil: mail.profileName ?? '', minutos: minutes });
-    return sendText(run, text, BOT_STORED_TEXT.code, 'code');
-  }
-  // The page was not readable from the server; the customer opens the link himself.
-  return sendText(run, renderBotMessage(definition, 'travel_link_sent', { enlace: mail.verifyUrl, minutos: minutes }), BOT_STORED_TEXT.link, 'link');
+  const delivery = provider.formatDelivery(mail, { minutes, travelCode });
+  return sendText(run, renderBotMessage(run.deps.definition, delivery.message, delivery.values),
+    delivery.result === 'code' ? BOT_STORED_TEXT.code : BOT_STORED_TEXT.link, delivery.result);
 }
 
 async function releaseQuietly(run: BotRun, key: string): Promise<void> {
@@ -181,13 +180,14 @@ export async function requestNetflixCode(
     return 'limited';
   }
   const owned = request.serviceId ? services.filter((service) => service.serviceId === request.serviceId) : services;
-  if (owned.length === 0) {
+  const supported = owned.filter((service) => !service.providerKey || service.providerKey === 'netflix');
+  if (supported.length === 0) {
     await sayMessage(run, 'no_netflix_account');
     await trackEvent(run, 'not_found', { detail: { tipo: type, motivo: 'sin_cuenta' } });
     return 'none';
   }
   // Without a noted profile a travel request cannot be matched to this customer, so nothing is delivered.
-  const eligible = type === 'travel' ? owned.filter((service) => service.profiles.length > 0) : owned;
+  const eligible = type === 'travel' ? supported.filter((service) => service.profiles.length > 0) : supported;
   if (eligible.length === 0) {
     await sayMessage(run, 'profile_missing');
     await trackEvent(run, 'profile_blocked', { detail: { tipo: type, motivo: 'sin_perfil' } });

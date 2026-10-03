@@ -65,6 +65,7 @@ describe('createCategoriaUseCase', () => {
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
       created_by: null,
+      code_provider: null,
     };
     const builtCategoria: Categoria = {
       ...baseCategoria,
@@ -116,4 +117,11 @@ describe('deleteCategoriaUseCase', () => {
 
     expect(deleteCategoriaRecord).toHaveBeenCalledWith('categoria-1');
   });
+});
+
+it('rejects unknown provider keys before creating a category', async () => {
+  vi.mocked(createCategoriaRecord).mockClear();
+  await expect(createCategoriaUseCase({ ...baseCategoria, codeProvider: 'fake' },
+    { logContext: { usuarioId: 'u1', usuarioEmail: 'u@example.test' } })).rejects.toThrow();
+  expect(createCategoriaRecord).not.toHaveBeenCalled();
 });

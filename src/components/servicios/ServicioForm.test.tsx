@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const controllerMocks = vi.hoisted(() => ({
   controller: {
+    codeAccessNotice: { pending: null, count: 0, cancel: vi.fn(), confirm: vi.fn() },
     activeTab: "datos",
     isDatosTabComplete: true,
     handleSubmit: vi.fn((handler: () => void) => handler),
