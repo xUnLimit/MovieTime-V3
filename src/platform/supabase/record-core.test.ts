@@ -142,6 +142,12 @@ describe('record-core writes and views', () => {
     if (operation === 'archive') await expect(archiveRecord('config', '1', 'motivo')).rejects.toThrow(operation);
   });
 
+  it('preserves structured deletion diagnostics for dependency classification', async () => {
+    const error = { message: 'dependency', code: '23503', details: 'constraint' };
+    mocks.from.mockReturnValue(builder({ error }));
+    await expect(remove('terceros', '1')).rejects.toMatchObject({ cause: error });
+  });
+
   it('counts filtered rows from a view with overrides and all operators', async () => {
     const query = builder({ count: 2, error: null });
     mocks.from.mockReturnValue(query);

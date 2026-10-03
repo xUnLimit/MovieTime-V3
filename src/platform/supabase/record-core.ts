@@ -121,7 +121,7 @@ export async function update<T extends Record<string, unknown>>(
 export async function remove(collectionName: CollectionName, id: string): Promise<void> {
   const table = writeTable(collectionName);
   const { error } = await supabase.from(table as never).delete().eq('id', id);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(error.message, { cause: error });
 }
 
 /**

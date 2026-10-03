@@ -51,7 +51,7 @@ export async function executeIdempotentRpc<T extends { p_idempotency_key?: strin
   saveKey(fingerprint, key);
   const run = (async () => {
     const { data, error } = await send({ ...payload, p_idempotency_key: key });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(error.message, { cause: error });
     const id = assertRpcStringId(data, operation);
     clearKey(fingerprint);
     return id;

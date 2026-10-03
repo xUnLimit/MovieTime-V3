@@ -79,8 +79,53 @@ function serializeErrorLike(value: object, depth: number, seen: WeakSet<object>)
   return result;
 }
 
+function readDiagnostic(value: object, key: string): unknown {
+  try {
+    return Reflect.get(value, key);
+  } catch {
+    return '[Unreadable]';
+  }
+}
+
+/** Solo conserva campos diagnosticos conocidos: nunca el objeto rechazado completo. */
+function serializeThrown(value: unknown, depth = 0, seen = new WeakSet<object>()): unknown {
+  if (depth > 4) return '[Truncated]';
+  const type = value === null ? 'null' : typeof value;
+  if (value === null || value === undefined) {
+    return { type, constructor: null, value: value === undefined ? '[undefined]' : null };
+  }
+  if (typeof value !== 'object' && typeof value !== 'function') {
+    return {
+      type,
+      constructor: sanitizeText(Object(value).constructor.name),
+      value: redact(typeof value === 'bigint' || typeof value === 'symbol' ? String(value) : value),
+    };
+  }
+  if (seen.has(value)) return '[Circular]';
+  seen.add(value);
+  const constructor = readDiagnostic(value, 'constructor');
+  const name = typeof constructor === 'function' ? readDiagnostic(constructor, 'name') : null;
+  const result: Record<string, unknown> = {
+    type,
+    constructor: typeof name === 'string' ? sanitizeText(name) : null,
+  };
+  for (const key of ['name', 'message', 'code', 'details', 'hint']) {
+    const field = readDiagnostic(value, key);
+    if (field !== undefined) result[key] = redact(field, depth + 1, seen);
+  }
+  if (Object.prototype.hasOwnProperty.call(value, 'cause')) {
+    result.cause = serializeThrown(readDiagnostic(value, 'cause'), depth + 1, seen);
+  }
+  return result;
+}
+
 function emit(level: LogLevel, scope: string, message: string, metadata?: LogMetadata) {
-  const safeMeta = metadata ? (redact(metadata) as LogMetadata) : undefined;
+  let safeMeta: LogMetadata | undefined;
+  if (metadata) {
+    const { error, ...context } = metadata;
+    safeMeta = redact(context) as LogMetadata;
+    if (Object.prototype.hasOwnProperty.call(metadata, 'error')) safeMeta.error = serializeThrown(error);
+  }
   const prefix = `[${sanitizeText(scope)}]`;
   const consoleFn =
     level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;

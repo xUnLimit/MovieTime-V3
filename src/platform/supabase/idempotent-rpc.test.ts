@@ -13,6 +13,14 @@ beforeEach(() => {
 });
 
 describe('executeIdempotentRpc', () => {
+  it('preserves RPC diagnostics and retry keys after a database rejection', async () => {
+    const { executeIdempotentRpc } = await import('./idempotent-rpc');
+    const error = { message: 'payment rejected', code: '23503', details: 'dependency', hint: 'check method' };
+    const send = vi.fn().mockResolvedValueOnce({ data: null, error }).mockResolvedValue({ data: 'payment', error: null });
+    await expect(executeIdempotentRpc('create_venta_payment', payload, send)).rejects.toMatchObject({ cause: error });
+    await executeIdempotentRpc('create_venta_payment', payload, send);
+    expect(send.mock.calls[0][0].p_idempotency_key).toBe(send.mock.calls[1][0].p_idempotency_key);
+  });
   it('reuses the key after the server commits but the response is lost, even after reload', async () => {
     const records = new Map<string, string>();
     let loseResponse = true;
