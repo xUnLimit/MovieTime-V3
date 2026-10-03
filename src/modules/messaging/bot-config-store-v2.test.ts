@@ -8,7 +8,9 @@ vi.mock('@/platform/server/supabase-server', () => ({ createServiceRoleClient: (
 import { createBotConfigStore } from './bot-config-store';
 import { upgradeDefinition } from '@/modules/bot-config/schema';
 import { defaultDefinition } from '@/modules/bot-config/defaults';
-it('does not dispatch any v2 definition through the current v1 webhook executor', async () => {
+it('loads a valid v2 definition so the webhook can route it to the v2 runtime', async () => {
   definition.value = upgradeDefinition(defaultDefinition());
-  await expect(createBotConfigStore().load()).resolves.toEqual({ ready: false, enabled: true, version: 7, reason: 'invalid_definition' });
+  const snapshot = await createBotConfigStore().load();
+  expect(snapshot).toMatchObject({ ready: true, enabled: true, version: 7 });
+  expect(snapshot.ready && snapshot.definition.schemaVersion).toBe(2);
 });

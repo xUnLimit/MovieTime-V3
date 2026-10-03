@@ -30,7 +30,17 @@ const labels: Record<string, string> = {
 const tones: Record<string, Tone> = {
   match_unico: 'success', ambiguo: 'warning', sin_match: 'danger', registrado: 'info', descartado: 'neutral',
 };
-const filters = ['todos', 'match_unico', 'ambiguo', 'sin_match', 'registrado', 'descartado'] as const;
+const REVIEW_FILTER = 'en_revision';
+const filters = ['todos', REVIEW_FILTER, 'match_unico', 'ambiguo', 'sin_match', 'registrado', 'descartado'] as const;
+const revisionLabels: Record<string, string> = {
+  monto_menor: 'Monto menor al pedido', monto_mayor: 'Monto mayor al pedido',
+  fuera_de_ventana: 'Fuera de la ventana de pago', entrega_fallida: 'Entrega fallida',
+};
+function revisionText(motivo: string | null): string { return motivo ? revisionLabels[motivo] ?? motivo : 'Requiere revisión'; }
+function RevisionBadge({ payment, className }: { payment: YappyPayment; className?: string }) {
+  if (!payment.requiereRevision) return null;
+  return <StatusBadge tone="warning" className={className}>{revisionText(payment.revisionMotivo)}</StatusBadge>;
+}
 const CLOSED_STATUSES = ['registrado', 'descartado'];
 const money = new Intl.NumberFormat('es-PA', { style: 'currency', currency: 'USD' });
 const panamaDate = new Intl.DateTimeFormat('es-PA', { timeZone: 'America/Panama', dateStyle: 'medium', timeStyle: 'short' });
@@ -87,6 +97,12 @@ function PaymentReview({ payment, ventas }: { payment: YappyPayment; ventas: Yap
         <StatusBadge tone={tones[payment.matchStatus] ?? 'neutral'}>{labels[payment.matchStatus] ?? payment.matchStatus}</StatusBadge>
       </div>
       <p className="text-xs text-muted-foreground">{panamaDate.format(new Date(payment.paidAt))} · Confirmación {payment.confirmationCode}</p>
+      {payment.requiereRevision && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <RevisionBadge payment={payment} />
+          {payment.revisionPedidoId && <span className="text-xs text-muted-foreground">Pedido {payment.revisionPedidoId.slice(0, 8)}</span>}
+        </div>
+      )}
       <div className="space-y-3 border-t pt-4">
         {suggested.length > 0 && (
           <div className="space-y-2">
@@ -152,6 +168,12 @@ function createColumns(onReview: (payment: YappyPayment) => void) {
     { key: 'paidAt', header: 'Fecha', sortable: true, hideBelow: 'sm', render: (row) => <span className="whitespace-nowrap">{panamaDate.format(new Date(row.paidAt))}</span> },
     { key: 'confirmationCode', header: 'Confirmación', hideBelow: 'lg', render: (row) => <span className="tabular-nums">{row.confirmationCode}</span> },
     { key: 'matchStatus', header: 'Estado', hideBelow: 'sm', render: (row) => <StatusBadge tone={tones[row.matchStatus] ?? 'neutral'}>{labels[row.matchStatus] ?? row.matchStatus}</StatusBadge> },
+    { key: 'requiereRevision', header: 'Revisión', hideBelow: 'md', render: (row) => row.requiereRevision ? (
+      <div className="min-w-0 leading-tight">
+        <RevisionBadge payment={row} />
+        {row.revisionPedidoId && <p className="truncate text-xs text-muted-foreground">Pedido {row.revisionPedidoId.slice(0, 8)}</p>}
+      </div>
+    ) : <span className="text-muted-foreground">—</span> },
     {
       key: 'acciones',
       header: 'Detalle',
@@ -178,7 +200,7 @@ function YappyPageContent() {
   const rows = useMemo<PaymentRow[]>(() => {
     const query = search.trim().toLowerCase();
     return all
-      .filter((payment) => filter === 'todos' || payment.matchStatus === filter)
+      .filter((payment) => filter === 'todos' || (filter === REVIEW_FILTER ? payment.requiereRevision : payment.matchStatus === filter))
       .map((payment) => ({ ...payment, searchText: `${payment.payerNameShort} ${payment.confirmationCode} ${payment.payerPhoneLast4}`.toLowerCase() }))
       .filter((row) => !query || row.searchText.includes(query));
   }, [all, filter, search]);
@@ -187,11 +209,11 @@ function YappyPageContent() {
   const { sync } = useYappyActions();
   const columns = useMemo(() => createColumns((payment) => setReviewId(payment.id)), []);
   if (user?.role !== 'admin') return <p className="p-6">Esta sección está disponible solo para administradores.</p>;
-  const countBy = (status: string) => all.filter((payment) => payment.matchStatus === status).length;
+  const countBy = (status: string) => all.filter((payment) => (status === REVIEW_FILTER ? payment.requiereRevision : payment.matchStatus === status)).length;
   const pending = all.filter((payment) => !CLOSED_STATUSES.includes(payment.matchStatus)).length;
   const filterOptions = filters.map((item) => ({
     value: item,
-    label: `${item === 'todos' ? 'Todos' : labels[item]} (${item === 'todos' ? all.length : countBy(item)})`,
+    label: `${item === 'todos' ? 'Todos' : item === REVIEW_FILTER ? 'En revisión' : labels[item]} (${item === 'todos' ? all.length : countBy(item)})`,
   }));
   return (
     <div className="space-y-4">

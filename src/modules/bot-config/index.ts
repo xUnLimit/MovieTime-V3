@@ -15,3 +15,4 @@ export {
 export { diffDefinitions } from './diff';
 export { buildFlowGraph } from './graph';
 export { startSimulation, stepSimulation } from './simulate';
+export { mergePurchaseMessages, type PurchaseMessages } from './purchase-messages';

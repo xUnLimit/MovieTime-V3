@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const read = (name: string) => readFileSync(join(process.cwd(), 'supabase/migrations', name), 'utf8');
+const read = (name: string) => readFileSync(join(process.cwd(), 'supabase/migrations', name), 'utf8').replaceAll('\r\n', '\n');
 const sql = read('20261004010000_pedido_payment_reconciliation.sql');
 const audit = read('20261004011000_security_audit_pedido_payments.sql').replace(/^--.*$/gm, '');
 

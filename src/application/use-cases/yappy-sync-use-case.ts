@@ -5,6 +5,7 @@ import { createLogger } from '@/platform/observability/logger';
 import { z } from '@/platform/validation/zod';
 import { createPedidoPaymentRepository } from '@/platform/supabase/pedido-payment-repository';
 import { retryPendingReceipts } from './pedido-payment-use-cases';
+import { createReceiptNotifierFromEnv } from './payment-wiring';
 
 type Config = { user: string; password: string };
 type Counts = { scanned: number; extracted: number; invalid: number; duplicate: number; discarded: number; ignored: number; deferred: number; errorCode: string | null };
@@ -18,7 +19,8 @@ const stateSchema = z.object({ mailbox: z.string(), uid_validity: z.number().int
 
 // Tras cada sincronizacion con pagos nuevos se reintentan los comprobantes que esperaban el correo.
 async function retryReceiptsAfterSync(): Promise<void> {
-  await retryPendingReceipts({ repository: createPedidoPaymentRepository(createServiceRoleClient()), newKey: () => crypto.randomUUID() });
+  await retryPendingReceipts({ repository: createPedidoPaymentRepository(createServiceRoleClient()), newKey: () => crypto.randomUUID() },
+    createReceiptNotifierFromEnv());
 }
 
 function isAuthFailure(error: unknown): boolean {

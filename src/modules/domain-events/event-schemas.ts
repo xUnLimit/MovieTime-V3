@@ -33,7 +33,7 @@ export const DOMAIN_EVENT_SCHEMAS = {
 } as const;
 
 export type DomainEventType = keyof typeof DOMAIN_EVENT_SCHEMAS;
-export type DomainEventPayloads = { [K in DomainEventType]: z.infer<(typeof DOMAIN_EVENT_SCHEMAS)[K]> };
+type DomainEventPayloads = { [K in DomainEventType]: z.infer<(typeof DOMAIN_EVENT_SCHEMAS)[K]> };
 
 export type DomainEvent = {
   [K in DomainEventType]: {

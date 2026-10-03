@@ -3,9 +3,9 @@ import { z } from '@/platform/validation/zod';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
-export const CLAIM_OUTCOMES = ['confirmado', 'monto_menor', 'monto_mayor', 'codigo_usado', 'no_encontrado',
+const CLAIM_OUTCOMES = ['confirmado', 'monto_menor', 'monto_mayor', 'codigo_usado', 'no_encontrado',
   'fuera_de_ventana', 'pedido_invalido', 'intentos_excedidos'] as const;
-export type ClaimOutcome = (typeof CLAIM_OUTCOMES)[number];
+type ClaimOutcome = (typeof CLAIM_OUTCOMES)[number];
 
 const claimSchema = z.object({
   resultado: z.enum(CLAIM_OUTCOMES),
@@ -26,7 +26,7 @@ export type ClaimResult = {
   remaining: number; deliveryPending: boolean;
 };
 export type ClaimInput = { pedidoId: string; code: string; waId: string | null; idempotencyKey: string; retry: boolean };
-export type PendingReceipt = { pedidoId: string; waId: string | null; code: string };
+type PendingReceipt = { pedidoId: string; waId: string | null; code: string };
 
 export type PedidoPaymentRepository = {
   claim(input: ClaimInput): Promise<ClaimResult>;
@@ -34,7 +34,7 @@ export type PedidoPaymentRepository = {
 };
 
 // Los errores SQL no salen de aqui: solo un codigo corto.
-export class PedidoPaymentRepositoryError extends Error {
+class PedidoPaymentRepositoryError extends Error {
   constructor(operation: string, readonly code: string) {
     super(`Pedido payment ${operation} failed: ${code}`);
     this.name = 'PedidoPaymentRepositoryError';

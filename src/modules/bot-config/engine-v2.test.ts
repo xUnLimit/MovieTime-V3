@@ -25,9 +25,11 @@ describe('definition v2', () => {
     expect(ACTION_REGISTRY.show_catalog.implemented).toBe(true);
     expect(ACTION_REGISTRY.register_interest.implemented).toBe(true);
     expect(ACTION_REGISTRY.send_code.implemented).toBe(true);
-    for (const key of ['request_payment', 'verify_payment', 'deliver_credentials', 'renew_services'] as const) {
-      expect(ACTION_REGISTRY[key].implemented).toBe(false);
+    for (const key of ['request_payment', 'verify_payment', 'deliver_credentials', 'start_purchase'] as const) {
+      expect(ACTION_REGISTRY[key].implemented).toBe(true);
     }
+    // Closed until the bot has an operator identity to create renewal orders.
+    expect(ACTION_REGISTRY.renew_services.implemented).toBe(false);
   });
   it('keeps serialized v1 definitions and upgrade is explicit, deep and idempotent', () => {
     const v1 = defaultDefinition();

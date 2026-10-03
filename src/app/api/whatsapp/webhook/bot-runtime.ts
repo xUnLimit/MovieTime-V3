@@ -13,6 +13,7 @@ import { createContactStore } from '@/modules/messaging/contact-store';
 import { createBotV2IdentityStore } from '@/modules/messaging/bot-v2-identity-store';
 import { createBotCatalogStore } from '@/modules/messaging/bot-catalog-store';
 import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
+import { createBotV2Extras } from './bot-v2-wiring';
 import { handleV2Message } from '@/application/use-cases/bot-v2/runtime';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { BotDefinition } from '@/types/bot';
@@ -73,7 +74,7 @@ export function createBotRuntime(requestId: string) {
           return await handleV2Message(message, {
             ...deps, version: published.version, states, contacts: createContactStore(), identity: createBotV2IdentityStore(),
             replied: async id => (await createOutboundStore().findByIdempotencyKey(replyKey(id)))?.sendStatus === 'accepted',
-            catalog: createBotCatalogStore(),
+            catalog: createBotCatalogStore(), ...createBotV2Extras(),
           });
         }
         if ((await states.load(message.fromWaId))?.state.owner === 'humano') return 'ignored';

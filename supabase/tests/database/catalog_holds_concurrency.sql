@@ -4,8 +4,8 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS dblink WITH SCHEMA extensions;
 SELECT no_plan();
-SELECT extensions.dblink_connect('catalog_a', coalesce(nullif(current_setting('app.catalog_test_dsn', true), ''), 'dbname=' || current_database()));
-SELECT extensions.dblink_connect('catalog_b', coalesce(nullif(current_setting('app.catalog_test_dsn', true), ''), 'dbname=' || current_database()));
+SELECT extensions.dblink_connect('catalog_a', coalesce(nullif(current_setting('app.catalog_test_dsn', true), ''), 'host=' || coalesce(host(inet_server_addr()), '127.0.0.1') || ' port=5432 user=postgres password=postgres dbname=' || current_database()));
+SELECT extensions.dblink_connect('catalog_b', coalesce(nullif(current_setting('app.catalog_test_dsn', true), ''), 'host=' || coalesce(host(inet_server_addr()), '127.0.0.1') || ' port=5432 user=postgres password=postgres dbname=' || current_database()));
 
 -- Commit synthetic fixtures via session A so both sessions see them. Clean up
 -- via A at the end, since the outer pgTAP rollback cannot remove remote writes.

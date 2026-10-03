@@ -1,6 +1,6 @@
 import type { CatalogAdminSnapshot } from '@/modules/catalog/admin-contracts';
-export const categoryId = '61111111-1111-4111-8111-111111111111';
-export const planId = '62222222-2222-4222-8222-222222222222';
+const categoryId = '61111111-1111-4111-8111-111111111111';
+const planId = '62222222-2222-4222-8222-222222222222';
 export function catalogSnapshot(): CatalogAdminSnapshot {
   const snapshot: CatalogAdminSnapshot = {
     settings: { reserva_ttl_minutos: 30, moneda: 'USD', resumen_template: '{{disponibles}}\n{{agotados}}' },

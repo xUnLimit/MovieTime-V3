@@ -12,11 +12,13 @@ export const ACTION_REGISTRY = {
   handoff: implemented('handoff', 'Pasar a una persona', 'Deja el chat para el equipo.'),
   show_catalog: { ...declared('show_catalog', []), implemented: true },
   register_interest: { ...declared('register_interest', ['categoria_id']), implemented: true },
-  request_payment: declared('request_payment', ['pedido_id']),
-  verify_payment: declared('verify_payment', ['pedido_id']),
-  deliver_credentials: declared('deliver_credentials', ['venta_id']),
+  request_payment: { ...declared('request_payment', ['pedido_id']), implemented: true },
+  verify_payment: { ...declared('verify_payment', ['pedido_id']), implemented: true },
+  deliver_credentials: { ...declared('deliver_credentials', ['venta_id']), implemented: true },
   send_code: { ...declared('send_code', ['venta_id']), implemented: true },
-  renew_services: declared('renew_services', ['venta_id']),
+  // Closed on purpose: renewal orders need an operator identity the bot does not have (pending owner decision).
+  renew_services: declared('renew_services', []),
+  start_purchase: { ...declared('start_purchase', []), implemented: true },
   send_template: declared('send_template', ['template_id']),
 } as const;
 export type RegisteredActionKey = keyof typeof ACTION_REGISTRY;

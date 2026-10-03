@@ -4,6 +4,7 @@ import { defaultCatalogMessages } from '@/modules/bot-config/catalog-messages';
 import type { CatalogItem } from '@/platform/supabase/catalog-contracts';
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { ActionContext, ActionResult } from './contracts';
+import { addToCart } from './purchase-flow';
 
 const routeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('available'), value: z.coerce.number().int().min(0).max(10000) }),
@@ -105,6 +106,9 @@ export async function handleCatalogRoute(ctx: ActionContext, route: NonNullable<
   if (route.kind === 'plan') {
     if (!['plans', 'interest'].includes(String(v.catalog_view)) || (item.estado === 'agotado') !== (v.catalog_mode === 'soldout')) return null;
     if (item.estado === 'agotado') return registerInterest({ ...ctx, params: { categoria_id: item.categoria_id, plan_id: item.plan_id } });
+    // With the purchase flow wired the customer buys in the chat; otherwise an advisor takes over.
+    const cart = await addToCart(ctx, item);
+    if (cart) return cart;
     return { state: { ...vars(ctx, { interes: `solicita ${label(item).slice(0, 150)}` }), owner: 'humano' },
       message: { kind: 'text', text: ctx.run.deps.definition.messages.handoff_ack }, event: 'handoff' };
   }

@@ -1,7 +1,7 @@
 import { z } from '@/platform/validation/zod';
 import { sessionValueSchema, variableNameSchema } from '@/platform/validation/conversation-state';
 
-export const safePatternSchema = z.enum(['digits', 'letters', 'alphanumeric']);
+const safePatternSchema = z.enum(['digits', 'letters', 'alphanumeric']);
 export const inputSpecSchema = z.object({
   tipo: z.enum(['text', 'number', 'image']), variable: variableNameSchema.refine(name =>
     !name.startsWith('runtime_') && !name.startsWith('catalog_') && name !== 'solicitud_venta'),
@@ -11,7 +11,7 @@ export const inputSpecSchema = z.object({
     maxLength: z.number().int().min(1).max(512).optional(), min: z.number().finite().optional(), max: z.number().finite().optional(),
   }).strict(),
 }).strict();
-export const predicateSchema = z.discriminatedUnion('kind', [
+const predicateSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('contact_is'), value: z.enum(['lead', 'cliente']) }).strict(),
   z.object({ kind: z.literal('active_service'), categoria: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('pending_order') }).strict(),

@@ -6,9 +6,12 @@ import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import { conversationStateSchema, type ConversationState } from '@/platform/validation/conversation-state';
 import { z } from '@/platform/validation/zod';
 import { reply, trackEvent } from '../bot-reply';
-import { ACTION_HANDLERS } from './actions';
+import { isUuid } from '@/platform/utils/safety';
+import { ACTION_HANDLERS, handleBuyRoute, handleRenewRoute } from './actions';
 import { catalogRoute, handleCatalogRoute } from './catalog-flow';
 import type { ActionContext, ActionResult, V2Deps } from './contracts';
+import { purchaseRoute } from './purchase-flow';
+import { renewRoute } from './renew-routes';
 
 function replyId(message: InboundMessage): string | null {
   const p = message.payload;
@@ -32,20 +35,37 @@ function answerEvent(message: InboundMessage, state: ConversationState): Convers
   }
   return { kind: 'answer', tipo: 'text', value: text };
 }
+/** A payment receipt is expected: the order id lives in the session and the proof (image or typed code) is never stored. */
+function receiptWait(state: ConversationState, now: Date): string | null {
+  const orderId = state.variables.pago_pedido;
+  return state.awaiting && Date.parse(state.awaiting.expiresAt) > now.getTime() && typeof orderId === 'string' && isUuid(orderId) ? orderId : null;
+}
+function receiptParams(orderId: string, message: InboundMessage): Record<string, string> | null {
+  if (message.messageType === 'image' && message.mediaId) return { pedido_id: orderId, comprobante_media: message.mediaId };
+  if (message.messageType === 'text' && message.textBody && message.textBody.length <= 512) return { pedido_id: orderId, comprobante_texto: message.textBody };
+  return null;
+}
 function leadTarget(ctx: ActionContext, nodeId: string, visited = new Set<string>()): boolean {
   if (visited.has(nodeId)) return false;
   visited.add(nodeId);
   const node = ctx.run.deps.definition.nodes.find(candidate => candidate.id === nodeId);
   if (!node || node.kind === 'input') return false;
-  if (node.kind === 'action') return node.action === 'show_catalog' || node.action === 'register_interest';
+  if (node.kind === 'action') return ['show_catalog', 'register_interest', 'start_purchase'].includes(node.action ?? '');
   if (node.kind === 'condition' && node.condition) return [node.condition.yes, node.condition.no].some(next => leadTarget(ctx, next, new Set(visited)));
   return node.options.some(option => leadTarget(ctx, option.next, new Set(visited)));
 }
 async function plan(ctx: ActionContext, message: InboundMessage, event: ConversationInput['event'], now: Date): Promise<ActionResult | null> {
   const { deps } = ctx.run;
   const id = replyId(message);
+  const orderId = !id ? receiptWait(ctx.state, now) : null;
+  const proof = orderId ? receiptParams(orderId, message) : null;
+  if (proof) return ACTION_HANDLERS.verify_payment?.({ ...ctx, params: proof }) ?? null;
   const route = id ? catalogRoute(id) : null;
   if (route) return handleCatalogRoute(ctx, route);
+  const buy = id ? purchaseRoute(id) : null;
+  if (buy) return handleBuyRoute(ctx, buy);
+  const renew = id ? renewRoute(id) : null;
+  if (renew) return handleRenewRoute(ctx, renew);
   const entity = id ? decodeEntityReplyId(id) : null;
   const requested = entity?.kind === 'CODE' ? entity.entityId :
     ctx.state.awaiting && Date.parse(ctx.state.awaiting.expiresAt) > now.getTime() &&
@@ -98,7 +118,7 @@ async function plan(ctx: ActionContext, message: InboundMessage, event: Conversa
     }
     return null;
   }
-  if (lead && effect.key !== 'show_catalog' && effect.key !== 'register_interest') return null;
+  if (lead && !['show_catalog', 'register_interest', 'start_purchase'].includes(effect.key)) return null;
   return ACTION_HANDLERS[effect.key]?.({ ...ctx, state: transition.state, params: effect.params }) ?? null;
 }
 
@@ -134,6 +154,9 @@ export async function handleV2Message(message: InboundMessage, deps: V2Deps): Pr
   if (action?.kind === 'option') {
     if (action.nodeId !== state.nodeId) return 'ignored';
     event = { kind: 'option', optionId: action.optionId };
+  } else if (!id && receiptWait(state, now)) {
+    // Proof of payment bypasses the free-text filter: a typed Yappy code is exactly what this turn needs.
+    if (message.messageType !== 'image' && message.messageType !== 'text') return 'ignored';
   } else if (state.awaiting && !state.variables.solicitud_venta) {
     const answer = answerEvent(message, state);
     if (!answer) return 'ignored';

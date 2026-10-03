@@ -12,7 +12,7 @@ import { TableCard } from '@/components/shared/TableCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import type { CatalogInterest } from '@/platform/supabase/catalog-contracts';
+import type { CatalogInterest } from '@/types/catalog';
 
 const labels = { esperando: 'Esperando', avisado: 'Avisado', convertido: 'Atendido', descartado: 'Descartado' };
 export function InterestView() { return <InterestScreen api={useCatalogAdmin()} />; }

@@ -3,7 +3,7 @@ import type { InboundMessage } from './webhook-payload';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
-export type QueuedInboundMessage = { id: string; message: InboundMessage };
+type QueuedInboundMessage = { id: string; message: InboundMessage };
 
 export type InboundQueueStore = {
   claim(limit: number, lockSeconds: number): Promise<QueuedInboundMessage[]>;

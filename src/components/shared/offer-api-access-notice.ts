@@ -29,14 +29,15 @@ interface OfferApiAccessNoticeParams {
  * omitido, wa.me) cae al toast wa.me existente. Sin plantilla vinculada no se usa.
  */
 export function offerApiAccessNotice({
-  tipo, items, enqueueWhatsAppMessages, title, description, kind = 'info', onApiSettled, eventId = crypto.randomUUID(),
+  tipo, items, enqueueWhatsAppMessages, title, description, kind = 'info', onApiSettled, eventId,
 }: OfferApiAccessNoticeParams) {
   // Un id por cambio: reintentar el mismo aviso no duplica, pero un cambio nuevo sobre la misma
   // venta sí se envía (antes el servidor lo tomaba por duplicado y no mandaba nada).
+  const noticeEventId = eventId ?? crypto.randomUUID();
   const sendViaApi = async () => {
     const loadingId = toast.loading('Enviando por WhatsApp API...');
     try {
-      const results = await sendWhatsAppNoticesUseCase({ tipo, ventaIds: items.map((item) => item.ventaId), eventId });
+      const results = await sendWhatsAppNoticesUseCase({ tipo, ventaIds: items.map((item) => item.ventaId), eventId: noticeEventId });
       const delivered = new Set(results.filter((result) => isNoticeDelivered(result.status)).flatMap((result) => result.ventaIds));
       const pending = items.filter((item) => !delivered.has(item.ventaId));
       enqueueWhatsAppMessages(pending.map((item) => item.message));

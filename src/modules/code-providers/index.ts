@@ -1,6 +1,6 @@
 import { netflixProvider } from './netflix-provider';
 import type { CodeProvider } from './types';
-export type { CodeProvider, CodeMail, CodeDelivery, DatedCodeMail } from './types';
+export type { CodeProvider, DatedCodeMail } from './types';
 
 const providers: readonly CodeProvider[] = Object.freeze([netflixProvider]);
 export function getCodeProvider(key: string | null | undefined): CodeProvider | null {

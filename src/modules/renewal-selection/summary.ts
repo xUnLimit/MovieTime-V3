@@ -2,7 +2,7 @@ import { z } from '@/platform/validation/zod';
 import { renewalTotal, selectedByCurrency, selectionSchema, type RenewalSelection } from './selection';
 
 export const defaultRenewalTemplate = 'Renovar todo / Elegir\n{{servicios}}\nTotal: {{total}} {{moneda}}';
-export const renewalTemplateSchema = z.string().min(1).max(1000).refine(t =>
+const renewalTemplateSchema = z.string().min(1).max(1000).refine(t =>
   ['{{servicios}}', '{{total}}', '{{moneda}}'].every(marker => t.includes(marker)));
 
 export function renderRenewalSummary(input: RenewalSelection, page = 0, template = defaultRenewalTemplate) {

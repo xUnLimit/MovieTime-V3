@@ -3,7 +3,7 @@ import { createServiceRoleClient } from '@/platform/server/supabase-server';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
-export type ContactEstado = 'lead' | 'cliente' | 'bloqueado';
+type ContactEstado = 'lead' | 'cliente' | 'bloqueado';
 export type WhatsAppContact = { waId: string; terceroId: string | null; estado: ContactEstado };
 export type ContactStore = { upsert(waId: string, profileName: string | null): Promise<WhatsAppContact> };
 type InboundSender = { fromWaId: string; contactName: string | null };

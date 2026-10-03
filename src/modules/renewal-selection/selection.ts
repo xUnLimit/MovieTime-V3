@@ -26,7 +26,7 @@ export const selectionSchema = z.object({
 });
 export type RenewalItem = z.infer<typeof renewalItemSchema>;
 export type RenewalSelection = z.infer<typeof selectionSchema>;
-export const selectionActionSchema = z.discriminatedUnion('type', [
+const selectionActionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('toggle'), ventaId: uuid }).strict(),
   z.object({ type: z.literal('decline'), ventaId: uuid }).strict(),
   z.object({ type: z.literal('selectAll') }).strict(),

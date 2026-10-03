@@ -34,6 +34,7 @@ vi.mock('@/modules/messaging/notice-store', () => ({ createNoticeStore: () => ({
 vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({ handleBotMessage }));
 vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({ kind: 'bot-store' }) }));
 vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: () => ({ load: loadBotConfig }) }));
+vi.mock('@/modules/messaging/conversation-state-store', () => ({ createConversationStateStore: () => ({ load: async () => null }) }));
 vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: recordBotEvent }) }));
 vi.mock('@/modules/messaging/netflix-claim-store', () => ({ createNetflixClaimStore: () => ({ kind: 'claim-store' }) }));
 vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox }));

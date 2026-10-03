@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultDefinitionV2 } from '@/modules/bot-config';
+import { defaultPurchaseMessages } from '@/modules/bot-config/purchase-messages';
 import type { BotDefinition } from '@/types/bot';
 import type { ConversationState } from '@/platform/validation/conversation-state';
 import { conversationStateSchema } from '@/platform/validation/conversation-state';
@@ -7,6 +8,12 @@ import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { CatalogItem } from '@/platform/supabase/catalog-contracts';
 import type { V2Deps } from './contracts';
 import { awaitCodeRequest, handleV2Message } from './runtime';
+
+const paymentMocks = vi.hoisted(() => ({ verify: vi.fn(), request: vi.fn() }));
+// The real wiring reads environment settings; the routing under test only needs the handler seam.
+vi.mock('../payment-wiring', () => ({
+  createBotPaymentHandlers: () => ({ verify_payment: paymentMocks.verify, request_payment: paymentMocks.request }),
+}));
 
 const NOW = new Date('2026-10-04T04:00:00Z');
 const WA = '50760000000';
@@ -39,16 +46,16 @@ function setup(definition = defaultDefinitionV2(), lead = false) {
         return true;
       }),
     },
-    contacts: { upsert: vi.fn(async () => ({ waId: WA, terceroId: lead ? null : CAT, estado: lead ? 'lead' : 'cliente' })) },
+    contacts: { upsert: vi.fn(async () => ({ waId: WA, terceroId: lead ? null : CAT, estado: lead ? 'lead' as const : 'cliente' as const })) },
     replied: vi.fn(async id => delivered.has(id)),
     catalog: { list: vi.fn(async () => [item(), item({ categoria_id: ALT, plan_id: ALT, categoria_nombre: 'Disney', estado: 'disponible', perfiles_libres: 2 })]),
       registerInterest: vi.fn(async () => SALE) },
     identity: { context: vi.fn(async () => ({ activeCategories: [CAT], pendingOrder: false })), codeSale: vi.fn(async () => null), requestsSince: vi.fn(async () => 0) },
     store: { customerServices: vi.fn(async () => ({ known: true, clienteId: CAT, services: [] })),
       lastActivityAt: vi.fn(async () => null), operatorRepliedSince: vi.fn(async () => false), menuTapsSince: vi.fn(async () => 0) },
-    claims: { owners: vi.fn(async () => new Map()), claim: vi.fn(async () => 'claimed'), release: vi.fn(async () => true) },
+    claims: { owners: vi.fn(async () => new Map()), claim: vi.fn(async () => 'claimed' as const), release: vi.fn(async () => true) },
     events: { record: vi.fn(async () => undefined) }, openInbox: vi.fn(async () => null), fetchTravelPage: vi.fn(async () => null),
-    send: vi.fn(async () => ({ id: SALE, sendStatus: 'accepted', waMessageId: 'out.1', errorTitle: null, replayed: false })),
+    send: vi.fn(async () => ({ id: SALE, sendStatus: 'accepted' as const, waMessageId: 'out.1', errorTitle: null, replayed: false })),
   };
   return { deps, state: () => snapshot?.state, setState(state: ConversationState, expired = false) {
     snapshot = { state, revision: 1, updatedAt: NOW.toISOString(), expiresAt: new Date(NOW.getTime() + (expired ? -1 : 86400_000)).toISOString() };
@@ -233,5 +240,140 @@ describe('live v2 runtime', () => {
     expect(JSON.stringify(s.state())).not.toContain('nftoken');
     expect(s.state()?.awaiting).toBeNull();
     expect(s.state()?.variables.solicitud_venta).toBeNull();
+  });
+});
+
+const ORDER = '55555555-5555-4555-8555-555555555555';
+function media(id: string, messageType: InboundMessage['messageType'], patch: Partial<InboundMessage> = {}): InboundMessage {
+  return { ...inbound(id), messageType, textBody: null, mediaId: messageType === 'image' ? 'media.1' : null, payload: {}, ...patch };
+}
+const waiting = (expiresAt = '2026-10-05T04:00:00Z', variables: ConversationState['variables'] = { pago_pedido: ORDER }): ConversationState =>
+  ({ ...initial(), variables, awaiting: { tipo: 'image', ref: 'menu', expiresAt } });
+const verifyResult = (ctx: { state: ConversationState }) => ({ state: { ...ctx.state, awaiting: null,
+  variables: Object.fromEntries(Object.entries(ctx.state.variables).filter(([key]) => key !== 'pago_pedido')) }, message: { kind: 'text' as const, text: 'Recibido' } });
+
+describe('payment receipt wait', () => {
+  beforeEach(() => { paymentMocks.verify.mockReset(); paymentMocks.request.mockReset(); paymentMocks.verify.mockImplementation(async ctx => verifyResult(ctx)); });
+
+  it('routes an image to verify_payment with the media id and clears the pending order', async () => {
+    const s = setup(); s.setState(waiting());
+    expect(await handleV2Message(media('img.1', 'image'), s.deps)).toBe('node');
+    expect(paymentMocks.verify).toHaveBeenCalledTimes(1);
+    expect(paymentMocks.verify.mock.calls[0][0].params).toEqual({ pedido_id: ORDER, comprobante_media: 'media.1' });
+    expect(s.state()?.variables.pago_pedido).toBeUndefined();
+    expect(s.state()?.awaiting).toBeNull();
+    expect(vi.mocked(s.deps.send).mock.calls[0][0].payload).toEqual({ kind: 'text', text: 'Recibido' });
+  });
+
+  it('does not discard a typed 9-digit Yappy code and never stores it in the session', async () => {
+    const s = setup(); s.setState(waiting());
+    await handleV2Message(inbound('code.1', undefined, '123456789'), s.deps);
+    expect(paymentMocks.verify.mock.calls[0][0].params).toEqual({ pedido_id: ORDER, comprobante_texto: '123456789' });
+    expect(JSON.stringify(s.state())).not.toContain('123456789');
+    expect(JSON.stringify(vi.mocked(s.deps.send).mock.calls)).not.toContain('123456789');
+  });
+
+  it('ignores stickers while waiting', async () => {
+    const s = setup(); s.setState(waiting());
+    expect(await handleV2Message(media('st.1', 'sticker'), s.deps)).toBe('ignored');
+    expect(paymentMocks.verify).not.toHaveBeenCalled();
+    expect(s.deps.send).not.toHaveBeenCalled();
+  });
+
+  it('does not forward oversized text or an image without media id as proof, nor store them', async () => {
+    const s = setup(); s.setState(waiting());
+    await handleV2Message(inbound('long.1', undefined, 'a'.repeat(513)), s.deps);
+    await handleV2Message(media('img.2', 'image', { mediaId: null }), s.deps);
+    expect(paymentMocks.verify).not.toHaveBeenCalled();
+    expect(JSON.stringify(s.state())).not.toContain('aaaaaaaa');
+  });
+
+  it('falls back to the normal flow once the wait has expired', async () => {
+    const s = setup(); s.setState(waiting('2026-10-03T04:00:00Z'));
+    await handleV2Message(media('img.3', 'image'), s.deps);
+    expect(paymentMocks.verify).not.toHaveBeenCalled();
+  });
+
+  it('does not wait without a valid pending order id', async () => {
+    const s = setup(); s.setState(waiting(undefined, { pago_pedido: 'no-uuid' }));
+    await handleV2Message(media('img.4', 'image'), s.deps);
+    const t = setup(); t.setState(waiting(undefined, {}));
+    await handleV2Message(media('img.5', 'image'), t.deps);
+    expect(paymentMocks.verify).not.toHaveBeenCalled();
+  });
+
+  it('lets button taps keep their own routing while a receipt is awaited', async () => {
+    const s = setup(); s.setState(waiting());
+    await handleV2Message(inbound('tap.1', 'BOT:BUY:cancel:0'), s.deps);
+    expect(paymentMocks.verify).not.toHaveBeenCalled();
+  });
+});
+
+describe('purchase routes and lead capabilities', () => {
+  beforeEach(() => { paymentMocks.verify.mockReset(); paymentMocks.request.mockReset(); });
+  const store = () => ({
+    settings: vi.fn(async () => ({ maxItems: 3, messages: defaultPurchaseMessages() })),
+    reserve: vi.fn(async () => ({ id: ALT, servicio: 'Disney', perfil: 1, vence: 'x' })),
+    createOrder: vi.fn(async () => ORDER), release: vi.fn(async () => 1), credentials: vi.fn(async () => null), orderSales: vi.fn(async () => []),
+  });
+  const actionDef = (action: string, actionParams: Record<string, string> = {}): BotDefinition => ({ ...defaultDefinitionV2(), entryNodeId: 'act', nodes: [
+    { id: 'act', name: 'Acción', kind: 'action', body: '', options: [], action, actionParams } as BotDefinition['nodes'][number],
+  ] });
+
+  it('ignores BOT:BUY routes when purchases are not wired', async () => {
+    const s = setup();
+    expect(await handleV2Message(inbound('buy.0', 'BOT:BUY:cancel:0'), s.deps)).toBe('ignored');
+  });
+
+  it('cancel releases holds and clears the cart', async () => {
+    const s = setup(undefined, true); const purchase = store(); s.deps.purchase = purchase;
+    s.setState({ ...initial(), variables: { compra_planes: ALT } });
+    expect(await handleV2Message(inbound('buy.1', 'BOT:BUY:cancel:0'), s.deps)).toBe('node');
+    expect(purchase.release).toHaveBeenCalledWith(WA, null);
+    expect(s.state()?.variables.compra_planes).toBeUndefined();
+  });
+
+  it('checkout creates the order and chains to request_payment, leaving the receipt wait in the session', async () => {
+    const s = setup(undefined, true); const purchase = store(); s.deps.purchase = purchase;
+    paymentMocks.request.mockImplementation(async ctx => ({ state: { ...ctx.state, variables: { ...ctx.state.variables, pago_pedido: ctx.params.pedido_id },
+      awaiting: { tipo: 'image', ref: 'menu', expiresAt: '2026-10-05T04:00:00Z' } }, message: { kind: 'text', text: 'Paga por Yappy' } }));
+    s.setState({ ...initial(), variables: { compra_planes: ALT } });
+    await handleV2Message(inbound('buy.2', 'BOT:BUY:checkout:0'), s.deps);
+    expect(purchase.createOrder).toHaveBeenCalledWith(WA, [ALT], expect.any(String));
+    expect(paymentMocks.request.mock.calls[0][0].params).toEqual({ pedido_id: ORDER });
+    expect(s.state()?.variables).toMatchObject({ pago_pedido: ORDER });
+    expect(s.state()?.variables.compra_planes).toBeUndefined();
+    expect(vi.mocked(s.deps.send).mock.calls[0][0].payload).toEqual({ kind: 'text', text: 'Paga por Yappy' });
+  });
+
+  it('lets a lead reach start_purchase (opens the catalog) and add a plan to the cart', async () => {
+    const s = setup(actionDef('start_purchase'), true); const purchase = store(); s.deps.purchase = purchase;
+    await handleV2Message(inbound(), s.deps);
+    expect(vi.mocked(s.deps.send).mock.calls[0][0].payload.kind).not.toBe('text');
+    const t = setup(undefined, true); const wired = store(); t.deps.purchase = wired;
+    t.setState({ ...initial(), variables: { catalog_view: 'plans', catalog_mode: 'available', catalog_category: ALT } });
+    await handleV2Message(inbound('plan.1', `BOT:CAT:plan:${ALT}`), t.deps);
+    expect(wired.reserve).toHaveBeenCalledWith(WA, ALT);
+    expect(t.state()?.variables.compra_planes).toBe(ALT);
+  });
+
+  it('keeps start_purchase unavailable without a purchase store', async () => {
+    const s = setup(actionDef('start_purchase'), true);
+    await handleV2Message(inbound(), s.deps);
+    expect(s.deps.send).not.toHaveBeenCalled();
+  });
+
+  it.each(['handoff', 'netflix_login_code', 'send_code'])('does not let a lead reach %s', async action => {
+    const s = setup(actionDef(action), true);
+    expect(await handleV2Message(inbound(), s.deps)).toBe('ignored');
+    expect(s.deps.send).not.toHaveBeenCalled();
+  });
+
+  it('keeps renewal closed on purpose when it is not wired', async () => {
+    const s = setup();
+    expect(await handleV2Message(inbound('ren.1', 'BOT:REN:confirm:0'), s.deps)).toBe('ignored');
+    const t = setup(actionDef('renew_services'));
+    expect(await handleV2Message(inbound(), t.deps)).toBe('ignored');
+    expect(t.deps.send).not.toHaveBeenCalled();
   });
 });

@@ -26,6 +26,3 @@ export const catalogInterestSchema = z.object({
   created_at: z.string().datetime({ offset: true }), avisado_at: z.string().datetime({ offset: true }).nullable(),
 });
 export type CatalogItem = z.infer<typeof catalogItemSchema>;
-export type CatalogEstado = z.infer<typeof catalogEstadoSchema>;
-export type CatalogHold = z.infer<typeof catalogHoldSchema>;
-export type CatalogInterest = z.infer<typeof catalogInterestSchema>;

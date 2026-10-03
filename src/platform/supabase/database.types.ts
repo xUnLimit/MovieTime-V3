@@ -4458,6 +4458,16 @@ export type Database = {
       reclamar_pago_yappy_para_pedido: { Args: { p_pedido_id: string; p_confirmation_code: string; p_idempotency_key: string; p_wa_id?: string | null; p_reintento?: boolean }; Returns: Json }
       listar_comprobantes_pendientes: { Args: { p_limit?: number }; Returns: { pedido_id: string; wa_id: string | null; codigo: string }[] }
       expirar_pedidos: { Args: Record<PropertyKey, never>; Returns: number }
+      obtener_ajustes_pago_bot: { Args: Record<PropertyKey, never>; Returns: Json }
+      obtener_pedido_para_bot: { Args: { p_pedido_id: string }; Returns: Json }
+      reclamar_recordatorios_pedido: { Args: { p_limit?: number }; Returns: { pedido_id: string; wa_id: string; total: number; moneda: string; expira_at: string }[] }
+      cerrar_recordatorio_pedido: { Args: { p_pedido_id: string; p_estado: string; p_motivo?: string | null }; Returns: boolean }
+      reservar_perfil_para_plan: { Args: { p_wa_id: string; p_plan_id: string }; Returns: { id: string; servicio: string; perfil: number; vence: string }[] }
+      crear_pedido_compra_bot: { Args: { p_wa_id: string; p_plan_ids: string[]; p_idempotency_key: string }; Returns: string }
+      liberar_compra_bot: { Args: { p_wa_id: string; p_pedido_id?: string | null }; Returns: number }
+      credenciales_venta_bot: { Args: { p_wa_id: string; p_venta_id: string }; Returns: Json }
+      ventas_pedido_bot: { Args: { p_wa_id: string; p_pedido_id: string }; Returns: string[] }
+      obtener_ajustes_compra_bot: { Args: Record<PropertyKey, never>; Returns: Json }
       catalogo_disponible: { Args: Record<PropertyKey, never>; Returns: CatalogItemRow[] }
       reservar_perfil: { Args: { p_servicio_id: string; p_owner_ref: string; p_plan_id?: string | null }; Returns: CatalogHoldRow[] }
       liberar_reserva: { Args: { p_reserva_id: string; p_owner_ref: string }; Returns: boolean }

@@ -6,8 +6,8 @@ import { assertUuid } from '@/platform/utils/safety';
 const logger = createLogger('PedidoPayment');
 const RETRY_BATCH = 50;
 
-export type ReceiptRejectReason = 'sin_codigo' | 'codigo_usado' | 'pedido_invalido' | 'intentos_excedidos';
-export type ReceiptReviewReason = 'monto_menor' | 'entrega_pendiente' | 'fuera_de_ventana';
+type ReceiptRejectReason = 'sin_codigo' | 'codigo_usado' | 'pedido_invalido' | 'intentos_excedidos';
+type ReceiptReviewReason = 'monto_menor' | 'entrega_pendiente' | 'fuera_de_ventana';
 
 // Resultado que el bot traduce a mensajes. Nunca contiene el codigo ni telefonos.
 export type SubmitReceiptResult =

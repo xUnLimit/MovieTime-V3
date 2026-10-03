@@ -2,8 +2,8 @@ import { z } from '@/platform/validation/zod';
 import { extractConfirmationCode } from './confirmation-code';
 
 // El comprobante es solo una pista: el pago lo confirma unicamente el correo de Yappy.
-export type ReceiptInput = { typedCode?: string | null; imageMediaId?: string | null };
-export type ReceiptReading = { code: string | null; source: 'texto' | 'vision' | 'ninguna' };
+type ReceiptInput = { typedCode?: string | null; imageMediaId?: string | null };
+type ReceiptReading = { code: string | null; source: 'texto' | 'vision' | 'ninguna' };
 
 export interface ReceiptReader {
   read(input: ReceiptInput): Promise<ReceiptReading>;
@@ -50,7 +50,7 @@ export function parseVisionReply(body: unknown): string | null {
   return parsed.success ? extractConfirmationCode(parsed.data.codigo) : null;
 }
 
-export type ReceiptImage = { base64: string; mimeType: 'image/jpeg' | 'image/png' | 'image/webp' };
+type ReceiptImage = { base64: string; mimeType: 'image/jpeg' | 'image/png' | 'image/webp' };
 export type VisionReaderOptions = {
   apiKey: string; model: string; loadImage(mediaId: string): Promise<ReceiptImage | null>;
   fetchImpl?: typeof fetch; timeoutMs?: number;
