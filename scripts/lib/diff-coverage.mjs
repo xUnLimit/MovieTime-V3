@@ -69,6 +69,12 @@ function collectFile(fileCoverage, changed, totals) {
   collect(fileCoverage.branchMap, fileCoverage.b, changed, totals.branches, (entry) => entry.loc, true);
 }
 
+const punctuation = new Set([
+  ts.SyntaxKind.OpenBraceToken, ts.SyntaxKind.CloseBraceToken, ts.SyntaxKind.OpenParenToken,
+  ts.SyntaxKind.CloseParenToken, ts.SyntaxKind.OpenBracketToken, ts.SyntaxKind.CloseBracketToken,
+  ts.SyntaxKind.SemicolonToken, ts.SyntaxKind.CommaToken,
+]);
+
 function hasExecutableChangedCode(source, changed) {
   const ast = ts.createSourceFile('changed.ts', source, ts.ScriptTarget.Latest, true);
   function hasRuntimeToken(node) {
@@ -78,10 +84,13 @@ function hasExecutableChangedCode(source, changed) {
     if (ts.isTypeNode(node) || ts.isTypeAliasDeclaration(node) || ts.isPropertySignature(node) || ts.isInterfaceDeclaration(node)) return false;
     // V8 does not create statement entries for static imports or reexports.
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) return false;
+    // Braces, parentheses and separators on their own never run.
+    if (punctuation.has(node.kind)) return false;
     const children = node.getChildren(ast);
-    return children.length === 0
-      ? true
-      : children.some(hasRuntimeToken);
+    if (children.length === 0) return true;
+    // A function header (keyword, name, parameters) is not a statement; only its body can run.
+    if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) return node.body ? hasRuntimeToken(node.body) : false;
+    return children.some(hasRuntimeToken);
   }
   return ast.statements.some(hasRuntimeToken);
 }

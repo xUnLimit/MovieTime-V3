@@ -112,6 +112,22 @@ describe('gate del diff', () => {
     changed.get('src/existing.ts').add(6);
     expect(evaluateCoverage(changed, new Map(), () => source).missing).toEqual(['src/existing.ts']);
   });
+
+  it('ignora la cabecera y las llaves de una funcion pero exige cobertura de su cuerpo', () => {
+    const source = ['export async function sync(config, retry = false): Promise<number> {', '  const value = config.size;', '  return value;', '}', ''].join('\n');
+    const header = new Map([['src/existing.ts', new Set([1])]]);
+    const closing = new Map([['src/existing.ts', new Set([4])]]);
+    const body = new Map([['src/existing.ts', new Set([2])]]);
+    expect(evaluateCoverage(header, new Map(), () => source).missing).toEqual([]);
+    expect(evaluateCoverage(closing, new Map(), () => source).missing).toEqual([]);
+    expect(evaluateCoverage(body, new Map(), () => source).missing).toEqual(['src/existing.ts']);
+  });
+
+  it('sigue exigiendo cobertura cuando cambia el cuerpo de un metodo de clase', () => {
+    const source = ['export class Repo {', '  load(id: string) {', '    return id.trim();', '  }', '}', ''].join('\n');
+    expect(evaluateCoverage(new Map([['src/existing.ts', new Set([2])]]), new Map(), () => source).missing).toEqual([]);
+    expect(evaluateCoverage(new Map([['src/existing.ts', new Set([3])]]), new Map(), () => source).missing).toEqual(['src/existing.ts']);
+  });
 });
 
 describe('baseline por area', () => {
