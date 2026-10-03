@@ -49,7 +49,7 @@ SELECT throws_ok($$SELECT pg_temp.renew(gen_random_uuid(),5,'50761111111')$$,'P0
 SELECT throws_ok($$SELECT pg_temp.renew(gen_random_uuid(),6)$$,'P0001','renewal_snapshot_changed','tampered price rejected atomically');
 SELECT is((SELECT count(*) FROM public.pedidos WHERE notice_id='f7500000-0000-4000-8000-000000000001'),0::bigint,'invalid snapshot creates no order');
 INSERT INTO renewal_intent(key) VALUES (gen_random_uuid());
-UPDATE renewal_intent SET id=pg_temp.renew(key);
+UPDATE renewal_intent SET id=pg_temp.renew(key) WHERE id IS NULL;
 SELECT is((SELECT total FROM public.pedidos WHERE id=(SELECT id::uuid FROM renewal_intent)),5::numeric,'partial renewal freezes only selected price');
 SELECT is((SELECT count(*) FROM public.pedido_items WHERE pedido_id=(SELECT id::uuid FROM renewal_intent)),1::bigint,'unselected service excluded');
 SELECT is(pg_temp.renew((SELECT key FROM renewal_intent)),(SELECT id FROM renewal_intent),'same intent returns same order');

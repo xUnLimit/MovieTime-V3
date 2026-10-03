@@ -1,4 +1,3 @@
-vi.mock('./ConversationControl', () => ({ ConversationControl: () => <span>Control de atención</span> }));
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,6 +63,8 @@ vi.mock('@/platform/utils/whatsapp', async (importOriginal) => ({
 vi.mock('sonner', () => ({ toast: { error: toastError, success: toastSuccess } }));
 
 import { ChatWorkspace } from './ChatWorkspace';
+
+vi.mock('./ConversationControl', () => ({ ConversationControl: () => <span>Control de atención</span> }));
 
 const NOW = new Date(2026, 8, 27, 15, 30);
 

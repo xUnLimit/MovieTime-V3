@@ -35,9 +35,9 @@ const sendCode: ActionHandler = async ctx => {
 let payments: ReturnType<typeof createBotPaymentHandlers> | undefined;
 // Created on first use so a missing environment setting cannot break unrelated bot turns.
 const payment = (key: 'request_payment' | 'verify_payment'): ActionHandler => ctx => (payments ??= createBotPaymentHandlers())[key](ctx);
-const renewal = (ctx: ActionContext) => ctx.run.deps.renew ? createRenewalFlow(ctx.run.deps.renew, ctx2 => ACTION_HANDLERS.request_payment?.(ctx2) ?? Promise.resolve(null)) : null;
-export const handleRenewRoute = (ctx: ActionContext, route: RenewRoute): Promise<ActionResult | null> =>
-  renewal(ctx)?.handleRoute(ctx, route) ?? Promise.resolve(null);
+const renewal = (ctx: ActionContext) => ctx.run.deps.renew ? createRenewalFlow(ctx.run.deps.renew, async ctx2 => (await ACTION_HANDLERS.request_payment?.(ctx2)) ?? null) : null;
+export const handleRenewRoute = async (ctx: ActionContext, route: RenewRoute): Promise<ActionResult | null> =>
+  (await renewal(ctx)?.handleRoute(ctx, route)) ?? null;
 export const handleBuyRoute = (ctx: ActionContext, route: PurchaseRoute): Promise<ActionResult | null> =>
   handlePurchaseRoute(ctx, route, { chain: ACTION_HANDLERS.request_payment, catalog: showCatalog });
 
@@ -45,7 +45,7 @@ export const handleBuyRoute = (ctx: ActionContext, route: PurchaseRoute): Promis
 export const ACTION_HANDLERS: ActionBindings = {
   request_payment: payment('request_payment'), verify_payment: payment('verify_payment'),
   deliver_credentials: createDeliverCredentials(), start_purchase: createStartPurchase(showCatalog),
-  renew_services: ctx => renewal(ctx)?.handler(ctx) ?? Promise.resolve(null),
+  renew_services: async ctx => (await renewal(ctx)?.handler(ctx)) ?? null,
   show_catalog: showCatalog, register_interest: registerInterest, send_code: sendCode,
   netflix_login_code: netflix('login'), netflix_travel_code: netflix('travel'),
   handoff: async ctx => ({

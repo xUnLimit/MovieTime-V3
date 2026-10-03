@@ -1,4 +1,3 @@
-vi.mock('./ConversationControl', () => ({ ConversationControl: () => <span>Control de atención</span> }));
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -9,6 +8,8 @@ import { ChatHeader } from './ChatHeader';
 import { CustomerPanel, sortVentasForChat } from './CustomerPanel';
 import type { TemplateOption } from './chat-templates';
 import { TemplateSendDialog } from './TemplateSendDialog';
+
+vi.mock('./ConversationControl', () => ({ ConversationControl: () => <span>Control de atención</span> }));
 
 const NOW = new Date(2026, 8, 27, 15, 30);
 

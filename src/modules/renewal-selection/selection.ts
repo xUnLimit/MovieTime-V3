@@ -35,6 +35,9 @@ const selectionActionSchema = z.discriminatedUnion('type', [
 ]);
 export type SelectionAction = z.infer<typeof selectionActionSchema>;
 
+// Locale-independent order so serialized selections and their fingerprints stay deterministic.
+const byCodePoint = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
 export function applySelectionAction(input: RenewalSelection, action: SelectionAction): RenewalSelection {
   const state = selectionSchema.parse(input);
   const a = selectionActionSchema.parse(action);
@@ -52,7 +55,7 @@ export function applySelectionAction(input: RenewalSelection, action: SelectionA
     declined.clear();
   }
   if (a.type === 'clear') { selected.clear(); declined.clear(); }
-  return selectionSchema.parse({ ...state, selected: [...selected].sort(), declined: [...declined].sort(),
+  return selectionSchema.parse({ ...state, selected: [...selected].sort(byCodePoint), declined: [...declined].sort(byCodePoint),
     confirmed: a.type === 'confirm' });
 }
 
