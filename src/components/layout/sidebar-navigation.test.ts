@@ -57,10 +57,3 @@ describe('Configuracion', () => {
     expect(names('vendedor')).not.toContain('Configuración');
   });
 });
-
-it('limits catalog and interests navigation to administrators', () => {
-  for (const role of [undefined, 'vendedor', 'admin']) {
-    const paths = getSidebarNavigationSections(role).flatMap(section => section.items.map(item => item.href));
-    for (const path of ['/catalogo', '/interesados']) expect(paths.includes(path)).toBe(role === 'admin');
-  }
-});

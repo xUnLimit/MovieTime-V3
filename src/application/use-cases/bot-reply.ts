@@ -13,7 +13,6 @@ import type { BotDefinition, BotEventType } from '@/types/bot';
 const log = createLogger('WhatsAppBot');
 
 export type BotDeps = {
-  conversationOwner?: (waId: string) => Promise<'bot' | 'humano' | null>;
   store: BotStore;
   claims: NetflixClaimStore;
   events: Pick<BotEventsStore, 'record'>;
@@ -32,10 +31,10 @@ export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavai
 // What one inbound message needs to be answered: who wrote, when, and the published bot.
 export type BotRun = { deps: BotDeps; message: InboundMessage; now: Date; clienteId: string | null };
 
-export const replyKey = (waMessageId: string): string => {
+function replyKey(waMessageId: string): string {
   const hex = createHash('sha256').update(`bot-reply:${waMessageId}`).digest('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
-};
+}
 
 // One reply per inbound message: the key derives from it, so a redelivery never answers twice.
 export function reply(

@@ -18,12 +18,10 @@ describe('Yappy Supabase repository', () => {
       id: paymentId, confirmation_code: 'GZCSS-20613095', amount: 2, payer_name_short: 'E. S.',
       payer_phone_last4: '0268', paid_at: '2026-09-27T18:07:00Z', match_status: 'match_unico',
       candidate_venta_ids: [ventaId], matched_venta_id: null,
-      requiere_revision: true, revision_pedido_id: ventaId, revision_motivo: 'monto_menor',
     }], error: null }) }) }) });
     expect(await listYappyPayments()).toEqual([{ id: paymentId, confirmationCode: 'GZCSS-20613095', amount: 2,
       payerNameShort: 'E. S.', payerPhoneLast4: '0268', paidAt: '2026-09-27T18:07:00Z',
-      matchStatus: 'match_unico', candidateVentaIds: [ventaId], matchedVentaId: null,
-      requiereRevision: true, revisionPedidoId: ventaId, revisionMotivo: 'monto_menor' }]);
+      matchStatus: 'match_unico', candidateVentaIds: [ventaId], matchedVentaId: null }]);
   });
   it('drops malformed view rows and maps safe sale labels', async () => {
     from.mockImplementation((table: string) => table === 'v_yappy_mail_sync_status' ? {

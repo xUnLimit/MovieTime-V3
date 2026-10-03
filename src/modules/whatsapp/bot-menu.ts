@@ -48,11 +48,6 @@ function readAccountRow(id: string): BotAction | null {
 // Only taps on our own menu count; anything else a customer writes stays a chat.
 export function readBotAction(message: InboundMessage): BotAction | null {
   const payload = message.payload;
-  // Approved access notices arrive as template buttons rather than interactive replies.
-  if (message.messageType === 'button' && payload && typeof payload === 'object' && !Array.isArray(payload)
-    && payload.type === 'template_button' && payload.payload === 'BOT:NFX:LOGIN') {
-    return { kind: 'legacy', target: 'login' };
-  }
   if (message.messageType !== 'interactive' || !payload || typeof payload !== 'object' || Array.isArray(payload)
     || (payload.type !== 'button_reply' && payload.type !== 'list_reply') || typeof payload.id !== 'string') return null;
   const legacy = LEGACY_REPLY_IDS.get(payload.id);

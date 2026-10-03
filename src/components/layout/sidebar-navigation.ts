@@ -32,8 +32,6 @@ export type SidebarNavSection = {
 };
 
 const adminOnlyPaths = [
-  '/interesados',
-  '/catalogo',
   '/chats',
   '/bot',
   '/pagos-yappy',
@@ -84,7 +82,6 @@ const navigationSections: SidebarNavSection[] = [
   {
     label: 'Seguimiento',
     items: [
-      { name: 'Interesados', href: '/interesados', icon: Users },
       {
         name: 'Notificaciones',
         href: '/notificaciones',
@@ -120,7 +117,6 @@ const navigationSections: SidebarNavSection[] = [
   {
     label: 'Configuración',
     items: [
-      { name: 'Catálogo', href: '/catalogo', icon: Folder },
       {
         name: 'Categorías',
         href: '/categorias',

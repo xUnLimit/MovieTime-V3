@@ -87,7 +87,7 @@ describe('client domain mutation contract', () => {
     const events: StoreEvent[] = [];
     const unsubscribe = storeEventBus.on('VENTA_CREATED', (event) => events.push(event));
 
-    await expect(createVentaMutation({ servicioId: 'servicio-1' } as never)).resolves.toBe('venta-1');
+    await createVentaMutation({ servicioId: 'servicio-1' } as never);
 
     unsubscribe();
     expect(mocks.createVentaUseCase).toHaveBeenCalledWith(

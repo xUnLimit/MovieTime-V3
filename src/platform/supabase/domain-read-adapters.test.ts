@@ -84,10 +84,3 @@ describe('domain read adapters', () => {
     expect(result?.fechaFin).toBeInstanceOf(Date);
   });
 });
-
-it('omits passwords from manual message reads for code-access accounts', async () => {
-  mocks.servicioById.mockResolvedValue({ contrasena: 'do-not-deliver', accesoPorCodigo: true });
-  expect(await getServicioContrasenaRead('s1')).toBe('');
-  mocks.ventaById.mockResolvedValue({ id: 'v1', accesoPorCodigo: true });
-  expect(await getVentaDetalleRead('v1')).toMatchObject({ accesoPorCodigo: true });
-});

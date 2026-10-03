@@ -94,14 +94,11 @@ describe('notice store Supabase adapter', () => {
     responses.set('templates', { data: null, error: null });
     expect(await createNoticeStore().loadTemplate('dia_pago')).toBeNull();
   });
-  it('detects ambiguity through the canonical terceros.wa_id column', async () => {
-    responses.set('terceros', { data: [{ id: ID }, { id: ID2 }], error: null });
+  it('normalizes all active tercero phones to detect ambiguity', async () => {
+    responses.set('terceros', { data: [{ id: ID, telefono: '6000-0000' }, { id: ID2, telefono: '+507 6000 0000' }], error: null });
     expect(await createNoticeStore().isAmbiguousPhone('50760000000', ID)).toBe(true);
-    expect(calls).toContainEqual({ table: 'terceros', operation: 'eq', args: ['wa_id', '50760000000'] });
+    expect(await createNoticeStore().isAmbiguousPhone('50760000001', ID)).toBe(false);
     expect(calls).toContainEqual({ table: 'terceros', operation: 'eq', args: ['active', true] });
-    expect(calls).toContainEqual({ table: 'terceros', operation: 'limit', args: [2] });
-    responses.set('terceros', { data: [{ id: ID }], error: null });
-    expect(await createNoticeStore().isAmbiguousPhone('50760000000', ID)).toBe(false);
     responses.set('terceros', { data: null, error: null });
     expect(await createNoticeStore().isAmbiguousPhone('50760000000', ID)).toBe(false);
   });
@@ -132,11 +129,4 @@ describe('notice store Supabase adapter', () => {
     responses.set('terceros', { data: null, error: { code: 'DB_ERR' } });
     await expect(createNoticeStore().isAmbiguousPhone('50760000000', ID)).rejects.toThrow('check phone ambiguity failed');
   });
-});
-
-it('never exposes a code-access password in current notice credential data', async () => {
-  responses.set('v_ventas_full', { data: [{ id: ID, cliente_id: ID2, acceso_por_codigo: true,
-    servicio_contrasena: 'never-send-this', servicio_correo: 'a@example.test' }], error: null });
-  const rows = await createNoticeStore().loadVentas([ID]);
-  expect(rows[0]).toMatchObject({ accesoPorCodigo: true, contrasena: '', correo: 'a@example.test' });
 });

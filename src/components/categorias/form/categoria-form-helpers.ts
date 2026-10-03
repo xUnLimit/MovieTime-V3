@@ -1,4 +1,3 @@
-import { getCodeProvider } from "@/modules/code-providers";
 import { z } from "@/platform/validation/zod";
 
 import type { Categoria, Plan, TipoPlanConfig } from "@/types";
@@ -11,8 +10,6 @@ export const categoriaSchema = z.object({
   tipoCategoria: z.enum(["plataforma_streaming", "otros"], {
     message: "Debe seleccionar un tipo de categoría",
   }),
-  codeProvider: z.string().nullable().optional().refine((key) => key == null || !!getCodeProvider(key),
-    "El proveedor de códigos no está disponible"),
   notas: z.string().optional(),
 });
 

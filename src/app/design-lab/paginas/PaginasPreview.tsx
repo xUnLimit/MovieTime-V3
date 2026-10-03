@@ -22,7 +22,6 @@ function demoPayments(): YappyPayment[] {
     matchStatus: STATUSES[i % STATUSES.length],
     candidateVentaIds: [],
     matchedVentaId: null,
-    requiereRevision: false, revisionPedidoId: null, revisionMotivo: null,
   }));
 }
 

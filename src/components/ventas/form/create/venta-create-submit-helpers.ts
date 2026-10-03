@@ -46,7 +46,7 @@ function buildVentaCreateInput({
     clienteTelefono,
     metodoPagoId,
     metodoPagoNombre,
-    moneda: item.moneda ?? moneda,
+    moneda,
     fechaInicio,
     fechaFin,
     codigo: item.codigo || "",
@@ -77,7 +77,7 @@ function buildVentaCreateInput({
         total: item.precioFinal,
         metodoPagoId,
         metodoPagoNombre,
-        moneda: item.moneda ?? moneda,
+        moneda,
         isPagoInicial: true,
         cicloPago: item.cicloPago ?? undefined,
         fechaInicio,
@@ -133,5 +133,15 @@ export function buildVentaCreateBatchInputs({
       totalFinal,
       ventaId,
     }),
+  );
+}
+
+export function getServicioIdsConPerfil(items: VentaItem[]) {
+  return Array.from(
+    new Set(
+      items
+        .filter((item) => item.perfilNumero)
+        .map((item) => item.servicioId),
+    ),
   );
 }

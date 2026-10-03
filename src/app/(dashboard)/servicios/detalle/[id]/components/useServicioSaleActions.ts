@@ -2,7 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { announceNotice } from "@/components/shared/announce-notice";
+import { offerApiAccessNotice } from "@/components/shared/offer-api-access-notice";
 import { queryKeys } from "@/platform/query-keys";
 import { getPublicErrorMessage } from "@/platform/errors/public-errors";
 import { getActivityLogOptions } from "@/platform/activity/activity-log-adapter";
@@ -147,7 +147,7 @@ export function useServicioSaleActions({
         venta: selectedActionVenta,
       });
 
-      if (outcome.type === "servicioVentaTransferred") {
+      if (notificarWhatsApp && outcome.type === "servicioVentaTransferred") {
         const template = getTemplateByTipo("transferencia_servicio");
 
         const transferToast = buildTransferWhatsAppToast({
@@ -157,19 +157,17 @@ export function useServicioSaleActions({
           tercero: outcome.tercero ?? undefined,
           updatedVentaForMessage,
         });
-        await announceNotice({
-          tipo: "transferencia_servicio",
-          items: [{ ventaId: selectedActionVenta.id, message: transferToast }],
-          enqueueWhatsAppMessages,
-          ...(!notificarWhatsApp ? { onAutoDisabled: () => { toast.success("Venta transferida"); } } : {}),
-          copy: {
-            loading: "Venta transferida. Avisando al cliente...",
-            sent: "Venta transferida y cliente avisado por WhatsApp",
-            notSent: "Venta transferida, pero no se pudo avisar por la API",
-            offerTitle: "Notificar transferencia",
-            offerDescription: `${selectedActionVenta.clienteNombre} recibirá los datos de ${targetServicioDoc.nombre}.`,
-          },
-        });
+        if (template?.metaTemplateName) {
+          offerApiAccessNotice({
+            tipo: "transferencia_servicio",
+            items: [{ ventaId: selectedActionVenta.id, message: transferToast }],
+            enqueueWhatsAppMessages,
+            title: "Notificar transferencia",
+            description: `${selectedActionVenta.clienteNombre} recibira los datos de ${targetServicioDoc.nombre}.`,
+          });
+        } else {
+          enqueueWhatsAppMessages([transferToast]);
+        }
       }
 
       if (outcome.type === "servicioVentaTransferred") {
@@ -179,6 +177,11 @@ export function useServicioSaleActions({
       }
       setTransferVentaDialogOpen(false);
       setSelectedActionVenta(null);
+      toast.success("Venta transferida", {
+        description: notificarWhatsApp
+          ? "La venta fue movida y el WhatsApp quedo preparado."
+          : "La venta fue movida al nuevo servicio.",
+      });
     } catch (error) {
       toast.error("Error al transferir la venta", {
         description: getPublicErrorMessage(error, "No se pudo transferir la venta."),

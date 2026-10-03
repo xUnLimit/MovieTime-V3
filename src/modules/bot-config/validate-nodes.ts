@@ -1,12 +1,9 @@
 import type { BotDefinition, BotNode } from '@/types/bot';
 import {
-  ACTION_KEYS, NODE_ID_PATTERN, NODE_KINDS, NODE_LIMITS, NODE_NAME_MAX_LENGTH, OPTION_ID_PATTERN,
+  ACTION_CATALOG, ACTION_KEYS, NODE_ID_PATTERN, NODE_KINDS, NODE_LIMITS, NODE_NAME_MAX_LENGTH, OPTION_ID_PATTERN,
 } from './catalog';
 import { reachableNodeIds } from './graph';
 import { templateVariables } from './render';
-import { nodeEdges } from './node-edges';
-import { validateV2Node } from './validate-v2';
-import { ACTION_REGISTRY } from './action-registry';
 
 type Report = (path: string, message: string, severity?: 'error' | 'warning') => void;
 
@@ -50,7 +47,7 @@ function checkNode(node: BotNode, ids: ReadonlySet<string>, report: Report): voi
       report(`${base}.action`, 'Elige una acción válida para este nodo.');
     }
     if (node.body.trim() !== '') report(`${base}.body`, 'Los nodos de acción no muestran texto; se ignorará.', 'warning');
-  } else if (node.kind !== 'condition') {
+  } else {
     if (node.body.trim() === '') report(`${base}.body`, 'El texto del mensaje no puede estar vacío.');
     if (node.action !== undefined) report(`${base}.action`, 'Solo los nodos de acción llevan acción; se ignorará.', 'warning');
   }
@@ -74,7 +71,7 @@ function deadEndNodes(def: BotDefinition, reachable: ReadonlySet<string>): strin
   while (grew) {
     grew = false;
     for (const node of def.nodes) {
-      if (!exits.has(node.id) && nodeEdges(node).some((option) => exits.has(option.next))) {
+      if (!exits.has(node.id) && node.options.some((option) => exits.has(option.next))) {
         exits.add(node.id);
         grew = true;
       }
@@ -95,13 +92,12 @@ export function validateNodes(def: BotDefinition, report: Report): void {
     if (seen.has(node.id)) report(`nodes[${node.id}].id`, `El id de nodo «${node.id}» está repetido.`);
     seen.add(node.id);
     checkNode(node, ids, report);
-    validateV2Node(def, node, ids, report);
   }
   const reachable = reachableNodeIds(def);
   for (const node of def.nodes) {
     if (reachable.has(node.id)) continue;
     const label = node.kind === 'action' && node.action && ACTION_KEYS.includes(node.action)
-      ? `La acción «${ACTION_REGISTRY[node.action].label}» no se puede alcanzar desde el nodo de entrada.`
+      ? `La acción «${ACTION_CATALOG[node.action].label}» no se puede alcanzar desde el nodo de entrada.`
       : `El nodo «${node.name}» no se puede alcanzar desde el nodo de entrada.`;
     report(`nodes[${node.id}]`, label, 'warning');
   }

@@ -2,8 +2,8 @@
 // `bot-config` (logica pura), el runtime del webhook, los repositorios y la UI.
 // Cambiar un tipo aqui exige actualizar `docs/whatsapp-bot-admin.md`.
 
-export type BotActionKey = import('@/modules/bot-config/action-registry').RegisteredActionKey;
-export type BotNodeKind = 'buttons' | 'list' | 'text' | 'action' | 'input' | 'condition';
+export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff';
+export type BotNodeKind = 'buttons' | 'list' | 'text' | 'action';
 
 export type BotOption = {
   /** Slug estable (^[a-z][a-z0-9_]{0,31}$), unico dentro del nodo. Viaja en el id del boton. */
@@ -30,9 +30,6 @@ export type BotNode = {
   options: BotOption[];
   /** Solo en nodos action. */
   action?: BotActionKey;
-  actionParams?: Record<string, string>;
-  input?: import('@/modules/bot-config/v2-schema').InputSpec;
-  condition?: import('@/modules/bot-config/v2-schema').ConditionSpec;
 };
 
 export type BotParams = {
@@ -58,15 +55,13 @@ export type BotMessageKey =
   | 'account_picker_body' | 'account_picker_button';
 
 export type BotDefinition = {
-  schemaVersion: 1 | 2;
+  schemaVersion: 1;
   entryNodeId: string;
   nodes: BotNode[];
   messages: Record<BotMessageKey, string>;
   params: BotParams;
   /** Palabras (sin acentos, minusculas) que fuerzan el menu. */
   keywords: string[];
-  /** v2 catalog text templates, edited/published with the definition. */
-  catalogMessages?: import('@/modules/bot-config/catalog-messages').CatalogMessages;
 };
 
 export type BotIssue = {
@@ -79,7 +74,7 @@ export type BotIssue = {
 export type BotEventType =
   | 'menu_shown' | 'option_selected' | 'code_sent' | 'link_sent' | 'not_found'
   | 'already_sent' | 'profile_blocked' | 'rate_limited' | 'mailbox_unavailable'
-  | 'handoff' | 'option_unavailable' | 'error' | 'catalog_shown' | 'interest_registered';
+  | 'handoff' | 'option_unavailable' | 'error';
 
 /** Nunca contiene codigos, enlaces con token ni contrasenas. */
 export type BotEventDetail = Record<string, string | number | boolean | null>;

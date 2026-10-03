@@ -4,14 +4,18 @@ import { env } from '@/platform/config';
 import { createLogger } from '@/platform/observability/logger';
 import { apiErrorResponse, apiFailure, apiSuccess, createRequestId } from '@/platform/server/api-response';
 import { z } from '@/platform/validation/zod';
-import { processInboundMessage } from '@/application/use-cases/process-inbound-message';
-import { registerInboundContacts } from '@/modules/messaging/contact-store';
-import { createInboundQueueStore } from '@/modules/whatsapp/inbound-queue-store';
+import { handleNoticeReply } from '@/application/use-cases/notice-reply-use-case';
+import { createNoticeReplyStore } from '@/modules/messaging/notice-reply-store';
+import { createNoticeStore } from '@/modules/messaging/notice-store';
 import { notifyWhatsAppMessages } from '@/modules/notifications/whatsapp-message-push';
+import { sendCloudApiMessage } from '@/modules/whatsapp/cloud-api-client';
+import { sendOutboundMessage } from '@/modules/whatsapp/outbound-messages';
+import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
+import { createTemplateCatalog } from '@/modules/whatsapp/template-catalog';
 import { storeWebhookBatch } from '@/modules/whatsapp/webhook-inbox';
 import { parseWebhookPayload } from '@/modules/whatsapp/webhook-payload';
+import { createBotRuntime } from './bot-runtime';
 import { isValidVerifyToken, isValidWebhookSignature } from '@/modules/whatsapp/webhook-signature';
-import { createInboundPipelineDeps } from './inbound-pipeline';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -93,22 +97,30 @@ export async function POST(request: Request) {
     if (messages.length > 0) {
       // El aviso push corre despues de responder para no retrasar a Meta.
       after(async () => {
-        // Nunca lanza: registrar el contacto no debe frenar al bot ni al aviso push.
-        await registerInboundContacts(messages.filter((m) => insertedIds.has(m.waMessageId)), requestId);
         if (env.whatsappAccessToken && env.whatsappPhoneNumberId) {
           const config = { accessToken: env.whatsappAccessToken, phoneNumberId: env.whatsappPhoneNumberId };
-          const pipeline = createInboundPipelineDeps(config, requestId);
-          const queue = createInboundQueueStore();
+          const catalog = createTemplateCatalog();
+          const outboundStore = createOutboundStore();
+          const bot = createBotRuntime(requestId);
           for (const message of messages) {
-            const isNew = insertedIds.has(message.waMessageId);
-            const outcome = await processInboundMessage(message, pipeline, isNew);
-            const rowId = stored.insertedRowIds?.[message.waMessageId];
-            if (!isNew || !rowId) continue;
-            // A failed message stays queued: /api/whatsapp/inbound/retry picks it up.
             try {
-              await queue.finish(rowId, outcome.status === 'done' ? null : outcome.label);
+              const result = await handleNoticeReply(message, {
+                replies: createNoticeReplyStore(), notices: createNoticeStore(),
+                send: (outbound) => sendOutboundMessage(outbound, {
+                  store: outboundStore, catalog,
+                  send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload),
+                }),
+              });
+              if (result === 'failed') logger.warn('WhatsApp notice reply action failed', { requestId });
+              if (result === 'ignored' && insertedIds.has(message.waMessageId)) {
+                await bot.handle(message, (outbound) => sendOutboundMessage(outbound, {
+                  store: outboundStore, catalog,
+                  send: (recipient, payload) => sendCloudApiMessage(config, recipient, payload),
+                }));
+              }
             } catch {
-              logger.warn('WhatsApp inbound message could not be marked', { requestId });
+              // Never log the inbound payload or rendered credentials.
+              logger.warn('WhatsApp message automation could not be processed', { requestId });
             }
           }
         }
@@ -120,7 +132,7 @@ export async function POST(request: Request) {
         }
       });
     }
-    return apiSuccess({ messages: stored.messages, statuses: stored.statuses, insertedWaMessageIds: stored.insertedWaMessageIds }, requestId);
+    return apiSuccess(stored, requestId);
   } catch (error) {
     return apiErrorResponse('WhatsAppWebhookRoute', requestId, error);
   }

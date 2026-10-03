@@ -91,16 +91,3 @@ describe('credential notification helpers', () => {
     expect(message).toContain('Codigo: 1234');
   });
 });
-
-it('omits code-access passwords in credential changes and transfers, including custom placeholders', () => {
-  const account = { ...servicio, accesoPorCodigo: true };
-  const template = '{correo}|{contrasena}|{cambio_contrasena}|{credenciales_cambiadas}';
-  for (const custom of [undefined, template]) {
-    const update = buildCredentialUpdateMessage(custom, venta, account, { correo: true, contrasena: true });
-    const transfer = buildServiceTransferMessage(custom, venta, account);
-    expect(update).not.toContain(account.contrasena);
-    expect(transfer).not.toContain(account.contrasena);
-    expect(update).toContain(account.correo);
-    expect(transfer).toContain(account.correo);
-  }
-});

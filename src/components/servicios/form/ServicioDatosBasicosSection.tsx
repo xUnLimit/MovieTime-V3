@@ -1,4 +1,3 @@
-import { getCodeProvider } from "@/modules/code-providers";
 import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -68,9 +67,6 @@ export function ServicioDatosBasicosSection({
                 onClick={() => {
                   setValue("categoriaId", categoria.id);
                   setValue("tipoPlan", "");
-                  if (!getCodeProvider(categoria.codeProvider)) {
-                    setValue("accesoPorCodigo", false, { shouldDirty: true, shouldValidate: true });
-                  }
                 }}
               >
                 {categoria.nombre}

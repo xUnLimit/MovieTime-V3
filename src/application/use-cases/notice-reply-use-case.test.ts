@@ -100,17 +100,6 @@ describe('handleNoticeReply', () => {
     expect(deps.send).not.toHaveBeenCalled();
   });
 
-  it('preserves whole-group RENOVAR and NO_CONTINUAR for multiple linked services', async () => {
-    const deps = fixture();
-    deps.replies.ventaIds.mockResolvedValue(['sale-1', 'sale-2']);
-    deps.notices.loadVentas.mockResolvedValue([venta, { ...venta, ventaId: 'sale-2' }]);
-    expect(await handleNoticeReply(inbound, deps)).toBe('accepted');
-    expect(deps.notices.loadTemplate).toHaveBeenCalledWith('datos_pago');
-    expect(deps.replies.declineVentas).not.toHaveBeenCalled();
-    expect(await handleNoticeReply({ ...inbound, payload: { type: 'template_button', payload: `NO_CONTINUAR:${ID}` } }, deps)).toBe('accepted');
-    expect(deps.replies.declineVentas).toHaveBeenCalledWith(['sale-1', 'sale-2'], NOW.toISOString());
-  });
-
   it('marks only linked sales and sends a farewell without cutting sales', async () => {
     const deps = fixture();
     const message = { ...inbound, payload: { type: 'template_button', payload: `NO_CONTINUAR:${ID}`, text: 'No deseo continuar' } };
@@ -244,16 +233,4 @@ describe('handleNoticeReply', () => {
       processed: 2, accepted: 1, failed: 0, uncertain: 0, skipped: 1,
     });
   });
-});
-
-it.each(['actualizacion_credenciales', 'transferencia_servicio'] as const)
-('never sends a code-access password in DATOS replies for %s', async (tipo) => {
-  const deps = fixture();
-  deps.replies.findNotice.mockResolvedValue({ ...notice, tipo });
-  deps.notices.loadVentas.mockResolvedValue([{ ...venta, accesoPorCodigo: true }]);
-  const message = { ...inbound, payload: { type: 'template_button', payload: `DATOS:${ID}` } };
-  expect(await handleNoticeReply(message, deps)).toBe('accepted');
-  const sent = deps.send.mock.calls[0]![0];
-  expect(sent.payload).toMatchObject({ text: expect.not.stringContaining(venta.contrasena) });
-  expect(sent.storedTextBody).not.toContain(venta.contrasena);
 });

@@ -1,9 +1,7 @@
-import { deliveryPassword } from '@/platform/utils/code-access';
 import { getSaludo, replacePlaceholders } from '@/platform/utils/whatsapp';
 import { formatMonto, formatVencimiento, greetingFor } from '@/platform/utils/whatsapp-template-render';
 
 export type NoticeVenta = {
-  accesoPorCodigo?: boolean;
   ventaId: string;
   clienteId: string;
   clienteNombre: string;
@@ -165,7 +163,7 @@ function itemRow(venta: NoticeVenta): MessageItemData {
     categoria: venta.categoriaNombre,
     perfil: venta.perfilNombre,
     correo: venta.correo,
-    contrasena: deliveryPassword(venta.contrasena, venta.accesoPorCodigo),
+    contrasena: venta.contrasena,
     codigo: venta.codigo,
     vencimiento: formatVencimiento(venta.fechaVencimiento),
     monto: formatMonto(venta.monto),
@@ -187,7 +185,7 @@ export function buildMessageData(group: NoticeGroup, options: { saludo?: string;
     monto_total: formatMonto(total),
     perfil: first?.perfilNombre ?? '',
     correo: first?.correo ?? '',
-    contrasena: deliveryPassword(first?.contrasena, first?.accesoPorCodigo),
+    contrasena: first?.contrasena ?? '',
     codigo: first?.codigo ?? '',
     items: group.ventas.map((v) => `*${v.categoriaNombre}*`).join('\n'),
     itemRows: group.ventas.map(itemRow),

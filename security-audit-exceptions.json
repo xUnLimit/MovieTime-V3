@@ -1,12 +1,3 @@
 {
-  "exceptions": [
-    {
-      "advisory": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
-      "owner": "itsallan1403@gmail.com",
-      "reason": "braces <=3.0.3 (denegacion de servicio por patrones anidados) llega solo por eslint-config-next > @next/eslint-plugin-next > fast-glob > micromatch. No existe version corregida de braces.",
-      "mitigation": "Dependencia solo de desarrollo (lint): no se despliega ni procesa entrada externa; los patrones glob los define el repositorio. Produccion sigue exigiendo cero avisos. Revisar al vencer o cuando exista braces corregido.",
-      "createdAt": "2026-10-03",
-      "expiresAt": "2026-11-01"
-    }
-  ]
+  "exceptions": []
 }

@@ -1,6 +1,3 @@
-import { assertCodeAccess } from '@/modules/code-providers';
-import { getCategoriaById } from '@/platform/supabase/categorias-repository';
-import type { Categoria } from '@/types';
 import { NotFoundError } from '@/platform/errors/domain-errors';
 import { afterCommit } from '@/platform/errors/mutation-committed-error';
 import { getMetodoPagoById } from '@/platform/supabase/catalogos-repository';
@@ -32,10 +29,6 @@ export async function createServicioUseCase(
   servicioData: Omit<Servicio, 'id' | 'createdAt' | 'updatedAt' | 'perfilesOcupados'>,
   options: { logContext: LogContext; recordActivityLog?: RecordActivityLog; idempotencyKey?: string }
 ) {
-  if (servicioData.accesoPorCodigo !== undefined) {
-    const categoria = await getCategoriaById<Categoria>(servicioData.categoriaId);
-    assertCodeAccess(servicioData.accesoPorCodigo, categoria?.codeProvider);
-  }
   let metodoPagoNombre: string | undefined;
   let moneda: string | undefined;
   if (servicioData.metodoPagoId) {
@@ -49,7 +42,6 @@ export async function createServicioUseCase(
   const { usd, rate } = await getUsdValues(costo, monedaOriginal);
   const id = await createServicioWithInitialPayment({
     p_idempotency_key: options.idempotencyKey,
-    ...(servicioData.accesoPorCodigo === true ? { p_acceso_por_codigo: true } : {}),
     p_categoria_id: servicioData.categoriaId,
     p_plan_tipo_id: servicioData.tipo || null,
     p_nombre: servicioData.nombre,
@@ -122,10 +114,6 @@ export async function updateServicioUseCase(
   const servicio = await getServicioById<Servicio>(id);
   if (!servicio) throw new NotFoundError('Servicio not found', { servicioId: id });
 
-  if (updates.accesoPorCodigo !== undefined || updates.categoriaId !== undefined) {
-    const categoria = await getCategoriaById<Categoria>(updates.categoriaId ?? servicio.categoriaId);
-    assertCodeAccess(updates.accesoPorCodigo ?? servicio.accesoPorCodigo, categoria?.codeProvider);
-  }
   let finalUpdates = { ...updates };
   if (updates.metodoPagoId !== undefined) {
     const metodoPago = updates.metodoPagoId

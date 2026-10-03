@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/platform/utils/cn';
-import { ConversationControl } from './ConversationControl';
 import { ChatAvatar } from './ChatAvatar';
 import { ServiceTags } from './ServiceTags';
 import { conversationTitle, formatWaId, type ServiceWindow } from './chat-format';
@@ -36,7 +35,7 @@ export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen 
   const title = conversationTitle(conversation);
 
   return (
-    <header className="flex flex-wrap min-h-[calc(68px+env(safe-area-inset-top))] shrink-0 items-center gap-[7px] border-b border-chat-line-soft bg-chat-surface px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] md:min-h-[calc(78px+env(safe-area-inset-top))] md:gap-3 md:px-[22px] md:pb-[13px] md:pt-[max(13px,env(safe-area-inset-top))]">
+    <header className="flex min-h-[calc(68px+env(safe-area-inset-top))] shrink-0 items-center gap-[7px] border-b border-chat-line-soft bg-chat-surface px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] md:min-h-[calc(78px+env(safe-area-inset-top))] md:gap-3 md:px-[22px] md:pb-[13px] md:pt-[max(13px,env(safe-area-inset-top))]">
       <button type="button" className={cn(HEADER_ICON, 'md:hidden')} onClick={onBack} aria-label="Volver a la lista">
         <ArrowLeft className="h-[19px] w-[19px]" strokeWidth={1.6} />
       </button>
@@ -108,7 +107,6 @@ export function ChatHeader({ conversation, serviceWindow, panelOpen, searchOpen 
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <div className="w-full"><ConversationControl waId={conversation.waId} /></div>
     </header>
   );
 }

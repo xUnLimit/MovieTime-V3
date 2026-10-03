@@ -81,28 +81,13 @@ describe('POST /api/whatsapp/notices', () => {
     expect((await response.json()).data).toEqual({ results: [], skipped: 'auto_disabled' });
     expect(sendNotice).not.toHaveBeenCalled();
   });
-  it('preserves manual channel choice when automatic sending is off and the API is unconfigured', async () => {
-    env.whatsappAccessToken = '';
-    autoConfig.mockResolvedValue({ enabled: false, sendHour: 9, dailyCap: 200 });
-    const response = await POST(post({ tipo: 'suscripcion', ventaIds: [ID], automatic: true }));
-    expect(response.status).toBe(200);
-    expect((await response.json()).data).toEqual({ results: [], skipped: 'auto_disabled' });
+  it.each([
+    { tipo: 'dia_pago', ventaIds: [ID], automatic: true },
+    { tipo: 'cancelacion', ventaIds: [ID], automatic: true },
+    { tipo: 'renovacion', ventaIds: [ID, '22222222-2222-4222-8222-222222222222'], automatic: true },
+  ])('rejects an automatic notice that is not a single renewal confirmation', async (body) => {
+    expect((await POST(post(body))).status).toBe(400);
     expect(sendNotice).not.toHaveBeenCalled();
-  });
-  it.each(['renovacion', 'suscripcion', 'actualizacion_credenciales', 'transferencia_servicio', 'dia_pago', 'cancelacion'])(
-    'sends an automatic %s notice after a panel action, with its event id', async (tipo) => {
-      const ID2 = '22222222-2222-4222-8222-222222222222';
-      const response = await POST(post({ tipo, ventaIds: [ID, ID2], eventId: ID2, automatic: true }));
-      expect(response.status).toBe(200);
-      expect(sendNotice).toHaveBeenCalledWith(
-        expect.objectContaining({ tipo, ventaIds: [ID, ID2], eventId: ID2, origin: 'auto' }), expect.any(Object),
-      );
-    },
-  );
-  it.each(['notificacion_regular', 'datos_pago', 'despedida'])('rejects an automatic %s notice', async (tipo) => {
-    expect((await POST(post({ tipo, ventaIds: [ID], automatic: true }))).status).toBe(400);
-    expect(sendNotice).not.toHaveBeenCalled();
-    expect(autoConfig).not.toHaveBeenCalled();
   });
   it('keeps manual notices independent of the automatic switch', async () => {
     autoConfig.mockResolvedValue({ enabled: false, sendHour: 9, dailyCap: 200 });

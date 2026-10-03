@@ -285,10 +285,3 @@ describe('notifications repository aggregate writes', () => {
     );
   });
 });
-
-it('omits a live code-access password from notification data despite an old snapshot', async () => {
-  fromMock.mockReturnValue(readQuery({ data: [{ entidad: 'venta', acceso_por_codigo: true,
-    servicio_contrasena_snapshot: 'never-deliver-snapshot', servicio_correo_snapshot: 'a@example.test' }], error: null }));
-  const rows = await queryNotifications<Record<string, unknown>>([{ field: 'entidad', operator: '==', value: 'venta' }]);
-  expect(rows[0]).toMatchObject({ servicioContrasena: '', accesoPorCodigo: true, servicioCorreo: 'a@example.test' });
-});

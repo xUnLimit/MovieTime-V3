@@ -1,8 +1,6 @@
 import { toast } from 'sonner';
 
-import {
-  isNoticeDelivered, sendWhatsAppNoticesUseCase, type CustomerNoticeTipo,
-} from '@/application/use-cases/whatsapp-notices-use-cases';
+import { isNoticeDelivered, sendWhatsAppNoticesUseCase } from '@/application/use-cases/whatsapp-notices-use-cases';
 import { openWhatsAppNow } from '@/components/shared/open-whatsapp-now';
 import { reportError } from '@/platform/observability/logger';
 import type { PendingWhatsAppToast } from '@/store/whatsappToastStore';
@@ -12,14 +10,13 @@ type WaMeMessage = Omit<PendingWhatsAppToast, 'id'>;
 type AccessNoticeItem = { ventaId: string; message: WaMeMessage };
 
 interface OfferApiAccessNoticeParams {
-  tipo: CustomerNoticeTipo;
+  tipo: 'actualizacion_credenciales' | 'transferencia_servicio' | 'renovacion' | 'dia_pago' | 'cancelacion';
   items: AccessNoticeItem[];
   enqueueWhatsAppMessages: (messages: WaMeMessage[]) => void;
   title: string;
   description: string;
   /** Estilo del aviso: informativo por defecto; exito cuando acompana una accion ya completada. */
   kind?: 'info' | 'success';
-  eventId?: string;
   /** Se ejecuta al terminar el intento por la API (con exito o no), por ejemplo para refrescar estados. */
   onApiSettled?: () => void;
 }
@@ -29,15 +26,15 @@ interface OfferApiAccessNoticeParams {
  * omitido, wa.me) cae al toast wa.me existente. Sin plantilla vinculada no se usa.
  */
 export function offerApiAccessNotice({
-  tipo, items, enqueueWhatsAppMessages, title, description, kind = 'info', onApiSettled, eventId,
+  tipo, items, enqueueWhatsAppMessages, title, description, kind = 'info', onApiSettled,
 }: OfferApiAccessNoticeParams) {
   // Un id por cambio: reintentar el mismo aviso no duplica, pero un cambio nuevo sobre la misma
   // venta sí se envía (antes el servidor lo tomaba por duplicado y no mandaba nada).
-  const noticeEventId = eventId ?? crypto.randomUUID();
+  const eventId = crypto.randomUUID();
   const sendViaApi = async () => {
     const loadingId = toast.loading('Enviando por WhatsApp API...');
     try {
-      const results = await sendWhatsAppNoticesUseCase({ tipo, ventaIds: items.map((item) => item.ventaId), eventId: noticeEventId });
+      const results = await sendWhatsAppNoticesUseCase({ tipo, ventaIds: items.map((item) => item.ventaId), eventId });
       const delivered = new Set(results.filter((result) => isNoticeDelivered(result.status)).flatMap((result) => result.ventaIds));
       const pending = items.filter((item) => !delivered.has(item.ventaId));
       enqueueWhatsAppMessages(pending.map((item) => item.message));

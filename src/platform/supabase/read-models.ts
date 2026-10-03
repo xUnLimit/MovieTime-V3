@@ -1,4 +1,3 @@
-import { deliveryPassword } from '@/platform/utils/code-access';
 import { supabase } from './client';
 import { toCamelCase } from './mappers';
 import { reviveDates } from './dates';
@@ -10,7 +9,6 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
   if (collectionName === ENTITIES.SERVICIOS) {
     return {
       ...camel,
-      accesoPorCodigo: camel.accesoPorCodigo === true,
       tipo: camel.tipo ?? camel.planTipoId ?? '',
       tipoNombre: camel.tipoNombre ?? camel.planTipoNombre,
       costoServicio: Number(camel.costoServicio ?? camel.ultimoCostoOriginal ?? 0),
@@ -28,7 +26,6 @@ export function mapReadRow<T>(collectionName: CollectionName, row: unknown): T {
   if (collectionName === ENTITIES.VENTAS) {
     return {
       ...camel,
-      ...(camel.accesoPorCodigo === true ? { servicioContrasena: deliveryPassword('', true) } : {}),
       fechaInicio: camel.fechaInicio ?? camel.ultimaFechaInicio,
       fechaFin: camel.fechaFin ?? camel.ultimaFechaFin,
       cicloPago: camel.cicloPago ?? camel.ultimoCicloPago,

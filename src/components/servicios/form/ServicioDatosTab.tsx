@@ -13,8 +13,6 @@ import type {
 } from "./types";
 
 interface ServicioDatosTabProps extends ServicioFormBindings {
-  accesoPorCodigoValue: boolean;
-  codeProviderKey?: string | null;
   categoriaNombre: string;
   categoriasActivas: Categoria[];
   cicloPagoValue: ServicioFormData["cicloPago"];
@@ -39,8 +37,6 @@ interface ServicioDatosTabProps extends ServicioFormBindings {
 }
 
 export function ServicioDatosTab({
-  accesoPorCodigoValue,
-  codeProviderKey,
   categoriaNombre,
   categoriasActivas,
   cicloPagoValue,
@@ -77,8 +73,6 @@ export function ServicioDatosTab({
       />
 
       <ServicioSeguridadSection
-        accesoPorCodigoValue={accesoPorCodigoValue}
-        codeProviderKey={codeProviderKey}
         errors={errors}
         register={register}
         setValue={setValue}

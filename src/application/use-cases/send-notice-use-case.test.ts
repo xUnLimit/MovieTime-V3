@@ -47,23 +47,6 @@ beforeEach(() => {
 const input = { tipo: 'dia_pago' as const, ventaIds: [ID], origin: 'manual' as const, sentBy: ID, now: NOW };
 
 describe('sendNotice', () => {
-  it('persists the code-request state only after a welcome is accepted', async () => {
-    store.lastInboundAt = vi.fn(async () => NOW.toISOString());
-    const accepted = vi.fn(async () => undefined);
-    const codeWelcome = vi.fn(async () => ({ payload: { kind: 'buttons' as const, body: 'Bienvenido', buttons: [{ id: `BOT:CODE:${ID}`, title: 'Solicitar código' }] }, accepted }));
-    const result = await sendNotice({ ...input, tipo: 'suscripcion' }, { store, catalog, send, codeWelcome });
-    expect(result[0].status).toBe('accepted');
-    expect(accepted).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({ kind: 'buttons' }) }));
-  });
-  it('does not start code awaiting when the welcome send fails', async () => {
-    store.lastInboundAt = vi.fn(async () => NOW.toISOString());
-    const accepted = vi.fn(async () => undefined);
-    const codeWelcome = vi.fn(async () => ({ payload: { kind: 'text' as const, text: 'Bienvenido' }, accepted }));
-    vi.mocked(send).mockResolvedValue({ id: ID, waMessageId: null, sendStatus: 'failed', errorTitle: 'Failed', replayed: false });
-    await sendNotice({ ...input, tipo: 'suscripcion' }, { store, catalog, send, codeWelcome });
-    expect(accepted).not.toHaveBeenCalled();
-  });
   it('groups matching sales and sends one approved template with ordered notice buttons', async () => {
     sales.push(venta({ ventaId: ID2, categoriaNombre: 'Disney+' }));
     const results = await sendNotice({ ...input, ventaIds: [ID, ID2] }, { store, catalog, send });
@@ -292,62 +275,4 @@ describe('sendNotice renewal confirmation', () => {
     expect(result.status).toBe('already_sent');
     expect(send).not.toHaveBeenCalled();
   });
-});
-
-describe('sendNotice new sale confirmation', () => {
-  const subscription = { ...input, tipo: 'suscripcion' as const, origin: 'auto' as const, sentBy: ID };
-  const subscriptionTemplate = (metaTemplateName: string | null): NoticeTemplate => ({
-    contenido: 'Bienvenido {categoria}', metaTemplateName,
-    metaParamMap: ['saludo_nombre', 'servicios', 'vencimiento'], metaButtonActions: [],
-  });
-
-  it('sends free text while the 24-hour window is open', async () => {
-    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate('bienvenida'));
-    vi.mocked(store.lastInboundAt).mockResolvedValue('2026-09-28T13:00:00Z');
-    const [result] = await sendNotice(subscription, { store, catalog, send });
-    expect(result).toMatchObject({ status: 'accepted', channel: 'text' });
-    expect(catalog.getApproved).not.toHaveBeenCalled();
-  });
-  it('uses the linked Meta template when the window is closed', async () => {
-    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate('bienvenida'));
-    vi.mocked(catalog.getApproved).mockResolvedValue({ paramCount: 3, buttons: [] });
-    vi.mocked(store.lastInboundAt).mockResolvedValue('2026-09-26T13:00:00Z');
-    const [result] = await sendNotice(subscription, { store, catalog, send });
-    expect(result).toMatchObject({ status: 'accepted', channel: 'template' });
-    expect(store.reserve).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'suscripcion', origin: 'auto', metaTemplateName: 'bienvenida' }));
-  });
-  it('records an automatic notice without a linked template as skipped', async () => {
-    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate(null));
-    const [result] = await sendNotice(subscription, { store, catalog, send });
-    expect(result).toMatchObject({ status: 'skipped', error: 'plantilla_no_aprobada' });
-    expect(send).not.toHaveBeenCalled();
-  });
-  it('does not send a rejected subscription template outside the 24-hour window', async () => {
-    vi.mocked(store.loadTemplate).mockResolvedValue(subscriptionTemplate('bienvenida'));
-    vi.mocked(store.lastInboundAt).mockResolvedValue(null);
-    vi.mocked(catalog.getApproved).mockResolvedValue(null);
-    const [result] = await sendNotice(subscription, { store, catalog, send });
-    expect(result).toMatchObject({ status: 'skipped', error: 'plantilla_no_aprobada' });
-    expect(send).not.toHaveBeenCalled();
-  });
-});
-
-it('sends code-access buttons in the open window without credentials, even with a payment promise', async () => {
-  vi.mocked(store.loadTemplate).mockResolvedValueOnce(null);
-  sales = [venta({ accesoPorCodigo: true, respuestaCliente: 'no_continuar', promesaPagoHasta: new Date('2026-10-01T00:00:00Z') })];
-  vi.mocked(store.lastInboundAt).mockResolvedValue('2026-09-28T13:00:00Z');
-  await sendNotice({ ...input, tipo: 'actualizacion_credenciales' }, { store, catalog, send });
-  expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: {
-    kind: 'buttons', body: 'Hola Ana Perez, tu acceso ahora es por código. Solicita un código en este chat para ingresar.',
-    buttons: [{ id: 'BOT:NFX:LOGIN', title: 'Solicitar código' }],
-  } }));
-  expect(JSON.stringify(vi.mocked(send).mock.calls)).not.toContain('secret');
-});
-it('requires the approved code-request button with a closed window', async () => {
-  sales = [venta({ accesoPorCodigo: true })];
-  const result = await sendNotice({ ...input, tipo: 'actualizacion_credenciales', origin: 'auto' }, { store, catalog, send });
-  expect(result[0].status).toBe('skipped'); expect(send).not.toHaveBeenCalled();
-  vi.mocked(catalog.getApproved).mockResolvedValueOnce({ paramCount: 4, buttons: [{ type: 'QUICK_REPLY', text: 'Solicitar código' }] });
-  await sendNotice({ ...input, tipo: 'actualizacion_credenciales', eventId: 'code-flag' }, { store, catalog, send });
-  expect(send).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({ kind: 'template', buttonPayloads: ['BOT:NFX:LOGIN'] }) }));
 });

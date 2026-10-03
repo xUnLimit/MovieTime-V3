@@ -34,10 +34,7 @@ vi.mock('@/modules/payments', () => payments);
 vi.mock('@/application/use-cases/servicios/servicio-dependencies-use-cases', () => dependencies);
 vi.mock('@/platform/events/store-event-bus', () => eventBus);
 
-const categoriaById = vi.hoisted(() => vi.fn());
-vi.mock('@/platform/supabase/categorias-repository', () => ({ getCategoriaById: categoriaById }));
-
-import { createServicioUseCase, updateServicioUseCase } from './servicios-write-use-cases';
+import { createServicioUseCase } from './servicios-write-use-cases';
 import type { Servicio } from '@/types';
 
 const servicioData = {
@@ -113,33 +110,5 @@ describe('createServicioUseCase', () => {
     expect(serviciosRepository.createServicioWithInitialPayment).toHaveBeenCalledWith(
       expect.objectContaining({ p_moneda_original: 'USD', p_metodo_pago_id: null }),
     );
-  });
-});
-
-describe('code-access service writes', () => {
-  it('passes the flag to the atomic RPC after registry validation', async () => {
-    categoriaById.mockResolvedValue({ codeProvider: 'netflix' });
-    const result = await createServicioUseCase({ ...servicioData, accesoPorCodigo: true },
-      { logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } });
-    expect(result.servicio.accesoPorCodigo).toBe(true);
-    expect(serviciosRepository.createServicioWithInitialPayment).toHaveBeenCalledWith(
-      expect.objectContaining({ p_acceso_por_codigo: true }));
-  });
-  it.each([null, 'fake'])('rejects enabled access without a real provider (%s)', async (codeProvider) => {
-    categoriaById.mockResolvedValue({ codeProvider });
-    await expect(createServicioUseCase({ ...servicioData, accesoPorCodigo: true },
-      { logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } })).rejects.toThrow();
-    expect(serviciosRepository.createServicioWithInitialPayment).not.toHaveBeenCalled();
-  });
-  it('persists toggle-only changes and validates category changes for enabled accounts', async () => {
-    serviciosRepository.getServicioById.mockResolvedValue({ ...servicioData, id: 's1', accesoPorCodigo: true });
-    categoriaById.mockResolvedValue({ codeProvider: 'netflix' });
-    await updateServicioUseCase('s1', { accesoPorCodigo: false },
-      { logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } });
-    expect(serviciosRepository.updateServicio).toHaveBeenCalledWith('s1', { accesoPorCodigo: false });
-    expect(serviciosRepository.updateLatestServicioPeriodo).not.toHaveBeenCalled();
-    categoriaById.mockResolvedValue({ codeProvider: null });
-    await expect(updateServicioUseCase('s1', { categoriaId: 'no-provider' },
-      { logContext: { usuarioId: 'u1', usuarioEmail: 'u@test.com' } })).rejects.toThrow();
   });
 });

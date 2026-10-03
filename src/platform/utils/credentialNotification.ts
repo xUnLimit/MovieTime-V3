@@ -1,4 +1,3 @@
-import { deliveryPassword } from './code-access';
 import { formatearFechaWhatsApp, replacePlaceholders } from '@/platform/utils/whatsapp';
 import type { Servicio, VentaDoc, WhatsAppData } from '@/types';
 
@@ -49,12 +48,12 @@ export function getCredentialChangeSummary(changes: CredentialChangeFlags) {
 export function buildCredentialUpdateMessage(
   template: string | undefined,
   venta: VentaDoc,
-  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena' | 'accesoPorCodigo'>,
+  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena'>,
   changes: CredentialChangeFlags,
 ) {
   return buildCredentialMessage(template || DEFAULT_CREDENTIAL_UPDATE_TEMPLATE, venta, servicio, {
     cambioCorreo: changes.correo ? `Correo actualizado: ${servicio.correo}` : '',
-    cambioContrasena: changes.contrasena && !servicio.accesoPorCodigo ? `Contrasena actualizada: ${servicio.contrasena}` : '',
+    cambioContrasena: changes.contrasena ? `Contrasena actualizada: ${servicio.contrasena}` : '',
     credencialesCambiadas: getCredentialChangeSummary(changes),
   });
 }
@@ -62,7 +61,7 @@ export function buildCredentialUpdateMessage(
 export function buildServiceTransferMessage(
   template: string | undefined,
   venta: VentaDoc,
-  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena' | 'accesoPorCodigo'>,
+  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena'>,
 ) {
   return buildCredentialMessage(template || DEFAULT_SERVICE_TRANSFER_TEMPLATE, venta, servicio, {
     cambioCorreo: '',
@@ -74,7 +73,7 @@ export function buildServiceTransferMessage(
 function buildCredentialMessage(
   template: string,
   venta: VentaDoc,
-  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena' | 'accesoPorCodigo'>,
+  servicio: Pick<Servicio, 'nombre' | 'categoriaNombre' | 'correo' | 'contrasena'>,
   extraData: Pick<WhatsAppData, 'cambioCorreo' | 'cambioContrasena' | 'credencialesCambiadas'>,
 ) {
   const fechaVencimiento = venta.fechaFin
@@ -89,7 +88,7 @@ function buildCredentialMessage(
     categoria: servicio.categoriaNombre || venta.categoriaNombre || '',
     perfilNombre,
     correo: servicio.correo || '',
-    contrasena: deliveryPassword(servicio.contrasena, servicio.accesoPorCodigo),
+    contrasena: servicio.contrasena || '',
     vencimiento: fechaVencimiento,
     monto: venta.precioFinal ? `$${venta.precioFinal.toFixed(2)}` : '',
     codigo: venta.codigo || '',

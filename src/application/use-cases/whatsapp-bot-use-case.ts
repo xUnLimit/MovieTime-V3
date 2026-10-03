@@ -99,7 +99,6 @@ async function offerMenu(run: BotRun, text: string | null, services: BotService[
 // Answers a registered customer's menu taps and, when it is appropriate, offers the
 // menu. Unknown numbers never get an automatic reply.
 export async function handleBotMessage(message: InboundMessage, deps: BotDeps): Promise<BotResult> {
-  if (await deps.conversationOwner?.(message.fromWaId) === 'humano') return 'ignored';
   const action = readBotAction(message);
   const text = message.messageType === 'text' ? message.textBody : null;
   if (!action && text === null) return 'ignored';

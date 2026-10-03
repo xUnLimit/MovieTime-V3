@@ -20,7 +20,6 @@ export interface VentaItem {
   fechaFin?: Date;
   perfilNumero?: number;
   perfilNombre?: string;
-  moneda?: string;
   precio: number;
   descuento: number;
   precioFinal: number;

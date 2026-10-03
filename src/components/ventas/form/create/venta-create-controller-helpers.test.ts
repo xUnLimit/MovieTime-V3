@@ -173,15 +173,3 @@ describe("venta-create-controller-helpers", () => {
     vi.restoreAllMocks();
   });
 });
-
-it('omits the account password when preparing a code-access sale message', () => {
-  const item = buildVentaItem({ categoria, plan, descuento: 0, precio: 10, precioFinal: 10,
-    servicioId: 's1', tipo: 'perfil', servicioSeleccionado: {
-      id: 's1', nombre: 'Cuenta', correo: 'a@example.test', contrasena: 'do-not-send', accesoPorCodigo: true,
-      categoriaId: 'cat-1', categoriaNombre: 'Streaming', tipo: 'premium', perfilesDisponibles: 5,
-      perfilesOcupados: 0, costoServicio: 10, gastosTotal: 0, activo: true, renovacionAutomatica: false,
-      createdAt: fechaInicio, updatedAt: fechaInicio, createdBy: 'admin',
-    } });
-  expect(item.servicioContrasena).toBe('');
-  expect(item.servicioCorreo).toBe('a@example.test');
-});

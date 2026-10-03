@@ -700,24 +700,3 @@ describe('bot events', () => {
     await expect(handleBotMessage(inbound({ textBody: 'gracias' }), menu.deps)).resolves.toBe('menu');
   });
 });
-
-it('stays silent for a human-owned conversation and resumes after returning to the bot', async () => {
-  const { deps, send } = setup({ lastActivityAt: minutesAgo(13 * 60) });
-  const conversationOwner = vi.fn().mockResolvedValue('humano');
-  expect(await handleBotMessage(inbound({ textBody: 'hola' }), { ...deps, conversationOwner })).toBe('ignored');
-  expect(send).not.toHaveBeenCalled();
-  conversationOwner.mockResolvedValue('bot');
-  expect(await handleBotMessage(inbound({ textBody: 'hola' }), { ...deps, conversationOwner })).toBe('menu');
-});
-it('fails closed when ownership cannot be loaded and permits missing state', async () => {
-  const { deps, send } = setup({ lastActivityAt: minutesAgo(13 * 60) });
-  const conversationOwner = vi.fn().mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValue(null);
-  await expect(handleBotMessage(inbound({ textBody: 'hola' }), { ...deps, conversationOwner })).rejects.toThrow('Unavailable');
-  expect(send).not.toHaveBeenCalled();
-  expect(await handleBotMessage(inbound({ textBody: 'hola' }), { ...deps, conversationOwner })).toBe('menu');
-});
-it('requests a code when a customer taps the approved access template', async () => {
-  const { deps } = setup();
-  const result = await handleBotMessage({ ...inbound(), messageType: 'button', payload: { type: 'template_button', payload: 'BOT:NFX:LOGIN' } }, deps);
-  expect(result).not.toBe('ignored');
-});

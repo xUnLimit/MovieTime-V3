@@ -13,7 +13,8 @@ import type {
 } from "@/components/ventas/form/ventas-form-shared";
 import { useTemplates } from "@/hooks/use-templates";
 import {
-  createVentasFromCartMutation,
+  createVentaMutation,
+  refreshServicioProfileCountMutation,
 } from "@/application/client-domain-mutations";
 import { useWhatsAppToastStore } from "@/store/whatsappToastStore";
 import type { Categoria, Plan, Servicio, Tercero } from "@/types";
@@ -164,7 +165,7 @@ export function useVentaCreateWorkflow({
   const { handleGuardarVenta, saving } = useVentaCreateSubmit({
     clienteId,
     clienteSeleccionado,
-    createCart: createVentasFromCartMutation,
+    createVenta: createVentaMutation,
     editedMessage,
     estadoVenta,
     fechaFin,
@@ -177,6 +178,7 @@ export function useVentaCreateWorkflow({
     setPendingWhatsApp,
     sendDirectMessage,
     totalFinal,
+    updatePerfilOcupado: refreshServicioProfileCountMutation,
   });
 
   const { handleAddItem, handleEditItem, handleRemoveItem } =

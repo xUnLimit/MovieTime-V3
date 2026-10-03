@@ -1,6 +1,5 @@
 "use client";
 
-import { CodeAccessNoticeContext, CodeAccessNoticeDialog } from './form/CodeAccessNoticeDialog';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Servicio } from "@/types";
 
@@ -18,9 +17,6 @@ export function ServicioForm({
   returnTo = "/servicios",
 }: ServicioFormProps) {
   const {
-    codeAccessNotice,
-    accesoPorCodigoValue,
-    codeProviderKey,
     activeTab,
     isDatosTabComplete,
     handleSubmit,
@@ -61,7 +57,6 @@ export function ServicioForm({
     perfilesDisponiblesValue,
   } = useServicioFormController({ servicio, returnTo });
   return (
-    <CodeAccessNoticeContext.Provider value={codeAccessNotice}><CodeAccessNoticeDialog notice={codeAccessNotice} />
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-3" noValidate>
       <Tabs
         value={activeTab}
@@ -83,8 +78,6 @@ export function ServicioForm({
         </TabsList>
 
         <ServicioDatosTab
-          accesoPorCodigoValue={accesoPorCodigoValue}
-          codeProviderKey={codeProviderKey}
           categoriaNombre={categoriaNombre}
           categoriasActivas={categoriasActivas}
           cicloPagoValue={cicloPagoValue}
@@ -132,6 +125,6 @@ export function ServicioForm({
           tiposPlanesDinamicos={tiposPlanesDinamicos}
         />
       </Tabs>
-    </form></CodeAccessNoticeContext.Provider>
+    </form>
   );
 }

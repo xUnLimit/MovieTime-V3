@@ -13,7 +13,6 @@ export const countCategorias = (filters: QueryFilter[] = []) => getCount(ENTITIE
 
 type CategoriaRow = {
   id: string;
-  code_provider?: string | null;
   nombre: string;
   tipo: 'cliente' | 'revendedor';
   tipo_categoria: 'plataforma_streaming' | 'otros' | null;
@@ -42,12 +41,11 @@ export async function getCategoriasCounts() {
 }
 
 export async function createCategoriaRecord(
-  categoria: Pick<Categoria, 'nombre' | 'tipo' | 'tipoCategoria' | 'notas' | 'activo' | 'codeProvider'>
+  categoria: Pick<Categoria, 'nombre' | 'tipo' | 'tipoCategoria' | 'notas' | 'activo'>
 ) {
   const { data, error } = await supabase
     .from('categorias')
     .insert({
-      ...(categoria.codeProvider !== undefined ? { code_provider: categoria.codeProvider } : {}),
       nombre: categoria.nombre,
       tipo: categoria.tipo,
       tipo_categoria: categoria.tipoCategoria,
@@ -65,7 +63,6 @@ export async function updateCategoriaRecord(id: string, updates: Partial<Categor
   const { data, error } = await supabase
     .from('categorias')
     .update({
-      ...(updates.codeProvider !== undefined ? { code_provider: updates.codeProvider } : {}),
       ...(updates.nombre !== undefined ? { nombre: updates.nombre } : {}),
       ...(updates.tipo !== undefined ? { tipo: updates.tipo } : {}),
       ...(updates.tipoCategoria !== undefined ? { tipo_categoria: updates.tipoCategoria } : {}),
@@ -141,7 +138,6 @@ export async function buildCategorias(categoriasRows: CategoriaRow[]): Promise<C
     const financial = financialByCategoria.get(categoria.id);
     return {
       id: categoria.id,
-      codeProvider: categoria.code_provider ?? null,
       nombre: categoria.nombre,
       tipo: categoria.tipo,
       tipoCategoria: categoria.tipo_categoria ?? undefined,
@@ -203,7 +199,6 @@ function jsonCategorias(data: Json | null): Categoria[] {
     const record = row as Record<string, unknown>;
     return {
       id: String(record.id),
-      codeProvider: typeof record.codeProvider === 'string' ? record.codeProvider : null,
       nombre: String(record.nombre ?? ''),
       tipo: record.tipo === 'revendedor' ? 'revendedor' : 'cliente',
       tipoCategoria: record.tipoCategoria === 'plataforma_streaming' || record.tipoCategoria === 'otros'

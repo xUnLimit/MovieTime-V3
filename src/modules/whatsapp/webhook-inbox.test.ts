@@ -13,7 +13,7 @@ function fakeClient(errors: Record<string, { code: string } | null> = {}, insert
     from: (table: string) => ({
       upsert: (rows: unknown, options: unknown) => {
         upserts.push({ table, rows, options });
-        return { select: async () => ({ data: inserted.map((wa_message_id) => ({ id: `row-${wa_message_id}`, wa_message_id })), error: errors[table] ?? null }),
+        return { select: async () => ({ data: inserted.map((wa_message_id) => ({ wa_message_id })), error: errors[table] ?? null }),
           then: (resolve: (value: { error: { code: string } | null }) => void) => resolve({ error: errors[table] ?? null }) };
       },
     }),
@@ -53,7 +53,7 @@ describe('storeWebhookBatch', () => {
   it('upserts messages and statuses idempotently by their natural ids', async () => {
     const { client, upserts } = fakeClient();
 
-    await expect(storeWebhookBatch(batch, client)).resolves.toEqual({ messages: 1, statuses: 1, insertedWaMessageIds: ['wamid.IN'], insertedRowIds: { 'wamid.IN': 'row-wamid.IN' } });
+    await expect(storeWebhookBatch(batch, client)).resolves.toEqual({ messages: 1, statuses: 1, insertedWaMessageIds: ['wamid.IN'] });
     expect(upserts).toEqual([
       {
         table: 'whatsapp_inbound_messages',
@@ -93,7 +93,7 @@ describe('storeWebhookBatch', () => {
     const { client, upserts } = fakeClient();
 
     await expect(storeWebhookBatch({ messages: [], statuses: [], skippedChanges: 1, skippedItems: 0 }, client))
-      .resolves.toEqual({ messages: 0, statuses: 0, insertedWaMessageIds: [], insertedRowIds: {} });
+      .resolves.toEqual({ messages: 0, statuses: 0, insertedWaMessageIds: [] });
     expect(upserts).toEqual([]);
   });
 

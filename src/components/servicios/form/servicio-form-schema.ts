@@ -31,7 +31,6 @@ export const servicioSchema = z.object({
   fechaVencimiento: z.date(),
   estado: z.enum(['activo', 'inactivo', 'reposo']),
   renovacionAutomatica: z.boolean(),
-  accesoPorCodigo: z.boolean().optional(),
   diasReposo: z.string().optional(),
   notas: z.string().optional(),
 });

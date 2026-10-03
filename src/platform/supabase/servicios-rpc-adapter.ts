@@ -4,7 +4,6 @@ import { executeIdempotentRpc } from './idempotent-rpc';
 import { assertRpcVoidResult, callRpc } from './rpc-client';
 
 export type CreateServicioWithInitialPaymentPayload = {
-  p_acceso_por_codigo?: boolean;
   p_categoria_id: string;
   p_plan_tipo_id: string | null;
   p_nombre: string;
@@ -55,14 +54,7 @@ export type UpdateServicioPaymentAndPeriodPayload = {
 export async function createServicioWithInitialPaymentRpc(
   payload: CreateServicioWithInitialPaymentPayload
 ): Promise<string> {
-  if (payload.p_acceso_por_codigo === true) {
-    const request = { ...payload, p_acceso_por_codigo: true };
-    return executeIdempotentRpc('create_servicio_with_code_access', request, (args) =>
-      callRpc('create_servicio_with_code_access', args));
-  }
-  const legacyPayload = { ...payload };
-  delete legacyPayload.p_acceso_por_codigo;
-  return executeIdempotentRpc('create_servicio_with_initial_payment', legacyPayload, (request) =>
+  return executeIdempotentRpc('create_servicio_with_initial_payment', payload, (request) =>
     callRpc('create_servicio_with_initial_payment', request));
 }
 

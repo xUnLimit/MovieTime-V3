@@ -37,27 +37,11 @@ if (report.error) {
 const exceptions = allDependencies ? loadValidExceptions() : new Map();
 const findings = [];
 
-const vulnerabilities = report.vulnerabilities ?? {};
-const exceptedByName = new Map();
-
-// A package is excepted only if every advisory reaching it is excepted: directly, or through a dependency
-// that is itself excepted. Transitive dependents carry no advisory of their own, only the vulnerable package name.
-function isExcepted(name, trail = new Set()) {
-  if (exceptedByName.has(name)) return exceptedByName.get(name);
-  const via = vulnerabilities[name]?.via ?? [];
-  if (via.length === 0 || trail.has(name)) return false;
-  const next = new Set(trail).add(name);
-  const excepted = via.every((item) => typeof item === 'object'
-    ? exceptions.has(String(item.url ?? item.source))
-    : isExcepted(item, next));
-  exceptedByName.set(name, excepted);
-  return excepted;
-}
-
-for (const [name, vulnerability] of Object.entries(vulnerabilities)) {
+for (const [name, vulnerability] of Object.entries(report.vulnerabilities ?? {})) {
   const advisories = (vulnerability.via ?? []).filter((item) => typeof item === 'object');
   const advisoryIds = advisories.map((item) => String(item.url ?? item.source));
-  if (!isExcepted(name)) findings.push({ name, severity: vulnerability.severity, advisoryIds });
+  const excepted = advisoryIds.length > 0 && advisoryIds.every((id) => exceptions.has(id));
+  if (!excepted) findings.push({ name, severity: vulnerability.severity, advisoryIds });
 }
 
 if (findings.length > 0) {

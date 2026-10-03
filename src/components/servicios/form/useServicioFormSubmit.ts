@@ -14,7 +14,7 @@ import { reportError } from "@/platform/observability/logger";
 import { queryKeys } from "@/platform/query-keys";
 import { updateServicioPagoUseCase } from "@/application/use-cases/servicios/servicios-payment-use-cases";
 import type { PendingWhatsAppToast } from "@/store/whatsappToastStore";
-import { announceNotice } from "@/components/shared/announce-notice";
+import { offerApiAccessNotice } from "@/components/shared/offer-api-access-notice";
 import { getVentasActivasParaCredenciales } from "@/application/use-cases/servicios/servicio-credential-notification-use-case";
 import {
   changedCredentialsCount,
@@ -37,10 +37,11 @@ import {
 type ServicioPayload = ReturnType<typeof buildServicioFormPayload>;
 
 interface UseServicioFormSubmitParams {
-  codeAccessNoticeConfirmed?: () => boolean;
   categorias: Categoria[];
   createServicio: (servicio: ServicioPayload, idempotencyKey?: string) => Promise<void>;
   credentialTemplateContent?: string;
+  /** Plantilla de Meta vinculada al tipo; habilita "Enviar por WhatsApp API". */
+  credentialMetaTemplateName?: string | null;
   enqueueWhatsAppMessages: (messages: Array<Omit<PendingWhatsAppToast, "id">>) => void;
   metodosPago: MetodoPago[];
   onSaved: () => void;
@@ -55,10 +56,10 @@ interface UseServicioFormSubmitParams {
 }
 
 export function useServicioFormSubmit({
-  codeAccessNoticeConfirmed = () => false,
   categorias,
   createServicio,
   credentialTemplateContent,
+  credentialMetaTemplateName,
   enqueueWhatsAppMessages,
   metodosPago,
   onSaved,
@@ -78,7 +79,6 @@ export function useServicioFormSubmit({
     submitting.current = true;
     let created = false;
     try {
-      const codeAccessChanged = !!servicio?.id && (servicio.accesoPorCodigo ?? false) !== (data.accesoPorCodigo ?? false);
       const credentialChanges = servicio?.id
         ? hasCredentialChanges(servicio, data)
         : { correo: false, contrasena: false };
@@ -150,7 +150,7 @@ export function useServicioFormSubmit({
         });
         refreshPagos();
 
-        if ((codeAccessChanged && codeAccessNoticeConfirmed()) || (!codeAccessChanged && changedCredentialsCount(credentialChanges) > 0)) {
+        if (changedCredentialsCount(credentialChanges) > 0) {
           const ventasActivas = await getVentasActivasParaCredenciales(servicio.id);
 
           if (ventasActivas.length > 0) {
@@ -160,12 +160,11 @@ export function useServicioFormSubmit({
               categoriaNombre: categoria?.nombre || servicio.categoriaNombre,
               correo: data.correo,
               contrasena: data.contrasena,
-              accesoPorCodigo: data.accesoPorCodigo ?? false,
             };
             const messages = buildCredentialUpdateWhatsAppMessages({
               changes: credentialChanges,
               servicio: servicioActualizado,
-              template: data.accesoPorCodigo ? "Hola {nombre_cliente}, tu acceso a {servicio} ahora es por código. Escribe código en este chat para solicitarlo." : credentialTemplateContent,
+              template: credentialTemplateContent,
               terceros,
               ventas: ventasActivas,
             });
@@ -173,19 +172,18 @@ export function useServicioFormSubmit({
             const description = `${ventasActivas.length} cliente${
               ventasActivas.length !== 1 ? "s" : ""
             } pendiente${ventasActivas.length !== 1 ? "s" : ""} por WhatsApp.`;
-            await announceNotice({
-              tipo: "actualizacion_credenciales",
-              items: messages.map((message) => ({ ventaId: message.id, message })),
-              enqueueWhatsAppMessages,
-              eventId: intent.current.keyFor({ servicioId: servicio.id, correo: data.correo, contrasena: data.contrasena, accesoPorCodigo: data.accesoPorCodigo }),
-              copy: {
-                loading: "Credenciales actualizadas. Avisando a los clientes...",
-                sent: "Credenciales actualizadas y clientes avisados por WhatsApp",
-                notSent: "Credenciales actualizadas, pero no se pudo avisar por la API",
-                offerTitle: "Notificar cambio de credenciales",
-                offerDescription: description,
-              },
-            });
+            if (credentialMetaTemplateName) {
+              offerApiAccessNotice({
+                tipo: "actualizacion_credenciales",
+                items: messages.map((message) => ({ ventaId: message.id, message })),
+                enqueueWhatsAppMessages,
+                title: "Notificar cambio de credenciales",
+                description,
+              });
+            } else {
+              enqueueWhatsAppMessages(messages);
+              toast.info("Notificaciones preparadas", { description, duration: 3000 });
+            }
           } else {
             toast.info("Credenciales actualizadas", {
               description:

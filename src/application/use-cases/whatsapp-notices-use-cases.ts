@@ -71,29 +71,16 @@ export function isNoticeDelivered(status: NoticeResult['status']): boolean {
   return status === 'accepted' || status === 'already_sent';
 }
 
-/** Avisos que siguen a una accion del panel (renovar, vender, cambiar credenciales, transferir, avisar, cortar). */
-export type CustomerNoticeTipo = Extract<NoticeTipo,
-  'renovacion' | 'actualizacion_credenciales' | 'transferencia_servicio' | 'suscripcion' | 'dia_pago' | 'cancelacion'>;
-
-export type NotifyCustomerOutcome = {
-  /** `sent`: llego a todas las ventas; `not_sent`: a alguna no; `auto_disabled`: el automatico esta apagado. */
-  status: 'sent' | 'auto_disabled' | 'not_sent';
-  deliveredVentaIds: string[];
-};
+export type AutomaticRenewalOutcome = 'auto_disabled' | 'sent' | 'not_sent';
 
 /**
- * Regla unica de envio: con el WhatsApp automatico encendido el aviso sale por la API sin preguntar (el servidor
- * elige texto libre o plantilla de Meta); apagado no sale nada y `auto_disabled` deja la eleccion a quien actuo.
- * `eventId` distingue cambios puntuales (credenciales, transferencia) para que un reintento no duplique.
+ * Confirma la renovacion por la API solo si el WhatsApp automatico esta encendido: el servidor decide entre
+ * texto libre (ventana de 24 h abierta) y plantilla de Meta. `auto_disabled` deja la eleccion a quien renovo.
  */
-export async function notifyCustomerUseCase(
-  input: { tipo: CustomerNoticeTipo; ventaIds: string[]; eventId?: string },
-): Promise<NotifyCustomerOutcome> {
+export async function sendAutomaticRenewalNoticeUseCase(ventaId: string): Promise<AutomaticRenewalOutcome> {
   const session = await getCurrentSession();
   if (!session?.access_token) throw new Error('No hay una sesión activa para enviar avisos por WhatsApp.');
-  const { results, skipped } = await postWhatsAppNotices(session.access_token, { ...input, automatic: true });
-  if (skipped) return { status: 'auto_disabled', deliveredVentaIds: [] };
-  const delivered = new Set(results.filter((result) => isNoticeDelivered(result.status)).flatMap((result) => result.ventaIds));
-  const deliveredVentaIds = input.ventaIds.filter((id) => delivered.has(id));
-  return { status: deliveredVentaIds.length === input.ventaIds.length ? 'sent' : 'not_sent', deliveredVentaIds };
+  const { results, skipped } = await postWhatsAppNotices(session.access_token, { tipo: 'renovacion', ventaIds: [ventaId], automatic: true });
+  if (skipped) return 'auto_disabled';
+  return results.some((result) => isNoticeDelivered(result.status)) ? 'sent' : 'not_sent';
 }

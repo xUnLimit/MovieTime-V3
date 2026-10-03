@@ -1,9 +1,30 @@
 import type { BotParams } from '@/types/bot';
-export { renderTemplate, templateVariables } from '@/platform/text/template';
 
 // Entradas de texto del cliente de hasta ~4 KB; se recorta antes de procesar.
 const TEXT_SCAN_MAX = 4096;
 const HOUR_MS = 60 * 60 * 1000;
+// Clase de caracteres acotada y sin anidamiento: busqueda lineal.
+const MARKER_PATTERN = /\{\{([^{}\n]{1,40})\}\}/g;
+
+/** Nombres (tal como estan escritos, sin repetir) de los marcadores `{{x}}` de una plantilla. */
+export function templateVariables(template: string): string[] {
+  const found: string[] = [];
+  for (const match of template.matchAll(MARKER_PATTERN)) {
+    if (!found.includes(match[1])) found.push(match[1]);
+  }
+  return found;
+}
+
+/**
+ * Reemplaza solo los marcadores conocidos en una sola pasada: el valor insertado
+ * no se vuelve a interpretar, asi que no hay doble sustitucion ni inyeccion.
+ */
+export function renderTemplate(template: string, values: Record<string, string>): string {
+  return template.replace(MARKER_PATTERN, (whole, name: string) => (
+    Object.hasOwn(values, name) ? values[name] : whole
+  ));
+}
+
 /** Minusculas, sin acentos y con espacios colapsados. */
 export function normalizeText(text: string): string {
   return text.slice(0, TEXT_SCAN_MAX)

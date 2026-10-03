@@ -155,11 +155,3 @@ describe('updateServicioPaymentAndPeriodRpc', () => {
   });
 });
 
-
-it('creates code-access accounts with the atomic typed wrapper and preserves the legacy signature for false', async () => {
-  rpcMock.mockResolvedValue({ data: 'servicio-code', error: null });
-  await expect(createServicioWithInitialPaymentRpc({ ...payload, p_acceso_por_codigo: true })).resolves.toBe('servicio-code');
-  expect(rpcMock).toHaveBeenLastCalledWith('create_servicio_with_code_access', { ...payload, p_acceso_por_codigo: true });
-  await createServicioWithInitialPaymentRpc({ ...payload, p_acceso_por_codigo: false });
-  expect(rpcMock).toHaveBeenLastCalledWith('create_servicio_with_initial_payment', payload);
-});

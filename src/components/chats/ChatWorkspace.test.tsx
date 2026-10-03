@@ -64,8 +64,6 @@ vi.mock('sonner', () => ({ toast: { error: toastError, success: toastSuccess } }
 
 import { ChatWorkspace } from './ChatWorkspace';
 
-vi.mock('./ConversationControl', () => ({ ConversationControl: () => <span>Control de atención</span> }));
-
 const NOW = new Date(2026, 8, 27, 15, 30);
 
 const open: WhatsAppConversation = {

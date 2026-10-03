@@ -1,4 +1,3 @@
-import { deliveryPassword } from '@/platform/utils/code-access';
 import {
   fetchWhatsAppMedia,
   postMarkConversationRead,
@@ -100,7 +99,7 @@ export async function fetchVentaMessageContextUseCase(ventaId: string): Promise<
     servicioNombre: venta.servicioNombre,
     perfilNombre: venta.perfilNombre ?? '',
     correo: venta.servicioCorreo ?? '',
-    contrasena: deliveryPassword(venta.servicioContrasena || servicioContrasena, venta.accesoPorCodigo),
+    contrasena: venta.servicioContrasena || servicioContrasena,
     codigo: venta.codigo ?? '',
     fechaVencimiento: venta.fechaFin ?? null,
     monto: venta.precioFinal ?? venta.precio ?? 0,
