@@ -1,6 +1,6 @@
 # MovieTime PTY - reglas obligatorias de ingenieria
 
-Este archivo es la fuente canonica y unica para personas y agentes de IA. `CLAUDE.md` solo contiene `@AGENTS.md` para que Claude Code lo cargue; no agregues reglas alli ni en configuraciones de editor.
+Este archivo es la fuente canonica y unica para personas y agentes de IA.
 
 ## Definicion de terminado
 
@@ -82,6 +82,21 @@ Este archivo es la fuente canonica y unica para personas y agentes de IA. `CLAUD
 - Produccion requiere todos los jobs verdes, credenciales completas, migraciones verificadas, deployment staged, smoke tests y promocion explicita.
 - Si falla antes de promover, el staged deployment se descarta. Si falla despues, se ejecuta rollback del frontend.
 - El rollback del frontend no revierte la base de datos; por eso las migraciones siempre deben ser compatibles hacia atras.
+
+## Navegacion del codigo con Graphify
+
+- El mapa local vive en `graphify-out/graph.json`; la skill esta en `.agents/skills/graphify/SKILL.md`. Para arquitectura, investigacion de errores, revisiones y cambios que abarcan varios archivos, consulta primero el grafo y lee despues las fuentes relevantes. Carga solo la referencia de la skill necesaria para la tarea.
+- En PowerShell, si la CLI no esta en PATH, prueba primero el interprete instalado registrado en `graphify-out/.graphify_python`, comprobando que existe y puede importar Graphify, con `-m graphify`. Si el usuario pide no usar el grafo, la tarea ya identifica un archivo y cambio puntual, o Graphify sigue sin estar disponible, usa `rg` y lectura dirigida sin bloquear el trabajo. La ausencia del grafo no exige instalar herramientas ni reconstruir todo el proyecto.
+- Prefiere `graphify explain "ruta::simbolo"` para una funcion concreta, `graphify path "ID_A" "ID_B"` para una relacion y `graphify affected "ID_del_nodo"` para explorar impacto. Usa `graphify query "terminos" --budget 1500` para descubrir el contexto inicial. Desambigua coincidencias con la ruta relativa o el ID completo; para `path` y `affected`, usa IDs exactos cuando haya ambiguedad.
+- Formula consultas con nombres reales de funciones, archivos y conceptos del grafo. Para preguntas generales en espanol, selecciona pocos terminos pertinentes del vocabulario real; reutiliza esa seleccion mientras el grafo no cambie. Evita consultas genericas que solo devuelven hubs como React o Vitest.
+- No cargues el JSON completo, todos los nodos ni el informe completo en el contexto. Reserva `GRAPH_REPORT.md` para una vista general y lee solo sus secciones utiles. Si la respuesta se trunca o no encuentra el simbolo, acota por ruta o relacion; amplia el presupuesto solo cuando haga falta. Si sigue sin responder, busca en las fuentes con `rg`.
+- Antes de editar, comprueba en el codigo actual la implementacion, sus llamadores, contratos y pruebas relevantes. El grafo orienta la seleccion de archivos; no reemplaza leerlos, autenticar, autorizar ni validar las invariantes SQL/RPC.
+- Comprueba la vigencia de los archivos del alcance frente al manifiesto del grafo y a los cambios locales. Un grafo desactualizado, un cambio de rama o una referencia no resuelta exige verificar las fuentes y actualizar el alcance necesario; no presupongas que todo el mapa describe el checkout actual.
+- Tras cambios de codigo o SQL, ejecuta `graphify update .` para mantener el mapa estructural. Ese comando no sustituye la extraccion semantica de documentos e imagenes: cuando cambien, actualiza los archivos afectados con la skill incremental y conserva pendientes los que no pudieron procesarse. Evita reconstrucciones completas y exportaciones HTML salvo que sean necesarias o solicitadas.
+- La ausencia de aristas no demuestra codigo muerto; los nombres iguales no demuestran equivalencia; el numero de conexiones no demuestra un defecto. Confirma codigo innecesario con `dead-code` y busquedas de entradas dinamicas, y dependencias problematicas con `arch:check`. Compara contratos antes de proponer unificacion.
+- En un hallazgo, distingue evidencia extraida, inferencia y problema comprobado. Cita archivo y linea actuales, explica el efecto y verifica la conducta con las pruebas apropiadas. Las advertencias del extractor son limites del mapa, no errores de la aplicacion.
+- Al iniciar una investigacion extensa, consulta las lecciones de Graphify si existen. Guarda solo conclusiones verificadas y utiles con `save-result`, incluyendo sus fuentes; no registres secretos, datos personales, conversaciones completas ni hipotesis como hechos. El ahorro de tokens del benchmark es una estimacion frente a su corpus de referencia, no una garantia por conversacion.
+- Los artefactos de `graphify-out/` son herramientas locales: respeta exclusiones de secretos, sesiones, dependencias y builds. No cambies las reglas de seguridad, arquitectura, cobertura o `quality:full` para acomodar el grafo. No instales hooks, MCP, servicios ni configuraciones paralelas para aplicar estas instrucciones.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

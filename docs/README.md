@@ -9,7 +9,7 @@ Cada tema tiene **un solo lugar** (sin duplicar reglas entre documentos):
 
 | Tema | Documento |
 |---|---|
-| Reglas obligatorias de ingenieria, seguridad, arquitectura y pruebas | [`AGENTS.md`](../AGENTS.md) (`CLAUDE.md` solo lo importa para Claude Code) |
+| Reglas obligatorias de ingenieria, seguridad, arquitectura y pruebas | [`AGENTS.md`](../AGENTS.md) |
 | Producto: usuarios, proposito, marca y principios | [`PRODUCT.md`](../PRODUCT.md) |
 | Vocabulario de dominio | [`CONTEXT.md`](../CONTEXT.md) |
 | Sistema visual: tokens, tipografia, componentes y tablas | [`DESIGN.md`](../DESIGN.md) |
