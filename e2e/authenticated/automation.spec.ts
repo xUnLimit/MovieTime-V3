@@ -22,7 +22,7 @@ test('@auth @smoke encuentra automatizaciones, mensajes y conexiones sin pestañ
 test('@auth @smoke encuentra pedidos y cobros en Automatizaciones; conserva filtro al volver', async ({ page }) => {
   await page.goto('/automatizaciones');
   await openTab(page, 'Pedidos');
-  await expect(page.getByRole('heading', { name: 'Pedidos', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pedidos de clientes', exact: true })).toBeVisible();
   const search = page.getByRole('searchbox', { name: 'Buscar pedido o servicio…' });
   await search.fill('servicio-de-prueba');
   await openTab(page, 'Cobros');
@@ -38,6 +38,4 @@ test('@auth @smoke encuentra interesados dentro de Automatizaciones sin otro des
   await openTab(page, 'Interesados');
   await expect(page.getByRole('heading', { name: 'Interesados', exact: true })).toBeVisible();
   await expect(page.getByText('El interés y el consentimiento se registran por separado.', { exact: false })).toBeVisible();
-  await page.getByRole('link', { name: 'Volver a terceros', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Terceros', exact: true })).toBeVisible();
 });

@@ -92,7 +92,7 @@ export function MessageComposer({ tipo, value, onChange }: MessageComposerProps)
         </div>
 
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span aria-hidden className="rounded-[3px] bg-primary/15 px-1.5 font-medium text-primary">{'{dato}'}</span>
+          <span aria-hidden className="rounded-[3px] bg-primary/15 px-1.5 font-medium text-foreground">{'{dato}'}</span>
           se reemplaza por el dato real de cada cliente
         </p>
       </section>
