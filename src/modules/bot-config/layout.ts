@@ -10,9 +10,14 @@ const CARD_GAP = 32;
 
 /**
  * Posiciones iniciales del lienzo: un nivel del recorrido por columna (calculado con `buildFlowGraph`) y
- * los nodos de cada nivel apilados segun la altura estimada. `saved` conserva lo que el usuario movio.
+ * los nodos de cada nivel apilados segun la altura real medida en el lienzo (`measured`) o, si aun no existe, la estimada.
+ * `saved` conserva lo que el usuario movio.
  */
-export function layoutNodes(def: BotDefinition, saved: Readonly<Record<string, NodePosition>> = {}): Record<string, NodePosition> {
+export function layoutNodes(
+  def: BotDefinition,
+  saved: Readonly<Record<string, NodePosition>> = {},
+  measured: Readonly<Record<string, number>> = {},
+): Record<string, NodePosition> {
   const graph = buildFlowGraph(def);
   const optionCount = new Map(def.nodes.map((node) => [node.id, node.options.length]));
   const levels = [...new Set(graph.nodes.map((vertex) => vertex.y))].sort((a, b) => a - b);
@@ -21,7 +26,7 @@ export function layoutNodes(def: BotDefinition, saved: Readonly<Record<string, N
     let top = 0;
     graph.nodes.filter((vertex) => vertex.y === level).sort((a, b) => a.x - b.x).forEach((vertex) => {
       positions[vertex.id] = saved[vertex.id] ?? { x: column * COLUMN_WIDTH, y: top };
-      top += CARD_BASE_HEIGHT + (optionCount.get(vertex.id) ?? 0) * OPTION_HEIGHT + CARD_GAP;
+      top += (measured[vertex.id] ?? CARD_BASE_HEIGHT + (optionCount.get(vertex.id) ?? 0) * OPTION_HEIGHT) + CARD_GAP;
     });
   });
   return positions;

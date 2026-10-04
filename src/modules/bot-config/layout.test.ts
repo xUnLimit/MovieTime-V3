@@ -20,6 +20,15 @@ describe('layoutNodes', () => {
     expect(positions.menu).toEqual({ x: 500, y: 40 });
     expect(positions.suelto).toBeDefined();
   });
+  it('apila los nodos nuevos debajo de la altura medida de los existentes para no taparlos', () => {
+    let def = addNode(defaultDefinition(), 'buttons', 'Botones');
+    const first = layoutNodes(def);
+    def = addNode(def, 'text', 'Texto');
+    const estimated = layoutNodes(def, first);
+    const measured = layoutNodes(def, first, { botones: 600 });
+    expect(measured.texto.y - measured.botones.y).toBe(632);
+    expect(measured.texto.y).toBeGreaterThan(estimated.texto.y);
+  });
   it('no falla con un flujo vacio', () => {
     expect(layoutNodes({ ...defaultDefinition(), nodes: [] })).toEqual({});
   });

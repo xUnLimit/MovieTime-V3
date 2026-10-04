@@ -27,7 +27,7 @@ type FlowCanvasProps = {
 export function FlowCanvas({ def, issues, selectedId, onSelect, actions }: FlowCanvasProps) {
   const [positions, setPositions] = useState<Record<string, NodePosition>>({});
   const [sizes, setSizes] = useState<Record<string, Size>>({});
-  if (def.nodes.some((node) => !(node.id in positions))) setPositions(layoutNodes(def, positions));
+  if (def.nodes.some((node) => !(node.id in positions))) setPositions(layoutNodes(def, positions, Object.fromEntries(Object.entries(sizes).map(([id, size]) => [id, size.height]))));
 
   const targets = useMemo(() => def.nodes.map((node) => ({ id: node.id, name: node.name, exit: node.block === undefined })), [def.nodes]);
   const problems = useMemo(() => issuesByNode(issues), [issues]);

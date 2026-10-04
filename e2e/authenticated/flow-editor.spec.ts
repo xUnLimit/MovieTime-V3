@@ -18,7 +18,7 @@ test('@auth edita el recorrido en el lienzo, no publica con errores y publica un
   // Se agrega un texto final, se renombra y se conecta desde el nuevo nodo con la salida de un botón.
   await page.getByRole('button', { name: 'Agregar nodo de texto' }).click();
   await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Gracias final');
-  await page.getByRole('button', { name: 'Agregar botón' }).last().click();
+  await page.getByRole('group', { name: 'Nodo Nuevo nodo de botones' }).getByRole('button', { name: 'Agregar botón' }).click();
   await page.getByRole('textbox', { name: /^Título del botón 1 de Nuevo nodo de botones/ }).fill('Terminar');
   await page.getByRole('combobox', { name: /^Destino del botón 1 de Nuevo nodo de botones/ }).selectOption({ label: 'Gracias final' });
   await expect(page.getByRole('combobox', { name: /^Destino del botón 1 de Nuevo nodo de botones/ })).toHaveValue(/gracias_final/);
