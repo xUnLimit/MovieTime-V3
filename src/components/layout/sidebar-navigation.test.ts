@@ -7,8 +7,9 @@ describe('findNavItem', () => {
     expect(findNavItem('/ventas')?.name).toBe('Ventas');
     expect(findNavItem('/ventas/abc/editar')?.name).toBe('Ventas');
     expect(findNavItem('/servicios/detalle/x')?.name).toBe('Servicios');
-    expect(findNavItem('/editor-mensajes')?.name).toBe('Automatizaciones');
-    expect(findNavItem('/bot/flujo')?.name).toBe('Automatizaciones');
+    expect(findNavItem('/pedidos-cobros')?.name).toBe('Pedidos y cobros');
+    expect(findNavItem('/plantillas-mensajes')?.name).toBe('Plantillas de mensajes');
+    expect(findNavItem('/automatizaciones')?.name).toBe('Automatizaciones');
   });
 
   it('devuelve undefined para rutas fuera del menu', () => {
@@ -40,19 +41,29 @@ describe('getSidebarNavigationSections', () => {
     expect(names('vendedor')).not.toContain('Automatizaciones');
   });
 
-  it('consolida bot y mensajes en Automatizaciones y cobros en Ventas', () => {
-    const items = getSidebarNavigationSections('admin').flatMap((s) => s.items);
-    expect(items.filter((i) => i.href === '/automatizaciones')).toHaveLength(1);
-    expect(items.map((i) => i.href)).not.toContain('/pagos-yappy');
-    expect(items.map((i) => i.href)).not.toContain('/editor-mensajes');
-    expect(findNavItem('/pagos-yappy')?.name).toBe('Automatizaciones');
+  it('ubica Pedidos y cobros tras Ventas y Plantillas de mensajes tras Metodos de Pago', () => {
+    const sections = getSidebarNavigationSections('admin');
+    const section = (label: string) => sections.find((s) => s.label === label)?.items.map((i) => i.name);
+    expect(section('Operación')).toEqual(['Terceros', 'Ventas', 'Pedidos y cobros', 'Servicios', 'Gastos']);
+    expect(section('Configuración')).toEqual(['Categorías', 'Métodos de Pago', 'Plantillas de mensajes']);
+    expect(section('Seguimiento')).toContain('Automatizaciones');
   });
-  it('resalta el destino consolidado al abrir un enlace anterior', () => {
-    expect(isNavItemActive('/bot', '/automatizaciones')).toBe(true);
-    expect(isNavItemActive('/bot/flujo', '/automatizaciones')).toBe(true);
-    expect(isNavItemActive('/editor-mensajes', '/automatizaciones')).toBe(true);
-    expect(isNavItemActive('/pagos-yappy', '/automatizaciones')).toBe(true);
-    expect(isNavItemActive('/automatizaciones/pedidos', '/ventas')).toBe(false);
+
+  it('reserva los apartados nuevos a administradores', () => {
+    expect(names('vendedor')).not.toContain('Pedidos y cobros');
+    expect(names('vendedor')).not.toContain('Plantillas de mensajes');
+    expect(names('admin')).toContain('Pedidos y cobros');
+    expect(names('admin')).toContain('Plantillas de mensajes');
+  });
+
+  it('no deja alias ocultos de rutas anteriores: el servidor las redirige', () => {
+    const hrefs = getSidebarNavigationSections('admin').flatMap((s) => s.items.map((i) => i.href));
+    for (const legacy of ['/bot', '/editor-mensajes', '/pagos-yappy']) {
+      expect(hrefs).not.toContain(legacy);
+      expect(findNavItem(legacy)).toBeUndefined();
+    }
+    expect(isNavItemActive('/automatizaciones/compras', '/automatizaciones')).toBe(true);
+    expect(isNavItemActive('/pedidos-cobros', '/automatizaciones')).toBe(false);
     expect(isNavItemActive('/bot-archivo', '/automatizaciones')).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Pause,
   Settings,
+  ShoppingBag,
   ShoppingCart,
   Tv2,
   Users,
@@ -32,11 +33,10 @@ export type SidebarNavSection = {
 
 const adminOnlyPaths = [
   '/chats',
-  '/bot',
   '/automatizaciones',
-  '/pagos-yappy',
+  '/pedidos-cobros',
   '/gastos',
-  '/editor-mensajes',
+  '/plantillas-mensajes',
   '/categorias',
   '/metodos-pago',
   '/log-actividad',
@@ -66,6 +66,11 @@ const navigationSections: SidebarNavSection[] = [
         name: 'Ventas',
         href: '/ventas',
         icon: ShoppingCart,
+      },
+      {
+        name: 'Pedidos y cobros',
+        href: '/pedidos-cobros',
+        icon: ShoppingBag,
       },
       {
         name: 'Servicios',
@@ -98,18 +103,6 @@ const navigationSections: SidebarNavSection[] = [
         icon: Bot,
       },
       {
-        name: 'Automatizaciones',
-        href: '/pagos-yappy',
-        icon: Bot,
-        hidden: true,
-      },
-      {
-        name: 'Automatizaciones',
-        href: '/bot',
-        icon: Bot,
-        hidden: true,
-      },
-      {
         name: 'Servicios en Reposo',
         href: '/reposo',
         icon: Pause,
@@ -135,10 +128,9 @@ const navigationSections: SidebarNavSection[] = [
         icon: CreditCard,
       },
       {
-        name: 'Automatizaciones',
-        href: '/editor-mensajes',
+        name: 'Plantillas de mensajes',
+        href: '/plantillas-mensajes',
         icon: MessageSquare,
-        hidden: true,
       },
       {
         name: 'Configuración',
@@ -166,7 +158,6 @@ export function getSidebarNavigationSections(
     .filter((section) => section.items.length > 0);
 }
 
-/** Un item esta activo en su ruta exacta y en cualquiera de sus subrutas (p. ej. /ventas/crear resalta Ventas). */
 /** Item del menu que contiene la ruta (el de href mas largo). Sirve para las migas y el titulo de seccion. */
 export function findNavItem(pathname: string): SidebarNavItem | undefined {
   return navigationSections
@@ -175,8 +166,10 @@ export function findNavItem(pathname: string): SidebarNavItem | undefined {
     .sort((a, b) => b.href.length - a.href.length)[0];
 }
 
+/**
+ * Un item esta activo en su ruta exacta y en cualquiera de sus subrutas (p. ej. /ventas/crear resalta Ventas).
+ * Las rutas anteriores (/bot, /editor-mensajes, /pagos-yappy, /automatizaciones/pedidos...) redirigen en el servidor.
+ */
 export function isNavItemActive(pathname: string, href: string): boolean {
-  if (href === '/automatizaciones' && ['/bot', '/editor-mensajes'].some(legacy => pathname === legacy || pathname.startsWith(`${legacy}/`))) return true;
-  if (href === '/automatizaciones' && (pathname === '/pagos-yappy' || pathname.startsWith('/pagos-yappy/'))) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
