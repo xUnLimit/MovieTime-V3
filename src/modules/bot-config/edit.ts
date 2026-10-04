@@ -62,6 +62,19 @@ export function removeNode(def: BotDefinition, nodeId: string): BotDefinition {
   };
 }
 
+/** El cliente puede recibir este nodo como primer paso: ni un bloque de compra ni una acción. */
+export function canSetEntry(node: BotNode): boolean {
+  return node.block === undefined && node.kind !== 'action';
+}
+
+/** Cambia el nodo de entrada. Solo nodos que existen y que el cliente puede recibir: no bloques de compra ni acciones. */
+export function setEntryNode(def: BotDefinition, nodeId: string): BotDefinition {
+  if (nodeId === def.entryNodeId) return def;
+  const node = def.nodes.find((candidate) => candidate.id === nodeId);
+  if (!node || !canSetEntry(node)) return def;
+  return { ...def, entryNodeId: nodeId };
+}
+
 function adaptKind(node: BotNode, kind: BotNodeKind): BotNode {
   const common = { id: node.id, name: node.name, kind, body: node.body };
   if (kind === 'action') return { ...common, body: '', options: [], action: node.action ?? 'handoff' };

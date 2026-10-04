@@ -30,7 +30,7 @@ function makeActions(): FlowActions {
     addNode: vi.fn(), removeNode: vi.fn(), updateNode: vi.fn(), moveNode: vi.fn(), addOption: vi.fn(), removeOption: vi.fn(),
     moveOption: vi.fn(), updateOption: vi.fn(), connect: vi.fn(),
     addPurchaseFlow: vi.fn(async () => {}), removePurchaseFlow: vi.fn(), setBlockCopy: vi.fn(),
-    addHandoffOption: vi.fn(), addCondition: vi.fn(), applyTemplate: vi.fn(async () => {}),
+    addHandoffOption: vi.fn(), addCondition: vi.fn(), setEntry: vi.fn(), applyTemplate: vi.fn(async () => {}),
   };
 }
 

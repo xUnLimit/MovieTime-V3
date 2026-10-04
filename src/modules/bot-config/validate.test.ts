@@ -94,13 +94,13 @@ describe('validateDefinition - nodos', () => {
     const eleven = Array.from({ length: 11 }, (_, i) => ({ id: `o${i}`, title: `T${i}`, next: 'netflix' }));
     const list = withNode(base, 'menu', { kind: 'list', listButtonLabel: 'Ver', options: eleven });
     expect(errors(list).map((i) => i.path)).toContain('nodes[menu].options');
-    expect(errors(withNode(base, 'menu', { kind: 'list', listButtonLabel: 'Ver', options: eleven.slice(0, 10) })).filter((i) => !i.message.includes('alcanzar'))).toEqual([]);
+    expect(errors(withNode(base, 'menu', { kind: 'list', listButtonLabel: 'Ver', options: eleven.slice(0, 10) })).filter((i) => !i.message.includes('Ningún botón lleva'))).toEqual([]);
   });
   it('lista: titulo 24, descripcion 72 y etiqueta del boton', () => {
     const base = defaultDefinition();
     const okOption = { id: 'a', title: 'x'.repeat(24), description: 'd'.repeat(72), next: 'netflix' };
     const ok = withNode(base, 'menu', { kind: 'list', listButtonLabel: 'b'.repeat(20), options: [okOption] });
-    expect(errors(ok).filter((i) => !i.message.includes('alcanzar'))).toEqual([]);
+    expect(errors(ok).filter((i) => !i.message.includes('Ningún botón lleva'))).toEqual([]);
     const bad = withNode(base, 'menu', {
       kind: 'list', listButtonLabel: 'b'.repeat(21),
       options: [{ ...okOption, title: 'x'.repeat(25), description: 'd'.repeat(73) }],

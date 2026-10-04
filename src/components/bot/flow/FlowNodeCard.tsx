@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/platform/utils';
 import type { BotIssue, BotNode } from '@/types/bot';
 import { KIND_LABELS, type FlowActions, type FlowTarget } from './flow-actions';
+import { EntryButton } from './EntryButton';
 import { IssueList } from './IssueList';
 import { BlockOptionRow } from './BlockOptionRow';
 import { OptionRow } from './OptionRow';
@@ -51,6 +52,7 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
         onClick={() => actions.removeNode(node.id)}><Trash2 /></Button>
     </div>
     <p className="line-clamp-3 px-3 pt-2 pb-2 text-xs whitespace-pre-wrap text-muted-foreground">{preview(node)}</p>
+    <EntryButton node={node} isEntry={isEntry} actions={actions} className="nodrag mx-3 mb-2" />
     <IssueList issues={issues} label={`Problemas de ${node.name}`} />
     {node.kind === 'buttons' || node.kind === 'list' ? <>
       <ul aria-label={`Opciones de ${node.name}`}>

@@ -16,7 +16,7 @@ function makeActions(): FlowActions {
     addNode: vi.fn(), removeNode: vi.fn(), updateNode: vi.fn(), moveNode: vi.fn(), addOption: vi.fn(), removeOption: vi.fn(),
     moveOption: vi.fn(), updateOption: vi.fn(), connect: vi.fn(),
     addPurchaseFlow: vi.fn(async () => {}), removePurchaseFlow: vi.fn(), setBlockCopy: vi.fn(),
-    addHandoffOption: vi.fn(), addCondition: vi.fn(), applyTemplate: vi.fn(async () => {}),
+    addHandoffOption: vi.fn(), addCondition: vi.fn(), setEntry: vi.fn(), applyTemplate: vi.fn(async () => {}),
   };
 }
 
@@ -60,7 +60,7 @@ describe('FlowCanvas con React Flow', () => {
     const def = addNode(defaultDefinition(), 'text', 'Suelto');
     const issues = validateDefinition({ ...def, nodes: def.nodes.map((node) => (node.id === 'menu' ? { ...node, body: '' } : node)) });
     render(<FlowCanvas def={def} issues={issues} selectedId="suelto" onSelect={vi.fn()} actions={makeActions()} />);
-    expect(within(screen.getByRole('list', { ...hidden, name: 'Problemas de Suelto' })).getByText(/no se puede alcanzar/)).toBeTruthy();
+    expect(within(screen.getByRole('list', { ...hidden, name: 'Problemas de Suelto' })).getByText(/Ningún botón lleva a/)).toBeTruthy();
     expect(screen.queryByRole('list', { ...hidden, name: 'Problemas de Menú principal' })).not.toBeNull();
   });
 

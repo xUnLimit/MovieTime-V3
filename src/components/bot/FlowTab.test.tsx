@@ -130,7 +130,7 @@ describe('FlowTab en lista (celular y vista alternativa)', () => {
     render(<Harness initial={broken} />);
     expect(screen.getByRole('status').textContent).toMatch(/impid(e|en) publicar/);
     const issues = screen.getByRole('list', { name: 'Problemas de Suelto' });
-    expect(within(issues).getByText(/no se puede alcanzar/)).toBeTruthy();
+    expect(within(issues).getByText(/Ningún botón lleva a/)).toBeTruthy();
     expect(within(issues).getByText(/Agrega al menos una opción/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: /^Suelto/ }));
     await user.type(screen.getByRole('textbox', { name: /^Texto/ }), 'Hola');

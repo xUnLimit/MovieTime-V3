@@ -10,6 +10,7 @@ import type { BotActionKey, BotDefinition, BotNode, BotNodeKind } from '@/types/
 import { KINDS, KIND_LABELS, type FlowActions } from './flow-actions';
 import { BlockEditor } from './BlockEditor';
 import { ConditionEditor } from './ConditionEditor';
+import { EntryButton } from './EntryButton';
 import { VariableHints } from './VariableHints';
 import { OptionRow, SELECT_CLASS } from './OptionRow';
 
@@ -29,8 +30,9 @@ export function NodeEditor({ def, node, actions, showOptions, extensionsEnabled 
   if (node.block) return <BlockEditor node={node} targets={targets} exits={targets.filter((item) => item.exit)} actions={actions} />;
   if (node.condition) return <ConditionEditor node={node} targets={targets} isEntry={node.id === def.entryNodeId} actions={actions} />;
   const noun = node.kind === 'list' ? 'fila' : 'botón';
-  return <Panel title={`Editar: ${node.name}`} actions={<Button variant="destructive" disabled={node.id === def.entryNodeId}
-    onClick={() => actions.removeNode(node.id)}><Trash2 />Eliminar nodo</Button>}>
+  return <Panel title={`Editar: ${node.name}`} actions={<>
+    <EntryButton node={node} isEntry={node.id === def.entryNodeId} actions={actions} />
+    <Button variant="destructive" disabled={node.id === def.entryNodeId} onClick={() => actions.removeNode(node.id)}><Trash2 />Eliminar nodo</Button></>}>
     <div className="space-y-3">
       <label className="block text-sm font-medium">Nombre
         <Input value={node.name} onChange={(event) => actions.updateNode(node.id, { name: event.target.value })} /></label>

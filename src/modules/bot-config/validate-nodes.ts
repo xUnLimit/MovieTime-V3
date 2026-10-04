@@ -102,12 +102,12 @@ export function validateNodes(def: BotDefinition, report: Report): void {
   for (const node of def.nodes) {
     if (reachable.has(node.id)) continue;
     const label = node.kind === 'action' && node.action && ACTION_KEYS.includes(node.action)
-      ? `La acción «${ACTION_CATALOG[node.action].label}» no se puede alcanzar desde el nodo de entrada.`
-      : `El nodo «${node.name}» no se puede alcanzar desde el nodo de entrada.`;
+      ? `Ningún botón lleva a la acción «${ACTION_CATALOG[node.action].label}». Conéctala a un botón o quítala.`
+      : `Ningún botón lleva a «${node.name}». Conéctalo o márcalo como entrada.`;
     report(`nodes[${node.id}]`, label);
   }
   for (const id of deadEndNodes(def, reachable)) {
-    report(`nodes[${id}]`, 'Este nodo forma un ciclo sin salida: el cliente no llega a un mensaje final ni a una acción.');
+    report(`nodes[${id}]`, 'Desde este nodo el cliente da vueltas sin terminar. Agrega un botón que lleve a un mensaje final o a una acción.');
   }
 }
 

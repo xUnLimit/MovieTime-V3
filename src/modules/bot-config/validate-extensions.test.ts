@@ -43,7 +43,7 @@ describe('condiciones', () => {
     expect(text(errors(run(patch({ options: [{ id: 'a', title: 'A', next: 'menu' }, { id: 'b', title: 'B', next: 'menu' }] }), true)))).toContain('exactamente dos salidas');
     expect(text(errors(run(patch({ kind: 'text', options: [] }), true)))).toContain('nodo de botones');
     expect(text(errors(run(patch({ block: { type: 'catalogo', copy: {} } }), true)))).toContain('bloque de compra no puede ser una condición');
-    expect(text(errors(run({ ...def, entryNodeId: id }, true)))).toContain('no puede ser una condición');
+    expect(text(errors(run({ ...def, entryNodeId: id }, true)))).toContain('Elige un destino distinto');
   });
 });
 

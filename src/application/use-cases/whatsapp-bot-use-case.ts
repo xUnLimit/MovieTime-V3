@@ -25,16 +25,26 @@ async function runAction(run: BotRun, action: BotActionKey | undefined, services
   return null;
 }
 
+type Delivery = { result: BotResult; shown: BotNode | null };
+
 // Sends a node; an action node runs its action instead. The prefix lets the "option no
 // longer exists" notice and the menu travel in one reply (each inbound message gets one).
-async function deliverNode(run: BotRun, start: BotNode, services: BotService[], prefix?: string): Promise<BotResult> {
-  const node = await followConditions(run, start, services);
-  if (!node) return 'ignored';
-  if (node.kind === 'action') return (await runAction(run, node.action, services)) ?? 'ignored';
+// Conditions are resolved on the server first: `shown` is the node the customer really received (never a
+// condition). `fromEntry` marks the start of the flow, where a badly wired condition output falls back to the other one.
+async function showNode(run: BotRun, start: BotNode, services: BotService[], prefix?: string, fromEntry = false): Promise<Delivery> {
+  const node = await followConditions(run, start, services, fromEntry);
+  if (!node) return { result: 'ignored', shown: null };
+  if (node.kind === 'action') return { result: (await runAction(run, node.action, services)) ?? 'ignored', shown: node };
   const rendered = await nodeWithValues(run, node);
-  const shown = prefix ? { ...rendered, body: `${prefix}\n\n${rendered.body}` } : rendered;
-  await reply(run.deps, run.message, buildNodeMessage(shown));
-  return 'node';
+  const body = prefix ? { ...rendered, body: `${prefix}
+
+${rendered.body}` } : rendered;
+  await reply(run.deps, run.message, buildNodeMessage(body));
+  return { result: 'node', shown: node };
+}
+
+async function deliverNode(run: BotRun, start: BotNode, services: BotService[], prefix?: string, fromEntry = false): Promise<BotResult> {
+  return (await showNode(run, start, services, prefix, fromEntry)).result;
 }
 
 async function optionUnavailable(run: BotRun, action: Extract<BotAction, { kind: 'option' }>, services: BotService[]): Promise<BotResult> {
@@ -46,7 +56,7 @@ async function optionUnavailable(run: BotRun, action: Extract<BotAction, { kind:
     await sayMessage(run, 'option_unavailable');
     return 'option_unavailable';
   }
-  await deliverNode(run, entry, services, notice);
+  await deliverNode(run, entry, services, notice, true);
   return 'option_unavailable';
 }
 
@@ -63,7 +73,7 @@ async function handleLegacy(run: BotRun, target: LegacyTarget, services: BotServ
   if (target === 'entry') {
     const { definition } = run.deps;
     const entry = definition.nodes.find((node) => node.id === definition.entryNodeId);
-    return entry ? deliverNode(run, entry, services) : 'ignored';
+    return entry ? deliverNode(run, entry, services, undefined, true) : 'ignored';
   }
   return (await runAction(run, LEGACY_ACTIONS[target], services)) ?? 'ignored';
 }
@@ -83,8 +93,10 @@ async function handleAction(run: BotRun, action: BotAction, services: BotService
 async function offerMenu(run: BotRun, text: string | null, services: BotService[]): Promise<BotResult> {
   const { deps, message, now } = run;
   const { definition } = deps;
-  // Without a Netflix account the only menu option left would be support.
-  if (services.length === 0) return 'ignored';
+  const entry = definition.nodes.find((node) => node.id === definition.entryNodeId);
+  // Without a Netflix account the only menu option left would be support, unless the flow starts with a condition
+  // that sends new customers down their own route.
+  if (services.length === 0 && !entry?.condition) return 'ignored';
   const quietMs = definition.params.operatorQuietMinutes * MINUTE_MS;
   const [lastActivityAt, operatorRepliedRecently] = await Promise.all([
     deps.store.lastActivityAt(message.fromWaId, message.waMessageId),
@@ -95,11 +107,10 @@ async function offerMenu(run: BotRun, text: string | null, services: BotService[
   if (!shouldOfferMenu({
     text, lastActivityAt, operatorRepliedRecently, now, params: definition.params, keywords: definition.keywords,
   })) return 'ignored';
-  const entry = definition.nodes.find((node) => node.id === definition.entryNodeId);
   if (!entry) return 'ignored';
-  const result = await deliverNode(run, entry, services);
-  if (result === 'node') {
-    await trackEvent(run, 'menu_shown', { nodeId: entry.id });
+  const { result, shown } = await showNode(run, entry, services, undefined, true);
+  if (result === 'node' && shown) {
+    await trackEvent(run, 'menu_shown', { nodeId: shown.id });
     return 'menu';
   }
   return result;

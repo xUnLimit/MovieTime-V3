@@ -1,6 +1,6 @@
 import type { BotActionKey, BotDefinition, BotNode } from '@/types/bot';
 import { VARIABLE_CATALOG } from './catalog';
-import { CONDITION_CATALOG, conditionOption, exampleNodeValues, renderNodeBody, type ConditionFacts } from './extensions';
+import { CONDITION_CATALOG, MAX_CONDITION_HOPS, conditionOption, exampleNodeValues, renderNodeBody, type ConditionFacts } from './extensions';
 import { buildNodeMessage, resolveOption } from './payload';
 import { renderTemplate } from './render';
 
@@ -12,7 +12,6 @@ type SimulationTurn = {
 /** Datos de ejemplo editables: que respondera cada condicion y que valor tiene cada dato del pedido. Nada sale del navegador. */
 export type SimulationSample = { facts: ConditionFacts; values: Record<string, string> };
 export type SimulationState = { turns: SimulationTurn[]; currentNodeId: string | null; finished: boolean; sample?: SimulationSample };
-const MAX_CONDITION_HOPS = 5;
 
 export function defaultSample(): SimulationSample {
   return { facts: { customer_has_services: true, catalog_has_stock: true }, values: exampleNodeValues() };
@@ -43,15 +42,24 @@ function actionTurns(def: BotDefinition, action: BotActionKey | undefined): Simu
   return [warning('este nodo de acción no tiene una acción válida.')];
 }
 
-function enterNode(def: BotDefinition, node: BotNode, turns: SimulationTurn[], sample: SimulationSample, hops = 0): SimulationState {
+/** Como el servidor al inicio del recorrido: si la salida que toca no lleva a un nodo existente, usa la otra. */
+function conditionTarget(def: BotDefinition, node: BotNode, answer: boolean, lenient: boolean) {
+  for (const candidate of lenient ? [answer, !answer] : [answer]) {
+    const option = conditionOption(node, candidate);
+    const target = option ? def.nodes.find((item) => item.id === option.next) : undefined;
+    if (target) return target;
+  }
+  return undefined;
+}
+
+function enterNode(def: BotDefinition, node: BotNode, turns: SimulationTurn[], sample: SimulationSample, hops = 0, lenient = false): SimulationState {
   if (node.condition) {
     const answer = sample.facts[node.condition.type];
     const label = CONDITION_CATALOG[node.condition.type];
     const note = warning(`condición «${label.label}»: ${answer ? label.yes : label.no}.`);
-    const option = hops < MAX_CONDITION_HOPS ? conditionOption(node, answer) : undefined;
-    const target = option ? def.nodes.find((candidate) => candidate.id === option.next) : undefined;
+    const target = hops < MAX_CONDITION_HOPS ? conditionTarget(def, node, answer, lenient) : undefined;
     if (!target) return { turns: [...turns, note, warning('la condición no tiene un destino válido y el cliente no podría continuar.')], currentNodeId: node.id, finished: true, sample };
-    return enterNode(def, target, [...turns, note], sample, hops + 1);
+    return enterNode(def, target, [...turns, note], sample, hops + 1, lenient);
   }
   if (node.kind === 'action') {
     return { turns: [...turns, ...actionTurns(def, node.action)], currentNodeId: node.id, finished: true, sample };
@@ -73,7 +81,7 @@ function enterEntry(def: BotDefinition, turns: SimulationTurn[], sample: Simulat
   if (!entry) {
     return { turns: [...turns, warning(`el nodo de entrada «${def.entryNodeId}» no existe.`)], currentNodeId: null, finished: true, sample };
   }
-  return enterNode(def, entry, turns, sample);
+  return enterNode(def, entry, turns, sample, 0, true);
 }
 
 export function startSimulation(def: BotDefinition, sample: SimulationSample = defaultSample()): SimulationState {

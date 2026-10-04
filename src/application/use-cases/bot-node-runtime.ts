@@ -1,11 +1,10 @@
-import { conditionOption, nodeVariablesIn, renderNodeBody } from '@/modules/bot-config';
+import { MAX_CONDITION_HOPS, conditionOption, nodeVariablesIn, renderNodeBody } from '@/modules/bot-config';
 import { createLogger } from '@/platform/observability/logger';
 import type { BotService } from '@/modules/messaging/bot-store';
 import type { BotNode } from '@/types/bot';
 import { trackEvent, type BotRun } from './bot-reply';
 
 const log = createLogger('WhatsAppBotNodes');
-const MAX_CONDITION_HOPS = 5;
 
 // Los datos se piden solo si el texto los usa; un fallo de lectura muestra «—» y nunca impide responder.
 async function orderValues(run: BotRun): Promise<Record<string, string>> {
@@ -34,16 +33,29 @@ async function conditionAnswer(run: BotRun, node: BotNode, services: BotService[
 }
 
 /**
+ * Destino de una condicion. Con `lenient` (solo el inicio del recorrido), si la salida que toca no lleva a un nodo
+ * existente se usa la otra, para que el cliente no se quede sin respuesta por una salida mal conectada.
+ */
+function conditionTarget(run: BotRun, node: BotNode, answer: boolean, lenient: boolean) {
+  for (const candidate of lenient ? [answer, !answer] : [answer]) {
+    const option = conditionOption(node, candidate);
+    const target = option ? run.deps.definition.nodes.find((item) => item.id === option.next) : undefined;
+    if (option && target) return { option, target };
+  }
+  return undefined;
+}
+
+/**
  * Sigue las condiciones del recorrido hasta un nodo que si se muestra. El servidor elige la salida con datos que ya
  * existen; una condicion sin destino valido, o demasiadas seguidas, devuelve null y el cliente no recibe nada nuevo.
  */
-export async function followConditions(run: BotRun, start: BotNode, services: BotService[]): Promise<BotNode | null> {
+export async function followConditions(run: BotRun, start: BotNode, services: BotService[], lenient = false): Promise<BotNode | null> {
   let node = start;
   for (let hop = 0; node.condition; hop += 1) {
     const answer = await conditionAnswer(run, node, services);
-    const option = hop < MAX_CONDITION_HOPS ? conditionOption(node, answer) : undefined;
-    const target = option ? run.deps.definition.nodes.find((candidate) => candidate.id === option.next) : undefined;
-    if (!option || !target) return null;
+    const chosen = hop < MAX_CONDITION_HOPS ? conditionTarget(run, node, answer, lenient) : undefined;
+    if (!chosen) return null;
+    const { option, target } = chosen;
     await trackEvent(run, 'option_selected', { nodeId: node.id, optionId: option.id, detail: { condicion: node.condition.type, respuesta: answer, destino: target.id } });
     node = target;
   }

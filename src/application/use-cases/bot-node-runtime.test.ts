@@ -4,7 +4,7 @@ vi.mock('@/platform/observability/logger', () => ({
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
 }));
 
-import { addConditionNode, connectOption, defaultDefinition } from '@/modules/bot-config';
+import { addConditionNode, addNode, connectOption, defaultDefinition, setEntryNode } from '@/modules/bot-config';
 import type { BotService } from '@/modules/messaging/bot-store';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { BotConditionType, BotDefinition } from '@/types/bot';
@@ -126,5 +126,75 @@ describe('datos del pedido en los textos publicados', () => {
     await expect(handleBotMessage(tap('BOT:menu:codigo'), deps)).resolves.toBe('node');
     expect(orderValues).not.toHaveBeenCalled();
     expect(sent(send).body).toBe(defaultDefinition().nodes[1].body);
+  });
+});
+
+// entrada = condicion de cliente existente: si -> menu; no -> bienvenida (texto)
+function entryFlow(): { def: BotDefinition; conditionId: string } {
+  let def = addNode(defaultDefinition(), 'text', 'Bienvenida');
+  def = addConditionNode(def, 'customer_has_services');
+  const conditionId = def.nodes.at(-1)!.id;
+  def = connectOption(connectOption(def, conditionId, 'si', 'menu'), conditionId, 'no', 'bienvenida');
+  return { def: setEntryNode(def, conditionId), conditionId };
+}
+function written(body = 'hola'): InboundMessage {
+  return { ...tap('x'), messageType: 'text', textBody: body, payload: {} };
+}
+
+describe('condicion como entrada del recorrido', () => {
+  it('cliente con servicios: muestra el menu y registra el nodo mostrado, no la condicion', async () => {
+    const { def, conditionId } = entryFlow();
+    const { deps, send, record } = setup(def);
+    await expect(handleBotMessage(written(), deps)).resolves.toBe('menu');
+    expect(sent(send)).toMatchObject({ kind: 'buttons', body: defaultDefinition().nodes[0].body });
+    expect(record).toHaveBeenCalledWith(expect.objectContaining({ type: 'menu_shown', nodeId: 'menu' }));
+    expect(record).toHaveBeenCalledWith(expect.objectContaining({ type: 'option_selected', nodeId: conditionId, optionId: 'si' }));
+  });
+
+  it('cliente sin servicios: sigue la ruta nueva en lugar de quedarse mudo', async () => {
+    const { def } = entryFlow();
+    const { deps, send } = setup(def, {}, []);
+    await expect(handleBotMessage(written(), deps)).resolves.toBe('menu');
+    expect(sent(send).kind).toBe('text');
+  });
+
+  it('sin condicion de entrada, un cliente sin servicios sigue sin recibir el menu', async () => {
+    const { deps, send } = setup(defaultDefinition(), {}, []);
+    await expect(handleBotMessage(written(), deps)).resolves.toBe('ignored');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('volver al menu y una opcion inexistente tambien resuelven la condicion', async () => {
+    const { def } = entryFlow();
+    const legacy = setup(def, {}, []);
+    await expect(handleBotMessage(tap('BOT:NETFLIX'), legacy.deps)).resolves.toBe('node');
+    expect(sent(legacy.send).kind).toBe('text');
+    const stale = setup(def);
+    await expect(handleBotMessage(tap('BOT:menu:ya_no_existe'), stale.deps)).resolves.toBe('option_unavailable');
+    expect(sent(stale.send)).toMatchObject({ kind: 'buttons', body: expect.stringContaining(defaultDefinition().nodes[0].body) });
+  });
+
+  it('si la salida que toca esta rota usa la otra y el cliente recibe algo', async () => {
+    const { def, conditionId } = entryFlow();
+    const broken = { ...def, nodes: def.nodes.map((node) => (node.id === conditionId ? { ...node, options: node.options.filter((option) => option.id === 'no') } : node)) };
+    const { deps, send } = setup(broken);
+    await expect(handleBotMessage(written(), deps)).resolves.toBe('menu');
+    expect(sent(send).kind).toBe('text');
+  });
+
+  it('sin ninguna salida valida no envia nada ni lanza errores', async () => {
+    const { def, conditionId } = entryFlow();
+    const dead = { ...def, nodes: def.nodes.map((node) => (node.id === conditionId ? { ...node, options: [] } : node)) };
+    const { deps, send } = setup(dead);
+    await expect(handleBotMessage(written(), deps)).resolves.toBe('ignored');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('una definicion ya publicada con condicion de entrada responde aunque la bandera este apagada', async () => {
+    // El runtime no consulta la bandera: la definicion publicada se resuelve siempre.
+    const { def } = entryFlow();
+    const { deps, send } = setup(def);
+    await expect(handleBotMessage(written(), deps)).resolves.toBe('menu');
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });

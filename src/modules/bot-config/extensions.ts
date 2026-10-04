@@ -21,6 +21,8 @@ export const CONDITION_CATALOG: Record<BotConditionType, { label: string; descri
 };
 export const CONDITION_TYPES = Object.keys(CONDITION_CATALOG) as BotConditionType[];
 export const CONDITION_OPTION_IDS = { yes: 'si', no: 'no' } as const;
+/** Condiciones seguidas que el servidor resuelve antes de mostrar un nodo; mas alla no se envia nada. */
+export const MAX_CONDITION_HOPS = 5;
 export type ConditionFacts = Record<BotConditionType, boolean>;
 
 /** Opcion que corresponde a la respuesta de la condicion (`si` / `no`), si el nodo la tiene. */

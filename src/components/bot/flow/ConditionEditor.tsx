@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { BotConditionType, BotNode } from '@/types/bot';
 import { BlockOptionRow } from './BlockOptionRow';
+import { EntryButton } from './EntryButton';
 import type { FlowActions, FlowTarget } from './flow-actions';
 import { SELECT_CLASS } from './OptionRow';
 
@@ -18,8 +19,18 @@ export function ConditionEditor({ node, targets, isEntry, actions }: ConditionEd
   const condition = node.condition;
   if (!condition) return null;
   return <Panel title={`Condición: ${node.name}`} description={CONDITION_CATALOG[condition.type].description}
-    actions={<Button variant="destructive" disabled={isEntry} onClick={() => actions.removeNode(node.id)}><Trash2 />Eliminar nodo</Button>}>
+    actions={<>
+      <EntryButton node={node} isEntry={isEntry} actions={actions} />
+      <Button variant="destructive" disabled={isEntry} onClick={() => actions.removeNode(node.id)}><Trash2 />Eliminar nodo</Button></>}>
     <div className="space-y-3">
+      <div className="space-y-1 rounded-md border bg-muted p-3 text-sm" aria-label="Cómo funciona una condición" role="note">
+        {condition.type === 'customer_has_services'
+          ? <p className="font-medium">Existente = el cliente tiene servicios activos. Nuevo = no los tiene.</p>
+          : <p className="font-medium">Con cupo = hay perfiles libres en el catálogo. Sin cupo = no los hay.</p>}
+        <p className="text-muted-foreground">El cliente no ve este nodo: el sistema elige la salida y le muestra directamente el siguiente paso. {isEntry
+          ? 'Esta condición es la entrada: define con qué paso empieza cada cliente.'
+          : 'Para que sea el primer paso, usa «Usar como entrada».'}</p>
+      </div>
       <label className="block text-sm font-medium">Nombre
         <Input value={node.name} onChange={(event) => actions.updateNode(node.id, { name: event.target.value })} /></label>
       <label className="block text-sm font-medium">Condición

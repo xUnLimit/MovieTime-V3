@@ -52,7 +52,7 @@ describe('pasar a una persona desde cualquier nodo', () => {
     expect(screen.getByRole('textbox', { name: 'Título del botón 3 de Tipo de código de Netflix' })).toHaveProperty('value', 'Hablar con alguien');
     expect(screen.getByRole('combobox', { name: 'Destino del botón 3 de Tipo de código de Netflix' })).toHaveProperty('value', 'soporte');
     expect(screen.getByRole('button', { name: 'Agregar salida a una persona' })).toHaveProperty('disabled', true);
-    expect(screen.queryByText(/no se puede alcanzar/)).toBeNull();
+    expect(screen.queryByText(/Ningún botón lleva a/)).toBeNull();
   });
 
   it('no se ofrece en nodos de texto ni de accion', async () => {

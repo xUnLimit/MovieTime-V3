@@ -40,7 +40,7 @@ describe('issuesByNode / flowWideIssues', () => {
     def = updateNode(def, 'menu', { body: '' });
     const issues = validateDefinition(def);
     const grouped = issuesByNode(issues);
-    expect(grouped.suelto?.some((i) => i.message.includes('no se puede alcanzar'))).toBe(true);
+    expect(grouped.suelto?.some((i) => i.message.includes('Ningún botón lleva'))).toBe(true);
     expect(grouped.menu?.some((i) => i.path.endsWith('.body'))).toBe(true);
   });
   it('separa los problemas de todo el flujo', () => {

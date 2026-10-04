@@ -31,6 +31,14 @@ describe('useFlowActions', () => {
     expect(view.select).toHaveBeenLastCalledWith(null);
   });
 
+  it('sets the entry node through the pure model', () => {
+    const view = setup(defaultDefinition());
+    act(() => view.actions().setEntry('netflix'));
+    expect(view.current()?.entryNodeId).toBe('netflix');
+    act(() => view.actions().setEntry('soporte'));
+    expect(view.current()?.entryNodeId).toBe('netflix');
+  });
+
   it('does nothing when there is no draft or the node limit is reached', () => {
     const view = setup(null);
     act(() => view.actions().addNode('text'));

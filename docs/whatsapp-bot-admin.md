@@ -75,7 +75,7 @@ Parametros (`BotParams`) y palabras clave: ver rangos en `src/types/bot.ts`.
 
 Validacion (`validateDefinition`, devuelve `BotIssue[]`): ids con formato y unicos, `entryNodeId` existe, toda
 opcion apunta a un nodo existente, limites de WhatsApp por tipo, nodos `action` con accion valida y sin opciones,
-acciones alcanzables, marcadores permitidos y obligatorios, sin nodos inalcanzables desde la entrada (error), sin ciclos sin salida
+acciones alcanzables, marcadores permitidos y obligatorios, sin nodos inalcanzables desde la entrada (error; mensaje: «Ningún botón lleva a ...»), sin ciclos sin salida
 (error; solo cuenta un ciclo inescapable: si algun camino llega a un nodo `text` o `action` no hay problema), parametros en rango, palabras clave sin duplicados. Cualquier `error` bloquea publicar.
 
 ## 5. Runtime (webhook)
@@ -298,9 +298,20 @@ anterior ignora (`z.object` no estricto).
     La version anterior lo muestra como un menu de dos botones; la actual lo resuelve en el servidor sin mostrarlo. Tipos
     cerrados: `customer_has_services` (existente: al menos un servicio de Netflix activo, dato que el bot ya carga) y
     `catalog_has_stock` (algun plan del catalogo con perfiles libres, `listCatalogoServerUseCase`; si no se puede leer se toma
-    «sin cupo»). Reglas: no puede ser el nodo de entrada ni un bloque, no cambia de tipo de nodo, sus salidas no se agregan ni se
-    renombran, hasta 5 condiciones seguidas (despues no se envia nada nuevo). Cada decision queda en los eventos del bot
+    «sin cupo»). Reglas: no puede ser un bloque, no cambia de tipo de nodo, sus salidas no se agregan ni se
+    renombran, hasta 5 condiciones seguidas (`MAX_CONDITION_HOPS`; despues no se envia nada nuevo). Cada decision queda en los eventos del bot
     (`option_selected` con `condicion`, `respuesta`, `destino`).
+  - **Condicion como entrada (opt-in; la plantilla base no cambia).** «Usar como entrada» (`setEntryNode`, solo nodos que existen y que no
+    son bloques de compra ni acciones; la entrada sigue sin poder borrarse) permite que el primer paso sea una condicion, p. ej.
+    «¿Cliente existente?»: Existente -> menu de clientes, Nuevo -> bienvenida. El cliente nunca ve la condicion: el servidor elige la
+    salida y le muestra el nodo destino. Validacion (errores bloqueantes): las dos salidas deben llevar a destinos distintos y
+    existentes (en una condicion que no es la entrada sigue siendo solo aviso), ninguna cadena de condiciones alcanzable desde la
+    entrada puede volver sobre si misma ni pasar de 5 condiciones seguidas. Runtime (`followConditions` en todos los puntos que
+    parten de la entrada: palabra clave, reinicio por inactividad, «volver al menu», opcion inexistente): un cliente sin servicios
+    ya no se ignora si la entrada es una condicion, y el evento `menu_shown` registra el nodo realmente mostrado (no hay estado de
+    conversacion: los botones llevan el id del nodo mostrado). Si la salida que toca no lleva a un nodo existente se usa la otra;
+    si ninguna es valida (o la cadena pasa del limite) no se envia nada, sin errores; la validacion lo impide al publicar. El runtime
+    no consulta la bandera: una version ya publicada con condicion de entrada sigue funcionando aunque se apague.
   - Datos del pedido: lista blanca cerrada en los textos de nodos (no en titulos ni descripciones): `{{pedido_total}}`,
     `{{pedido_estado}}`, `{{pedido_pendiente}}`, `{{pedido_servicios}}`, `{{pedido_vence}}`. Se resuelven en el servidor desde el
     pedido de la conversacion (`getPedidoServerUseCase`, que valida que sea del mismo numero) y nunca incluyen ids, nombres,

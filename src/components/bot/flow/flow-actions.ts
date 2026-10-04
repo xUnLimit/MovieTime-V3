@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { fetchCommerceCopyUseCase } from '@/application/use-cases/commerce-copy-use-cases';
 import {
   addConditionNode, addHandoffOption, addNode, addOption, addPurchaseFlow, applyFlowTemplate, connectOption, moveNode, moveOption, removeNode, removeOption, removePurchaseFlow,
-  setBlockCopy, updateNode, updateOption,
+  setBlockCopy, setEntryNode, updateNode, updateOption,
 } from '@/modules/bot-config';
 import type { FlowTemplateId } from '@/modules/bot-config';
 import type { BotAdminApi, BotConditionType, BotDefinition, BotNode, BotNodeKind, BotOption } from '@/types/bot';
@@ -35,6 +35,8 @@ export type FlowActions = {
   /** Salida «Hablar con alguien» desde cualquier nodo de botones o lista hacia el pase a una persona. */
   addHandoffOption: (nodeId: string) => void;
   addCondition: (type: BotConditionType) => void;
+  /** Marca el nodo como primer paso del recorrido (puede ser una condición). */
+  setEntry: (nodeId: string) => void;
   /** Reemplaza el borrador por una plantilla; la de compras siembra los textos editados hoy. */
   applyTemplate: (id: FlowTemplateId) => Promise<void>;
 };
@@ -80,6 +82,7 @@ export function useFlowActions(api: BotAdminApi, select: (nodeId: string | null)
         edit(() => next);
         select(next.nodes[next.nodes.length - 1].id);
       },
+      setEntry: (nodeId) => edit((def) => setEntryNode(def, nodeId)),
       applyTemplate: async (id) => {
         let overrides: Record<string, string> = {};
         if (id === 'base_compras') {
