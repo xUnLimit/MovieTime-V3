@@ -58,7 +58,7 @@ describe.skipIf(requireIntegrationEnv()===null)('integracion: compra guiada, cor
     const confirmed=await inbound('confirmar');expect(confirmed.stage).toBe('payment');if(!confirmed.orderId)throw new Error('Missing confirmed order');
     const orderId=confirmed.orderId;
     expect(fixture.sql(`SELECT count(*) FROM public.pedidos WHERE contact_id='${fixture.waId}';`)).toBe('1');
-    const waiting=await inbound(`pago ${fixture.code}`);expect(waiting.lastReply).toContain('Faltante: 10.00');
+    const waiting=await inbound(`pago ${fixture.code}`);expect(waiting.lastReply).toContain('Todavía no veo tu pago');
     expect((await getPedidoServerUseCase(fixture.waId,orderId)).paymentState).toBe('pendiente');
     expect(fixture.sql(`SELECT count(*) FROM public.ventas WHERE servicio_id='${fixture.service}';`)).toBe('0');
     expect(fixture.sql(`SELECT count(*) FROM public.pedido_pagos WHERE pedido_id='${orderId}';`)).toBe('0');
