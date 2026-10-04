@@ -2,10 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const forecast = vi.hoisted(() => ({
+  options: [] as unknown[],
   state: { meses: [] as unknown[], isLoading: false, error: null as unknown, retry: vi.fn() },
 }));
 
-vi.mock('@/hooks/use-pronostico-financiero', () => ({ usePronosticoFinanciero: () => forecast.state }));
+vi.mock('@/hooks/use-pronostico-financiero', () => ({ usePronosticoFinanciero: (options: unknown) => { forecast.options.push(options); return forecast.state; } }));
 
 import { PronosticoFinanciero } from './PronosticoFinanciero';
 
@@ -14,6 +15,13 @@ const mes = (n: number, over: Record<string, unknown> = {}) => ({
 });
 
 describe('PronosticoFinanciero', () => {
+  it('pide siempre los próximos 12 meses, contando el actual', () => {
+    forecast.options.length = 0;
+    render(<PronosticoFinanciero />);
+    expect(forecast.options[0]).toEqual({ monthsCount: 12 });
+    expect(screen.getByText('Proyección de los próximos 12 meses, desde el mes actual.')).toBeTruthy();
+  });
+
   beforeEach(() => {
     forecast.state = { meses: [], isLoading: false, error: null, retry: vi.fn() };
   });

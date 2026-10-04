@@ -129,6 +129,17 @@ beforeEach(() => {
 });
 
 describe('ChatWorkspace', () => {
+  it('no repite claves entre sus hijos al abrir un chat', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      renderWorkspace();
+      const duplicated = errors.mock.calls.filter(([message]) => String(message).includes('same key'));
+      expect(duplicated).toEqual([]);
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
   it('retries and forwards media using the original media ID', async () => {
     const original: WhatsAppChatMessage = { id: 'media-message', waMessageId: 'wa-media', direction: 'outbound', kind: 'document', textBody: 'Archivo', templateName: null, occurredAt: NOW.toISOString(), status: 'failed', mediaId: 'media-123', mediaMimeType: 'application/pdf', mediaFilename: 'nota.pdf', contextWaMessageId: null, reactionEmoji: null, payload: {} };
     state.messages = [original];

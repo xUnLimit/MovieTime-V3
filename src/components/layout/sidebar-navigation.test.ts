@@ -45,13 +45,14 @@ describe('getSidebarNavigationSections', () => {
     expect(items.filter((i) => i.href === '/automatizaciones')).toHaveLength(1);
     expect(items.map((i) => i.href)).not.toContain('/pagos-yappy');
     expect(items.map((i) => i.href)).not.toContain('/editor-mensajes');
-    expect(findNavItem('/pagos-yappy')?.name).toBe('Ventas');
+    expect(findNavItem('/pagos-yappy')?.name).toBe('Automatizaciones');
   });
   it('resalta el destino consolidado al abrir un enlace anterior', () => {
     expect(isNavItemActive('/bot', '/automatizaciones')).toBe(true);
     expect(isNavItemActive('/bot/flujo', '/automatizaciones')).toBe(true);
     expect(isNavItemActive('/editor-mensajes', '/automatizaciones')).toBe(true);
-    expect(isNavItemActive('/pagos-yappy', '/ventas')).toBe(true);
+    expect(isNavItemActive('/pagos-yappy', '/automatizaciones')).toBe(true);
+    expect(isNavItemActive('/automatizaciones/pedidos', '/ventas')).toBe(false);
     expect(isNavItemActive('/bot-archivo', '/automatizaciones')).toBe(false);
   });
 });

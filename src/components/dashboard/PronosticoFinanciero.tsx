@@ -10,6 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { usePronosticoFinanciero, type MesPronostico } from '@/hooks/use-pronostico-financiero';
 
+/** El pronóstico siempre cubre los próximos 12 meses, contando el mes actual. */
+const FORECAST_MONTHS = 12;
+
 function MesRowSkeleton() {
   return (
     <div className="rounded-lg border px-3 py-1.5">
@@ -55,7 +58,7 @@ function MesRow({ mes }: { mes: MesPronostico }) {
 }
 
 export function PronosticoFinanciero() {
-  const { meses, isLoading, error, retry } = usePronosticoFinanciero({ endAtCurrentYear: true });
+  const { meses, isLoading, error, retry } = usePronosticoFinanciero({ monthsCount: FORECAST_MONTHS });
   const [paginaActual, setPaginaActual] = useState(0);
   const [animacionFase, setAnimacionFase] = useState<'idle' | 'exit' | 'enter'>('idle');
   const [animacionDireccion, setAnimacionDireccion] = useState<1 | -1>(1);
@@ -130,7 +133,7 @@ export function PronosticoFinanciero() {
           </Popover>
         </span>
       }
-      description={'Proyecciones para los próximos meses.'}
+      description={'Proyección de los próximos 12 meses, desde el mes actual.'}
       className="min-h-0 flex-1"
       contentClassName="space-y-1.5 overflow-y-auto"
       actions={

@@ -11,7 +11,7 @@ import { ConfirmDeleteVentaDialog } from '@/components/shared/ConfirmDeleteVenta
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
-import { VentasNavigation } from '@/components/ventas/VentasNavigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
@@ -121,21 +121,32 @@ function VentasPageContent() {
         <PageHeader
           title="Ventas"
           actions={
-            <Button asChild className="whitespace-nowrap">
-              <Link prefetch={false} href="/ventas/crear">
-                <Plus />
-                Nueva Venta
-              </Link>
-            </Button>
+            <>
+              <Button asChild className="whitespace-nowrap">
+                <Link prefetch={false} href="/ventas/crear">
+                  <Plus />
+                  Nueva Venta
+                </Link>
+              </Button>
+            </>
           }
         />
 
         <VentasMetrics />
 
-        <VentasNavigation />
+        <Tabs value={activeTab} onValueChange={(value) => {
+          if (value !== 'todas' && value !== 'activas' && value !== 'inactivas') return;
+          setActiveTab(value);
+          setSearchQuery('');
+          setSelectedCategoriaId('todas');
+        }}>
+          <TabsList aria-label="Estado de las ventas">
+            <TabsTrigger value="todas">Todas</TabsTrigger>
+            <TabsTrigger value="activas">Activas</TabsTrigger>
+            <TabsTrigger value="inactivas">Inactivas</TabsTrigger>
+          </TabsList>
+          <TabsContent value={activeTab} className="space-y-4">
           <VentasTable
-            estado={activeTab}
-            onEstadoChange={setActiveTab}
             ventas={ventasPaginadas}
             isLoading={isLoadingPage}
             title={tituloTab}
@@ -157,6 +168,8 @@ function VentasPageContent() {
             pageSize={pageSize}
             onPageSizeChange={setPageSize}
           />
+          </TabsContent>
+        </Tabs>
     </div>
     <ConfirmDeleteVentaDialog
         open={deleteDialogOpen}

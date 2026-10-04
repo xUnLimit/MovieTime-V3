@@ -7,6 +7,7 @@ import { CheckCircle2, Clock, Inbox, ListFilter, Mail, RefreshCw, XCircle } from
 import { DataTable, defineDataTableColumns } from '@/components/shared/DataTable';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { MetricGrid } from '@/components/shared/MetricGrid';
+import { AutomationNavigation } from '@/components/bot/AutomationNavigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { TableCard } from '@/components/shared/TableCard';
@@ -197,6 +198,7 @@ export function YappyPaymentsView() {
     <div className="space-y-4">
       <PageHeader
         title="Pagos Yappy detectados"
+        description="Revisa los pagos recibidos por correo y regístralos en la venta que corresponde."
         actions={
           <Button disabled={sync.isPending} onClick={() => sync.mutate()}>
             <RefreshCw className={cn(sync.isPending && 'animate-spin')} />
@@ -204,6 +206,7 @@ export function YappyPaymentsView() {
           </Button>
         }
       />
+      <AutomationNavigation />
       <MetricGrid>
         <MetricCard title="Detectados" value={all.length} icon={Inbox} tone="info" loading={payments.isLoading} />
         <MetricCard title="Por revisar" value={pending} icon={Clock} tone="warning" loading={payments.isLoading} />

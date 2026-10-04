@@ -33,13 +33,68 @@ function dependencies() {
 beforeEach(() => { counter = 0; });
 
 describe('guided commerce coordinator', () => {
+  it('primero ofrece las plataformas con cupo y solo después los planes de la elegida', async () => {
+    const NETFLIX = '123e4567-e89b-42d3-a456-426614174010';
+    const DISNEY = '123e4567-e89b-42d3-a456-426614174011';
+    const plans = [
+      { ...plan, planId: ID, planNombre: 'Mensual', categoriaId: NETFLIX, categoriaNombre: 'Netflix', precio: 2, perfilesLibres: 0 },
+      { ...plan, planId: OTHER, planNombre: 'Mensual', categoriaId: DISNEY, categoriaNombre: 'Disney+', precio: 4, perfilesLibres: 3 },
+      { ...plan, planId: THIRD, planNombre: 'Trimestral', categoriaId: DISNEY, categoriaNombre: 'Disney+', precio: 10, cicloPago: 'trimestral', perfilesLibres: 1 },
+      { ...plan, planId: '123e4567-e89b-42d3-a456-426614174099', planNombre: 'Mensual', categoriaId: DISNEY, categoriaNombre: 'Disney+', precio: 6, perfilesLibres: 0 },
+    ];
+    const deps = dependencies(); deps.catalogue.mockResolvedValue(plans);
+    const platforms = await handleCommerceConversation(message('catalogo'), {}, deps);
+    const list = platforms!.payload as { body: string; rows: { id: string; title: string; description: string }[] };
+    expect(list.body).toContain('plataforma');
+    expect(list.rows.map(row => row.title)).toEqual(['Disney+', 'Agotados']);
+    expect(list.rows[0].description).toBe('2 planes · desde USD 4.00');
+    expect(JSON.stringify(list)).not.toContain('Netflix');
+    const disney = await handleCommerceConversation(message(`cat:${DISNEY}`, true), platforms!.context, deps);
+    const planRows = (disney!.payload as { rows: { id: string; title: string; description: string }[] }).rows;
+    expect(planRows.map(row => row.title)).toEqual(['Mensual', 'Trimestral', 'Otras plataformas']);
+    expect(planRows[1].description).toBe('USD 10.00 · trimestral');
+    const added = await handleCommerceConversation(message(`add:${THIRD}`, true), disney!.context, deps);
+    const back = added!.payload as { body: string; rows: { id: string }[] };
+    expect(back.body).toContain('Agregué Disney+ Trimestral');
+    expect(back.rows.map(row => row.id)).toContain('SHOP:summary');
+    expect(back.rows[0].id).toBe(`SHOP:cat:${DISNEY}`);
+    const summary = await handleCommerceConversation(message('carrito'), added!.context, deps);
+    const body = (summary!.payload as { body: string }).body;
+    expect(body).toContain('1. Disney+ Trimestral: USD 10.00');
+    expect(body).not.toMatch(/servidor|revalida/i);
+  });
+  it('deja lo agotado aparte para registrar interés y vuelve a las plataformas', async () => {
+    const SOLD = '123e4567-e89b-42d3-a456-426614174010';
+    const deps = dependencies();
+    deps.catalogue.mockResolvedValue([{ ...plan, planId: ID, planNombre: 'Mensual', categoriaId: SOLD, categoriaNombre: 'Netflix', perfilesLibres: 0 }]);
+    const none = await handleCommerceConversation(message('catalogo'), {}, deps);
+    expect(JSON.stringify(none!.payload)).toContain('no hay plataformas disponibles');
+    const soldOut = await handleCommerceConversation(message('soldout', true), none!.context, deps);
+    expect((soldOut!.payload as { rows: { title: string }[] }).rows.map(row => row.title)).toEqual(['Netflix Mensual', 'Ver plataformas']);
+    const interest = await handleCommerceConversation(message(`add:${ID}`, true), soldOut!.context, deps);
+    expect(JSON.stringify(interest!.payload)).toContain('agotado');
+    const again = await handleCommerceConversation(message('platforms', true), none!.context, deps);
+    expect(JSON.stringify(again!.payload)).toContain('Agotados');
+  });
+  it('responde "estado" sin pedido y no ofrece comprar cuando las compras están pausadas', async () => {
+    const deps = { ...dependencies(), purchasesEnabled: vi.fn().mockResolvedValue(false) };
+    const none = await handleCommerceConversation(message('estado'), {}, deps);
+    expect(JSON.stringify(none?.payload)).toContain('No tienes pedidos abiertos');
+    expect(JSON.stringify(none?.payload)).not.toContain('Adquirir servicio');
+    const withCart = await handleCommerceConversation(message('estado'), state({ stage: 'buy', items: [{ id: ID, name: 'Netflix', amount: 5, currency: 'USD', cycle: 'mensual' }] }), deps);
+    expect(JSON.stringify(withCart?.payload)).toContain('Todavía no tienes un pedido');
+    const menu = await handleCommerceConversation(message('hola'), {}, deps);
+    expect(menu?.payload).toMatchObject({ kind: 'buttons', buttons: [{ id: 'SHOP:renew', title: 'Renovar' }, { id: 'SHOP:services', title: 'Mis servicios' }, { id: 'SHOP:help', title: 'Hablar con alguien' }] });
+    const empty = await handleCommerceConversation(message('summary', true), {}, deps);
+    expect(JSON.stringify(empty?.payload)).toContain('Tu carrito está vacío');
+  });
   it('pauses new purchases while preserving paid-order status and renewal', async () => {
     const deps = { ...dependencies(), purchasesEnabled: vi.fn().mockResolvedValue(false) };
     expect((await handleCommerceConversation(message('comprar'), {}, deps))?.payload)
-      .toMatchObject({ kind: 'text', text: expect.stringContaining('pausadas') });
+      .toMatchObject({ kind: 'text', text: expect.stringContaining('compras nuevas') });
     const cart = state({ stage: 'summary', kind: 'buy', items: [{ id: ID, name: 'Netflix', amount: 5, currency: 'USD', cycle: 'mensual' }] });
     expect((await handleCommerceConversation(message('confirmar'), cart, deps))?.payload)
-      .toMatchObject({ kind: 'text', text: expect.stringContaining('pausadas') });
+      .toMatchObject({ kind: 'text', text: expect.stringContaining('compras nuevas') });
     expect(deps.buy).not.toHaveBeenCalled();
     await handleCommerceConversation(message('estado'), state({ stage: 'payment', orderId: OTHER }), deps);
     expect(deps.order).toHaveBeenCalledWith(waId, OTHER);
@@ -60,11 +115,11 @@ describe('guided commerce coordinator', () => {
     const deps = dependencies();
     const welcome = await handleCommerceConversation(message('hola'), {}, deps);
     expect(welcome?.payload).toMatchObject({ kind: 'buttons', buttons: expect.arrayContaining([{ id: 'SHOP:buy', title: 'Adquirir servicio' }]) });
-    deps.catalogue.mockResolvedValue(Array.from({ length: 12 }, (_, index) => ({ ...plan, planNombre: `Plan ${index}` })));
+    deps.catalogue.mockResolvedValue(Array.from({ length: 12 }, (_, index) => ({ ...plan, categoriaId: `123e4567-e89b-42d3-a456-4266141740${String(index).padStart(2, '0')}`, categoriaNombre: `Plataforma ${String(index).padStart(2, '0')}` })));
     const result = await handleCommerceConversation(message('catalogo'), {}, deps);
-    expect(result?.payload).toMatchObject({ rows: expect.arrayContaining([{ id: 'SHOP:page:1', title: 'Más servicios', description: 'Ver siguiente página' }]) });
+    expect(result?.payload).toMatchObject({ rows: expect.arrayContaining([{ id: 'SHOP:page:1', title: 'Más opciones', description: 'Ver siguiente página' }]) });
     const page = await handleCommerceConversation(message('page:1', true), result!.context, deps);
-    expect(page?.payload).toMatchObject({ rows: expect.arrayContaining([expect.objectContaining({ title: 'Plan 8' })]) });
+    expect(page?.payload).toMatchObject({ rows: expect.arrayContaining([expect.objectContaining({ title: 'Plataforma 07' })]) });
     const added = await handleCommerceConversation(message(`add:${ID}`, true), page!.context, deps);
     expect(added?.payload).toMatchObject({ rows: expect.arrayContaining([expect.objectContaining({ id: 'SHOP:summary' })]) });
     expect(deps.buy).not.toHaveBeenCalled();
@@ -111,7 +166,7 @@ describe('guided commerce coordinator', () => {
     expect(deps.services).toHaveBeenCalledWith(waId);
     deps.services.mockResolvedValue([]);
     expect((await handleCommerceConversation(message('mis servicios'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('No hay servicios') });
-    expect((await handleCommerceConversation(message('renovar'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('No hay opciones') });
+    expect((await handleCommerceConversation(message('renovar'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('No encuentro opciones') });
   });
   it('registers depleted demand with separate, explicit consent', async () => {
     const deps = dependencies(); deps.catalogue.mockResolvedValue([{ ...plan, perfilesLibres: 0 }]);
@@ -134,7 +189,7 @@ describe('guided commerce coordinator', () => {
     expect(commerceStateSchema.parse(mixed!.context).items).toHaveLength(1);
     const full = state({ stage: 'buy', items: Array.from({ length: 10 }, () => ({ id: OTHER, name: 'Item', amount: 1, currency: 'USD', cycle: 'mensual' })) });
     expect(commerceStateSchema.parse((await handleCommerceConversation(message(`add:${ID}`, true), full, deps))!.context).items).toHaveLength(10);
-    expect((await handleCommerceConversation(message('carrito'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('Primero elige') });
+    expect((await handleCommerceConversation(message('carrito'), {}, deps))?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('carrito está vacío') });
     expect(commerceSummary([])).toContain('USD 0');
   });
   it('verifies an explicitly supplied receipt and keeps financial and delivery states distinct', async () => {

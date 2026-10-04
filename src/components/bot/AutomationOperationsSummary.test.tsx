@@ -20,7 +20,7 @@ describe('resumen operativo', () => {
     state.operations = { ...state.operations, reviewMessages: 0, oldestPendingAt: null }; rerender(<AutomationOperationsSummary />); fireEvent.click(screen.getByRole('button', { name: 'Ver detalle operativo' })); expect(screen.queryByText(/Pendiente más antiguo/)).toBeNull();
     state.operations = { ...state.operations, pendingInterests: 3, reviewInterests: 2 }; rerender(<AutomationOperationsSummary />);
     expect(screen.getByText('Avisos de stock: 3 pendientes · 2 por revisar')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Revisar avisos en Interesados' }).getAttribute('href')).toBe('/terceros/interesados');
+    expect(screen.getByRole('link', { name: 'Revisar avisos en Interesados' }).getAttribute('href')).toBe('/automatizaciones/interesados');
     state.operations = { ...state.operations, pendingInterests: undefined, reviewInterests: 0 }; rerender(<AutomationOperationsSummary />);
     expect(screen.getByText('Avisos de stock: sin dato pendientes · 0 por revisar')).toBeTruthy();
     state.operations = { ...state.operations, pendingInterests: 0, reviewInterests: undefined }; rerender(<AutomationOperationsSummary />);

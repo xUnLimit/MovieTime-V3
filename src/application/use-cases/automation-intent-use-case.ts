@@ -26,8 +26,8 @@ export async function suggestAutomationIntent(
     const result = intentSchema.safeParse(await dependencies.interpret(text, settings.model));
     if (!result.success || result.data.confidence < 0.75) return null;
     return result.data;
-  } catch {
-    log.warn('No se pudo interpretar la intención; se conserva el recorrido guiado.');
+  } catch (error) {
+    log.warn('No se pudo interpretar la intención; se conserva el recorrido guiado.', { error });
     return null;
   }
 }

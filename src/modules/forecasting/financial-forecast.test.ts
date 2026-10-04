@@ -13,6 +13,21 @@ const toUSD = (amount: number, currency: string) => {
 };
 
 describe('financial forecast', () => {
+  it('cubre 12 meses desde el mes actual aunque crucen de año', () => {
+    const res = calculateFinancialForecast({
+      ventas: [{ fechaFin: '2026-11-20T12:00:00.000Z', cicloPago: 'mensual', precioFinal: 10, moneda: 'USD' } as VentaPronostico],
+      servicios: [],
+      monthsCount: 12,
+      now: new Date(2026, 10, 10, 12),
+      convertToUSD: toUSD,
+    });
+    expect(res).toHaveLength(12);
+    expect(res[0].mesKey).toBe('2026-11');
+    expect(res[1].mesKey).toBe('2026-12');
+    expect(res[2].mesKey).toBe('2027-01');
+    expect(res[11].mesKey).toBe('2027-10');
+  });
+
   it('detects recurring cycles inside a target month', () => {
     expect(
       occursInMonth(

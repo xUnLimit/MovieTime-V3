@@ -15,10 +15,11 @@ vi.mock('./AutomationOperationsSummary',()=>({AutomationOperationsSummary:()=> <
 beforeEach(()=>{vi.clearAllMocks();state.params=new URLSearchParams();state.admin=true;state.loading=false;state.error=false;state.enabled=true;state.health=true;state.retry.mockResolvedValue({});});
 
 describe('AutomationWorkspace',()=>{
-  it('abre en recorridos breves con acceso secundario a biblioteca y configuración',()=>{
+  it('abre en recorridos breves; biblioteca y conexiones viven en el menú lateral',()=>{
     const {rerender}=render(<AutomationWorkspace />);
     expect(screen.getByRole('heading',{name:'Automatizaciones'})).toBeTruthy();
-    expect(screen.getByRole('link',{name:'Biblioteca de mensajes'}).getAttribute('href')).toBe('/automatizaciones?vista=mensajes');
+    expect(screen.queryByRole('link',{name:'Biblioteca de mensajes'})).toBeNull();
+    expect(screen.queryByRole('link',{name:'Conexiones y capacidades'})).toBeNull();
     expect(screen.getByRole('link',{name:'Editar recorrido'}).getAttribute('href')).toBe('/automatizaciones?editar=whatsapp');
     expect(screen.getByText('Activo')).toBeTruthy();
     state.enabled=false;state.health=false;rerender(<AutomationWorkspace />);
@@ -35,6 +36,7 @@ describe('AutomationWorkspace',()=>{
   it('permite biblioteca, editor y recuperación de error; limita por rol',()=>{
     state.params=new URLSearchParams('vista=mensajes');const {rerender}=render(<AutomationWorkspace />);
     expect(screen.getByText('Biblioteca completa')).toBeTruthy();
+    rerender(<AutomationWorkspace view="mensajes" />);expect(screen.getByText('Biblioteca completa')).toBeTruthy();
     state.params=new URLSearchParams('editar=whatsapp');rerender(<AutomationWorkspace />);
     expect(screen.getByText('Editor del recorrido')).toBeTruthy();
     state.params=new URLSearchParams('mensaje=unknown');state.loading=true;rerender(<AutomationWorkspace />);

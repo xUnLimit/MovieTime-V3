@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+const logger = vi.hoisted(() => ({ warn: vi.fn() }));
+vi.mock('@/platform/observability/logger', () => ({ createLogger: () => ({ ...logger, info: vi.fn(), error: vi.fn(), debug: vi.fn() }) }));
+
 import { suggestAutomationIntent } from './automation-intent-use-case';
 import { defaultAutomationSettings } from '@/modules/automation-control/contracts';
 
@@ -45,5 +48,11 @@ describe('bounded intent extraction', () => {
     expect(await suggestAutomationIntent('texto', deps)).toBeNull();
     deps.settings.mockRejectedValue(new Error('database'));
     expect(await suggestAutomationIntent('texto', deps)).toBeNull();
+  });
+  it('registra el motivo del fallo para poder diagnosticarlo', async () => {
+    const failure = Object.assign(new Error('La interpretación de IA no está disponible.'), { code: 'openai_http_404:model_not_found' });
+    const deps = dependencies(); deps.interpret.mockRejectedValue(failure);
+    expect(await suggestAutomationIntent('texto', deps)).toBeNull();
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('No se pudo interpretar'), { error: failure });
   });
 });

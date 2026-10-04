@@ -62,7 +62,15 @@ function ChatsPageContent() {
   const searchParams = useSearchParams();
   const requested = searchParams.get('wa');
   const selectedWaId = requested && /^\d{8,15}$/.test(requested) ? requested : null;
-  const { data: conversations = [], isLoading } = useWhatsAppConversations();
+  const { data: conversationRows = [], isLoading } = useWhatsAppConversations();
+  const conversations = useMemo(() => {
+    const seen = new Set<string>();
+    return conversationRows.filter((conversation) => {
+      if (seen.has(conversation.waId)) return false;
+      seen.add(conversation.waId);
+      return true;
+    });
+  }, [conversationRows]);
   const now = useNow();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ChatFilter>('todos');

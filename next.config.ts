@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   skipTrailingSlashRedirect: true,
+  async redirects() {
+    return [
+      { source: '/ventas/pedidos', destination: '/automatizaciones/pedidos', permanent: true },
+      { source: '/ventas/cobros', destination: '/automatizaciones/cobros', permanent: true },
+      { source: '/terceros/interesados', destination: '/automatizaciones/interesados', permanent: true },
+      { source: '/configuracion/automatizacion', destination: '/automatizaciones/conexiones', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

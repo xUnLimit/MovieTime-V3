@@ -68,6 +68,21 @@ describe('whatsapp chat repository', () => {
     expect(calls).toContainEqual({ method: 'from', args: ['v_whatsapp_conversations'] });
   });
 
+  it('returns one conversation per WhatsApp identifier when the view repeats a row', async () => {
+    const recent = {
+      wa_id: '50760000000', contact_name: 'Mary', tercero_id: null, tercero_nombre: null,
+      last_direction: 'inbound', last_preview: 'Mensaje reciente',
+      last_message_at: '2026-10-03T12:00:00Z', last_inbound_at: '2026-10-03T12:00:00Z',
+      unread_count: 1, proxima_fecha_fin: null, categorias_activas: [], pinned_at: null, archived: false,
+    };
+    result.value.data = [recent, { ...recent, last_preview: 'Mensaje anterior', last_message_at: '2026-10-03T11:00:00Z' }];
+
+    const conversations = await listWhatsAppConversations();
+
+    expect(conversations).toHaveLength(1);
+    expect(conversations[0]).toMatchObject({ waId: recent.wa_id, lastPreview: recent.last_preview });
+  });
+
   it('returns messages oldest first for one conversation', async () => {
     result.value.data = [
       { id: 'm2', direction: 'outbound', message_kind: 'template', text_body: null, template_name: 'vence_hoy', occurred_at: '2026-09-27T12:00:00Z', status: null },

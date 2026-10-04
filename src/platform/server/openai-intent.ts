@@ -16,6 +16,19 @@ const intentJsonSchema = {
   },
 };
 
+// Error publico y generico; `code` conserva solo el estado HTTP y el codigo corto de OpenAI para diagnosticar.
+async function providerError(response: Response): Promise<Error> {
+  let detail = '';
+  try {
+    const body = await response.json() as { error?: { code?: unknown; type?: unknown } };
+    const code = body.error?.code ?? body.error?.type;
+    if (typeof code === 'string' && /^[\w.-]{1,64}$/.test(code)) detail = `:${code}`;
+  } catch (error) {
+    detail = error instanceof Error ? ':respuesta_no_json' : '';
+  }
+  return Object.assign(new Error('La interpretación de IA no está disponible.'), { code: `openai_http_${response.status}${detail}` });
+}
+
 // Only intent extraction: no credentials, tools, customer identities or financial writes.
 export async function requestOpenAiIntent(text: string, model: string, fetcher: typeof fetch = fetch): Promise<unknown> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -29,7 +42,7 @@ export async function requestOpenAiIntent(text: string, model: string, fetcher: 
       text: { format: { type: 'json_schema', name: 'movietime_intent', strict: true, schema: intentJsonSchema } },
     }),
   });
-  if (!response.ok) throw new Error('La interpretación de IA no está disponible.');
+  if (!response.ok) throw await providerError(response);
   const payload = responseSchema.parse(await response.json());
   if (payload.status !== 'completed') return null;
   const output = payload.output.flatMap((item) => item.type === 'message' ? item.content ?? [] : [])

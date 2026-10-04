@@ -196,7 +196,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           onTogglePin={onTogglePin}
           onToggleArchive={onToggleArchive}
         />
-        <ConversationControl key={waId} waId={waId} />
+        <ConversationControl key={`control-${waId}`} waId={waId} />
         {searchActive ? <div className="flex items-center gap-[9px] border-b border-chat-line bg-chat-raised px-3 py-2 md:px-5">
           <Search className="h-[15px] w-[15px] shrink-0 text-chat-quiet" strokeWidth={1.6} aria-hidden />
           <input autoFocus aria-label="Buscar en la conversación" placeholder="Buscar en los mensajes" value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setActiveMatchIndex(0); }} className="min-w-0 flex-1 bg-transparent text-base text-chat-ink outline-none placeholder:text-chat-quiet sm:text-sm" />
@@ -205,7 +205,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           <button type="button" className={FIND_ICON} aria-label="Resultado siguiente" disabled={!matchIds.length} onClick={() => setActiveMatchIndex((index) => (index + 1) % matchIds.length)}><ChevronDown className="h-[15px] w-[15px]" /></button>
           <button type="button" className={FIND_ICON} aria-label="Cerrar búsqueda" onClick={() => { setSearchActive(false); setSearchQuery(''); }}><X className="h-[15px] w-[15px]" /></button>
         </div> : null}
-        <MessageTimeline key={waId} messages={messages} isLoading={isLoading} unreadCount={conversation.unreadCount} now={now} searchQuery={searchActive ? searchQuery : ''} matchIds={matchIds} activeMatchIndex={shownMatchIndex} metaTemplates={metaTemplates} canRetry={canRetry}
+        <MessageTimeline key={`timeline-${waId}`} messages={messages} isLoading={isLoading} unreadCount={conversation.unreadCount} now={now} searchQuery={searchActive ? searchQuery : ''} matchIds={matchIds} activeMatchIndex={shownMatchIndex} metaTemplates={metaTemplates} canRetry={canRetry}
           onReply={(message) => {
             if (!message.waMessageId) return;
             const content = message.templateName ? buildTemplateContent(message.templateName, message.templateParams, metaTemplates) : null;

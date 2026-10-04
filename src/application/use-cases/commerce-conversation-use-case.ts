@@ -5,6 +5,7 @@ import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { BotDefinition } from '@/types/bot';
 import { readBotAction } from '@/modules/whatsapp/bot-menu';
 import { botReplyKey } from './bot-reply';
+import { renderChoiceList, type CommerceChoice } from './commerce-conversation-lists';
 import { commerceButtons, commerceCommand, commerceStateSchema, commerceSummary, type CommerceItem } from './commerce-conversation-state';
 
 type PublicPlan = { planId: string; planNombre: string; categoriaId: string; categoriaNombre: string; precio: number; moneda: string; cicloPago: string; perfilesLibres: number };
@@ -34,6 +35,13 @@ function paymentText(order: Pedido): string {
       : paid ? `Pago recibido. ${delivery}` : 'Pago pendiente de confirmar por el canal de recepción.')
     + (order.excessAmount > 0 ? `\nExceso ${order.excessAmount.toFixed(2)} pendiente de resolución.` : '');
 }
+// El menu solo ofrece comprar cuando las compras nuevas estan activas.
+function menuPayload(text: string, canBuy: boolean): OutboundPayload {
+  return commerceButtons(text, [
+    ...(canBuy ? [{ id: 'buy', title: 'Adquirir servicio' }] : []), { id: 'renew', title: 'Renovar' }, { id: 'services', title: 'Mis servicios' },
+    ...(canBuy ? [] : [{ id: 'help', title: 'Hablar con alguien' }]),
+  ]);
+}
 const pick = (id: string, name: string, amount: number, currency: string, cycle: string): CommerceItem => ({ id, name, amount, currency, cycle });
 
 export async function handleCommerceConversation(message: InboundMessage, context: Json, deps: CommerceConversationDeps,
@@ -50,7 +58,7 @@ export async function handleCommerceConversation(message: InboundMessage, contex
   }
   if (!state.orderId && (command === 'buy' || (command === 'confirm' && state.kind === 'buy'))
     && deps.purchasesEnabled && !await deps.purchasesEnabled()) {
-    return { context: state, payload: { kind: 'text', text: 'Las nuevas compras están pausadas. Tus pedidos pagados siguen en atención; escribe estado, renovar o ayuda para continuar.' },
+    return { context: state, payload: { kind: 'text', text: 'Por ahora no estamos tomando compras nuevas. Puedes renovar tus servicios, consultar el estado de un pedido o escribir ayuda para hablar con una persona.' },
       process: state.stage, orderId: null, handoff: false };
   }
   if (!command && state.stage === 'idle') return null;
@@ -61,21 +69,29 @@ export async function handleCommerceConversation(message: InboundMessage, contex
     state.stage = 'idle'; state.items = []; state.orderId = null;
     payload = { kind: 'text', text: 'Selección cancelada. Puedes escribir catálogo, renovar o ayuda.' };
   } else if (command === 'menu') {
-    payload = commerceButtons('Elige qué necesitas. También puedes escribir mis servicios o ayuda.', [
-      { id: 'buy', title: 'Adquirir servicio' }, { id: 'renew', title: 'Renovar' }, { id: 'services', title: 'Mis servicios' },
-    ]);
+    payload = menuPayload('Hola, soy el asistente de MovieTime PTY. ¿Qué necesitas?', !deps.purchasesEnabled || await deps.purchasesEnabled());
   } else if (command === 'services') {
     const services = await deps.services(message.fromWaId);
     payload = { kind: 'text', text: services.length ? services.map(s => `${s.nombre} · vence ${s.fechaVencimiento}`).join('\n').slice(0, 3500)
       + '\nEscribe renovar para elegir servicios o pulsa Solicitar código en tu mensaje de acceso.' : 'No hay servicios vinculados a este número. Escribe catálogo para adquirir o ayuda para revisar tu cuenta.' };
-  } else if (command === 'buy' || command === 'renew' || command?.startsWith('page:') || command?.startsWith('add:')) {
+  } else if (command === 'buy' || command === 'renew' || command?.startsWith('page:') || command?.startsWith('add:')
+    || command?.startsWith('cat:') || command === 'platforms' || command === 'soldout') {
     if (state.orderId) return { context: state, payload: { kind: 'text', text: 'Tienes un pedido abierto. Escribe estado o cancelar antes de crear otro.' }, process: state.stage, orderId: state.orderId, handoff: false };
-    if (command === 'buy' || command === 'renew') { state.kind = command; state.stage = command; state.items = []; state.page = 0; }
+    if (command === 'buy' || command === 'renew') { state.kind = command; state.stage = command; state.items = []; state.page = 0; state.categoryId = null; state.soldout = false; }
+    if (command === 'platforms') { state.categoryId = null; state.soldout = false; state.page = 0; }
+    if (command === 'soldout') { state.categoryId = null; state.soldout = true; state.page = 0; }
     if (command?.startsWith('page:')) { const page = Number(command.slice(5)); if (Number.isInteger(page) && page >= 0 && page < 10000) state.page = page; }
     const plans = state.kind === 'buy' ? await deps.catalogue() : [];
     const owned = state.kind === 'renew' ? await deps.services(message.fromWaId) : [];
-    const choices = state.kind === 'buy' ? plans.map(p => ({ ...pick(p.planId, p.planNombre, p.precio, p.moneda, p.cicloPago), stock: p.perfilesLibres }))
-      : owned.map(s => ({ ...pick(s.ventaId, s.nombre, s.precio, s.moneda, s.cicloPago), stock: 1 }));
+    // Compra: se elige la plataforma y luego su plan. Renovacion: sus propios servicios.
+    const choices: CommerceChoice[] = state.kind === 'buy'
+      ? plans.map(p => ({ ...pick(p.planId, `${p.categoriaNombre} ${p.planNombre}`.trim(), p.precio, p.moneda, p.cicloPago), stock: p.perfilesLibres,
+        categoryId: p.categoriaId, categoryName: p.categoriaNombre, planName: p.planNombre }))
+      : owned.map(s => ({ ...pick(s.ventaId, s.nombre, s.precio, s.moneda, s.cicloPago), stock: 1, categoryId: '', categoryName: '', planName: s.nombre }));
+    if (command?.startsWith('cat:')) {
+      const category = command.slice(4);
+      state.categoryId = choices.some(c => c.categoryId === category && c.stock > 0) ? category : null; state.soldout = false; state.page = 0;
+    }
     let currencyNotice = '';
     if (command?.startsWith('add:')) {
       const chosen = choices.find(c => c.id === command.slice(4));
@@ -90,15 +106,12 @@ export async function handleCommerceConversation(message: InboundMessage, contex
         return { context: state, payload, process: 'interest', orderId: null, handoff: false };
       }
       if (chosen && chosen.stock > 0 && state.items.length < 10 && !state.items.some(i => i.id === chosen.id)
-        && (!state.items.length || state.items[0].currency === chosen.currency)) state.items.push(pick(chosen.id, chosen.name, chosen.amount, chosen.currency, chosen.cycle));
+        && (!state.items.length || state.items[0].currency === chosen.currency)) {
+        state.items.push(pick(chosen.id, chosen.name, chosen.amount, chosen.currency, chosen.cycle));
+        state.categoryId = null; state.soldout = false; state.page = 0; currencyNotice = `Agregué ${chosen.name}.\n`;
+      }
     }
-    const pageChoices = choices.slice(state.page * 8, state.page * 8 + 8);
-    const rows = pageChoices.map(c => ({ id: `SHOP:add:${c.id}`, title: c.name.slice(0, 24),
-      description: `${c.currency} ${c.amount.toFixed(2)} · ${c.cycle} · ${c.stock ? 'Disponible' : 'Agotado'}`.slice(0, 72) }));
-    if ((state.page + 1) * 8 < choices.length) rows.push({ id: `SHOP:page:${state.page + 1}`, title: 'Más servicios', description: 'Ver siguiente página' });
-    if (state.items.length) rows.push({ id: 'SHOP:summary', title: 'Revisar carrito', description: `${state.items.length} servicios seleccionados` });
-    payload = rows.length ? { kind: 'list', body: currencyNotice + 'Elige un servicio. Puedes agregar hasta 10 del mismo tipo de moneda. Escribe carrito para revisar o cancelar para empezar otra vez.', buttonLabel: 'Elegir servicios', rows }
-      : { kind: 'text', text: 'No hay opciones para este número. Escribe catálogo o ayuda.' };
+    payload = renderChoiceList(state, choices, currencyNotice);
   } else if (command?.startsWith('interest:') && state.stage === 'interest' && state.interestPlanId) {
     const plan = (await deps.catalogue()).find(p => p.planId === state.interestPlanId);
     if (!plan || !['interest:yes', 'interest:no'].includes(command)) return null;
@@ -107,7 +120,7 @@ export async function handleCommerceConversation(message: InboundMessage, contex
     payload = { kind: 'text', text: command === 'interest:yes' ? 'Interés registrado con permiso para avisarte. Escribe catálogo para ver alternativas.' : 'Interés registrado sin permiso de avisos. Escribe catálogo para ver alternativas.' };
   } else if (command === 'summary' || command === 'confirm') {
     if (state.orderId) payload = { kind: 'text', text: paymentText(await deps.order(message.fromWaId, state.orderId)) + '\nEscribe estado, pago CÓDIGO o ayuda para continuar.' };
-    else if (!state.items.length) payload = { kind: 'text', text: 'Primero elige servicios escribiendo catálogo o renovar.' };
+    else if (!state.items.length) payload = menuPayload('Tu carrito está vacío. Elige cómo quieres empezar.', !deps.purchasesEnabled || await deps.purchasesEnabled());
     else if (command === 'confirm' && state.stage === 'summary' && state.items[0].currency !== 'USD') {
       payload = { kind: 'text', text: `Este servicio se cobra en ${state.items[0].currency}; Yappy usa USD. Un operador te ayuda a confirmar el pago.` };
       handoff = true;
@@ -120,7 +133,7 @@ export async function handleCommerceConversation(message: InboundMessage, contex
       payload = commerceButtons(`${paymentText(order)}\nReserva hasta ${order.expiraAt}. Revisa el importe final antes de pagar.`, [{ id: 'pay', title: 'Instrucciones pago' }, { id: 'cancel', title: 'Cancelar' }]);
     } else {
       state.stage = 'summary';
-      payload = commerceButtons(`${commerceSummary(state.items)}\nConfirma para reservar. El servidor revalida disponibilidad y precio.`, [{ id: 'confirm', title: 'Confirmar selección' }, { id: 'cancel', title: 'Cancelar' }]);
+      payload = commerceButtons(`${commerceSummary(state.items)}\nAl confirmar reservamos tu selección. Si cambia el precio o la disponibilidad, te avisamos antes de cobrar.`, [{ id: 'confirm', title: 'Confirmar selección' }, { id: 'cancel', title: 'Cancelar' }]);
     }
   } else if (state.orderId && state.stage === 'payment') {
     const text = message.messageType === 'text' ? message.textBody?.trim() ?? '' : '';
@@ -137,6 +150,11 @@ export async function handleCommerceConversation(message: InboundMessage, contex
     if (order.deliveryState === 'enviado' && !handoff) {
       state.stage = 'idle'; state.orderId = null; state.items = [];
     }
+  } else if (command === 'status') {
+    payload = state.items.length
+      ? commerceButtons('Todavía no tienes un pedido. Tu selección sigue guardada: revísala para continuar.', [
+        { id: 'summary', title: 'Revisar carrito' }, { id: 'cancel', title: 'Cancelar' }, { id: 'help', title: 'Hablar con alguien' }])
+      : menuPayload('No tienes pedidos abiertos. ¿Qué necesitas?', !deps.purchasesEnabled || await deps.purchasesEnabled());
   } else payload = commerceButtons('Conservo tu selección. Usa el menú para continuar o pedir ayuda.', [
     { id: 'summary', title: 'Revisar carrito' }, { id: 'cancel', title: 'Cancelar' }, { id: 'help', title: 'Hablar con alguien' },
   ]);

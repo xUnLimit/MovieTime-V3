@@ -60,7 +60,7 @@ export const ConversationList = forwardRef<HTMLInputElement, ConversationListPro
   const activeMoreItem = moreItems.find((item) => item.id === filter) ?? null;
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-chat-line-soft px-4 pb-3 pt-4 md:pt-[max(1rem,env(safe-area-inset-top))]">
+      <div className="border-b border-chat-line-soft px-3 pb-3 pt-3 sm:px-4 sm:pt-4 md:px-5 md:pt-[max(1.25rem,env(safe-area-inset-top))]">
         {header}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-chat-quiet" aria-hidden />

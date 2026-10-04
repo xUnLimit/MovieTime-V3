@@ -17,13 +17,13 @@ La implementación amplía el esquema conservado tras la restauración. Las migr
 
 ## Preparación del operador
 
-En **Configuración → Conexiones y automatización**, preparar el modelo y cuotas, vencimiento y máximo de reservas. **Permitir nuevas compras por WhatsApp** comienza apagado; pausarlo conserva atención de pedidos existentes, conciliación y entrega. El panel mantiene sus comandos comerciales propios. El interruptor general de automatismos y tomar el chat siguen controlando respuestas y entregas automáticas.
+En **Automatizaciones → Conexiones**, preparar el modelo y cuotas, vencimiento y máximo de reservas. **Permitir nuevas compras por WhatsApp** comienza apagado; pausarlo conserva atención de pedidos existentes, conciliación y entrega. El panel mantiene sus comandos comerciales propios. El interruptor general de automatismos y tomar el chat siguen controlando respuestas y entregas automáticas.
 
 En **Automatizaciones**, seleccionar un recorrido para editar mensajes o probar la interpretación. La biblioteca global es un acceso secundario y avisa que un mensaje compartido afecta sus usos. El resumen operativo presenta pendientes, revisiones y presupuesto reservado; el detalle muestra entregas, avisos de stock, reintentos y tiempo de resolución. Los tokens reservados son un límite conservador, no una factura o costo monetario observado.
 
-En **Ventas → Pedidos**, distinguir recibido, asignado y enviado. La política automática exige todos los ítems. Una resolución parcial necesita seleccionar explícitamente ítems e importes; nunca deriva de omitir una venta. Registrar una devolución exige referencia del movimiento externo ya realizado; el panel no efectúa ni simula una transferencia bancaria. Un cambio de moneda requiere revisión, sin conversión silenciosa.
+En **Automatizaciones → Pedidos**, distinguir recibido, asignado y enviado. La política automática exige todos los ítems. Una resolución parcial necesita seleccionar explícitamente ítems e importes; nunca deriva de omitir una venta. Registrar una devolución exige referencia del movimiento externo ya realizado; el panel no efectúa ni simula una transferencia bancaria. Un cambio de moneda requiere revisión, sin conversión silenciosa.
 
-En una cuenta Netflix, **Acceso por código** requiere confirmar rotación previa. La capacidad existe para el proveedor probado; no se habilitan parsers de otros proveedores sin pruebas. En **Terceros → Interesados**, interés no equivale a consentimiento: revisar destinatario, pausa y disponibilidad antes del aviso. Un timeout de entrega incierta queda en revisión y no se reenvía ciegamente.
+En una cuenta Netflix, **Acceso por código** requiere confirmar rotación previa. La capacidad existe para el proveedor probado; no se habilitan parsers de otros proveedores sin pruebas. En **Automatizaciones → Interesados**, interés no equivale a consentimiento: revisar destinatario, pausa y disponibilidad antes del aviso. Un timeout de entrega incierta queda en revisión y no se reenvía ciegamente.
 
 ## Recuperación y conexiones
 

@@ -24,6 +24,14 @@ describe('OpenAI intent adapter', () => {
     expect(body.tools).toBeUndefined();
     expect(body.input).toEqual([{ role: 'user', content: [{ type: 'input_text', text: 'hello' }] }]);
   });
+  it('expone solo el estado HTTP y el codigo corto de OpenAI para diagnosticar', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'test-key');
+    const failing = (body: BodyInit, status: number) => requestOpenAiIntent('a', 'b', vi.fn().mockResolvedValue(new Response(body, { status })));
+    await expect(failing(JSON.stringify({ error: { code: 'model_not_found', message: 'detalle interno' } }), 404))
+      .rejects.toMatchObject({ message: 'La interpretación de IA no está disponible.', code: 'openai_http_404:model_not_found' });
+    await expect(failing(JSON.stringify({ error: { code: 'bad code with spaces' } }), 401)).rejects.toMatchObject({ code: 'openai_http_401' });
+    await expect(failing('<html>', 502)).rejects.toMatchObject({ code: 'openai_http_502:respuesta_no_json' });
+  });
   it('hides provider errors and refuses incomplete, missing and oversized output', async () => {
     vi.stubEnv('OPENAI_API_KEY', 'test-key');
     await expect(requestOpenAiIntent('a', 'b', vi.fn().mockResolvedValue(new Response('secret', { status: 429 }))))

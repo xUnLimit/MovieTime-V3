@@ -19,11 +19,14 @@ export const commerceStateSchema = z.object({
   page: z.number().int().nonnegative().max(10000).default(0),
   orderId: z.string().uuid().nullable().default(null),
   interestPlanId: z.string().uuid().nullable().default(null),
+  // Compra en dos pasos: plataforma con cupo y luego sus planes. `soldout` abre la lista de agotados.
+  categoryId: z.string().uuid().nullable().default(null), soldout: z.boolean().default(false),
   lastMessageId: z.string().max(256).nullable().default(null), lastReply: z.string().max(4096).nullable().default(null),
   pendingHandoff: z.boolean().default(false),
   lastPayload: replySchema.nullable().default(null),
 });
 export type CommerceItem = z.infer<typeof itemSchema>;
+export type CommerceState = z.infer<typeof commerceStateSchema>;
 
 export function commerceCommand(message: InboundMessage, definition?: BotDefinition | null): string | null {
   const payload = message.payload;
@@ -45,7 +48,7 @@ export function commerceCommand(message: InboundMessage, definition?: BotDefinit
 }
 
 export function commerceSummary(items: CommerceItem[]): string {
-  return items.map((item, index) => `${index + 1}. ${item.name} (${item.cycle}): ${item.currency} ${item.amount.toFixed(2)}`).join('\n')
+  return items.map((item, index) => `${index + 1}. ${item.name}${item.name.toLowerCase().includes(item.cycle.toLowerCase()) ? '' : ` (${item.cycle})`}: ${item.currency} ${item.amount.toFixed(2)}`).join('\n')
     + `\nTotal: ${items[0]?.currency ?? 'USD'} ${items.reduce((total, item) => total + Math.round(item.amount * 100), 0) / 100}`;
 }
 export function commerceButtons(body: string, buttons: { id: string; title: string }[]): OutboundPayload {

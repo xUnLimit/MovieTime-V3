@@ -4,9 +4,9 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import YappyPage from '@/app/(dashboard)/pagos-yappy/page';
 import EditorMensajesPage from '@/app/(dashboard)/editor-mensajes/page';
-import PedidosPage from '@/app/(dashboard)/ventas/pedidos/page';
-import InteresadosPage from '@/app/(dashboard)/terceros/interesados/page';
-import AutomationConfigurationPage from '@/app/(dashboard)/configuracion/automatizacion/page';
+import PedidosPage from '@/app/(dashboard)/automatizaciones/pedidos/page';
+import InteresadosPage from '@/app/(dashboard)/automatizaciones/interesados/page';
+import AutomationConfigurationPage from '@/app/(dashboard)/automatizaciones/conexiones/page';
 import { ServiceAccessPanel } from '@/components/servicios/ServiceAccessPanel';
 import { demoControl, demoOrders } from '../automatizaciones/demo-operation-data';
 import type { YappyPayment } from '@/application/use-cases/yappy-use-cases';

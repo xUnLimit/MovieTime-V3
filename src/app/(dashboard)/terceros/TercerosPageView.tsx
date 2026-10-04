@@ -10,7 +10,6 @@ import { RevendedoresTable } from '@/components/terceros/RevendedoresTable';
 import { TercerosMetrics } from '@/components/terceros/TercerosMetrics';
 import { TodosTercerosTable } from '@/components/terceros/TodosTercerosTable';
 import type { TercerosPageController } from './useTercerosPageController';
-import { useAuthStore } from '@/store/authStore';
 
 type TercerosPageViewProps = TercerosPageController;
 
@@ -96,13 +95,11 @@ export function TercerosPageView({
 }
 
 function TercerosPageHeading() {
-  const admin = useAuthStore(state => state.user?.role === 'admin');
   return (
     <PageHeader
       title="Terceros"
       actions={
         <>
-        {admin ? <Button variant="outline" asChild><Link href="/terceros/interesados">Interesados</Link></Button> : null}
         <Button asChild className="whitespace-nowrap">
           <Link prefetch={false} href="/terceros/crear">
             <Plus />

@@ -15,7 +15,7 @@ export function ConfiguracionView() {
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-2 xl:items-start">
       <div className="min-w-0 space-y-4">
-        <Panel title="Conexiones y automatización" description="Prepara IA, integraciones, reservas y proveedores de acceso."><Button variant="outline" asChild><Link href="/configuracion/automatizacion">Configurar conexiones</Link></Button></Panel>
+        <Panel title="Conexiones y automatización" description="Prepara IA, integraciones, reservas y proveedores de acceso."><Button variant="outline" asChild><Link href="/automatizaciones/conexiones">Configurar conexiones</Link></Button></Panel>
         <DashboardViewSection
           availableYears={controller.availableYears}
           selectedYear={controller.selectedYear}

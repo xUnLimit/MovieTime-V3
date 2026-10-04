@@ -53,8 +53,12 @@ export async function listWhatsAppConversations(): Promise<WhatsAppConversation[
     .limit(CONVERSATION_LIMIT);
   if (error) throw error;
 
+  // La respuesta ya viene ordenada por fecha: conserva la fila mas reciente
+  // si una vista desplegada devuelve el mismo chat mas de una vez.
+  const seenWaIds = new Set<string>();
   return (data ?? []).flatMap((row) => {
-    if (!row.wa_id || !row.last_message_at) return [];
+    if (!row.wa_id || !row.last_message_at || seenWaIds.has(row.wa_id)) return [];
+    seenWaIds.add(row.wa_id);
     return [{
       waId: row.wa_id,
       contactName: row.contact_name,

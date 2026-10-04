@@ -98,9 +98,9 @@ const navigationSections: SidebarNavSection[] = [
         icon: Bot,
       },
       {
-        name: 'Ventas',
+        name: 'Automatizaciones',
         href: '/pagos-yappy',
-        icon: ShoppingCart,
+        icon: Bot,
         hidden: true,
       },
       {
@@ -177,6 +177,6 @@ export function findNavItem(pathname: string): SidebarNavItem | undefined {
 
 export function isNavItemActive(pathname: string, href: string): boolean {
   if (href === '/automatizaciones' && ['/bot', '/editor-mensajes'].some(legacy => pathname === legacy || pathname.startsWith(`${legacy}/`))) return true;
-  if (href === '/ventas' && (pathname === '/pagos-yappy' || pathname.startsWith('/pagos-yappy/'))) return true;
+  if (href === '/automatizaciones' && (pathname === '/pagos-yappy' || pathname.startsWith('/pagos-yappy/'))) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }

@@ -4,6 +4,17 @@ import type { AutomationControl } from '@/types/automation-control';
 import { cleanupCatalog, createVentaRpc, seedCatalog } from './helpers/seed';
 import { adminUserClient, serviceClient } from './helpers/supabase';
 
+async function openSidebar(page: Page, name: string) {
+  const menu = page.getByRole('button', { name: 'Abrir menú', exact: true });
+  if (await menu.isVisible()) await menu.click();
+  await page.getByRole('link', { name, exact: true }).click();
+}
+
+async function openTab(page: Page, name: string) {
+  await page.getByRole('navigation', { name: 'Secciones de automatizaciones' }).getByRole('link', { name, exact: true }).click();
+}
+
+
 const uuid = (value: number) => `70000000-0000-4000-8000-${String(value).padStart(12, '0')}`;
 const orders: Pedido[] = Array.from({ length: 14 }, (_, index) => ({
   id: uuid(index + 1), terceroId: null, contactId: null, moneda: 'USD', total: 12, estado: 'esperando_pago',
@@ -76,6 +87,20 @@ for (const theme of ['light', 'dark'] as const) {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
         await page.goto('/ventas');
         await expect(page.locator('html')).toHaveClass(theme === 'dark' ? /dark/ : /^(?!.*dark)/);
+        const titleBox = await page.getByRole('heading', { name: 'Ventas', exact: true }).boundingBox();
+        const actionBox = await page.getByRole('link', { name: 'Nueva Venta', exact: true }).boundingBox();
+        expect(titleBox).not.toBeNull();
+        expect(actionBox).not.toBeNull();
+        if (titleBox && actionBox) {
+          expect(titleBox.y + titleBox.height <= actionBox.y || titleBox.x + titleBox.width <= actionBox.x).toBe(true);
+        }
+        await expect(page.getByRole('tablist', { name: 'Estado de las ventas' })).toBeVisible();
+        await expect(page.getByRole('tab', { name: 'Todas', exact: true })).toHaveAttribute('aria-selected', 'true');
+        await page.getByRole('tab', { name: 'Activas', exact: true }).click();
+        await expect(page.getByRole('tab', { name: 'Activas', exact: true })).toHaveAttribute('aria-selected', 'true');
+        await page.getByRole('tab', { name: 'Inactivas', exact: true }).click();
+        await expect(page.getByRole('tab', { name: 'Inactivas', exact: true })).toHaveAttribute('aria-selected', 'true');
+        await page.getByRole('tab', { name: 'Todas', exact: true }).click();
         await page.getByRole('searchbox').fill(catalog.terceroNombre);
         const salesRows = await assertTable(page, 10, viewport.name === 'movil');
         await expect(salesRows.first()).toContainText(catalog.terceroNombre);
@@ -86,30 +111,33 @@ for (const theme of ['light', 'dark'] as const) {
         await page.route('**/api/automations/control', route => route.request().method() === 'GET'
           ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, data: control, requestId: 'visual-fixture' }) })
           : route.abort());
-        await page.getByRole('link', { name: 'Pedidos', exact: true }).click();
+        await openSidebar(page, 'Automatizaciones');
+        await openTab(page, 'Pedidos');
         const orderRows = await assertTable(page, 10);
         await capture(page, testInfo, 'pedidos-presentacion-pagina1');
         await nextPage(page, orderRows, 4);
         await capture(page, testInfo, 'pedidos-presentacion-pagina2');
-        await page.getByRole('link', { name: 'Cobros', exact: true }).click();
+        await openTab(page, 'Cobros');
         await expect(page.getByRole('heading', { name: 'Pagos Yappy detectados', exact: true })).toBeVisible();
-        await page.getByRole('link', { name: 'Pedidos', exact: true }).click();
+        await openTab(page, 'Pedidos');
         await assertTable(page, 10);
         await page.getByRole('searchbox').fill('Netflix');
-        await page.getByRole('link', { name: 'Suscripciones', exact: true }).click();
+        await openSidebar(page, 'Ventas');
         await expect(page.getByRole('heading', { name: 'Ventas', exact: true })).toBeVisible();
-        await page.getByRole('link', { name: 'Pedidos', exact: true }).click();
+        await openSidebar(page, 'Automatizaciones');
+        await openTab(page, 'Pedidos');
         await expect(page.getByRole('searchbox')).toHaveValue('Netflix');
         await page.getByRole('searchbox').fill('');
-        await page.goto('/terceros/interesados');
+        await page.goto('/automatizaciones/interesados');
         const interestRows = await assertTable(page, 10);
         await capture(page, testInfo, 'interesados-presentacion-pagina1');
         await nextPage(page, interestRows, 4);
         await capture(page, testInfo, 'interesados-presentacion-pagina2');
         await page.getByRole('searchbox').fill('Netflix');
         await expect(page.getByText('Página 1 de 1', { exact: true })).toBeVisible();
-        await page.getByRole('link', { name: 'Volver a terceros', exact: true }).click();
-        await page.getByRole('link', { name: 'Interesados', exact: true }).click();
+        await openSidebar(page, 'Terceros');
+        await openSidebar(page, 'Automatizaciones');
+        await openTab(page, 'Interesados');
         await expect(page.getByRole('searchbox')).toHaveValue('Netflix');
         await assertTable(page, 7);
         expect(pageErrors).toEqual([]);

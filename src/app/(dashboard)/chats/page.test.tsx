@@ -67,6 +67,23 @@ beforeEach(() => {
 });
 
 describe('ChatsPage', () => {
+  it('renders each chat once when cached conversations repeat an identifier', () => {
+    state.conversations = [
+      conversation('50760000000', 'Mary', 2),
+      conversation('50760000000', 'Mary antigua'),
+      conversation('50761111111', 'Juan'),
+    ];
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      render(<ChatsPage />);
+      expect(screen.getAllByRole('button', { name: /Mary/ })).toHaveLength(1);
+      expect(screen.queryByText('Mary antigua')).toBeNull();
+      expect(error.mock.calls.flat().join(' ')).not.toContain('Encountered two children with the same key');
+    } finally {
+      error.mockRestore();
+    }
+  });
+
   it('asks to pick a chat and navigates on select', async () => {
     const user = userEvent.setup();
     render(<ChatsPage />);

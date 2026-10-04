@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowUpDown, Edit, Eye, MoreHorizontal, Tags, Trash2, ListFilter } from "lucide-react";
+import { ArrowUpDown, Edit, Eye, MoreHorizontal, Tags, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/shared/DataTable";
@@ -43,8 +43,6 @@ interface VentasTableProps {
   showPagination?: boolean;
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
-  estado?: 'todas' | 'activas' | 'inactivas';
-  onEstadoChange?: (estado: 'todas' | 'activas' | 'inactivas') => void;
 }
 
 const ORDER_OPTIONS = [
@@ -73,8 +71,6 @@ export function VentasTable({
   showPagination = true,
   pageSize,
   onPageSizeChange,
-  estado = 'todas',
-  onEstadoChange,
 }: VentasTableProps) {
   const filteredRows = useMemo(() => ventas.map(toVentaRow), [ventas]);
   const categoriaOptions = useMemo(
@@ -104,7 +100,6 @@ export function VentasTable({
             onChange={onSearchChange}
             placeholder="Buscar por cliente, servicio o email..."
           />
-          {onEstadoChange ? <FilterMenu icon={ListFilter} ariaLabel="Estado de suscripción" value={estado} options={[{value:'todas',label:'Todas'},{value:'activas',label:'Activas'},{value:'inactivas',label:'Inactivas'}]} onChange={onEstadoChange} /> : null}
           <FilterMenu
             icon={Tags}
             ariaLabel="Categoría"
