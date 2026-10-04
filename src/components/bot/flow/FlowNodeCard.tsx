@@ -36,7 +36,7 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
   const noun = node.kind === 'list' ? 'fila' : 'botón';
   const exits = targets.filter((target) => target.exit);
   return <div className={cn('w-72 rounded-xl border bg-card text-sm', tone, selected && 'ring-2 ring-ring')}>
-    <Handle type="target" position={Position.Left} aria-label={`Entrada de ${node.name}`} />
+    <Handle type="target" position={Position.Left} role="img" aria-label={`Entrada de ${node.name}`} />
     <div className="flex items-start gap-2 px-3 pt-3">
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{node.name}</p>
@@ -55,7 +55,7 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
     {node.kind === 'buttons' || node.kind === 'list' ? <>
       <ul aria-label={`Opciones de ${node.name}`}>
         {node.options.map((option, index) => {
-          const handle = <Handle type="source" id={option.id} position={Position.Right} aria-label={`Salida del ${noun} ${index + 1} de ${node.name}`} />;
+          const handle = <Handle type="source" id={option.id} position={Position.Right} role="img" aria-label={`Salida del ${noun} ${index + 1} de ${node.name}`} />;
           return node.block || node.condition
             ? <BlockOptionRow key={option.id} node={node} option={option} exits={node.condition ? targets : exits} targets={targets} actions={actions}>{handle}</BlockOptionRow>
             : <OptionRow key={option.id} node={node} option={option} index={index} targets={targets} actions={actions}>{handle}</OptionRow>;

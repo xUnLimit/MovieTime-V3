@@ -32,7 +32,7 @@ Todo color sale de tokens en `src/app/globals.css`. **Prohibido** usar paleta cr
 | Superficies | `background`, `card`, `popover`, `muted`, `accent`, `secondary` | Pagina gris muy claro; tarjetas blancas con borde hairline. |
 | Texto | `foreground`, `muted-foreground` | Principal y secundario. |
 | Bordes | `border`, `input`, `ring` | Hairline. El borde es el separador principal. |
-| Marca | `primary`, `primary-foreground` | Accion principal, foco, activo. |
+| Marca | `primary`, `primary-foreground`, `primary-text` | Accion principal, foco, activo. `primary-text` es la tinta de marca sobre fondos tenues (insignias); aclarada en oscuro para cumplir 4.5:1. |
 | Exito | `success`, `success-subtle`, `success-border`, `success-foreground` | Activo, al dia, ganancia. |
 | Advertencia | `warning`, `warning-subtle`, `warning-border`, `warning-foreground` | Proximo a vencer, reposo. |
 | Peligro | `danger`, `danger-subtle`, `danger-border`, `danger-foreground` (`destructive`) | Vencido, error, accion irreversible. |

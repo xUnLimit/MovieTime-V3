@@ -63,6 +63,9 @@ describe.skipIf(requireIntegrationEnv()===null)('integracion: "Ya pagué" cruza 
       p_dmarc_pass:true,p_parser_version:1,p_confirmation_code:fixture.digitsCode,p_amount:10,p_payer_name_short:'Another payer',
       p_payer_phone_last4:'9999',p_paid_at:new Date().toISOString()}),'trusted mail');
     expect(mail[0].outcome).toBe('nuevo');
+    // The review hands the chat to a person (mode 'human'); the operator gives it back to the bot before the retry.
+    expect(fixture.sql(`SELECT mode FROM public.whatsapp_conversation_state WHERE wa_id='${fixture.waId}';`)).toBe('human');
+    fixture.sql(`UPDATE public.whatsapp_conversation_state SET mode='bot',handoff_reason=NULL,operator_id=NULL,lease_token=NULL,locked_until=NULL,version=version+1 WHERE wa_id='${fixture.waId}';`);
     expect((await inbound('paid',true)).stage).toBe('last4');
     const paid=await inbound(fixture.last4);
     expect(paid.lastReply).toContain('Ya recibimos tu pago');

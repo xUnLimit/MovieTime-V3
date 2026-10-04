@@ -20,7 +20,7 @@ const badgeVariants = cva(
         link: "text-primary underline-offset-4 [a&]:hover:underline",
         // Tonos semanticos: fondo tenue + borde + texto del mismo tono. Fuente unica de color de estado.
         neutral: "border-border bg-muted text-muted-foreground",
-        brand: "border-primary/25 bg-primary/10 text-primary",
+        brand: "border-primary/25 bg-primary/10 text-primary-text",
         success: "border-success-border bg-success-subtle text-success",
         warning: "border-warning-border bg-warning-subtle text-warning",
         danger: "border-danger-border bg-danger-subtle text-danger",

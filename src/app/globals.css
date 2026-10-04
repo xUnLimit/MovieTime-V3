@@ -72,6 +72,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -155,6 +156,7 @@
   /* Marca: violeta MovieTime (hue 295). */
   --primary: oklch(0.5 0.22 295);
   --primary-foreground: oklch(1 0 0);
+  --primary-text: oklch(0.5 0.22 295);
   --secondary: oklch(0.965 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.965 0 0);
@@ -212,6 +214,7 @@
 
   --primary: oklch(0.55 0.24 295);
   --primary-foreground: oklch(1 0 0);
+  --primary-text: oklch(0.78 0.15 295);
   --secondary: oklch(0.235 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.235 0 0);
@@ -366,6 +369,7 @@
   --popover-foreground: var(--chat-ink);
   --primary: var(--chat-accent);
   --primary-foreground: var(--chat-accent-ink);
+  --primary-text: var(--chat-accent);
   --secondary: var(--chat-hover);
   --secondary-foreground: var(--chat-ink);
   --muted: var(--chat-hover);

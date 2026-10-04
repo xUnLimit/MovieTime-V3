@@ -23,7 +23,8 @@ describe('datos del pedido en los textos', () => {
 
   it('no vuelve a interpretar el valor insertado ni acepta nombres fuera de la lista', () => {
     expect(renderNodeBody('{{pedido_total}}', { pedido_total: '{{pedido_estado}}', pedido_estado: 'secreto' })).toBe('{{pedido_estado}}');
-    expect(renderNodeBody('{{__proto__}} {{constructor}} {{toString}}', { __proto__: 'x' } as Record<string, string>))
+    const ownProto = JSON.parse('{"__proto__":"x"}') as Record<string, string>;
+    expect(renderNodeBody('{{__proto__}} {{constructor}} {{toString}}', ownProto))
       .toBe('{{__proto__}} {{constructor}} {{toString}}');
     expect(renderNodeBody('{{pedido_total}}', { constructor: 'x', toString: 'y' })).toBe(FALLBACK_VALUE);
   });
