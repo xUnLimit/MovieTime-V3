@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+﻿import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -61,6 +61,8 @@ vi.mock('@/platform/utils/whatsapp', async (importOriginal) => ({
   getSaludo: () => 'Buenas tardes',
 }));
 vi.mock('sonner', () => ({ toast: { error: toastError, success: toastSuccess } }));
+
+vi.mock('./ConversationControl', () => ({ ConversationControl: () => null }));
 
 import { ChatWorkspace } from './ChatWorkspace';
 
@@ -454,3 +456,4 @@ describe('ChatWorkspace', () => {
     expect((screen.getByLabelText('Mensaje') as HTMLTextAreaElement).value).toBe('/');
   });
 });
+

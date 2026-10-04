@@ -1,0 +1,49 @@
+﻿import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Pedido } from '@/modules/orders/contracts';
+import { PedidosView } from './PedidosView';
+
+const state=vi.hoisted(()=>({rows:[] as Pedido[],failed:false,loading:false,retry:vi.fn()}));
+vi.mock('@/hooks/use-pedidos',()=>({usePedidos:()=>({data:state.rows,isLoading:state.loading,isError:state.failed,refetch:state.retry})}));
+vi.mock('./PedidoReview',async importOriginal=>({...(await importOriginal<typeof import('./PedidoReview')>()),PedidoReview:()=> <p>Detalle del pedido seleccionado</p>}));
+beforeEach(()=>{window.sessionStorage.clear();vi.clearAllMocks();state.failed=false;state.loading=false;state.rows=Array.from({length:4},(_,index)=>({id:`order-${index}`,terceroId:null,contactId:null,moneda:'USD',total:12,estado:'confirmado',paymentState:index===0?'parcial':index===1?'exceso':index===2?'pendiente':'cubierto',deliveryState:index===0?'pendiente':index===1?'asignado':'enviado',receivedAmount:index===2?0:12,missingAmount:index===0||index===2?4:0,excessAmount:index===1?2:0,expiraAt:'2026-10-03',items:[{id:`item-${index}`,tipo:'nueva',servicioId:'s1',ventaId:null,planNombre:`Plan ${index}`,total:12,estado:'pendiente',ventaIdResultante:null}]}));Element.prototype.hasPointerCapture=()=>false;Element.prototype.setPointerCapture=()=>undefined;Element.prototype.releasePointerCapture=()=>undefined;Element.prototype.scrollIntoView=()=>undefined;});
+
+describe('PedidosView',()=>{
+  it('muestra dinero y estados independientes; conserva búsqueda y selección al volver',async()=>{
+    const {unmount}=render(<PedidosView />);
+    expect(screen.getByText('Exceso')).toBeTruthy();
+    expect(screen.getByText('Asignado')).toBeTruthy();
+    fireEvent.change(screen.getByRole('searchbox'),{target:{value:'Plan 0'}});
+    fireEvent.click(screen.getByRole('button',{name:'Revisar'}));
+    expect(screen.getByText('Detalle del pedido seleccionado')).toBeTruthy();
+    unmount();
+    render(<PedidosView />);
+    expect(screen.getByRole('searchbox', { hidden: true })).toHaveProperty('value','Plan 0');
+    expect(screen.getByText('Detalle del pedido seleccionado')).toBeTruthy();
+    await userEvent.setup().keyboard('{Escape}');
+    expect(screen.queryByText('Detalle del pedido seleccionado')).toBeNull();
+  });
+  it('filtra cobro, entrega y completados como vistas de la misma lista',async()=>{
+    render(<PedidosView />);
+    const user=userEvent.setup();
+    for(const [filter,count] of [['Cobro pendiente',2],['Entrega pendiente',2],['Completados',2],['Todos',4]] as const){
+      await user.click(screen.getByRole('button',{name:'Estado del pedido'}));
+      await user.click(screen.getByRole('menuitem',{name:filter}));
+      expect(screen.getAllByRole('button',{name:'Revisar'})).toHaveLength(count);
+    }
+  });
+  it('permite reintentar, vacío y carga',()=>{
+    state.failed=true;
+    const {rerender}=render(<PedidosView />);
+    fireEvent.click(screen.getByRole('button',{name:'Reintentar'}));
+    expect(state.retry).toHaveBeenCalled();
+    state.failed=false;state.rows=[];
+    rerender(<PedidosView />);
+    expect(screen.getByText('No hay pedidos en esta vista.')).toBeTruthy();
+    state.loading=true;
+    rerender(<PedidosView />);
+    expect(screen.getByText('Cargando datos…')).toBeTruthy();
+  });
+});
+

@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UnreadableYappyMailError, type YappyInbox, type YappyInboxMail } from '@/platform/server/yappy-imap';
 
 const createServiceRoleClient = vi.hoisted(() => vi.fn());
+const retryComprobantesServerUseCase = vi.hoisted(() => vi.fn());
+vi.mock('./pedidos-server-use-cases', () => ({ retryComprobantesServerUseCase }));
+vi.mock('./pedido-delivery-runtime', () => ({ drainOrderDeliveries: vi.fn().mockResolvedValue({ processed:0,failed:0 }) }));
 vi.mock('@/platform/server/supabase-server', () => ({ createServiceRoleClient }));
 import { syncYappyUseCase } from './yappy-sync-use-case';
 
@@ -26,6 +29,7 @@ const open = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  retryComprobantesServerUseCase.mockResolvedValue(0);
   updates.length = 0;
   calls.length = 0;
   state = { mailbox: 'owner@gmail.com', uid_validity: 10, last_uid: 3, last_error_code: null };
@@ -61,6 +65,13 @@ describe('Yappy IMAP synchronization', () => {
     expect(calls.filter((call) => call.name === 'ingest_yappy_payment')).toHaveLength(2);
     expect(updates.filter((item) => 'last_uid' in item).map((item) => item.last_uid)).toEqual([4, 5]);
     expect(close).toHaveBeenCalledOnce();
+  });
+  it('retries delayed order receipts after trusted mail synchronization and preserves sync success if retry fails', async () => {
+    uids = [];
+    expect((await syncYappyUseCase(config, open)).errorCode).toBeNull();
+    expect(retryComprobantesServerUseCase).toHaveBeenCalledTimes(1);
+    retryComprobantesServerUseCase.mockRejectedValue(new Error('reconciliation temporarily unavailable'));
+    expect((await syncYappyUseCase(config, open)).errorCode).toBeNull();
   });
   it('records an unreadable notice and keeps processing later UIDs', async () => {
     read.mockRejectedValueOnce(new UnreadableYappyMailError('2026-09-27T18:07:00.000Z'));

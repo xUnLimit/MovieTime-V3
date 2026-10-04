@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      intereses: {
+        Row: { id: string; contact_id: string; categoria_id: string; plan_id: string | null; origen: string; estado: string; created_at: string; avisado_at: string | null; consent_at: string | null; paused_at: string | null; invite_until: string | null; notice_attempts: number }
+        Insert: { id?: string; contact_id: string; categoria_id: string; plan_id?: string | null; origen: string; estado?: string; created_at?: string; avisado_at?: string | null; consent_at?: string | null; paused_at?: string | null; invite_until?: string | null; notice_attempts?: number }
+        Update: { estado?: string; avisado_at?: string | null; consent_at?: string | null; paused_at?: string | null; invite_until?: string | null; notice_attempts?: number }
+        Relationships: []
+      }
+      mt_service_access: {
+        Row: { service_id: string; mode: string; provider: string; rotation_confirmed_at: string | null; updated_by: string | null; updated_at: string }
+        Insert: { service_id: string; mode?: string; provider?: string; rotation_confirmed_at?: string | null; updated_by?: string | null; updated_at?: string }
+        Update: { mode?: string; provider?: string; rotation_confirmed_at?: string | null; updated_by?: string | null; updated_at?: string }
+        Relationships: []
+      }
+      mt_automation_settings: {
+        Row: { id: boolean; settings: Json; updated_at: string }
+        Insert: { id?: boolean; settings?: Json; updated_at?: string }
+        Update: { settings?: Json; updated_at?: string }
+        Relationships: []
+      }
+      whatsapp_conversation_state: {
+        Row: { wa_id: string; mode: string; version: number; operator_id: string | null; active_process: string | null; order_id: string | null; handoff_reason: string | null; flow_version: number | null; context: Json; lease_token: string | null; locked_until: string | null; updated_at: string }
+        Insert: { wa_id: string; mode?: string; version?: number; operator_id?: string | null; active_process?: string | null; order_id?: string | null; handoff_reason?: string | null; flow_version?: number | null; context?: Json; lease_token?: string | null; locked_until?: string | null; updated_at?: string }
+        Update: { mode?: string; version?: number; operator_id?: string | null; active_process?: string | null; order_id?: string | null; handoff_reason?: string | null; flow_version?: number | null; context?: Json; lease_token?: string | null; locked_until?: string | null; updated_at?: string }
+        Relationships: []
+      }
+      whatsapp_automation_inbox: {
+        Row: { id: number; wa_message_id: string; wa_id: string; status: string; attempts: number; available_at: string; lease_token: string | null; fence: number | null; last_error_code: string | null; completed_at: string | null }
+        Insert: { id?: never; wa_message_id: string; wa_id: string; status?: string; attempts?: number; available_at?: string; lease_token?: string | null; fence?: number | null; last_error_code?: string | null; completed_at?: string | null }
+        Update: { status?: string; attempts?: number; available_at?: string; lease_token?: string | null; fence?: number | null; last_error_code?: string | null; completed_at?: string | null }
+        Relationships: []
+      }
       yappy_mail_sync_state: {
         Row: { id: boolean; mailbox: string; uid_validity: number | null; last_uid: number; last_synced_at: string | null; last_error_code: string | null; sync_locked_until: string | null; updated_at: string }
         Insert: { id?: boolean; mailbox?: string; uid_validity?: number | null; last_uid?: number; last_synced_at?: string | null; last_error_code?: string | null; sync_locked_until?: string | null; updated_at?: string }
@@ -1852,6 +1882,7 @@ export type Database = {
       }
       terceros: {
         Row: {
+          wa_id: string | null
           active: boolean
           apellido: string
           created_at: string
@@ -4231,6 +4262,42 @@ export type Database = {
       }
     }
     Functions: {
+      mt_order_resolution_quote: { Args: { p_order_id: string }; Returns: Json }
+      mt_resolve_order: { Args: { p_order_id: string; p_action: string; p_expected_amount: number; p_reference: string | null; p_items: string[] | null; p_idempotency_key: string }; Returns: string }
+      mt_claim_order_delivery: { Args: { p_order_id?: string | null }; Returns: Json }
+      mt_order_delivery_access: { Args: { p_id: string; p_token: string; p_fence: number }; Returns: Json }
+      mt_finish_order_delivery: { Args: { p_id: string; p_token: string; p_fence: number; p_result: string; p_outbound_id?: string | null }; Returns: boolean }
+      mt_retry_order_delivery: { Args: { p_order_id: string }; Returns: boolean }
+      mt_resolve_access_sale: { Args: { p_wa_id: string; p_sale_id: string }; Returns: string | null }
+      mt_resolve_excess: { Args: { p_order_id: string; p_action: string; p_reference: string; p_expected_amount: number; p_idempotency_key: string }; Returns: string }
+      mt_retry_receipts: { Args: { p_limit: number }; Returns: number }
+      mt_export_integration_events: { Args: { p_consumer: string }; Returns: Json }
+      mt_ack_integration_event: { Args: { p_consumer: string; p_event_id: string; p_token: string }; Returns: boolean }
+      mt_panel_checkout: { Args: { p_groups: Json; p_idempotency_key: string }; Returns: string }
+      mt_list_orders: { Args: Record<string, never>; Returns: Json }
+      mt_order_command: { Args: { p_order_id: string; p_action: string; p_idempotency_key: string; p_wa_id?: string | null }; Returns: string }
+      mt_reconcile_order: { Args: { p_order_id: string; p_code: string; p_wa_id: string | null; p_idempotency_key: string }; Returns: string }
+      mt_public_catalog: { Args: Record<string, never>; Returns: Json }
+      mt_customer_sales: { Args: { p_wa_id: string }; Returns: Json }
+      mt_create_commerce_order: { Args: { p_wa_id: string; p_ids: string[]; p_kind: string; p_idempotency_key: string; p_expected_total: number }; Returns: string }
+      mt_get_commerce_order: { Args: { p_wa_id: string; p_order_id: string }; Returns: Json }
+      mt_register_interest: { Args: { p_contact: string; p_category_id: string; p_plan_id: string | null; p_consent: boolean }; Returns: string }
+      mt_claim_interest_notice: { Args: { p_id: string }; Returns: Json }
+      mt_claim_automatic_interest: { Args: { p_id?: string | null; p_manual?: boolean }; Returns: Json }
+      mt_check_interest_delivery: { Args: { p_id: string; p_token: string; p_fence: number }; Returns: boolean }
+      mt_finish_automatic_interest: { Args: { p_id: string; p_token: string; p_fence: number; p_result: string; p_outbound_id?: string | null }; Returns: boolean }
+      mt_finish_interest_notice: { Args: { p_id: string }; Returns: string }
+      mt_set_service_access: { Args: { p_service_id: string; p_mode: string; p_rotation_confirmed: boolean }; Returns: string }
+      mt_update_automation_settings: { Args: { p_settings: Json }; Returns: string }
+      mt_manage_interest: { Args: { p_id: string; p_action: string }; Returns: string }
+      mt_claim_ai_budget: { Args: { p_tokens: number }; Returns: boolean }
+      mt_automation_metrics: { Args: Record<PropertyKey, never>; Returns: Json }
+      claim_whatsapp_automation: { Args: { p_lease_seconds?: number }; Returns: Json }
+      checkpoint_whatsapp_automation: { Args: { p_wa_id: string; p_token: string; p_fence: number; p_context: Json; p_process: string | null; p_order_id: string | null; p_flow_version: number | null }; Returns: boolean }
+      check_whatsapp_automation_lease: { Args: { p_wa_id: string; p_token: string; p_fence: number }; Returns: boolean }
+      finish_whatsapp_automation: { Args: { p_id: number; p_token: string; p_fence: number; p_outcome: string; p_context?: Json | null; p_process?: string | null; p_order_id?: string | null; p_flow_version?: number | null }; Returns: boolean }
+      set_whatsapp_conversation_mode: { Args: { p_wa_id: string; p_mode: string; p_version: number }; Returns: boolean }
+      resolve_whatsapp_automation_review: { Args: { p_wa_id: string; p_version: number }; Returns: boolean }
       publish_whatsapp_bot_version: { Args: { p_definition: Json; p_note: string }; Returns: number }
       set_whatsapp_bot_enabled: { Args: { p_enabled: boolean }; Returns: boolean }
       record_whatsapp_bot_event: { Args: { p_wa_id: string; p_cliente_id: string | null; p_type: string; p_node_id: string | null; p_option_id: string | null; p_detail: Json }; Returns: string }

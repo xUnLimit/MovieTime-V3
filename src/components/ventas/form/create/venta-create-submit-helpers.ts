@@ -136,12 +136,3 @@ export function buildVentaCreateBatchInputs({
   );
 }
 
-export function getServicioIdsConPerfil(items: VentaItem[]) {
-  return Array.from(
-    new Set(
-      items
-        .filter((item) => item.perfilNumero)
-        .map((item) => item.servicioId),
-    ),
-  );
-}

@@ -45,6 +45,51 @@ afterEach(() => {
 });
 
 describe('gate del diff', () => {
+  const financialFiles = ['src/modules/orders/contracts.ts', 'src/platform/supabase/order-resolution-rpc-adapter.ts',
+    'src/application/use-cases/pedidos-use-cases.ts', 'src/application/use-cases/ventas/venta-batch-use-case.ts',
+    'src/application/use-cases/commerce-conversation-use-case.ts', 'src/components/ventas/form/create/useVentaCreateWorkflow.ts',
+    'src/components/ventas/form/create/useVentaCreateSubmit.ts'];
+  it.each(financialFiles)('exige 90%% para el recorrido financiero %s', (file) => {
+    const cwd = fixture();
+    mkdirSync(path.dirname(path.join(cwd, file)), { recursive: true });
+    writeFileSync(path.join(cwd, file), 'export const value = 2;\n');
+    const loc = { start: { line: 1 }, end: { line: 1 } };
+    report(cwd, { [path.join(cwd, file)]: {
+      statementMap: Object.fromEntries(Array.from({ length: 5 }, (_, id) => [id, loc])), s: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 0 },
+      fnMap: {}, f: {}, branchMap: {}, b: {},
+    } });
+    const result = run(cwd);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('changed critical code lines: 80.00%');
+    expect(result.stderr).toContain('changed critical code requires 90% lines');
+  });
+  it('exige 80% de ramas en pedidos aunque supere el gate general de 70%', () => {
+    const cwd = fixture(), file = 'src/orders-rpc-adapter.ts';
+    writeFileSync(path.join(cwd, file), 'export const value = 2;\n');
+    const loc = { start: { line: 1 }, end: { line: 1 } };
+    report(cwd, { [path.join(cwd, file)]: {
+      statementMap: { 0: loc }, s: { 0: 1 }, fnMap: {}, f: {},
+      branchMap: { 0: { loc, locations: [loc, loc, loc, loc] } }, b: { 0: [1, 1, 1, 0] },
+    } });
+    const result = run(cwd);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('changed critical code branches: 75.00%');
+    expect(result.stderr).toContain('changed critical code requires 80% branches');
+  });
+  it('exige 90% de funciones financieras aunque supere el gate general de 80%', () => {
+    const cwd = fixture(), file = 'src/orders-rpc-adapter.ts';
+    writeFileSync(path.join(cwd, file), 'export const value = 2;\n');
+    const loc = { start: { line: 1 }, end: { line: 1 } };
+    report(cwd, { [path.join(cwd, file)]: {
+      statementMap: { 0: loc }, s: { 0: 1 },
+      fnMap: Object.fromEntries(Array.from({ length: 5 }, (_, id) => [id, { loc }])), f: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 0 },
+      branchMap: {}, b: {},
+    } });
+    const result = run(cwd);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('changed critical code functions: 80.00%');
+    expect(result.stderr).toContain('changed critical code requires 90% functions');
+  });
   it('falla si un archivo nuevo ejecutable no aparece en cobertura', () => {
     const cwd = fixture();
     writeFileSync(path.join(cwd, 'src', 'new.ts'), 'export const value = 2;\n');

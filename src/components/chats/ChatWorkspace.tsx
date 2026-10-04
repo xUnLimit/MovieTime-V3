@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ import { MessageTimeline } from './MessageTimeline';
 import { ForwardDialog } from './ForwardDialog';
 import { TemplateSendDialog } from './TemplateSendDialog';
 import { useChatWorkspaceActions } from './useChatWorkspaceActions';
+import { ConversationControl } from './ConversationControl';
 
 const FIND_ICON = 'grid h-[31px] w-[31px] shrink-0 place-items-center rounded-lg text-chat-muted transition-colors hover:bg-chat-selected hover:text-chat-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45';
 
@@ -195,6 +196,7 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
           onTogglePin={onTogglePin}
           onToggleArchive={onToggleArchive}
         />
+        <ConversationControl key={waId} waId={waId} />
         {searchActive ? <div className="flex items-center gap-[9px] border-b border-chat-line bg-chat-raised px-3 py-2 md:px-5">
           <Search className="h-[15px] w-[15px] shrink-0 text-chat-quiet" strokeWidth={1.6} aria-hidden />
           <input autoFocus aria-label="Buscar en la conversación" placeholder="Buscar en los mensajes" value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setActiveMatchIndex(0); }} className="min-w-0 flex-1 bg-transparent text-base text-chat-ink outline-none placeholder:text-chat-quiet sm:text-sm" />
@@ -292,3 +294,4 @@ export function ChatWorkspace({ conversation, now, panelPreferred, onPanelPrefer
     </div>
   );
 }
+

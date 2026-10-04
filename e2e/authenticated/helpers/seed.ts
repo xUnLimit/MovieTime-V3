@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { uniqueId } from './env';
 import { assertOk, assertRow, bestEffort } from './supabase';
+import { cleanupOrderFixtures } from './order-cleanup';
 
 /** Fecha local YYYY-MM-DD desplazada `offsetDays` dias desde hoy. */
 export function isoDate(offsetDays = 0): string {
@@ -165,8 +166,9 @@ export async function findVentaId(admin: SupabaseClient, catalog: Catalog): Prom
  * incluidos); lo demas, con service role y en orden de dependencias. Es best-effort.
  */
 export async function cleanupCatalog(admin: SupabaseClient, adminUser: SupabaseClient, catalog: Catalog): Promise<void> {
+  cleanupOrderFixtures(catalog.terceroId, catalog.servicioId);
   await bestEffort('borrar ventas', async () => {
-    const { data } = await admin.from('ventas').select('id').eq('cliente_id', catalog.terceroId);
+    const { data } = await admin.from('ventas').select('id').eq('cliente_id', catalog.terceroId).eq('servicio_id', catalog.servicioId);
     await (data ?? []).reduce(async (previous, row) => {
       // Las ventas comparten servicio: conservar el orden de los RPC de limpieza.
       await previous;
@@ -175,8 +177,9 @@ export async function cleanupCatalog(admin: SupabaseClient, adminUser: SupabaseC
       if (error) {
         await admin.from('pagos_venta').delete().eq('venta_id', id);
         await admin.from('venta_periodos').delete().eq('venta_id', id);
-        assertOk(await admin.from('ventas').delete().eq('id', id), 'borrar venta');
       }
+      // The application RPC archives successfully; fixture teardown must also remove the row.
+      assertOk(await admin.from('ventas').delete().eq('id', id).eq('cliente_id', catalog.terceroId).eq('servicio_id', catalog.servicioId), 'borrar venta');
     }, Promise.resolve());
   });
   await bestEffort('borrar servicio', async () => assertOk(await admin.from('servicios').delete().eq('id', catalog.servicioId), 'servicio'));

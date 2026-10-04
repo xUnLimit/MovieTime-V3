@@ -26,6 +26,9 @@ const publicEnvSchema = z.object({
 });
 
 const serverEnvSchema = z.object({
+  OPENAI_API_KEY: z.string().trim().min(20).optional(),
+  AUTOMATION_INTEGRATION_TOKEN: z.string().min(32).max(256).regex(/^[A-Za-z0-9_-]+$/).optional(),
+  AUTOMATION_INTEREST_TEMPLATE: z.string().max(512).regex(/^[a-z0-9_]+$/).optional(),
   PUSH_CRON_SECRET: isProduction
     ? z.string().trim().min(16).optional()
     : z.string().optional(),

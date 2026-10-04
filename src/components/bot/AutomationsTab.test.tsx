@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+﻿import { fireEvent, render as renderBase, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,6 +44,14 @@ function makeApi(overrides: Partial<AutomationsApi> = {}): AutomationsApi {
   };
 }
 
+function render(element: React.ReactNode) {
+  const result = renderBase(element);
+  screen.queryAllByRole('button', { name: 'Ver mensaje y condiciones' }).forEach(button => fireEvent.click(button));
+  const activity = screen.queryByRole('button', { name: 'Ver actividad reciente' });
+  if (activity) fireEvent.click(activity);
+  return result;
+}
+
 beforeEach(() => {
   state.api = makeApi();
   // Radix necesita estas APIs de puntero que jsdom no implementa.
@@ -84,9 +92,9 @@ describe('catalogo de automatizaciones', () => {
     render(<AutomationsView api={makeApi()} />);
     const links = screen.getAllByRole('link', { name: /^Editar mensaje/ });
     expect(links).toHaveLength(8);
-    expect(screen.getByRole('link', { name: 'Editar mensaje Aviso de vencimiento' }).getAttribute('href')).toBe('/editor-mensajes?tipo=dia_pago');
-    expect(screen.getByRole('link', { name: 'Editar mensaje Despedida' }).getAttribute('href')).toBe('/editor-mensajes?tipo=despedida');
-    expect(screen.getByRole('link', { name: 'Editar mensaje Transferencia de Servicio' }).getAttribute('href')).toBe('/editor-mensajes?tipo=transferencia_servicio');
+    expect(screen.getByRole('link', { name: 'Editar mensaje Aviso de vencimiento' }).getAttribute('href')).toBe('/automatizaciones?mensaje=dia_pago');
+    expect(screen.getByRole('link', { name: 'Editar mensaje Despedida' }).getAttribute('href')).toBe('/automatizaciones?mensaje=despedida');
+    expect(screen.getByRole('link', { name: 'Editar mensaje Transferencia de Servicio' }).getAttribute('href')).toBe('/automatizaciones?mensaje=transferencia_servicio');
   });
 
   it('muestra carga y error con reintento', async () => {
@@ -210,19 +218,16 @@ describe('envios recientes', () => {
 });
 
 describe('pestaña Automatizaciones del Bot', () => {
-  it('aparece entre las pestañas y monta la vista con el hook al abrirla', async () => {
+  it('abre el recorrido sin pestañas anidadas y conserva todas sus herramientas', () => {
     const botApi = {
       loading: false, error: null, status: { enabled: true, publishedVersion: 1, updatedAt: null }, published: null, draft: null, dirty: false,
       issues: [], hasErrors: false, versions: [], events: null, health: null, saving: false, setEnabled: vi.fn(), updateDraft: vi.fn(),
       discardDraft: vi.fn(), resetToDefaults: vi.fn(), publish: vi.fn(), loadVersionIntoDraft: vi.fn(), loadEvents: vi.fn(), testMailbox: vi.fn(), refresh: vi.fn(),
     };
-    render(<BotView api={botApi as never} />);
-    const tab = screen.getByRole('tab', { name: 'Automatizaciones' });
-    expect(screen.queryByText('Envíos recientes')).toBeNull();
-    await userEvent.setup().click(tab);
-    expect(await screen.findByText('Envíos recientes')).toBeTruthy();
+    render(<BotView api={botApi} />);
+    expect(screen.queryByRole('tablist')).toBeNull();
+    ['Pasos y prueba', 'Mensajes', 'Condiciones', 'Actividad', 'Versiones', 'Resumen'].forEach(name => expect(screen.getByRole('button', { name })).toBeTruthy());
   });
-
   it('el contenedor lee el hook', () => {
     render(<AutomationsTab />);
     expect(screen.getByText('WhatsApp automático')).toBeTruthy();
@@ -240,3 +245,5 @@ describe('formato', () => {
     expect(formatDateTime('no-fecha')).toBe('—');
   });
 });
+
+

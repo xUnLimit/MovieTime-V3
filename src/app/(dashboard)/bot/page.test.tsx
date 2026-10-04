@@ -47,6 +47,7 @@ describe('/bot page', () => {
 
   it('switches the bot off through the real hook and use case', async () => {
     renderPage();
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Resumen$/ }));
     await userEvent.setup().click(await screen.findByRole('switch', { name: 'Apagar bot' }));
     await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(useCases.setBotEnabledUseCase).toHaveBeenCalledWith(false, expect.anything()));

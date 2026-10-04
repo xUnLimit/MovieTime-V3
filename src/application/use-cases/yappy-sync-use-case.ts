@@ -3,6 +3,8 @@ import { openYappyInbox, UnreadableYappyMailError, type YappyInbox, type YappyIn
 import { parseYappyMail, YAPPY_PARSER_VERSION } from '@/modules/yappy/parse-mail';
 import { createLogger } from '@/platform/observability/logger';
 import { z } from '@/platform/validation/zod';
+import { retryComprobantesServerUseCase } from './pedidos-server-use-cases';
+import { drainOrderDeliveries } from './pedido-delivery-runtime';
 
 type Config = { user: string; password: string };
 type Counts = { scanned: number; extracted: number; invalid: number; duplicate: number; discarded: number; ignored: number; deferred: number; errorCode: string | null };
@@ -127,6 +129,12 @@ export async function syncYappyUseCase(config: Config, openInbox = openYappyInbo
     }
     const { error } = await db.from('yappy_mail_sync_state').update({ sync_locked_until: null }).eq('id', true);
     if (error) logger.warn('Could not release Yappy sync lock', { errorCode: error.code });
+  }
+  if (!counts.errorCode) {
+    try { await retryComprobantesServerUseCase(); }
+    catch { logger.warn('Order reconciliation remains pending for retry', { errorCode: 'order_retry_failed' }); }
+    try { await drainOrderDeliveries(); }
+    catch { logger.warn('Order access delivery remains pending for retry', { errorCode: 'order_delivery_failed' }); }
   }
   return counts;
 }

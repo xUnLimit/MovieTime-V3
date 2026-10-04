@@ -23,6 +23,7 @@ export type BotDeps = {
   fetchTravelPage: (url: string) => Promise<string | null>;
   send: (message: NewOutboundMessage) => Promise<OutboundResult>;
   now?: () => Date;
+  resolveOwnedSale?: (waId: string, saleId: string) => Promise<string | null>;
 };
 
 export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavailable' | 'limited' | 'none' | 'no_profile'
@@ -31,7 +32,7 @@ export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavai
 // What one inbound message needs to be answered: who wrote, when, and the published bot.
 export type BotRun = { deps: BotDeps; message: InboundMessage; now: Date; clienteId: string | null };
 
-function replyKey(waMessageId: string): string {
+export function botReplyKey(waMessageId: string): string {
   const hex = createHash('sha256').update(`bot-reply:${waMessageId}`).digest('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
@@ -41,7 +42,7 @@ export function reply(
   deps: BotDeps, message: InboundMessage, payload: OutboundPayload, storedTextBody?: string,
 ): Promise<OutboundResult> {
   return deps.send({
-    idempotencyKey: replyKey(message.waMessageId), toWaId: message.fromWaId, payload, sentBy: null,
+    idempotencyKey: botReplyKey(message.waMessageId), toWaId: message.fromWaId, payload, sentBy: null,
     ...(storedTextBody ? { storedTextBody } : {}),
   });
 }

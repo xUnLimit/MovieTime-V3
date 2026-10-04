@@ -1,8 +1,8 @@
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { WhatsAppText } from '@/components/chats/WhatsAppText';
 import { SAMPLE_MESSAGE_DATA } from '@/components/editor-mensajes/sample-data';
-import { Panel } from '@/components/shared/Panel';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import type { AutomationCard } from '@/modules/messaging/automation-cards';
@@ -21,20 +21,16 @@ function channelSummary(channel: AutomationCard['channel']): string {
 }
 
 export function AutomationCardItem({ card }: { card: AutomationCard }) {
+  const [expanded, setExpanded] = useState(false);
   const { activity } = card;
   const preview = card.contenido.trim() ? renderFreeText(card.contenido, SAMPLE_MESSAGE_DATA) : '';
   return (
-    <Panel
-      title={card.label}
-      description={`Cuándo se envía: ${card.cuando}.`}
-      actions={<ChannelBadge channel={card.channel} />}
-      footer={
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/editor-mensajes?tipo=${card.tipo}`} aria-label={`Editar mensaje ${card.label}`}>Editar mensaje</Link>
-        </Button>
-      }
-      contentClassName="space-y-3"
-    >
+    <article className="space-y-2 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold">{card.label}</h3><ChannelBadge channel={card.channel} /></div>
+      <p className="text-xs text-muted-foreground">Cuándo se envía: {card.cuando}.</p>
+      <p className="text-xs text-muted-foreground tabular-nums">Últimos 30 días: {activity.sent} enviados · {activity.failed} fallidos · {activity.lastSentAt ? `último envío ${formatDateTime(activity.lastSentAt)}` : 'sin envíos'}</p>
+      <div className="flex flex-wrap gap-2"><Button asChild variant="outline" size="sm"><Link href={`/automatizaciones?mensaje=${card.tipo}`} aria-label={`Editar mensaje ${card.label}`}>Editar mensaje</Link></Button><Button variant="ghost" size="sm" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? 'Ocultar detalles' : 'Ver mensaje y condiciones'}</Button></div>
+      {expanded ? <>
       <dl className="space-y-1 text-sm">
         <div><dt className="sr-only">Quién lo dispara</dt><dd className="font-medium">{card.triggers.join(' · ')}</dd></div>
         <div><dt className="sr-only">Detalle</dt><dd className="text-xs text-muted-foreground">{card.detail}</dd></div>
@@ -65,6 +61,7 @@ export function AutomationCardItem({ card }: { card: AutomationCard }) {
         30 días: {activity.sent} enviados · {activity.failed} fallidos · {activity.skipped} omitidos
         {' · '}{activity.lastSentAt ? `último envío ${formatDateTime(activity.lastSentAt)}` : 'sin envíos'}
       </p>
-    </Panel>
+      </> : null}
+    </article>
   );
 }

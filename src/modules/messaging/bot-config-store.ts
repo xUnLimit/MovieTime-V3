@@ -11,7 +11,7 @@ type BotConfigSnapshot =
   | { ready: true; enabled: true; version: number; definition: BotDefinition }
   | { ready: false; enabled: boolean; version: number | null; reason: BotConfigOffReason };
 
-export type BotConfigStore = { load(): Promise<BotConfigSnapshot> };
+export type BotConfigStore = { load(pinnedVersion?: number | null): Promise<BotConfigSnapshot> };
 
 function check(error: { code?: string } | null, action: string): void {
   if (error) throw new Error(`Bot config store ${action} failed: ${error.code ?? 'unknown'}`);
@@ -20,12 +20,12 @@ function check(error: { code?: string } | null, action: string): void {
 // Fail closed: any missing or invalid piece leaves the bot silent. Only a database error throws.
 export function createBotConfigStore(client: ServiceClient = createServiceRoleClient()): BotConfigStore {
   return {
-    async load() {
+    async load(pinnedVersion) {
       const { data: config, error } = await client.from('whatsapp_bot_config')
         .select('enabled,published_version').eq('id', 'global').maybeSingle();
       check(error, 'config lookup');
       if (!config) return { ready: false, enabled: false, version: null, reason: 'missing_config' };
-      const version = config.published_version;
+      const version = pinnedVersion ?? config.published_version;
       if (!config.enabled) return { ready: false, enabled: false, version, reason: 'disabled' };
       if (version === null) return { ready: false, enabled: true, version: null, reason: 'no_published_version' };
 

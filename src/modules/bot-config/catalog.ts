@@ -19,9 +19,12 @@ export const KEYWORD_MAX_LENGTH = 40;
 export const NODE_NAME_MAX_LENGTH = 60;
 
 export const NODE_KINDS: readonly BotNodeKind[] = ['buttons', 'list', 'text', 'action'];
-export const ACTION_KEYS: readonly BotActionKey[] = ['netflix_login_code', 'netflix_travel_code', 'handoff'];
+export const ACTION_KEYS: readonly BotActionKey[] = ['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services'];
 
 export const ACTION_CATALOG: Record<BotActionKey, { label: string; description: string }> = {
+  purchase: { label: 'Adquirir servicios', description: 'Abre el catálogo y el carrito con reserva y pago verificado.' },
+  renewal: { label: 'Renovar servicios', description: 'Permite elegir las ventas propias antes de confirmar importe y pago.' },
+  my_services: { label: 'Consultar mis servicios', description: 'Muestra solamente los servicios vinculados al número que escribe.' },
   netflix_login_code: {
     label: 'Enviar código de inicio de sesión',
     description: 'Busca en el buzón el código que Netflix envió para iniciar sesión y se lo entrega al cliente.',

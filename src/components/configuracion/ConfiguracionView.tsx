@@ -4,6 +4,9 @@ import { DashboardViewSection, DevicePushSection } from './BasicSections';
 import { ExecutivePushSection } from './ExecutivePushSection';
 import { useConfiguracionController } from './useConfiguracionController';
 import { WhatsAppAutoSection } from './WhatsAppAutoSection';
+import Link from 'next/link';
+import { Panel } from '@/components/shared/Panel';
+import { Button } from '@/components/ui/button';
 
 /** Ajustes en dos columnas: preferencias de este dispositivo a la izquierda, automatizaciones a la derecha. */
 export function ConfiguracionView() {
@@ -12,6 +15,7 @@ export function ConfiguracionView() {
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-2 xl:items-start">
       <div className="min-w-0 space-y-4">
+        <Panel title="Conexiones y automatización" description="Prepara IA, integraciones, reservas y proveedores de acceso."><Button variant="outline" asChild><Link href="/configuracion/automatizacion">Configurar conexiones</Link></Button></Panel>
         <DashboardViewSection
           availableYears={controller.availableYears}
           selectedYear={controller.selectedYear}

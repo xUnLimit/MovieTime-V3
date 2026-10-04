@@ -210,6 +210,8 @@ export class FixtureScope {
       }
     };
     if (this.waIds.length > 0) {
+      await step('cola de automatizacion', () => db.from('whatsapp_automation_inbox').delete().in('wa_id', this.waIds));
+      await step('estado de conversacion', () => db.from('whatsapp_conversation_state').delete().in('wa_id', this.waIds));
       await step('flags', () => db.from('whatsapp_conversation_flags').delete().in('wa_id', this.waIds));
       await step('lecturas', () => db.from('whatsapp_conversation_reads').delete().in('wa_id', this.waIds));
       await step('entrantes', () => db.from('whatsapp_inbound_messages').delete().in('from_wa_id', this.waIds));

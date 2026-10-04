@@ -27,6 +27,7 @@ export const BOT_STORED_TEXT = {
 } as const;
 
 export type BotAction =
+  | { kind: 'sale'; type: BotCodeType; saleId: string }
   | { kind: 'option'; nodeId: string; optionId: string }
   | { kind: 'account'; type: BotCodeType; serviceId: string }
   | { kind: 'legacy'; target: LegacyTarget };
@@ -50,6 +51,10 @@ export function readBotAction(message: InboundMessage): BotAction | null {
   const payload = message.payload;
   if (message.messageType !== 'interactive' || !payload || typeof payload !== 'object' || Array.isArray(payload)
     || (payload.type !== 'button_reply' && payload.type !== 'list_reply') || typeof payload.id !== 'string') return null;
+  if (payload.id.startsWith('ACCESS:LOGIN:')) {
+    const saleId = payload.id.slice('ACCESS:LOGIN:'.length);
+    return isUuid(saleId) ? { kind: 'sale',type: 'login',saleId } : null;
+  }
   const legacy = LEGACY_REPLY_IDS.get(payload.id);
   if (legacy) return { kind: 'legacy', target: legacy };
   const option = parseOptionReplyId(payload.id);

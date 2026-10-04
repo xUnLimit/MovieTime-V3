@@ -2,7 +2,7 @@
 // `bot-config` (logica pura), el runtime del webhook, los repositorios y la UI.
 // Cambiar un tipo aqui exige actualizar `docs/whatsapp-bot-admin.md`.
 
-export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff';
+export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff' | 'purchase' | 'renewal' | 'my_services';
 export type BotNodeKind = 'buttons' | 'list' | 'text' | 'action';
 
 export type BotOption = {

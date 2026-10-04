@@ -1,5 +1,4 @@
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
-import { normalizePanamaWaId } from './message-data';
 
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 // profiles lists the Netflix profile names noted on the customer's sales of this account.
@@ -19,21 +18,23 @@ function check(error: { code?: string } | null, action: string): void {
 export function createBotStore(client: ServiceClient = createServiceRoleClient()): BotStore {
   return {
     async customerServices(waId) {
-      const { data: people, error } = await client.from('terceros').select('id,telefono').eq('active', true);
+      const { data: people, error } = await client.from('terceros').select('id').eq('active', true).eq('wa_id', waId).limit(2);
       check(error, 'customer lookup');
-      const matches = (people ?? []).filter((row) => normalizePanamaWaId(row.telefono ?? '') === waId);
+      const matches = people ?? [];
       if (matches.length !== 1) return { known: false, clienteId: null, services: [] };
       const { data: ventas, error: ventasError } = await client.from('v_ventas_full')
         .select('servicio_id,servicio_correo,perfil_nombre,categoria_nombre,servicio_nombre')
-        .eq('cliente_id', matches[0].id).eq('estado', 'activo');
+        .eq('cliente_id', matches[0].id).eq('estado', 'activo')
+        .gte('ultima_fecha_fin', new Date().toLocaleDateString('en-CA', { timeZone: 'America/Panama' }));
       check(ventasError, 'sales lookup');
       const netflix = (ventas ?? []).filter((venta) => venta.servicio_id && venta.servicio_correo
         && /netflix/i.test(`${venta.categoria_nombre ?? ''} ${venta.servicio_nombre ?? ''}`));
       const ids = [...new Set(netflix.flatMap((venta) => venta.servicio_id ? [venta.servicio_id] : []))];
       if (ids.length === 0) return { known: true, clienteId: matches[0].id, services: [] };
-      const { data: states, error: statesError } = await client.from('servicios').select('id,activo').in('id', ids);
+      const { data: states, error: statesError } = await client.from('servicios')
+        .select('id,activo,en_reposo,cortado_at,archivado_at').in('id', ids);
       check(statesError, 'service state lookup');
-      const active = new Set((states ?? []).filter((row) => row.activo).map((row) => row.id));
+      const active = new Set((states ?? []).filter((row) => row.activo && !row.en_reposo && !row.cortado_at && !row.archivado_at).map((row) => row.id));
       const byEmail = new Map<string, BotService>();
       for (const venta of netflix) {
         const email = venta.servicio_correo?.trim().toLowerCase();

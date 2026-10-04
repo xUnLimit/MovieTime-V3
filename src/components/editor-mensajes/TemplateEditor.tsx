@@ -27,15 +27,17 @@ import { TemplateList } from './TemplateList';
 import { TemplatePreview } from './TemplatePreview';
 import { useTemplateDraft } from './useTemplateDraft';
 import { useTemplateSave } from './useTemplateSave';
+import { useUnsavedNavigation } from '@/hooks/use-unsaved-navigation';
 
 interface TemplateEditorProps {
   templates: TemplateMensaje[];
   onTemplateSaved?: () => void | Promise<void>;
   /** Mensaje seleccionado al abrir (enlace profundo `?tipo=`); sin él abre en el aviso de vencimiento. */
   initialTipo?: EditableTipoKey;
+  focused?: boolean;
 }
 
-export function TemplateEditor({ templates, onTemplateSaved, initialTipo }: TemplateEditorProps) {
+export function TemplateEditor({ templates, onTemplateSaved, initialTipo, focused = false }: TemplateEditorProps) {
   const [selectedTipo, setSelectedTipo] = useState<EditableTipoKey>(initialTipo ?? 'dia_pago');
   const [pendingTipo, setPendingTipo] = useState<EditableTipoKey | null>(null);
   const [modes, setModes] = useState<Partial<Record<EditableTipoKey, SendMode>>>({});
@@ -44,6 +46,7 @@ export function TemplateEditor({ templates, onTemplateSaved, initialTipo }: Temp
 
   const currentTemplate = templates.find((t) => t.tipo === selectedTipo) ?? null;
   const { fields, dirty, patch } = useTemplateDraft(selectedTipo, currentTemplate);
+  useUnsavedNavigation(dirty);
 
   const linked = fields.metaTemplateName
     ? metaTemplates.find((item) => item.name === fields.metaTemplateName && !item.retired) ?? null
@@ -75,12 +78,12 @@ export function TemplateEditor({ templates, onTemplateSaved, initialTipo }: Temp
   };
 
   return (
-    <Card className="grid min-w-0 gap-0 overflow-clip py-0 md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[264px_minmax(0,1fr)_332px]">
-      <div className="min-w-0 border-b md:col-start-1 md:row-span-2 md:row-start-1 md:border-b-0 md:border-r xl:row-span-1">
+    <Card className={focused ? 'grid min-w-0 gap-0 overflow-clip py-0 xl:grid-cols-[minmax(0,1fr)_332px]' : 'grid min-w-0 gap-0 overflow-clip py-0 md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[264px_minmax(0,1fr)_332px]'}>
+      {!focused ? <div className="min-w-0 border-b md:col-start-1 md:row-span-2 md:row-start-1 md:border-b-0 md:border-r xl:row-span-1">
         <TemplateList selected={selectedTipo} statusOf={statusOf} onSelect={changeTipo} />
-      </div>
+      </div> : null}
 
-      <div className="flex min-h-[30rem] min-w-0 flex-col md:col-start-2 md:row-start-1">
+      <div className={focused ? 'flex min-h-[30rem] min-w-0 flex-col' : 'flex min-h-[30rem] min-w-0 flex-col md:col-start-2 md:row-start-1'}>
         <PanelHeader
           title={<span className="text-base">{tipoLabel(selectedTipo)}</span>}
           description={`Cuándo se envía: ${tipoCuando(selectedTipo)}.`}
@@ -104,7 +107,7 @@ export function TemplateEditor({ templates, onTemplateSaved, initialTipo }: Temp
         />
       </div>
 
-      <div className="min-w-0 border-t md:col-start-2 md:row-start-2 xl:col-start-3 xl:row-start-1 xl:border-l xl:border-t-0">
+      <div className={focused ? 'min-w-0 border-t xl:border-l xl:border-t-0' : 'min-w-0 border-t md:col-start-2 md:row-start-2 xl:col-start-3 xl:row-start-1 xl:border-l xl:border-t-0'}>
         <TemplatePreview contenido={fields.contenido} meta={linked} paramMap={fields.metaParamMap} mode={mode} />
       </div>
 

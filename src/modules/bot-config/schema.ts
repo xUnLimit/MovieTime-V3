@@ -21,7 +21,7 @@ const nodeSchema = z.object({
   body: text,
   listButtonLabel: text.optional(),
   options: z.array(optionSchema).max(100),
-  action: z.enum(['netflix_login_code', 'netflix_travel_code', 'handoff']).optional(),
+  action: z.enum(['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services']).optional(),
 });
 
 const paramSchema = z.number();

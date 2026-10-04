@@ -21,6 +21,30 @@ const env = vi.hoisted(() => ({
 
 vi.mock('@/platform/config', () => ({ env }));
 vi.mock('@/modules/whatsapp/webhook-inbox', () => ({ storeWebhookBatch }));
+vi.mock('@/application/use-cases/commerce-conversation-use-case', () => ({ handleCommerceConversation: async () => null }));
+vi.mock('@/application/use-cases/commerce-conversation-runtime', () => ({ createCommerceConversationDeps: () => ({}) }));
+vi.mock('@/application/use-cases/commerce-conversation-state', () => ({ commerceCommand: () => null }));
+vi.mock('@/application/use-cases/automation-intent-use-case', () => ({ suggestAutomationIntent: async () => null }));
+vi.mock('@/application/use-cases/pedido-delivery-runtime', () => ({ drainOrderDeliveries: async () => ({ processed:0,failed:0 }) }));
+vi.mock('@/modules/whatsapp/automation-inbox-store', () => ({
+  createAutomationInboxStore: () => {
+    let queue: Array<{ id: number; attempts: number; token: string; fence: number; message: unknown; conversation: object }> | undefined;
+    return {
+      claim: async () => {
+        if (!queue) {
+          const batch = storeWebhookBatch.mock.calls.at(-1)?.[0];
+          const stored = await storeWebhookBatch.mock.results.at(-1)?.value;
+          queue = (batch?.messages ?? []).filter((message: { waMessageId: string }) => stored?.insertedWaMessageIds?.includes(message.waMessageId))
+            .map((message: unknown, index: number) => ({ id: index + 1, attempts: 1, token: 'lease', fence: 1, message,
+              conversation: { flowVersion: null, context: {}, activeProcess: null, orderId: null } }));
+        }
+        return queue?.shift() ?? null;
+      },
+      isCurrent: async () => true,
+      finish: async () => true,
+    };
+  },
+}));
 vi.mock('@/modules/notifications/whatsapp-message-push', () => ({ notifyWhatsAppMessages }));
 vi.mock('@/application/use-cases/notice-reply-use-case', () => ({ handleNoticeReply }));
 vi.mock('@/modules/whatsapp/outbound-messages', () => ({ sendOutboundMessage }));

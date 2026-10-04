@@ -245,3 +245,11 @@ Decisiones del runtime (`webhook/route.ts`, `webhook/bot-runtime.ts`, `whatsapp-
   caso de uso (simulado) para el interruptor y la publicacion.
 - **Pendiente para el usuario:** borrar `WHATSAPP_BOT_ENABLED` de Vercel y de `.env.local`; encender el bot desde `/bot`; comprobar que el nombre de perfil
   de cada venta de Netflix coincide con el de Netflix (sin eso el cruce por perfil bloquea el codigo de viaje).
+# Recorridos comerciales
+
+Además de acceso Netflix y atención humana, los nodos de acción admiten `purchase`,
+`renewal` y `my_services`. Su implementación verifica catálogo/propiedad en el
+servidor y exige un resumen confirmado antes de reservar. El simulador describe
+los pasos sin crear pedidos ni ejecutar pagos. Consulta
+[procesamiento persistente](whatsapp-durable-processing.md) para recuperación,
+control humano y preparación del scheduler.

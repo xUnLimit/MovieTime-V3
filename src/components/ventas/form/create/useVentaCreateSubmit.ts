@@ -7,15 +7,12 @@ import { MutationCommittedError } from '@/platform/errors/mutation-committed-err
 import type { VentaItem } from '@/components/ventas/form/ventas-form-shared';
 import { syncTerceroMetodoPagoUseCase } from '@/application/use-cases/terceros/tercero-metodo-pago-use-cases';
 import { reportError } from '@/platform/observability/logger';
+import { createVentaBatchUseCase } from '@/application/use-cases/ventas/venta-batch-use-case';
 import { getPublicErrorMessage } from '@/platform/errors/public-errors';
-import type { Tercero, VentaDoc } from '@/types';
+import type { Tercero } from '@/types';
 
-import {
-  buildVentaCreateBatchInputs,
-  getServicioIdsConPerfil,
-} from './venta-create-submit-helpers';
+import { buildVentaCreateBatchInputs } from './venta-create-submit-helpers';
 
-type CreateVentaInput = Omit<VentaDoc, 'id' | 'createdAt' | 'updatedAt'>;
 type MetodoPagoResumen = {
   nombre?: string;
   moneda?: string;
@@ -24,7 +21,6 @@ type MetodoPagoResumen = {
 type UseVentaCreateSubmitParams = {
   clienteId: string | undefined;
   clienteSeleccionado: Tercero | undefined;
-  createVenta: (venta: CreateVentaInput, idempotencyKey?: string) => Promise<void>;
   editedMessage: string;
   estadoVenta: string | undefined;
   fechaFin: Date | undefined;
@@ -47,13 +43,11 @@ type UseVentaCreateSubmitParams = {
   // flujo por defecto (setPendingWhatsApp).
   sendDirectMessage?: (message: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
   totalFinal: number;
-  updatePerfilOcupado: (id: string, shouldIncrement: boolean) => Promise<void>;
 };
 
 export function useVentaCreateSubmit({
   clienteId,
   clienteSeleccionado,
-  createVenta,
   editedMessage,
   estadoVenta,
   fechaFin,
@@ -66,12 +60,10 @@ export function useVentaCreateSubmit({
   setPendingWhatsApp,
   sendDirectMessage,
   totalFinal,
-  updatePerfilOcupado,
 }: UseVentaCreateSubmitParams) {
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
   const intent = useRef(createMutationIntent());
-  const completed = useRef(new Set<string>());
 
   const handleGuardarVenta = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -100,7 +92,7 @@ export function useVentaCreateSubmit({
     try {
       submitting.current = true;
       setSaving(true);
-      const writes = buildVentaCreateBatchInputs({
+      const inputs = buildVentaCreateBatchInputs({
         clienteId,
         clienteNombre,
         clienteTelefono: clienteSeleccionado?.telefono || '',
@@ -112,22 +104,13 @@ export function useVentaCreateSubmit({
         metodoPagoNombre,
         moneda,
         totalFinal,
-      }).map(async (input, index) => {
-        const key = intent.current.keyFor([
-          items[index], clienteId, metodoPagoId, moneda, fechaInicio, fechaFin, normalizedEstado,
-        ]);
-        if (completed.current.has(key)) return;
-        try {
-          await createVenta(input, key);
-        } catch (error) {
-          if (!notifyCommittedMutation(error)) throw error;
-          reportError('VentaCreateSubmit', 'Venta guardada con error secundario', error);
-        }
-        completed.current.add(key);
       });
-      const results = await Promise.allSettled(writes);
-      const failed = results.find((result) => result.status === 'rejected');
-      if (failed?.status === 'rejected') throw failed.reason;
+      const key = intent.current.keyFor([items, clienteId, metodoPagoId, moneda, fechaInicio, fechaFin, normalizedEstado]);
+      try {
+        await createVentaBatchUseCase(inputs, key);
+      } catch (error) {
+        if (!notifyCommittedMutation(error)) throw error;
+      }
       batchCommitted = true;
 
       try {
@@ -145,14 +128,6 @@ export function useVentaCreateSubmit({
         });
       }
 
-      if (normalizedEstado !== 'inactivo') {
-        const servicioIdsConPerfil = getServicioIdsConPerfil(items);
-        await Promise.all(
-          servicioIdsConPerfil.map((servicioId) =>
-            updatePerfilOcupado(servicioId, true),
-          ),
-        );
-      }
       if (notifyCliente && normalizedEstado !== 'inactivo' && editedMessage) {
         const sent = sendDirectMessage ? await sendDirectMessage(editedMessage) : null;
         if (sent?.ok) {
@@ -186,9 +161,7 @@ export function useVentaCreateSubmit({
         return;
       }
       toast.error('Error al guardar la venta', {
-        description: completed.current.size > 0
-          ? 'Parte del lote ya se guardo. Reintenta sin cambiar los datos para completar las ventas pendientes sin duplicarlas.'
-          : getPublicErrorMessage(error, 'No se pudo guardar la venta.'),
+        description: getPublicErrorMessage(error, 'No se pudo guardar la venta.'),
       });
     } finally {
       submitting.current = false;

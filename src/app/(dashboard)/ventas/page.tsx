@@ -11,7 +11,7 @@ import { ConfirmDeleteVentaDialog } from '@/components/shared/ConfirmDeleteVenta
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { VentasNavigation } from '@/components/ventas/VentasNavigation';
 import { VentasMetrics } from '@/components/ventas/VentasMetrics';
 import { VentasTable } from '@/components/ventas/VentasTable';
 import { useCategoriasFull } from '@/hooks/use-categorias-full';
@@ -132,27 +132,10 @@ function VentasPageContent() {
 
         <VentasMetrics />
 
-        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as typeof activeTab); setSearchQuery(''); setSelectedCategoriaId('todas'); }}>
-        <TabsList>
-          <TabsTrigger
-            value="todas"
-          >
-            Todas
-          </TabsTrigger>
-          <TabsTrigger
-            value="activas"
-          >
-            Activas
-          </TabsTrigger>
-          <TabsTrigger
-            value="inactivas"
-          >
-            Inactivas
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="space-y-4">
+        <VentasNavigation />
           <VentasTable
+            estado={activeTab}
+            onEstadoChange={setActiveTab}
             ventas={ventasPaginadas}
             isLoading={isLoadingPage}
             title={tituloTab}
@@ -174,8 +157,6 @@ function VentasPageContent() {
             pageSize={pageSize}
             onPageSizeChange={setPageSize}
           />
-        </TabsContent>
-      </Tabs>
     </div>
     <ConfirmDeleteVentaDialog
         open={deleteDialogOpen}

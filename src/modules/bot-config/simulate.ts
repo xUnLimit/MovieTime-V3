@@ -29,6 +29,9 @@ function actionTurns(def: BotDefinition, action: BotActionKey | undefined): Simu
     return [{ from: 'bot', text: renderTemplate(def.messages.travel_code_sent, sampleValues(def.params.travelWindowMinutes)) }];
   }
   if (action === 'handoff') return [{ from: 'bot', text: def.messages.handoff_ack }];
+  if (action === 'purchase') return [{ from: 'bot', text: 'El catálogo muestra servicios disponibles y agotados. Selecciona servicios, revisa el carrito y confirma para reservar. Los precios y el pago se verifican en el servidor.' }];
+  if (action === 'renewal') return [{ from: 'bot', text: 'El cliente selecciona sus servicios, confirma el resumen y recibe instrucciones de pago. El simulador no crea pedidos ni cobra.' }];
+  if (action === 'my_services') return [{ from: 'bot', text: 'Se mostrarían únicamente los servicios del número que escribe. No se cargan datos reales en el simulador.' }];
   return [warning('este nodo de acción no tiene una acción válida.')];
 }
 

@@ -44,14 +44,17 @@ export function createNoticeStore(client: ServiceClient = createServiceRoleClien
       const ventaIds = ventas.flatMap((venta) => venta.id ? [venta.id] : []);
       const serviceIds = [...new Set(ventas.flatMap((venta) => venta.servicio_id ? [venta.servicio_id] : []))];
       const periodIds = [...new Set(ventas.flatMap((venta) => venta.ultimo_periodo_id ? [venta.ultimo_periodo_id] : []))];
-      const [states, promises, refunds, responses] = await Promise.all([
+      const [states, promises, refunds, responses, access] = await Promise.all([
         client.from('servicios').select('id,en_reposo,activo').in('id', serviceIds),
         client.from('v_notificaciones_venta').select('venta_id,fecha_prometida_pago').in('venta_id', ventaIds).not('fecha_prometida_pago', 'is', null),
         periodIds.length ? client.from('pagos_venta').select('venta_periodo_id,estado').in('venta_periodo_id', periodIds).eq('estado', 'reembolsado') : Promise.resolve({ data: [], error: null }),
         client.from('ventas').select('id,respuesta_cliente').in('id', ventaIds),
+        client.from('mt_service_access').select('service_id,mode').in('service_id', serviceIds),
       ]);
       check(states.error, 'load service state'); check(promises.error, 'load promises');
       check(refunds.error, 'load refunds'); check(responses.error, 'load replies');
+      check(access.error, 'load access policy');
+      const codeOnly = new Set((access.data ?? []).filter((row) => row.mode === 'code').map((row) => row.service_id));
       const services = new Map((states.data ?? []).map((row) => [row.id, row]));
       const refunded = new Set((refunds.data ?? []).map((row) => row.venta_periodo_id));
       const replies = new Map((responses.data ?? []).map((row) => [row.id, row.respuesta_cliente]));
@@ -69,7 +72,8 @@ export function createNoticeStore(client: ServiceClient = createServiceRoleClien
           clienteNombre: venta.cliente_nombre ?? '', telefono: venta.cliente_telefono ?? '',
           categoriaNombre: venta.categoria_nombre ?? '', servicioNombre: venta.servicio_nombre ?? '',
           perfilNombre: venta.perfil_nombre ?? '', correo: venta.servicio_correo ?? '',
-          contrasena: venta.servicio_contrasena ?? '', codigo: venta.codigo ?? '',
+          contrasena: venta.servicio_id && codeOnly.has(venta.servicio_id) ? '' : venta.servicio_contrasena ?? '',
+          codigo: venta.servicio_id && codeOnly.has(venta.servicio_id) ? '' : venta.codigo ?? '',
           fechaVencimiento: dateOnly(venta.ultima_fecha_fin), monto: venta.ultimo_total_original ?? 0,
           moneda: venta.ultima_moneda ?? '', activa: venta.estado === 'activo' && service?.activo === true,
           reembolsada: !!venta.ultimo_periodo_id && refunded.has(venta.ultimo_periodo_id),

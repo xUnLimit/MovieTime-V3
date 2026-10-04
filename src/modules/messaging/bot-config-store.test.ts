@@ -41,6 +41,14 @@ describe('createBotConfigStore.load', () => {
     await expect(createBotConfigStore(client).load())
       .resolves.toEqual({ ready: false, enabled: false, version: null, reason: 'missing_config' });
   });
+  it('pins an ongoing conversation while honoring the global off switch', async () => {
+    const definition = defaultDefinition();
+    const { client, filters } = fakeClient({ whatsapp_bot_config: config(), whatsapp_bot_versions: version(definition) });
+    expect(await createBotConfigStore(client).load(1)).toMatchObject({ ready: true, version: 1 });
+    expect(filters).toContainEqual({ table: 'whatsapp_bot_versions', column: 'version', value: 1 });
+    const off = fakeClient({ whatsapp_bot_config: config({ enabled: false }) });
+    expect(await createBotConfigStore(off.client).load(1)).toMatchObject({ ready: false, reason: 'disabled' });
+  });
 
   it('stays silent when switched off and does not read the version', async () => {
     const { client, filters } = fakeClient({ whatsapp_bot_config: config({ enabled: false }) });

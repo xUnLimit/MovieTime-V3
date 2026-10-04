@@ -130,6 +130,22 @@ describe('handleBotMessage menu', () => {
 });
 
 describe('handleBotMessage actions', () => {
+  it('authorizes a sale-bound access button again and never trusts the provided sale id', async () => {
+    const saleId = '123e4567-e89b-42d3-a456-426614174000';
+    const own = setup({ mails: [loginMail(serviceA.email, '3916', 1)] });
+    own.deps.resolveOwnedSale = vi.fn().mockResolvedValue(serviceA.serviceId);
+    await expect(handleBotMessage(tap(`ACCESS:LOGIN:${saleId}`), own.deps)).resolves.toBe('code');
+    expect(own.deps.resolveOwnedSale).toHaveBeenCalledWith(waId, saleId);
+    for (const resolved of [null,serviceB.serviceId]) {
+      const rejected=setup(); rejected.deps.resolveOwnedSale=vi.fn().mockResolvedValue(resolved);
+      await expect(handleBotMessage(tap(`ACCESS:LOGIN:${saleId}`),rejected.deps)).resolves.toBe('ignored');
+      expect(rejected.recent).not.toHaveBeenCalled(); expect(rejected.send).not.toHaveBeenCalled();
+    }
+    const absent=setup(); await expect(handleBotMessage(tap(`ACCESS:LOGIN:${saleId}`),absent.deps)).resolves.toBe('ignored');
+    expect(absent.recent).not.toHaveBeenCalled();
+    const invalid=setup(); await expect(handleBotMessage(tap('ACCESS:LOGIN:invalid'),invalid.deps)).resolves.toBe('ignored');
+    expect(invalid.recent).not.toHaveBeenCalled();
+  });
   it('hands the conversation to a person on request', async () => {
     const { deps, send } = setup();
     await expect(handleBotMessage(tap('BOT:menu:soporte'), deps)).resolves.toBe('handoff');

@@ -33,6 +33,14 @@ beforeEach(() => {
 });
 
 describe('notice store Supabase adapter', () => {
+  it('removes the password server-side for accounts switched to code and fails closed on policy lookup errors', async () => {
+    responses.set('v_ventas_full', { data: [{ id: ID, cliente_id: ID2, servicio_id: 'service',
+      servicio_contrasena: 'password-should-not-be-delivered', codigo: '1234' }], error: null });
+    responses.set('mt_service_access', { data: [{ service_id: 'service', mode: 'code' }], error: null });
+    expect(await createNoticeStore().loadVentas([ID])).toMatchObject([{ contrasena: '', codigo: '' }]);
+    responses.set('mt_service_access', { data: null, error: { code: 'policy unavailable' } });
+    await expect(createNoticeStore().loadVentas([ID])).rejects.toThrow('access policy');
+  });
   it('maps latest sale data, service state, refunds, promises and customer reply', async () => {
     responses.set('v_ventas_full', { data: [{
       id: ID, cliente_id: ID2, cliente_nombre: 'Ana Perez', cliente_telefono: '6000-0000',

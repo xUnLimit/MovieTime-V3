@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { ModuleErrorBoundary } from '@/components/shared/ModuleErrorBoundary';
+import { ServiceAccessPanel } from '@/components/servicios/ServiceAccessPanel';
 import { useMetodosPagoServicios } from '@/hooks/use-metodos-pago-servicios';
 import { usePagosServicio } from '@/hooks/use-pagos-servicio';
 import { useServicios } from '@/hooks/use-servicios';
@@ -159,14 +160,8 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
     toggleProfile,
   } = useServicioProfiles(servicio, ventasServicio);
 
-  // Estado de carga
-  if (isLoadingData) {
-    return <ServicioLoadingState />;
-  }
-
-  if (!servicio) {
-    return <ServicioNotFoundState />;
-  }
+  if (isLoadingData) return <ServicioLoadingState />;
+  if (!servicio) return <ServicioNotFoundState />;
 
   const returnToServicios = getReturnToServicios({ from, servicio });
 
@@ -203,6 +198,7 @@ function ServicioDetallePageBody({ id, from }: { id: string; from: string | null
             />
 
             <div className="min-w-0 space-y-4">
+              <ServiceAccessPanel serviceId={id} clients={ventasServicio.length} />
               <ServicioProfilesSection
                 expandedProfileNumber={expandedProfileNumber}
                 getCicloPagoLabel={getCicloPagoLabel}

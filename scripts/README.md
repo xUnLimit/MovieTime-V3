@@ -18,6 +18,8 @@ Gates de calidad y scripts operativos. Se ejecutan con los comandos de `package.
 
 ## Operacion y despliegue
 
+El desmontaje de fixtures comerciales E2E elimina primero sus relaciones de pedido mediante Docker y PostgreSQL local, sin ampliar grants. Fuera de CI exige `supabase_db_MovieTime-Automation-Verification`; CI usa `supabase_db_MovieTime-V3`. `E2E_DATABASE_CONTAINER` permite indicar el contenedor local de CI. La URL debe ser loopback y cada operación valida los UUID del tercero y servicio sembrados.
+
 | Script | Comando | Que hace |
 |--------|---------|----------|
 | `validate-supabase-migration.ts` | `migrate:validate` | Cuenta tablas y ejecuta `run_all_validations()` en Supabase |

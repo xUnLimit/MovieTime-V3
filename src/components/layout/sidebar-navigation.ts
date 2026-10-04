@@ -12,7 +12,6 @@ import {
   Pause,
   Settings,
   ShoppingCart,
-  Smartphone,
   Tv2,
   Users,
 } from 'lucide-react';
@@ -34,6 +33,7 @@ export type SidebarNavSection = {
 const adminOnlyPaths = [
   '/chats',
   '/bot',
+  '/automatizaciones',
   '/pagos-yappy',
   '/gastos',
   '/editor-mensajes',
@@ -93,14 +93,21 @@ const navigationSections: SidebarNavSection[] = [
         icon: MessageCircle,
       },
       {
-        name: 'Bot',
-        href: '/bot',
+        name: 'Automatizaciones',
+        href: '/automatizaciones',
         icon: Bot,
       },
       {
-        name: 'Pagos Yappy',
+        name: 'Ventas',
         href: '/pagos-yappy',
-        icon: Smartphone,
+        icon: ShoppingCart,
+        hidden: true,
+      },
+      {
+        name: 'Automatizaciones',
+        href: '/bot',
+        icon: Bot,
+        hidden: true,
       },
       {
         name: 'Servicios en Reposo',
@@ -128,9 +135,10 @@ const navigationSections: SidebarNavSection[] = [
         icon: CreditCard,
       },
       {
-        name: 'Plantillas de Mensajes',
+        name: 'Automatizaciones',
         href: '/editor-mensajes',
         icon: MessageSquare,
+        hidden: true,
       },
       {
         name: 'Configuración',
@@ -168,5 +176,7 @@ export function findNavItem(pathname: string): SidebarNavItem | undefined {
 }
 
 export function isNavItemActive(pathname: string, href: string): boolean {
+  if (href === '/automatizaciones' && ['/bot', '/editor-mensajes'].some(legacy => pathname === legacy || pathname.startsWith(`${legacy}/`))) return true;
+  if (href === '/ventas' && (pathname === '/pagos-yappy' || pathname.startsWith('/pagos-yappy/'))) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }

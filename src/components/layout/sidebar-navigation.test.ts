@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 
 import { findNavItem, getSidebarNavigationSections, isNavItemActive } from './sidebar-navigation';
 
@@ -7,8 +7,8 @@ describe('findNavItem', () => {
     expect(findNavItem('/ventas')?.name).toBe('Ventas');
     expect(findNavItem('/ventas/abc/editar')?.name).toBe('Ventas');
     expect(findNavItem('/servicios/detalle/x')?.name).toBe('Servicios');
-    expect(findNavItem('/editor-mensajes')?.name).toBe('Plantillas de Mensajes');
-    expect(findNavItem('/bot/flujo')?.name).toBe('Bot');
+    expect(findNavItem('/editor-mensajes')?.name).toBe('Automatizaciones');
+    expect(findNavItem('/bot/flujo')?.name).toBe('Automatizaciones');
   });
 
   it('devuelve undefined para rutas fuera del menu', () => {
@@ -36,16 +36,23 @@ describe('getSidebarNavigationSections', () => {
   it('oculta apartados de administrador a otros roles', () => {
     expect(names('vendedor')).not.toContain('Chats');
     expect(names('admin')).toContain('Chats');
-    expect(names('admin')).toContain('Bot');
-    expect(names('vendedor')).not.toContain('Bot');
+    expect(names('admin')).toContain('Automatizaciones');
+    expect(names('vendedor')).not.toContain('Automatizaciones');
   });
 
-  it('usa iconos distintos para Pagos Yappy y Metodos de Pago', () => {
+  it('consolida bot y mensajes en Automatizaciones y cobros en Ventas', () => {
     const items = getSidebarNavigationSections('admin').flatMap((s) => s.items);
-    const yappy = items.find((i) => i.name === 'Pagos Yappy');
-    const metodos = items.find((i) => i.name === 'Métodos de Pago');
-
-    expect(yappy?.icon).not.toBe(metodos?.icon);
+    expect(items.filter((i) => i.href === '/automatizaciones')).toHaveLength(1);
+    expect(items.map((i) => i.href)).not.toContain('/pagos-yappy');
+    expect(items.map((i) => i.href)).not.toContain('/editor-mensajes');
+    expect(findNavItem('/pagos-yappy')?.name).toBe('Ventas');
+  });
+  it('resalta el destino consolidado al abrir un enlace anterior', () => {
+    expect(isNavItemActive('/bot', '/automatizaciones')).toBe(true);
+    expect(isNavItemActive('/bot/flujo', '/automatizaciones')).toBe(true);
+    expect(isNavItemActive('/editor-mensajes', '/automatizaciones')).toBe(true);
+    expect(isNavItemActive('/pagos-yappy', '/ventas')).toBe(true);
+    expect(isNavItemActive('/bot-archivo', '/automatizaciones')).toBe(false);
   });
 });
 
@@ -57,3 +64,4 @@ describe('Configuracion', () => {
     expect(names('vendedor')).not.toContain('Configuración');
   });
 });
+

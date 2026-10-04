@@ -67,6 +67,11 @@ async function handleLegacy(run: BotRun, target: LegacyTarget, services: BotServ
 async function handleAction(run: BotRun, action: BotAction, services: BotService[]): Promise<BotResult> {
   if (action.kind === 'option') return handleOption(run, action, services);
   if (action.kind === 'legacy') return handleLegacy(run, action.target, services);
+  if (action.kind === 'sale') {
+    const serviceId = await run.deps.resolveOwnedSale?.(run.message.fromWaId,action.saleId);
+    if (!serviceId || !services.some(service=>service.serviceId===serviceId)) return 'ignored';
+    return requestNetflixCode(run,services,{ type:action.type,serviceId });
+  }
   await trackEvent(run, 'option_selected', { detail: { destino: 'elegir_cuenta', tipo: action.type } });
   return requestNetflixCode(run, services, { type: action.type, serviceId: action.serviceId });
 }

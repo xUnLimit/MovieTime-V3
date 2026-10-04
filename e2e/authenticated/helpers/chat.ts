@@ -46,10 +46,12 @@ export async function seedInbound(admin: SupabaseClient, message: SeedInbound): 
 
 export async function cleanupChats(admin: SupabaseClient, waIds: string[]): Promise<void> {
   if (waIds.length === 0) return;
+  await bestEffort('borrar cola entrante', async () => assertOk(await admin.from('whatsapp_automation_inbox').delete().in('wa_id', waIds), 'cola entrante'));
   await bestEffort('borrar mensajes entrantes', async () => assertOk(await admin.from('whatsapp_inbound_messages').delete().in('from_wa_id', waIds), 'entrantes'));
   await bestEffort('borrar mensajes salientes', async () => assertOk(await admin.from('whatsapp_outbound_messages').delete().in('to_wa_id', waIds), 'salientes'));
   await bestEffort('borrar banderas', async () => assertOk(await admin.from('whatsapp_conversation_flags').delete().in('wa_id', waIds), 'banderas'));
   await bestEffort('borrar lecturas', async () => assertOk(await admin.from('whatsapp_conversation_reads').delete().in('wa_id', waIds), 'lecturas'));
+  await bestEffort('borrar estado del chat', async () => assertOk(await admin.from('whatsapp_conversation_state').delete().in('wa_id', waIds), 'estado del chat'));
 }
 
 /** Cuerpo de un webhook de Meta con un mensaje de texto entrante. */

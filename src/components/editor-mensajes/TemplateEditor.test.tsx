@@ -30,7 +30,7 @@ vi.mock('@/hooks/use-templates', () => ({
 
 import { TemplateEditor } from './TemplateEditor';
 
-function wrap(templates: TemplateMensaje[]) {
+function wrap(templates: TemplateMensaje[], focused = false) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -39,7 +39,7 @@ function wrap(templates: TemplateMensaje[]) {
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <TemplateEditor templates={templates} />
+      <TemplateEditor templates={templates} focused={focused} />
     </QueryClientProvider>
   );
 }
@@ -107,6 +107,23 @@ describe('TemplateEditor', () => {
         'Hola {nombre_cliente}, tu servicio vence pronto.',
       );
     });
+  });
+  it('edita el mensaje del recorrido con vista previa sin abrir la biblioteca y protege el borrador al volver', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(wrap([makeTemplate()], true));
+    expect(document.querySelector('button[data-tipo]')).toBeNull();
+    expect(screen.getByLabelText('Simulación del celular del cliente')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Mensaje ajustado para renovar' } });
+    const link = document.createElement('a');
+    link.href = '/automatizaciones';
+    document.body.append(link);
+    const navigation = new MouseEvent('click', { bubbles: true, cancelable: true });
+    link.dispatchEvent(navigation);
+    expect(navigation.defaultPrevented).toBe(true);
+    expect(confirm).toHaveBeenCalled();
+    expect(screen.getByRole('textbox')).toHaveProperty('value', 'Mensaje ajustado para renovar');
+    link.remove();
+    confirm.mockRestore();
   });
 
   it('groups the messages by moment and hides the removed notificacion_regular', () => {

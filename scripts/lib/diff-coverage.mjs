@@ -1,7 +1,7 @@
 import path from 'node:path';
 import ts from 'typescript';
 
-const criticalPattern = /(?:platform\/.*auth|application\/.*auth|authStore|payment|pago|refund|reembolso|rls|migration)/i;
+const criticalPattern = /(?:platform\/.*auth|application\/.*auth|authStore|payment|pago|refund|reembolso|rls|migration|orders?[-/]|pedidos?[-/]|venta-batch|commerce|useVentaCreate(?:Workflow|Submit))/i;
 const productionFile = /^src\/.*\.[jt]sx?$/;
 const excludedFile = /(?:\.(?:test|spec)\.[jt]sx?$|\.d\.ts$|^src\/test\/|^src\/types\/|^src\/app\/design-lab\/|^src\/platform\/supabase\/database\.types\.ts$)/;
 
