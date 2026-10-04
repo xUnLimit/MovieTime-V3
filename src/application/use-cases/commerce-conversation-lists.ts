@@ -28,7 +28,7 @@ function platformRows(available: CommerceChoice[]): Row[] {
  */
 export function renderChoiceList(state: CommerceState, choices: CommerceChoice[], notice: string, t: Copy): OutboundPayload {
   let entries: Row[];
-  let section = 'Opciones';
+  let section: string;
   let body: string;
   let buttonLabel: string;
   const extras: Row[] = [];
