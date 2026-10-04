@@ -6,10 +6,12 @@ import { listCatalogoServerUseCase, listServiciosServerUseCase, createCompraServ
   cancelPedidoServerUseCase } from './pedidos-server-use-cases';
 import type { CommerceConversationDeps } from './commerce-conversation-use-case';
 import { createAutomationControlStore } from '@/modules/automation-control/store';
+import { createCommerceCopyStore } from '@/modules/commerce-copy/store';
 
 export function createCommerceConversationDeps(): CommerceConversationDeps {
   return {
     purchasesEnabled: async () => (await createAutomationControlStore().settings()).purchasesEnabled === true,
+    copyOverrides: () => createCommerceCopyStore().overrides(),
     catalogue: listCatalogoServerUseCase, services: listServiciosServerUseCase,
     buy: createCompraServerUseCase, renew: createRenovacionServerUseCase,
     order: getPedidoServerUseCase, reconcile: reconcilePedidoServerUseCase,

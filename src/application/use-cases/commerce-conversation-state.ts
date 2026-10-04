@@ -11,7 +11,7 @@ const replySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('text'), text: z.string().max(4096) }),
   z.object({ kind: z.literal('buttons'), body: z.string().max(1024), buttons: z.array(z.object({ id: z.string().max(256), title: z.string().max(20) })).max(3) }),
   z.object({ kind: z.literal('list'), body: z.string().max(1024), buttonLabel: z.string().max(20),
-    rows: z.array(z.object({ id: z.string().max(256), title: z.string().max(24), description: z.string().max(72).optional() })).max(10) }),
+    rows: z.array(z.object({ id: z.string().max(256), title: z.string().max(24), description: z.string().max(72).optional(), section: z.string().max(24).optional() })).max(10) }),
 ]);
 export const commerceStateSchema = z.object({
   stage: z.enum(['idle', 'buy', 'renew', 'summary', 'payment', 'interest']).default('idle'),
@@ -49,7 +49,7 @@ export function commerceCommand(message: InboundMessage, definition?: BotDefinit
 
 export function commerceSummary(items: CommerceItem[]): string {
   return items.map((item, index) => `${index + 1}. ${item.name}${item.name.toLowerCase().includes(item.cycle.toLowerCase()) ? '' : ` (${item.cycle})`}: ${item.currency} ${item.amount.toFixed(2)}`).join('\n')
-    + `\nTotal: ${items[0]?.currency ?? 'USD'} ${items.reduce((total, item) => total + Math.round(item.amount * 100), 0) / 100}`;
+    + `\nTotal: ${items[0]?.currency ?? 'USD'} ${(items.reduce((total, item) => total + Math.round(item.amount * 100), 0) / 100).toFixed(2)}`;
 }
 export function commerceButtons(body: string, buttons: { id: string; title: string }[]): OutboundPayload {
   return { kind: 'buttons', body: body.slice(0, 1024), buttons: buttons.map(button => ({ ...button, id: `SHOP:${button.id}` })) };

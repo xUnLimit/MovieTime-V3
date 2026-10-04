@@ -32,6 +32,12 @@ export type Database = {
         Update: { settings?: Json; updated_at?: string }
         Relationships: []
       }
+      mt_commerce_copy: {
+        Row: { key: string; text: string; updated_at: string; updated_by: string | null }
+        Insert: { key: string; text: string; updated_at?: string; updated_by?: string | null }
+        Update: { text?: string; updated_at?: string; updated_by?: string | null }
+        Relationships: []
+      }
       whatsapp_conversation_state: {
         Row: { wa_id: string; mode: string; version: number; operator_id: string | null; active_process: string | null; order_id: string | null; handoff_reason: string | null; flow_version: number | null; context: Json; lease_token: string | null; locked_until: string | null; updated_at: string }
         Insert: { wa_id: string; mode?: string; version?: number; operator_id?: string | null; active_process?: string | null; order_id?: string | null; handoff_reason?: string | null; flow_version?: number | null; context?: Json; lease_token?: string | null; locked_until?: string | null; updated_at?: string }
@@ -4289,6 +4295,7 @@ export type Database = {
       mt_finish_interest_notice: { Args: { p_id: string }; Returns: string }
       mt_set_service_access: { Args: { p_service_id: string; p_mode: string; p_rotation_confirmed: boolean }; Returns: string }
       mt_update_automation_settings: { Args: { p_settings: Json }; Returns: string }
+      mt_set_commerce_copy: { Args: { p_key: string; p_text: string | null }; Returns: string }
       mt_manage_interest: { Args: { p_id: string; p_action: string }; Returns: string }
       mt_claim_ai_budget: { Args: { p_tokens: number }; Returns: boolean }
       mt_automation_metrics: { Args: Record<PropertyKey, never>; Returns: Json }

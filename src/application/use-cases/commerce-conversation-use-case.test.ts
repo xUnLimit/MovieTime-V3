@@ -33,6 +33,23 @@ function dependencies() {
 beforeEach(() => { counter = 0; });
 
 describe('guided commerce coordinator', () => {
+  it('usa los textos editados desde el panel en mensajes, botones y listas', async () => {
+    const deps = { ...dependencies(), copyOverrides: vi.fn().mockResolvedValue({
+      greeting: 'Buenas, ¿en qué te ayudo?', btnBuy: 'Quiero comprar', platformsPrompt: 'Elige tu plataforma.', sectionPlatforms: 'Con cupo',
+    }) };
+    const menu = await handleCommerceConversation(message('hola'), {}, deps);
+    expect(menu?.payload).toMatchObject({ kind: 'buttons', body: 'Buenas, ¿en qué te ayudo?', buttons: expect.arrayContaining([{ id: 'SHOP:buy', title: 'Quiero comprar' }]) });
+    const list = await handleCommerceConversation(message('catalogo'), {}, deps);
+    expect(list?.payload).toMatchObject({ kind: 'list', body: 'Elige tu plataforma.', rows: [expect.objectContaining({ section: 'Con cupo' })] });
+  });
+  it('ignora un texto editado que ya no cumple las reglas y no se cae si no puede leerlos', async () => {
+    const deps = { ...dependencies(), copyOverrides: vi.fn().mockResolvedValue({ btnBuy: 'Un botón demasiado largo', greeting: '<b>Hola</b>' }) };
+    const menu = await handleCommerceConversation(message('hola'), {}, deps);
+    expect(menu?.payload).toMatchObject({ body: 'Hola, soy el asistente de MovieTime PTY. ¿Qué necesitas?', buttons: expect.arrayContaining([{ id: 'SHOP:buy', title: 'Adquirir servicio' }]) });
+    deps.copyOverrides.mockRejectedValue(new Error('base de datos caída'));
+    const fallback = await handleCommerceConversation(message('hola'), {}, deps);
+    expect(fallback?.payload).toMatchObject({ kind: 'buttons', body: 'Hola, soy el asistente de MovieTime PTY. ¿Qué necesitas?' });
+  });
   it('primero ofrece las plataformas con cupo y solo después los planes de la elegida', async () => {
     const NETFLIX = '123e4567-e89b-42d3-a456-426614174010';
     const DISNEY = '123e4567-e89b-42d3-a456-426614174011';
@@ -46,7 +63,8 @@ describe('guided commerce coordinator', () => {
     const platforms = await handleCommerceConversation(message('catalogo'), {}, deps);
     const list = platforms!.payload as { body: string; rows: { id: string; title: string; description: string }[] };
     expect(list.body).toContain('plataforma');
-    expect(list.rows.map(row => row.title)).toEqual(['Disney+', 'Agotados']);
+    expect((list.rows as { section?: string }[]).map(item => item.section)).toEqual(['Plataformas disponibles', 'Más']);
+    expect(list.rows.map(row => row.title)).toEqual(['Disney+', 'Consultar agotados']);
     expect(list.rows[0].description).toBe('2 planes · desde USD 4.00');
     expect(JSON.stringify(list)).not.toContain('Netflix');
     const disney = await handleCommerceConversation(message(`cat:${DISNEY}`, true), platforms!.context, deps);
@@ -55,7 +73,7 @@ describe('guided commerce coordinator', () => {
     expect(planRows[1].description).toBe('USD 10.00 · trimestral');
     const added = await handleCommerceConversation(message(`add:${THIRD}`, true), disney!.context, deps);
     const back = added!.payload as { body: string; rows: { id: string }[] };
-    expect(back.body).toContain('Agregué Disney+ Trimestral');
+    expect(back.body).toContain('agregué Disney+ Trimestral');
     expect(back.rows.map(row => row.id)).toContain('SHOP:summary');
     expect(back.rows[0].id).toBe(`SHOP:cat:${DISNEY}`);
     const summary = await handleCommerceConversation(message('carrito'), added!.context, deps);
@@ -68,18 +86,18 @@ describe('guided commerce coordinator', () => {
     const deps = dependencies();
     deps.catalogue.mockResolvedValue([{ ...plan, planId: ID, planNombre: 'Mensual', categoriaId: SOLD, categoriaNombre: 'Netflix', perfilesLibres: 0 }]);
     const none = await handleCommerceConversation(message('catalogo'), {}, deps);
-    expect(JSON.stringify(none!.payload)).toContain('no hay plataformas disponibles');
+    expect(JSON.stringify(none!.payload)).toContain('no tenemos plataformas con cupo');
     const soldOut = await handleCommerceConversation(message('soldout', true), none!.context, deps);
     expect((soldOut!.payload as { rows: { title: string }[] }).rows.map(row => row.title)).toEqual(['Netflix Mensual', 'Ver plataformas']);
     const interest = await handleCommerceConversation(message(`add:${ID}`, true), soldOut!.context, deps);
-    expect(JSON.stringify(interest!.payload)).toContain('agotado');
+    expect(JSON.stringify(interest!.payload)).toContain('no tenemos cupo');
     const again = await handleCommerceConversation(message('platforms', true), none!.context, deps);
-    expect(JSON.stringify(again!.payload)).toContain('Agotados');
+    expect(JSON.stringify(again!.payload)).toContain('Consultar agotados');
   });
   it('responde "estado" sin pedido y no ofrece comprar cuando las compras están pausadas', async () => {
     const deps = { ...dependencies(), purchasesEnabled: vi.fn().mockResolvedValue(false) };
     const none = await handleCommerceConversation(message('estado'), {}, deps);
-    expect(JSON.stringify(none?.payload)).toContain('No tienes pedidos abiertos');
+    expect(JSON.stringify(none?.payload)).toContain('No tienes pedidos en proceso');
     expect(JSON.stringify(none?.payload)).not.toContain('Adquirir servicio');
     const withCart = await handleCommerceConversation(message('estado'), state({ stage: 'buy', items: [{ id: ID, name: 'Netflix', amount: 5, currency: 'USD', cycle: 'mensual' }] }), deps);
     expect(JSON.stringify(withCart?.payload)).toContain('Todavía no tienes un pedido');
@@ -117,7 +135,7 @@ describe('guided commerce coordinator', () => {
     expect(welcome?.payload).toMatchObject({ kind: 'buttons', buttons: expect.arrayContaining([{ id: 'SHOP:buy', title: 'Adquirir servicio' }]) });
     deps.catalogue.mockResolvedValue(Array.from({ length: 12 }, (_, index) => ({ ...plan, categoriaId: `123e4567-e89b-42d3-a456-4266141740${String(index).padStart(2, '0')}`, categoriaNombre: `Plataforma ${String(index).padStart(2, '0')}` })));
     const result = await handleCommerceConversation(message('catalogo'), {}, deps);
-    expect(result?.payload).toMatchObject({ rows: expect.arrayContaining([{ id: 'SHOP:page:1', title: 'Más opciones', description: 'Ver siguiente página' }]) });
+    expect(result?.payload).toMatchObject({ rows: expect.arrayContaining([{ id: 'SHOP:page:1', title: 'Más opciones', description: 'Ver siguiente página', section: 'Más' }]) });
     const page = await handleCommerceConversation(message('page:1', true), result!.context, deps);
     expect(page?.payload).toMatchObject({ rows: expect.arrayContaining([expect.objectContaining({ title: 'Plataforma 07' })]) });
     const added = await handleCommerceConversation(message(`add:${ID}`, true), page!.context, deps);
@@ -136,9 +154,9 @@ describe('guided commerce coordinator', () => {
     expect(confirmed?.orderId).toBe(OTHER);
     expect(deps.buy).toHaveBeenCalledWith(waId, [ID], expect.stringMatching(/^[a-f0-9-]{36}$/), 5);
     const again = await handleCommerceConversation(message('confirmar'), confirmed!.context, deps);
-    expect(again?.payload).toMatchObject({ text: expect.stringContaining('Pedido') });
+    expect(again?.payload).toMatchObject({ text: expect.stringContaining('Tu pedido') });
     expect(deps.buy).toHaveBeenCalledTimes(1);
-    expect((await handleCommerceConversation(message('comprar'), confirmed!.context, deps))?.payload).toMatchObject({ text: expect.stringContaining('pedido abierto') });
+    expect((await handleCommerceConversation(message('comprar'), confirmed!.context, deps))?.payload).toMatchObject({ text: expect.stringContaining('pedido en proceso') });
   });
   it('replays the complete interactive response after a checkpoint without rerunning effects', async () => {
     const deps = dependencies(); const input = message('hola');
@@ -162,16 +180,16 @@ describe('guided commerce coordinator', () => {
     expect(deps.renew).toHaveBeenCalledWith(waId, [ID], expect.any(String), 5);
     expect(deps.buy).not.toHaveBeenCalled();
     const services = await handleCommerceConversation(message('mis servicios'), {}, deps);
-    expect(services?.payload).toMatchObject({ text: expect.stringContaining('2026-10-31') });
+    expect(services?.payload).toMatchObject({ text: expect.stringContaining('31 de octubre de 2026') });
     expect(deps.services).toHaveBeenCalledWith(waId);
     deps.services.mockResolvedValue([]);
-    expect((await handleCommerceConversation(message('mis servicios'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('No hay servicios') });
-    expect((await handleCommerceConversation(message('renovar'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('No encuentro opciones') });
+    expect((await handleCommerceConversation(message('mis servicios'), {}, deps))?.payload).toMatchObject({ body: expect.stringContaining('No encuentro servicios activos') });
+    expect((await handleCommerceConversation(message('renovar'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('no tengo opciones') });
   });
   it('registers depleted demand with separate, explicit consent', async () => {
     const deps = dependencies(); deps.catalogue.mockResolvedValue([{ ...plan, perfilesLibres: 0 }]);
     const choice = await handleCommerceConversation(message(`add:${ID}`, true), state({ stage: 'buy' }), deps);
-    expect(choice?.payload).toMatchObject({ body: expect.stringContaining('agotado') });
+    expect(choice?.payload).toMatchObject({ body: expect.stringContaining('no tenemos cupo') });
     expect(deps.interest).not.toHaveBeenCalled();
     await handleCommerceConversation(message('interest:no', true), choice!.context, deps);
     expect(deps.interest).toHaveBeenCalledWith(waId, OTHER, ID, false);
@@ -196,22 +214,22 @@ describe('guided commerce coordinator', () => {
     const deps = dependencies(); const paying = state({ stage: 'payment', orderId: OTHER });
     const pending = await handleCommerceConversation(message('pago ABCD-123'), paying, deps);
     expect(deps.reconcile).toHaveBeenCalledWith(waId, OTHER, 'ABCD-123', expect.any(String));
-    expect(pending?.payload).toMatchObject({ text: expect.stringContaining('Faltante: 5.00') });
+    expect(pending?.payload).toMatchObject({ text: expect.stringContaining('Todavía no veo tu pago') });
     deps.order.mockResolvedValue({ ...order, paymentState: 'cubierto', receivedAmount: 5, missingAmount: 0 });
     const paid = await handleCommerceConversation(message('estado'), paying, deps);
-    expect(paid?.payload).toMatchObject({ text: expect.stringContaining('no vuelvas a pagar') });
+    expect(paid?.payload).toMatchObject({ text: expect.stringContaining('no hace falta que pagues otra vez') });
     deps.order.mockResolvedValue({ ...order, paymentState: 'exceso', receivedAmount: 7, missingAmount: 0, excessAmount: 2, deliveryState: 'asignado' });
     const excess = await handleCommerceConversation(message('estado'), paying, deps);
     expect(excess?.handoff).toBe(true);
-    expect(excess?.payload).toMatchObject({ text: expect.stringContaining('Exceso 2.00 pendiente de resolución') });
-    expect(excess?.payload).toMatchObject({ text: expect.stringContaining('acceso pendiente') });
+    expect(excess?.payload).toMatchObject({ text: expect.stringContaining('Pagaste USD 2.00 de más') });
+    expect(excess?.payload).toMatchObject({ text: expect.stringContaining('te envío el acceso') });
   });
   it('uses bounded payment instructions and preserves fallback when unavailable or media is unreadable', async () => {
     const deps = dependencies(); const paying = state({ stage: 'payment', orderId: OTHER });
-    expect((await handleCommerceConversation(message('pay', true), paying, deps))?.payload).toMatchObject({ text: expect.stringContaining('Puede pagar otra persona') });
+    expect((await handleCommerceConversation(message('pay', true), paying, deps))?.payload).toMatchObject({ text: expect.stringContaining('Si paga otra persona') });
     expect((await handleCommerceConversation(message('pay', true), paying, { ...deps, paymentInstructions: null }))?.handoff).toBe(true);
     const unreadable = { ...message(''), messageType: 'image' };
-    expect((await handleCommerceConversation(unreadable, paying, deps))?.payload).toMatchObject({ text: expect.stringContaining('pago CÓDIGO') });
+    expect((await handleCommerceConversation(unreadable, paying, deps))?.payload).toMatchObject({ text: expect.stringContaining('código de la transacción') });
     expect(deps.reconcile).not.toHaveBeenCalled();
     deps.order.mockResolvedValue({ ...order, estado: 'revision' });
     expect((await handleCommerceConversation(message('estado'), paying, deps))?.handoff).toBe(true);
@@ -220,7 +238,7 @@ describe('guided commerce coordinator', () => {
     const deps = dependencies(); const paying = state({ stage: 'payment', orderId: OTHER });
     deps.order.mockResolvedValue({ ...order, paymentState: 'cubierto', deliveryState: 'enviado', missingAmount: 0 });
     const completed = await handleCommerceConversation(message('estado'), paying, deps);
-    expect(completed?.payload).toMatchObject({ text: expect.stringContaining('Acceso enviado.') });
+    expect(completed?.payload).toMatchObject({ text: expect.stringContaining('Tu acceso ya fue enviado.') });
     expect(completed?.orderId).toBeNull();
     expect((await handleCommerceConversation(message('comprar'), completed!.context, deps))?.payload).toMatchObject({kind:'list'});
     deps.order.mockResolvedValue({ ...order, paymentState: 'cubierto', deliveryState: 'parcial' });
@@ -228,8 +246,8 @@ describe('guided commerce coordinator', () => {
     for (const paymentState of ['reembolsado','parcialmente_reembolsado'] as const) {
       deps.order.mockResolvedValue({ ...order, paymentState });
       const result = await handleCommerceConversation(message('pay',true), paying, deps);
-      expect(result?.handoff).toBe(true); expect(result?.payload).toMatchObject({text:expect.stringContaining('Reembolso registrado')});
-      expect(JSON.stringify(result?.payload)).not.toContain('Puede pagar otra persona');
+      expect(result?.handoff).toBe(true); expect(result?.payload).toMatchObject({text:expect.stringContaining('reembolso')});
+      expect(JSON.stringify(result?.payload)).not.toContain('Si paga otra persona');
     }
   });
   it('cancels with an authorized command and preserves the order when that command fails', async () => {
@@ -239,7 +257,7 @@ describe('guided commerce coordinator', () => {
     deps.cancelOrder.mockRejectedValue(new Error('payment received'));
     await expect(handleCommerceConversation(message('cancelar'), paying, deps)).rejects.toThrow();
     expect(paying.orderId).toBe(OTHER);
-    expect((await handleCommerceConversation(message('cancelar'), {}, deps))?.payload).toMatchObject({ text: expect.stringContaining('cancelada') });
+    expect((await handleCommerceConversation(message('cancelar'), {}, deps))?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('cancelé tu selección') });
   });
   it('maps configured actions and accepts AI only as navigation, never as a purchase selection', async () => {
     const def = defaultDefinition();

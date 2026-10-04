@@ -1,7 +1,14 @@
 import { WHATSAPP_TEMPLATE_LANGUAGE } from './template-catalog';
 
 type InteractiveButton = { id: string; title: string };
-type InteractiveRow = { id: string; title: string; description?: string };
+type InteractiveRow = { id: string; title: string; description?: string; section?: string };
+
+/** Agrupa las filas por `section` conservando el orden; sin seccion van en "Opciones". La seccion no se envia como campo de la fila. */
+function listSections(rows: InteractiveRow[]) {
+  const sections = new Map<string, { id: string; title: string; description?: string }[]>();
+  for (const { section, ...row } of rows) sections.set(section ?? 'Opciones', [...(sections.get(section ?? 'Opciones') ?? []), row]);
+  return [...sections.entries()].map(([title, sectionRows]) => ({ title, rows: sectionRows }));
+}
 type SharedContact = { name: string; phone: string };
 type SharedLocation = { latitude: number; longitude: number; name?: string; address?: string };
 
@@ -113,7 +120,7 @@ export function toCloudApiBody(to: string, payload: OutboundPayload) {
         interactive: {
           type: 'list',
           body: { text: payload.body },
-          action: { button: payload.buttonLabel, sections: [{ title: 'Opciones', rows: payload.rows }] },
+          action: { button: payload.buttonLabel, sections: listSections(payload.rows) },
         },
       }, payload.replyTo);
     case 'location':

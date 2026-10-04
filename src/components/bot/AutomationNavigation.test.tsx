@@ -7,10 +7,10 @@ vi.mock('next/navigation', () => ({ usePathname: () => state.route }));
 beforeEach(() => { state.route = '/automatizaciones'; });
 
 describe('AutomationNavigation', () => {
-  it('lista las seis secciones como enlaces a rutas propias', () => {
+  it('lista las siete secciones como enlaces a rutas propias', () => {
     render(<AutomationNavigation />);
     const hrefs = screen.getAllByRole('link').map(link => link.getAttribute('href'));
-    expect(hrefs).toEqual(['/automatizaciones', '/automatizaciones/pedidos', '/automatizaciones/cobros', '/automatizaciones/interesados', '/automatizaciones/mensajes', '/automatizaciones/conexiones']);
+    expect(hrefs).toEqual(['/automatizaciones', '/automatizaciones/compras', '/automatizaciones/pedidos', '/automatizaciones/cobros', '/automatizaciones/interesados', '/automatizaciones/mensajes', '/automatizaciones/conexiones']);
   });
 
   it('marca solo la sección actual, incluso en subrutas, y Recorridos solo en la raíz', () => {

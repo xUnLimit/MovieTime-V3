@@ -6,6 +6,7 @@ import { cn } from '@/platform/utils/cn';
 
 const sections = [
   { href: '/automatizaciones', label: 'Recorridos' },
+  { href: '/automatizaciones/compras', label: 'Compras' },
   { href: '/automatizaciones/pedidos', label: 'Pedidos' },
   { href: '/automatizaciones/cobros', label: 'Cobros' },
   { href: '/automatizaciones/interesados', label: 'Interesados' },

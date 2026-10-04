@@ -19,6 +19,7 @@ const listRowSchema = z.object({
   id: z.string().min(1).max(256),
   title: z.string().trim().min(1).max(24),
   description: z.string().trim().max(72).optional(),
+  section: z.string().trim().min(1).max(24).optional(),
 });
 const contactSchema = z.object({
   name: z.string().trim().min(1).max(256),

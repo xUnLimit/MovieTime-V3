@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { expectNoBlockingA11yViolations } from './helpers/axe';
 
-const routes = ['/dashboard', '/ventas', '/automatizaciones', '/automatizaciones/pedidos', '/automatizaciones/cobros', '/automatizaciones/mensajes', '/servicios', '/terceros', '/automatizaciones/interesados', '/categorias', '/gastos', '/notificaciones', '/chats', '/configuracion', '/automatizaciones/conexiones'];
+const routes = ['/dashboard', '/ventas', '/automatizaciones', '/automatizaciones/compras', '/automatizaciones/pedidos', '/automatizaciones/cobros', '/automatizaciones/mensajes', '/servicios', '/terceros', '/automatizaciones/interesados', '/categorias', '/gastos', '/notificaciones', '/chats', '/configuracion', '/automatizaciones/conexiones'];
 
 for (const theme of ['light', 'dark'] as const) {
   for (const route of routes) {

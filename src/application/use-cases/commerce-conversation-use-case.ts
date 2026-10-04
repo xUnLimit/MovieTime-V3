@@ -5,6 +5,9 @@ import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { BotDefinition } from '@/types/bot';
 import { readBotAction } from '@/modules/whatsapp/bot-menu';
 import { botReplyKey } from './bot-reply';
+import { createCopy, type CopyOverrides } from '@/modules/commerce-copy/render';
+import { createLogger } from '@/platform/observability/logger';
+import { formatDay, orderStatusText, reservationText, type Copy } from './commerce-conversation-copy';
 import { renderChoiceList, type CommerceChoice } from './commerce-conversation-lists';
 import { commerceButtons, commerceCommand, commerceStateSchema, commerceSummary, type CommerceItem } from './commerce-conversation-state';
 
@@ -20,27 +23,26 @@ export type CommerceConversationDeps = {
   interest: (waId: string, categoryId: string, planId: string, consent: boolean) => Promise<void>;
   cancelOrder: (waId: string, id: string, key: string) => Promise<void>;
   paymentInstructions: string | null;
+  /** Textos editados desde el panel; si falta o falla, el flujo usa los originales. */
+  copyOverrides?: () => Promise<CopyOverrides>;
 };
 export type CommerceConversationResult = { context: Json; payload: OutboundPayload; process: string; orderId: string | null; handoff: boolean };
 
-function paymentText(order: Pedido): string {
-  const paid = order.paymentState === 'cubierto' || order.paymentState === 'exceso';
-  const refunded = ['reembolsado', 'parcialmente_reembolsado'].includes(order.paymentState);
-  const delivery = order.deliveryState === 'enviado' ? 'Acceso enviado.' : order.deliveryState === 'parcial'
-    ? 'Parte de los servicios está asignada; una persona revisará los pendientes.' : order.deliveryState === 'pendiente'
-      ? 'Asignación pendiente; no vuelvas a pagar.' : 'Servicios asignados; acceso pendiente de envío.';
-  return `Pedido ${order.id.slice(0, 8)} · ${order.moneda} ${order.total.toFixed(2)}\n`
-    + `Recibido: ${order.receivedAmount.toFixed(2)}. Faltante: ${order.missingAmount.toFixed(2)}.\n`
-    + (refunded ? `Reembolso registrado. ${delivery} Una persona revisará tu caso; no vuelvas a pagar.`
-      : paid ? `Pago recibido. ${delivery}` : 'Pago pendiente de confirmar por el canal de recepción.')
-    + (order.excessAmount > 0 ? `\nExceso ${order.excessAmount.toFixed(2)} pendiente de resolución.` : '');
-}
 // El menu solo ofrece comprar cuando las compras nuevas estan activas.
-function menuPayload(text: string, canBuy: boolean): OutboundPayload {
+function menuPayload(text: string, canBuy: boolean, t: Copy): OutboundPayload {
   return commerceButtons(text, [
-    ...(canBuy ? [{ id: 'buy', title: 'Adquirir servicio' }] : []), { id: 'renew', title: 'Renovar' }, { id: 'services', title: 'Mis servicios' },
-    ...(canBuy ? [] : [{ id: 'help', title: 'Hablar con alguien' }]),
+    ...(canBuy ? [{ id: 'buy', title: t('btnBuy') }] : []), { id: 'renew', title: t('btnRenew') }, { id: 'services', title: t('btnServices') },
+    ...(canBuy ? [] : [{ id: 'help', title: t('btnHelp') }]),
   ]);
+}
+const log = createLogger('CommerceCopy');
+async function loadCopy(deps: CommerceConversationDeps): Promise<Copy> {
+  try {
+    return createCopy(await deps.copyOverrides?.());
+  } catch (error) {
+    log.warn('No se pudieron leer los textos editados; se usan los originales.', { error });
+    return createCopy();
+  }
 }
 const pick = (id: string, name: string, amount: number, currency: string, cycle: string): CommerceItem => ({ id, name, amount, currency, cycle });
 
@@ -53,30 +55,33 @@ export async function handleCommerceConversation(message: InboundMessage, contex
   if (!command && (readBotAction(message) || /^(?:codigo|netflix)$/i.test(message.textBody?.trim() ?? ''))) return null;
   let payload: OutboundPayload;
   let handoff = false;
+  const t = await loadCopy(deps);
   if (state.lastMessageId === message.waMessageId && state.lastReply) {
     return { context: state, payload: state.lastPayload ?? { kind: 'text', text: state.lastReply }, process: state.stage, orderId: state.orderId, handoff: state.pendingHandoff };
   }
   if (!state.orderId && (command === 'buy' || (command === 'confirm' && state.kind === 'buy'))
     && deps.purchasesEnabled && !await deps.purchasesEnabled()) {
-    return { context: state, payload: { kind: 'text', text: 'Por ahora no estamos tomando compras nuevas. Puedes renovar tus servicios, consultar el estado de un pedido o escribir ayuda para hablar con una persona.' },
+    return { context: state, payload: { kind: 'text', text: t('purchasesPaused') },
       process: state.stage, orderId: null, handoff: false };
   }
   if (!command && state.stage === 'idle') return null;
   if (command === 'help') {
-    payload = { kind: 'text', text: 'Una persona revisará tu caso y continuará contigo.' }; handoff = true;
+    payload = { kind: 'text', text: t('help') }; handoff = true;
   } else if (command === 'cancel') {
+    const hadOrder = Boolean(state.orderId);
     if (state.orderId) await deps.cancelOrder(message.fromWaId, state.orderId, botReplyKey(message.waMessageId));
     state.stage = 'idle'; state.items = []; state.orderId = null;
-    payload = { kind: 'text', text: 'Selección cancelada. Puedes escribir catálogo, renovar o ayuda.' };
+    payload = menuPayload(t(hadOrder ? 'orderCancelled' : 'cancelled'), !deps.purchasesEnabled || await deps.purchasesEnabled(), t);
   } else if (command === 'menu') {
-    payload = menuPayload('Hola, soy el asistente de MovieTime PTY. ¿Qué necesitas?', !deps.purchasesEnabled || await deps.purchasesEnabled());
+    payload = menuPayload(t('greeting'), !deps.purchasesEnabled || await deps.purchasesEnabled(), t);
   } else if (command === 'services') {
     const services = await deps.services(message.fromWaId);
-    payload = { kind: 'text', text: services.length ? services.map(s => `${s.nombre} · vence ${s.fechaVencimiento}`).join('\n').slice(0, 3500)
-      + '\nEscribe renovar para elegir servicios o pulsa Solicitar código en tu mensaje de acceso.' : 'No hay servicios vinculados a este número. Escribe catálogo para adquirir o ayuda para revisar tu cuenta.' };
+    payload = services.length
+      ? { kind: 'text', text: `${t('servicesTitle')}\n${services.map(s => `• ${s.nombre}: vence el ${formatDay(s.fechaVencimiento)}`).join('\n').slice(0, 3400)}\n\n${t('servicesHint')}` }
+      : menuPayload(t('noServices'), !deps.purchasesEnabled || await deps.purchasesEnabled(), t);
   } else if (command === 'buy' || command === 'renew' || command?.startsWith('page:') || command?.startsWith('add:')
     || command?.startsWith('cat:') || command === 'platforms' || command === 'soldout') {
-    if (state.orderId) return { context: state, payload: { kind: 'text', text: 'Tienes un pedido abierto. Escribe estado o cancelar antes de crear otro.' }, process: state.stage, orderId: state.orderId, handoff: false };
+    if (state.orderId) return { context: state, payload: { kind: 'text', text: t('openOrder') }, process: state.stage, orderId: state.orderId, handoff: false };
     if (command === 'buy' || command === 'renew') { state.kind = command; state.stage = command; state.items = []; state.page = 0; state.categoryId = null; state.soldout = false; }
     if (command === 'platforms') { state.categoryId = null; state.soldout = false; state.page = 0; }
     if (command === 'soldout') { state.categoryId = null; state.soldout = true; state.page = 0; }
@@ -96,33 +101,33 @@ export async function handleCommerceConversation(message: InboundMessage, contex
     if (command?.startsWith('add:')) {
       const chosen = choices.find(c => c.id === command.slice(4));
       if (chosen && state.items.length && state.items[0].currency !== chosen.currency) {
-        currencyNotice = 'Las monedas diferentes requieren pedidos separados. Confirma tu selección actual antes de comprar este servicio en otro pedido.\n';
+        currencyNotice = `${t('otherCurrency')}\n`;
       }
       if (chosen?.stock === 0 && state.kind === 'buy') {
         state.stage = 'interest'; state.interestPlanId = chosen.id;
-        payload = commerceButtons(`${chosen.name} está agotado. ¿Quieres un aviso cuando vuelva? Tu interés se registra aunque prefieras no recibir avisos.`, [
-          { id: 'interest:yes', title: 'Sí, avisarme' }, { id: 'interest:no', title: 'Solo mi interés' }, { id: 'cancel', title: 'Cancelar' },
+        payload = commerceButtons(t('soldOutAsk', { plan: chosen.name }), [
+          { id: 'interest:yes', title: t('btnInterestYes') }, { id: 'interest:no', title: t('btnInterestNo') }, { id: 'cancel', title: t('btnCancel') },
         ]);
         return { context: state, payload, process: 'interest', orderId: null, handoff: false };
       }
       if (chosen && chosen.stock > 0 && state.items.length < 10 && !state.items.some(i => i.id === chosen.id)
         && (!state.items.length || state.items[0].currency === chosen.currency)) {
         state.items.push(pick(chosen.id, chosen.name, chosen.amount, chosen.currency, chosen.cycle));
-        state.categoryId = null; state.soldout = false; state.page = 0; currencyNotice = `Agregué ${chosen.name}.\n`;
+        state.categoryId = null; state.soldout = false; state.page = 0; currencyNotice = `${t('addedNotice', { servicio: chosen.name })}\n`;
       }
     }
-    payload = renderChoiceList(state, choices, currencyNotice);
+    payload = renderChoiceList(state, choices, currencyNotice, t);
   } else if (command?.startsWith('interest:') && state.stage === 'interest' && state.interestPlanId) {
     const plan = (await deps.catalogue()).find(p => p.planId === state.interestPlanId);
     if (!plan || !['interest:yes', 'interest:no'].includes(command)) return null;
     await deps.interest(message.fromWaId, plan.categoriaId, plan.planId, command === 'interest:yes');
     state.stage = 'idle'; state.interestPlanId = null;
-    payload = { kind: 'text', text: command === 'interest:yes' ? 'Interés registrado con permiso para avisarte. Escribe catálogo para ver alternativas.' : 'Interés registrado sin permiso de avisos. Escribe catálogo para ver alternativas.' };
+    payload = menuPayload(t(command === 'interest:yes' ? 'interestYes' : 'interestNo'), !deps.purchasesEnabled || await deps.purchasesEnabled(), t);
   } else if (command === 'summary' || command === 'confirm') {
-    if (state.orderId) payload = { kind: 'text', text: paymentText(await deps.order(message.fromWaId, state.orderId)) + '\nEscribe estado, pago CÓDIGO o ayuda para continuar.' };
-    else if (!state.items.length) payload = menuPayload('Tu carrito está vacío. Elige cómo quieres empezar.', !deps.purchasesEnabled || await deps.purchasesEnabled());
+    if (state.orderId) payload = { kind: 'text', text: `${orderStatusText(await deps.order(message.fromWaId, state.orderId), t)}\n\n${t('orderHint')}` };
+    else if (!state.items.length) payload = menuPayload(t('emptyCart'), !deps.purchasesEnabled || await deps.purchasesEnabled(), t);
     else if (command === 'confirm' && state.stage === 'summary' && state.items[0].currency !== 'USD') {
-      payload = { kind: 'text', text: `Este servicio se cobra en ${state.items[0].currency}; Yappy usa USD. Un operador te ayuda a confirmar el pago.` };
+      payload = { kind: 'text', text: t('usdOnly', { moneda: state.items[0].currency }) };
       handoff = true;
     } else if (command === 'confirm' && state.stage === 'summary') {
       const key = botReplyKey(message.waMessageId);
@@ -130,10 +135,10 @@ export async function handleCommerceConversation(message: InboundMessage, contex
       const orderId = state.kind === 'buy' ? await deps.buy(message.fromWaId, state.items.map(i => i.id), key, total) : await deps.renew(message.fromWaId, state.items.map(i => i.id), key, total);
       const order = await deps.order(message.fromWaId, orderId);
       state.orderId = orderId; state.stage = 'payment';
-      payload = commerceButtons(`${paymentText(order)}\nReserva hasta ${order.expiraAt}. Revisa el importe final antes de pagar.`, [{ id: 'pay', title: 'Instrucciones pago' }, { id: 'cancel', title: 'Cancelar' }]);
+      payload = commerceButtons(reservationText(order, state.items, t), [{ id: 'pay', title: t('btnPay') }, { id: 'cancel', title: t('btnCancel') }]);
     } else {
       state.stage = 'summary';
-      payload = commerceButtons(`${commerceSummary(state.items)}\nAl confirmar reservamos tu selección. Si cambia el precio o la disponibilidad, te avisamos antes de cobrar.`, [{ id: 'confirm', title: 'Confirmar selección' }, { id: 'cancel', title: 'Cancelar' }]);
+      payload = commerceButtons(`${t('summaryTitle')}\n${commerceSummary(state.items)}\n\n${t('confirmNote')}`, [{ id: 'confirm', title: t('btnConfirm') }, { id: 'cancel', title: t('btnCancel') }]);
     }
   } else if (state.orderId && state.stage === 'payment') {
     const text = message.messageType === 'text' ? message.textBody?.trim() ?? '' : '';
@@ -141,9 +146,9 @@ export async function handleCommerceConversation(message: InboundMessage, contex
     const order = reference ? await deps.reconcile(message.fromWaId, state.orderId, reference, botReplyKey(message.waMessageId)) : await deps.order(message.fromWaId, state.orderId);
     const paid = ['cubierto', 'exceso', 'reembolsado', 'parcialmente_reembolsado'].includes(order.paymentState);
     const instructions = command === 'pay' ? deps.paymentInstructions : null;
-    payload = { kind: 'text', text: paymentText(order) + (paid ? '' : instructions
-      ? `\n${instructions}\nEnvía pago CÓDIGO con la referencia. Puede pagar otra persona; la referencia se verifica antes de entregar.`
-      : '\nEnvía pago CÓDIGO si ya pagaste. Para recibir instrucciones de pago, escribe ayuda.') };
+    const next = paid ? '' : instructions ? `\n\n${t('paymentInstructions', { instrucciones: instructions })}`
+      : command === 'pay' ? `\n\n${t('payNoInstructions')}` : `\n\n${t('payHint')}`;
+    payload = { kind: 'text', text: orderStatusText(order, t) + next };
     if (command === 'pay' && !instructions && !paid) handoff = true;
     if (order.estado === 'revision' || order.excessAmount > 0 || order.deliveryState === 'parcial'
       || ['reembolsado', 'parcialmente_reembolsado'].includes(order.paymentState)) handoff = true;
@@ -152,11 +157,11 @@ export async function handleCommerceConversation(message: InboundMessage, contex
     }
   } else if (command === 'status') {
     payload = state.items.length
-      ? commerceButtons('Todavía no tienes un pedido. Tu selección sigue guardada: revísala para continuar.', [
-        { id: 'summary', title: 'Revisar carrito' }, { id: 'cancel', title: 'Cancelar' }, { id: 'help', title: 'Hablar con alguien' }])
-      : menuPayload('No tienes pedidos abiertos. ¿Qué necesitas?', !deps.purchasesEnabled || await deps.purchasesEnabled());
-  } else payload = commerceButtons('Conservo tu selección. Usa el menú para continuar o pedir ayuda.', [
-    { id: 'summary', title: 'Revisar carrito' }, { id: 'cancel', title: 'Cancelar' }, { id: 'help', title: 'Hablar con alguien' },
+      ? commerceButtons(t('cartSaved'), [
+        { id: 'summary', title: t('btnReview') }, { id: 'cancel', title: t('btnCancel') }, { id: 'help', title: t('btnHelp') }])
+      : menuPayload(t('noOrders'), !deps.purchasesEnabled || await deps.purchasesEnabled(), t);
+  } else payload = commerceButtons(t('fallback'), [
+    { id: 'summary', title: t('btnReview') }, { id: 'cancel', title: t('btnCancel') }, { id: 'help', title: t('btnHelp') },
   ]);
   state.lastMessageId = message.waMessageId;
   state.pendingHandoff = handoff;

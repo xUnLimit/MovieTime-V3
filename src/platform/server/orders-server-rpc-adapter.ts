@@ -2,7 +2,7 @@ import { assertRpcStringId, assertUuid } from '@/platform/utils/safety';
 import { createServiceRoleClient } from './supabase-server';
 
 function check(error: { message: string } | null): void {
-  if (error?.message === 'pedido_purchases_paused') throw new Error('Las nuevas compras están pausadas. Seguimos atendiendo los pedidos pagados.');
+  if (error?.message === 'pedido_purchases_paused') throw new Error('Por ahora no estamos tomando compras nuevas. Seguimos atendiendo los pedidos pagados.');
   if (error) throw new Error('No se pudo completar el pedido.', { cause: error });
 }
 
