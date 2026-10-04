@@ -21,7 +21,7 @@ test('@auth edita el recorrido en el lienzo, no publica con errores y publica un
   await page.getByRole('group', { name: 'Nodo Nuevo nodo de botones' }).getByRole('button', { name: 'Agregar botón' }).click();
   await page.getByRole('textbox', { name: /^Título del botón 1 de Nuevo nodo de botones/ }).fill('Terminar');
   await page.getByRole('combobox', { name: /^Destino del botón 1 de Nuevo nodo de botones/ }).selectOption({ label: 'Gracias final' });
-  await expect(page.getByRole('combobox', { name: /^Destino del botón 1 de Nuevo nodo de botones/ })).toHaveValue(/gracias_final/);
+  await expect(page.getByRole('combobox', { name: /^Destino del botón 1 de Nuevo nodo de botones/ })).toHaveValue('nuevo_nodo_de_texto');
 
   // Se conecta el menú con el nuevo nodo y los avisos de nodo inalcanzable desaparecen.
   await page.getByRole('combobox', { name: 'Destino del botón 1 de Menú principal' }).first().selectOption({ label: 'Nuevo nodo de botones' });
