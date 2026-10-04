@@ -28,7 +28,7 @@ function platformRows(available: CommerceChoice[]): Row[] {
  */
 export function renderChoiceList(state: CommerceState, choices: CommerceChoice[], notice: string, t: Copy): OutboundPayload {
   let entries: Row[];
-  let section: string;
+  let section = t('sectionPlatforms');
   let body: string;
   let buttonLabel: string;
   const extras: Row[] = [];
@@ -48,7 +48,7 @@ export function renderChoiceList(state: CommerceState, choices: CommerceChoice[]
   } else {
     entries = platformRows(choices.filter(choice => choice.stock > 0));
     body = t(entries.length ? 'platformsPrompt' : 'noPlatforms');
-    buttonLabel = t('listButtonPlatforms'); section = t('sectionPlatforms');
+    buttonLabel = t('listButtonPlatforms');
     if (soldOut.length) extras.push(row('SHOP:soldout', t('rowSoldOut'), t('rowSoldOutDesc')));
   }
   const more = [...(entries.length > (state.page + 1) * PAGE_SIZE ? [row(`SHOP:page:${state.page + 1}`, t('rowMore'), t('rowMoreDesc'))] : []), ...extras];
