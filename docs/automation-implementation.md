@@ -6,20 +6,20 @@ La implementación amplía el esquema conservado tras la restauración. Las migr
 | --- | --- |
 | Atender un chat | Inbox persistente, recuperación por cron, FIFO, lease y versión; tomar/devolver y resolver una revisión invalidan respuestas pendientes |
 | Comprar o renovar | Recorrido guiado, identidad propia, selección y confirmación; carrito atómico, reservas con vencimiento y límite por contacto |
-| Verificar un pago | Fuente IMAP validada, referencia única, acumulación de pagos, reintentos limitados de correo tardío; imagen/IA aporta candidato que requiere confirmación escrita |
+| Verificar un pago | Fuente IMAP validada, referencia única, acumulación de pagos, reintentos limitados de correo tardío; el cliente escribe `pago CÓDIGO` y la referencia se concilia contra el ingreso recibido |
 | Resolver excepciones | Comandos admin idempotentes para saldo sobrante, crédito/devolución externa confirmada, devolución de principal sin asignar, precio vencido y subconjunto de ítems confirmado |
 | Entregar acceso | Ledger recuperable separado del pago; revalidación de venta, destinatario, vigencia, cuenta y política inmediatamente antes del envío; historial protegido |
 | Acceso por código | Política por cuenta Netflix con confirmación de rotación; contraseña/PIN ausentes del envío y botón ligado a la venta propia vigente |
 | Avisar disponibilidad | Interés y consentimiento separados; pausa/cancelación, disponibilidad real, invitación con vencimiento, entrega idempotente y recuperación con la misma versión del chat |
 | Editar recorridos | Automatizaciones reúne recorrido, mensajes y simulador; versión fijada en conversaciones abiertas; navegación conserva filtro, selección y borradores |
-| Usar IA | Salida estructurada y validada, límites diarios atómicos, timeout, sin herramientas financieras ni credenciales, fallback guiado; apagada por defecto |
+| Texto libre | Sin interpretación automática: el texto no reconocido muestra el menú guiado; los comandos y botones del recorrido son la única vía de compra |
 | Integrar herramientas | API acotada de eventos, consumidor dedicado, leases, deduplicación y correlación; piloto n8n versionado/desactivado, sin escrituras financieras |
 
 ## Preparación del operador
 
-En **Automatizaciones → Conexiones**, preparar el modelo y cuotas, vencimiento y máximo de reservas. **Permitir nuevas compras por WhatsApp** comienza apagado; pausarlo conserva atención de pedidos existentes, conciliación y entrega. El panel mantiene sus comandos comerciales propios. El interruptor general de automatismos y tomar el chat siguen controlando respuestas y entregas automáticas.
+En **Automatizaciones → Conexiones**, preparar el vencimiento y el máximo de reservas. **Permitir nuevas compras por WhatsApp** comienza apagado; pausarlo conserva atención de pedidos existentes, conciliación y entrega. El panel mantiene sus comandos comerciales propios. El interruptor general de automatismos y tomar el chat siguen controlando respuestas y entregas automáticas.
 
-En **Automatizaciones**, seleccionar un recorrido para editar mensajes o probar la interpretación. La biblioteca global es un acceso secundario y avisa que un mensaje compartido afecta sus usos. El resumen operativo presenta pendientes, revisiones y presupuesto reservado; el detalle muestra entregas, avisos de stock, reintentos y tiempo de resolución. Los tokens reservados son un límite conservador, no una factura o costo monetario observado.
+En **Automatizaciones**, seleccionar un recorrido para editar mensajes o probar el resultado en el simulador. La biblioteca global es un acceso secundario y avisa que un mensaje compartido afecta sus usos. El resumen operativo presenta pendientes, revisiones y pedidos del día; el detalle muestra entregas, avisos de stock, reintentos y tiempo de resolución.
 
 En **Automatizaciones → Pedidos**, distinguir recibido, asignado y enviado. La política automática exige todos los ítems. Una resolución parcial necesita seleccionar explícitamente ítems e importes; nunca deriva de omitir una venta. Registrar una devolución exige referencia del movimiento externo ya realizado; el panel no efectúa ni simula una transferencia bancaria. Un cambio de moneda requiere revisión, sin conversión silenciosa.
 
@@ -29,9 +29,9 @@ En una cuenta Netflix, **Acceso por código** requiere confirmar rotación previ
 
 Programar el POST protegido descrito en [whatsapp-durable-processing.md](whatsapp-durable-processing.md). El webhook acelera el procesamiento; la recuperación persistente completa trabajo pendiente tras una caída. El cron procesa inbox, entregas y avisos de stock. Una falla de envío no revierte pagos ni períodos. Fuera de la ventana de WhatsApp se requiere la plantilla aprobada correspondiente; sin ella el caso permanece pendiente/revisable.
 
-Las variables opcionales de servidor figuran en `.env.local.example`. La IA envía sólo texto limitado o la imagen de un comprobante esperado (JPEG/PNG/WebP de hasta 1 MB), con `store:false`, sin IDs de cliente ni herramientas. Una lectura incierta solicita referencia escrita. La referencia se compara con la fuente Yappy autenticada; nunca prueba por sí sola el ingreso.
+Las variables opcionales de servidor figuran en `.env.local.example`. Las imágenes de comprobantes no se leen automáticamente: la referencia debe escribirse como `pago CÓDIGO` y se compara con la fuente Yappy autenticada; nunca prueba por sí sola el ingreso.
 
-El piloto externo y sus credenciales/retención se describen en [automation-integrations.md](automation-integrations.md). n8n, IA y otros proveedores requieren conexión y verificación del canal real antes de activarse; no se contrataron servicios durante esta implementación.
+El piloto externo y sus credenciales/retención se describen en [automation-integrations.md](automation-integrations.md). n8n y otros proveedores requieren conexión y verificación del canal real antes de activarse; no se contrataron servicios durante esta implementación.
 
 ## Verificación
 

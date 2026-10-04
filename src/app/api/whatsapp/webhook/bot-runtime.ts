@@ -2,6 +2,8 @@ import { getNetflixMailConfig } from '@/platform/config/netflix-server';
 import { createLogger } from '@/platform/observability/logger';
 import { openNetflixInbox } from '@/platform/server/netflix-imap';
 import { fetchTravelPageHtml } from '@/platform/server/netflix-travel-page';
+import { orderTemplateValues } from '@/application/use-cases/bot-order-values';
+import { getPedidoServerUseCase, listCatalogoServerUseCase } from '@/application/use-cases/pedidos-server-use-cases';
 import { handleBotMessage } from '@/application/use-cases/whatsapp-bot-use-case';
 import type { BotDeps, BotResult } from '@/application/use-cases/bot-reply';
 import { createBotConfigStore } from '@/modules/messaging/bot-config-store';
@@ -58,7 +60,7 @@ export function createBotRuntime(requestId: string) {
     },
     // 'off' when the bot is not answering at all.
     get version() { return loadedVersion; },
-    async handle(message: InboundMessage, send: BotDeps['send'], pinnedVersion: number | null = null): Promise<BotResult | 'off'> {
+    async handle(message: InboundMessage, send: BotDeps['send'], pinnedVersion: number | null = null, orderId: string | null = null): Promise<BotResult | 'off'> {
       if (!definitions.has(pinnedVersion)) definitions.set(pinnedVersion, loadDefinition(message, pinnedVersion));
       const published = await definitions.get(pinnedVersion);
       loadedVersion = versions.get(pinnedVersion) ?? null;
@@ -73,6 +75,9 @@ export function createBotRuntime(requestId: string) {
           },
           send,
           resolveOwnedSale: resolveAccessSale,
+          // Solo los datos de la lista blanca del pedido abierto de este mismo numero; el RPC valida la propiedad.
+          ...(orderId ? { orderValues: async () => orderTemplateValues(await getPedidoServerUseCase(message.fromWaId, orderId)) } : {}),
+          catalogHasStock: async () => (await listCatalogoServerUseCase()).some((plan) => plan.perfilesLibres > 0),
         });
       } catch (error) {
         await recordError(message, { motivo: 'respuesta_fallida' });

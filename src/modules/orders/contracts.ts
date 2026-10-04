@@ -11,6 +11,8 @@ export const pedidoSchema = z.object({
   receivedAmount: money, missingAmount: money, excessAmount: money,
   allocatedAmount: money.optional(), refundedAmount: money.optional(), unallocatedAmount: money.optional(),
   expiraAt: z.string(),
+  // Pago del correo de Yappy ya cruzado para un pedido por revisar; solo lo entrega la proyeccion del panel.
+  reviewCandidate: z.object({ code: z.string(), amount: money, paidAt: z.string(), reason: z.string().nullable() }).nullable().optional(),
   items: z.array(z.object({
     id: z.uuid(), tipo: z.enum(['nueva', 'renovacion']), servicioId: z.string(),
     ventaId: z.string().nullable(), planNombre: z.string(), total: money,
@@ -45,3 +47,4 @@ export const serverCartSchema = z.object({
 export const receiptSchema = z.object({
   id: z.uuid(), code: z.string().trim().min(4).max(64).regex(/^[A-Za-z0-9-]+$/), key: z.uuid(),
 });
+export const last4Schema = z.object({ id: z.uuid(), last4: z.string().regex(/^\d{4}$/).nullable(), key: z.uuid() });

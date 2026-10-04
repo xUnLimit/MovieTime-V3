@@ -27,7 +27,7 @@ const state = (extra: object = {}) => commerceStateSchema.parse(extra);
 function dependencies() {
   return { catalogue: vi.fn().mockResolvedValue([plan]), services: vi.fn().mockResolvedValue([sale]),
     buy: vi.fn().mockResolvedValue(OTHER), renew: vi.fn().mockResolvedValue(OTHER), order: vi.fn().mockResolvedValue(order),
-    reconcile: vi.fn().mockResolvedValue(order), interest: vi.fn().mockResolvedValue(undefined),
+    reconcile: vi.fn().mockResolvedValue(order), matchPayment: vi.fn().mockResolvedValue(order), interest: vi.fn().mockResolvedValue(undefined),
     cancelOrder: vi.fn().mockResolvedValue(undefined), paymentInstructions: 'Yappy al contacto comercial verificado.' } satisfies CommerceConversationDeps;
 }
 beforeEach(() => { counter = 0; });
@@ -214,7 +214,7 @@ describe('guided commerce coordinator', () => {
     const deps = dependencies(); const paying = state({ stage: 'payment', orderId: OTHER });
     const pending = await handleCommerceConversation(message('pago ABCD-123'), paying, deps);
     expect(deps.reconcile).toHaveBeenCalledWith(waId, OTHER, 'ABCD-123', expect.any(String));
-    expect(pending?.payload).toMatchObject({ text: expect.stringContaining('Todavía no veo tu pago') });
+    expect(pending?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('Todavía no veo tu pago'), buttons: expect.arrayContaining([{ id: 'SHOP:paid', title: 'Ya pagué' }]) });
     deps.order.mockResolvedValue({ ...order, paymentState: 'cubierto', receivedAmount: 5, missingAmount: 0 });
     const paid = await handleCommerceConversation(message('estado'), paying, deps);
     expect(paid?.payload).toMatchObject({ text: expect.stringContaining('no hace falta que pagues otra vez') });
@@ -226,10 +226,10 @@ describe('guided commerce coordinator', () => {
   });
   it('uses bounded payment instructions and preserves fallback when unavailable or media is unreadable', async () => {
     const deps = dependencies(); const paying = state({ stage: 'payment', orderId: OTHER });
-    expect((await handleCommerceConversation(message('pay', true), paying, deps))?.payload).toMatchObject({ text: expect.stringContaining('Si paga otra persona') });
+    expect((await handleCommerceConversation(message('pay', true), paying, deps))?.payload).toMatchObject({ body: expect.stringContaining('Si paga otra persona') });
     expect((await handleCommerceConversation(message('pay', true), paying, { ...deps, paymentInstructions: null }))?.handoff).toBe(true);
     const unreadable = { ...message(''), messageType: 'image' };
-    expect((await handleCommerceConversation(unreadable, paying, deps))?.payload).toMatchObject({ text: expect.stringContaining('código de la transacción') });
+    expect((await handleCommerceConversation(unreadable, paying, deps))?.payload).toMatchObject({ body: expect.stringContaining('Ya pagué') });
     expect(deps.reconcile).not.toHaveBeenCalled();
     deps.order.mockResolvedValue({ ...order, estado: 'revision' });
     expect((await handleCommerceConversation(message('estado'), paying, deps))?.handoff).toBe(true);
@@ -274,7 +274,7 @@ describe('guided commerce coordinator', () => {
     node.action = 'netflix_login_code'; expect(commerceCommand(valid, def)).toBeNull();
     expect(await handleCommerceConversation(valid, state({ stage: 'payment', orderId: OTHER }), dependencies(), def)).toBeNull();
     expect(await handleCommerceConversation(message('codigo'), state({ stage: 'buy' }), dependencies(), def)).toBeNull();
-    expect((await handleCommerceConversation(message('free words'), {}, dependencies(), def, 'buy'))?.payload).toMatchObject({ kind: 'list' });
+    expect(await handleCommerceConversation(message('free words'), {}, dependencies(), def)).toBeNull();
     const unknown = await handleCommerceConversation(message('free words'), state({ stage: 'buy' }), dependencies());
     expect(unknown?.payload).toMatchObject({ buttons: expect.arrayContaining([expect.objectContaining({ id: 'SHOP:help' })]) });
     expect(commerceCommand({ ...input, payload: ['SHOP:buy'] }, def)).toBeNull();

@@ -8,9 +8,9 @@ vi.mock('@/hooks/use-automation-control', () => ({ useAutomationControl: () => (
 beforeEach(() => { vi.clearAllMocks(); state.loading = false; state.error = false; state.operations = undefined; });
 describe('resumen operativo', () => {
   it('muestra métricas reales y despliega detalle sin saturar el listado', () => {
-    state.operations = { pendingMessages: 4, reviewMessages: 2, oldestPendingAt: '2026-10-03T12:00:00Z', retryAttempts: 3, averageResolutionSeconds: 42.5, pendingDeliveries: 5, reviewDeliveries: 1, ordersToday: 8, completedToday: 6, aiCallsToday: 7, aiReservedTokensToday: 1900 };
+    state.operations = { pendingMessages: 4, reviewMessages: 2, oldestPendingAt: '2026-10-03T12:00:00Z', retryAttempts: 3, averageResolutionSeconds: 42.5, pendingDeliveries: 5, reviewDeliveries: 1, ordersToday: 8, completedToday: 6 };
     const { rerender } = render(<AutomationOperationsSummary />);
-    expect(screen.getByText('1900 tokens de presupuesto reservado')).toBeTruthy(); expect(screen.queryByText(/entregas pendientes/)).toBeNull();
+    expect(screen.queryByText(/IA hoy|tokens/)).toBeNull(); expect(screen.queryByText(/entregas pendientes/)).toBeNull();
     expect(screen.getByText('Pedidos de hoy completados')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle operativo' })); expect(screen.getByText(/5 entregas pendientes/)).toBeTruthy(); expect(screen.getByText(/Pendiente más antiguo/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Revisar casos en Chats' }).getAttribute('href')).toBe('/chats');
@@ -28,7 +28,7 @@ describe('resumen operativo', () => {
   });
   it('maneja operación ausente, carga y error sin representar ausencia como cero', () => {
     const { rerender, container } = render(<AutomationOperationsSummary />); expect(container.innerHTML).toBe('');
-    state.loading = true; rerender(<AutomationOperationsSummary />); expect(container.querySelectorAll('[aria-busy="true"]')).toHaveLength(3);
+    state.loading = true; rerender(<AutomationOperationsSummary />); expect(container.querySelectorAll('[aria-busy="true"]')).toHaveLength(2);
     state.loading = false; state.error = true; rerender(<AutomationOperationsSummary />); expect(screen.getByRole('alert')).toBeTruthy(); fireEvent.click(screen.getByRole('button', { name: 'Reintentar resumen' })); expect(state.retry).toHaveBeenCalled();
   });
 });

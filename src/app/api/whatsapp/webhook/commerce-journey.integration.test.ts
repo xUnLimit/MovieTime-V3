@@ -27,16 +27,22 @@ import { commerceStateSchema } from '@/application/use-cases/commerce-conversati
 import { unwrap } from '@/test/integration/fixtures';
 import { drainWhatsAppInbox } from './inbox-runtime';
 
-describe.skipIf(requireIntegrationEnv()===null)('integracion: compra guiada, correo tardío y acceso protegido',()=>{
+// El mismo recorrido real con el flujo de siempre y con los bloques de compra del lienzo publicados y la bandera encendida:
+// reservas, pagos y entrega deben comportarse igual (los bloques solo aportan textos).
+const suite=requireIntegrationEnv()===null?describe.skip:describe;
+suite.each([
+  {mode:'flujo actual',blocks:false},{mode:'bloques de compra en el lienzo',blocks:true},
+])('integracion: compra guiada, correo tardío y acceso protegido ($mode)',({blocks})=>{
   const fixture=new CommerceJourneyFixture();const batches:WebhookBatch[]=[];
   beforeAll(()=>{
     expect(new URL(integrationEnv().url).hostname).toMatch(/^(?:127\.0\.0\.1|localhost|\[?::1\]?)$/);
-    fixture.setup(); cloud.send.mockImplementation(async(config:unknown,recipient:string,payload:OutboundPayload)=>{
+    if(blocks)vi.stubEnv('COMMERCE_FLOW_CANVAS_ENABLED','true');
+    fixture.setup(blocks); cloud.send.mockImplementation(async(config:unknown,recipient:string,payload:OutboundPayload)=>{
       expect(config).toMatchObject({phoneNumberId:'123'});expect(recipient).toBe(fixture.waId);expect(payload.kind).toBeTruthy();
       return {waMessageId:`wamid.meta.${randomUUID()}`};
     });
   });
-  afterAll(()=>fixture.cleanup());
+  afterAll(()=>{ fixture.cleanup(); vi.unstubAllEnvs(); });
   async function inbound(command:string,interactive=false){
     const parsed=parseWebhookPayload({object:'whatsapp_business_account',entry:[{id:'1',changes:[{field:'messages',value:{
       messaging_product:'whatsapp',metadata:{phone_number_id:'123'},messages:[{id:`wamid.journey.${randomUUID()}`,from:fixture.waId,

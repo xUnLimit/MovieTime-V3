@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { randomInt, randomUUID } from 'node:crypto';
-import { defaultDefinition } from '@/modules/bot-config';
+import { addOption, addPurchaseFlow, connectOption, defaultDefinition } from '@/modules/bot-config';
 import { z } from '@/platform/validation/zod';
 import { integrationEnv } from './env';
 import { uniqueWaId } from './fixtures';
@@ -10,6 +10,9 @@ const literal=(value:string)=>`'${value.replaceAll("'","''")}'`;
 export class CommerceJourneyFixture {
   readonly category=randomUUID();readonly planType=randomUUID();readonly plan=randomUUID();readonly service=randomUUID();
   readonly waId=uniqueWaId();readonly fixtureCredential=randomUUID();readonly code=`JOURNEY${randomUUID().replaceAll('-','').slice(0,16)}`.toUpperCase();
+  /** Codigo de Yappy con la forma LETRAS-NUMEROS: el cliente solo da sus ultimos 4 digitos. */
+  readonly digitsCode = `JOURNEYD-${randomInt(10_000_000, 99_999_999)}`;
+  get last4(): string { return this.digitsCode.slice(-4); }
   readonly uidValidity=randomInt(1_000_000,2_000_000_000);
   private originalSettings:string|null=null;
   private originalBot:z.infer<typeof botStateSchema>|null=null;
@@ -26,12 +29,21 @@ export class CommerceJourneyFixture {
     return execFileSync('docker',['exec','-i',container,'psql','-U','postgres','-d','postgres','-qAt','-v','ON_ERROR_STOP=1'],
       {input:statement,encoding:'utf8',stdio:['pipe','pipe','pipe']}).trim();
   }
-  setup():void {
+  /** Recorrido publicado en el escenario: el de siempre o el que trae los bloques de compra conectados desde el menu. */
+  static definition(withPurchaseBlocks:boolean){
+    const base=defaultDefinition();
+    if(!withPurchaseBlocks)return base;
+    const flow=addOption(addPurchaseFlow(base),'menu');
+    const added=flow.nodes.find(node=>node.id==='menu')?.options.at(-1);
+    if(!added)throw new Error('El menú no admite otro botón.');
+    return connectOption(flow,'menu',added.id,'compra_catalogo');
+  }
+  setup(withPurchaseBlocks=false):void {
     this.originalSettings=this.sql('SELECT settings::text FROM public.mt_automation_settings WHERE id;');
     this.originalBot=botStateSchema.parse(JSON.parse(this.sql("SELECT jsonb_build_object('enabled',enabled,'published_version',published_version) FROM public.whatsapp_bot_config WHERE id='global';")));
     this.originalAutomatic=this.sql("SELECT whatsapp_auto_enabled FROM public.config WHERE id='global';")==='t';
     this.fixtureVersion=z.coerce.number().int().positive().parse(this.sql(`INSERT INTO public.whatsapp_bot_versions(definition,note)
-      VALUES(${literal(JSON.stringify(defaultDefinition()))}::jsonb,'Integration journey fixture') RETURNING version;`));
+      VALUES(${literal(JSON.stringify(CommerceJourneyFixture.definition(withPurchaseBlocks)))}::jsonb,'Integration journey fixture') RETURNING version;`));
     this.sql(`BEGIN;
       UPDATE public.mt_automation_settings SET settings=jsonb_set(jsonb_set(settings,'{purchasesEnabled}','true'),'{aiMode}','"off"');
       UPDATE public.whatsapp_bot_config SET enabled=true,published_version=${this.fixtureVersion} WHERE id='global';
@@ -62,7 +74,7 @@ export class CommerceJourneyFixture {
       DELETE FROM public.intentos_comprobante WHERE pedido_id IN(SELECT id FROM public.pedidos WHERE contact_id='${this.waId}');
       DELETE FROM public.pedido_operaciones WHERE result_id IN(SELECT id FROM public.pedidos WHERE contact_id='${this.waId}');
       DELETE FROM public.pedido_pagos WHERE pedido_id IN(SELECT id FROM public.pedidos WHERE contact_id='${this.waId}');
-      UPDATE public.yappy_payments SET revision_pedido_id=NULL,matched_venta_id=NULL WHERE upper(confirmation_code)=upper('${this.code}');
+      UPDATE public.yappy_payments SET revision_pedido_id=NULL,matched_venta_id=NULL WHERE upper(confirmation_code) IN(upper('${this.code}'),upper('${this.digitsCode}'));
       DELETE FROM public.pedido_items WHERE servicio_id='${this.service}';
       DELETE FROM public.pedidos WHERE contact_id='${this.waId}';
       DELETE FROM public.pagos_venta WHERE venta_id IN(SELECT id FROM public.ventas WHERE servicio_id='${this.service}');
@@ -70,7 +82,7 @@ export class CommerceJourneyFixture {
       DELETE FROM public.ventas WHERE servicio_id='${this.service}';
       DELETE FROM public.whatsapp_contacts WHERE wa_id='${this.waId}';
       DELETE FROM public.terceros WHERE wa_id='${this.waId}';
-      DELETE FROM public.yappy_payments WHERE upper(confirmation_code)=upper('${this.code}');
+      DELETE FROM public.yappy_payments WHERE upper(confirmation_code) IN(upper('${this.code}'),upper('${this.digitsCode}'));
       DELETE FROM public.yappy_mail_messages WHERE uid_validity=${this.uidValidity};
       DELETE FROM public.servicios WHERE id='${this.service}';
       DELETE FROM public.planes WHERE id='${this.plan}';

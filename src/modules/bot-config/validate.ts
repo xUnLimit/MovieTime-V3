@@ -3,6 +3,8 @@ import {
   KEYWORD_MAX_LENGTH, MESSAGE_CATALOG, MESSAGE_KEYS, NODE_LIMITS, PARAM_CATALOG, PARAM_KEYS,
 } from './catalog';
 import { normalizeText, templateVariables } from './render';
+import { validateBlocks } from './validate-blocks';
+import { validateExtensions } from './validate-extensions';
 import { validateNodes, type Report } from './validate-nodes';
 
 function validateMessages(def: BotDefinition, report: Report): void {
@@ -58,10 +60,12 @@ function validateKeywords(def: BotDefinition, report: Report): void {
 }
 
 /** Errores (bloquean publicar) y avisos de la definicion. Rutas legibles, mensajes en espanol. */
-export function validateDefinition(def: BotDefinition): BotIssue[] {
+export function validateDefinition(def: BotDefinition, options: { purchaseBlocksEnabled?: boolean; flowExtensionsEnabled?: boolean } = {}): BotIssue[] {
   const issues: BotIssue[] = [];
   const report: Report = (path, message, severity = 'error') => { issues.push({ path, message, severity }); };
   validateNodes(def, report);
+  validateBlocks(def, report, options.purchaseBlocksEnabled === true);
+  validateExtensions(def, report, options.flowExtensionsEnabled === true);
   validateMessages(def, report);
   validateParams(def, report);
   validateKeywords(def, report);

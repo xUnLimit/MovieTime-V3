@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({ session: vi.fn(), get: vi.fn(), post: vi.fn(),
 vi.mock('@/platform/supabase/auth', () => ({ getCurrentSession: mocks.session }));
 vi.mock('@/platform/api/automation-control-client', () => ({ getAutomationControl: mocks.get, postAutomationControl: mocks.post }));
 vi.mock('@/platform/utils/online-mutation', () => ({ assertOnlineMutation: mocks.online }));
-import { fetchAutomationControlUseCase, simulateAutomationIntentUseCase, updateAutomationSettingsUseCase,
+import { fetchAutomationControlUseCase, updateAutomationSettingsUseCase,
   updateInterestUseCase, updateServiceAccessUseCase } from './automation-control-use-cases';
 beforeEach(() => { vi.clearAllMocks(); mocks.session.mockResolvedValue({ access_token: 'session' }); mocks.get.mockResolvedValue('snapshot'); mocks.post.mockResolvedValue('result'); mocks.online.mockReturnValue(undefined); });
 describe('automation browser use cases', () => {
@@ -16,7 +16,6 @@ describe('automation browser use cases', () => {
     expect(mocks.post).toHaveBeenLastCalledWith('session', { command: 'access', serviceId: 'id', mode: 'code', rotationConfirmed: true });
     await updateInterestUseCase({ id: 'interest', action: 'pause' });
     expect(mocks.post).toHaveBeenLastCalledWith('session', { command: 'interest', id: 'interest', action: 'pause' });
-    await simulateAutomationIntentUseCase('hello'); expect(mocks.post).toHaveBeenLastCalledWith('session', { command: 'simulate', text: 'hello' });
   });
   it('rejects anonymous reads and offline mutations before sending', async () => {
     mocks.session.mockResolvedValue(null);

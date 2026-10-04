@@ -6,16 +6,14 @@ import type { Json } from '@/platform/supabase/database.types';
 import { commerceStateSchema } from '@/application/use-cases/commerce-conversation-state';
 
 const mocks=vi.hoisted(()=>({ env:{whatsappAccessToken:'fixture',whatsappPhoneNumberId:'123'},
-  store:{claim:vi.fn(),isCurrent:vi.fn(),checkpoint:vi.fn(),finish:vi.fn()},notice:vi.fn(),commerce:vi.fn(),candidate:vi.fn(),
-  intent:vi.fn(),send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{configuration:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
+  store:{claim:vi.fn(),isCurrent:vi.fn(),checkpoint:vi.fn(),finish:vi.fn()},notice:vi.fn(),commerce:vi.fn(),
+  send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{configuration:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
 vi.mock('@/platform/config',()=>({env:mocks.env}));
 vi.mock('@/platform/observability/logger',()=>({createLogger:()=>({warn:mocks.warn})}));
 vi.mock('@/modules/whatsapp/automation-inbox-store',()=>({createAutomationInboxStore:()=>mocks.store}));
 vi.mock('@/application/use-cases/notice-reply-use-case',()=>({handleNoticeReply:mocks.notice}));
 vi.mock('@/application/use-cases/commerce-conversation-use-case',()=>({handleCommerceConversation:mocks.commerce}));
 vi.mock('@/application/use-cases/commerce-conversation-runtime',()=>({createCommerceConversationDeps:()=>({})}));
-vi.mock('@/application/use-cases/receipt-candidate-use-case',()=>({readReceiptCandidateUseCase:mocks.candidate}));
-vi.mock('@/application/use-cases/automation-intent-use-case',()=>({suggestAutomationIntent:mocks.intent}));
 vi.mock('@/application/use-cases/pedido-delivery-runtime',()=>({drainOrderDeliveries:mocks.delivery}));
 vi.mock('@/application/use-cases/interest-delivery-runtime',()=>({drainInterestDeliveries:mocks.interest}));
 vi.mock('@/modules/messaging/notice-reply-store',()=>({createNoticeReplyStore:()=>({})}));
@@ -42,38 +40,33 @@ beforeEach(()=>{
   vi.resetAllMocks(); mocks.env.whatsappAccessToken='fixture'; mocks.env.whatsappPhoneNumberId='123';
   mocks.store.isCurrent.mockResolvedValue(true); mocks.store.checkpoint.mockResolvedValue(true); mocks.store.finish.mockResolvedValue(true);
   mocks.notice.mockResolvedValue('ignored'); mocks.bot.configuration.mockResolvedValue(defaultDefinition()); mocks.bot.handle.mockResolvedValue('ignored');
-  mocks.commerce.mockResolvedValue(null); mocks.intent.mockResolvedValue(null); mocks.send.mockResolvedValue({sendStatus:'accepted'});
-  mocks.candidate.mockResolvedValue(null); mocks.delivery.mockResolvedValue({processed:0,failed:0});
+  mocks.commerce.mockResolvedValue(null); mocks.send.mockResolvedValue({sendStatus:'accepted'});
+  mocks.delivery.mockResolvedValue({processed:0,failed:0});
 });
-describe('inbox composition and safe receipt candidates',()=>{
+describe('inbox composition',()=>{
   it('remains idle without channel credentials and handles known notice replies before the bot',async()=>{
     mocks.env.whatsappAccessToken=''; expect(await drainWhatsAppInbox('request')).toEqual({processed:0,failed:0});
     expect(mocks.store.claim).not.toHaveBeenCalled(); mocks.env.whatsappAccessToken='fixture'; queue(); mocks.notice.mockResolvedValue('handled');
     expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0}); expect(mocks.bot.configuration).not.toHaveBeenCalled();
   });
-  it('checkpoints a candidate only inside a confirmed payment context and requires written confirmation',async()=>{
-    const input=queue(claim({stage:'payment',orderId},'image')); commercial(input); mocks.candidate.mockResolvedValue('ABCD-123');
+  it('sends unrecognised free text through the guided flow without any interpretation step',async()=>{
+    const input=queue(); mocks.commerce.mockResolvedValue(null); mocks.bot.handle.mockResolvedValue('ignored');
     expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
-    expect(mocks.candidate).toHaveBeenCalledWith('123');
-    expect(mocks.store.checkpoint).toHaveBeenCalledWith(input,expect.objectContaining({lastReply:expect.stringContaining('Escríbela como pago ABCD-123')}),'payment',orderId,3);
-    expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({payload:{kind:'text',text:expect.stringContaining('para confirmar la lectura')}}),expect.any(Object));
-    expect(mocks.commerce).toHaveBeenCalledTimes(1);
+    expect(mocks.commerce).toHaveBeenCalledWith(input.message,input.conversation.context,{},expect.anything());
+    expect(mocks.commerce.mock.lastCall).toHaveLength(4); expect(mocks.bot.handle).toHaveBeenCalledTimes(1);
   });
-  it('never reruns vision on replay and leaves unreadable, oversized or unrelated images with fallback',async()=>{
-    const contexts:Record<string,Json>[]=[{stage:'payment',orderId,lastMessageId:'wamid.fixture'},{}];
-    for (const context of contexts) {
-      const input=queue(claim(context,'image')); commercial(input); await drainWhatsAppInbox('request');
-    }
-    expect(mocks.candidate).not.toHaveBeenCalled();
-    for (const candidate of [null,'A'.repeat(65)]) {
-      const input=queue(claim({stage:'payment',orderId},'image')); commercial(input); mocks.candidate.mockResolvedValue(candidate);
-      await drainWhatsAppInbox('request'); expect(mocks.send.mock.lastCall?.[0].payload.text).toBe('Fallback');
-    }
+  it('hands the conversation order to the bot so node texts can show its data',async()=>{
+    const input=claim(); input.conversation.orderId=orderId; queue(input);
+    expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
+    expect(mocks.bot.handle).toHaveBeenCalledWith(input.message,expect.any(Function),2,orderId);
   });
-  it('pins the definition, uses intent as navigation and fences a checkpoint before any send',async()=>{
-    const input=queue(); commercial(input,true); mocks.intent.mockResolvedValue({intent:'catalogue'});
-    await drainWhatsAppInbox('request'); expect(mocks.commerce.mock.lastCall?.[4]).toBe('buy');
-    expect(mocks.bot.configuration).toHaveBeenCalledWith(input.message,2);
+  it('keeps payment images on the guided reply with no receipt reading',async()=>{
+    const input=queue(claim({stage:'payment',orderId},'image')); commercial(input);
+    await drainWhatsAppInbox('request'); expect(mocks.send.mock.lastCall?.[0].payload.text).toBe('Fallback');
+  });
+  it('pins the definition and fences a checkpoint before any send',async()=>{
+    const input=queue(); commercial(input,true);
+    await drainWhatsAppInbox('request');     expect(mocks.bot.configuration).toHaveBeenCalledWith(input.message,2);
     expect(mocks.store.finish).toHaveBeenCalledWith(input,expect.objectContaining({outcome:'handoff',flowVersion:3}));
     const stale=queue(); commercial(stale); mocks.store.checkpoint.mockResolvedValue(false); mocks.send.mockClear();
     expect(await drainWhatsAppInbox('request')).toEqual({processed:0,failed:0}); expect(mocks.send).not.toHaveBeenCalled();

@@ -15,10 +15,10 @@ vi.mock('@/platform/supabase/bot-api-client', () => ({
 }));
 vi.mock('@/platform/supabase/auth', () => ({ getCurrentSession: mocks.getCurrentSession }));
 
-import { addNode, defaultDefinition, setMessage } from '@/modules/bot-config';
+import { addConditionNode, addNode, addOption, addPurchaseFlow, defaultDefinition, setMessage, updateOption } from '@/modules/bot-config';
 import {
   BotAdminError, loadBotAdminSnapshot, loadBotHealthUseCase, listBotEventsUseCase, publishBotUseCase,
-  restoreBotVersionUseCase, setBotEnabledUseCase, testBotMailboxUseCase,
+  compareBotVersionsUseCase, restoreBotVersionUseCase, setBotEnabledUseCase, testBotMailboxUseCase,
 } from './bot-admin-use-cases';
 
 const record = vi.fn();
@@ -88,6 +88,17 @@ describe('publishBotUseCase', () => {
     expect(mocks.publishBotVersion).not.toHaveBeenCalled();
   });
 
+  it('only publishes purchase blocks when the server flag is on', async () => {
+    mocks.publishBotVersion.mockResolvedValue(6);
+    let flow = addOption(addPurchaseFlow(defaultDefinition()), 'menu');
+    flow = updateOption(flow, 'menu', flow.nodes[0].options.at(-1)!.id, { title: 'Comprar', next: 'compra_catalogo' });
+    await expect(publishBotUseCase(flow, 'Con bloques', context())).rejects.toThrow('Corrige los 4 errores antes de publicar');
+    await expect(publishBotUseCase(flow, 'Con bloques', context(), null, false)).rejects.toBeInstanceOf(BotAdminError);
+    expect(mocks.publishBotVersion).not.toHaveBeenCalled();
+    await expect(publishBotUseCase(flow, 'Con bloques', context(), null, true)).resolves.toBe(6);
+    expect(mocks.publishBotVersion).toHaveBeenCalledTimes(1);
+  });
+
   it('pluralizes the blocking error count', async () => {
     const broken = addNode({ ...defaultDefinition(), entryNodeId: 'x' }, 'text', 'Otro');
     broken.messages.login_code_sent = 'sin marcador';
@@ -105,6 +116,40 @@ describe('publishBotUseCase', () => {
     mocks.publishBotVersion.mockRejectedValue(new Error('No se pudo publicar la version del bot.'));
     await expect(publishBotUseCase(defaultDefinition(), 'Nota', context())).rejects.toThrow('No se pudo publicar');
     expect(record).not.toHaveBeenCalled();
+  });
+});
+
+describe('publishBotUseCase flow extensions', () => {
+  it('refuses conditions without the server flag and publishes them with it', async () => {
+    const withCondition = addConditionNode(defaultDefinition(), 'catalog_has_stock');
+    const wired = {
+      ...withCondition,
+      nodes: withCondition.nodes.map((node) => (node.id === 'menu'
+        ? { ...node, options: [...node.options, { id: 'cupo', title: 'Hay cupo', next: withCondition.nodes.at(-1)!.id }] } : node)),
+    };
+    await expect(publishBotUseCase(wired, 'Con condicion', context())).rejects.toThrow('Corrige');
+    expect(mocks.publishBotVersion).not.toHaveBeenCalled();
+    mocks.publishBotVersion.mockResolvedValue(6);
+    await expect(publishBotUseCase(wired, 'Con condicion', context(), null, false, true)).resolves.toBe(6);
+  });
+});
+
+describe('compareBotVersionsUseCase', () => {
+  it('returns the differences between two stored versions without logging or touching the draft', async () => {
+    const before = defaultDefinition();
+    const after = setMessage(before, 'handoff_ack', 'Te atendemos en breve.');
+    mocks.getBotVersion.mockImplementation(async (version: number) => ({ version, definition: version === 1 ? before : after }));
+    await expect(compareBotVersionsUseCase(1, 2)).resolves.toEqual(['Mensaje «Pase a una persona» modificado']);
+    await expect(compareBotVersionsUseCase(2, 2)).resolves.toEqual([]);
+    expect(record).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing or invalid version', async () => {
+    mocks.getBotVersion.mockImplementation(async (version: number) => (version === 1 ? { version, definition: defaultDefinition() } : null));
+    await expect(compareBotVersionsUseCase(1, 9)).rejects.toThrow('La version 9 no existe.');
+    await expect(compareBotVersionsUseCase(8, 1)).rejects.toThrow('La version 8 no existe.');
+    mocks.getBotVersion.mockResolvedValue({ version: 4, definition: { broken: true } });
+    await expect(compareBotVersionsUseCase(4, 5)).rejects.toThrow('no es valida');
   });
 });
 

@@ -5,6 +5,17 @@
 export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff' | 'purchase' | 'renewal' | 'my_services';
 export type BotNodeKind = 'buttons' | 'list' | 'text' | 'action';
 
+/** Condiciones cerradas que el servidor resuelve con datos existentes; el nodo sigue siendo `buttons` (si / no). */
+export type BotConditionType = 'customer_has_services' | 'catalog_has_stock';
+
+/** Bloques cerrados del flujo de compras: solo se editan sus textos; sus reglas viven en el servidor y en SQL. */
+export type PurchaseBlockType = 'catalogo' | 'resumen' | 'reserva' | 'pago';
+type BotNodeBlock = {
+  type: PurchaseBlockType;
+  /** Textos editados por clave de `commerce-copy`; lo que falta usa el texto original. */
+  copy: Record<string, string>;
+};
+
 export type BotOption = {
   /** Slug estable (^[a-z][a-z0-9_]{0,31}$), unico dentro del nodo. Viaja en el id del boton. */
   id: string;
@@ -30,6 +41,10 @@ export type BotNode = {
   options: BotOption[];
   /** Solo en nodos action. */
   action?: BotActionKey;
+  /** Bloque de compra con identidad fija (ver `bot-config/purchase-blocks`). Solo con la bandera de compras en el lienzo. */
+  block?: BotNodeBlock;
+  /** Nodo de condicion (solo con la bandera de extensiones): dos botones `si` / `no` que el servidor elige solo. */
+  condition?: { type: BotConditionType };
 };
 
 export type BotParams = {
@@ -132,6 +147,10 @@ export type BotHealth = {
   lastActivityAt: string | null;
   eventsLast24h: number;
   codesLast24h: number;
+  /** Bandera del servidor: permite publicar bloques de compra en el lienzo. */
+  purchaseBlocksEnabled: boolean;
+  /** Bandera del servidor: permite publicar condiciones y datos del pedido en los textos. */
+  flowExtensionsEnabled: boolean;
 };
 
 /** Lo que la UI consume. Lo implementa `useBotAdmin` (src/hooks/use-bot-admin.ts). */
@@ -144,6 +163,10 @@ export type BotAdminApi = {
   dirty: boolean;
   issues: BotIssue[];
   hasErrors: boolean;
+  /** Bandera del servidor: permite agregar y publicar los bloques de compra del lienzo. */
+  purchaseBlocksEnabled: boolean;
+  /** Bandera del servidor: permite publicar condiciones y datos del pedido en los textos. */
+  flowExtensionsEnabled: boolean;
   versions: BotVersionSummary[];
   events: BotEventPage | null;
   health: BotHealth | null;

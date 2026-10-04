@@ -4,6 +4,7 @@ import { readBotAction, type BotAction, type LegacyTarget } from '@/modules/what
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { BotActionKey, BotNode } from '@/types/bot';
 import { renderBotMessage, sayMessage } from './bot-messages';
+import { followConditions, nodeWithValues } from './bot-node-runtime';
 import { reply, trackEvent, type BotDeps, type BotResult, type BotRun } from './bot-reply';
 import { requestNetflixCode } from './netflix-code-flow';
 
@@ -26,9 +27,12 @@ async function runAction(run: BotRun, action: BotActionKey | undefined, services
 
 // Sends a node; an action node runs its action instead. The prefix lets the "option no
 // longer exists" notice and the menu travel in one reply (each inbound message gets one).
-async function deliverNode(run: BotRun, node: BotNode, services: BotService[], prefix?: string): Promise<BotResult> {
+async function deliverNode(run: BotRun, start: BotNode, services: BotService[], prefix?: string): Promise<BotResult> {
+  const node = await followConditions(run, start, services);
+  if (!node) return 'ignored';
   if (node.kind === 'action') return (await runAction(run, node.action, services)) ?? 'ignored';
-  const shown = prefix ? { ...node, body: `${prefix}\n\n${node.body}` } : node;
+  const rendered = await nodeWithValues(run, node);
+  const shown = prefix ? { ...rendered, body: `${prefix}\n\n${rendered.body}` } : rendered;
   await reply(run.deps, run.message, buildNodeMessage(shown));
   return 'node';
 }

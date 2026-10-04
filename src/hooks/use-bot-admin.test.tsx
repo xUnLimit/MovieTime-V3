@@ -11,11 +11,11 @@ vi.mock('@/application/use-cases/bot-admin-use-cases', () => useCases);
 const activityOptions = vi.hoisted(() => ({ logContext: { usuarioId: 'u1', usuarioEmail: 'a@example.test' }, recordActivityLog: vi.fn() }));
 vi.mock('@/platform/activity/activity-log-adapter', () => ({ getActivityLogOptions: () => activityOptions }));
 
-import { defaultDefinition, setMessage } from '@/modules/bot-config';
+import { addConditionNode, addOption, addPurchaseFlow, defaultDefinition, setMessage, updateOption } from '@/modules/bot-config';
 import { useBotAdmin } from './use-bot-admin';
 
 const status = { enabled: false, publishedVersion: 1, updatedAt: 't' };
-const health = { whatsappConfigured: true, mailboxConfigured: true, lastActivityAt: null, eventsLast24h: 0, codesLast24h: 0 };
+const health = { whatsappConfigured: true, mailboxConfigured: true, lastActivityAt: null, eventsLast24h: 0, codesLast24h: 0, purchaseBlocksEnabled: false, flowExtensionsEnabled: false };
 const page = { events: [], total: 0, page: 1, pageSize: 10 };
 
 function mockLoad(published: ReturnType<typeof defaultDefinition> | null = defaultDefinition()) {
@@ -111,7 +111,7 @@ describe('useBotAdmin', () => {
     useCases.publishBotUseCase.mockResolvedValue(2);
     mockLoad(edited);
     await act(async () => { await result.current.publish('Cambio de texto'); });
-    expect(useCases.publishBotUseCase).toHaveBeenCalledWith(edited, 'Cambio de texto', activityOptions, defaultDefinition());
+    expect(useCases.publishBotUseCase).toHaveBeenCalledWith(edited, 'Cambio de texto', activityOptions, defaultDefinition(), false, false);
     expect(result.current.published).toEqual(edited);
     expect(result.current.dirty).toBe(false);
     expect(result.current.saving).toBe(false);
@@ -170,5 +170,40 @@ describe('useBotAdmin', () => {
     const { result } = await ready();
     await act(async () => { await result.current.publish('Nota'); });
     expect(useCases.publishBotUseCase).not.toHaveBeenCalled();
+  });
+
+  it('treats purchase blocks as blocking until the server flag is on, and publishes with the flag it read', async () => {
+    let flow = addOption(addPurchaseFlow(defaultDefinition()), 'menu');
+    flow = updateOption(flow, 'menu', flow.nodes[0].options.at(-1)!.id, { title: 'Comprar', next: 'compra_catalogo' });
+    mockLoad(flow);
+    const off = await ready();
+    expect(off.result.current.purchaseBlocksEnabled).toBe(false);
+    expect(off.result.current.hasErrors).toBe(true);
+    off.unmount();
+    useCases.loadBotHealthUseCase.mockResolvedValue({ ...health, purchaseBlocksEnabled: true });
+    const on = await ready();
+    expect(on.result.current.purchaseBlocksEnabled).toBe(true);
+    expect(on.result.current.hasErrors).toBe(false);
+    act(() => on.result.current.updateDraft((current) => setMessage(current, 'handoff_ack', 'Texto nuevo.')));
+    useCases.publishBotUseCase.mockResolvedValue(3);
+    await act(async () => { await on.result.current.publish('Con bloques'); });
+    expect(useCases.publishBotUseCase).toHaveBeenCalledWith(expect.anything(), 'Con bloques', activityOptions, flow, true, false);
+  });
+
+  it('treats conditions as blocking until the flow-extensions flag is on, and publishes with the flag it read', async () => {
+    const withCondition = addConditionNode(defaultDefinition(), 'catalog_has_stock');
+    mockLoad(withCondition);
+    const off = await ready();
+    expect(off.result.current.flowExtensionsEnabled).toBe(false);
+    expect(off.result.current.hasErrors).toBe(true);
+    off.unmount();
+    useCases.loadBotHealthUseCase.mockResolvedValue({ ...health, flowExtensionsEnabled: true });
+    const on = await ready();
+    expect(on.result.current.flowExtensionsEnabled).toBe(true);
+    expect(on.result.current.issues.filter((issue) => issue.path.includes('condition'))).toEqual([]);
+    act(() => on.result.current.updateDraft((current) => setMessage(current, 'handoff_ack', 'Texto nuevo.')));
+    useCases.publishBotUseCase.mockResolvedValue(4);
+    await act(async () => { await on.result.current.publish('Con condicion'); });
+    expect(useCases.publishBotUseCase).toHaveBeenCalledWith(expect.anything(), 'Con condicion', activityOptions, withCondition, false, true);
   });
 });

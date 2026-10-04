@@ -1,28 +1,27 @@
+import { legacySettingsKeys } from '@/modules/automation-control/contracts';
 import { createAutomationControlStore } from '@/modules/automation-control/store';
 import { createUserRequestClient } from '@/platform/server/supabase-server';
 import { assertRpcStringId, assertUuid } from '@/platform/utils/safety';
 import type { AutomationControlCommand } from '@/platform/api/automation-control-client';
 import type { AutomationControl } from '@/types/automation-control';
-import { suggestAutomationIntent } from './automation-intent-use-case';
 import { notifyInterestUseCase } from './interest-notification-use-case';
 
 export async function readAutomationControlUseCase(): Promise<AutomationControl> {
   const store = createAutomationControlStore();
   const [settings, interests, access, operations] = await Promise.all([store.settings(), store.interests(), store.access(), store.metrics()]);
   return { settings, interests, access, operations,
-    health: { aiConfigured: !!process.env.OPENAI_API_KEY, integrationConfigured: !!process.env.AUTOMATION_INTEGRATION_TOKEN },
+    health: { integrationConfigured: !!process.env.AUTOMATION_INTEGRATION_TOKEN },
     providers: [{ id: 'netflix', name: 'Netflix', loginCode: true, travelCode: true, verified: true }],
   };
 }
 
 export async function executeAutomationControlUseCase(input: AutomationControlCommand, authorization: string) {
-  if (input.command === 'simulate') return suggestAutomationIntent(input.text);
   const client = createUserRequestClient(authorization);
   if (input.command === 'interest' && input.action === 'notify') return notifyInterestUseCase(input.id);
   if (input.command === 'access') assertUuid(input.serviceId, 'Cuenta');
   if (input.command === 'interest') assertUuid(input.id, 'Interés');
   const result = input.command === 'settings'
-    ? await client.rpc('mt_update_automation_settings', { p_settings: input.settings })
+    ? await client.rpc('mt_update_automation_settings', { p_settings: { ...legacySettingsKeys, ...input.settings } })
     : input.command === 'access'
       ? await client.rpc('mt_set_service_access', { p_service_id: input.serviceId, p_mode: input.mode,
         p_rotation_confirmed: input.rotationConfirmed })

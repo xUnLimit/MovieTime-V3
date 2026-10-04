@@ -94,13 +94,13 @@ describe('validateDefinition - nodos', () => {
     const eleven = Array.from({ length: 11 }, (_, i) => ({ id: `o${i}`, title: `T${i}`, next: 'netflix' }));
     const list = withNode(base, 'menu', { kind: 'list', listButtonLabel: 'Ver', options: eleven });
     expect(errors(list).map((i) => i.path)).toContain('nodes[menu].options');
-    expect(errors(withNode(base, 'menu', { kind: 'list', listButtonLabel: 'Ver', options: eleven.slice(0, 10) }))).toEqual([]);
+    expect(errors(withNode(base, 'menu', { kind: 'list', listButtonLabel: 'Ver', options: eleven.slice(0, 10) })).filter((i) => !i.message.includes('alcanzar'))).toEqual([]);
   });
   it('lista: titulo 24, descripcion 72 y etiqueta del boton', () => {
     const base = defaultDefinition();
     const okOption = { id: 'a', title: 'x'.repeat(24), description: 'd'.repeat(72), next: 'netflix' };
     const ok = withNode(base, 'menu', { kind: 'list', listButtonLabel: 'b'.repeat(20), options: [okOption] });
-    expect(errors(ok)).toEqual([]);
+    expect(errors(ok).filter((i) => !i.message.includes('alcanzar'))).toEqual([]);
     const bad = withNode(base, 'menu', {
       kind: 'list', listButtonLabel: 'b'.repeat(21),
       options: [{ ...okOption, title: 'x'.repeat(25), description: 'd'.repeat(73) }],
@@ -127,19 +127,24 @@ describe('validateDefinition - nodos', () => {
     expect(warnings(withNode(base, 'login', { body: 'texto' })).map((i) => i.path)).toContain('nodes[login].body');
     expect(warnings(withNode(base, 'menu', { action: 'handoff' })).map((i) => i.path)).toContain('nodes[menu].action');
   });
-  it('avisa de nodos y acciones inalcanzables', () => {
+  it('el flujo por defecto es publicable', () => {
+    expect(hasBlockingIssues(validateDefinition(defaultDefinition()))).toBe(false);
+  });
+  it('bloquea publicar con nodos y acciones inalcanzables', () => {
     const base = defaultDefinition();
     const orphan: BotNode = { id: 'huerfano', name: 'Huérfano', kind: 'text', body: 'hola', options: [] };
     const orphanAction: BotNode = { id: 'extra', name: 'Extra', kind: 'action', body: '', options: [], action: 'handoff' };
-    const found = warnings({ ...base, nodes: [...base.nodes, orphan, orphanAction] });
+    expect(hasBlockingIssues(validateDefinition({ ...base, nodes: [...base.nodes, orphan] }))).toBe(true);
+    const found = errors({ ...base, nodes: [...base.nodes, orphan, orphanAction] });
     expect(found.find((i) => i.path === 'nodes[huerfano]')?.message).toContain('Huérfano');
     expect(found.find((i) => i.path === 'nodes[extra]')?.message).toContain('Pasar a una persona');
   });
-  it('avisa de ciclos sin salida y tolera ciclos con salida', () => {
+  it('bloquea ciclos sin salida y tolera ciclos con salida', () => {
     const base = defaultDefinition();
     const loop = withNode(base, 'netflix', { options: [{ id: 'a', title: 'A', next: 'menu' }] });
     const noExit = withNode(loop, 'menu', { options: [{ id: 'b', title: 'B', next: 'netflix' }] });
-    expect(warnings(noExit).map((i) => i.path)).toEqual(expect.arrayContaining(['nodes[menu]', 'nodes[netflix]']));
+    expect(hasBlockingIssues(validateDefinition(noExit))).toBe(true);
+    expect(errors(noExit).map((i) => i.path)).toEqual(expect.arrayContaining(['nodes[menu]', 'nodes[netflix]']));
     const withExit = withNode(base, 'netflix', {
       options: [{ id: 'a', title: 'A', next: 'menu' }, { id: 'b', title: 'B', next: 'login' }, { id: 'c', title: 'C', next: 'viaje' }] });
     expect(warnings(withExit)).toEqual([]);

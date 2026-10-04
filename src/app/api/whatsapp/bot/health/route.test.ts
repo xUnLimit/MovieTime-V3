@@ -36,14 +36,30 @@ describe('GET /api/whatsapp/bot/health', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('x-request-id')).toBeTruthy();
-    expect(JSON.parse(text).data).toEqual({ whatsappConfigured: true, mailboxConfigured: true });
+    expect(JSON.parse(text).data).toEqual({ whatsappConfigured: true, mailboxConfigured: true, purchaseBlocksEnabled: false, flowExtensionsEnabled: false });
     expect(text).not.toMatch(/secret|owner@|app-password/);
   });
 
   it('reports missing configuration as false', async () => {
     Object.assign(env, { whatsappAccessToken: 'only-the-token' });
     const body = await (await GET(request())).json();
-    expect(body.data).toEqual({ whatsappConfigured: false, mailboxConfigured: false });
+    expect(body.data).toEqual({ whatsappConfigured: false, mailboxConfigured: false, purchaseBlocksEnabled: false, flowExtensionsEnabled: false });
+  });
+
+  it('reports the purchase-blocks flag only when the server turns it on', async () => {
+    vi.stubEnv('COMMERCE_FLOW_CANVAS_ENABLED', 'true');
+    expect((await (await GET(request())).json()).data.purchaseBlocksEnabled).toBe(true);
+    vi.stubEnv('COMMERCE_FLOW_CANVAS_ENABLED', 'yes');
+    expect((await (await GET(request())).json()).data.purchaseBlocksEnabled).toBe(false);
+    vi.unstubAllEnvs();
+  });
+
+  it('reports the flow-extensions flag only when the server turns it on', async () => {
+    vi.stubEnv('FLOW_EXTENSIONS_ENABLED', 'true');
+    expect((await (await GET(request())).json()).data.flowExtensionsEnabled).toBe(true);
+    vi.stubEnv('FLOW_EXTENSIONS_ENABLED', 'yes');
+    expect((await (await GET(request())).json()).data.flowExtensionsEnabled).toBe(false);
+    vi.unstubAllEnvs();
   });
 
   it('rejects unexpected query parameters', async () => {

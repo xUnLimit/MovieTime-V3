@@ -76,6 +76,10 @@ export async function publishBotUseCase(
   note: string,
   context: BotAdminContext,
   previous: BotDefinition | null = null,
+  /** Bandera del servidor; sin ella un borrador con bloques de compra no se publica. */
+  purchaseBlocksEnabled = false,
+  /** Bandera del servidor; sin ella un borrador con condiciones o datos del pedido no se publica. */
+  flowExtensionsEnabled = false,
 ): Promise<number> {
   const cleanNote = note.trim();
   if (!cleanNote) throw new BotAdminError('Escribe una nota que describa el cambio.');
@@ -84,7 +88,7 @@ export async function publishBotUseCase(
   }
   const parsed = parseDefinition(definition);
   if (!parsed.success) throw new BotAdminError('La definicion del bot no es valida.');
-  const issues = validateDefinition(parsed.definition);
+  const issues = validateDefinition(parsed.definition, { purchaseBlocksEnabled, flowExtensionsEnabled });
   if (hasBlockingIssues(issues)) {
     const count = issues.filter((issue) => issue.severity === 'error').length;
     throw new BotAdminError(`Corrige ${count === 1 ? 'el error' : `los ${count} errores`} antes de publicar.`);
@@ -109,6 +113,14 @@ export async function restoreBotVersionUseCase(version: number, context: BotAdmi
     metadata: { operacion: 'restaurar', version },
   });
   return definition;
+}
+
+/** Diferencias entre dos versiones guardadas (solo lectura: no toca el borrador ni deja registro). */
+export async function compareBotVersionsUseCase(from: number, to: number): Promise<string[]> {
+  const [before, after] = await Promise.all([getBotVersion(from), getBotVersion(to)]);
+  if (!before) throw new BotAdminError(`La version ${from} no existe.`);
+  if (!after) throw new BotAdminError(`La version ${to} no existe.`);
+  return diffDefinitions(readDefinition(before.definition, `La version ${from}`), readDefinition(after.definition, `La version ${to}`));
 }
 
 export async function setBotEnabledUseCase(enabled: boolean, context: BotAdminContext): Promise<boolean> {

@@ -14,7 +14,7 @@ const replySchema = z.discriminatedUnion('kind', [
     rows: z.array(z.object({ id: z.string().max(256), title: z.string().max(24), description: z.string().max(72).optional(), section: z.string().max(24).optional() })).max(10) }),
 ]);
 export const commerceStateSchema = z.object({
-  stage: z.enum(['idle', 'buy', 'renew', 'summary', 'payment', 'interest']).default('idle'),
+  stage: z.enum(['idle', 'buy', 'renew', 'summary', 'payment', 'last4', 'interest']).default('idle'),
   kind: z.enum(['buy', 'renew']).default('buy'), items: z.array(itemSchema).max(10).default([]),
   page: z.number().int().nonnegative().max(10000).default(0),
   orderId: z.string().uuid().nullable().default(null),
@@ -22,6 +22,8 @@ export const commerceStateSchema = z.object({
   // Compra en dos pasos: plataforma con cupo y luego sus planes. `soldout` abre la lista de agotados.
   categoryId: z.string().uuid().nullable().default(null), soldout: z.boolean().default(false),
   lastMessageId: z.string().max(256).nullable().default(null), lastReply: z.string().max(4096).nullable().default(null),
+  // Intentos con formato invalido al dar los ultimos 4 digitos; el limite real de coincidencias vive en SQL.
+  last4Attempts: z.number().int().nonnegative().max(20).default(0),
   pendingHandoff: z.boolean().default(false),
   lastPayload: replySchema.nullable().default(null),
 });
@@ -35,7 +37,8 @@ export function commerceCommand(message: InboundMessage, definition?: BotDefinit
   const action = readBotAction(message);
   if (action?.kind === 'option' && definition) {
     const resolved = resolveOption(definition, action.nodeId, action.optionId);
-    if (resolved?.target.action === 'purchase') return 'buy';
+    // El bloque de catalogo del lienzo tiene la identidad fija de "comprar"; entra al mismo flujo de siempre.
+    if (resolved?.target.action === 'purchase' || resolved?.target.block?.type === 'catalogo') return 'buy';
     if (resolved?.target.action === 'renewal') return 'renew';
     if (resolved?.target.action === 'my_services') return 'services';
   }
@@ -43,7 +46,7 @@ export function commerceCommand(message: InboundMessage, definition?: BotDefinit
   const text = message.textBody?.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') ?? '';
   const commands: Record<string, string> = { comprar: 'buy', catalogo: 'buy', adquirir: 'buy', renovar: 'renew',
     'mis servicios': 'services', carrito: 'summary', resumen: 'summary', confirmar: 'confirm',
-    cancelar: 'cancel', ayuda: 'help', humano: 'help', hola: 'menu', menu: 'menu', estado: 'status' };
+    cancelar: 'cancel', ayuda: 'help', humano: 'help', hola: 'menu', menu: 'menu', estado: 'status', 'ya pague': 'paid' };
   return commands[text] ?? null;
 }
 

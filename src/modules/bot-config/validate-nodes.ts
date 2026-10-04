@@ -3,6 +3,7 @@ import {
   ACTION_CATALOG, ACTION_KEYS, NODE_ID_PATTERN, NODE_KINDS, NODE_LIMITS, NODE_NAME_MAX_LENGTH, OPTION_ID_PATTERN,
 } from './catalog';
 import { reachableNodeIds } from './graph';
+import { NODE_VARIABLE_NAMES } from './extensions';
 import { templateVariables } from './render';
 
 type Report = (path: string, message: string, severity?: 'error' | 'warning') => void;
@@ -52,8 +53,8 @@ function checkNode(node: BotNode, ids: ReadonlySet<string>, report: Report): voi
     if (node.action !== undefined) report(`${base}.action`, 'Solo los nodos de acción llevan acción; se ignorará.', 'warning');
   }
   if (node.body.length > NODE_LIMITS.bodyMax) report(`${base}.body`, `El texto supera ${NODE_LIMITS.bodyMax} caracteres.`);
-  for (const name of templateVariables(node.body)) {
-    report(`${base}.body`, `Los textos de los nodos no admiten marcadores; quita {{${name}}}.`);
+  for (const name of templateVariables(node.body).filter((variable) => !NODE_VARIABLE_NAMES.includes(variable))) {
+    report(`${base}.body`, `Los textos de los nodos no admiten el marcador {{${name}}}; quítalo o usa un dato del pedido permitido.`);
   }
   if (node.kind === 'list') {
     const label = node.listButtonLabel ?? '';
@@ -65,6 +66,10 @@ function checkNode(node: BotNode, ids: ReadonlySet<string>, report: Report): voi
   checkOptions(node, ids, report);
 }
 
+/**
+ * Nodos alcanzables desde los que ningun camino llega a un texto o una accion (salidas reales). Un ciclo que
+ * puede volver al menu o salir hacia un nodo final NO cuenta: solo los ciclos inescapables bloquean publicar.
+ */
 function deadEndNodes(def: BotDefinition, reachable: ReadonlySet<string>): string[] {
   const exits = new Set(def.nodes.filter((node) => node.kind === 'text' || node.kind === 'action').map((node) => node.id));
   let grew = true;
@@ -99,10 +104,10 @@ export function validateNodes(def: BotDefinition, report: Report): void {
     const label = node.kind === 'action' && node.action && ACTION_KEYS.includes(node.action)
       ? `La acción «${ACTION_CATALOG[node.action].label}» no se puede alcanzar desde el nodo de entrada.`
       : `El nodo «${node.name}» no se puede alcanzar desde el nodo de entrada.`;
-    report(`nodes[${node.id}]`, label, 'warning');
+    report(`nodes[${node.id}]`, label);
   }
   for (const id of deadEndNodes(def, reachable)) {
-    report(`nodes[${id}]`, 'Este nodo forma un ciclo sin salida: el cliente no llega a un mensaje final ni a una acción.', 'warning');
+    report(`nodes[${id}]`, 'Este nodo forma un ciclo sin salida: el cliente no llega a un mensaje final ni a una acción.');
   }
 }
 

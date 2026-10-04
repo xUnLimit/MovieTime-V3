@@ -24,8 +24,8 @@ const orders: Pedido[] = Array.from({ length: 14 }, (_, index) => ({
   items: ['Netflix', 'Disney+'].map((planNombre, part) => ({ id: uuid(100 + index * 2 + part), tipo: 'nueva', servicioId: uuid(300), ventaId: null, planNombre, total: 6, estado: index % 2 && index % 3 ? 'aplicado' : 'pendiente', ventaIdResultante: index % 2 && index % 3 ? uuid(400) : null })),
 }));
 const control: AutomationControl = {
-  settings: { aiMode: 'off', model: '', dailyCalls: 100, dailyTokens: 10000, reservationMinutes: 15, maxReservations: 1, integrationsEnabled: false, purchasesEnabled: false },
-  health: { aiConfigured: false, integrationConfigured: false }, providers: [], access: [],
+  settings: { reservationMinutes: 15, maxReservations: 1, integrationsEnabled: false, purchasesEnabled: false },
+  health: { integrationConfigured: false }, providers: [], access: [],
   interests: Array.from({ length: 14 }, (_, index) => ({ id: uuid(500 + index), contactSuffix: String(2000 + index), category: index % 2 ? 'Disney+' : 'Netflix', plan: 'Perfil mensual', consent: index % 3 !== 0, paused: index % 5 === 0, state: index === 13 ? 'cancelled' : 'waiting', createdAt: '2026-10-03T12:00:00Z' })),
 };
 

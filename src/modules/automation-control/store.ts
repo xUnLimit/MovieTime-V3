@@ -1,5 +1,5 @@
 import { createServiceRoleClient } from '@/platform/server/supabase-server';
-import { settingsSchema, defaultAutomationSettings } from './contracts';
+import { storedSettingsSchema, defaultAutomationSettings } from './contracts';
 import { automationMetricsSchema } from './metrics';
 import type { AutomationControl } from '@/types/automation-control';
 
@@ -16,7 +16,7 @@ export function createAutomationControlStore(client: Client = createServiceRoleC
     async settings() {
       const { data, error } = await client.from('mt_automation_settings').select('settings').eq('id', true).single();
       check(error);
-      return settingsSchema.parse(data?.settings ?? defaultAutomationSettings);
+      return storedSettingsSchema.parse(data?.settings ?? defaultAutomationSettings);
     },
     async access(): Promise<AutomationControl['access']> {
       const [policies, services, categories] = await Promise.all([
@@ -44,10 +44,6 @@ export function createAutomationControlStore(client: Client = createServiceRoleC
       return (interests.data ?? []).map((row) => ({ id: row.id, contactSuffix: row.contact_id.slice(-4),
         category: names.get(row.categoria_id) ?? 'Servicio', plan: row.plan_id ? planNames.get(row.plan_id) ?? '' : '',
         consent: row.consent_at !== null, paused: row.paused_at !== null, state: row.estado, createdAt: row.created_at }));
-    },
-    async claimBudget(tokens: number) {
-      const { data, error } = await client.rpc('mt_claim_ai_budget', { p_tokens: tokens });
-      check(error); return data === true;
     },
   };
 }

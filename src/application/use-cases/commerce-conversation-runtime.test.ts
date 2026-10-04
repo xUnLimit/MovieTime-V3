@@ -5,7 +5,7 @@ vi.mock('@/modules/automation-control/store', () => ({ createAutomationControlSt
 vi.mock('@/platform/server/supabase-server', () => ({ createServiceRoleClient: () => ({ rpc }) }));
 vi.mock('./pedidos-server-use-cases', () => ({
   listCatalogoServerUseCase: vi.fn(), listServiciosServerUseCase: vi.fn(), createCompraServerUseCase: vi.fn(),
-  createRenovacionServerUseCase: vi.fn(), getPedidoServerUseCase: vi.fn(), reconcilePedidoServerUseCase: vi.fn(), cancelPedidoServerUseCase: cancel,
+  createRenovacionServerUseCase: vi.fn(), getPedidoServerUseCase: vi.fn(), reconcilePedidoServerUseCase: vi.fn(), matchPedidoPaymentServerUseCase: vi.fn(), cancelPedidoServerUseCase: cancel,
 }));
 import { createCommerceConversationDeps } from './commerce-conversation-runtime';
 const id = '123e4567-e89b-42d3-a456-426614174000';

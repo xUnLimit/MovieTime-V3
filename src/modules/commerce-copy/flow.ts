@@ -12,7 +12,7 @@ export const FLOW_STEPS: readonly FlowStep[] = [
   { id: 'renovar', title: 'Renovar', description: 'El cliente elige cuáles de sus servicios renovar.', next: ['carrito'] },
   { id: 'carrito', title: 'Carrito', description: 'Resumen de lo elegido y confirmación.', next: ['reserva'] },
   { id: 'reserva', title: 'Reserva', description: 'El pedido queda reservado por un tiempo limitado.', next: ['pago'] },
-  { id: 'pago', title: 'Pago y estado', description: 'Datos de pago, seguimiento del pedido y entrega del acceso.', next: [] },
+  { id: 'pago', title: 'Pago y estado', description: 'Datos de pago, "Ya pagué" con los últimos 4 dígitos del código de Yappy, seguimiento del pedido y entrega del acceso.', next: [] },
   { id: 'servicios', title: 'Mis servicios', description: 'Lista de los servicios activos del cliente.', next: ['renovar'] },
   { id: 'ayuda', title: 'Ayuda y avisos', description: 'Pasar con una persona, cancelar y respuestas cuando algo no aplica.', next: [] },
 ];

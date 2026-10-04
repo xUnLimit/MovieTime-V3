@@ -1,6 +1,6 @@
 import { z } from '@/platform/validation/zod';
-import { catalogoSchema, pedidoSchema, serverCartSchema, receiptSchema } from '@/modules/orders/contracts';
-import { catalogoServerRpc, createCommerceOrderRpc, getCommerceOrderRpc, reconcileCommerceOrderRpc, serviciosServerRpc, cancelCommerceOrderRpc, retryReceiptsRpc } from '@/platform/server/orders-server-rpc-adapter';
+import { catalogoSchema, pedidoSchema, serverCartSchema, receiptSchema, last4Schema } from '@/modules/orders/contracts';
+import { catalogoServerRpc, createCommerceOrderRpc, getCommerceOrderRpc, reconcileCommerceOrderRpc, matchCommerceOrderPaymentRpc, serviciosServerRpc, cancelCommerceOrderRpc, retryReceiptsRpc } from '@/platform/server/orders-server-rpc-adapter';
 
 const waSchema = z.string().regex(/^507\d{8}$/);
 const serviciosSchema = z.array(z.object({
@@ -33,6 +33,12 @@ export async function getPedidoServerUseCase(waId: string, id: string) {
 export async function reconcilePedidoServerUseCase(waId: string, id: string, code: string, key: string) {
   const request = receiptSchema.parse({ id, code, key });
   await reconcileCommerceOrderRpc(waSchema.parse(waId), request.id, request.code, request.key);
+  return getPedidoServerUseCase(waId, id);
+}
+
+export async function matchPedidoPaymentServerUseCase(waId: string, id: string, last4: string | null, key: string) {
+  const request = last4Schema.parse({ id, last4, key });
+  await matchCommerceOrderPaymentRpc(waSchema.parse(waId), request.id, request.last4, request.key);
   return getPedidoServerUseCase(waId, id);
 }
 

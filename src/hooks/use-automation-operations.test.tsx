@@ -6,14 +6,14 @@ import { useAutomationControl, useAutomationControlActions } from './use-automat
 import { useConversationControl } from './use-conversation-control';
 import { usePedidoActions, usePedidos } from './use-pedidos';
 
-const state=vi.hoisted(()=>({admin:true,fetchControl:vi.fn(),settings:vi.fn(),access:vi.fn(),interest:vi.fn(),simulate:vi.fn(),getConversation:vi.fn(),setConversation:vi.fn(),resolveReview:vi.fn(),list:vi.fn(),retry:vi.fn(),cancel:vi.fn(),reconcile:vi.fn(),delivery:vi.fn(),excess:vi.fn()}));
+const state=vi.hoisted(()=>({admin:true,fetchControl:vi.fn(),settings:vi.fn(),access:vi.fn(),interest:vi.fn(),getConversation:vi.fn(),setConversation:vi.fn(),resolveReview:vi.fn(),list:vi.fn(),retry:vi.fn(),cancel:vi.fn(),reconcile:vi.fn(),delivery:vi.fn(),excess:vi.fn()}));
 vi.mock('@/store/authStore',()=>({useAuthStore:(selector:(value:{user:{role:string}})=>unknown)=>selector({user:{role:state.admin?'admin':'vendedor'}})}));
-vi.mock('@/application/use-cases/automation-control-use-cases',()=>({fetchAutomationControlUseCase:state.fetchControl,updateAutomationSettingsUseCase:state.settings,updateServiceAccessUseCase:state.access,updateInterestUseCase:state.interest,simulateAutomationIntentUseCase:state.simulate}));
+vi.mock('@/application/use-cases/automation-control-use-cases',()=>({fetchAutomationControlUseCase:state.fetchControl,updateAutomationSettingsUseCase:state.settings,updateServiceAccessUseCase:state.access,updateInterestUseCase:state.interest}));
 vi.mock('@/application/use-cases/whatsapp-conversation-use-cases',()=>({getConversationControlUseCase:state.getConversation,setConversationControlUseCase:state.setConversation,resolveConversationReviewUseCase:state.resolveReview}));
 vi.mock('@/application/use-cases/pedidos-use-cases',()=>({listPedidosUseCase:state.list,retryPedidoUseCase:state.retry,cancelPedidoUseCase:state.cancel,reconcilePedidoUseCase:state.reconcile,resolvePedidoExcessUseCase:state.excess}));
 vi.mock('@/application/use-cases/pedido-delivery-use-cases',()=>({requestPedidoDeliveryRetryUseCase:state.delivery}));
 function wrapper(){const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});return {client,Wrapper:({children}:{children:ReactNode})=><QueryClientProvider client={client}>{children}</QueryClientProvider>};}
-beforeEach(()=>{vi.clearAllMocks();state.admin=true;state.fetchControl.mockResolvedValue({settings:{}});state.settings.mockResolvedValue('ok');state.access.mockResolvedValue('ok');state.interest.mockResolvedValue('ok');state.simulate.mockResolvedValue(null);state.getConversation.mockResolvedValue({waId:'50760000001',mode:'bot',version:1});state.setConversation.mockResolvedValue({waId:'50760000001',mode:'human',version:2});state.list.mockResolvedValue([]);state.retry.mockResolvedValue('order');state.cancel.mockResolvedValue('order');state.reconcile.mockResolvedValue('order');state.delivery.mockResolvedValue({processed:1,failed:0});});
+beforeEach(()=>{vi.clearAllMocks();state.admin=true;state.fetchControl.mockResolvedValue({settings:{}});state.settings.mockResolvedValue('ok');state.access.mockResolvedValue('ok');state.interest.mockResolvedValue('ok');state.getConversation.mockResolvedValue({waId:'50760000001',mode:'bot',version:1});state.setConversation.mockResolvedValue({waId:'50760000001',mode:'human',version:2});state.list.mockResolvedValue([]);state.retry.mockResolvedValue('order');state.cancel.mockResolvedValue('order');state.reconcile.mockResolvedValue('order');state.delivery.mockResolvedValue({processed:1,failed:0});});
 
 describe('automation hooks',()=>{
   it('reads admin controls and invalidates configuration after each command',async()=>{
@@ -22,8 +22,8 @@ describe('automation hooks',()=>{
     const query=renderHook(()=>useAutomationControl(),{wrapper:Wrapper});
     await waitFor(()=>expect(query.result.current.isSuccess).toBe(true));
     const actions=renderHook(()=>useAutomationControlActions(),{wrapper:Wrapper});
-    await act(async()=>{await actions.result.current.save.mutateAsync({aiMode:'off',model:'',dailyCalls:10,dailyTokens:100,reservationMinutes:15,maxReservations:1,integrationsEnabled:false});await actions.result.current.access.mutateAsync({serviceId:'s1',mode:'code',rotationConfirmed:true});await actions.result.current.interest.mutateAsync({id:'i1',action:'pause'});await actions.result.current.simulate.mutateAsync('Consulta el catálogo');});
-    expect(state.settings).toHaveBeenCalled();expect(state.access).toHaveBeenCalled();expect(state.interest).toHaveBeenCalled();expect(state.simulate).toHaveBeenCalledWith('Consulta el catálogo',expect.any(Object));
+    await act(async()=>{await actions.result.current.save.mutateAsync({reservationMinutes:15,maxReservations:1,integrationsEnabled:false});await actions.result.current.access.mutateAsync({serviceId:'s1',mode:'code',rotationConfirmed:true});await actions.result.current.interest.mutateAsync({id:'i1',action:'pause'});});
+    expect(state.settings).toHaveBeenCalled();expect(state.access).toHaveBeenCalled();expect(state.interest).toHaveBeenCalled();
     expect(invalidate).toHaveBeenCalledTimes(3);
     query.unmount();client.clear();
   });

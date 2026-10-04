@@ -4283,6 +4283,7 @@ export type Database = {
       mt_list_orders: { Args: Record<string, never>; Returns: Json }
       mt_order_command: { Args: { p_order_id: string; p_action: string; p_idempotency_key: string; p_wa_id?: string | null }; Returns: string }
       mt_reconcile_order: { Args: { p_order_id: string; p_code: string; p_wa_id: string | null; p_idempotency_key: string }; Returns: string }
+      mt_match_order_payment: { Args: { p_order_id: string; p_last4: string | null; p_wa_id: string; p_idempotency_key: string }; Returns: string }
       mt_public_catalog: { Args: Record<string, never>; Returns: Json }
       mt_customer_sales: { Args: { p_wa_id: string }; Returns: Json }
       mt_create_commerce_order: { Args: { p_wa_id: string; p_ids: string[]; p_kind: string; p_idempotency_key: string; p_expected_total: number }; Returns: string }

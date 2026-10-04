@@ -64,7 +64,7 @@ describe('/bot page', () => {
     const buttons = screen.getAllByRole('button', { name: 'Publicar' });
     await user.click(buttons[buttons.length - 1]);
     await waitFor(() => expect(useCases.publishBotUseCase).toHaveBeenCalledWith(
-      defaultDefinition(), 'Vuelta a los valores por defecto', expect.anything(), expect.objectContaining({ schemaVersion: 1 }),
+      defaultDefinition(), 'Vuelta a los valores por defecto', expect.anything(), expect.objectContaining({ schemaVersion: 1 }), false, false,
     ));
     await waitFor(() => expect(useCases.loadBotAdminSnapshot).toHaveBeenCalledTimes(2));
   });

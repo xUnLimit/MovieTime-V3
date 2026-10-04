@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+import { defaultDefinition } from './defaults';
+import { addNode, updateNode } from './edit';
+import { flowWideIssues, issuesByNode, layoutNodes } from './layout';
+import { validateDefinition } from './validate';
+
+describe('layoutNodes', () => {
+  it('coloca un nivel por columna sin superponer nodos', () => {
+    const def = defaultDefinition();
+    const positions = layoutNodes(def);
+    expect(Object.keys(positions).sort()).toEqual(def.nodes.map((n) => n.id).sort());
+    expect(positions.menu).toEqual({ x: 0, y: 0 });
+    expect(positions.netflix.x).toBeGreaterThan(positions.menu.x);
+    expect(positions.login.x).toBe(positions.viaje.x);
+    expect(positions.login.y).not.toBe(positions.viaje.y);
+  });
+  it('conserva las posiciones guardadas y calcula las nuevas', () => {
+    const def = addNode(defaultDefinition(), 'text', 'Suelto');
+    const positions = layoutNodes(def, { menu: { x: 500, y: 40 } });
+    expect(positions.menu).toEqual({ x: 500, y: 40 });
+    expect(positions.suelto).toBeDefined();
+  });
+  it('no falla con un flujo vacio', () => {
+    expect(layoutNodes({ ...defaultDefinition(), nodes: [] })).toEqual({});
+  });
+});
+
+describe('issuesByNode / flowWideIssues', () => {
+  it('agrupa por nodo los huerfanos, ciclos y limites', () => {
+    let def = addNode(defaultDefinition(), 'text', 'Suelto');
+    def = updateNode(def, 'menu', { body: '' });
+    const issues = validateDefinition(def);
+    const grouped = issuesByNode(issues);
+    expect(grouped.suelto?.some((i) => i.message.includes('no se puede alcanzar'))).toBe(true);
+    expect(grouped.menu?.some((i) => i.path.endsWith('.body'))).toBe(true);
+  });
+  it('separa los problemas de todo el flujo', () => {
+    const issues = validateDefinition({ ...defaultDefinition(), entryNodeId: 'zzz' });
+    expect(flowWideIssues(issues).map((i) => i.path)).toContain('entryNodeId');
+    expect(issuesByNode(issues).zzz).toBeUndefined();
+  });
+});

@@ -1,6 +1,5 @@
 import { getCurrentSession } from '@/platform/supabase/auth';
-import { getAutomationControl, postAutomationControl, type AutomationControlCommand,
-  type AutomationSimulation } from '@/platform/api/automation-control-client';
+import { getAutomationControl, postAutomationControl, type AutomationControlCommand } from '@/platform/api/automation-control-client';
 import type { AutomationSettings } from '@/types/automation-control';
 import { assertOnlineMutation } from '@/platform/utils/online-mutation';
 
@@ -24,7 +23,4 @@ export function updateServiceAccessUseCase(input: { serviceId: string; mode: 'pa
 }
 export function updateInterestUseCase(input: { id: string; action: 'pause' | 'resume' | 'cancel' | 'notify' }) {
   return command<string>({ command: 'interest', ...input });
-}
-export function simulateAutomationIntentUseCase(text: string) {
-  return command<AutomationSimulation>({ command: 'simulate', text });
 }

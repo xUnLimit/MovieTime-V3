@@ -4,10 +4,6 @@ import { handleNoticeReply } from '@/application/use-cases/notice-reply-use-case
 import { AutomationDeliveryUncertainError, AutomationLeaseLostError, processWhatsAppInbox } from '@/application/use-cases/whatsapp-inbox-use-case';
 import { handleCommerceConversation } from '@/application/use-cases/commerce-conversation-use-case';
 import { createCommerceConversationDeps } from '@/application/use-cases/commerce-conversation-runtime';
-import { commerceCommand } from '@/application/use-cases/commerce-conversation-state';
-import { commerceStateSchema } from '@/application/use-cases/commerce-conversation-state';
-import { readReceiptCandidateUseCase } from '@/application/use-cases/receipt-candidate-use-case';
-import { suggestAutomationIntent } from '@/application/use-cases/automation-intent-use-case';
 import { botReplyKey } from '@/application/use-cases/bot-reply';
 import { drainOrderDeliveries } from '@/application/use-cases/pedido-delivery-runtime';
 import { drainInterestDeliveries } from '@/application/use-cases/interest-delivery-runtime';
@@ -51,26 +47,9 @@ export async function drainWhatsAppInbox(requestId: string) {
       if (result !== 'ignored') return { outcome: 'done' };
       const definition = await bot.configuration(claim.message, claim.conversation.flowVersion);
       if (!definition) return { outcome: 'done' };
-      let command: string | null = null;
-      if (claim.message.messageType === 'text' && !commerceCommand(claim.message, definition)) {
-        const suggestion = await suggestAutomationIntent(claim.message.textBody ?? '', undefined, true);
-        if (suggestion) command = { catalogue: 'buy', services: 'services', payment: 'status', handoff: 'help', clarify: '' }[suggestion.intent] || null;
-      }
       await assertCurrent();
-      const commerce = await handleCommerceConversation(claim.message, claim.conversation.context, createCommerceConversationDeps(), definition, command);
+      const commerce = await handleCommerceConversation(claim.message, claim.conversation.context, createCommerceConversationDeps(), definition);
       if (commerce) {
-        const prior = commerceStateSchema.safeParse(claim.conversation.context);
-        if (claim.message.messageType==='image' && claim.message.mediaId && prior.success
-          && prior.data.stage==='payment' && prior.data.orderId && prior.data.lastMessageId!==claim.message.waMessageId) {
-          const candidate = await readReceiptCandidateUseCase(claim.message.mediaId);
-          if (candidate && candidate.length<=64) {
-            const text = `Leo la referencia ${candidate}. Escríbela como pago ${candidate} para confirmar la lectura. La referencia se verificará contra el ingreso recibido.`;
-            commerce.payload = { kind:'text',text };
-            const checkpoint = commerceStateSchema.parse(commerce.context);
-            checkpoint.lastPayload = { kind:'text',text }; checkpoint.lastReply = text;
-            commerce.context = checkpoint;
-          }
-        }
         if (!await store.checkpoint(claim, commerce.context, commerce.process, commerce.orderId, bot.version)) throw new AutomationLeaseLostError();
         await send({ idempotencyKey: botReplyKey(claim.message.waMessageId), toWaId: claim.message.fromWaId,
           payload: commerce.payload, sentBy: null });
@@ -78,7 +57,7 @@ export async function drainWhatsAppInbox(requestId: string) {
           process: commerce.process, ...(commerce.orderId ? { orderId: commerce.orderId } : {}),
           ...(bot.version ? { flowVersion: bot.version } : {}) };
       }
-      const botResult = await bot.handle(claim.message, send, claim.conversation.flowVersion);
+      const botResult = await bot.handle(claim.message, send, claim.conversation.flowVersion, claim.conversation.orderId);
       if (botResult === 'send_failed' || botResult === 'retry') throw new Error('Bot reply failed');
       return { outcome: botResult === 'handoff' ? 'handoff' : 'done', ...(bot.version ? { flowVersion: bot.version } : {}) };
     },

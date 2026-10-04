@@ -1,9 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { cancelPedidoServerUseCase, retryComprobantesServerUseCase, createCompraServerUseCase, createRenovacionServerUseCase, getPedidoServerUseCase, listCatalogoServerUseCase, listServiciosServerUseCase, reconcilePedidoServerUseCase } from './pedidos-server-use-cases';
+import { cancelPedidoServerUseCase, retryComprobantesServerUseCase, createCompraServerUseCase, createRenovacionServerUseCase, getPedidoServerUseCase, listCatalogoServerUseCase, listServiciosServerUseCase, reconcilePedidoServerUseCase, matchPedidoPaymentServerUseCase } from './pedidos-server-use-cases';
 import * as rpc from '@/platform/server/orders-server-rpc-adapter';
 
 vi.mock('@/platform/server/orders-server-rpc-adapter', () => ({
-  catalogoServerRpc: vi.fn(), serviciosServerRpc: vi.fn(), createCommerceOrderRpc: vi.fn(), getCommerceOrderRpc: vi.fn(), reconcileCommerceOrderRpc: vi.fn(), cancelCommerceOrderRpc: vi.fn(), retryReceiptsRpc: vi.fn(),
+  catalogoServerRpc: vi.fn(), serviciosServerRpc: vi.fn(), createCommerceOrderRpc: vi.fn(), getCommerceOrderRpc: vi.fn(), reconcileCommerceOrderRpc: vi.fn(), matchCommerceOrderPaymentRpc: vi.fn(), cancelCommerceOrderRpc: vi.fn(), retryReceiptsRpc: vi.fn(),
 }));
 const id = '11111111-1111-4111-8111-111111111111';
 const wa = '50760000000';
@@ -56,4 +56,14 @@ it('cancels only a contact-owned pending order and validates the retry worker re
   expect(await retryComprobantesServerUseCase()).toBe(3);
   vi.mocked(rpc.retryReceiptsRpc).mockResolvedValue(-1);
   await expect(retryComprobantesServerUseCase()).rejects.toThrow();
+});
+it('the last-four match accepts only four digits (or none to escalate) and never takes a client-supplied verdict', async () => {
+  vi.mocked(rpc.matchCommerceOrderPaymentRpc).mockResolvedValue(id);
+  vi.mocked(rpc.getCommerceOrderRpc).mockResolvedValue(order);
+  expect(await matchPedidoPaymentServerUseCase(wa, id, '9238', id)).toEqual(order);
+  expect(rpc.matchCommerceOrderPaymentRpc).toHaveBeenCalledWith(wa, id, '9238', id);
+  await matchPedidoPaymentServerUseCase(wa, id, null, id);
+  expect(rpc.matchCommerceOrderPaymentRpc).toHaveBeenLastCalledWith(wa, id, null, id);
+  for (const bad of ['123', '12345', 'abcd', '12 34', 'VAEIZ-93839238']) await expect(matchPedidoPaymentServerUseCase(wa, id, bad, id)).rejects.toThrow();
+  await expect(matchPedidoPaymentServerUseCase('foreign', id, '9238', id)).rejects.toThrow();
 });

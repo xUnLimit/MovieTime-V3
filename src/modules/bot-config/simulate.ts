@@ -1,5 +1,6 @@
 import type { BotActionKey, BotDefinition, BotNode } from '@/types/bot';
 import { VARIABLE_CATALOG } from './catalog';
+import { CONDITION_CATALOG, conditionOption, exampleNodeValues, renderNodeBody, type ConditionFacts } from './extensions';
 import { buildNodeMessage, resolveOption } from './payload';
 import { renderTemplate } from './render';
 
@@ -8,7 +9,14 @@ type SimulationTurn = {
   buttons?: { id: string; title: string }[];
   list?: { buttonLabel: string; rows: { id: string; title: string; description?: string }[] };
 };
-export type SimulationState = { turns: SimulationTurn[]; currentNodeId: string | null; finished: boolean };
+/** Datos de ejemplo editables: que respondera cada condicion y que valor tiene cada dato del pedido. Nada sale del navegador. */
+export type SimulationSample = { facts: ConditionFacts; values: Record<string, string> };
+export type SimulationState = { turns: SimulationTurn[]; currentNodeId: string | null; finished: boolean; sample?: SimulationSample };
+const MAX_CONDITION_HOPS = 5;
+
+export function defaultSample(): SimulationSample {
+  return { facts: { customer_has_services: true, catalog_has_stock: true }, values: exampleNodeValues() };
+}
 
 function sampleValues(minutes: number): Record<string, string> {
   const values: Record<string, string> = {};
@@ -35,40 +43,50 @@ function actionTurns(def: BotDefinition, action: BotActionKey | undefined): Simu
   return [warning('este nodo de acción no tiene una acción válida.')];
 }
 
-function enterNode(def: BotDefinition, node: BotNode, turns: SimulationTurn[]): SimulationState {
-  if (node.kind === 'action') {
-    return { turns: [...turns, ...actionTurns(def, node.action)], currentNodeId: node.id, finished: true };
+function enterNode(def: BotDefinition, node: BotNode, turns: SimulationTurn[], sample: SimulationSample, hops = 0): SimulationState {
+  if (node.condition) {
+    const answer = sample.facts[node.condition.type];
+    const label = CONDITION_CATALOG[node.condition.type];
+    const note = warning(`condición «${label.label}»: ${answer ? label.yes : label.no}.`);
+    const option = hops < MAX_CONDITION_HOPS ? conditionOption(node, answer) : undefined;
+    const target = option ? def.nodes.find((candidate) => candidate.id === option.next) : undefined;
+    if (!target) return { turns: [...turns, note, warning('la condición no tiene un destino válido y el cliente no podría continuar.')], currentNodeId: node.id, finished: true, sample };
+    return enterNode(def, target, [...turns, note], sample, hops + 1);
   }
-  const message = buildNodeMessage(node);
+  if (node.kind === 'action') {
+    return { turns: [...turns, ...actionTurns(def, node.action)], currentNodeId: node.id, finished: true, sample };
+  }
+  const message = buildNodeMessage({ ...node, body: renderNodeBody(node.body, sample.values) });
   if (message.kind === 'text') {
     const invalid = node.kind !== 'text';
     const turn = invalid ? warning(`el nodo «${node.name}» no tiene opciones y el cliente no podría continuar.`) : { from: 'bot' as const, text: message.text };
-    return { turns: [...turns, turn], currentNodeId: node.id, finished: true };
+    return { turns: [...turns, turn], currentNodeId: node.id, finished: true, sample };
   }
   const turn: SimulationTurn = message.kind === 'buttons'
     ? { from: 'bot', text: message.body, buttons: message.buttons }
     : { from: 'bot', text: message.body, list: { buttonLabel: message.buttonLabel, rows: message.rows } };
-  return { turns: [...turns, turn], currentNodeId: node.id, finished: false };
+  return { turns: [...turns, turn], currentNodeId: node.id, finished: false, sample };
 }
 
-function enterEntry(def: BotDefinition, turns: SimulationTurn[]): SimulationState {
+function enterEntry(def: BotDefinition, turns: SimulationTurn[], sample: SimulationSample): SimulationState {
   const entry = def.nodes.find((node) => node.id === def.entryNodeId);
   if (!entry) {
-    return { turns: [...turns, warning(`el nodo de entrada «${def.entryNodeId}» no existe.`)], currentNodeId: null, finished: true };
+    return { turns: [...turns, warning(`el nodo de entrada «${def.entryNodeId}» no existe.`)], currentNodeId: null, finished: true, sample };
   }
-  return enterNode(def, entry, turns);
+  return enterNode(def, entry, turns, sample);
 }
 
-export function startSimulation(def: BotDefinition): SimulationState {
-  return enterEntry(def, []);
+export function startSimulation(def: BotDefinition, sample: SimulationSample = defaultSample()): SimulationState {
+  return enterEntry(def, [], sample);
 }
 
 /** Un toque del cliente. Una opcion que ya no existe responde `option_unavailable` y reofrece el menu. */
 export function stepSimulation(def: BotDefinition, state: SimulationState, optionId: string): SimulationState {
   if (state.finished || state.currentNodeId === null) return state;
+  const sample = state.sample ?? defaultSample();
   const resolved = resolveOption(def, state.currentNodeId, optionId);
   if (!resolved) {
-    return enterEntry(def, [...state.turns, { from: 'bot', text: def.messages.option_unavailable }]);
+    return enterEntry(def, [...state.turns, { from: 'bot', text: def.messages.option_unavailable }], sample);
   }
-  return enterNode(def, resolved.target, [...state.turns, { from: 'customer', text: resolved.option.title }]);
+  return enterNode(def, resolved.target, [...state.turns, { from: 'customer', text: resolved.option.title }], sample);
 }

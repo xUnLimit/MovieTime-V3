@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/platform/server/supabase-server', () => ({ createServiceRoleClient: vi.fn() }));
 
-import { defaultDefinition } from '@/modules/bot-config';
+import { addConditionNode, addOption, addPurchaseFlow, connectOption, defaultDefinition } from '@/modules/bot-config';
 import { createBotConfigStore } from './bot-config-store';
 
 type Result = { data: unknown; error: { code: string } | null };
@@ -34,6 +34,29 @@ describe('createBotConfigStore.load', () => {
     expect(snapshot).toEqual({ ready: true, enabled: true, version: 3, definition: defaultDefinition() });
     expect(filters).toContainEqual({ table: 'whatsapp_bot_config', column: 'id', value: 'global' });
     expect(filters).toContainEqual({ table: 'whatsapp_bot_versions', column: 'version', value: 3 });
+  });
+
+  it('loads a published definition with purchase blocks whatever the flag says, but stays silent if their order is broken', async () => {
+    const flow = addOption(addPurchaseFlow(defaultDefinition()), 'menu');
+    const connected = connectOption(flow, 'menu', flow.nodes[0].options.at(-1)!.id, 'compra_catalogo');
+    const ok = fakeClient({ whatsapp_bot_config: config(), whatsapp_bot_versions: version(connected) });
+    await expect(createBotConfigStore(ok.client).load()).resolves.toMatchObject({ ready: true });
+    const broken = fakeClient({ whatsapp_bot_config: config(), whatsapp_bot_versions: version(
+      { ...connected, nodes: connected.nodes.filter((node) => node.id !== 'compra_reserva') }) });
+    await expect(createBotConfigStore(broken.client).load()).resolves.toMatchObject({ ready: false, reason: 'invalid_definition' });
+  });
+
+  it('loads a published definition with conditions and order data whatever the flag says, so a flag change never silences the bot', async () => {
+    const withCondition = addConditionNode(defaultDefinition(), 'catalog_has_stock');
+    const id = withCondition.nodes.at(-1)!.id;
+    const flow = {
+      ...withCondition,
+      nodes: withCondition.nodes.map((node) => (node.id === 'menu'
+        ? { ...node, body: 'Total {{pedido_total}}', options: [...node.options, { id: 'cupo', title: 'Hay cupo', next: id }] } : node)),
+    };
+    const { client } = fakeClient({ whatsapp_bot_config: config(), whatsapp_bot_versions: version(flow) });
+    const snapshot = await createBotConfigStore(client).load();
+    expect(snapshot).toMatchObject({ ready: true, version: 3 });
   });
 
   it('stays silent without a config row', async () => {

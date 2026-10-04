@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { cancelCommerceOrderRpc, catalogoServerRpc, createCommerceOrderRpc, getCommerceOrderRpc, reconcileCommerceOrderRpc, retryReceiptsRpc, serviciosServerRpc } from './orders-server-rpc-adapter';
+import { cancelCommerceOrderRpc, catalogoServerRpc, createCommerceOrderRpc, getCommerceOrderRpc, matchCommerceOrderPaymentRpc, reconcileCommerceOrderRpc, retryReceiptsRpc, serviciosServerRpc } from './orders-server-rpc-adapter';
 
 const client = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock('./supabase-server', () => ({ createServiceRoleClient: () => client }));
@@ -29,4 +29,13 @@ it('returns public errors with private diagnostics as the cause, and rejects mal
 it('reports paused purchases without blocking or disguising paid-order support', async () => {
   client.rpc.mockResolvedValue({ data: null, error: { message: 'pedido_purchases_paused' } });
   await expect(createCommerceOrderRpc('50760000000', [id], 'compra', id, 10)).rejects.toThrow('Seguimos atendiendo los pedidos pagados');
+});
+it('matches by last four digits through the service-owned RPC and validates its id result', async () => {
+  expect(await matchCommerceOrderPaymentRpc('50760000000', id, '9238', id)).toBe(id);
+  expect(client.rpc).toHaveBeenLastCalledWith('mt_match_order_payment', { p_wa_id: '50760000000', p_order_id: id, p_last4: '9238', p_idempotency_key: id });
+  await expect(matchCommerceOrderPaymentRpc('50760000000', 'bad', '9238', id)).rejects.toThrow('UUID');
+  client.rpc.mockResolvedValue({ data: { id }, error: null });
+  await expect(matchCommerceOrderPaymentRpc('50760000000', id, null, id)).rejects.toThrow('id valido');
+  client.rpc.mockResolvedValue({ data: null, error: { message: 'SQL diagnostic' } });
+  await expect(matchCommerceOrderPaymentRpc('50760000000', id, '9238', id)).rejects.toThrow('No se pudo completar el pedido.');
 });

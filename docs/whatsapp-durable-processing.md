@@ -44,7 +44,7 @@ este cambio no activa un scheduler remoto ni modifica producción.
 ## Recorridos guiados
 
 `catálogo`, `renovar`, `mis servicios`, `carrito`, `confirmar`, `estado`, `cancelar`
-y `ayuda` funcionan sin IA. El catálogo pagina disponibles y agotados. La selección
+y `ayuda` funcionan sin interpretación automática; cualquier otro texto muestra el menú. El catálogo pagina disponibles y agotados. La selección
 admite diez servicios y una moneda por pedido. El resumen necesita confirmación
 explícita; el RPC compara el total esperado bajo bloqueo antes de reservar. Los
 servicios agotados solicitan consentimiento de aviso separado del registro de
@@ -56,14 +56,9 @@ acceso se muestran por separado. Un correo tardío conserva trabajo persistente
 en el conciliador de pedidos. Los importes menores y mayores nunca se ocultan.
 
 Las acciones editables `purchase`, `renewal` y `my_services` usan estos mismos
-recorridos y cuentan con previsualización en el simulador. La IA puede sugerir
-catálogo, servicios propios, estado o atención humana; sus argumentos nunca
-seleccionan automáticamente una venta, un pedido o una operación de dinero.
-
-Una imagen se lee únicamente durante el pago de un pedido propio confirmado y
-cuando está habilitada la interpretación. Una referencia candidata se devuelve
-para confirmación escrita con `pago CÓDIGO`; nunca concilia por sí sola. El
-checkpoint conserva la respuesta para no volver a leer la imagen en un reintento.
+recorridos y cuentan con previsualización en el simulador. Las imágenes no se leen
+automáticamente: la referencia se escribe como `pago CÓDIGO` y nunca concilia por
+sí sola.
 
 ## Entrega de acceso
 
@@ -72,7 +67,7 @@ worker comparte el lease de la conversación, verifica de nuevo propiedad,
 vigencia, cuenta y política inmediatamente antes de llamar a Meta y usa una
 clave estable por ítem. El ledger conserva identificadores, intentos y resultado;
 el historial conserva texto protegido. Las credenciales existen solo durante el
-envío y nunca entran en la cola, el contexto conversacional o la IA. En modo
+envío y nunca entran en la cola, o el contexto conversacional. En modo
 código se omiten contraseña y PIN y se ofrece un botón vinculado a la venta.
 
 El cron y la conciliación drenan la cola. Automático apagado bloquea este envío;

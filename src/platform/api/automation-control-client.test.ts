@@ -7,10 +7,10 @@ describe('private automation API client', () => {
     vi.stubGlobal('fetch', fetcher);
     expect(await getAutomationControl('session')).toBe('value');
     expect(fetcher).toHaveBeenCalledWith('/api/automations/control', { headers: { Authorization: 'Bearer session' }, cache: 'no-store' });
-    expect(await postAutomationControl('session', { command: 'simulate', text: 'catalogue' })).toBe('value');
+    expect(await postAutomationControl('session', { command: 'interest', id: 'i', action: 'pause' })).toBe('value');
     expect(fetcher).toHaveBeenLastCalledWith('/api/automations/control', expect.objectContaining({ method: 'POST',
       headers: { Authorization: 'Bearer session', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command: 'simulate', text: 'catalogue' }) }));
+      body: JSON.stringify({ command: 'interest', id: 'i', action: 'pause' }) }));
   });
   it('preserves safe typed API errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ ok: false, error: { code: 'FORBIDDEN', message: 'No autorizado' }, requestId: 'request' }, { status: 403 })));

@@ -29,11 +29,11 @@ describe('aggregate operational metrics', () => {
   it('validates the aggregate projection and fails closed without exposing contacts', async () => {
     const metrics = { pendingMessages: 2, reviewMessages: 1, oldestPendingAt: null, retryAttempts: 3,
       averageResolutionSeconds: 12, pendingDeliveries: 1, reviewDeliveries: 0, ordersToday: 4,
-      completedToday: 2, aiCallsToday: 1, aiReservedTokensToday: 4096 };
+      completedToday: 2 };
     rpc.mockResolvedValue({ data: metrics, error: null });
     expect(await createAutomationControlStore().metrics()).toEqual(metrics);
     expect(rpc).toHaveBeenCalledWith('mt_automation_metrics');
-    expect(automationMetricsSchema.safeParse({ ...metrics, contact: 'private' }).success).toBe(false);
+    expect(automationMetricsSchema.parse({ ...metrics, aiCallsToday: 1, contact: 'private' })).toEqual(metrics);
     expect(automationMetricsSchema.safeParse({ ...metrics, pendingMessages: -1 }).success).toBe(false);
     rpc.mockResolvedValue({ data: null, error: { message: 'private' } });
     await expect(createAutomationControlStore().metrics()).rejects.toThrow('No se pudo leer');
@@ -44,7 +44,9 @@ describe('automation administrative projection', () => {
     expect(await createAutomationControlStore().settings()).toEqual(defaultAutomationSettings);
     responses.set('mt_automation_settings', { data: { settings: defaultAutomationSettings }, error: null });
     expect(await createAutomationControlStore().settings()).toEqual(defaultAutomationSettings);
-    responses.set('mt_automation_settings', { data: { settings: { dailyCalls: -1 } }, error: null });
+    responses.set('mt_automation_settings', { data: { settings: { ...defaultAutomationSettings, aiMode: 'queries', dailyCalls: 5 } }, error: null });
+    expect(await createAutomationControlStore().settings()).toEqual(defaultAutomationSettings);
+    responses.set('mt_automation_settings', { data: { settings: { reservationMinutes: -1 } }, error: null });
     await expect(createAutomationControlStore().settings()).rejects.toThrow();
     responses.set('mt_automation_settings', { data: null, error: 'database' });
     await expect(createAutomationControlStore().settings()).rejects.toThrow('configuración');
@@ -86,11 +88,5 @@ describe('automation administrative projection', () => {
       responses.set(table, { data: null, error: 'failed' });
       await expect(createAutomationControlStore().interests()).rejects.toThrow(); responses.clear();
     }
-  });
-  it('requires an authoritative affirmative budget claim', async () => {
-    expect(await createAutomationControlStore().claimBudget(4096)).toBe(true);
-    expect(rpc).toHaveBeenCalledWith('mt_claim_ai_budget', { p_tokens: 4096 });
-    rpc.mockResolvedValue({ data: false, error: null }); expect(await createAutomationControlStore().claimBudget(4096)).toBe(false);
-    rpc.mockResolvedValue({ data: null, error: 'failed' }); await expect(createAutomationControlStore().claimBudget(4096)).rejects.toThrow();
   });
 });

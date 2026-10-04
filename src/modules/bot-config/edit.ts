@@ -1,5 +1,7 @@
 import type { BotDefinition, BotMessageKey, BotNode, BotNodeKind, BotOption, BotParams } from '@/types/bot';
 import { NODE_LIMITS, PARAM_CATALOG } from './catalog';
+import { patchConditionNode } from './condition-node';
+import { blockOptionSpec } from './purchase-blocks';
 import { normalizeText } from './render';
 
 const ID_MAX = 32;
@@ -48,7 +50,8 @@ export function addNode(def: BotDefinition, kind: BotNodeKind, name: string): Bo
 
 /** No permite borrar el nodo de entrada; limpia las opciones que apuntaban al nodo borrado. */
 export function removeNode(def: BotDefinition, nodeId: string): BotDefinition {
-  if (nodeId === def.entryNodeId || !def.nodes.some((node) => node.id === nodeId)) return def;
+  // Los bloques de compra se agregan y se quitan juntos (`addPurchaseFlow` / `removePurchaseFlow`).
+  if (nodeId === def.entryNodeId || !def.nodes.some((node) => node.id === nodeId && !node.block)) return def;
   return {
     ...def,
     nodes: def.nodes.filter((node) => node.id !== nodeId).map((node) => (
@@ -73,6 +76,8 @@ function adaptKind(node: BotNode, kind: BotNodeKind): BotNode {
 /** El id no se puede cambiar; al cambiar el tipo se ajustan opciones y campos propios del tipo. */
 export function updateNode(def: BotDefinition, nodeId: string, patch: Partial<Omit<BotNode, 'id'>>): BotDefinition {
   return mapNode(def, nodeId, (node) => {
+    if (node.block) return patch.name === undefined ? node : { ...node, name: patch.name };
+    if (node.condition) return patchConditionNode(node, patch);
     const base = patch.kind !== undefined && patch.kind !== node.kind ? adaptKind(node, patch.kind) : node;
     return { ...base, ...patch, id: node.id };
   });
@@ -81,7 +86,7 @@ export function updateNode(def: BotDefinition, nodeId: string, patch: Partial<Om
 export function addOption(def: BotDefinition, nodeId: string): BotDefinition {
   return mapNode(def, nodeId, (node) => {
     const max = node.kind === 'buttons' ? NODE_LIMITS.buttonsMax : NODE_LIMITS.listRowsMax;
-    if ((node.kind !== 'buttons' && node.kind !== 'list') || node.options.length >= max) return node;
+    if ((node.kind !== 'buttons' && node.kind !== 'list') || node.options.length >= max || node.block || node.condition) return node;
     const target = def.entryNodeId !== node.id && def.nodes.some((n) => n.id === def.entryNodeId)
       ? def.entryNodeId : (def.nodes.find((n) => n.id !== node.id)?.id ?? node.id);
     const option: BotOption = {
@@ -92,19 +97,62 @@ export function addOption(def: BotDefinition, nodeId: string): BotDefinition {
 }
 
 export function removeOption(def: BotDefinition, nodeId: string, optionId: string): BotDefinition {
-  return mapNode(def, nodeId, (node) => ({ ...node, options: node.options.filter((o) => o.id !== optionId) }));
+  return mapNode(def, nodeId, (node) => (node.block || node.condition ? node : { ...node, options: node.options.filter((o) => o.id !== optionId) }));
 }
 
 /** Mueve una opcion de posicion; indices fuera de rango dejan la definicion igual. */
 export function moveOption(def: BotDefinition, nodeId: string, from: number, to: number): BotDefinition {
   return mapNode(def, nodeId, (node) => {
     const last = node.options.length - 1;
-    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0 || from > last || to > last || from === to) return node;
+    if (node.block || node.condition || !Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0 || from > last || to > last || from === to) return node;
     const options = [...node.options];
     const [moved] = options.splice(from, 1);
     options.splice(to, 0, moved);
     return { ...node, options };
   });
+}
+
+/** Maximo de opciones del tipo de nodo (0 si el tipo no admite opciones). */
+export function optionLimit(kind: BotNodeKind): number {
+  if (kind === 'buttons') return NODE_LIMITS.buttonsMax;
+  return kind === 'list' ? NODE_LIMITS.listRowsMax : 0;
+}
+
+export function canAddOption(node: BotNode): boolean {
+  return node.condition === undefined && node.options.length < optionLimit(node.kind);
+}
+
+export function canAddNode(def: BotDefinition): boolean {
+  return def.nodes.length < NODE_LIMITS.nodesMax;
+}
+
+/** Cambia titulo, descripcion o destino de una opcion; un destino inexistente se ignora. */
+export function updateOption(
+  def: BotDefinition, nodeId: string, optionId: string, patch: Partial<Pick<BotOption, 'title' | 'description' | 'next'>>,
+): BotDefinition {
+  if (patch.next !== undefined && !def.nodes.some((node) => node.id === patch.next)) return def;
+  return mapNode(def, nodeId, (node) => {
+    if (!node.options.some((option) => option.id === optionId)) return node;
+    // En un bloque de compra (o una condicion) solo se elige a donde sigue "cancelar"; titulos y conexiones fijas vienen del bloque.
+    const change = node.block ? (blockOptionSpec(node, optionId)?.fixedNext ? {} : { next: patch.next }) : node.condition ? { next: patch.next } : patch;
+    if ((node.block || node.condition) && change.next === undefined) return node;
+    return { ...node, options: node.options.map((option) => (option.id === optionId ? { ...option, ...change } : option)) };
+  });
+}
+
+/** Conectar la salida de una opcion con un nodo fija `option.next`. */
+export function connectOption(def: BotDefinition, nodeId: string, optionId: string, targetId: string): BotDefinition {
+  return updateOption(def, nodeId, optionId, { next: targetId });
+}
+
+/** Mueve un nodo dentro de la lista (orden en la vista alternativa); indices invalidos no cambian nada. */
+export function moveNode(def: BotDefinition, from: number, to: number): BotDefinition {
+  const last = def.nodes.length - 1;
+  if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0 || from > last || to > last || from === to) return def;
+  const nodes = [...def.nodes];
+  const [moved] = nodes.splice(from, 1);
+  nodes.splice(to, 0, moved);
+  return { ...def, nodes };
 }
 
 export function setMessage(def: BotDefinition, key: BotMessageKey, text: string): BotDefinition {

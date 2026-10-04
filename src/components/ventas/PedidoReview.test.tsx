@@ -74,7 +74,23 @@ describe('PedidoReview', () => {
     expect(screen.getByRole('button', { name: 'Reintentar asignación' })).toBeTruthy(); expect(screen.getByRole('button', { name: 'Reintentar envío de acceso' })).toBeTruthy();
     rerender(<PedidoReview pedido={{ ...base, estado: 'cancelado', paymentState: 'reembolsado' }} />); expect(screen.getByText('Devuelto')).toBeTruthy();
   });
+  it('muestra el pago candidato ya cruzado y lo confirma con un clic por la misma conciliación', () => {
+    const pedido = { ...base, estado: 'pago_en_revision', reviewCandidate: { code: 'VAEIZ-93839238', amount: 4, paidAt: '2026-10-04T12:00:00Z', reason: 'Coincide en monto; confirmar manualmente' } };
+    render(<PedidoReview pedido={pedido} />);
+    expect(screen.getByText('Pago candidato del correo de Yappy')).toBeTruthy();
+    expect(screen.getByText(/Coincide en monto/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar con este pago' }));
+    expect(state.reconcile).toHaveBeenCalledWith({ id: base.id, code: 'VAEIZ-93839238' }, expect.any(Object));
+    act(() => state.reconcile.mock.calls[0][1].onSuccess());
+    expect(screen.getByText(/Ingreso conciliado/)).toBeTruthy();
+  });
+  it('no ofrece el candidato si el pedido está cancelado o no tiene faltante', () => {
+    const reviewCandidate = { code: 'ABCDE-12345678', amount: 4, paidAt: 'fecha inválida', reason: null };
+    const { rerender } = render(<PedidoReview pedido={{ ...base, estado: 'cancelado', reviewCandidate }} />);
+    expect(screen.queryByRole('button', { name: 'Confirmar con este pago' })).toBeNull();
+    rerender(<PedidoReview pedido={{ ...base, missingAmount: 0, paymentState: 'cubierto', reviewCandidate }} />);
+    expect(screen.queryByRole('button', { name: 'Confirmar con este pago' })).toBeNull();
+    rerender(<PedidoReview pedido={{ ...base, reviewCandidate }} />);
+    expect(screen.getByRole('button', { name: 'Confirmar con este pago' })).toBeTruthy();
+  });
 });
-
-
-

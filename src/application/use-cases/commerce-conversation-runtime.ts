@@ -2,19 +2,21 @@ import { createServiceRoleClient } from '@/platform/server/supabase-server';
 import { assertRpcStringId, assertUuid } from '@/platform/utils/safety';
 import { z } from '@/platform/validation/zod';
 import { listCatalogoServerUseCase, listServiciosServerUseCase, createCompraServerUseCase,
-  createRenovacionServerUseCase, getPedidoServerUseCase, reconcilePedidoServerUseCase,
+  createRenovacionServerUseCase, getPedidoServerUseCase, reconcilePedidoServerUseCase, matchPedidoPaymentServerUseCase,
   cancelPedidoServerUseCase } from './pedidos-server-use-cases';
 import type { CommerceConversationDeps } from './commerce-conversation-use-case';
 import { createAutomationControlStore } from '@/modules/automation-control/store';
 import { createCommerceCopyStore } from '@/modules/commerce-copy/store';
+import { commerceCanvasEnabled } from '@/platform/config/commerce-flow';
 
 export function createCommerceConversationDeps(): CommerceConversationDeps {
   return {
     purchasesEnabled: async () => (await createAutomationControlStore().settings()).purchasesEnabled === true,
     copyOverrides: () => createCommerceCopyStore().overrides(),
+    purchaseBlocksEnabled: commerceCanvasEnabled,
     catalogue: listCatalogoServerUseCase, services: listServiciosServerUseCase,
     buy: createCompraServerUseCase, renew: createRenovacionServerUseCase,
-    order: getPedidoServerUseCase, reconcile: reconcilePedidoServerUseCase,
+    order: getPedidoServerUseCase, reconcile: reconcilePedidoServerUseCase, matchPayment: matchPedidoPaymentServerUseCase,
     cancelOrder: async (waId, id, key) => { await cancelPedidoServerUseCase(waId, id, key); },
     paymentInstructions: z.string().trim().min(1).max(600).safeParse(process.env.YAPPY_PAYMENT_INSTRUCTIONS).data ?? null,
     async interest(waId, categoryId, planId, consent) {

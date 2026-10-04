@@ -4,10 +4,12 @@ import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { BotDefinition } from '@/types/bot';
 import { readBotAction } from '@/modules/whatsapp/bot-menu';
+import { blockCopyOverrides, hasPurchaseBlocks } from '@/modules/bot-config';
 import { botReplyKey } from './bot-reply';
 import { createCopy, type CopyOverrides } from '@/modules/commerce-copy/render';
 import { createLogger } from '@/platform/observability/logger';
 import { formatDay, orderStatusText, reservationText, type Copy } from './commerce-conversation-copy';
+import { handlePaymentStep } from './commerce-conversation-payment';
 import { renderChoiceList, type CommerceChoice } from './commerce-conversation-lists';
 import { commerceButtons, commerceCommand, commerceStateSchema, commerceSummary, type CommerceItem } from './commerce-conversation-state';
 
@@ -20,11 +22,14 @@ export type CommerceConversationDeps = {
   renew: (waId: string, ids: string[], key: string, expectedTotal: number) => Promise<string>;
   order: (waId: string, id: string) => Promise<Pedido>;
   reconcile: (waId: string, id: string, code: string, key: string) => Promise<Pedido>;
+  matchPayment: (waId: string, id: string, last4: string | null, key: string) => Promise<Pedido>;
   interest: (waId: string, categoryId: string, planId: string, consent: boolean) => Promise<void>;
   cancelOrder: (waId: string, id: string, key: string) => Promise<void>;
   paymentInstructions: string | null;
   /** Textos editados desde el panel; si falta o falla, el flujo usa los originales. */
   copyOverrides?: () => Promise<CopyOverrides>;
+  /** Bandera de servidor: si es true y la definicion publicada trae bloques de compra, sus textos se suman a los editados. */
+  purchaseBlocksEnabled?: () => boolean;
 };
 export type CommerceConversationResult = { context: Json; payload: OutboundPayload; process: string; orderId: string | null; handoff: boolean };
 
@@ -36,26 +41,31 @@ function menuPayload(text: string, canBuy: boolean, t: Copy): OutboundPayload {
   ]);
 }
 const log = createLogger('CommerceCopy');
-async function loadCopy(deps: CommerceConversationDeps): Promise<Copy> {
+async function loadCopy(deps: CommerceConversationDeps, definition?: BotDefinition | null): Promise<Copy> {
+  let overrides: CopyOverrides = {};
   try {
-    return createCopy(await deps.copyOverrides?.());
+    overrides = await deps.copyOverrides?.() ?? {};
   } catch (error) {
     log.warn('No se pudieron leer los textos editados; se usan los originales.', { error });
-    return createCopy();
   }
+  // Los textos del lienzo solo aplican con la bandera encendida; createCopy vuelve al original si alguno no cumple las reglas.
+  if (definition && hasPurchaseBlocks(definition) && deps.purchaseBlocksEnabled?.() === true) {
+    overrides = { ...overrides, ...blockCopyOverrides(definition) };
+  }
+  return createCopy(overrides);
 }
 const pick = (id: string, name: string, amount: number, currency: string, cycle: string): CommerceItem => ({ id, name, amount, currency, cycle });
 
 export async function handleCommerceConversation(message: InboundMessage, context: Json, deps: CommerceConversationDeps,
-  definition?: BotDefinition | null, intentCommand?: string | null): Promise<CommerceConversationResult | null> {
+  definition?: BotDefinition | null): Promise<CommerceConversationResult | null> {
   if (!/^507\d{8}$/.test(message.fromWaId)) return null;
   const state = commerceStateSchema.parse(context);
-  const command = commerceCommand(message, definition) ?? intentCommand;
+  const command = commerceCommand(message, definition);
   // Access remains available while a commercial selection is in progress.
   if (!command && (readBotAction(message) || /^(?:codigo|netflix)$/i.test(message.textBody?.trim() ?? ''))) return null;
   let payload: OutboundPayload;
   let handoff = false;
-  const t = await loadCopy(deps);
+  const t = await loadCopy(deps, definition);
   if (state.lastMessageId === message.waMessageId && state.lastReply) {
     return { context: state, payload: state.lastPayload ?? { kind: 'text', text: state.lastReply }, process: state.stage, orderId: state.orderId, handoff: state.pendingHandoff };
   }
@@ -140,21 +150,8 @@ export async function handleCommerceConversation(message: InboundMessage, contex
       state.stage = 'summary';
       payload = commerceButtons(`${t('summaryTitle')}\n${commerceSummary(state.items)}\n\n${t('confirmNote')}`, [{ id: 'confirm', title: t('btnConfirm') }, { id: 'cancel', title: t('btnCancel') }]);
     }
-  } else if (state.orderId && state.stage === 'payment') {
-    const text = message.messageType === 'text' ? message.textBody?.trim() ?? '' : '';
-    const reference = /^pago\s+([A-Za-z0-9-]{4,64})$/i.exec(text)?.[1];
-    const order = reference ? await deps.reconcile(message.fromWaId, state.orderId, reference, botReplyKey(message.waMessageId)) : await deps.order(message.fromWaId, state.orderId);
-    const paid = ['cubierto', 'exceso', 'reembolsado', 'parcialmente_reembolsado'].includes(order.paymentState);
-    const instructions = command === 'pay' ? deps.paymentInstructions : null;
-    const next = paid ? '' : instructions ? `\n\n${t('paymentInstructions', { instrucciones: instructions })}`
-      : command === 'pay' ? `\n\n${t('payNoInstructions')}` : `\n\n${t('payHint')}`;
-    payload = { kind: 'text', text: orderStatusText(order, t) + next };
-    if (command === 'pay' && !instructions && !paid) handoff = true;
-    if (order.estado === 'revision' || order.excessAmount > 0 || order.deliveryState === 'parcial'
-      || ['reembolsado', 'parcialmente_reembolsado'].includes(order.paymentState)) handoff = true;
-    if (order.deliveryState === 'enviado' && !handoff) {
-      state.stage = 'idle'; state.orderId = null; state.items = [];
-    }
+  } else if (state.orderId && (state.stage === 'payment' || state.stage === 'last4')) {
+    ({ payload, handoff } = await handlePaymentStep(message, command, state, deps, t));
   } else if (command === 'status') {
     payload = state.items.length
       ? commerceButtons(t('cartSaved'), [

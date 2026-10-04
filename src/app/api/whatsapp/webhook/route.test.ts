@@ -24,7 +24,6 @@ vi.mock('@/modules/whatsapp/webhook-inbox', () => ({ storeWebhookBatch }));
 vi.mock('@/application/use-cases/commerce-conversation-use-case', () => ({ handleCommerceConversation: async () => null }));
 vi.mock('@/application/use-cases/commerce-conversation-runtime', () => ({ createCommerceConversationDeps: () => ({}) }));
 vi.mock('@/application/use-cases/commerce-conversation-state', () => ({ commerceCommand: () => null }));
-vi.mock('@/application/use-cases/automation-intent-use-case', () => ({ suggestAutomationIntent: async () => null }));
 vi.mock('@/application/use-cases/pedido-delivery-runtime', () => ({ drainOrderDeliveries: async () => ({ processed:0,failed:0 }) }));
 vi.mock('@/modules/whatsapp/automation-inbox-store', () => ({
   createAutomationInboxStore: () => {

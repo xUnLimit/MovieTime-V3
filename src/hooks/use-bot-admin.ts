@@ -33,7 +33,10 @@ export function useBotAdmin(): BotAdminApi {
     () => draft !== null && (published === null || JSON.stringify(draft) !== JSON.stringify(published)),
     [draft, published],
   );
-  const issues = useMemo(() => (draft ? validateDefinition(draft) : []), [draft]);
+  // Fail closed: mientras la bandera no se haya leido, los bloques de compra cuentan como desactivados.
+  const purchaseBlocksEnabled = healthQuery.data?.purchaseBlocksEnabled === true;
+  const flowExtensionsEnabled = healthQuery.data?.flowExtensionsEnabled === true;
+  const issues = useMemo(() => (draft ? validateDefinition(draft, { purchaseBlocksEnabled, flowExtensionsEnabled }) : []), [draft, purchaseBlocksEnabled, flowExtensionsEnabled]);
   const hasErrors = useMemo(() => hasBlockingIssues(issues), [issues]);
 
   const updateDraft = useCallback((updater: (current: BotDefinition) => BotDefinition) => {
@@ -65,14 +68,14 @@ export function useBotAdmin(): BotAdminApi {
     if (!draft) return;
     setSaving(true);
     try {
-      await publishBotUseCase(draft, note, getActivityLogOptions(), published);
+      await publishBotUseCase(draft, note, getActivityLogOptions(), published, purchaseBlocksEnabled, flowExtensionsEnabled);
       await Promise.all([refetchSnapshot(), refetchEvents()]);
       setDraftEdit(null);
       setEventsEdit(null);
     } finally {
       setSaving(false);
     }
-  }, [draft, published, refetchSnapshot, refetchEvents]);
+  }, [draft, published, purchaseBlocksEnabled, flowExtensionsEnabled, refetchSnapshot, refetchEvents]);
 
   const loadVersionIntoDraft = useCallback(async (version: number) => {
     setDraftEdit(await restoreBotVersionUseCase(version, getActivityLogOptions()));
@@ -87,7 +90,7 @@ export function useBotAdmin(): BotAdminApi {
   return {
     loading: snapshot.isFetching,
     error: snapshot.isError ? LOAD_ERROR : null,
-    status, published, draft, dirty, issues, hasErrors,
+    status, published, draft, dirty, issues, hasErrors, purchaseBlocksEnabled, flowExtensionsEnabled,
     versions: snapshot.data?.versions ?? [],
     events: eventsEdit ?? eventsQuery.data ?? null,
     health: healthQuery.data ?? null,

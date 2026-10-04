@@ -24,6 +24,10 @@ export type BotDeps = {
   send: (message: NewOutboundMessage) => Promise<OutboundResult>;
   now?: () => Date;
   resolveOwnedSale?: (waId: string, saleId: string) => Promise<string | null>;
+  // Datos del pedido abierto del cliente para los textos de los nodos (lista blanca de bot-config); ausente si no hay pedido.
+  orderValues?: () => Promise<Record<string, string>>;
+  // Si algun plan del catalogo tiene perfiles libres; lo usa la condicion «con o sin cupo».
+  catalogHasStock?: () => Promise<boolean>;
 };
 
 export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavailable' | 'limited' | 'none' | 'no_profile'

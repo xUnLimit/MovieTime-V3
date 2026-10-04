@@ -24,3 +24,7 @@ Stryker usa `stryker.config.mjs` y escribe resultados en `reports/mutation/`. Pa
 - Nocturno: mutacion, auditorias recurrentes de dependencias e informe de Knip en modo produccion. El resultado de mutacion sirve para reforzar las pruebas de logica critica.
 
 `arch:check`, `module-size`, `ci:parity` y `coverage:baseline` son gates locales obligatorios. CodeQL, SBOM, migraciones desde cero, pgTAP, integracion con Supabase y E2E autenticado requieren el entorno de CI. Los jobs `database` y `e2e-authenticated` usan Supabase local; `nightly.yml` ejecuta mutacion y repite el E2E autenticado. Sus resultados solo pueden verificarse al correr GitHub Actions.
+
+## Dependencias de interfaz
+
+- `@xyflow/react` (React Flow): lienzo interactivo del editor de recorridos (nodos arrastrables, conexiones y teclado accesible) en `src/components/bot/flow/`. Escribirlo a mano sobre SVG exigiria reimplementar arrastre, zoom, conexiones y foco. Pasa `security:audit:prod` y `security:audit:all`; sus colores se enlazan a los tokens en `globals.css`.

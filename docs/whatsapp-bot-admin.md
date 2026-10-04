@@ -75,8 +75,8 @@ Parametros (`BotParams`) y palabras clave: ver rangos en `src/types/bot.ts`.
 
 Validacion (`validateDefinition`, devuelve `BotIssue[]`): ids con formato y unicos, `entryNodeId` existe, toda
 opcion apunta a un nodo existente, limites de WhatsApp por tipo, nodos `action` con accion valida y sin opciones,
-acciones alcanzables, marcadores permitidos y obligatorios, sin nodos inalcanzables (aviso), sin ciclos sin salida
-(aviso), parametros en rango, palabras clave sin duplicados. Cualquier `error` bloquea publicar.
+acciones alcanzables, marcadores permitidos y obligatorios, sin nodos inalcanzables desde la entrada (error), sin ciclos sin salida
+(error; solo cuenta un ciclo inescapable: si algun camino llega a un nodo `text` o `action` no hay problema), parametros en rango, palabras clave sin duplicados. Cualquier `error` bloquea publicar.
 
 ## 5. Runtime (webhook)
 
@@ -253,3 +253,64 @@ servidor y exige un resumen confirmado antes de reservar. El simulador describe
 los pasos sin crear pedidos ni ejecutar pagos. Consulta
 [procesamiento persistente](whatsapp-durable-processing.md) para recuperación,
 control humano y preparación del scheduler.
+
+## Flujo de compras como bloques del lienzo (Fase 3)
+
+Con la variable de servidor `COMMERCE_FLOW_CANVAS_ENABLED=true` (apagada por defecto, sin `NEXT_PUBLIC_`) el editor
+ofrece **Agregar flujo de compras**: cuatro nodos `buttons` con identidad fija (`compra_catalogo`, `compra_resumen`,
+`compra_reserva`, `compra_pago`) y un campo opcional `block: { type, copy }`. Solo se editan textos, titulos de botones
+(derivados del texto) y a donde vuelve «cancelar». Las reglas de elegir, reservar, pagar, entregar y reembolsar siguen en
+`commerce-conversation-*` y en SQL/RPC; el grafo no las toca.
+
+- **Compatibilidad:** no hay SQL ni valores nuevos en los enums; la version anterior ignora `block` y lee los nodos como
+  botones normales. Si se vuelve a una version anterior de la aplicacion con bloques publicados, los bloques se muestran
+  como menus de texto fijo (no compran): restaurar una version previa del recorrido lo corrige.
+- **Entrada:** un boton del recorrido lleva a `compra_catalogo`; `commerceCommand` lo trata como «comprar» con la bandera
+  encendida o no.
+- **Validacion** (`validate-blocks.ts`, errores bloqueantes): bloques sin bandera; flujo incompleto o repetido; id, tipo de
+  nodo o botones distintos de los fijos; conexion entre bloques alterada; «cancelar» hacia otro bloque; nodos ajenos que
+  lleven a resumen, reserva o pago (no se reserva sin confirmar el resumen ni se llega al pago o la entrega sin reservar);
+  textos que incumplen las reglas de su mensaje.
+- **Runtime:** con la bandera encendida y bloques en la version publicada, los textos del grafo se suman (con prioridad)
+  a los de `mt_commerce_copy`; `createCopy` vuelve al original si alguno no cumple. Con la bandera apagada solo cuentan
+  los de `mt_commerce_copy`. La pestana Compras remite al lienzo cuando ambas condiciones se cumplen.
+- **Limite:** publicar es una RPC de administrador desde el navegador; el bloqueo de publicacion con la bandera apagada es
+  de aplicacion. La carga en el webhook valida estructura y orden pero no la bandera.
+
+## Extensiones del recorrido (Fase 4)
+
+Sin SQL nuevo ni valores nuevos en los enums: todo viaja en campos opcionales de la definicion `jsonb`, que la version
+anterior ignora (`z.object` no estricto).
+
+- **Pasar a una persona desde cualquier nodo** (sin bandera): cada nodo de botones o lista (lienzo y panel) tiene
+  «Agregar salida a una persona». Agrega la salida «Hablar con alguien» hacia el nodo de accion `handoff` que ya exista
+  (o lo crea, `pasar_a_persona`). No duplica la salida y respeta los limites de botones/filas y de nodos (`edit-extensions.ts`).
+  Los nodos de texto y de accion son finales y no tienen salidas.
+- **Plantillas** (sin bandera propia): «Recorrido base» y «Recorrido base + compras» reemplazan el borrador (no lo publicado)
+  tras confirmar. La segunda exige los bloques de compra activados (`COMMERCE_FLOW_CANVAS_ENABLED`) y siembra los textos de
+  compras editados hoy (`templates.ts`).
+- **Comparar versiones** (sin bandera): Versiones, «Comparar versiones», usa `diffDefinitions` entre dos versiones guardadas
+  (`compareBotVersionsUseCase`, solo lectura: no toca el borrador ni deja registro). `diffDefinitions` ahora tambien
+  describe condiciones y textos de bloques.
+- **Condiciones y datos del pedido** (bandera `FLOW_EXTENSIONS_ENABLED=true`, servidor, apagada por defecto, sin `NEXT_PUBLIC_`;
+  se informa a la UI por `/api/whatsapp/bot/health` como `flowExtensionsEnabled`):
+  - Una condicion es un nodo `buttons` normal con el campo opcional `condition: { type }` y exactamente dos salidas `si` / `no`.
+    La version anterior lo muestra como un menu de dos botones; la actual lo resuelve en el servidor sin mostrarlo. Tipos
+    cerrados: `customer_has_services` (existente: al menos un servicio de Netflix activo, dato que el bot ya carga) y
+    `catalog_has_stock` (algun plan del catalogo con perfiles libres, `listCatalogoServerUseCase`; si no se puede leer se toma
+    «sin cupo»). Reglas: no puede ser el nodo de entrada ni un bloque, no cambia de tipo de nodo, sus salidas no se agregan ni se
+    renombran, hasta 5 condiciones seguidas (despues no se envia nada nuevo). Cada decision queda en los eventos del bot
+    (`option_selected` con `condicion`, `respuesta`, `destino`).
+  - Datos del pedido: lista blanca cerrada en los textos de nodos (no en titulos ni descripciones): `{{pedido_total}}`,
+    `{{pedido_estado}}`, `{{pedido_pendiente}}`, `{{pedido_servicios}}`, `{{pedido_vence}}`. Se resuelven en el servidor desde el
+    pedido de la conversacion (`getPedidoServerUseCase`, que valida que sea del mismo numero) y nunca incluyen ids, nombres,
+    correos, telefonos ni credenciales. Sin pedido o ante un fallo se muestra «—». Cualquier otro marcador sigue siendo un error.
+  - Sin la bandera, `validateDefinition` y `publishBotUseCase` rechazan (error bloqueante) condiciones y datos del pedido, de modo
+    que no se pueden publicar. El runtime los resuelve siempre que existan en la version publicada (la carga valida con la bandera
+    asumida encendida), asi que apagarla despues no silencia el bot.
+  - **Activacion:** definir `FLOW_EXTENSIONS_ENABLED=true` en el entorno del servidor tras desplegar la version nueva en todo el
+    entorno (si una instancia anterior sigue activa, vera estos nodos como menus de dos botones y los marcadores sin resolver).
+    Para volver atras, restaurar una version publicada anterior del recorrido y despues apagar la bandera. Publicar con la
+    version anterior de la aplicacion pierde los campos nuevos (los descarta al parsear).
+- **Simulador:** con condiciones o datos del pedido en el borrador aparece «Datos de ejemplo de la simulación»: interruptores para
+  cada condicion y valores editables para cada dato. No consulta clientes ni envia mensajes; reiniciar aplica los cambios.

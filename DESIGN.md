@@ -94,6 +94,7 @@ Fuente: **Geist Sans** (y **Geist Mono** para codigo) via `next/font/google`. Ci
 | Vacio / carga / error | `EmptyState`, `Skeleton`, `LoadingSpinner`, `ModuleErrorBoundary` | `shared/*` |
 | Marca | `Logo` | `shared/Logo.tsx` |
 | Simulacion de celular (vista previa de mensajes) | `PhoneMockup`: tamano fijo 300x600, el contenido hace scroll adentro; el marco nunca cambia de tamano | `editor-mensajes/PhoneMockup.tsx` |
+| Lienzo de flujos (editor de recorridos) | `FlowCanvas` (React Flow) con nodos `FlowNodeCard`; vista alternativa `NodeList` + `NodeEditor`. Las variables `--xy-*` de la libreria se enlazan a tokens en `globals.css`; las posiciones solo viven en la sesion. En pantallas angostas (< 1024px) solo se muestra la lista | `bot/flow/*` |
 | Primitivas | shadcn (Button, Input, Select, Tabs, Dialog, Dropdown, Popover, Tooltip, Badge, Card, Switch, Checkbox, Kbd...) | `src/components/ui/*` |
 | Iconos | `lucide-react` (16px, trazo estandar) | - |
 | Avisos | `sonner` con tonos semanticos | `ui/sonner.tsx` |

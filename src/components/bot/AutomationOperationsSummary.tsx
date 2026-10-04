@@ -17,7 +17,6 @@ export function AutomationOperationsSummary() {
     <MetricGrid variant="strip">
       <MetricCard title="Mensajes por revisar" value={operations?.reviewMessages ?? 0} loading={query.isLoading} valueTone={operations?.reviewMessages ? 'warning' : 'neutral'} description={`${operations?.pendingMessages ?? 0} mensajes pendientes`} />
       <MetricCard title="Pedidos de hoy completados" value={operations?.completedToday ?? 0} loading={query.isLoading} description={`${operations?.ordersToday ?? 0} pedidos creados hoy`} />
-      <MetricCard title="Consultas IA hoy" value={operations?.aiCallsToday ?? 0} loading={query.isLoading} description={`${operations?.aiReservedTokensToday ?? 0} tokens de presupuesto reservado`} />
     </MetricGrid>
     {operations ? <>
       <Button variant="ghost" size="sm" aria-expanded={details} aria-controls="automation-operations-details" onClick={() => setDetails(value => !value)}>{details ? 'Ocultar detalle operativo' : 'Ver detalle operativo'}</Button>

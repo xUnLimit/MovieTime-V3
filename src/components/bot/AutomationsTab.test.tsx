@@ -222,7 +222,7 @@ describe('pestaña Automatizaciones del Bot', () => {
     const botApi = {
       loading: false, error: null, status: { enabled: true, publishedVersion: 1, updatedAt: null }, published: null, draft: null, dirty: false,
       issues: [], hasErrors: false, versions: [], events: null, health: null, saving: false, setEnabled: vi.fn(), updateDraft: vi.fn(),
-      discardDraft: vi.fn(), resetToDefaults: vi.fn(), publish: vi.fn(), loadVersionIntoDraft: vi.fn(), loadEvents: vi.fn(), testMailbox: vi.fn(), refresh: vi.fn(),
+      discardDraft: vi.fn(), resetToDefaults: vi.fn(), publish: vi.fn(), loadVersionIntoDraft: vi.fn(), loadEvents: vi.fn(), testMailbox: vi.fn(), refresh: vi.fn(), purchaseBlocksEnabled: false, flowExtensionsEnabled: false,
     };
     render(<BotView api={botApi} />);
     expect(screen.queryByRole('tablist')).toBeNull();

@@ -42,6 +42,16 @@ export async function reconcileCommerceOrderRpc(waId: string, id: string, code: 
   return assertRpcStringId(data, 'mt_reconcile_order');
 }
 
+// Cruce por ultimos 4 digitos del codigo de Yappy: SQL decide; solo una coincidencia unica confirma dinero.
+export async function matchCommerceOrderPaymentRpc(waId: string, id: string, last4: string | null, key: string): Promise<string> {
+  assertUuid(id, 'Pedido');
+  const { data, error } = await createServiceRoleClient().rpc('mt_match_order_payment', {
+    p_wa_id: waId, p_order_id: id, p_last4: last4, p_idempotency_key: key,
+  });
+  check(error);
+  return assertRpcStringId(data, 'mt_match_order_payment');
+}
+
 export async function cancelCommerceOrderRpc(waId: string, id: string, key: string): Promise<string> {
   assertUuid(id, 'Pedido');
   const { data, error } = await createServiceRoleClient().rpc('mt_order_command', {

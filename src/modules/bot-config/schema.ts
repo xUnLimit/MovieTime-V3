@@ -14,6 +14,11 @@ const optionSchema = z.object({
   next: z.string().max(64),
 });
 
+const blockSchema = z.object({
+  type: z.enum(['catalogo', 'resumen', 'reserva', 'pago']),
+  copy: z.record(z.string().max(64), z.string().max(1000)).refine((copy) => Object.keys(copy).length <= 100),
+});
+
 const nodeSchema = z.object({
   id: z.string().max(64),
   name: text,
@@ -22,6 +27,8 @@ const nodeSchema = z.object({
   listButtonLabel: text.optional(),
   options: z.array(optionSchema).max(100),
   action: z.enum(['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services']).optional(),
+  block: blockSchema.optional(),
+  condition: z.object({ type: z.enum(['customer_has_services', 'catalog_has_stock']) }).optional(),
 });
 
 const paramSchema = z.number();

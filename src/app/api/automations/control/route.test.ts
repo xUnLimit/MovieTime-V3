@@ -19,14 +19,16 @@ describe('automation admin endpoint', () => {
   it('requires authentication and authorization before reading or changing anything', async () => {
     mocks.auth.mockRejectedValue(new UnauthorizedError());
     expect((await GET(new Request('https://local'))).status).toBe(401);
-    expect((await POST(request({ command: 'simulate', text: 'hello' }))).status).toBe(401);
+    expect((await POST(request({ command: 'interest', id: '11111111-1111-4111-8111-111111111111', action: 'pause' }))).status).toBe(401);
     mocks.auth.mockRejectedValue(new ForbiddenError());
-    expect((await POST(request({ command: 'simulate', text: 'hello' }))).status).toBe(403);
+    expect((await POST(request({ command: 'interest', id: '11111111-1111-4111-8111-111111111111', action: 'pause' }))).status).toBe(403);
     expect(mocks.read).not.toHaveBeenCalled(); expect(mocks.execute).not.toHaveBeenCalled();
   });
   it('rejects invalid input and bounds payloads', async () => {
     expect((await POST(request({ command: 'charge' }))).status).toBe(400);
-    expect((await POST(request({ command: 'simulate', text: 'x'.repeat(10000) }))).status).toBe(413);
+    expect((await POST(request({ command: 'simulate', text: 'hello' }))).status).toBe(400);
+    expect((await POST(request({ command: 'settings', settings: { ...defaultAutomationSettings, aiMode: 'queries' } }))).status).toBe(400);
+    expect((await POST(request({ command: 'interest', id: 'x'.repeat(10000), action: 'pause' }))).status).toBe(413);
     expect(mocks.execute).not.toHaveBeenCalled();
   });
   it('keeps database and stack details out of public failures', async () => {
