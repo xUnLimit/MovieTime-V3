@@ -36,7 +36,7 @@ describe('createBotConfigStore.load', () => {
     expect(filters).toContainEqual({ table: 'whatsapp_bot_versions', column: 'version', value: 3 });
   });
 
-  it('loads a published definition with purchase blocks whatever the flag says, but stays silent if their order is broken', async () => {
+  it('loads a published definition with purchase blocks, but stays silent if their order is broken', async () => {
     const flow = addOption(addPurchaseFlow(defaultDefinition()), 'menu');
     const connected = connectOption(flow, 'menu', flow.nodes[0].options.at(-1)!.id, 'compra_catalogo');
     const ok = fakeClient({ whatsapp_bot_config: config(), whatsapp_bot_versions: version(connected) });
@@ -46,7 +46,7 @@ describe('createBotConfigStore.load', () => {
     await expect(createBotConfigStore(broken.client).load()).resolves.toMatchObject({ ready: false, reason: 'invalid_definition' });
   });
 
-  it('loads a published definition with conditions and order data whatever the flag says, so a flag change never silences the bot', async () => {
+  it('loads a published definition with conditions and order data', async () => {
     const withCondition = addConditionNode(defaultDefinition(), 'catalog_has_stock');
     const id = withCondition.nodes.at(-1)!.id;
     const flow = {

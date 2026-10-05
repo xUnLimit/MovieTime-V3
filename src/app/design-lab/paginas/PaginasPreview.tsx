@@ -2,11 +2,9 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 
-import YappyPage from '@/app/(dashboard)/pagos-yappy/page';
-import EditorMensajesPage from '@/app/(dashboard)/editor-mensajes/page';
-import PedidosPage from '@/app/(dashboard)/automatizaciones/pedidos/page';
-import InteresadosPage from '@/app/(dashboard)/automatizaciones/interesados/page';
-import AutomationConfigurationPage from '@/app/(dashboard)/automatizaciones/conexiones/page';
+import PedidosCobrosPage from '@/app/(dashboard)/pedidos-cobros/page';
+import PlantillasMensajesPage from '@/app/(dashboard)/plantillas-mensajes/page';
+import { ConfiguracionView } from '@/components/configuracion/ConfiguracionView';
 import { ServiceAccessPanel } from '@/components/servicios/ServiceAccessPanel';
 import { demoControl, demoOrders } from '../automatizaciones/demo-operation-data';
 import type { YappyPayment } from '@/application/use-cases/yappy-use-cases';
@@ -43,7 +41,8 @@ function seed(queryClient: QueryClient) {
   queryClient.setQueryData(queryKeys.whatsapp.metaTemplates(), []);
 }
 
+/** `?p=`: pedidos-cobros (y su `?tab=`), plantillas, configuracion o acceso. Por defecto, Pedidos y cobros. */
 export function PaginasPreview() {
-  const which = typeof window === 'undefined' ? 'yappy' : new URLSearchParams(window.location.search).get('p') ?? 'yappy';
-  return <ShellPreview seed={seed}>{which === 'mensajes' ? <EditorMensajesPage /> : which === 'pedidos' ? <PedidosPage /> : which === 'interesados' ? <InteresadosPage /> : which === 'configuracion' ? <AutomationConfigurationPage /> : which === 'acceso' ? <ServiceAccessPanel serviceId="00000000-0000-4000-8000-000000000003" clients={4} /> : <YappyPage />}</ShellPreview>;
+  const which = typeof window === 'undefined' ? 'pedidos-cobros' : new URLSearchParams(window.location.search).get('p') ?? 'pedidos-cobros';
+  return <ShellPreview seed={seed}>{which === 'plantillas' ? <PlantillasMensajesPage /> : which === 'configuracion' ? <ConfiguracionView /> : which === 'acceso' ? <ServiceAccessPanel serviceId="00000000-0000-4000-8000-000000000003" clients={4} /> : <PedidosCobrosPage />}</ShellPreview>;
 }

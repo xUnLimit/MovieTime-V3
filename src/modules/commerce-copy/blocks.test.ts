@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COPY_CATALOG } from './catalog';
-import { COPY_BLOCK_TYPES, blockCopyProblem, blockOfCopyKey, copyKeysOfBlock } from './blocks';
+import { COPY_BLOCK_TYPES, blockCopyProblem, blockOfCopyKey, copyKeysOfBlock, editableCopyKeysOfBlock } from './blocks';
 
 describe('bloques de commerce-copy', () => {
   it('cada texto pertenece a un solo bloque y ninguno queda fuera', () => {
@@ -14,6 +14,14 @@ describe('bloques de commerce-copy', () => {
     expect(blockOfCopyKey('btnReview')).toBe('resumen');
     expect(blockOfCopyKey('reservation')).toBe('reserva');
     expect(blockOfCopyKey('help')).toBe('pago');
+  });
+
+  it('oculta los textos del antiguo menú de compras sin dejar de aceptarlos', () => {
+    const retired = ['greeting', 'btnBuy', 'btnRenew', 'btnServices'];
+    expect(editableCopyKeysOfBlock('catalogo')).toEqual(copyKeysOfBlock('catalogo').filter(key => !retired.includes(key)));
+    expect(editableCopyKeysOfBlock('catalogo')).toContain('btnHelp');
+    for (const type of ['resumen', 'reserva', 'pago'] as const) expect(editableCopyKeysOfBlock(type)).toEqual(copyKeysOfBlock(type));
+    for (const key of retired) expect(blockCopyProblem('catalogo', key, 'Hola')).toBeNull();
   });
 
   it('valida el texto con las reglas de su mensaje y rechaza claves de otro bloque', () => {

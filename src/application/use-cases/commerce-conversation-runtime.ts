@@ -7,13 +7,11 @@ import { listCatalogoServerUseCase, listServiciosServerUseCase, createCompraServ
 import type { CommerceConversationDeps } from './commerce-conversation-use-case';
 import { createAutomationControlStore } from '@/modules/automation-control/store';
 import { createCommerceCopyStore } from '@/modules/commerce-copy/store';
-import { commerceCanvasEnabled } from '@/platform/config/commerce-flow';
 
 export function createCommerceConversationDeps(): CommerceConversationDeps {
   return {
     purchasesEnabled: async () => (await createAutomationControlStore().settings()).purchasesEnabled === true,
     copyOverrides: () => createCommerceCopyStore().overrides(),
-    purchaseBlocksEnabled: commerceCanvasEnabled,
     catalogue: listCatalogoServerUseCase, services: listServiciosServerUseCase,
     buy: createCompraServerUseCase, renew: createRenovacionServerUseCase,
     order: getPedidoServerUseCase, reconcile: reconcilePedidoServerUseCase, matchPayment: matchPedidoPaymentServerUseCase,

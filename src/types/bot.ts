@@ -41,7 +41,7 @@ export type BotNode = {
   options: BotOption[];
   /** Solo en nodos action. */
   action?: BotActionKey;
-  /** Bloque de compra con identidad fija (ver `bot-config/purchase-blocks`). Solo con la bandera de compras en el lienzo. */
+  /** Bloque de compra con identidad fija (ver `bot-config/purchase-blocks`). */
   block?: BotNodeBlock;
   /** Nodo de condicion (solo con la bandera de extensiones): dos botones `si` / `no` que el servidor elige solo. */
   condition?: { type: BotConditionType };
@@ -147,8 +147,6 @@ export type BotHealth = {
   lastActivityAt: string | null;
   eventsLast24h: number;
   codesLast24h: number;
-  /** Bandera del servidor: permite publicar bloques de compra en el lienzo. */
-  purchaseBlocksEnabled: boolean;
   /** Bandera del servidor: permite publicar condiciones y datos del pedido en los textos. */
   flowExtensionsEnabled: boolean;
 };
@@ -163,8 +161,6 @@ export type BotAdminApi = {
   dirty: boolean;
   issues: BotIssue[];
   hasErrors: boolean;
-  /** Bandera del servidor: permite agregar y publicar los bloques de compra del lienzo. */
-  purchaseBlocksEnabled: boolean;
   /** Bandera del servidor: permite publicar condiciones y datos del pedido en los textos. */
   flowExtensionsEnabled: boolean;
   versions: BotVersionSummary[];

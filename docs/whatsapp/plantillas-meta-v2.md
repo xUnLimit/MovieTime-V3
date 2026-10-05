@@ -5,7 +5,7 @@ Edita los textos directamente en este archivo y avisa cuando termines.
 Hay dos clases de plantillas:
 
 - **A. Plantillas de Meta.** Se envían por la API aunque el cliente no haya escrito, y necesitan aprobación de Meta. Las variables son numeradas (`{{1}}`, `{{2}}`…) y cada una ocupa una sola línea.
-- **B. Textos libres del Editor de mensajes.** Se envían por wa.me, o por la API cuando el chat está abierto. Se editan en la app sin aprobación y usan variables con nombre, como `{nombre_cliente}`.
+- **B. Textos libres del apartado Plantillas de mensajes.** Se envían por wa.me, o por la API cuando el chat está abierto. Se editan en la app sin aprobación y usan variables con nombre, como `{nombre_cliente}`.
 
 ---
 
@@ -74,7 +74,7 @@ Botón de respuesta rápida: `Recibir mis datos`
 
 ---
 
-## B. Textos libres del Editor de mensajes
+## B. Textos libres del apartado Plantillas de mensajes
 
 Variables disponibles:
 

@@ -89,7 +89,7 @@ export function NotifyVentaDialog({ notification, open, onOpenChange }: NotifyVe
   const handleSend = async () => {
     if (!waMessage && !autoOn) {
       toast.error('No hay un mensaje configurado para este aviso.', {
-        description: 'Crea o activa la plantilla en el Editor de mensajes.',
+        description: 'Crea o activa la plantilla en Plantillas de mensajes.',
       });
       return;
     }

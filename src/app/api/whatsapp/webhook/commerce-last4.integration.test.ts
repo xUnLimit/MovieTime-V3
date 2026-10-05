@@ -47,7 +47,7 @@ describe.skipIf(requireIntegrationEnv()===null)('integracion: "Ya pagué" cruza 
     return commerceStateSchema.parse(row.context);
   }
   it('sends an unmatched order to review, then confirms the unique email match once, without reading any image',async()=>{
-    await inbound('comprar');await inbound(`add:${fixture.plan}`,true);await inbound('confirmar');
+    await inbound('buy',true);await inbound(`add:${fixture.plan}`,true);await inbound('confirmar');
     const confirmed=await inbound('confirmar');if(!confirmed.orderId)throw new Error('Missing confirmed order');
     const orderId=confirmed.orderId;
     expect((await inbound('paid',true)).stage).toBe('last4');

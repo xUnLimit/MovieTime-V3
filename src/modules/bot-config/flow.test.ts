@@ -102,7 +102,10 @@ describe('simulador', () => {
   });
   it('una opcion que ya no existe avisa y reofrece el menu', () => {
     const state = stepSimulation(def, startSimulation(def), 'borrada');
-    expect(state.turns.at(-2)?.text).toBe(def.messages.option_unavailable);
+    // Como el bot real: el aviso y el menu viajan en un solo mensaje.
+    expect(state.turns.at(-1)?.text).toBe(`${def.messages.option_unavailable}
+
+${def.nodes[0].body}`);
     expect(state.turns.at(-1)?.buttons).toBeDefined();
     expect(state.currentNodeId).toBe('menu');
     expect(state.finished).toBe(false);
@@ -132,7 +135,7 @@ describe('simulador', () => {
     expect(state.turns.at(-1)?.text).toContain('acción válida');
     const dangling: BotDefinition = { ...def, nodes: def.nodes.filter((n) => n.id !== 'netflix') };
     const after = stepSimulation(dangling, startSimulation(dangling), 'codigo');
-    expect(after.turns.at(-2)?.text).toBe(def.messages.option_unavailable);
+    expect(after.turns.at(-1)?.text).toContain(def.messages.option_unavailable);
     expect(after.currentNodeId).toBe('menu');
   });
   it('sin nodo de entrada avisa y termina', () => {

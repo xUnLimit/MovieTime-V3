@@ -5,12 +5,12 @@ vi.mock('@/platform/observability/logger', () => ({
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
 }));
 
-import { defaultDefinition } from '@/modules/bot-config';
+import { addConditionNode, addOption, addPurchaseFlow, connectOption, defaultDefinition, setEntryNode, updateNode } from '@/modules/bot-config';
 import type { BotService, BotStore } from '@/modules/messaging/bot-store';
 import type { NetflixClaimStore } from '@/modules/messaging/netflix-claim-store';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
-import type { BotDefinition, BotEventType } from '@/types/bot';
-import type { BotDeps } from './bot-reply';
+import type { BotActionKey, BotDefinition, BotEventType } from '@/types/bot';
+import type { BotDeps, BotHandBack } from './bot-reply';
 import { handleBotMessage } from './whatsapp-bot-use-case';
 
 const now = new Date('2026-10-02T04:00:00.000Z');
@@ -48,12 +48,15 @@ const LOGIN = 'BOT:netflix:login';
 const TRAVEL = 'BOT:netflix:viaje';
 
 function setup(options: {
-  services?: BotService[]; known?: boolean; mails?: RawMail[]; taps?: number; owners?: Record<string, string>;
+  services?: BotService[]; known?: boolean; hasServices?: boolean; mails?: RawMail[]; taps?: number; owners?: Record<string, string>;
   claimResult?: 'claimed' | 'mine' | 'taken'; lastActivityAt?: string | null; operator?: boolean; page?: string | null | Error;
   inbox?: 'none' | 'fails' | 'closeFails'; sendStatus?: string; sendThrows?: boolean; releaseThrows?: boolean; definition?: BotDefinition; eventsThrow?: boolean;
 } = {}) {
   const store: BotStore = {
-    customerServices: vi.fn().mockResolvedValue({ known: options.known ?? true, clienteId: 'c1', services: options.services ?? [serviceA] }),
+    customerServices: vi.fn().mockResolvedValue({
+      known: options.known ?? true, clienteId: 'c1', services: options.services ?? [serviceA],
+      hasServices: options.hasServices ?? (options.services ?? [serviceA]).length > 0,
+    }),
     lastActivityAt: vi.fn().mockResolvedValue(options.lastActivityAt ?? null),
     operatorRepliedSince: vi.fn().mockResolvedValue(options.operator ?? false),
     menuTapsSince: vi.fn().mockResolvedValue(options.taps ?? 1),
@@ -118,15 +121,6 @@ describe('handleBotMessage menu', () => {
     for (const { send } of [active, operator, media]) expect(send).not.toHaveBeenCalled();
   });
 
-  it('never answers numbers that are not a registered customer, or customers without Netflix', async () => {
-    const stranger = setup({ known: false, services: [] });
-    await expect(handleBotMessage(inbound(), stranger.deps)).resolves.toBe('ignored');
-    const other = setup({ services: [] });
-    await expect(handleBotMessage(inbound(), other.deps)).resolves.toBe('ignored');
-    await expect(handleBotMessage(tap(LOGIN), other.deps)).resolves.toBe('none');
-    expect(stranger.send).not.toHaveBeenCalled();
-    expect(other.send).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe('handleBotMessage actions', () => {
@@ -714,5 +708,172 @@ describe('bot events', () => {
     expect(claims.release).not.toHaveBeenCalled();
     const menu = setup({ eventsThrow: true, lastActivityAt: minutesAgo(13 * 60) });
     await expect(handleBotMessage(inbound({ textBody: 'gracias' }), menu.deps)).resolves.toBe('menu');
+  });
+});
+
+describe('handleBotMessage: quien recibe el recorrido', () => {
+  it('un cliente conocido recibe el menu aunque no tenga Netflix, y los códigos siguen pidiendo una cuenta propia', async () => {
+    const other = setup({ services: [], hasServices: true });
+    await expect(handleBotMessage(inbound(), other.deps)).resolves.toBe('menu');
+    expect(sentPayload(other.send)).toMatchObject({ kind: 'buttons' });
+    const code = setup({ services: [], hasServices: true });
+    await expect(handleBotMessage(tap(LOGIN), code.deps)).resolves.toBe('none');
+    expect(sentText(code.send)).toBe(MESSAGES.no_netflix_account);
+  });
+
+  it('un contacto desconocido con número de Panamá recibe el recorrido; los demás números desconocidos, nada', async () => {
+    const lead = setup({ known: false, services: [], hasServices: false });
+    await expect(handleBotMessage(inbound(), lead.deps)).resolves.toBe('menu');
+    expect(lead.send).toHaveBeenCalledTimes(1);
+    const abroad = setup({ known: false, services: [] });
+    await expect(handleBotMessage(inbound({ fromWaId: '15551234567' }), abroad.deps)).resolves.toBe('ignored');
+    await expect(handleBotMessage({ ...tap(LOGIN), fromWaId: ABROAD }, abroad.deps)).resolves.toBe('ignored');
+    expect(abroad.send).not.toHaveBeenCalled();
+  });
+
+  it('un cliente conocido con número del extranjero también recibe el recorrido', async () => {
+    const known = setup({ known: true });
+    await expect(handleBotMessage(inbound({ fromWaId: '15551234567' }), known.deps)).resolves.toBe('menu');
+  });
+});
+
+// "soporte" (acción de atención) pasa a ser la acción de compras indicada; la entrada del recorrido es el menú.
+const withAction = (action: BotActionKey, entry?: string): BotDefinition => {
+  const def = updateNode(defaultDefinition(), 'soporte', { action });
+  return entry ? { ...def, entryNodeId: entry } : def;
+};
+function withBlocks(): BotDefinition {
+  const flow = addOption(addPurchaseFlow(defaultDefinition()), 'menu');
+  return connectOption(flow, 'menu', flow.nodes.find((node) => node.id === 'menu')!.options.at(-1)!.id, 'compra_catalogo');
+}
+const menuBody = defaultDefinition().nodes[0].body;
+const ABROAD = '15551234567';
+
+describe('handleBotMessage: nodos de compra del recorrido', () => {
+  it('delega al flujo de compras sin enviar nada: el nodo nunca se manda como texto', async () => {
+    for (const [action, step] of [['purchase', 'buy'], ['renewal', 'renew'], ['my_services', 'services']] as const) {
+      const { deps, send } = setup({ definition: withAction(action) });
+      await expect(handleBotMessage(tap('BOT:menu:soporte'), deps)).resolves.toEqual({ delegate: step });
+      expect(send).not.toHaveBeenCalled();
+    }
+    const blocks = withBlocks();
+    const catalog = setup({ definition: blocks });
+    const added = blocks.nodes.find((node) => node.id === 'menu')!.options.at(-1)!.id;
+    await expect(handleBotMessage(tap(`BOT:menu:${added}`), catalog.deps)).resolves.toEqual({ delegate: 'buy' });
+    const summary = setup({ definition: blocks });
+    await expect(handleBotMessage(tap('BOT:compra_catalogo:resumen'), summary.deps)).resolves.toEqual({ delegate: 'summary' });
+    expect(catalog.send).not.toHaveBeenCalled();
+  });
+
+  it('también delega cuando llega a la compra a través de una condición, para clientes nuevos y existentes', async () => {
+    let def = addConditionNode(withAction('purchase'), 'customer_has_services');
+    const id = def.nodes.at(-1)!.id;
+    def = connectOption(connectOption(def, id, 'si', 'soporte'), id, 'no', 'soporte');
+    def = connectOption(def, 'menu', 'soporte', id);
+    for (const hasServices of [true, false]) {
+      const { deps, send } = setup({ definition: def, services: [], hasServices });
+      await expect(handleBotMessage(tap('BOT:menu:soporte'), deps)).resolves.toEqual({ delegate: 'buy' });
+      expect(send).not.toHaveBeenCalled();
+    }
+  });
+
+  it('una entrada que es un nodo de compra delega al empezar', async () => {
+    const { deps, send } = setup({ definition: withAction('purchase', 'soporte') });
+    await expect(handleBotMessage(inbound(), deps)).resolves.toEqual({ delegate: 'buy' });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('una opción que ya no existe delega con el aviso cuando la entrada es una compra', async () => {
+    const { deps } = setup({ definition: withAction('purchase', 'soporte') });
+    await expect(handleBotMessage(tap('BOT:viejo:codigo'), deps)).resolves.toEqual({ delegate: 'buy', prefix: MESSAGES.option_unavailable });
+  });
+
+  it('un número que el flujo de compras no atiende recibe el aviso de opción no disponible y la entrada, en un solo mensaje', async () => {
+    const { deps, send, record } = setup({ definition: withAction('purchase') });
+    await expect(handleBotMessage({ ...tap('BOT:menu:soporte'), fromWaId: ABROAD }, deps)).resolves.toBe('option_unavailable');
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(sentPayload(send)).toMatchObject({ kind: 'buttons', body: `${MESSAGES.option_unavailable}\n\n${menuBody}` });
+    expect(eventTypes(record)).toContain('option_unavailable');
+  });
+
+  it('si la entrada también es una compra, el número sin compras recibe solo el aviso', async () => {
+    const { deps, send } = setup({ definition: withAction('purchase', 'soporte') });
+    await expect(handleBotMessage({ ...inbound({ textBody: 'hola' }), fromWaId: ABROAD }, deps)).resolves.toBe('option_unavailable');
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(sentPayload(send)).toEqual({ kind: 'text', text: MESSAGES.option_unavailable });
+  });
+
+  it('si la entrada es una acción, el número sin compras solo recibe el aviso', async () => {
+    const def = { ...withAction('purchase'), entryNodeId: 'login' };
+    const { deps, send } = setup({ definition: def });
+    await expect(handleBotMessage({ ...tap('BOT:menu:soporte'), fromWaId: ABROAD }, deps)).resolves.toBe('option_unavailable');
+    expect(sentPayload(send)).toEqual({ kind: 'text', text: MESSAGES.option_unavailable });
+  });
+});
+
+describe('handleBotMessage: el flujo de compras devuelve el turno', () => {
+  const back = (text = 'Listo, cancelé tu selección.', block: BotHandBack['block'] = null, prefixed = true): { handBack: BotHandBack } => ({ handBack: { text, prefixed, block } });
+  const written = () => inbound({ textBody: 'cancelar' });
+
+  it('envía el aviso y la entrada en un solo mensaje, aunque el cliente escriba texto, y sin pasar por las reglas del menú', async () => {
+    const { deps, send, store } = setup({ lastActivityAt: minutesAgo(1), operator: true });
+    await expect(handleBotMessage(written(), deps, back())).resolves.toBe('node');
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(sentPayload(send)).toMatchObject({ kind: 'buttons', body: `Listo, cancelé tu selección.\n\n${menuBody}` });
+    expect(store.operatorRepliedSince).not.toHaveBeenCalled();
+    const media = setup();
+    await expect(handleBotMessage(inbound({ messageType: 'image', textBody: null }), media.deps, back())).resolves.toBe('node');
+  });
+
+  it('sin aviso por delante (hola/menu) muestra solo la entrada', async () => {
+    const { deps, send } = setup();
+    await handleBotMessage(written(), deps, back('Por ahora no tengo opciones.', null, false));
+    expect(sentPayload(send)).toMatchObject({ kind: 'buttons', body: menuBody });
+  });
+
+  it('también atiende a un contacto desconocido de Panamá y a quien no tiene Netflix', async () => {
+    const lead = setup({ known: false, services: [], hasServices: false });
+    await expect(handleBotMessage(written(), lead.deps, back())).resolves.toBe('node');
+    const abroad = setup({ known: false, services: [] });
+    await expect(handleBotMessage({ ...written(), fromWaId: ABROAD }, abroad.deps, back())).resolves.toBe('ignored');
+    expect(abroad.send).not.toHaveBeenCalled();
+  });
+
+  it('cancelar en un bloque lleva al nodo que su salida conecta; si no existe, a la entrada', async () => {
+    const def = connectOption(withBlocks(), 'compra_resumen', 'cancel', 'soporte');
+    const handoff = setup({ definition: def });
+    await expect(handleBotMessage(written(), handoff.deps, back('Listo, cancelé tu selección.', 'resumen'))).resolves.toBe('handoff');
+    expect(sentPayload(handoff.send)).toEqual({ kind: 'text', text: `Listo, cancelé tu selección.\n\n${MESSAGES.handoff_ack}` });
+    const entry = setup({ definition: withBlocks() });
+    await handleBotMessage(written(), entry.deps, back('Listo.', 'resumen'));
+    expect(sentPayload(entry.send)).toMatchObject({ body: `Listo.\n\n${menuBody}` });
+    const noBlocks = setup();
+    await handleBotMessage(written(), noBlocks.deps, back('Listo.', 'reserva'));
+    expect(sentPayload(noBlocks.send)).toMatchObject({ body: `Listo.\n\n${menuBody}` });
+    const noCancel = setup({ definition: withBlocks() });
+    await handleBotMessage(written(), noCancel.deps, back('Listo.', 'catalogo'));
+    expect(sentPayload(noCancel.send)).toMatchObject({ body: `Listo.\n\n${menuBody}` });
+  });
+
+  it('si el destino es otro nodo de compra solo dice el aviso, nunca delega de nuevo', async () => {
+    const def = connectOption(withBlocks(), 'compra_resumen', 'cancel', 'compra_catalogo');
+    const toBlock = setup({ definition: def });
+    await expect(handleBotMessage(written(), toBlock.deps, back('Aviso.', 'resumen'))).resolves.toBe('node');
+    expect(sentPayload(toBlock.send)).toEqual({ kind: 'text', text: 'Aviso.' });
+    const entryIsPurchase = setup({ definition: withAction('my_services', 'soporte') });
+    await expect(handleBotMessage(written(), entryIsPurchase.deps, back('No encuentro servicios.'))).resolves.toBe('node');
+    expect(sentPayload(entryIsPurchase.send)).toEqual({ kind: 'text', text: 'No encuentro servicios.' });
+  });
+
+  it('si el recorrido no tiene nada que mostrar, el cliente igual recibe la respuesta del flujo de compras', async () => {
+    const noEntry = setup({ definition: { ...defaultDefinition(), entryNodeId: 'inexistente' } });
+    await expect(handleBotMessage(written(), noEntry.deps, back('Aviso.'))).resolves.toBe('node');
+    expect(sentPayload(noEntry.send)).toEqual({ kind: 'text', text: 'Aviso.' });
+    let def = addConditionNode(defaultDefinition(), 'catalog_has_stock');
+    const id = def.nodes.at(-1)!.id;
+    def = setEntryNode({ ...def, nodes: def.nodes.map((node) => (node.id === id ? { ...node, options: [] } : node)) }, id);
+    const dead = setup({ definition: def });
+    await expect(handleBotMessage(written(), dead.deps, back('Aviso.'))).resolves.toBe('node');
+    expect(sentPayload(dead.send)).toEqual({ kind: 'text', text: 'Aviso.' });
   });
 });

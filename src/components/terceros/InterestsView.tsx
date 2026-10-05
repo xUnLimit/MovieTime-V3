@@ -29,10 +29,10 @@ export function InterestsView() {
   };
   const rows = useMemo(() => (query.data?.interests ?? []).filter(item => (filter === 'all' || (filter === 'eligible' ? item.consent && !item.paused && !['cancelled', 'fulfilled'].includes(item.state) : filter === 'paused' ? item.paused : !item.consent)) && `${item.category} ${item.plan} ${item.contactSuffix}`.toLowerCase().includes(search.toLowerCase())), [query.data, filter, search]);
   const columns = defineDataTableColumns<Interest>([
-    { key: 'plan', header: 'Servicio', render: row => <div className="min-w-0 leading-tight"><p className="truncate font-medium">{row.plan || row.category}</p><p className="truncate text-xs text-muted-foreground">{row.category}</p></div> },
-    { key: 'contactSuffix', header: 'Contacto', width: '100px', hideBelow: 'sm', render: row => <span className="tabular-nums">•••• {row.contactSuffix}</span> },
-    { key: 'consent', header: 'Aviso', width: '160px', hideBelow: 'md', render: row => <StatusBadge tone={row.consent ? 'success' : 'neutral'}>{row.consent ? 'Autorizado' : 'Sin consentimiento'}</StatusBadge> },
-    { key: 'state', header: 'Estado', width: '130px', render: row => <StatusBadge tone={row.paused ? 'warning' : row.state === 'cancelled' ? 'neutral' : 'info'}>{row.paused ? 'Pausado' : states[row.state] ?? 'Por revisar'}</StatusBadge> },
+    { key: 'plan', header: 'Servicio', width: '36%', render: row => <div className="min-w-0 leading-tight"><p className="truncate font-medium">{row.plan || row.category}</p><p className="truncate text-xs text-muted-foreground">{row.category}</p></div> },
+    { key: 'contactSuffix', header: 'Contacto', align: 'center', hideBelow: 'sm', render: row => <span className="tabular-nums">•••• {row.contactSuffix}</span> },
+    { key: 'consent', header: 'Aviso', align: 'center', hideBelow: 'md', render: row => <StatusBadge tone={row.consent ? 'success' : 'neutral'}>{row.consent ? 'Autorizado' : 'Sin consentimiento'}</StatusBadge> },
+    { key: 'state', header: 'Estado', align: 'center', render: row => <StatusBadge tone={row.paused ? 'warning' : row.state === 'cancelled' ? 'neutral' : 'info'}>{row.paused ? 'Pausado' : states[row.state] ?? 'Por revisar'}</StatusBadge> },
   ]);
   return <div className="space-y-4">
     {query.isError ? <div role="alert" className="space-y-2"><p className="text-sm text-danger">No se pudieron cargar los interesados.</p><Button variant="outline" onClick={() => void query.refetch()}>Reintentar</Button></div> : null}

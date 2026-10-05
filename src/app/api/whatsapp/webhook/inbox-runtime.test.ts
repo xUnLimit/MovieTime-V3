@@ -7,7 +7,7 @@ import { commerceStateSchema } from '@/application/use-cases/commerce-conversati
 
 const mocks=vi.hoisted(()=>({ env:{whatsappAccessToken:'fixture',whatsappPhoneNumberId:'123'},
   store:{claim:vi.fn(),isCurrent:vi.fn(),checkpoint:vi.fn(),finish:vi.fn()},notice:vi.fn(),commerce:vi.fn(),
-  send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{configuration:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
+  send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{configuration:vi.fn(),definitionFor:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
 vi.mock('@/platform/config',()=>({env:mocks.env}));
 vi.mock('@/platform/observability/logger',()=>({createLogger:()=>({warn:mocks.warn})}));
 vi.mock('@/modules/whatsapp/automation-inbox-store',()=>({createAutomationInboxStore:()=>mocks.store}));
@@ -34,12 +34,12 @@ function claim(context:Record<string,Json>={},messageType='text'):AutomationClai
 function queue(input=claim()) { mocks.store.claim.mockResolvedValueOnce(input).mockResolvedValue(null); return input; }
 function commercial(input:AutomationClaim,handoff=false) {
   const context=commerceStateSchema.parse({...commerceStateSchema.parse(input.conversation.context),stage:'payment',orderId,lastMessageId:input.message.waMessageId,lastReply:'Fallback',lastPayload:{kind:'text',text:'Fallback'}});
-  mocks.commerce.mockResolvedValue({context,payload:{kind:'text',text:'Fallback'},process:'payment',orderId,handoff});
+  mocks.commerce.mockResolvedValue({context,payload:{kind:'text',text:'Fallback'},handBack:null,process:'payment',orderId,handoff});
 }
 beforeEach(()=>{
   vi.resetAllMocks(); mocks.env.whatsappAccessToken='fixture'; mocks.env.whatsappPhoneNumberId='123';
   mocks.store.isCurrent.mockResolvedValue(true); mocks.store.checkpoint.mockResolvedValue(true); mocks.store.finish.mockResolvedValue(true);
-  mocks.notice.mockResolvedValue('ignored'); mocks.bot.configuration.mockResolvedValue(defaultDefinition()); mocks.bot.handle.mockResolvedValue('ignored');
+  mocks.notice.mockResolvedValue('ignored'); mocks.bot.configuration.mockResolvedValue(defaultDefinition()); mocks.bot.definitionFor.mockImplementation(async(_message,_pin,latest)=>latest); mocks.bot.handle.mockResolvedValue('ignored');
   mocks.commerce.mockResolvedValue(null); mocks.send.mockResolvedValue({sendStatus:'accepted'});
   mocks.delivery.mockResolvedValue({processed:0,failed:0});
 });
@@ -52,13 +52,13 @@ describe('inbox composition',()=>{
   it('sends unrecognised free text through the guided flow without any interpretation step',async()=>{
     const input=queue(); mocks.commerce.mockResolvedValue(null); mocks.bot.handle.mockResolvedValue('ignored');
     expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
-    expect(mocks.commerce).toHaveBeenCalledWith(input.message,input.conversation.context,{},expect.anything());
-    expect(mocks.commerce.mock.lastCall).toHaveLength(4); expect(mocks.bot.handle).toHaveBeenCalledTimes(1);
+    expect(mocks.commerce).toHaveBeenCalledWith(input.message,input.conversation.context,{},defaultDefinition(),undefined);
+    expect(mocks.bot.handle).toHaveBeenCalledTimes(1); expect(mocks.store.checkpoint).not.toHaveBeenCalled();
   });
   it('hands the conversation order to the bot so node texts can show its data',async()=>{
     const input=claim(); input.conversation.orderId=orderId; queue(input);
     expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
-    expect(mocks.bot.handle).toHaveBeenCalledWith(input.message,expect.any(Function),2,orderId);
+    expect(mocks.bot.handle).toHaveBeenCalledWith(defaultDefinition(),input.message,expect.any(Function),orderId,undefined);
   });
   it('keeps payment images on the guided reply with no receipt reading',async()=>{
     const input=queue(claim({stage:'payment',orderId},'image')); commercial(input);
@@ -66,7 +66,7 @@ describe('inbox composition',()=>{
   });
   it('pins the definition and fences a checkpoint before any send',async()=>{
     const input=queue(); commercial(input,true);
-    await drainWhatsAppInbox('request');     expect(mocks.bot.configuration).toHaveBeenCalledWith(input.message,2);
+    await drainWhatsAppInbox('request');     expect(mocks.bot.configuration).toHaveBeenCalledWith(input.message); expect(mocks.bot.definitionFor).toHaveBeenCalledWith(input.message,2,defaultDefinition());
     expect(mocks.store.finish).toHaveBeenCalledWith(input,expect.objectContaining({outcome:'handoff',flowVersion:3}));
     const stale=queue(); commercial(stale); mocks.store.checkpoint.mockResolvedValue(false); mocks.send.mockClear();
     expect(await drainWhatsAppInbox('request')).toEqual({processed:0,failed:0}); expect(mocks.send).not.toHaveBeenCalled();
@@ -91,5 +91,26 @@ describe('inbox composition',()=>{
     expect(mocks.store.isCurrent).toHaveBeenCalledTimes(4);
     queue(); mocks.store.isCurrent.mockResolvedValueOnce(true).mockResolvedValueOnce(true).mockResolvedValueOnce(true).mockResolvedValue(false);
     expect(await drainWhatsAppInbox('request')).toEqual({processed:0,failed:0}); expect(mocks.cloud).toHaveBeenCalledTimes(1);
+  });
+  it('hands the turn back to the journey in one reply after saving the purchase state, and answers with the pinned definition when it differs',async()=>{
+    const input=queue(); const pinned={...defaultDefinition(),entryNodeId:'soporte'}; mocks.bot.definitionFor.mockResolvedValue(pinned);
+    const handBack={text:'Listo, cancelé tu selección.',prefixed:true,block:null};
+    const context=commerceStateSchema.parse({});
+    mocks.commerce.mockResolvedValue({context,payload:null,handBack,process:'idle',orderId:null,handoff:false});
+    mocks.bot.handle.mockResolvedValue('menu');
+    expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
+    expect(mocks.store.checkpoint).toHaveBeenCalledWith(input,context,'idle',null,3);
+    expect(mocks.bot.handle).toHaveBeenCalledWith(pinned,input.message,expect.any(Function),null,{handBack});
+    expect(mocks.send).not.toHaveBeenCalled();
+    expect(mocks.store.finish).toHaveBeenCalledWith(input,expect.objectContaining({outcome:'done',context,process:'idle'}));
+  });
+  it('lets the purchase flow answer when the journey reaches a purchase node, with the notice in front',async()=>{
+    queue(); mocks.commerce.mockResolvedValueOnce(null);
+    const context=commerceStateSchema.parse({stage:'buy'});
+    mocks.bot.handle.mockResolvedValue({delegate:'buy',prefix:'Aviso'});
+    mocks.commerce.mockResolvedValueOnce({context,payload:{kind:'text',text:'Catálogo'},handBack:null,process:'buy',orderId:null,handoff:false});
+    expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
+    expect(mocks.commerce).toHaveBeenLastCalledWith(expect.anything(),expect.anything(),{},defaultDefinition(),{command:'buy',prefix:'Aviso'});
+    expect(mocks.send.mock.lastCall?.[0].payload.text).toBe('Catálogo');
   });
 });

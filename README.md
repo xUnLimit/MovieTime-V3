@@ -7,8 +7,8 @@ Cubre:
 - **Operacion:** terceros (clientes y revendedores), servicios (cuentas de proveedor), ventas y sus periodos, renovaciones, reembolsos, cortes y reposo.
 - **Finanzas:** pagos de ventas y servicios, gastos, categorias, metodos de pago y un dashboard financiero con pronostico.
 - **WhatsApp (Cloud API de Meta):** bandeja de chats en `/chats` que se actualiza en tiempo real con Supabase Realtime (con sondeo lento de respaldo), plantillas aprobadas por Meta, avisos de vencimiento manuales y automaticos con botones de respuesta.
-- **Bot de WhatsApp administrable:** la pantalla `/bot` (solo administradores) enciende y apaga el bot, edita su flujo, mensajes y tiempos, y muestra su actividad; el webhook usa siempre la ultima version publicada (ver `docs/whatsapp-bot-admin.md`).
-- **Pagos Yappy:** deteccion de avisos de pago por correo (IMAP) en `/pagos-yappy` para conciliarlos.
+- **Bot de WhatsApp administrable:** la pantalla `/automatizaciones` (solo administradores) es la unica herramienta del bot: lo enciende y apaga, edita su recorrido en el diagrama, sus respuestas y tiempos, y muestra su actividad; el webhook usa siempre la ultima version publicada (ver `docs/whatsapp-bot-admin.md`).
+- **Pagos Yappy:** deteccion de avisos de pago por correo (IMAP) en `/pedidos-cobros` (pestana Cobros) para conciliarlos. Esa pagina tambien reune los pedidos del bot y los interesados por cupo.
 - **Notificaciones:** vencimientos de ventas y servicios, push web y resumen ejecutivo programado.
 
 El proposito, los usuarios y los principios del producto estan en [`PRODUCT.md`](PRODUCT.md).

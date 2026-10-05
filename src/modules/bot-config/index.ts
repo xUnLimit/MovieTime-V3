@@ -15,8 +15,8 @@ export {
 export { flowWideIssues, issuesByNode, layoutNodes } from './layout';
 export type { NodePosition } from './layout';
 export { diffDefinitions } from './diff';
-export { defaultSample, startSimulation, stepSimulation } from './simulate';
-export type { SimulationSample } from './simulate';
+export { defaultSample, purchaseStepOf, startSimulation, stepSimulation } from './simulate';
+export type { PurchaseStep, SimulationSample } from './simulate';
 export {
   CONDITION_CATALOG, CONDITION_TYPES, MAX_CONDITION_HOPS, NODE_VARIABLE_CATALOG, conditionOption, nodeVariablesIn, renderNodeBody,
 } from './extensions';

@@ -60,11 +60,11 @@ function validateKeywords(def: BotDefinition, report: Report): void {
 }
 
 /** Errores (bloquean publicar) y avisos de la definicion. Rutas legibles, mensajes en espanol. */
-export function validateDefinition(def: BotDefinition, options: { purchaseBlocksEnabled?: boolean; flowExtensionsEnabled?: boolean } = {}): BotIssue[] {
+export function validateDefinition(def: BotDefinition, options: { flowExtensionsEnabled?: boolean } = {}): BotIssue[] {
   const issues: BotIssue[] = [];
   const report: Report = (path, message, severity = 'error') => { issues.push({ path, message, severity }); };
   validateNodes(def, report);
-  validateBlocks(def, report, options.purchaseBlocksEnabled === true);
+  validateBlocks(def, report);
   validateExtensions(def, report, options.flowExtensionsEnabled === true);
   validateMessages(def, report);
   validateParams(def, report);

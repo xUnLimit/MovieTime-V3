@@ -33,10 +33,9 @@ export function useBotAdmin(): BotAdminApi {
     () => draft !== null && (published === null || JSON.stringify(draft) !== JSON.stringify(published)),
     [draft, published],
   );
-  // Fail closed: mientras la bandera no se haya leido, los bloques de compra cuentan como desactivados.
-  const purchaseBlocksEnabled = healthQuery.data?.purchaseBlocksEnabled === true;
+  // Fail closed: mientras la bandera no se haya leido, las condiciones y los datos del pedido cuentan como desactivados.
   const flowExtensionsEnabled = healthQuery.data?.flowExtensionsEnabled === true;
-  const issues = useMemo(() => (draft ? validateDefinition(draft, { purchaseBlocksEnabled, flowExtensionsEnabled }) : []), [draft, purchaseBlocksEnabled, flowExtensionsEnabled]);
+  const issues = useMemo(() => (draft ? validateDefinition(draft, { flowExtensionsEnabled }) : []), [draft, flowExtensionsEnabled]);
   const hasErrors = useMemo(() => hasBlockingIssues(issues), [issues]);
 
   const updateDraft = useCallback((updater: (current: BotDefinition) => BotDefinition) => {
@@ -68,14 +67,14 @@ export function useBotAdmin(): BotAdminApi {
     if (!draft) return;
     setSaving(true);
     try {
-      await publishBotUseCase(draft, note, getActivityLogOptions(), published, purchaseBlocksEnabled, flowExtensionsEnabled);
+      await publishBotUseCase(draft, note, getActivityLogOptions(), published, flowExtensionsEnabled);
       await Promise.all([refetchSnapshot(), refetchEvents()]);
       setDraftEdit(null);
       setEventsEdit(null);
     } finally {
       setSaving(false);
     }
-  }, [draft, published, purchaseBlocksEnabled, flowExtensionsEnabled, refetchSnapshot, refetchEvents]);
+  }, [draft, published, flowExtensionsEnabled, refetchSnapshot, refetchEvents]);
 
   const loadVersionIntoDraft = useCallback(async (version: number) => {
     setDraftEdit(await restoreBotVersionUseCase(version, getActivityLogOptions()));
@@ -90,7 +89,7 @@ export function useBotAdmin(): BotAdminApi {
   return {
     loading: snapshot.isFetching,
     error: snapshot.isError ? LOAD_ERROR : null,
-    status, published, draft, dirty, issues, hasErrors, purchaseBlocksEnabled, flowExtensionsEnabled,
+    status, published, draft, dirty, issues, hasErrors, flowExtensionsEnabled,
     versions: snapshot.data?.versions ?? [],
     events: eventsEdit ?? eventsQuery.data ?? null,
     health: healthQuery.data ?? null,

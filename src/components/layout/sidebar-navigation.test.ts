@@ -41,12 +41,12 @@ describe('getSidebarNavigationSections', () => {
     expect(names('vendedor')).not.toContain('Automatizaciones');
   });
 
-  it('ubica Pedidos y cobros tras Ventas y Plantillas de mensajes tras Metodos de Pago', () => {
+  it('ubica Pedidos y cobros sobre Gastos y Automatizaciones sobre Plantillas de mensajes', () => {
     const sections = getSidebarNavigationSections('admin');
     const section = (label: string) => sections.find((s) => s.label === label)?.items.map((i) => i.name);
-    expect(section('Operación')).toEqual(['Terceros', 'Ventas', 'Pedidos y cobros', 'Servicios', 'Gastos']);
-    expect(section('Configuración')).toEqual(['Categorías', 'Métodos de Pago', 'Plantillas de mensajes']);
-    expect(section('Seguimiento')).toContain('Automatizaciones');
+    expect(section('Operación')).toEqual(['Terceros', 'Ventas', 'Servicios', 'Pedidos y cobros', 'Gastos']);
+    expect(section('Configuración')).toEqual(['Categorías', 'Métodos de Pago', 'Automatizaciones', 'Plantillas de mensajes']);
+    expect(section('Seguimiento')).not.toContain('Automatizaciones');
   });
 
   it('reserva los apartados nuevos a administradores', () => {

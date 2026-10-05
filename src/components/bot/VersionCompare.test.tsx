@@ -59,7 +59,7 @@ describe('VersionCompare', () => {
 describe('VersionsTab', () => {
   const api: BotAdminApi = {
     loading: false, error: null, status: { enabled: true, publishedVersion: 3, updatedAt: null }, published: defaultDefinition(), draft: defaultDefinition(),
-    dirty: false, issues: [], hasErrors: false, purchaseBlocksEnabled: false, flowExtensionsEnabled: false, versions, events: null, health: null, saving: false,
+    dirty: false, issues: [], hasErrors: false, flowExtensionsEnabled: false, versions, events: null, health: null, saving: false,
     setEnabled: vi.fn(async () => {}), updateDraft: vi.fn(), discardDraft: vi.fn(), resetToDefaults: vi.fn(), publish: vi.fn(async () => {}),
     loadVersionIntoDraft: vi.fn(async () => {}), loadEvents: vi.fn(async () => {}), testMailbox: vi.fn(), refresh: vi.fn(async () => {}),
   };

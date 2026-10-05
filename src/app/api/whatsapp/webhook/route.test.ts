@@ -23,7 +23,6 @@ vi.mock('@/platform/config', () => ({ env }));
 vi.mock('@/modules/whatsapp/webhook-inbox', () => ({ storeWebhookBatch }));
 vi.mock('@/application/use-cases/commerce-conversation-use-case', () => ({ handleCommerceConversation: async () => null }));
 vi.mock('@/application/use-cases/commerce-conversation-runtime', () => ({ createCommerceConversationDeps: () => ({}) }));
-vi.mock('@/application/use-cases/commerce-conversation-state', () => ({ commerceCommand: () => null }));
 vi.mock('@/application/use-cases/pedido-delivery-runtime', () => ({ drainOrderDeliveries: async () => ({ processed:0,failed:0 }) }));
 vi.mock('@/modules/whatsapp/automation-inbox-store', () => ({
   createAutomationInboxStore: () => {
@@ -290,7 +289,7 @@ describe('POST /api/whatsapp/webhook', () => {
         return 'menu';
       });
       await deliver();
-      expect(handleBotMessage).toHaveBeenCalledWith(expect.objectContaining({ waMessageId: 'wamid.IN' }), expect.anything());
+      expect(handleBotMessage).toHaveBeenCalledWith(expect.objectContaining({ waMessageId: 'wamid.IN' }), expect.anything(), {});
       expect(openNetflixInbox).toHaveBeenCalledWith('owner@gmail.com', 'app-password');
       expect(sendCloudApiMessage).toHaveBeenCalledTimes(1);
       expect(recordBotEvent).toHaveBeenCalledWith({ waId: '50760000000', type: 'menu_shown' });

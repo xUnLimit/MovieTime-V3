@@ -2,7 +2,7 @@ import { readApiResponse } from '@/platform/api/client';
 import type { BotHealth, BotMailboxCheck } from '@/types/bot';
 
 /** Lo que solo el servidor sabe: si las integraciones estan configuradas (sin exponer valores). */
-export type BotConfigHealth = Pick<BotHealth, 'whatsappConfigured' | 'mailboxConfigured' | 'purchaseBlocksEnabled' | 'flowExtensionsEnabled'>;
+export type BotConfigHealth = Pick<BotHealth, 'whatsappConfigured' | 'mailboxConfigured' | 'flowExtensionsEnabled'>;
 
 function authorization(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };

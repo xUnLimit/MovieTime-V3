@@ -11,7 +11,7 @@ async function openSidebar(page: Page, name: string) {
 }
 
 async function openTab(page: Page, name: string) {
-  await page.getByRole('navigation', { name: 'Secciones de automatizaciones' }).getByRole('link', { name, exact: true }).click();
+  await page.getByRole('tablist', { name: 'Secciones de pedidos y cobros' }).getByRole('tab', { name, exact: true }).click();
 }
 
 
@@ -111,24 +111,24 @@ for (const theme of ['light', 'dark'] as const) {
         await page.route('**/api/automations/control', route => route.request().method() === 'GET'
           ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, data: control, requestId: 'visual-fixture' }) })
           : route.abort());
-        await openSidebar(page, 'Automatizaciones');
+        await openSidebar(page, 'Pedidos y cobros');
         await openTab(page, 'Pedidos');
         const orderRows = await assertTable(page, 10);
         await capture(page, testInfo, 'pedidos-presentacion-pagina1');
         await nextPage(page, orderRows, 4);
         await capture(page, testInfo, 'pedidos-presentacion-pagina2');
         await openTab(page, 'Cobros');
-        await expect(page.getByRole('heading', { name: 'Pagos Yappy detectados', exact: true })).toBeVisible();
+        await expect(page.getByText('Pagos Yappy detectados', { exact: true })).toBeVisible();
         await openTab(page, 'Pedidos');
         await assertTable(page, 10);
         await page.getByRole('searchbox').fill('Netflix');
         await openSidebar(page, 'Ventas');
         await expect(page.getByRole('heading', { name: 'Ventas', exact: true })).toBeVisible();
-        await openSidebar(page, 'Automatizaciones');
+        await openSidebar(page, 'Pedidos y cobros');
         await openTab(page, 'Pedidos');
         await expect(page.getByRole('searchbox')).toHaveValue('Netflix');
         await page.getByRole('searchbox').fill('');
-        await page.goto('/automatizaciones/interesados');
+        await page.goto('/pedidos-cobros?tab=interesados');
         const interestRows = await assertTable(page, 10);
         await capture(page, testInfo, 'interesados-presentacion-pagina1');
         await nextPage(page, interestRows, 4);
@@ -136,7 +136,7 @@ for (const theme of ['light', 'dark'] as const) {
         await page.getByRole('searchbox').fill('Netflix');
         await expect(page.getByText('Página 1 de 1', { exact: true })).toBeVisible();
         await openSidebar(page, 'Terceros');
-        await openSidebar(page, 'Automatizaciones');
+        await openSidebar(page, 'Pedidos y cobros');
         await openTab(page, 'Interesados');
         await expect(page.getByRole('searchbox')).toHaveValue('Netflix');
         await assertTable(page, 7);

@@ -4,8 +4,8 @@ type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 // profiles lists the Netflix profile names noted on the customer's sales of this account.
 export type BotService = { serviceId: string; email: string; profiles: string[] };
 export type BotStore = {
-  // services is empty for a number that is not exactly one active customer.
-  customerServices(waId: string): Promise<{ known: boolean; clienteId: string | null; services: BotService[] }>;
+  // services (Netflix only) is empty for a number that is not exactly one active customer; hasServices: any active sale.
+  customerServices(waId: string): Promise<{ known: boolean; clienteId: string | null; services: BotService[]; hasServices: boolean }>;
   lastActivityAt(waId: string, exceptWaMessageId: string): Promise<string | null>;
   operatorRepliedSince(waId: string, since: string): Promise<boolean>;
   menuTapsSince(waId: string, since: string): Promise<number>;
@@ -21,16 +21,17 @@ export function createBotStore(client: ServiceClient = createServiceRoleClient()
       const { data: people, error } = await client.from('terceros').select('id').eq('active', true).eq('wa_id', waId).limit(2);
       check(error, 'customer lookup');
       const matches = people ?? [];
-      if (matches.length !== 1) return { known: false, clienteId: null, services: [] };
+      if (matches.length !== 1) return { known: false, clienteId: null, services: [], hasServices: false };
       const { data: ventas, error: ventasError } = await client.from('v_ventas_full')
         .select('servicio_id,servicio_correo,perfil_nombre,categoria_nombre,servicio_nombre')
         .eq('cliente_id', matches[0].id).eq('estado', 'activo')
         .gte('ultima_fecha_fin', new Date().toLocaleDateString('en-CA', { timeZone: 'America/Panama' }));
       check(ventasError, 'sales lookup');
+      const hasServices = (ventas ?? []).length > 0;
       const netflix = (ventas ?? []).filter((venta) => venta.servicio_id && venta.servicio_correo
         && /netflix/i.test(`${venta.categoria_nombre ?? ''} ${venta.servicio_nombre ?? ''}`));
       const ids = [...new Set(netflix.flatMap((venta) => venta.servicio_id ? [venta.servicio_id] : []))];
-      if (ids.length === 0) return { known: true, clienteId: matches[0].id, services: [] };
+      if (ids.length === 0) return { known: true, clienteId: matches[0].id, services: [], hasServices };
       const { data: states, error: statesError } = await client.from('servicios')
         .select('id,activo,en_reposo,cortado_at,archivado_at').in('id', ids);
       check(statesError, 'service state lookup');
@@ -44,7 +45,7 @@ export function createBotStore(client: ServiceClient = createServiceRoleClient()
         if (profile && !service.profiles.includes(profile)) service.profiles.push(profile);
         byEmail.set(email, service);
       }
-      return { known: true, clienteId: matches[0].id, services: [...byEmail.values()] };
+      return { known: true, clienteId: matches[0].id, services: [...byEmail.values()], hasServices };
     },
     async lastActivityAt(waId, exceptWaMessageId) {
       const [inbound, outbound] = await Promise.all([

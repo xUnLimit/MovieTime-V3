@@ -32,15 +32,12 @@ function checkBlockNode(node: BotNode, type: PurchaseBlockType, report: Report):
 }
 
 /**
- * Reglas de los bloques de compra. Sin la bandera del servidor no se pueden publicar; con ella, la cadena
- * catalogo, resumen, reserva y pago debe estar completa, en orden y sin atajos desde el resto del recorrido.
+ * Reglas de los bloques de compra: la cadena catalogo, resumen, reserva y pago debe estar completa, en orden
+ * y sin atajos desde el resto del recorrido.
  */
-export function validateBlocks(def: BotDefinition, report: Report, enabled: boolean): void {
+export function validateBlocks(def: BotDefinition, report: Report): void {
   const blocks = def.nodes.filter((node) => node.block !== undefined);
   if (blocks.length === 0) return;
-  if (!enabled) {
-    for (const node of blocks) report(`nodes[${node.id}].block`, 'Los bloques de compra no están activados en este entorno y no se pueden publicar.');
-  }
   const blockIds = new Set(def.nodes.filter((node) => node.block).map((node) => node.id));
   for (const type of PURCHASE_BLOCK_TYPES) {
     const found = blocks.filter((node) => node.block?.type === type);

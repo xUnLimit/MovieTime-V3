@@ -33,11 +33,15 @@ export class CommerceJourneyFixture {
   static definition(withPurchaseBlocks:boolean){
     const base=defaultDefinition();
     if(!withPurchaseBlocks)return base;
-    const flow=addOption(addPurchaseFlow(base),'menu');
-    const added=flow.nodes.find(node=>node.id==='menu')?.options.at(-1);
-    if(!added)throw new Error('El menú no admite otro botón.');
-    return connectOption(flow,'menu',added.id,'compra_catalogo');
+    return connectOption(CommerceJourneyFixture.withPurchaseButton(),'menu',CommerceJourneyFixture.purchaseOptionId(),'compra_catalogo');
   }
+  /** Id del boton del menu que lleva al catalogo de compra en el recorrido con bloques; el cliente lo toca para empezar. */
+  static purchaseOptionId():string{
+    const added=CommerceJourneyFixture.withPurchaseButton().nodes.find(node=>node.id==='menu')?.options.at(-1);
+    if(!added)throw new Error('El menú no admite otro botón.');
+    return added.id;
+  }
+  private static withPurchaseButton(){return addOption(addPurchaseFlow(defaultDefinition()),'menu');}
   setup(withPurchaseBlocks=false):void {
     this.originalSettings=this.sql('SELECT settings::text FROM public.mt_automation_settings WHERE id;');
     this.originalBot=botStateSchema.parse(JSON.parse(this.sql("SELECT jsonb_build_object('enabled',enabled,'published_version',published_version) FROM public.whatsapp_bot_config WHERE id='global';")));

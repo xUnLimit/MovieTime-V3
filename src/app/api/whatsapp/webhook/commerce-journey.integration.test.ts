@@ -27,27 +27,26 @@ import { commerceStateSchema } from '@/application/use-cases/commerce-conversati
 import { unwrap } from '@/test/integration/fixtures';
 import { drainWhatsAppInbox } from './inbox-runtime';
 
-// El mismo recorrido real con el flujo de siempre y con los bloques de compra del lienzo publicados y la bandera encendida:
-// reservas, pagos y entrega deben comportarse igual (los bloques solo aportan textos).
+// El mismo recorrido real con el flujo de siempre y con los bloques de compra del lienzo publicados: la compra empieza con un
+// boton de compra o con un toque del recorrido, nunca con texto suelto; reservas, pagos y entrega se comportan igual.
 const suite=requireIntegrationEnv()===null?describe.skip:describe;
 suite.each([
   {mode:'flujo actual',blocks:false},{mode:'bloques de compra en el lienzo',blocks:true},
 ])('integracion: compra guiada, correo tardío y acceso protegido ($mode)',({blocks})=>{
-  const fixture=new CommerceJourneyFixture();const batches:WebhookBatch[]=[];
+  const fixture=new CommerceJourneyFixture();const purchaseOption=CommerceJourneyFixture.purchaseOptionId();const batches:WebhookBatch[]=[];
   beforeAll(()=>{
     expect(new URL(integrationEnv().url).hostname).toMatch(/^(?:127\.0\.0\.1|localhost|\[?::1\]?)$/);
-    if(blocks)vi.stubEnv('COMMERCE_FLOW_CANVAS_ENABLED','true');
     fixture.setup(blocks); cloud.send.mockImplementation(async(config:unknown,recipient:string,payload:OutboundPayload)=>{
       expect(config).toMatchObject({phoneNumberId:'123'});expect(recipient).toBe(fixture.waId);expect(payload.kind).toBeTruthy();
       return {waMessageId:`wamid.meta.${randomUUID()}`};
     });
   });
-  afterAll(()=>{ fixture.cleanup(); vi.unstubAllEnvs(); });
-  async function inbound(command:string,interactive=false){
+  afterAll(()=>fixture.cleanup());
+  async function inbound(command:string,interactive=false,buttonId=`SHOP:${command}`){
     const parsed=parseWebhookPayload({object:'whatsapp_business_account',entry:[{id:'1',changes:[{field:'messages',value:{
       messaging_product:'whatsapp',metadata:{phone_number_id:'123'},messages:[{id:`wamid.journey.${randomUUID()}`,from:fixture.waId,
         timestamp:String(Math.floor(Date.now()/1000)),type:interactive?'interactive':'text',
-        ...(interactive?{interactive:{type:'button_reply',button_reply:{id:`SHOP:${command}`,title:'Fixture'}}}:{text:{body:command}}),
+        ...(interactive?{interactive:{type:'button_reply',button_reply:{id:buttonId,title:'Fixture'}}}:{text:{body:command}}),
       }],
     }}]}]});
     if(!parsed.success)throw new Error('Invalid journey fixture');batches.push(parsed.batch);
@@ -59,7 +58,7 @@ suite.each([
   }
   it('confirms bank money separately, delivers once, and never stores access plaintext in operational records',async()=>{
     expect(fixture.sql(`SELECT count(*) FROM public.terceros WHERE wa_id='${fixture.waId}';`)).toBe('0');
-    await inbound('comprar');const selected=await inbound(`add:${fixture.plan}`,true);expect(selected.items).toHaveLength(1);
+    await (blocks?inbound('catalogo',true,`BOT:menu:${purchaseOption}`):inbound('buy',true));const selected=await inbound(`add:${fixture.plan}`,true);expect(selected.items).toHaveLength(1);
     const summary=await inbound('confirmar');expect(summary.stage).toBe('summary');expect(summary.orderId).toBeNull();
     const confirmed=await inbound('confirmar');expect(confirmed.stage).toBe('payment');if(!confirmed.orderId)throw new Error('Missing confirmed order');
     const orderId=confirmed.orderId;

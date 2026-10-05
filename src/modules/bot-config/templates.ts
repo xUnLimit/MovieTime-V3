@@ -4,12 +4,11 @@ import { PURCHASE_BLOCKS, addPurchaseFlow } from './purchase-blocks';
 
 export type FlowTemplateId = 'base' | 'base_compras';
 
-export const FLOW_TEMPLATES: readonly { id: FlowTemplateId; label: string; description: string; needsPurchaseBlocks: boolean }[] = [
-  { id: 'base', label: 'Recorrido base', description: 'Menú principal, códigos de Netflix y soporte con una persona.', needsPurchaseBlocks: false },
+export const FLOW_TEMPLATES: readonly { id: FlowTemplateId; label: string; description: string }[] = [
+  { id: 'base', label: 'Recorrido base', description: 'Menú principal, códigos de Netflix y soporte con una persona.' },
   {
     id: 'base_compras', label: 'Recorrido base + compras',
-    description: 'El recorrido base con un botón «Comprar servicios» que abre el flujo de compras (requiere activar los bloques de compra).',
-    needsPurchaseBlocks: true,
+    description: 'El recorrido base con un botón «Comprar servicios» que abre el flujo de compras.',
   },
 ];
 

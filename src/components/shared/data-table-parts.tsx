@@ -118,7 +118,7 @@ function DataTableRow<T extends object>({
         </TableCell>
       ))}
       {actions && (
-        <TableCell className="w-14 pr-4 text-center" onClick={(e) => e.stopPropagation()}>
+        <TableCell className="w-24 pr-4 text-center" onClick={(e) => e.stopPropagation()}>
           {actions(item)}
         </TableCell>
       )}

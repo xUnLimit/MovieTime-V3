@@ -51,11 +51,11 @@ describe('useFlowActions', () => {
   });
 
   it('adds the purchase flow seeded with the texts the bot uses today', async () => {
-    copy.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: { greeting: 'Buenas' }, updatedAt: {} });
+    copy.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: { btnHelp: 'Una persona', greeting: 'Buenas' }, updatedAt: {} });
     const view = setup(defaultDefinition());
     await act(async () => { await view.actions().addPurchaseFlow(); });
-    expect(view.current()?.nodes.find((node) => node.id === 'compra_catalogo')?.block?.copy).toEqual({ greeting: 'Buenas' });
-    act(() => view.actions().setBlockCopy('compra_catalogo', 'greeting', null));
+    expect(view.current()?.nodes.find((node) => node.id === 'compra_catalogo')?.block?.copy).toEqual({ btnHelp: 'Una persona' });
+    act(() => view.actions().setBlockCopy('compra_catalogo', 'btnHelp', null));
     expect(view.current()?.nodes.find((node) => node.id === 'compra_catalogo')?.block?.copy).toEqual({});
     act(() => view.actions().removePurchaseFlow());
     expect(view.current()).toEqual(defaultDefinition());

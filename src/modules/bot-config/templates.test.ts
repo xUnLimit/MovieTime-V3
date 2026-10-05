@@ -9,12 +9,11 @@ describe('plantillas de flujo', () => {
     expect(hasBlockingIssues(validateDefinition(applyFlowTemplate('base')))).toBe(false);
   });
 
-  it('base + compras agrega el boton y los cuatro bloques, y valida con la bandera de compras', () => {
+  it('base + compras agrega el boton y los cuatro bloques, y se puede publicar sin banderas', () => {
     const def = applyFlowTemplate('base_compras');
     expect(def.nodes.filter((node) => node.block)).toHaveLength(4);
     expect(def.nodes.find((node) => node.id === 'menu')?.options.map((o) => o.next)).toContain('compra_catalogo');
-    expect(validateDefinition(def, { purchaseBlocksEnabled: true }).filter((i) => i.severity === 'error')).toEqual([]);
-    expect(hasBlockingIssues(validateDefinition(def))).toBe(true);
+    expect(validateDefinition(def).filter((i) => i.severity === 'error')).toEqual([]);
   });
 
   it('siembra los textos de compras editados y devuelve objetos nuevos en cada llamada', () => {
@@ -23,7 +22,8 @@ describe('plantillas de flujo', () => {
     expect(applyFlowTemplate('base_compras')).not.toBe(applyFlowTemplate('base_compras'));
   });
 
-  it('solo las plantillas con compras exigen los bloques', () => {
-    expect(FLOW_TEMPLATES.map((t) => [t.id, t.needsPurchaseBlocks])).toEqual([['base', false], ['base_compras', true]]);
+  it('ninguna plantilla depende de una bandera del servidor', () => {
+    expect(FLOW_TEMPLATES.map((t) => t.id)).toEqual(['base', 'base_compras']);
+    expect(FLOW_TEMPLATES.every((t) => !/activar/.test(t.description))).toBe(true);
   });
 });

@@ -76,8 +76,6 @@ export async function publishBotUseCase(
   note: string,
   context: BotAdminContext,
   previous: BotDefinition | null = null,
-  /** Bandera del servidor; sin ella un borrador con bloques de compra no se publica. */
-  purchaseBlocksEnabled = false,
   /** Bandera del servidor; sin ella un borrador con condiciones o datos del pedido no se publica. */
   flowExtensionsEnabled = false,
 ): Promise<number> {
@@ -88,7 +86,7 @@ export async function publishBotUseCase(
   }
   const parsed = parseDefinition(definition);
   if (!parsed.success) throw new BotAdminError('La definicion del bot no es valida.');
-  const issues = validateDefinition(parsed.definition, { purchaseBlocksEnabled, flowExtensionsEnabled });
+  const issues = validateDefinition(parsed.definition, { flowExtensionsEnabled });
   if (hasBlockingIssues(issues)) {
     const count = issues.filter((issue) => issue.severity === 'error').length;
     throw new BotAdminError(`Corrige ${count === 1 ? 'el error' : `los ${count} errores`} antes de publicar.`);

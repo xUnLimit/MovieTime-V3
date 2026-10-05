@@ -144,7 +144,7 @@ function DataTableComponent<T extends object>({
               {columns.map((column) => (
                 <col key={column.key} className={column.hideBelow ? HIDE_COLUMN[column.hideBelow] : undefined} style={{ width: column.width }} />
               ))}
-              {actions ? <col className="w-14" /> : null}
+              {actions ? <col className="w-24" /> : null}
             </colgroup>
           ) : null}
           <TableHeader>
@@ -176,7 +176,7 @@ function DataTableComponent<T extends object>({
                   )}
                 </TableHead>
               ))}
-              {actions && <TableHead className="w-14 pr-4 text-center text-muted-foreground"><span className="block truncate">Acciones</span></TableHead>}
+              {actions && <TableHead className="w-24 pr-4 text-center text-muted-foreground"><span className="block truncate">Acciones</span></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>

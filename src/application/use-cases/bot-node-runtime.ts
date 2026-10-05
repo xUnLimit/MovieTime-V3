@@ -1,6 +1,5 @@
 import { MAX_CONDITION_HOPS, conditionOption, nodeVariablesIn, renderNodeBody } from '@/modules/bot-config';
 import { createLogger } from '@/platform/observability/logger';
-import type { BotService } from '@/modules/messaging/bot-store';
 import type { BotNode } from '@/types/bot';
 import { trackEvent, type BotRun } from './bot-reply';
 
@@ -22,8 +21,8 @@ export async function nodeWithValues(run: BotRun, node: BotNode): Promise<BotNod
   return { ...node, body: renderNodeBody(node.body, await orderValues(run)) };
 }
 
-async function conditionAnswer(run: BotRun, node: BotNode, services: BotService[]): Promise<boolean> {
-  if (node.condition?.type === 'customer_has_services') return services.length > 0;
+async function conditionAnswer(run: BotRun, node: BotNode): Promise<boolean> {
+  if (node.condition?.type === 'customer_has_services') return run.hasServices;
   try {
     return await run.deps.catalogHasStock?.() === true;
   } catch {
@@ -49,10 +48,10 @@ function conditionTarget(run: BotRun, node: BotNode, answer: boolean, lenient: b
  * Sigue las condiciones del recorrido hasta un nodo que si se muestra. El servidor elige la salida con datos que ya
  * existen; una condicion sin destino valido, o demasiadas seguidas, devuelve null y el cliente no recibe nada nuevo.
  */
-export async function followConditions(run: BotRun, start: BotNode, services: BotService[], lenient = false): Promise<BotNode | null> {
+export async function followConditions(run: BotRun, start: BotNode, lenient = false): Promise<BotNode | null> {
   let node = start;
   for (let hop = 0; node.condition; hop += 1) {
-    const answer = await conditionAnswer(run, node, services);
+    const answer = await conditionAnswer(run, node);
     const chosen = hop < MAX_CONDITION_HOPS ? conditionTarget(run, node, answer, lenient) : undefined;
     if (!chosen) return null;
     const { option, target } = chosen;

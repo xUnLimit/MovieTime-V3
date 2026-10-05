@@ -21,8 +21,11 @@ export function renderBotMessage(
   return renderTemplate(usable ? text : spec.defaultText, { ...BLANK_VALUES, ...values });
 }
 
-export function sayMessage(run: BotRun, key: BotMessageKey, values?: Record<string, string>): Promise<OutboundResult> {
-  return reply(run.deps, run.message, { kind: 'text', text: renderBotMessage(run.deps.definition, key, values) });
+export function sayMessage(run: BotRun, key: BotMessageKey, values?: Record<string, string>, prefix?: string): Promise<OutboundResult> {
+  const text = renderBotMessage(run.deps.definition, key, values);
+  return reply(run.deps, run.message, { kind: 'text', text: prefix ? `${prefix}
+
+${text}` : text });
 }
 
 // "Try again" messages invite the customer to tap the same button again: the one of the

@@ -23,7 +23,7 @@ test('conciliacion manual Yappy de aviso sembrado @auth', async ({ page }) => {
       match_status: 'match_unico', candidate_venta_ids: [ventaId],
     }).select('id').single(), 'sembrar pago Yappy');
     paymentId = payment.data.id;
-    await page.goto('/pagos-yappy');
+    await page.goto('/pedidos-cobros?tab=cobros');
     const row = page.getByRole('row').filter({ hasText: code });
     await expect(row).toBeVisible();
     await row.getByRole('button', { name: 'Revisar' }).click();

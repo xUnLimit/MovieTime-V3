@@ -12,6 +12,7 @@ describe('ServiceAccessPanel', () => {
     render(<ServiceAccessPanel serviceId="s1" clients={4} />);
     fireEvent.click(screen.getByRole('switch', { name: 'Entregar acceso por código' }));
     expect(screen.getByText(/Los 4 clientes vigentes/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ver capacidades de acceso' }).getAttribute('href')).toBe('/configuracion');
     expect(screen.getByRole('button', {name:'Guardar modo de acceso'})).toHaveProperty('disabled', true);
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', {name:'Guardar modo de acceso'}));

@@ -140,6 +140,7 @@ Rutas que devuelven 404 en produccion y no requieren sesion:
 - `/design-lab`: todos los componentes en claro y oscuro.
 - `/design-lab/shell`: el shell real con sesion sintetica.
 - `/design-lab/dashboard`: el Dashboard real con datos sinteticos (`src/app/design-lab/demo-dashboard-data.ts`).
+- `/design-lab/paginas`: Pedidos y cobros (`?p=pedidos-cobros&tab=pedidos|cobros|interesados`), Plantillas de mensajes (`?p=plantillas`) y Configuracion (`?p=configuracion`) con datos sinteticos.
 
 Toda pantalla nueva debe poder revisarse aqui antes de darse por terminada.
 

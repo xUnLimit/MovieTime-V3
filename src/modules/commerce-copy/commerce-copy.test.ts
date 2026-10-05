@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { COPY_CATALOG, COPY_KEYS, COPY_VARIABLES, isCopyKey, type CopyKey } from './catalog';
-import { copyCommandSchema } from './contracts';
-import { FLOW_STEPS, copyKeysOfStep, stepTitle } from './flow';
+import { FLOW_STEPS, stepDescription, stepTitle } from './flow';
 import { copyMarkers, copyProblem, createCopy, renderCopyText, sampleValues } from './render';
 import { createCommerceCopyStore } from './store';
 
@@ -32,9 +31,11 @@ describe('catalogo de textos', () => {
     expect(isCopyKey('greeting')).toBe(true);
     expect(isCopyKey('toString')).toBe(false);
     expect(isCopyKey(3)).toBe(false);
-    for (const step of FLOW_STEPS) expect(copyKeysOfStep(step.id).length, step.id).toBeGreaterThan(0);
+    for (const step of FLOW_STEPS) expect(COPY_KEYS.filter(key => COPY_CATALOG[key].step === step.id).length, step.id).toBeGreaterThan(0);
     expect(stepTitle('pago')).toBe('Pago y estado');
+    expect(stepDescription('reserva')).toContain('reservado');
     expect(stepTitle('otro' as never)).toBe('otro');
+    expect(stepDescription('otro' as never)).toBe('');
   });
 });
 
@@ -68,21 +69,6 @@ describe('validación y render', () => {
     const key: CopyKey = 'reservation';
     expect(Object.keys(sampleValues(key)).sort()).toEqual([...COPY_CATALOG[key].variables].sort());
     expect(renderCopyText(COPY_CATALOG[key].defaultText, sampleValues(key))).not.toContain('{{');
-  });
-});
-
-describe('orden para guardar', () => {
-  it('acepta un texto válido y la restauración (null)', () => {
-    expect(copyCommandSchema.safeParse({ key: 'greeting', text: 'Hola' }).success).toBe(true);
-    expect(copyCommandSchema.safeParse({ key: 'greeting', text: null }).success).toBe(true);
-  });
-
-  it('rechaza claves desconocidas, campos extra y textos que no cumplen el mensaje', () => {
-    expect(copyCommandSchema.safeParse({ key: 'nope', text: 'Hola' }).success).toBe(false);
-    expect(copyCommandSchema.safeParse({ key: 'greeting', text: 'Hola', extra: 1 }).success).toBe(false);
-    const bad = copyCommandSchema.safeParse({ key: 'reservation', text: 'Sin datos' });
-    expect(bad.success).toBe(false);
-    expect(bad.error?.issues[0]?.message).toMatch(/servicio/);
   });
 });
 

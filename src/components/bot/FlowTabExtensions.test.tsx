@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addConditionNode, defaultDefinition, hasBlockingIssues, validateDefinition } from '@/modules/bot-config';
 import type { BotAdminApi, BotDefinition } from '@/types/bot';
 
-const copyUseCases = vi.hoisted(() => ({ fetchCommerceCopyUseCase: vi.fn(), saveCommerceCopyClientUseCase: vi.fn() }));
+const copyUseCases = vi.hoisted(() => ({ fetchCommerceCopyUseCase: vi.fn() }));
 vi.mock('@/application/use-cases/commerce-copy-use-cases', () => copyUseCases);
 const toast = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock('sonner', () => ({ toast }));
@@ -17,20 +17,20 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
-function makeApi(draft: BotDefinition, updateDraft: BotAdminApi['updateDraft'], blocks: boolean, extensions: boolean): BotAdminApi {
-  const issues = validateDefinition(draft, { purchaseBlocksEnabled: blocks, flowExtensionsEnabled: extensions });
+function makeApi(draft: BotDefinition, updateDraft: BotAdminApi['updateDraft'], extensions: boolean): BotAdminApi {
+  const issues = validateDefinition(draft, { flowExtensionsEnabled: extensions });
   return {
     loading: false, error: null, status: null, published: draft, draft, dirty: true, issues, hasErrors: hasBlockingIssues(issues),
-    purchaseBlocksEnabled: blocks, flowExtensionsEnabled: extensions,
+    flowExtensionsEnabled: extensions,
     versions: [], events: null, health: null, saving: false, setEnabled: vi.fn(async () => {}), updateDraft,
     discardDraft: vi.fn(), resetToDefaults: vi.fn(), publish: vi.fn(async () => {}), loadVersionIntoDraft: vi.fn(async () => {}),
     loadEvents: vi.fn(async () => {}), testMailbox: vi.fn(), refresh: vi.fn(async () => {}),
   };
 }
 
-function Harness({ initial = defaultDefinition(), blocks = false, extensions = false }: { initial?: BotDefinition; blocks?: boolean; extensions?: boolean }) {
+function Harness({ initial = defaultDefinition(), extensions = false }: { initial?: BotDefinition; extensions?: boolean }) {
   const [draft, setDraft] = useState(initial);
-  return <FlowTab api={makeApi(draft, (updater) => setDraft((current) => updater(current)), blocks, extensions)} />;
+  return <FlowTab api={makeApi(draft, (updater) => setDraft((current) => updater(current)), extensions)} />;
 }
 
 beforeEach(() => {
@@ -143,16 +143,13 @@ describe('plantillas de flujo', () => {
     expect(screen.queryByRole('button', { name: /^Servicio con o sin cupo/ })).toBeNull();
   });
 
-  it('base + compras exige los bloques activados y siembra los textos editados', async () => {
+  it('base + compras siempre se puede usar y siembra los textos editados', async () => {
     const user = userEvent.setup();
     copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: { btnPay: 'Pagar ya' } });
-    const off = render(<Harness />);
+    render(<Harness />);
     await user.selectOptions(screen.getByRole('combobox', { name: 'Plantilla de recorrido' }), 'base_compras');
-    expect(screen.getByRole('button', { name: 'Usar plantilla' })).toHaveProperty('disabled', true);
-    expect(screen.getByText(/no están activados en este entorno/)).toBeTruthy();
-    off.unmount();
-    render(<Harness blocks />);
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Plantilla de recorrido' }), 'base_compras');
+    expect(screen.getByRole('button', { name: 'Usar plantilla' })).toHaveProperty('disabled', false);
+    expect(screen.queryByText(/no están activados/)).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Usar plantilla' }));
     await user.click(screen.getByRole('button', { name: 'Reemplazar borrador' }));
     expect(await screen.findByRole('button', { name: /^Compra: reserva/ })).toBeTruthy();
@@ -162,7 +159,7 @@ describe('plantillas de flujo', () => {
   it('si no se pueden leer los textos de compras no cambia nada y avisa', async () => {
     const user = userEvent.setup();
     copyUseCases.fetchCommerceCopyUseCase.mockRejectedValue(new Error('x'));
-    render(<Harness blocks />);
+    render(<Harness />);
     await user.selectOptions(screen.getByRole('combobox', { name: 'Plantilla de recorrido' }), 'base_compras');
     await user.click(screen.getByRole('button', { name: 'Usar plantilla' }));
     await user.click(screen.getByRole('button', { name: 'Reemplazar borrador' }));

@@ -6,8 +6,7 @@ import {
   validateDefinition,
 } from './index';
 
-const errors = (def: BotDefinition, enabled = true) => validateDefinition(def, { purchaseBlocksEnabled: enabled })
-  .filter((issue) => issue.severity === 'error');
+const errors = (def: BotDefinition) => validateDefinition(def).filter((issue) => issue.severity === 'error');
 
 /** Recorrido con los cuatro bloques y un boton del menu que lleva al catalogo. */
 function connected(overrides: Record<string, string> = {}): BotDefinition {
@@ -18,7 +17,7 @@ function connected(overrides: Record<string, string> = {}): BotDefinition {
 const node = (def: BotDefinition, id: string): BotNode => def.nodes.find((candidate) => candidate.id === id)!;
 const replace = (def: BotDefinition, id: string, change: (value: BotNode) => BotNode): BotDefinition =>
   ({ ...def, nodes: def.nodes.map((candidate) => (candidate.id === id ? change(candidate) : candidate)) });
-const paths = (def: BotDefinition, enabled = true) => errors(def, enabled).map((issue) => issue.path);
+const paths = (def: BotDefinition) => errors(def).map((issue) => issue.path);
 
 describe('agregar y quitar el flujo de compras', () => {
   it('agrega los cuatro bloques con identidad fija, botones fijos y salida al menú', () => {
@@ -34,9 +33,11 @@ describe('agregar y quitar el flujo de compras', () => {
     expect(parseDefinition(def).success).toBe(true);
   });
 
-  it('se siembra con los textos editados válidos y descarta los inválidos', () => {
-    const def = addPurchaseFlow(defaultDefinition(), { greeting: 'Buenas', btnPay: 'Pagar ya', btnBuy: 'Un botón demasiado largo', reservation: 'sin datos' });
-    expect(node(def, 'compra_catalogo').block?.copy).toEqual({ greeting: 'Buenas' });
+  it('se siembra con los textos editados válidos y descarta los inválidos y los que el bot ya no usa', () => {
+    const def = addPurchaseFlow(defaultDefinition(), {
+      greeting: 'Buenas', btnRenew: 'Renovar ya', btnHelp: 'Una persona', btnPay: 'Pagar ya', btnBuy: 'Un botón demasiado largo', reservation: 'sin datos',
+    });
+    expect(node(def, 'compra_catalogo').block?.copy).toEqual({ btnHelp: 'Una persona' });
     expect(node(def, 'compra_reserva').block?.copy).toEqual({ btnPay: 'Pagar ya' });
     expect(node(def, 'compra_reserva').options[0].title).toBe('Pagar ya');
   });
@@ -56,23 +57,21 @@ describe('agregar y quitar el flujo de compras', () => {
     const def = removePurchaseFlow(connected());
     expect(hasPurchaseBlocks(def)).toBe(false);
     expect(node(def, 'menu').options.map((option) => option.id)).toEqual(['codigo', 'soporte']);
-    expect(errors(def, false)).toEqual([]);
+    expect(errors(def)).toEqual([]);
     expect(removePurchaseFlow(def)).toBe(def);
     expect(removePurchaseFlow({ ...connected(), entryNodeId: 'compra_catalogo' }).nodes.some((item) => item.block)).toBe(true);
   });
 });
 
 describe('validación de los bloques de compra', () => {
-  it('un flujo conectado y completo es válido con la bandera encendida', () => {
+  it('un flujo conectado y completo es válido sin ninguna bandera del servidor', () => {
     expect(errors(connected())).toEqual([]);
+    expect(validateDefinition(connected(), { flowExtensionsEnabled: false }).some((issue) => issue.message.includes('no están activados'))).toBe(false);
   });
 
-  it('no se puede publicar mientras la bandera esté apagada', () => {
-    const issues = errors(connected(), false);
-    expect(issues).toHaveLength(4);
-    expect(issues[0].message).toContain('no están activados');
-    expect(errors(defaultDefinition(), false)).toEqual([]);
-    expect(validateDefinition(connected()).filter((issue) => issue.severity === 'error')).toHaveLength(4);
+  it('acepta en un bloque los textos del antiguo menú de compras que traen las versiones publicadas', () => {
+    const legacy = replace(connected(), 'compra_catalogo', (item) => ({ ...item, block: { type: 'catalogo', copy: { greeting: 'Buenas', btnBuy: 'Comprar' } } }));
+    expect(errors(legacy)).toEqual([]);
   });
 
   it('un bloque sin conectar desde el recorrido bloquea la publicación', () => {

@@ -22,6 +22,10 @@ export type PaymentDeps = {
 };
 export type PaymentStep = { payload: OutboundPayload; handoff: boolean };
 
+/** Pedido vencido o cancelado sin dinero recibido ni entrega: no queda nada por cobrar ni por entregar. */
+export const orderIsClosed = (order: Pedido) => ['expirado', 'cancelado'].includes(order.estado) && order.receivedAmount === 0
+  && order.excessAmount === 0 && order.paymentState === 'pendiente' && order.deliveryState === 'pendiente';
+
 const needsPerson = (order: Pedido) => order.estado === 'revision' || order.estado === 'pago_en_revision' || order.excessAmount > 0
   || order.deliveryState === 'parcial' || ['reembolsado', 'parcialmente_reembolsado'].includes(order.paymentState);
 
@@ -45,12 +49,12 @@ async function matchLast4(message: InboundMessage, state: CommerceState, orderId
 
 /** Etapa de pago: instrucciones, "Ya pagué" con los ultimos 4 digitos, y el comando "pago CODIGO". */
 export async function handlePaymentStep(message: InboundMessage, command: string | null, state: CommerceState,
-  deps: PaymentDeps, t: Copy): Promise<PaymentStep> {
+  deps: PaymentDeps, t: Copy, loaded?: Pedido): Promise<PaymentStep> {
   const orderId = state.orderId as string;
   const text = message.messageType === 'text' ? message.textBody?.trim() ?? '' : '';
   const reference = /^pago\s+([A-Za-z0-9-]{4,64})$/i.exec(text)?.[1];
   if (!reference && (command === 'paid' || state.stage === 'last4')) {
-    const current = await deps.order(message.fromWaId, orderId);
+    const current = loaded ?? await deps.order(message.fromWaId, orderId);
     if (PAID.includes(current.paymentState)) { const handoff = needsPerson(current); finish(state, current, handoff); return { payload: { kind: 'text', text: orderStatusText(current, t) }, handoff }; }
     if (command === 'paid') { state.stage = 'last4'; state.last4Attempts = 0; return { payload: { kind: 'text', text: t('askLast4') }, handoff: false }; }
     const parsed = last4Schema.safeParse(text);
@@ -59,7 +63,7 @@ export async function handlePaymentStep(message: InboundMessage, command: string
     if (state.last4Attempts >= MAX_INVALID_LAST4) return matchLast4(message, state, orderId, null, deps, t);
     return { payload: { kind: 'text', text: t('last4Invalid') }, handoff: false };
   }
-  const order = reference ? await deps.reconcile(message.fromWaId, orderId, reference, botReplyKey(message.waMessageId)) : await deps.order(message.fromWaId, orderId);
+  const order = reference ? await deps.reconcile(message.fromWaId, orderId, reference, botReplyKey(message.waMessageId)) : loaded ?? await deps.order(message.fromWaId, orderId);
   const paid = PAID.includes(order.paymentState);
   const instructions = command === 'pay' ? deps.paymentInstructions : null;
   const next = paid ? '' : instructions ? `\n\n${t('paymentInstructions', { instrucciones: instructions })}`

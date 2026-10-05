@@ -7,9 +7,3 @@ export async function getCommerceCopy(token: string): Promise<CommerceCopyData> 
     headers: { Authorization: `Bearer ${token}` }, cache: 'no-store',
   }));
 }
-export async function postCommerceCopy(token: string, command: { key: string; text: string | null }): Promise<string> {
-  return readApiResponse<string>(await fetch('/api/automations/copy', {
-    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(command),
-  }));
-}

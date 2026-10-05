@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { expectNoBlockingA11yViolations } from './helpers/axe';
 
-const EDITOR = '/automatizaciones?editar=whatsapp';
+const EDITOR = '/automatizaciones';
 
 test('@auth edita el recorrido en el lienzo, no publica con errores y publica una versión válida', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });

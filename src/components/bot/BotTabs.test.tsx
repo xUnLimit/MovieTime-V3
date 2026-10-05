@@ -2,10 +2,9 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { useState } from 'react';
 import Link from 'next/link';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultDefinition } from '@/modules/bot-config';
 import type { BotAdminApi, BotDefinition } from '@/types/bot';
-import { OverviewTab } from './OverviewTab';
 import { FlowTab } from './FlowTab';
 import { MessagesTab } from './MessagesTab';
 import { RulesTab } from './RulesTab';
@@ -13,14 +12,21 @@ import { ActivityTab } from './ActivityTab';
 import { VersionsTab } from './VersionsTab';
 import { PublishBar } from './PublishBar';
 import { BotView } from './BotView';
+import { BotPowerControl } from './BotPowerControl';
+import { SettingsTab } from './SettingsTab';
+
+const control = vi.hoisted(() => ({ data: undefined as unknown, isLoading: false, isError: false, refetch: vi.fn() }));
+vi.mock('@/hooks/use-automation-control', () => ({ useAutomationControl: () => control }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }), useSearchParams: () => new URLSearchParams(''), usePathname: () => '/automatizaciones' }));
+vi.mock('@/hooks/use-commerce-copy', () => ({ useCommerceCopy: () => ({ data: { overrides: {} }, isPending: false, isError: false, refetch: vi.fn() }) }));
 
 function makeApi(overrides: Partial<BotAdminApi> = {}): BotAdminApi {
   return {
     loading: false, error: null, status: { enabled: true, publishedVersion: 1, updatedAt: null },
-    published: defaultDefinition(), draft: defaultDefinition(), dirty: false, issues: [], hasErrors: false, purchaseBlocksEnabled: false, flowExtensionsEnabled: false,
+    published: defaultDefinition(), draft: defaultDefinition(), dirty: false, issues: [], hasErrors: false, flowExtensionsEnabled: false,
     versions: [{ version: 1, note: 'Inicial', createdAt: '2026-10-01T10:00:00Z', createdBy: 'Administrador', isPublished: true }],
     events: { events: [], total: 0, page: 1, pageSize: 10 },
-    health: { whatsappConfigured: true, mailboxConfigured: true, lastActivityAt: null, eventsLast24h: 2, codesLast24h: 1, purchaseBlocksEnabled: false, flowExtensionsEnabled: false },
+    health: { whatsappConfigured: true, mailboxConfigured: true, lastActivityAt: null, eventsLast24h: 2, codesLast24h: 1, flowExtensionsEnabled: false },
     saving: false, setEnabled: vi.fn(async () => {}), updateDraft: vi.fn(), discardDraft: vi.fn(), resetToDefaults: vi.fn(), publish: vi.fn(async () => {}), loadVersionIntoDraft: vi.fn(async () => {}), loadEvents: vi.fn(async () => {}), testMailbox: vi.fn(async () => ({ ok: true, message: 'Buzón disponible', recentNetflixMails: 2 })), refresh: vi.fn(async () => {}), ...overrides,
   };
 }
@@ -31,7 +37,7 @@ function RulesHarness() {
 }
 
 describe('estados de las pestañas', () => {
-  const tabs = [OverviewTab, FlowTab, MessagesTab, RulesTab, ActivityTab, VersionsTab];
+  const tabs = [FlowTab, MessagesTab, RulesTab, SettingsTab, ActivityTab, VersionsTab];
   it.each(tabs)('muestra carga y error', Tab => {
     const { rerender } = render(<Tab api={makeApi({ loading: true })} />);
     expect(screen.getByText('Cargando bot')).toBeTruthy();
@@ -44,23 +50,52 @@ describe('estados de las pestañas', () => {
   });
 });
 
-describe('resumen', () => {
-  it('confirma el apagado y prueba el buzón', async () => {
+describe('estado del bot en el encabezado', () => {
+  it('confirma el apagado', async () => {
     const api = makeApi();
-    render(<OverviewTab api={api} />);
+    render(<BotPowerControl api={api} />);
+    expect(screen.getByText('Encendido')).toBeTruthy();
+    expect(screen.getByText('Versión publicada: 1')).toBeTruthy();
     await userEvent.setup().click(screen.getByRole('switch', { name: 'Apagar bot' }));
     await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(api.setEnabled).toHaveBeenCalledWith(false));
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Probar buzón' }));
-    expect(await screen.findByText(/Buzón disponible/)).toBeTruthy();
   });
-  it('confirma el encendido y muestra comprobaciones pendientes', async () => {
-    const api = makeApi({ status: { enabled: false, publishedVersion: null, updatedAt: null }, health: { whatsappConfigured: false, mailboxConfigured: false, lastActivityAt: null, eventsLast24h: 0, codesLast24h: 0, purchaseBlocksEnabled: false, flowExtensionsEnabled: false } });
-    render(<OverviewTab api={api} />);
-    expect(screen.getByText('WhatsApp sin configurar')).toBeTruthy();
+  it('confirma el encendido y muestra apagado sin versión publicada', async () => {
+    const api = makeApi({ status: { enabled: false, publishedVersion: null, updatedAt: null } });
+    render(<BotPowerControl api={api} />);
+    expect(screen.getByText('Apagado')).toBeTruthy();
+    expect(screen.getByText('Versión publicada: Ninguna')).toBeTruthy();
     await userEvent.setup().click(screen.getByRole('switch', { name: 'Encender bot' }));
     await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar' }));
     expect(api.setEnabled).toHaveBeenCalledWith(true);
+  });
+  it('avisa si no se pudo cambiar y mantiene el diálogo abierto', async () => {
+    const api = makeApi({ setEnabled: vi.fn(async () => { throw new Error('x'); }) });
+    render(<BotPowerControl api={api} />);
+    await userEvent.setup().click(screen.getByRole('switch', { name: 'Apagar bot' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo cambiar el estado del bot');
+  });
+});
+
+describe('ajustes', () => {
+  it('reúne parámetros, comprobaciones y el aviso hacia Configuración', async () => {
+    const api = makeApi();
+    render(<SettingsTab api={api} />);
+    expect(screen.getByText('Parámetros')).toBeTruthy();
+    expect(screen.getByText('WhatsApp configurado')).toBeTruthy();
+    expect(screen.getByText('Sin actividad', { exact: false })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ir a Configuración' }).getAttribute('href')).toBe('/configuracion');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Probar buzón' }));
+    expect(await screen.findByText(/Buzón disponible/)).toBeTruthy();
+  });
+  it('muestra las conexiones pendientes y un error al probar el buzón', async () => {
+    const api = makeApi({ health: { whatsappConfigured: false, mailboxConfigured: false, lastActivityAt: '2026-10-01T10:00:00Z', eventsLast24h: 0, codesLast24h: 0, flowExtensionsEnabled: false }, testMailbox: vi.fn(async () => { throw new Error('x'); }) });
+    render(<SettingsTab api={api} />);
+    expect(screen.getByText('WhatsApp sin configurar')).toBeTruthy();
+    expect(screen.getByText('Buzón sin configurar')).toBeTruthy();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Probar buzón' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo comprobar el buzón');
   });
 });
 
@@ -68,7 +103,7 @@ describe('mensajes y reglas', () => {
   it('inserta un marcador y restablece un mensaje', async () => {
     const api = makeApi();
     render(<MessagesTab api={api} />);
-    const section = screen.getByRole('region', { name: 'Mensajes de Netflix' });
+    const section = screen.getByRole('region', { name: 'Respuestas de Netflix' });
     await userEvent.setup().click(within(section).getAllByRole('button', { name: /\{\{codigo\}\}/ })[0]);
     expect(api.updateDraft).toHaveBeenCalled();
     await userEvent.setup().click(within(section).getAllByRole('button', { name: 'Restablecer' })[0]);
@@ -89,6 +124,39 @@ describe('mensajes y reglas', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: /Horas para volver/i }), { target: { value: '12' } });
     await userEvent.setup().click(screen.getByRole('button', { name: 'Quitar hola' }));
     expect(screen.queryByRole('button', { name: 'Quitar hola' })).toBeNull();
+  });
+});
+
+describe('indicadores de actividad', () => {
+  const operations = { pendingMessages: 4, reviewMessages: 2, oldestPendingAt: '2026-10-01T10:00:00Z', retryAttempts: 1, averageResolutionSeconds: 125, pendingDeliveries: 0, reviewDeliveries: 0, ordersToday: 0, completedToday: 0 };
+  beforeEach(() => { control.data = undefined; control.isLoading = false; control.isError = false; control.refetch.mockReset(); });
+  it('muestra eventos, códigos y el procesamiento de mensajes con el enlace a Chats', () => {
+    control.data = { operations };
+    render(<ActivityTab api={makeApi()} />);
+    expect(screen.getByText('Eventos en 24 h')).toBeTruthy();
+    expect(screen.getByText('Mensajes por revisar')).toBeTruthy();
+    expect(screen.getByText('4 mensajes pendientes')).toBeTruthy();
+    expect(screen.getByText('2 min 5 s')).toBeTruthy();
+    expect(screen.getByText('1 reintento')).toBeTruthy();
+    expect(screen.getByText(/Pendiente más antiguo/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Revisar casos en Chats' }).getAttribute('href')).toBe('/chats');
+  });
+  it('muestra segundos y avisa cuando no hay mensajes pendientes', () => {
+    control.data = { operations: { ...operations, oldestPendingAt: null, averageResolutionSeconds: 48, retryAttempts: 3 } };
+    render(<ActivityTab api={makeApi()} />);
+    expect(screen.getByText('48 s')).toBeTruthy();
+    expect(screen.getByText('3 reintentos')).toBeTruthy();
+    expect(screen.getByText('No hay mensajes pendientes')).toBeTruthy();
+  });
+  it('carga sin ocultar la tabla y, si el resumen falla, permite reintentar', async () => {
+    control.isLoading = true;
+    const { rerender } = render(<ActivityTab api={makeApi()} />);
+    expect(screen.getByText('Actividad del bot')).toBeTruthy();
+    control.isLoading = false; control.isError = true;
+    rerender(<ActivityTab api={makeApi()} />);
+    expect(screen.getByText('Actividad del bot')).toBeTruthy();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Reintentar resumen' }));
+    expect(control.refetch).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -130,6 +198,18 @@ describe('salida con cambios', () => {
 });
 
 describe('publicación', () => {
+  it('pide confirmar antes de restablecer los valores por defecto', async () => {
+    const api = makeApi();
+    render(<PublishBar api={api} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Restablecer valores por defecto' }));
+    expect(api.resetToDefaults).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(api.resetToDefaults).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Restablecer valores por defecto' }));
+    await user.click(screen.getByRole('button', { name: 'Restablecer' }));
+    expect(api.resetToDefaults).toHaveBeenCalledTimes(1);
+  });
   it('exige nota y bloquea errores', async () => {
     const api = makeApi({ dirty: true, hasErrors: true, issues: [{ path: 'nodes[menu]', message: 'Texto requerido', severity: 'error' }] });
     const { rerender } = render(<PublishBar api={api} />);

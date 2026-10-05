@@ -128,7 +128,7 @@ export function TemplateSendDialog({
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              No hay plantillas de Meta aprobadas vinculadas a un tipo de mensaje. Vincúlalas y sincronízalas en el Editor de mensajes.
+              No hay plantillas de Meta aprobadas vinculadas a un tipo de mensaje. Vincúlalas y sincronízalas en Plantillas de mensajes.
             </p>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>

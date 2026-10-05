@@ -1,5 +1,5 @@
-// Contrato de la pestana "Automatizaciones" del Bot: actividad de avisos de WhatsApp
-// (tabla whatsapp_notices) leida con la sesion del administrador. Nunca incluye el texto enviado.
+// Contrato de la actividad de los avisos de WhatsApp que muestra Plantillas de mensajes
+// (tabla whatsapp_notices), leida con la sesion del administrador. Nunca incluye el texto enviado.
 
 import type { TipoTemplate } from '@/types';
 

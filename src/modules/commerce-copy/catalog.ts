@@ -40,7 +40,7 @@ export const COPY_CATALOG = {
   btnBuy: short('inicio', 'Botón: comprar', 'Menú principal', 'Adquirir servicio', 20),
   btnRenew: short('inicio', 'Botón: renovar', 'Menú principal', 'Renovar', 20),
   btnServices: short('inicio', 'Botón: mis servicios', 'Menú principal', 'Mis servicios', 20),
-  btnHelp: short('inicio', 'Botón: hablar con alguien', 'Menú sin compras nuevas y selección guardada', 'Hablar con alguien', 20),
+  btnHelp: short('inicio', 'Botón: hablar con alguien', 'Selección guardada y mensajes que el flujo no reconoce', 'Hablar con alguien', 20),
   platformsPrompt: message('plataformas', 'Elegir plataforma', 'Lista de plataformas con cupo', '¿Qué plataforma te interesa? Elige una de la lista. Cuando termines, toca Revisar carrito.'),
   noPlatforms: message('plataformas', 'Sin plataformas con cupo', 'No hay ninguna plataforma disponible', 'Por ahora no tenemos plataformas con cupo. Si quieres, deja tu interés y te aviso apenas haya.'),
   listButtonPlatforms: short('plataformas', 'Botón de la lista', 'Abre la lista de plataformas', 'Elegir plataforma', 20, 'label'),

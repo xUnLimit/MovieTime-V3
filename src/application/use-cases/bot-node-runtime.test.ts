@@ -38,12 +38,13 @@ function flow(type: BotConditionType): { def: BotDefinition; conditionId: string
   return { def, conditionId };
 }
 
-function setup(def: BotDefinition, extra: Partial<BotDeps> = {}, services: BotService[] = [service]) {
+// `hasServices`: una venta activa de cualquier servicio; por defecto, la misma que da la cuenta de Netflix.
+function setup(def: BotDefinition, extra: Partial<BotDeps> = {}, services: BotService[] = [service], hasServices = services.length > 0) {
   const send = vi.fn().mockResolvedValue({ id: 'o1', sendStatus: 'accepted', waMessageId: 'w', errorTitle: null, replayed: false });
   const record = vi.fn().mockResolvedValue(undefined);
   const deps: BotDeps = {
     store: {
-      customerServices: vi.fn().mockResolvedValue({ known: true, clienteId: 'c1', services }),
+      customerServices: vi.fn().mockResolvedValue({ known: true, clienteId: 'c1', services, hasServices }),
       lastActivityAt: vi.fn().mockResolvedValue(null), operatorRepliedSince: vi.fn().mockResolvedValue(false),
       menuTapsSince: vi.fn().mockResolvedValue(1),
     },
@@ -71,6 +72,13 @@ describe('condiciones en el recorrido publicado', () => {
     const { deps, send } = setup(def, {}, []);
     await expect(handleBotMessage(tap('BOT:menu:estado'), deps)).resolves.toBe('handoff');
     expect(sent(send)).toMatchObject({ kind: 'text', text: defaultDefinition().messages.handoff_ack });
+  });
+
+  it('un cliente con servicios que no son de Netflix cuenta como existente', async () => {
+    const { def } = flow('customer_has_services');
+    const { deps, send } = setup(def, {}, [], true);
+    await expect(handleBotMessage(tap('BOT:menu:estado'), deps)).resolves.toBe('node');
+    expect(sent(send)).toMatchObject({ kind: 'buttons' });
   });
 
   it('con cupo sigue si; sin cupo, sin dato o con error de lectura siguen no', async () => {
@@ -158,10 +166,10 @@ describe('condicion como entrada del recorrido', () => {
     expect(sent(send).kind).toBe('text');
   });
 
-  it('sin condicion de entrada, un cliente sin servicios sigue sin recibir el menu', async () => {
+  it('sin condicion de entrada, un cliente conocido sin Netflix tambien recibe el menu', async () => {
     const { deps, send } = setup(defaultDefinition(), {}, []);
-    await expect(handleBotMessage(written(), deps)).resolves.toBe('ignored');
-    expect(send).not.toHaveBeenCalled();
+    await expect(handleBotMessage(written(), deps)).resolves.toBe('menu');
+    expect(sent(send)).toMatchObject({ kind: 'buttons', body: defaultDefinition().nodes[0].body });
   });
 
   it('volver al menu y una opcion inexistente tambien resuelven la condicion', async () => {

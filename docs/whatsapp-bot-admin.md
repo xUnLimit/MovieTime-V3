@@ -90,7 +90,7 @@ acciones alcanzables, marcadores permitidos y obligatorios, sin nodos inalcanzab
 - Cada decision relevante inserta un `BotEvent` (sin codigos ni enlaces).
 - El interruptor `enabled` de la base de datos **sustituye** a `WHATSAPP_BOT_ENABLED` (la variable ya no existe en el codigo; hay que borrarla de Vercel y de `.env.local`).
 
-## 6. Pantalla Bot (`/bot`, entrada "Bot" en el menu lateral)
+## 6. Pantalla Automatizaciones (`/automatizaciones`, entrada "Automatizaciones" en el menu lateral)
 
 Sigue `DESIGN.md` (tokens, `PageHeader`, `MetricGrid`, `Panel`, `StatusBadge`, `DataTable`; tabla de actividad con
 las medidas de Ventas: fila 49px, 10 filas, sin scroll horizontal). Solo administradores.
@@ -124,13 +124,13 @@ Avisar antes de salir con cambios sin publicar. Estados vacios, de carga y de er
 | Casos de uso | `src/application/use-cases/bot-admin-use-cases.ts`, `whatsapp-bot-use-case.ts` (runtime) |
 | API | `src/app/api/whatsapp/bot/mailbox-check/route.ts` (admin, `no-store`, `requestId`) |
 | Hook | `src/hooks/use-bot-admin.ts` implementa `BotAdminApi` |
-| UI | `src/app/(dashboard)/bot/page.tsx`, `src/components/bot/**` |
+| UI | `src/app/(dashboard)/automatizaciones/page.tsx`, `src/components/bot/**` (pestanas Recorrido, Respuestas, Ajustes, Actividad, Versiones) |
 
 ## 8. Pruebas y calidad
 
 Unitarias de cada funcion pura y rama de casos de uso; repositorio con cliente falso; pgTAP de tablas, RLS y RPC
 (anon sin acceso, no administrador rechazado, version inmutable, publicar atomico); pruebas de componentes de la
-UI; E2E o accesibilidad de `/bot` si el patron del repo lo permite. Cobertura 80/70 en lo cambiado y 90/80 en
+UI; E2E o accesibilidad de `/automatizaciones` si el patron del repo lo permite. Cobertura 80/70 en lo cambiado y 90/80 en
 autorizacion y migraciones. `npm run quality:full` en verde.
 
 ## 9. Fases
@@ -240,10 +240,10 @@ Decisiones del runtime (`webhook/route.ts`, `webhook/bot-runtime.ts`, `whatsapp-
   (envio fallido, bot fallido, configuracion). Llevan `cliente_id` (`customerServices` ahora devuelve `clienteId`) y un `detail` con claves en espanol
   (`tipo`, `cuenta`, `perfil`, `motivo`...); nunca codigos, enlaces ni contrasenas. Un fallo al registrar un evento se captura con `logger.warn`
   y no cambia la respuesta al cliente.
-- **Pantalla.** `/bot` y su entrada del menu siguen el patron de `/pagos-yappy` (`user.role === 'admin'` en la pagina y `adminOnlyPaths` en el menu); la
-  autorizacion real esta en RLS/RPC y en `requireAuthenticatedAdmin` de la API. `src/app/(dashboard)/bot/page.test.tsx` recorre pagina, hook real y
+- **Pantalla.** `/automatizaciones` y su entrada del menu siguen el patron de las paginas de administrador (`user.role === 'admin'` en la pagina y `adminOnlyPaths` en el menu); la
+  autorizacion real esta en RLS/RPC y en `requireAuthenticatedAdmin` de la API. `src/app/(dashboard)/automatizaciones/page.test.tsx` recorre pagina, hook real y
   caso de uso (simulado) para el interruptor y la publicacion.
-- **Pendiente para el usuario:** borrar `WHATSAPP_BOT_ENABLED` de Vercel y de `.env.local`; encender el bot desde `/bot`; comprobar que el nombre de perfil
+- **Pendiente para el usuario:** borrar `WHATSAPP_BOT_ENABLED` de Vercel y de `.env.local`; encender el bot desde `/automatizaciones`; comprobar que el nombre de perfil
   de cada venta de Netflix coincide con el de Netflix (sin eso el cruce por perfil bloquea el codigo de viaje).
 # Recorridos comerciales
 
@@ -256,7 +256,7 @@ control humano y preparación del scheduler.
 
 ## Flujo de compras como bloques del lienzo (Fase 3)
 
-Con la variable de servidor `COMMERCE_FLOW_CANVAS_ENABLED=true` (apagada por defecto, sin `NEXT_PUBLIC_`) el editor
+Los bloques de compra estan siempre disponibles (la bandera `COMMERCE_FLOW_CANVAS_ENABLED` se retiro). El editor
 ofrece **Agregar flujo de compras**: cuatro nodos `buttons` con identidad fija (`compra_catalogo`, `compra_resumen`,
 `compra_reserva`, `compra_pago`) y un campo opcional `block: { type, copy }`. Solo se editan textos, titulos de botones
 (derivados del texto) y a donde vuelve «cancelar». Las reglas de elegir, reservar, pagar, entregar y reembolsar siguen en
@@ -273,7 +273,7 @@ ofrece **Agregar flujo de compras**: cuatro nodos `buttons` con identidad fija (
   textos que incumplen las reglas de su mensaje.
 - **Runtime:** con la bandera encendida y bloques en la version publicada, los textos del grafo se suman (con prioridad)
   a los de `mt_commerce_copy`; `createCopy` vuelve al original si alguno no cumple. Con la bandera apagada solo cuentan
-  los de `mt_commerce_copy`. La pestana Compras remite al lienzo cuando ambas condiciones se cumplen.
+  los de `mt_commerce_copy`. La pestana Compras se retiro: los textos de compra se editan solo en el lienzo, que muestra el texto vigente (bloque, luego el guardado en base de datos, luego el original).
 - **Limite:** publicar es una RPC de administrador desde el navegador; el bloqueo de publicacion con la bandera apagada es
   de aplicacion. La carga en el webhook valida estructura y orden pero no la bandera.
 
@@ -287,7 +287,7 @@ anterior ignora (`z.object` no estricto).
   (o lo crea, `pasar_a_persona`). No duplica la salida y respeta los limites de botones/filas y de nodos (`edit-extensions.ts`).
   Los nodos de texto y de accion son finales y no tienen salidas.
 - **Plantillas** (sin bandera propia): «Recorrido base» y «Recorrido base + compras» reemplazan el borrador (no lo publicado)
-  tras confirmar. La segunda exige los bloques de compra activados (`COMMERCE_FLOW_CANVAS_ENABLED`) y siembra los textos de
+  tras confirmar. La segunda siembra los textos de
   compras editados hoy (`templates.ts`).
 - **Comparar versiones** (sin bandera): Versiones, «Comparar versiones», usa `diffDefinitions` entre dos versiones guardadas
   (`compareBotVersionsUseCase`, solo lectura: no toca el borrador ni deja registro). `diffDefinitions` ahora tambien

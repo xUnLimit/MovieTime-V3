@@ -1,6 +1,6 @@
 import type { BotDefinition, BotNode, BotOption, PurchaseBlockType } from '@/types/bot';
 import {
-  COPY_BLOCK_TYPES, COPY_CATALOG, blockCopyProblem, blockOfCopyKey, copyKeysOfBlock, type CopyKey,
+  COPY_BLOCK_TYPES, COPY_CATALOG, blockCopyProblem, blockOfCopyKey, editableCopyKeysOfBlock, type CopyKey,
 } from '@/modules/commerce-copy';
 import { NODE_LIMITS } from './catalog';
 
@@ -60,7 +60,10 @@ function syncTitles(def: BotDefinition): BotDefinition {
   return { ...def, nodes };
 }
 
-/** Agrega los cuatro bloques (sembrados con los textos editados hoy) sin conectarlos: falta enlazar el catalogo desde el recorrido. */
+/**
+ * Agrega los cuatro bloques (sembrados con los textos editados hoy, salvo los que el bot ya no usa) sin conectarlos:
+ * falta enlazar el catalogo desde el recorrido.
+ */
 export function addPurchaseFlow(def: BotDefinition, overrides: Readonly<Record<string, string>> = {}): BotDefinition {
   const ids = new Set(def.nodes.map((node) => node.id));
   const taken = PURCHASE_BLOCK_TYPES.some((type) => ids.has(PURCHASE_BLOCKS[type].id));
@@ -70,7 +73,7 @@ export function addPurchaseFlow(def: BotDefinition, overrides: Readonly<Record<s
   const nodes = PURCHASE_BLOCK_TYPES.map((type): BotNode => {
     const spec = PURCHASE_BLOCKS[type];
     const copy: Record<string, string> = {};
-    for (const key of copyKeysOfBlock(type)) {
+    for (const key of editableCopyKeysOfBlock(type)) {
       const text = overrides[key];
       if (typeof text === 'string' && blockCopyProblem(type, key, text) === null) copy[key] = text.trim();
     }

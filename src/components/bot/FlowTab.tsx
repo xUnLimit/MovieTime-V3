@@ -39,7 +39,7 @@ export function FlowTab({ api }: { api: BotAdminApi }) {
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Agregar nodo">
           {KINDS.map((kind) => <Button key={kind} variant="outline" aria-label={`Agregar nodo de ${KIND_LABELS[kind].toLowerCase()}`} disabled={!canAddNode(def)} onClick={() => actions.addNode(kind)}><Plus />{KIND_LABELS[kind]}</Button>)}
-          {api.purchaseBlocksEnabled && !hasPurchaseBlocks(def)
+          {!hasPurchaseBlocks(def)
             ? <Button variant="outline" disabled={def.nodes.length + 4 > NODE_LIMITS.nodesMax} onClick={() => void actions.addPurchaseFlow()}><ShoppingCart />Agregar flujo de compras</Button> : null}
           {hasPurchaseBlocks(def) ? <Button variant="outline" onClick={actions.removePurchaseFlow}>Quitar flujo de compras</Button> : null}
           {api.flowExtensionsEnabled ? CONDITION_TYPES.map((type) => <Button key={type} variant="outline" disabled={!canAddNode(def)} onClick={() => actions.addCondition(type)}><GitBranch />Condición: {CONDITION_CATALOG[type].label.toLowerCase()}</Button>) : null}
@@ -47,7 +47,7 @@ export function FlowTab({ api }: { api: BotAdminApi }) {
             {errors > 0 ? `${errors} ${errors === 1 ? 'error impide' : 'errores impiden'} publicar` : 'Sin errores: se puede publicar'}
           </p>
         </div>
-        <TemplatePicker actions={actions} purchaseBlocksEnabled={api.purchaseBlocksEnabled} />
+        <TemplatePicker actions={actions} />
         <IssueList issues={flowWideIssues(api.issues)} label="Problemas del recorrido" />
         {showCanvas
           ? <FlowCanvas def={def} issues={api.issues} selectedId={node.id} onSelect={setSelectedId} actions={actions} />

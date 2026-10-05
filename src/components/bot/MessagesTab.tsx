@@ -11,7 +11,8 @@ const values = Object.fromEntries(Object.entries(VARIABLE_CATALOG).map(([key, va
 
 export function MessagesTab({ api }: { api: BotAdminApi }) {
   return <BotState api={api} empty={!api.draft}><div className="space-y-5">
-    {(['netflix', 'sistema'] as const).map(group => <section key={group} className="space-y-3" aria-label={group === 'netflix' ? 'Mensajes de Netflix' : 'Mensajes del sistema'}>
+    <p className="text-sm text-muted-foreground">Respuestas con las que el bot contesta dentro de la conversación (códigos, errores, atención). Los avisos de vencimiento y otros envíos a clientes se editan en Plantillas de mensajes.</p>
+    {(['netflix', 'sistema'] as const).map(group => <section key={group} className="space-y-3" aria-label={group === 'netflix' ? 'Respuestas de Netflix' : 'Respuestas del sistema'}>
       <h2 className="text-base font-semibold">{group === 'netflix' ? 'Netflix' : 'Sistema'}</h2>
       <div className="grid gap-3 lg:grid-cols-2">{(Object.entries(MESSAGE_CATALOG) as [BotMessageKey, typeof MESSAGE_CATALOG[BotMessageKey]][]).filter(([, item]) => item.group === group).map(([key, item]) => {
         const message = api.draft?.messages[key] ?? '';

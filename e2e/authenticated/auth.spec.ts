@@ -48,7 +48,7 @@ test('sesion guardada del operador permite panel y restringe Yappy @auth', async
     const page = await context.newPage();
     await page.goto('/ventas');
     await expect(page).not.toHaveURL(/\/login/);
-    await page.goto('/pagos-yappy');
+    await page.goto('/pedidos-cobros?tab=cobros');
     await expect(page.getByText('Esta sección está disponible solo para administradores.')).toBeVisible();
   } finally {
     await context.close();

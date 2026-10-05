@@ -1,38 +1,45 @@
-﻿'use client';
+'use client';
 
 import { PageHeader } from '@/components/shared/PageHeader';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTabParam } from '@/hooks/use-tab-param';
+import { useUnsavedNavigation } from '@/hooks/use-unsaved-navigation';
 import type { BotAdminApi } from '@/types/bot';
-import { OverviewTab } from './OverviewTab';
+import { ActivityTab } from './ActivityTab';
+import { BotPowerControl } from './BotPowerControl';
 import { FlowTab } from './FlowTab';
 import { MessagesTab } from './MessagesTab';
-import { RulesTab } from './RulesTab';
-import { ActivityTab } from './ActivityTab';
-import { VersionsTab } from './VersionsTab';
 import { PublishBar } from './PublishBar';
-import { useUnsavedNavigation } from '@/hooks/use-unsaved-navigation';
+import { SettingsTab } from './SettingsTab';
+import { VersionsTab } from './VersionsTab';
 
-const tabs = [
-  { id: 'resumen', label: 'Resumen', render: (api: BotAdminApi) => <OverviewTab api={api} /> },
-  { id: 'flujo', label: 'Flujo', render: (api: BotAdminApi) => <FlowTab api={api} /> },
-  { id: 'mensajes', label: 'Mensajes', render: (api: BotAdminApi) => <MessagesTab api={api} /> },
-  { id: 'reglas', label: 'Reglas', render: (api: BotAdminApi) => <RulesTab api={api} /> },
-  { id: 'actividad', label: 'Actividad', render: (api: BotAdminApi) => <ActivityTab api={api} /> },
-  { id: 'versiones', label: 'Versiones', render: (api: BotAdminApi) => <VersionsTab api={api} /> },
-];
+const TABS = ['recorrido', 'respuestas', 'ajustes', 'actividad', 'versiones'] as const;
 
+/**
+ * Herramienta única de Automatizaciones: el recorrido de WhatsApp con sus respuestas, ajustes, actividad y versiones.
+ * Solo el recorrido permanece montado al cambiar de pestaña, para conservar el lienzo, la selección y el simulador.
+ */
 export function BotView({ api }: { api: BotAdminApi }) {
-  const [selected, setSelected] = useState('flujo');
+  const [tab, setTab] = useTabParam(TABS, 'recorrido');
   useUnsavedNavigation(api.dirty);
 
   return <div className="min-w-0 space-y-4 pb-36">
-    <PageHeader title="Editar recorrido de WhatsApp" description="Modifica sus pasos, prueba el resultado y publica una versión." />
-    <div className="flex flex-wrap gap-2" aria-label="Herramientas del recorrido">
-      {tabs.map(tab => <Button key={tab.id} variant={selected === tab.id ? 'secondary' : 'outline'} aria-pressed={selected === tab.id} onClick={() => setSelected(tab.id)}>{tab.id === 'flujo' ? 'Pasos y prueba' : tab.id === 'reglas' ? 'Condiciones' : tab.label}</Button>)}
-    </div>
-    {tabs.map(({ id, render }) => <div key={id} hidden={selected !== id}>{render(api)}</div>)}
+    <PageHeader title="Automatizaciones" description="Diseña lo que responde el bot de WhatsApp: menú, compras, códigos y atención. Los cambios llegan a los clientes al publicar."
+      actions={<BotPowerControl api={api} />} />
+    <Tabs value={tab} onValueChange={setTab}>
+      <TabsList aria-label="Herramientas del recorrido">
+        <TabsTrigger value="recorrido">Recorrido</TabsTrigger>
+        <TabsTrigger value="respuestas">Respuestas</TabsTrigger>
+        <TabsTrigger value="ajustes">Ajustes</TabsTrigger>
+        <TabsTrigger value="actividad">Actividad</TabsTrigger>
+        <TabsTrigger value="versiones">Versiones</TabsTrigger>
+      </TabsList>
+      <TabsContent value="recorrido" forceMount className="min-w-0 data-[state=inactive]:hidden"><FlowTab api={api} /></TabsContent>
+      <TabsContent value="respuestas" className="min-w-0"><MessagesTab api={api} /></TabsContent>
+      <TabsContent value="ajustes" className="min-w-0"><SettingsTab api={api} /></TabsContent>
+      <TabsContent value="actividad" className="min-w-0"><ActivityTab api={api} /></TabsContent>
+      <TabsContent value="versiones" className="min-w-0"><VersionsTab api={api} /></TabsContent>
+    </Tabs>
     <PublishBar api={api} />
   </div>;
 }
-

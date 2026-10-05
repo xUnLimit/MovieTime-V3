@@ -8,7 +8,8 @@ import type { NetflixClaimStore } from '@/modules/messaging/netflix-claim-store'
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { NewOutboundMessage, OutboundResult } from '@/modules/whatsapp/outbound-messages';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
-import type { BotDefinition, BotEventType } from '@/types/bot';
+import type { PurchaseStep } from '@/modules/bot-config';
+import type { BotDefinition, BotEventType, PurchaseBlockType } from '@/types/bot';
 
 const log = createLogger('WhatsAppBot');
 
@@ -33,8 +34,17 @@ export type BotDeps = {
 export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavailable' | 'limited' | 'none' | 'no_profile'
   | 'unavailable' | 'retry' | 'already_sent' | 'list' | 'code' | 'link' | 'send_failed';
 
+/** The journey reached a purchase node: the purchase flow answers this same message (and may hand the turn back). */
+type BotDelegation = { delegate: PurchaseStep; prefix?: string };
+export type BotOutcome = BotResult | BotDelegation;
+/** The purchase flow gives the turn back: its notice travels with the journey node in one message. */
+export type BotHandBack = { text: string; prefixed: boolean; block: PurchaseBlockType | null };
+
 // What one inbound message needs to be answered: who wrote, when, and the published bot.
-export type BotRun = { deps: BotDeps; message: InboundMessage; now: Date; clienteId: string | null };
+// `hasServices`: an active sale of any service; `purchaseServed`: the purchase flow answers this number.
+export type BotRun = {
+  deps: BotDeps; message: InboundMessage; now: Date; clienteId: string | null; hasServices: boolean; purchaseServed: boolean;
+};
 
 export function botReplyKey(waMessageId: string): string {
   const hex = createHash('sha256').update(`bot-reply:${waMessageId}`).digest('hex');

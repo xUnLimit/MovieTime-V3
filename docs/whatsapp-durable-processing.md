@@ -35,16 +35,26 @@ mensaje incierto ni se revierte un pago correcto.
 - Definir `YAPPY_PAYMENT_INSTRUCTIONS` como instrucciones comerciales verificadas
   (hasta 600 caracteres). Sin ellas, solicitar instrucciones deriva al operador;
   el sistema no inventa un destinatario de pago.
-- Activar y publicar el recorrido en Automatizaciones. Las conversaciones fijan
-  su versión; una publicación posterior no cambia sus acciones en curso.
+- Activar y publicar el recorrido en Automatizaciones. Siempre responde la última
+  versión publicada: una publicación llega de inmediato a las conversaciones
+  existentes. La versión que quedó fijada en la conversación solo se usa para
+  resolver un botón antiguo que ya no existe en la versión vigente.
 
 La configuración y la programación de estos servicios se realizan al desplegar;
 este cambio no activa un scheduler remoto ni modifica producción.
 
 ## Recorridos guiados
 
-`catálogo`, `renovar`, `mis servicios`, `carrito`, `confirmar`, `estado`, `cancelar`
-y `ayuda` funcionan sin interpretación automática; cualquier otro texto muestra el menú. El catálogo pagina disponibles y agotados. La selección
+El diagrama publicado decide cómo empieza la conversación (palabras clave, primer contacto
+o ventana de inactividad). El motor de compras no toma texto suelto: arranca solo desde un
+botón `SHOP:`, un bloque de compra o una acción `purchase`/`renewal`/`my_services` del
+diagrama. Mientras hay una compra en curso (`buy`, `renew`, `summary`, `interest`, `payment`,
+`last4`) siguen funcionando `carrito`, `resumen`, `confirmar`, `estado`, `cancelar`, `ya pagué`
+y `ayuda`/`humano` (pasa a una persona); `hola` o `menú` devuelve al diagrama y conserva el
+carrito. Una etapa de compra inactiva por más de `menuIdleHours` vuelve a reposo.
+Al terminar un paso (cancelar, carrito vacío, sin servicios, interés registrado) el cliente
+recibe un solo mensaje: el aviso más el nodo del diagrama (la salida «Cancelar» del bloque,
+o la entrada), nunca un menú fijo. El catálogo pagina disponibles y agotados. La selección
 admite diez servicios y una moneda por pedido. El resumen necesita confirmación
 explícita; el RPC compara el total esperado bajo bloqueo antes de reservar. Los
 servicios agotados solicitan consentimiento de aviso separado del registro de

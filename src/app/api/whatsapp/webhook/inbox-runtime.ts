@@ -3,6 +3,7 @@ import { createLogger } from '@/platform/observability/logger';
 import { handleNoticeReply } from '@/application/use-cases/notice-reply-use-case';
 import { AutomationDeliveryUncertainError, AutomationLeaseLostError, processWhatsAppInbox } from '@/application/use-cases/whatsapp-inbox-use-case';
 import { handleCommerceConversation } from '@/application/use-cases/commerce-conversation-use-case';
+import { runConversationTurn } from '@/application/use-cases/whatsapp-conversation-use-case';
 import { createCommerceConversationDeps } from '@/application/use-cases/commerce-conversation-runtime';
 import { botReplyKey } from '@/application/use-cases/bot-reply';
 import { drainOrderDeliveries } from '@/application/use-cases/pedido-delivery-runtime';
@@ -45,21 +46,26 @@ export async function drainWhatsAppInbox(requestId: string) {
       });
       if (result === 'failed') throw new Error('Notice reply processing failed');
       if (result !== 'ignored') return { outcome: 'done' };
-      const definition = await bot.configuration(claim.message, claim.conversation.flowVersion);
-      if (!definition) return { outcome: 'done' };
+      const latest = await bot.configuration(claim.message);
+      if (!latest) return { outcome: 'done' };
       await assertCurrent();
-      const commerce = await handleCommerceConversation(claim.message, claim.conversation.context, createCommerceConversationDeps(), definition);
-      if (commerce) {
-        if (!await store.checkpoint(claim, commerce.context, commerce.process, commerce.orderId, bot.version)) throw new AutomationLeaseLostError();
-        await send({ idempotencyKey: botReplyKey(claim.message.waMessageId), toWaId: claim.message.fromWaId,
-          payload: commerce.payload, sentBy: null });
-        return { outcome: commerce.handoff ? 'handoff' : 'done', context: commerce.context,
-          process: commerce.process, ...(commerce.orderId ? { orderId: commerce.orderId } : {}),
-          ...(bot.version ? { flowVersion: bot.version } : {}) };
-      }
-      const botResult = await bot.handle(claim.message, send, claim.conversation.flowVersion, claim.conversation.orderId);
-      if (botResult === 'send_failed' || botResult === 'retry') throw new Error('Bot reply failed');
-      return { outcome: botResult === 'handoff' ? 'handoff' : 'done', ...(bot.version ? { flowVersion: bot.version } : {}) };
+      const definition = await bot.definitionFor(claim.message, claim.conversation.flowVersion, latest);
+      const commerceDeps = createCommerceConversationDeps();
+      const turn = await runConversationTurn({
+        commerce: (options) => handleCommerceConversation(claim.message, claim.conversation.context, commerceDeps, definition, options),
+        bot: (input) => bot.handle(definition, claim.message, send, claim.conversation.orderId, input),
+        async checkpoint(commerce) {
+          if (!await store.checkpoint(claim, commerce.context, commerce.process, commerce.orderId, bot.version)) throw new AutomationLeaseLostError();
+        },
+        async send(payload) {
+          await send({ idempotencyKey: botReplyKey(claim.message.waMessageId), toWaId: claim.message.fromWaId, payload, sentBy: null });
+        },
+      });
+      if (turn.result === 'send_failed' || turn.result === 'retry') throw new Error('Bot reply failed');
+      const { commerce } = turn;
+      return { outcome: commerce?.handoff || turn.result === 'handoff' ? 'handoff' : 'done',
+        ...(commerce ? { context: commerce.context, process: commerce.process, ...(commerce.orderId ? { orderId: commerce.orderId } : {}) } : {}),
+        ...(bot.version ? { flowVersion: bot.version } : {}) };
     },
   });
   try { await drainOrderDeliveries(); }

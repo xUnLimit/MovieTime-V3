@@ -9,6 +9,7 @@ import { TableCard } from '@/components/shared/TableCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { BotAdminApi, BotEvent, BotEventFilters, BotEventType } from '@/types/bot';
+import { ActivityMetrics } from './ActivityMetrics';
 import { BotState } from './BotState';
 
 const eventTypes: { value: BotEventType; label: string }[] = [
@@ -36,7 +37,8 @@ export function ActivityTab({ api }: { api: BotAdminApi }) {
     catch { setError('No se pudo cargar la actividad. Inténtalo de nuevo.'); }
   }
   function change(next: BotEventFilters) { setFilters(next); void load(1, next); }
-  return <BotState api={api} empty={!events}><div className="space-y-3">
+  return <BotState api={api} empty={!events}><div className="space-y-4">
+    <ActivityMetrics api={api} />
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
     <TableCard title="Actividad del bot" description="Eventos recientes sin códigos ni enlaces" toolbar={<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       <label className="text-xs font-medium">Tipo<select className="h-8 w-full rounded-md border bg-card px-2 text-sm" value={filters.type ?? ''} onChange={event => change({ ...filters, type: event.target.value ? event.target.value as BotEventType : undefined })}><option value="">Todos</option>{eventTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>

@@ -30,7 +30,7 @@ vi.mock('@/hooks/use-templates', () => ({
 
 import { TemplateEditor } from './TemplateEditor';
 
-function wrap(templates: TemplateMensaje[], focused = false) {
+function wrap(templates: TemplateMensaje[], renderDetails?: (tipo: string) => React.ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -39,7 +39,7 @@ function wrap(templates: TemplateMensaje[], focused = false) {
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <TemplateEditor templates={templates} focused={focused} />
+      <TemplateEditor templates={templates} renderDetails={renderDetails} />
     </QueryClientProvider>
   );
 }
@@ -108,14 +108,13 @@ describe('TemplateEditor', () => {
       );
     });
   });
-  it('edita el mensaje del recorrido con vista previa sin abrir la biblioteca y protege el borrador al volver', () => {
+  it('protege el borrador al salir de la pagina con cambios sin guardar', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    render(wrap([makeTemplate()], true));
-    expect(document.querySelector('button[data-tipo]')).toBeNull();
+    render(wrap([makeTemplate()]));
     expect(screen.getByLabelText('Simulación del celular del cliente')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Mensaje ajustado para renovar' } });
     const link = document.createElement('a');
-    link.href = '/automatizaciones';
+    link.href = '/ventas';
     document.body.append(link);
     const navigation = new MouseEvent('click', { bubbles: true, cancelable: true });
     link.dispatchEvent(navigation);
@@ -405,6 +404,16 @@ describe('TemplateEditor', () => {
   it('opens on the expiry notice when no tipo is requested', () => {
     render(wrap([]));
     expect(screen.getByRole('heading', { name: 'Aviso de vencimiento' })).toBeTruthy();
+  });
+
+  it('shows the extra details of the selected message and follows the selection', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(wrap([]));
+    expect(screen.queryByTestId('details')).toBeNull();
+    rerender(wrap([], (tipo) => <p data-testid="details">Detalles de {tipo}</p>));
+    expect(screen.getByTestId('details').textContent).toBe('Detalles de dia_pago');
+    await user.click(tipoButton('despedida'));
+    expect(screen.getByTestId('details').textContent).toBe('Detalles de despedida');
   });
 
   it('warns when a linked template is no longer in Meta', async () => {

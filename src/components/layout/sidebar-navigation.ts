@@ -68,14 +68,14 @@ const navigationSections: SidebarNavSection[] = [
         icon: ShoppingCart,
       },
       {
-        name: 'Pedidos y cobros',
-        href: '/pedidos-cobros',
-        icon: ShoppingBag,
-      },
-      {
         name: 'Servicios',
         href: '/servicios',
         icon: Tv2,
+      },
+      {
+        name: 'Pedidos y cobros',
+        href: '/pedidos-cobros',
+        icon: ShoppingBag,
       },
       {
         name: 'Gastos',
@@ -96,11 +96,6 @@ const navigationSections: SidebarNavSection[] = [
         name: 'Chats',
         href: '/chats',
         icon: MessageCircle,
-      },
-      {
-        name: 'Automatizaciones',
-        href: '/automatizaciones',
-        icon: Bot,
       },
       {
         name: 'Servicios en Reposo',
@@ -126,6 +121,11 @@ const navigationSections: SidebarNavSection[] = [
         name: 'Métodos de Pago',
         href: '/metodos-pago',
         icon: CreditCard,
+      },
+      {
+        name: 'Automatizaciones',
+        href: '/automatizaciones',
+        icon: Bot,
       },
       {
         name: 'Plantillas de mensajes',

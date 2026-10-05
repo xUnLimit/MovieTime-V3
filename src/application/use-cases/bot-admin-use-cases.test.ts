@@ -88,15 +88,18 @@ describe('publishBotUseCase', () => {
     expect(mocks.publishBotVersion).not.toHaveBeenCalled();
   });
 
-  it('only publishes purchase blocks when the server flag is on', async () => {
+  it('publishes a connected purchase flow without any server flag', async () => {
     mocks.publishBotVersion.mockResolvedValue(6);
     let flow = addOption(addPurchaseFlow(defaultDefinition()), 'menu');
     flow = updateOption(flow, 'menu', flow.nodes[0].options.at(-1)!.id, { title: 'Comprar', next: 'compra_catalogo' });
-    await expect(publishBotUseCase(flow, 'Con bloques', context())).rejects.toThrow('Corrige los 4 errores antes de publicar');
-    await expect(publishBotUseCase(flow, 'Con bloques', context(), null, false)).rejects.toBeInstanceOf(BotAdminError);
+    await expect(publishBotUseCase(flow, 'Con bloques', context())).resolves.toBe(6);
+    expect(mocks.publishBotVersion).toHaveBeenCalledWith(flow, 'Con bloques');
+  });
+
+  it('still refuses an incomplete purchase flow', async () => {
+    const flow = addPurchaseFlow(defaultDefinition());
+    await expect(publishBotUseCase(flow, 'Sin conectar', context())).rejects.toBeInstanceOf(BotAdminError);
     expect(mocks.publishBotVersion).not.toHaveBeenCalled();
-    await expect(publishBotUseCase(flow, 'Con bloques', context(), null, true)).resolves.toBe(6);
-    expect(mocks.publishBotVersion).toHaveBeenCalledTimes(1);
   });
 
   it('pluralizes the blocking error count', async () => {
@@ -130,7 +133,8 @@ describe('publishBotUseCase flow extensions', () => {
     await expect(publishBotUseCase(wired, 'Con condicion', context())).rejects.toThrow('Corrige');
     expect(mocks.publishBotVersion).not.toHaveBeenCalled();
     mocks.publishBotVersion.mockResolvedValue(6);
-    await expect(publishBotUseCase(wired, 'Con condicion', context(), null, false, true)).resolves.toBe(6);
+    await expect(publishBotUseCase(wired, 'Con condicion', context(), null, false)).rejects.toThrow('Corrige');
+    await expect(publishBotUseCase(wired, 'Con condicion', context(), null, true)).resolves.toBe(6);
   });
 });
 

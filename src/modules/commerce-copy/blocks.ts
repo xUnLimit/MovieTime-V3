@@ -14,6 +14,15 @@ const BLOCK_OF_STEP: Record<CopyStepId, CopyBlockType> = {
 export const blockOfCopyKey = (key: CopyKey): CopyBlockType => BLOCK_OF_STEP[COPY_CATALOG[key].step];
 export const copyKeysOfBlock = (type: CopyBlockType): CopyKey[] => COPY_KEYS.filter(key => blockOfCopyKey(key) === type);
 
+/**
+ * Textos del antiguo menu de compras: el recorrido muestra ahora su propio menu y el bot ya no los envia. Siguen en el
+ * catalogo porque las versiones publicadas pueden traerlos y una clave desconocida invalidaria la definicion entera.
+ */
+const RETIRED_COPY_KEYS: ReadonlySet<CopyKey> = new Set<CopyKey>(['greeting', 'btnBuy', 'btnRenew', 'btnServices']);
+
+/** Textos del bloque que el administrador puede cambiar: todos menos los retirados. */
+export const editableCopyKeysOfBlock = (type: CopyBlockType): CopyKey[] => copyKeysOfBlock(type).filter(key => !RETIRED_COPY_KEYS.has(key));
+
 /** Motivo por el que el texto no sirve en ese bloque (clave ajena, o reglas del mensaje); null si es valido. */
 export function blockCopyProblem(type: CopyBlockType, key: string, text: string): string | null {
   const known = (COPY_KEYS as readonly string[]).includes(key);

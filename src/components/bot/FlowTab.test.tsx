@@ -1,11 +1,13 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addPurchaseFlow, defaultDefinition, hasBlockingIssues, validateDefinition } from '@/modules/bot-config';
 import type { BotAdminApi, BotDefinition } from '@/types/bot';
-const copyUseCases = vi.hoisted(() => ({ fetchCommerceCopyUseCase: vi.fn(), saveCommerceCopyClientUseCase: vi.fn() }));
+const copyUseCases = vi.hoisted(() => ({ fetchCommerceCopyUseCase: vi.fn() }));
 vi.mock('@/application/use-cases/commerce-copy-use-cases', () => copyUseCases);
+vi.mock('@/store/authStore', () => ({ useAuthStore: (selector: (state: { user: { role: string } }) => unknown) => selector({ user: { role: 'admin' } }) }));
 const toast = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock('sonner', () => ({ toast }));
 import { FlowTab } from './FlowTab';
@@ -28,19 +30,20 @@ function setWide(wide: boolean) {
   } as unknown as MediaQueryList));
 }
 
-function makeApi(draft: BotDefinition | null, updateDraft: BotAdminApi['updateDraft'], purchaseBlocksEnabled = false, flowExtensionsEnabled = false): BotAdminApi {
-  const issues = draft ? validateDefinition(draft, { purchaseBlocksEnabled, flowExtensionsEnabled }) : [];
+function makeApi(draft: BotDefinition | null, updateDraft: BotAdminApi['updateDraft'], flowExtensionsEnabled = false): BotAdminApi {
+  const issues = draft ? validateDefinition(draft, { flowExtensionsEnabled }) : [];
   return {
-    loading: false, error: null, status: null, published: draft, draft, dirty: true, issues, hasErrors: hasBlockingIssues(issues), purchaseBlocksEnabled, flowExtensionsEnabled,
+    loading: false, error: null, status: null, published: draft, draft, dirty: true, issues, hasErrors: hasBlockingIssues(issues), flowExtensionsEnabled,
     versions: [], events: null, health: null, saving: false, setEnabled: vi.fn(async () => {}), updateDraft,
     discardDraft: vi.fn(), resetToDefaults: vi.fn(), publish: vi.fn(async () => {}), loadVersionIntoDraft: vi.fn(async () => {}),
     loadEvents: vi.fn(async () => {}), testMailbox: vi.fn(), refresh: vi.fn(async () => {}),
   };
 }
 
-function Harness({ initial = defaultDefinition(), blocksEnabled = false, extensionsEnabled = false }: { initial?: BotDefinition; blocksEnabled?: boolean; extensionsEnabled?: boolean }) {
+function Harness({ initial = defaultDefinition(), extensionsEnabled = false }: { initial?: BotDefinition; extensionsEnabled?: boolean }) {
   const [draft, setDraft] = useState(initial);
-  return <FlowTab api={makeApi(draft, updater => setDraft(current => updater(current)), blocksEnabled, extensionsEnabled)} />;
+  const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }));
+  return <QueryClientProvider client={client}><FlowTab api={makeApi(draft, updater => setDraft(current => updater(current)), extensionsEnabled)} /></QueryClientProvider>;
 }
 
 beforeEach(() => {
@@ -197,16 +200,16 @@ describe('FlowTab con datos ausentes', () => {
 });
 
 describe('FlowTab con el flujo de compras en el lienzo', () => {
-  it('no ofrece los bloques de compra mientras la bandera del servidor esté apagada', () => {
+  it('siempre ofrece agregar los bloques de compra, sin depender de ninguna bandera del servidor', () => {
     render(<Harness />);
-    expect(screen.queryByRole('button', { name: 'Agregar flujo de compras' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Agregar flujo de compras' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Quitar flujo de compras' })).toBeNull();
   });
 
-  it('agrega los cuatro bloques sembrados con los textos actuales y los edita sin tocar sus reglas', async () => {
-    copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: { greeting: 'Buenas desde Compras' }, updatedAt: {} });
+  it('agrega los cuatro bloques y muestra el texto vigente de cada clave: el del bloque, el guardado o el original', async () => {
+    copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: { platformsPrompt: 'Elige tu plataforma favorita' }, updatedAt: {} });
     const user = userEvent.setup();
-    render(<Harness blocksEnabled />);
+    render(<Harness />);
     await user.click(screen.getByRole('button', { name: 'Agregar flujo de compras' }));
     expect(await screen.findByRole('button', { name: /^Compra: catálogo/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Quitar flujo de compras' })).toBeTruthy();
@@ -217,20 +220,57 @@ describe('FlowTab con el flujo de compras en el lienzo', () => {
     expect(screen.getByRole('heading', { name: /Bloque cerrado: Compra: catálogo/ })).toBeTruthy();
     expect(screen.queryByRole('combobox', { name: 'Tipo' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Eliminar nodo' })).toBeNull();
-    await user.click(screen.getByRole('button', { name: /Saludo y menú/ }));
-    expect((screen.getByRole('textbox', { name: 'Texto' }) as HTMLTextAreaElement).value).toBe('Buenas desde Compras');
-    await user.clear(screen.getByRole('textbox', { name: 'Texto' }));
-    await user.type(screen.getByRole('textbox', { name: 'Texto' }), 'Hola, ¿qué quieres ver?');
+    const platforms = await screen.findByRole('region', { name: 'Textos de Plataformas' });
+    expect(within(platforms).getByText('Elige tu plataforma favorita')).toBeTruthy();
+    await user.click(within(platforms).getByRole('button', { name: /^Elegir plataformas*Elige tu plataforma/ }));
+    const field = screen.getByRole('textbox', { name: 'Texto' }) as HTMLTextAreaElement;
+    expect(field.value).toBe('Elige tu plataforma favorita');
+    await user.clear(field);
+    await user.type(field, 'Tenemos estas plataformas');
     await user.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(within(screen.getByRole('region', { name: 'Textos de Inicio' })).getAllByText('Editado').length).toBeGreaterThan(0);
-    await user.click(screen.getByRole('button', { name: /Botón: comprar/ }));
-    expect(screen.getByText('Adquirir servicio', { selector: '[data-testid="copy-preview"]' })).toBeTruthy();
+    expect(within(screen.getByRole('region', { name: 'Textos de Plataformas' })).getAllByText('Tenemos estas plataformas').length).toBeGreaterThan(0);
+  });
+
+  it('"Restaurar original" deja el texto original aunque haya uno guardado fuera del recorrido', async () => {
+    copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: { platformsPrompt: 'Elige tu plataforma favorita' }, updatedAt: {} });
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Agregar flujo de compras' }));
+    await user.click(await screen.findByRole('button', { name: /^Compra: catálogo/ }));
+    const platforms = await screen.findByRole('region', { name: 'Textos de Plataformas' });
+    await user.click(within(platforms).getByRole('button', { name: /^Elegir plataformas*Elige tu plataforma/ }));
+    await user.click(screen.getByRole('button', { name: 'Restaurar original' }));
+    const after = screen.getByRole('region', { name: 'Textos de Plataformas' });
+    expect(within(after).getAllByText(/¿Qué plataforma te interesa\?/).length).toBeGreaterThan(0);
+    expect(within(after).queryByText('Elige tu plataforma favorita')).toBeNull();
+  });
+
+  it('no muestra los textos del antiguo menú de compras, que el bot ya no envía', async () => {
+    copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: {}, updatedAt: {} });
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Agregar flujo de compras' }));
+    await user.click(await screen.findByRole('button', { name: /^Compra: catálogo/ }));
+    await screen.findByRole('region', { name: 'Textos de Plataformas' });
+    for (const name of [/Saludo y menú/, /Botón: comprar/, /Botón: renovar/, /Botón: mis servicios/]) expect(screen.queryByRole('button', { name })).toBeNull();
+    expect(screen.getByRole('button', { name: /Botón: hablar con alguien/ })).toBeTruthy();
+  });
+
+  it('avisa si no puede leer los textos que el bot usa hoy y permite reintentar', async () => {
+    copyUseCases.fetchCommerceCopyUseCase.mockRejectedValueOnce(new Error('sin red'));
+    const user = userEvent.setup();
+    render(<Harness initial={addPurchaseFlow(defaultDefinition())} />);
+    await user.click(screen.getByRole('button', { name: /^Compra: catálogo/ }));
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudieron leer los textos');
+    copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: {}, updatedAt: {} });
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByRole('region', { name: 'Textos de Plataformas' })).toBeTruthy();
   });
 
   it('el botón de cancelar elige a dónde vuelve el cliente y las conexiones entre bloques son fijas', async () => {
     copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: {}, updatedAt: {} });
     const user = userEvent.setup();
-    render(<Harness blocksEnabled />);
+    render(<Harness />);
     await user.click(screen.getByRole('button', { name: 'Agregar flujo de compras' }));
     await user.click(await screen.findByRole('button', { name: /^Compra: resumen/ }));
     const exits = screen.getByRole('combobox', { name: 'Destino del botón Cancelar de Compra: resumen' });
@@ -243,7 +283,7 @@ describe('FlowTab con el flujo de compras en el lienzo', () => {
   it('no agrega los bloques si no puede leer los textos actuales, y los quita de una vez', async () => {
     copyUseCases.fetchCommerceCopyUseCase.mockRejectedValueOnce(new Error('sin red'));
     const user = userEvent.setup();
-    render(<Harness blocksEnabled />);
+    render(<Harness />);
     await user.click(screen.getByRole('button', { name: 'Agregar flujo de compras' }));
     expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('No se pudieron leer los textos actuales'));
     expect(screen.queryByRole('button', { name: /^Compra: catálogo/ })).toBeNull();
@@ -252,11 +292,5 @@ describe('FlowTab con el flujo de compras en el lienzo', () => {
     await screen.findByRole('button', { name: /^Compra: pago/ });
     await user.click(screen.getByRole('button', { name: 'Quitar flujo de compras' }));
     expect(screen.queryByRole('button', { name: /^Compra:/ })).toBeNull();
-  });
-
-  it('con la bandera apagada un borrador con bloques muestra el error que impide publicar', () => {
-    render(<Harness initial={addPurchaseFlow(defaultDefinition())} />);
-    expect(screen.getByRole('button', { name: 'Quitar flujo de compras' })).toBeTruthy();
-    expect(screen.getAllByText(/no están activados en este entorno/).length).toBeGreaterThan(0);
   });
 });

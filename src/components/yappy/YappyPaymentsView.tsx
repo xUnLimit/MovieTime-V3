@@ -2,13 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Clock, Inbox, ListFilter, Mail, RefreshCw, XCircle } from 'lucide-react';
+import { ListFilter, Mail, RefreshCw } from 'lucide-react';
 
 import { DataTable, defineDataTableColumns } from '@/components/shared/DataTable';
-import { MetricCard } from '@/components/shared/MetricCard';
-import { MetricGrid } from '@/components/shared/MetricGrid';
-import { AutomationNavigation } from '@/components/bot/AutomationNavigation';
-import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { TableCard } from '@/components/shared/TableCard';
 import { FilterMenu, TableSearch, TableToolbar } from '@/components/shared/TableToolbar';
@@ -19,10 +15,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTableContext } from '@/hooks/use-table-context';
 import { useYappyActions, useYappyCandidateVentas, useYappyConnections, useYappyPayments, useYappyVentaSearch } from '@/hooks/use-yappy-payments';
 import type { YappyCandidateVenta, YappyPayment } from '@/application/use-cases/yappy-use-cases';
 import { cn } from '@/platform/utils';
-import { useAuthStore } from '@/store/authStore';
 
 const labels: Record<string, string> = {
   match_unico: 'Coincidencia única', ambiguo: 'Varias coincidencias', sin_match: 'Sin coincidencia',
@@ -31,7 +27,8 @@ const labels: Record<string, string> = {
 const tones: Record<string, Tone> = {
   match_unico: 'success', ambiguo: 'warning', sin_match: 'danger', registrado: 'info', descartado: 'neutral',
 };
-const filters = ['todos', 'match_unico', 'ambiguo', 'sin_match', 'registrado', 'descartado'] as const;
+// `all` coincide con el filtro por defecto de `useTableContext`, que conserva filtro y búsqueda al cambiar de pestaña.
+const filters = ['all', 'match_unico', 'ambiguo', 'sin_match', 'registrado', 'descartado'] as const;
 const CLOSED_STATUSES = ['registrado', 'descartado'];
 const money = new Intl.NumberFormat('es-PA', { style: 'currency', currency: 'USD' });
 const panamaDate = new Intl.DateTimeFormat('es-PA', { timeZone: 'America/Panama', dateStyle: 'medium', timeStyle: 'short' });
@@ -126,7 +123,13 @@ function MailboxPanel({ connections, sync }: { connections: ReturnType<typeof us
             <p className="text-xs text-muted-foreground">Última sincronización: {connection.lastSyncedAt ? panamaDate.format(new Date(connection.lastSyncedAt)) : 'Pendiente'}</p>
           </>
         ) : <p className="text-xs text-muted-foreground">Aún no hay estado del buzón.</p>}
-        {connection && <StatusBadge className="sm:ml-auto" tone={connection.status === 'configurado' ? 'success' : 'warning'}>{connection.status === 'configurado' ? 'Configurado' : 'Requiere atención'}</StatusBadge>}
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          {connection && <StatusBadge tone={connection.status === 'configurado' ? 'success' : 'warning'}>{connection.status === 'configurado' ? 'Configurado' : 'Requiere atención'}</StatusBadge>}
+          <Button variant="outline" disabled={sync.isPending} onClick={() => sync.mutate()}>
+            <RefreshCw className={cn(sync.isPending && 'animate-spin')} />
+            {sync.isPending ? 'Sincronizando…' : 'Sincronizar ahora'}
+          </Button>
+        </div>
       </div>
       {connection?.lastErrorCode === 'auth_failed' && <p role="alert" className="mt-2 text-sm text-danger">Revisa la contraseña de aplicación de Gmail en Vercel.</p>}
       {(connections.isError || sync.isError) && <p role="alert" className="mt-2 text-sm text-danger">No se pudo cargar o sincronizar el buzón.</p>}
@@ -168,18 +171,19 @@ function createColumns(onReview: (payment: YappyPayment) => void) {
   ]);
 }
 
+/** Pestaña Cobros de Pedidos y cobros: la página aporta el encabezado y el permiso de administrador. */
 export function YappyPaymentsView() {
-  const user = useAuthStore((state) => state.user);
   const payments = useYappyPayments();
   const connections = useYappyConnections();
-  const [filter, setFilter] = useState<string>('todos');
-  const [search, setSearch] = useState('');
+  const { filter: savedFilter, setFilter, search, setSearch } = useTableContext('cobros');
+  // Un filtro guardado que ya no existe vuelve a "Todos" en lugar de dejar la cola vacía.
+  const filter = filters.find((item) => item === savedFilter) ?? 'all';
   const [reviewId, setReviewId] = useState<string | null>(null);
   const all = useMemo(() => payments.data ?? [], [payments.data]);
   const rows = useMemo<PaymentRow[]>(() => {
     const query = search.trim().toLowerCase();
     return all
-      .filter((payment) => filter === 'todos' || payment.matchStatus === filter)
+      .filter((payment) => filter === 'all' || payment.matchStatus === filter)
       .map((payment) => ({ ...payment, searchText: `${payment.payerNameShort} ${payment.confirmationCode} ${payment.payerPhoneLast4}`.toLowerCase() }))
       .filter((row) => !query || row.searchText.includes(query));
   }, [all, filter, search]);
@@ -187,38 +191,19 @@ export function YappyPaymentsView() {
   const ventas = useYappyCandidateVentas(reviewing?.candidateVentaIds ?? []);
   const { sync } = useYappyActions();
   const columns = useMemo(() => createColumns((payment) => setReviewId(payment.id)), []);
-  if (user?.role !== 'admin') return <p className="p-6">Esta sección está disponible solo para administradores.</p>;
   const countBy = (status: string) => all.filter((payment) => payment.matchStatus === status).length;
-  const pending = all.filter((payment) => !CLOSED_STATUSES.includes(payment.matchStatus)).length;
   const filterOptions = filters.map((item) => ({
     value: item,
-    label: `${item === 'todos' ? 'Todos' : labels[item]} (${item === 'todos' ? all.length : countBy(item)})`,
+    label: `${item === 'all' ? 'Todos' : labels[item]} (${item === 'all' ? all.length : countBy(item)})`,
   }));
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="Pagos Yappy detectados"
-        description="Revisa los pagos recibidos por correo y regístralos en la venta que corresponde."
-        actions={
-          <Button disabled={sync.isPending} onClick={() => sync.mutate()}>
-            <RefreshCw className={cn(sync.isPending && 'animate-spin')} />
-            {sync.isPending ? 'Sincronizando…' : 'Sincronizar ahora'}
-          </Button>
-        }
-      />
-      <AutomationNavigation />
-      <MetricGrid>
-        <MetricCard title="Detectados" value={all.length} icon={Inbox} tone="info" loading={payments.isLoading} />
-        <MetricCard title="Por revisar" value={pending} icon={Clock} tone="warning" loading={payments.isLoading} />
-        <MetricCard title="Registrados" value={countBy('registrado')} icon={CheckCircle2} tone="success" loading={payments.isLoading} />
-        <MetricCard title="Descartados" value={countBy('descartado')} icon={XCircle} tone="danger" loading={payments.isLoading} />
-      </MetricGrid>
       <MailboxPanel connections={connections} sync={sync} />
       {payments.isLoading && <p role="status" className="sr-only">Cargando pagos…</p>}
       {(payments.isError || ventas.isError) && <p role="alert" className="text-sm text-danger">No se pudo cargar la cola. Actualiza la página.</p>}
       <TableCard
-        title="Cola de pagos"
-        description="Revisa cada aviso y renueva la venta desde su detalle. La detección no registra cobros automáticamente."
+        title="Pagos Yappy detectados"
+        description="Revisa cada pago recibido por correo, renueva la venta desde su detalle y regístralo en la venta que corresponde. La detección no registra cobros automáticamente."
         toolbar={
           <TableToolbar>
             <TableSearch value={search} onChange={setSearch} placeholder="Buscar por pagador o confirmación..." />
