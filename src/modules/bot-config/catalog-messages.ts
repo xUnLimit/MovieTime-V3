@@ -1,5 +1,4 @@
-import { COPY_VARIABLES } from '@/modules/commerce-copy/catalog';
-import { copyMarkers, renderCopyText } from '@/modules/commerce-copy/render';
+import { COPY_VARIABLES, copyMarkers, renderCopyText } from '@/modules/commerce-copy';
 import type { BotCatalogMessages, BotDefinition, BotIssue } from '@/types/bot';
 
 /**

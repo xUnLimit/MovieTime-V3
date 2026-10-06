@@ -26,7 +26,7 @@ test('@auth @smoke Pedidos y cobros agrupa pedidos, cobros e interesados; conser
   await expect(page.getByRole('heading', { name: 'Pedidos y cobros', exact: true })).toBeVisible();
   const tabs = page.getByRole('tablist', { name: 'Secciones de pedidos y cobros' });
   await expect(tabs.getByRole('tab', { name: 'Pedidos', exact: true })).toHaveAttribute('aria-selected', 'true');
-  const search = page.getByRole('searchbox', { name: 'Buscar pedido o servicio…' });
+  const search = page.getByRole('searchbox', { name: 'Buscar pedido' });
   await search.fill('servicio-de-prueba');
   await tabs.getByRole('tab', { name: 'Cobros', exact: true }).click();
   await expect(page.getByText('Pagos Yappy detectados', { exact: true })).toBeVisible();
