@@ -48,7 +48,7 @@ function setup(def: BotDefinition, extra: Partial<BotDeps> = {}, services: BotSe
       lastActivityAt: vi.fn().mockResolvedValue(null), operatorRepliedSince: vi.fn().mockResolvedValue(false),
       menuTapsSince: vi.fn().mockResolvedValue(1),
     },
-    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn() },
+    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn(), delivered: vi.fn() },
     send, fetchTravelPage: vi.fn(), now: () => new Date('2026-10-02T04:00:00.000Z'), events: { record },
     definition: def, openInbox: vi.fn().mockResolvedValue(null), ...extra,
   };

@@ -67,6 +67,12 @@ describe('qué pasa después de un texto', () => {
     expect((screen.getByRole('combobox', { name: /^Continúa en/ }) as HTMLSelectElement).value).toBe('netflix');
     expect(within(stepList()).getByRole('button', { name: /^Nuevo nodo de texto/ }).textContent).toContain('Texto · continúa solo');
     expect(screen.getByText(/en un solo mensaje/)).toBeTruthy();
+    const delivery = screen.getByRole('combobox', { name: 'Enviar mensajes' });
+    await user.selectOptions(delivery, 'separate');
+    expect((delivery as HTMLSelectElement).value).toBe('separate');
+    expect(screen.getByText(/Primero se envía este texto/)).toBeTruthy();
+    await user.selectOptions(delivery, 'joined');
+    expect(screen.getByText(/en un solo mensaje/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Terminar aquí' }));
     expect(screen.queryByRole('combobox', { name: /^Continúa en/ })).toBeNull();
     expect(within(stepList()).getByRole('button', { name: /^Nuevo nodo de texto/ }).textContent).not.toContain('continúa');
@@ -85,6 +91,25 @@ describe('qué pasa después de un texto', () => {
     await user.selectOptions(hours, '2');
     expect((screen.getByRole('combobox', { name: /Esperar hasta/ }) as HTMLSelectElement).value).toBe('2');
     expect(within(screen.getByRole('combobox', { name: /Esperar hasta/ })).getByRole('option', { name: '1 hora' })).toBeTruthy();
+    const custom = screen.getByRole('spinbutton', { name: 'Horas de espera' });
+    await user.clear(custom);
+    expect(custom.getAttribute('aria-invalid')).toBe('true');
+    await user.type(custom, '5');
+    expect((custom as HTMLInputElement).value).toBe('5');
+    expect((screen.getByRole('combobox', { name: /Esperar hasta/ }) as HTMLSelectElement).value).toBe('5');
+    expect(custom.getAttribute('aria-invalid')).toBe('false');
+    await user.selectOptions(hours, '2');
+    expect((custom as HTMLInputElement).value).toBe('2');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Unidad de espera' }), 'minutes');
+    const minutes = screen.getByRole('spinbutton', { name: 'Minutos de espera' });
+    await user.clear(minutes);
+    await user.type(minutes, '7');
+    expect((screen.getByRole('combobox', { name: /Esperar hasta/ }) as HTMLSelectElement).value).toBe('7');
+    expect(minutes.getAttribute('aria-invalid')).toBe('false');
+    await user.selectOptions(hours, '1');
+    expect((minutes as HTMLInputElement).value).toBe('1');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Unidad de espera' }), 'hours');
+    expect((screen.getByRole('spinbutton', { name: 'Horas de espera' }) as HTMLInputElement).value).toBe('1');
   });
 
   it('agrega respuestas con sus palabras, las ordena, cambia su destino y las quita', async () => {

@@ -9,7 +9,7 @@ import { profileMatches } from '@/modules/netflix/profile-match';
 import { parseTravelCode } from '@/modules/netflix/travel-code';
 import { accountListMessage, BOT_STORED_TEXT, type BotCodeType } from '@/modules/whatsapp/bot-menu';
 import { messageWithRetryButton, renderBotMessage, sayMessage } from './bot-messages';
-import { reply, trackEvent, type BotResult, type BotRun } from './bot-reply';
+import { botReplyKey, reply, trackEvent, type BotResult, type BotRun } from './bot-reply';
 
 const log = createLogger('WhatsAppBot');
 const MINUTE_MS = 60_000;
@@ -17,6 +17,8 @@ const MINUTE_MS = 60_000;
 type Candidate = { service: BotService; item: DatedNetflixMail; key: string };
 type Found = { candidates: Candidate[]; blocked: number };
 type Sent = { result: 'code' | 'link'; accepted: boolean };
+const deliveryKey = (run: BotRun, candidate: Candidate) => botReplyKey(`netflix-code:${candidate.key}:${run.message.fromWaId}`);
+const delivered = (run: BotRun, candidate: Candidate) => run.deps.claims.delivered(deliveryKey(run, candidate));
 
 // Netflix mails carry no stable id of their own beyond Message-ID; without it the
 // account and the arrival time still tell two mails apart.
@@ -69,17 +71,18 @@ async function findCandidates(
 }
 
 async function sendText(
-  run: BotRun, text: string, stored: string, result: Sent['result'],
+  run: BotRun, text: string, stored: string, result: Sent['result'], key: string,
 ): Promise<Sent> {
-  const sent = await reply(run.deps, run.message, { kind: 'text', text, replyTo: run.message.waMessageId }, stored);
+  const sent = await run.deps.send({ idempotencyKey: key, toWaId: run.message.fromWaId, sentBy: null,
+    payload: { kind: 'text', text, replyTo: run.message.waMessageId }, storedTextBody: stored });
   return { result, accepted: sent.sendStatus === 'accepted' };
 }
 
-async function sendCode(run: BotRun, item: DatedNetflixMail, minutes: string): Promise<Sent> {
+async function sendCode(run: BotRun, item: DatedNetflixMail, minutes: string, key: string): Promise<Sent> {
   const { definition } = run.deps;
   const mail = item.mail;
   if (mail.kind === 'login_code') {
-    return sendText(run, renderBotMessage(definition, 'login_code_sent', { codigo: mail.code, minutos: minutes }), BOT_STORED_TEXT.code, 'code');
+    return sendText(run, renderBotMessage(definition, 'login_code_sent', { codigo: mail.code, minutos: minutes }), BOT_STORED_TEXT.code, 'code', key);
   }
   let code: string | null = null;
   try {
@@ -90,10 +93,10 @@ async function sendCode(run: BotRun, item: DatedNetflixMail, minutes: string): P
   }
   if (code) {
     const text = renderBotMessage(definition, 'travel_code_sent', { codigo: code, perfil: mail.profileName ?? '', minutos: minutes });
-    return sendText(run, text, BOT_STORED_TEXT.code, 'code');
+    return sendText(run, text, BOT_STORED_TEXT.code, 'code', key);
   }
   // The page was not readable from the server; the customer opens the link himself.
-  return sendText(run, renderBotMessage(definition, 'travel_link_sent', { enlace: mail.verifyUrl, minutos: minutes }), BOT_STORED_TEXT.link, 'link');
+  return sendText(run, renderBotMessage(definition, 'travel_link_sent', { enlace: mail.verifyUrl, minutos: minutes }), BOT_STORED_TEXT.link, 'link', key);
 }
 
 async function releaseQuietly(run: BotRun, key: string): Promise<void> {
@@ -105,12 +108,13 @@ async function releaseQuietly(run: BotRun, key: string): Promise<void> {
 }
 
 // Asks the customer to request the code in Netflix and tap the same button again.
-async function sayNotFound(run: BotRun, type: BotCodeType, minutes: string, profiles: string[]): Promise<void> {
+async function sayNotFound(run: BotRun, type: BotCodeType, minutes: string, profiles: string[]): Promise<boolean> {
   const text = renderBotMessage(run.deps.definition, type === 'login' ? 'login_not_found' : 'travel_not_found', {
     minutos: minutes, perfil: profiles.slice(0, 3).join(', '),
   });
   const action = type === 'login' ? 'netflix_login_code' : 'netflix_travel_code';
-  await reply(run.deps, run.message, messageWithRetryButton(run.deps.definition, action, text));
+  const sent = await reply(run.deps, run.message, messageWithRetryButton(run.deps.definition, action, text));
+  return sent.sendStatus === 'accepted';
 }
 
 // The mail belongs to this customer from the claim on; if the message never reached
@@ -119,25 +123,25 @@ async function claimAndSend(
   run: BotRun, candidate: Candidate, type: BotCodeType, minutes: string, profiles: string[],
 ): Promise<BotResult> {
   const claim = await run.deps.claims.claim(candidate.key, run.message.fromWaId);
-  if (claim === 'mine') {
+  if (claim === 'mine' && await delivered(run, candidate)) {
     await sayMessage(run, 'already_sent');
     await trackEvent(run, 'already_sent', { detail: { tipo: type, cuenta: candidate.service.email } });
     return 'already_sent';
   }
   if (claim === 'taken') {
-    await sayNotFound(run, type, minutes, profiles);
+    if (!await sayNotFound(run, type, minutes, profiles)) return 'send_failed';
     await trackEvent(run, 'not_found', { detail: { tipo: type, motivo: 'entregado_a_otro' } });
-    return 'retry';
+    return 'not_found';
   }
   let sent: Sent;
   try {
-    sent = await sendCode(run, candidate.item, minutes);
+    sent = await sendCode(run, candidate.item, minutes, deliveryKey(run, candidate));
   } catch (error) {
-    await releaseQuietly(run, candidate.key);
+    if (claim === 'claimed') await releaseQuietly(run, candidate.key);
     throw error;
   }
   if (!sent.accepted) {
-    await releaseQuietly(run, candidate.key);
+    if (claim === 'claimed') await releaseQuietly(run, candidate.key);
     await trackEvent(run, 'error', { detail: { motivo: 'envio_fallido', tipo: type } });
     return 'send_failed';
   }
@@ -156,14 +160,14 @@ async function alreadySent(run: BotRun, type: BotCodeType): Promise<BotResult> {
 async function nothingToDeliver(
   run: BotRun, found: Found, type: BotCodeType, minutes: string, profiles: string[],
 ): Promise<BotResult> {
-  await sayNotFound(run, type, minutes, profiles);
+  if (!await sayNotFound(run, type, minutes, profiles)) return 'send_failed';
   if (found.candidates.length === 0 && found.blocked > 0) {
     await trackEvent(run, 'profile_blocked', { detail: { tipo: type, motivo: 'otro_perfil', solicitudes: found.blocked } });
   } else {
     const motivo = found.candidates.length === 0 ? 'sin_correo' : 'entregado_a_otro';
     await trackEvent(run, 'not_found', { detail: { tipo: type, motivo } });
   }
-  return 'retry';
+  return 'not_found';
 }
 
 export async function requestNetflixCode(
@@ -202,7 +206,9 @@ export async function requestNetflixCode(
   const { candidates } = found;
   const profiles = type === 'travel' ? [...new Set(eligible.flatMap((service) => service.profiles))] : [];
   const owners = await deps.claims.owners(candidates.map((candidate) => candidate.key));
-  const free = candidates.filter((candidate) => !owners.has(candidate.key));
+  const undelivered = new Set((await Promise.all(candidates.filter(candidate => owners.get(candidate.key) === message.fromWaId)
+    .map(async candidate => await delivered(run, candidate) ? null : candidate.key))).filter(key => key !== null));
+  const free = candidates.filter((candidate) => !owners.has(candidate.key) || undelivered.has(candidate.key));
   if (free.length === 0) {
     const delivered = candidates.some((candidate) => owners.get(candidate.key) === message.fromWaId);
     return delivered ? alreadySent(run, type) : nothingToDeliver(run, found, type, minutes, profiles);

@@ -31,10 +31,11 @@ export type BotOption = {
 
 /**
  * Qué pasa después de un nodo de texto. Sin valor, el texto es final. `continue`: el bot sigue solo con el nodo al que lleva su única salida
- * (el texto viaja delante, en el mismo mensaje). `wait`: el bot espera lo que escriba el cliente (hasta `hours` horas) y sigue por la salida
+ * (`delivery` permite enviarlo separado; por defecto se une al siguiente mensaje). `wait`: el bot espera lo que escriba el cliente (hasta `hours` horas) y sigue por la salida
  * cuya respuesta coincide; una salida con título vacío es «cualquier otra respuesta».
  */
-export type BotTextAfter = { mode: 'continue' } | { mode: 'wait'; hours: number };
+// La duración se guarda siempre en horas; unit solo controla la unidad visible en el editor.
+export type BotTextAfter = { mode: 'continue'; delivery?: 'joined' | 'separate' } | { mode: 'wait'; hours: number; unit?: 'hours' | 'minutes' };
 
 export type BotNode = {
   /** Slug estable (^[a-z][a-z0-9_]{1,31}$), unico en el flujo. */

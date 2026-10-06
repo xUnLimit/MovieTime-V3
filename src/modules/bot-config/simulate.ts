@@ -166,7 +166,7 @@ function plainText(node: BotNode, body: string): string {
 }
 
 /**
- * Un texto que continúa o espera. `continue`: su texto viaja delante del nodo siguiente, en el mismo mensaje, como en el bot real.
+ * Un texto que continúa o espera. `continue` muestra mensajes juntos o separados, como el bot real.
  * `wait`: se envía y la simulación espera lo que escriba el cliente.
  */
 function enterTextAfter(ctx: Context, node: BotNode, after: NonNullable<BotNode['after']>, turns: SimulationTurn[], at: Entering): SimulationState {
@@ -176,7 +176,8 @@ function enterTextAfter(ctx: Context, node: BotNode, after: NonNullable<BotNode[
   if (!next || at.hops >= MAX_CONTINUE_HOPS) {
     return state(ctx, [...turns, { from: 'bot', text: plainText(node, body) }, warning('este texto no tiene un paso siguiente válido y el cliente no podría continuar.')], node.id, true);
   }
-  return enterNode(ctx, next, turns, { ...at, hops: at.hops + 1, prefix: body });
+  return enterNode(ctx, next, after.delivery === 'separate' ? [...turns, { from: 'bot', text: plainText(node, body) }] : turns,
+    { ...at, hops: at.hops + 1, prefix: after.delivery === 'separate' ? undefined : body });
 }
 
 function enterNode(ctx: Context, node: BotNode, turns: SimulationTurn[], at: Entering): SimulationState {

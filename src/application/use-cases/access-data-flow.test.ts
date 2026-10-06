@@ -16,7 +16,7 @@ const waId = '50765331751';
 const SALE_A = '3f1c2a4e-5b6d-4e8f-9a0b-1c2d3e4f5a6b';
 const SALE_B = '7a1c2a4e-5b6d-4e8f-9a0b-1c2d3e4f5a6c';
 const OTHER = '9b1c2a4e-5b6d-4e8f-9a0b-1c2d3e4f5a6d';
-const sales: AccessSale[] = [{ saleId: SALE_A, service: 'Disney+ Premium', profile: 'Ana' }, { saleId: SALE_B, service: 'Max', profile: '' }];
+const sales: AccessSale[] = [{ saleId: SALE_A, service: 'Disney+', profile: 'Ana' }, { saleId: SALE_B, service: 'Max', profile: '' }];
 
 function inbound(overrides: Partial<InboundMessage> = {}): InboundMessage {
   return {
@@ -57,7 +57,7 @@ function setup(options: {
   const record = vi.fn().mockResolvedValue(undefined);
   const deps: BotDeps = {
     store, send, now: () => now, definition: definition(), events: { record },
-    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn() },
+    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn(), delivered: vi.fn() },
     openInbox: vi.fn().mockResolvedValue(null), fetchTravelPage: vi.fn().mockResolvedValue(null),
     ...(options.port === false ? {} : { accessData }),
   };
@@ -83,7 +83,7 @@ describe('acción «datos de acceso»', () => {
     expect(sent(send).payload).toEqual({
       kind: 'list', body: deps.definition.messages.access_picker_body, buttonLabel: deps.definition.messages.access_picker_button,
       rows: [
-        { id: `BOT:ACCESS:${SALE_A}`, title: 'Disney+ Premium', description: 'Perfil: Ana' },
+        { id: `BOT:ACCESS:${SALE_A}`, title: 'Disney+' },
         { id: `BOT:ACCESS:${SALE_B}`, title: 'Max' },
       ],
     });

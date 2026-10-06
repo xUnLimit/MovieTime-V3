@@ -7,7 +7,7 @@ import type { BotActionKey, BotNode, BotTextAfter, PurchaseBlockType } from '@/t
 import { renderBotMessage, sayMessage } from './bot-messages';
 import { requestServiceAccess } from './access-data-flow';
 import { followConditions, nodeWithValues } from './bot-node-runtime';
-import { reply, trackEvent, type BotDeps, type BotHandBack, type BotOutcome, type BotRun } from './bot-reply';
+import { botReplyKey, reply, trackEvent, type BotDeps, type BotHandBack, type BotOutcome, type BotRun } from './bot-reply';
 import { requestNetflixCode } from './netflix-code-flow';
 
 const log = createLogger('WhatsAppBot');
@@ -60,15 +60,21 @@ async function purchaseNode(run: BotRun, services: BotService[], step: PurchaseS
   return result === 'node' ? 'option_unavailable' : result;
 }
 
-// A text that goes on by itself or waits for the customer. `continue`: its text travels in front of the next node, in the same
-// message (each inbound message gets one reply). `wait`: the text is sent and the bot remembers it is waiting for the answer.
+// Continuations join text by default or send a separate, idempotent segment before the next step.
+// `wait` sends the text and remembers that the bot is waiting for the answer.
 async function showTextAfter(run: BotRun, node: BotNode, after: BotTextAfter, services: BotService[], show: Show): Promise<Delivery> {
   const rendered = await nodeWithValues(run, node);
   const body = show.prefix ? `${show.prefix}\n\n${rendered.body}` : rendered.body;
   const hops = show.hops ?? 0;
   if (after.mode === 'continue') {
     const next = run.deps.definition.nodes.find((candidate) => candidate.id === node.options[0]?.next);
-    if (next && hops < MAX_CONTINUE_HOPS) return showNode(run, next, services, { ...show, prefix: body, hops: hops + 1, fromEntry: false });
+    if (next && hops < MAX_CONTINUE_HOPS) {
+      if (after.delivery === 'separate') {
+        const sent = await reply(run.deps, run.message, buildNodeMessage({ ...rendered, kind: 'text', options: [], body }), undefined, `continue:${hops}`);
+        if (sent.sendStatus !== 'accepted') return { result: 'send_failed', shown: node };
+      }
+      return showNode(run, next, services, { ...show, prefix: after.delivery === 'separate' ? undefined : body, hops: hops + 1, fromEntry: false });
+    }
   }
   const sent = await reply(run.deps, run.message, buildNodeMessage({ ...rendered, kind: 'text', options: [], body }));
   if (after.mode === 'wait' && sent.sendStatus === 'accepted') await startWait(run, node, after.hours);
@@ -186,7 +192,8 @@ async function offerMenu(run: BotRun, text: string | null, services: BotService[
   const { definition } = deps;
   const quietMs = definition.params.operatorQuietMinutes * MINUTE_MS;
   const [lastActivityAt, operatorRepliedRecently] = await Promise.all([
-    deps.store.lastActivityAt(message.fromWaId, message.waMessageId),
+    deps.store.lastActivityAt(message.fromWaId, message.waMessageId, [botReplyKey(message.waMessageId),
+      ...Array.from({ length: MAX_CONTINUE_HOPS }, (_, hop) => botReplyKey(message.waMessageId, `continue:${hop}`))]),
     quietMs > 0
       ? deps.store.operatorRepliedSince(message.fromWaId, new Date(now.getTime() - quietMs).toISOString())
       : Promise.resolve(false),

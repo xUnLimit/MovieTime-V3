@@ -21,6 +21,20 @@ function updateNodeOptions(def: BotDefinition, options: BotNode['options']): Bot
 }
 
 describe('setTextAfter', () => {
+  it.each([1, 5, 7, 30, 4320])('permite %i minutos y conserva la duración al leer la definición', minutes => {
+    const def = reachable(setTextAfter(withText(), 'aviso', 'wait'));
+    aviso(def).after = { mode: 'wait', hours: minutes / 60, unit: 'minutes' };
+    expect(errors(def)).toEqual([]);
+    const parsed = parseDefinition(def);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(aviso(parsed.definition).after).toEqual(aviso(def).after);
+  });
+
+  it.each([0, 0.5, 1.5, 4321, Number.POSITIVE_INFINITY])('rechaza %s minutos inválidos', minutes => {
+    const def = reachable(setTextAfter(withText(), 'aviso', 'wait'));
+    aviso(def).after = { mode: 'wait', hours: minutes / 60, unit: 'minutes' };
+    expect(errors(def).some(issue => issue.path === 'nodes[aviso].after')).toBe(true);
+  });
   it('un texto nuevo es final y no admite salidas', () => {
     const node = aviso(withText());
     expect(node.after).toBeUndefined();
@@ -169,6 +183,26 @@ describe('cadenas de textos que continúan solos', () => {
     expect(errors(chain(2, ['corto', 'también corto'])).some((issue) => issue.message.includes('se cortaría'))).toBe(false);
   });
 
+  it('mensajes separados admiten textos largos, conservan la forma y se simulan en burbujas distintas', () => {
+    const half = 'x'.repeat(Math.floor(NODE_LIMITS.bodyMax / 2) + 10);
+    const def = chain(2, [half, half]);
+    def.nodes.find(node => node.id === 'paso_1')!.after = { mode: 'continue', delivery: 'separate' };
+    expect(errors(def)).toEqual([]);
+    const parsed = parseDefinition(JSON.parse(JSON.stringify(def)));
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.definition.nodes.find(node => node.id === 'paso_1')!.after).toEqual({ mode: 'continue', delivery: 'separate' });
+    const started = startSimulation({ ...def, entryNodeId: 'paso_1' });
+    expect(started.turns.filter(turn => turn.from === 'bot').map(turn => turn.text)).toEqual([half, half]);
+    expect(started.finished).toBe(true);
+  });
+
+  it('separar un segmento no permite que el segmento anterior combinado exceda el límite', () => {
+    const half = 'x'.repeat(Math.floor(NODE_LIMITS.bodyMax / 2) + 10);
+    const def = chain(3, [half, half, 'Final']);
+    def.nodes.find(node => node.id === 'paso_2')!.after = { mode: 'continue', delivery: 'separate' };
+    expect(errors(def).some(issue => issue.message.includes('se cortarían'))).toBe(true);
+  });
+
   it('avisa si el paso siguiente es una acción que no admite un texto antes, salvo pasar a una persona', () => {
     const base = reachable(setTextAfter(withText(), 'aviso', 'continue'));
     const toLogin = updateNodeOptions(base, [{ id: 'siguiente', title: '', next: 'login' }]);
@@ -195,6 +229,8 @@ describe('esquema y diferencias', () => {
     def.nodes[def.nodes.length - 1].after = { mode: 'wait' };
     expect(parseDefinition(def).success).toBe(false);
     def.nodes[def.nodes.length - 1].after = { mode: 'otro' };
+    expect(parseDefinition(def).success).toBe(false);
+    def.nodes[def.nodes.length - 1].after = { mode: 'continue', delivery: 'unknown' };
     expect(parseDefinition(def).success).toBe(false);
   });
 

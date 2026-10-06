@@ -53,7 +53,7 @@ export function createAccessDataStore(client: ServiceClient = createServiceRoleC
         if (!venta.id || !venta.servicio_id || !inUse.has(venta.servicio_id)) return [];
         if (venta.ultimo_periodo_id && refunded.has(venta.ultimo_periodo_id)) return [];
         return [{
-          saleId: venta.id, service: (venta.servicio_nombre || venta.categoria_nombre || '').trim(),
+          saleId: venta.id, service: (venta.categoria_nombre || 'Servicio').trim(),
           profile: (venta.perfil_nombre ?? '').trim(), codeOnly: codeOnly.has(venta.servicio_id),
         }];
       });

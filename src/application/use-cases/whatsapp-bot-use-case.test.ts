@@ -49,7 +49,7 @@ const TRAVEL = 'BOT:netflix:viaje';
 
 function setup(options: {
   services?: BotService[]; known?: boolean; hasServices?: boolean; mails?: RawMail[]; taps?: number; owners?: Record<string, string>;
-  claimResult?: 'claimed' | 'mine' | 'taken'; lastActivityAt?: string | null; operator?: boolean; page?: string | null | Error;
+  delivered?: boolean; claimResult?: 'claimed' | 'mine' | 'taken'; lastActivityAt?: string | null; operator?: boolean; page?: string | null | Error;
   inbox?: 'none' | 'fails' | 'closeFails'; sendStatus?: string; sendThrows?: boolean; releaseThrows?: boolean; definition?: BotDefinition; eventsThrow?: boolean;
 } = {}) {
   const store: BotStore = {
@@ -63,6 +63,7 @@ function setup(options: {
   };
   const owners = new Map(Object.entries(options.owners ?? {}));
   const claims: NetflixClaimStore = {
+    delivered: vi.fn().mockResolvedValue(options.delivered ?? true),
     owners: vi.fn().mockImplementation(async () => owners),
     claim: vi.fn().mockResolvedValue(options.claimResult ?? 'claimed'),
     release: vi.fn().mockImplementation(async () => {
@@ -96,6 +97,57 @@ function setup(options: {
 const sentPayload = (send: ReturnType<typeof setup>['send']) => send.mock.calls[0][0].payload;
 const sentText = (send: ReturnType<typeof setup>['send']) => String(sentPayload(send).text);
 const sentButtonId = (send: ReturnType<typeof setup>['send']) => sentPayload(send).buttons[0].id;
+
+describe('Netflix delivery receipts', () => {
+  it.each([false, true])('retries a failed no-code notification, including a claim race: %s', race => {
+    const { deps } = setup({ sendStatus: 'failed', ...(race ? { mails: [loginMail(serviceA.email, '1234', 1)], claimResult: 'taken' as const } : {}) });
+    return expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('send_failed');
+  });
+  it('does not replay the no-mail reply as a delivered code when the same inbound is retried', async () => {
+    const { deps, recent, send, claims } = setup();
+    const accepted = new Map<string, Parameters<BotDeps['send']>[0]>();
+    send.mockImplementation(async (input: Parameters<BotDeps['send']>[0]) => {
+      const replayed = accepted.has(input.idempotencyKey);
+      if (!replayed) accepted.set(input.idempotencyKey, input);
+      return { id: 'o1', sendStatus: 'accepted', waMessageId: 'wamid.OUT', errorTitle: null, replayed };
+    });
+    vi.mocked(claims.delivered).mockImplementation(async key => accepted.has(key));
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('not_found');
+    recent.mockResolvedValue([loginMail(serviceA.email, '1234', 1)]);
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('code');
+    expect(accepted.size).toBe(2);
+    expect([...accepted.values()][1].payload).toMatchObject({ kind: 'text', text: expect.stringContaining('1234') });
+    expect([...accepted.values()][1].storedTextBody).not.toContain('1234');
+    vi.mocked(claims.owners).mockResolvedValue(new Map([[keyOf('<1234@ejemplo.test>'), waId]]));
+    vi.mocked(claims.claim).mockResolvedValue('mine');
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('already_sent');
+  });
+
+  it('recovers an incorrectly retained claim only for its owner and records a real delivery', async () => {
+    const { deps, send, claims } = setup({ mails: [loginMail(serviceA.email, '1234', 1)],
+      owners: { [keyOf('<1234@ejemplo.test>')]: waId }, claimResult: 'mine', delivered: false });
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('code');
+    expect(sentText(send)).toContain('1234');
+    expect(claims.release).not.toHaveBeenCalled();
+  });
+
+  it.each([{ sendStatus: 'failed' }, { sendThrows: true }])('keeps ownership if recovering a claim fails: %o', async options => {
+    const { deps, claims } = setup({ ...options, mails: [loginMail(serviceA.email, '1234', 1)],
+      owners: { [keyOf('<1234@ejemplo.test>')]: waId }, claimResult: 'mine', delivered: false });
+    if (options.sendThrows) await expect(handleBotMessage(tap(LOGIN), deps)).rejects.toThrow('whatsapp down');
+    else await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('send_failed');
+    expect(claims.release).not.toHaveBeenCalled();
+  });
+
+  it('does not recover another customer’s claim even when it lacks a delivery receipt', async () => {
+    const { deps, send, claims } = setup({ mails: [loginMail(serviceA.email, '1234', 1)],
+      owners: { [keyOf('<1234@ejemplo.test>')]: 'another-customer' }, delivered: false });
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('not_found');
+    expect(claims.claim).not.toHaveBeenCalled();
+    expect(claims.delivered).not.toHaveBeenCalled();
+    expect(sentPayload(send)).toMatchObject({ kind: 'buttons' });
+  });
+});
 
 describe('handleBotMessage menu', () => {
   it('offers the menu to a registered customer who writes after a long silence', async () => {
@@ -212,7 +264,7 @@ describe('sign-in code', () => {
 
   it('asks the customer to request the code again when no recent mail arrived', async () => {
     const { deps, send, claims } = setup({ mails: [loginMail('netflix008@movietimepty.top', '1111', 6)] });
-    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('not_found');
     expect(sentPayload(send)).toMatchObject({ kind: 'buttons' });
     expect(sentButtonId(send)).toBe(LOGIN);
     expect(claims.claim).not.toHaveBeenCalled();
@@ -220,14 +272,14 @@ describe('sign-in code', () => {
 
   it('ignores mail that belongs to someone else', async () => {
     const { deps } = setup({ mails: [loginMail('stranger@movietimepty.top', '1111', 1)] });
-    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('not_found');
   });
 
   it('never gives a customer the code another customer already received', async () => {
     const { deps, send, claims } = setup({
       mails: [loginMail('netflix008@movietimepty.top', '1111', 1)], owners: { [keyOf('<1111@ejemplo.test>')]: '50760000000' },
     });
-    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('not_found');
     expect(claims.claim).not.toHaveBeenCalled();
     expect(JSON.stringify(send.mock.calls)).not.toContain('1111');
     expect(sentButtonId(send)).toBe(LOGIN);
@@ -303,7 +355,7 @@ describe('sign-in code', () => {
 
   it('asks to try again when someone else wins the race for the mail', async () => {
     const { deps, send, claims } = setup({ mails: [loginMail('netflix008@movietimepty.top', '1111', 1)], claimResult: 'taken' });
-    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(LOGIN), deps)).resolves.toBe('not_found');
     expect(sentButtonId(send)).toBe(LOGIN);
     expect(JSON.stringify(send.mock.calls)).not.toContain('1111');
     expect(claims.release).not.toHaveBeenCalled();
@@ -368,7 +420,7 @@ describe('travel code', () => {
     const { deps, send, fetchTravelPage, claims } = setup({
       mails: [travelMail('netflix008@movietimepty.top', 'Pedro', 1), travelMail('netflix008@movietimepty.top', null, 1)], page,
     });
-    await expect(handleBotMessage(tap(TRAVEL), deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(TRAVEL), deps)).resolves.toBe('not_found');
     expect(fetchTravelPage).not.toHaveBeenCalled();
     expect(claims.claim).not.toHaveBeenCalled();
     expect(sentButtonId(send)).toBe(TRAVEL);
@@ -405,7 +457,7 @@ describe('travel code', () => {
     const old = travelMail('netflix008@movietimepty.top', 'Ana María', 14, '<old@ejemplo.test>');
     const expired = travelMail('netflix008@movietimepty.top', 'Ana María', 16, '<expired@ejemplo.test>');
     const taken = setup({ mails: [old], owners: { [keyOf('<old@ejemplo.test>')]: '50760000000' } });
-    await expect(handleBotMessage(tap(TRAVEL), taken.deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(TRAVEL), taken.deps)).resolves.toBe('not_found');
     const free = setup({ mails: [old, expired], page });
     await expect(handleBotMessage(tap(TRAVEL), free.deps)).resolves.toBe('code');
     expect(free.claims.claim).toHaveBeenCalledWith(keyOf('<old@ejemplo.test>'), waId);
@@ -604,13 +656,13 @@ describe('published wording and numbers', () => {
     const login = setup({
       definition: withDefinition((d) => { d.params.loginWindowMinutes = 2; }), mails: [loginMail('netflix008@movietimepty.top', '1111', 3)],
     });
-    await expect(handleBotMessage(tap(LOGIN), login.deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(LOGIN), login.deps)).resolves.toBe('not_found');
     expect(login.recent).toHaveBeenCalledWith(new Date(now.getTime() - 3 * 60_000));
     expect(sentPayload(login.send).body).toContain('2 minutos');
     const travel = setup({
       definition: withDefinition((d) => { d.params.travelWindowMinutes = 3; }), mails: [travelMail('netflix008@movietimepty.top', 'Ana María', 4)],
     });
-    await expect(handleBotMessage(tap(TRAVEL), travel.deps)).resolves.toBe('retry');
+    await expect(handleBotMessage(tap(TRAVEL), travel.deps)).resolves.toBe('not_found');
     expect(sentPayload(travel.send).body).toContain('3 minutos');
   });
 

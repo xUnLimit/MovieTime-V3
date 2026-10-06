@@ -17,9 +17,11 @@ function checkTextAfter(node: BotNode, report: Report): void {
     return;
   }
   if (after?.mode !== 'wait') return;
-  const { hours } = after;
-  if (!Number.isInteger(hours) || hours < WAIT_HOURS.min || hours > WAIT_HOURS.max) {
-    report(`${base}.after`, `El tiempo de espera debe ser un número entero de horas entre ${WAIT_HOURS.min} y ${WAIT_HOURS.max}.`);
+  const minutes = after.unit === 'minutes';
+  const value = minutes ? after.hours * 60 : after.hours;
+  const max = WAIT_HOURS.max * (minutes ? 60 : 1);
+  if (!Number.isFinite(value) || Math.abs(value - Math.round(value)) > 1e-9 || value < 1 || value > max) {
+    report(`${base}.after`, `El tiempo de espera debe ser un número entero de ${minutes ? 'minutos' : 'horas'} entre 1 y ${max}.`);
   }
   if (node.options.length === 0) report(`${base}.options`, 'Agrega al menos una respuesta o «cualquier otra respuesta».');
   if (node.options.length > NODE_LIMITS.listRowsMax) report(`${base}.options`, `Máximo ${NODE_LIMITS.listRowsMax} respuestas en un texto que espera al cliente.`);
@@ -141,11 +143,15 @@ function checkContinueChains(def: BotDefinition, report: Report): void {
         break;
       }
       seen.add(next.id);
+      const separate = current.after?.mode === 'continue' && current.after.delivery === 'separate';
+      if (separate && length > NODE_LIMITS.bodyMax) report(path, `Estos textos juntos superan ${NODE_LIMITS.bodyMax} caracteres: se cortarían. Acórtalos o sepáralos.`);
       if (next.kind === 'action') {
-        if (next.action !== 'handoff') report(path, `El texto no se enviará: el paso siguiente («${next.name}») es una acción que no admite un texto antes.`, 'warning');
+        if (next.action !== 'handoff' && !separate) report(path, `El texto no se enviará: el paso siguiente («${next.name}») es una acción que no admite un texto antes.`, 'warning');
         break;
       }
-      length += CHAIN_JOIN + next.body.length;
+      if (separate) {
+        length = next.body.length;
+      } else length += CHAIN_JOIN + next.body.length;
       if (next.kind === 'text' && next.after?.mode === 'continue') { current = next; continue; }
       if (length > NODE_LIMITS.bodyMax) report(path, `Este texto junto con el paso siguiente supera ${NODE_LIMITS.bodyMax} caracteres: se cortaría. Acórtalos o sepáralos.`);
       break;

@@ -350,8 +350,8 @@ ignora: `z.object` no es estricto y lee el nodo como texto final):
 | `after` | Salidas (`options`) | Qué hace el bot |
 |---|---|---|
 | sin valor | ninguna | El texto es final. La conversación queda ahí hasta que el cliente escriba algo que active el menú. |
-| `{ mode: 'continue' }` | exactamente una (su título no se usa) | Sigue solo con el nodo al que lleva. **Cada mensaje recibido tiene una sola respuesta**, así que el texto viaja delante del nodo siguiente, en el mismo mensaje (igual que el aviso que acompaña a un nodo). |
-| `{ mode: 'wait', hours }` | de 1 a 10 respuestas | Envía el texto y espera lo que escriba el cliente (1 a 72 horas, 12 por defecto). Sigue por la salida que coincide. |
+| `{ mode: 'continue', delivery? }` | exactamente una (su título no se usa) | Sigue solo con el nodo al que lleva. `joined` (por defecto) une los textos; `separate` envía este texto primero y el paso siguiente como otro mensaje, sin esperar una respuesta. El editor permite elegir «Enviar mensajes». Cada segmento usa una clave idempotente distinta y estable; si falla un envío no se adelanta el siguiente. |
+| `{ mode: 'wait', hours, unit? }` | de 1 a 10 respuestas | Envía el texto y espera lo que escriba el cliente (1 a 72 horas, 12 por defecto). Permite elegir minutos (1 a 4320) u horas (1 a 72) y escribir un valor entero personalizado. La duración se guarda normalizada en horas; `unit` conserva la unidad del editor. Sigue por la salida que coincide. |
 
 **Respuestas escritas.** El título de cada salida son las palabras que la identifican, separadas por comas («sí, claro, ok»). Coincide si lo
 escrito incluye alguna como palabra completa, sin importar acentos ni mayúsculas (una frase de varias palabras debe aparecer completa).
@@ -367,9 +367,9 @@ La espera del recorrido se evalúa antes de compras. Al entrar en otro nodo, com
 Solo un botón `SHOP:` o una delegación explícita a una acción de compras vuelve a darle el turno; los mensajes escritos de soporte no reactivan compras.
 
 **Validación** (`validate-nodes.ts`, errores bloqueantes salvo que se diga): continuar exige una salida; esperar exige al menos una, como máximo 10, solo
-una «cualquier otra», palabras en cada respuesta (hasta 60 caracteres) y un número entero de horas entre 1 y 72; una cadena de textos que
-continúan no puede dar vueltas ni pasar de 5 mensajes seguidos, y el texto junto con el del paso donde termina debe caber en 1024 caracteres; si el paso
-siguiente es una acción que no admite un texto antes (todas salvo pasar a una persona) es un **aviso**. Un texto que continúa no cuenta como final
+una «cualquier otra», palabras en cada respuesta (hasta 60 caracteres) y un número entero de horas entre 1 y 72 o de minutos entre 1 y 4320; una cadena de textos que
+continúan no puede dar vueltas ni pasar de 5 mensajes seguidos, y cada grupo de textos unidos debe caber en 1024 caracteres; si se envía unido a una
+acción que no admite un texto antes (todas salvo pasar a una persona) es un **aviso**. En modo separado el texto se envía antes de ejecutar esa acción. Un texto que continúa no cuenta como final
 (el final está donde llega); uno que espera sí. `after` en un nodo que no es de texto se ignora con un aviso.
 
 El editor lo ofrece en el inspector de un texto («Después de este mensaje»), el simulador lo recorre (el texto que espera muestra un campo para escribir
@@ -392,3 +392,9 @@ También se usa al tocar un botón `DATOS` de un aviso. La bienvenida al crear u
   usa lecturas del servidor con el rol de servicio, como el resto del bot.
 - **Textos editables** (Respuestas): `access_none`, `access_picker_body`, `access_picker_button`, `access_code_notice` y `access_unavailable`. Una versión
   ya publicada que no los trae se completa con los textos por defecto al leerla (`parseDefinition`), así que publicar esta versión de la aplicación no apaga el bot.
+
+## Entrega de códigos y selección de datos
+
+La lista de datos muestra solo el nombre de la categoría, sin nombre de cuenta ni perfil; cada opción conserva el identificador de su venta.
+
+La respuesta sin código completa el turno y deja que el cliente vuelva a pulsar el botón. El código usa una clave idempotente propia por correo y destinatario, distinta de esa respuesta. Una reserva del mismo destinatario sin un envío aceptado puede recuperarse; la reserva de otra persona sigue bloqueada. Solo se consideran correos dentro de la ventana vigente.

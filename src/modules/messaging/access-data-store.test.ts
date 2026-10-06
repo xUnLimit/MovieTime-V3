@@ -45,7 +45,7 @@ describe('createAccessDataStore.eligibleSales', () => {
     await expect(createAccessDataStore(client).eligibleSales(waId)).resolves.toEqual({
       clienteId: 'c1',
       sales: [
-        { saleId: 'v1', service: 'Disney+ Premium', profile: 'Ana', codeOnly: false },
+        { saleId: 'v1', service: 'Disney+', profile: 'Ana', codeOnly: false },
         { saleId: 'v2', service: 'Max', profile: '', codeOnly: true },
       ],
     });

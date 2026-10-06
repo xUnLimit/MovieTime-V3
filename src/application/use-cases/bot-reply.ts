@@ -46,7 +46,7 @@ export type BotDeps = {
 };
 
 export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavailable' | 'limited' | 'none' | 'no_profile'
-  | 'unavailable' | 'retry' | 'already_sent' | 'list' | 'code' | 'link' | 'send_failed' | 'access';
+  | 'unavailable' | 'retry' | 'not_found' | 'already_sent' | 'list' | 'code' | 'link' | 'send_failed' | 'access';
 
 /** The journey reached a purchase node: the purchase flow answers this same message (and may hand the turn back). */
 type BotDelegation = { delegate: PurchaseStep; prefix?: string };
@@ -60,17 +60,17 @@ export type BotRun = {
   deps: BotDeps; message: InboundMessage; now: Date; clienteId: string | null; hasServices: boolean; purchaseServed: boolean;
 };
 
-export function botReplyKey(waMessageId: string): string {
-  const hex = createHash('sha256').update(`bot-reply:${waMessageId}`).digest('hex');
+export function botReplyKey(waMessageId: string, part?: string): string {
+  const hex = createHash('sha256').update(`bot-reply:${waMessageId}${part ? `:${part}` : ''}`).digest('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
-// One reply per inbound message: the key derives from it, so a redelivery never answers twice.
+// Stable keys per inbound message and segment prevent duplicate delivery during retries.
 export function reply(
-  deps: BotDeps, message: InboundMessage, payload: OutboundPayload, storedTextBody?: string,
+  deps: BotDeps, message: InboundMessage, payload: OutboundPayload, storedTextBody?: string, part?: string,
 ): Promise<OutboundResult> {
   return deps.send({
-    idempotencyKey: botReplyKey(message.waMessageId), toWaId: message.fromWaId, payload, sentBy: null,
+    idempotencyKey: botReplyKey(message.waMessageId, part), toWaId: message.fromWaId, payload, sentBy: null,
     ...(storedTextBody ? { storedTextBody } : {}),
   });
 }

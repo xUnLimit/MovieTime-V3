@@ -9,17 +9,31 @@ type Result = { data: unknown; error: { code: string } | null };
 function fakeClient(rpcResults: Record<string, Result> = {}, rows: Result = { data: [], error: null }) {
   const rpc = vi.fn(async (name: string) => rpcResults[name] ?? { data: null, error: null });
   const inFilter = vi.fn();
+  const eqFilter = vi.fn();
   const from = vi.fn((table: string) => {
-    const builder: Record<string, unknown> = { select: () => builder, in: (...args: unknown[]) => { inFilter(table, ...args); return builder; } };
+    const builder: Record<string, unknown> = { select: () => builder, in: (...args: unknown[]) => { inFilter(table, ...args); return builder; },
+      eq: (...args: unknown[]) => { eqFilter(table, ...args); return builder; }, maybeSingle: async () => rows };
     builder.then = (resolve: (value: Result) => void) => resolve(rows);
     return builder;
   });
-  return { client: { rpc, from } as never, rpc, from, inFilter };
+  return { client: { rpc, from } as never, rpc, from, inFilter, eqFilter };
 }
 
 const key = 'a'.repeat(64);
 
 describe('createNetflixClaimStore', () => {
+  it.each([{ data: { id: 'outbound' }, expected: true }, { data: null, expected: false }])('verifies an accepted code delivery: %o', async ({ data, expected }) => {
+    const { client, from, eqFilter } = fakeClient({}, { data, error: null });
+    await expect(createNetflixClaimStore(client).delivered('reply-key')).resolves.toBe(expected);
+    expect(from).toHaveBeenCalledWith('whatsapp_outbound_messages');
+    expect(eqFilter).toHaveBeenCalledWith('whatsapp_outbound_messages', 'idempotency_key', 'reply-key');
+    expect(eqFilter).toHaveBeenCalledWith('whatsapp_outbound_messages', 'send_status', 'accepted');
+  });
+
+  it('does not assume delivery when the receipt lookup fails', async () => {
+    const { client } = fakeClient({}, { data: null, error: { code: 'XX000' } });
+    await expect(createNetflixClaimStore(client).delivered('reply-key')).rejects.toThrow('delivery lookup failed: XX000');
+  });
   it.each(['claimed', 'mine', 'taken'] as const)('maps the atomic result %s', async (outcome) => {
     const { client, rpc } = fakeClient({ claim_netflix_code: { data: outcome, error: null } });
     await expect(createNetflixClaimStore(client).claim(key, '50760000001')).resolves.toBe(outcome);

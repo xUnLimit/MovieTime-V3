@@ -6,7 +6,7 @@ export type BotService = { serviceId: string; email: string; profiles: string[] 
 export type BotStore = {
   // services (Netflix only) is empty for a number that is not exactly one active customer; hasServices: any active sale.
   customerServices(waId: string): Promise<{ known: boolean; clienteId: string | null; services: BotService[]; hasServices: boolean }>;
-  lastActivityAt(waId: string, exceptWaMessageId: string): Promise<string | null>;
+  lastActivityAt(waId: string, exceptWaMessageId: string, exceptReplyKeys?: readonly string[]): Promise<string | null>;
   operatorRepliedSince(waId: string, since: string): Promise<boolean>;
   menuTapsSince(waId: string, since: string): Promise<number>;
 };
@@ -47,12 +47,13 @@ export function createBotStore(client: ServiceClient = createServiceRoleClient()
       }
       return { known: true, clienteId: matches[0].id, services: [...byEmail.values()], hasServices };
     },
-    async lastActivityAt(waId, exceptWaMessageId) {
+    async lastActivityAt(waId, exceptWaMessageId, exceptReplyKeys = []) {
+      let outboundQuery = client.from('whatsapp_outbound_messages').select('created_at').eq('to_wa_id', waId);
+      if (exceptReplyKeys.length > 0) outboundQuery = outboundQuery.not('idempotency_key', 'in', `(${exceptReplyKeys.join(',')})`);
       const [inbound, outbound] = await Promise.all([
         client.from('whatsapp_inbound_messages').select('sent_at').eq('from_wa_id', waId)
           .neq('wa_message_id', exceptWaMessageId).order('sent_at', { ascending: false }).limit(1).maybeSingle(),
-        client.from('whatsapp_outbound_messages').select('created_at').eq('to_wa_id', waId)
-          .order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        outboundQuery.order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
       check(inbound.error, 'last inbound lookup');
       check(outbound.error, 'last outbound lookup');

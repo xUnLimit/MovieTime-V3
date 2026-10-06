@@ -80,7 +80,6 @@ export function accessListMessage(
     rows: sales.slice(0, NODE_LIMITS.listRowsMax).map((sale) => ({
       id: `${ACCESS_PREFIX}${sale.saleId}`,
       title: sale.service.slice(0, NODE_LIMITS.listTitleMax) || 'Servicio',
-      ...(sale.profile ? { description: `Perfil: ${sale.profile}`.slice(0, NODE_LIMITS.listDescriptionMax) } : {}),
     })),
   };
 }

@@ -120,6 +120,9 @@ describe('createBotStore activity lookups', () => {
     });
     await expect(createBotStore(client).lastActivityAt(waId, 'wamid.NOW')).resolves.toBe('2026-10-02T11:00:00Z');
     expect(calls).toContainEqual({ table: 'whatsapp_inbound_messages', method: 'neq', args: ['wa_message_id', 'wamid.NOW'] });
+    const key = '11111111-1111-4111-8111-111111111111';
+    await createBotStore(client).lastActivityAt(waId, 'wamid.NOW', [key]);
+    expect(calls).toContainEqual({ table: 'whatsapp_outbound_messages', method: 'not', args: ['idempotency_key', 'in', `(${key})`] });
   });
 
   it('handles one-sided and empty history', async () => {

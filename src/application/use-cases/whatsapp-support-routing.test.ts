@@ -34,7 +34,7 @@ function setup(initial: Json = {}, initialWait: BotWait | null = null) {
       lastActivityAt: vi.fn().mockResolvedValue(now.toISOString()), operatorRepliedSince: vi.fn().mockResolvedValue(false),
       menuTapsSince: vi.fn().mockResolvedValue(0) },
     events: { record: vi.fn().mockResolvedValue(undefined) },
-    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn() },
+    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn(), delivered: vi.fn() },
     openInbox: vi.fn().mockResolvedValue(null), fetchTravelPage: vi.fn().mockResolvedValue(null),
     waits: { get: async () => wait, set: async (_wa, next) => { wait = next; },
       clear: async (_wa, only) => { if (!only || wait?.nodeId === only.nodeId) wait = null; } },

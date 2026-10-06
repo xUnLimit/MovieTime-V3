@@ -39,7 +39,7 @@ describe('accessListMessage', () => {
     const list = accessListMessage(sales, { ...texts, buttonLabel: 'Elegir servicio de la lista que es largo' });
     expect(list.buttonLabel.length).toBeLessThanOrEqual(20);
     expect(list.rows[0].title.length).toBeLessThanOrEqual(24);
-    expect(list.rows[0].description?.length).toBeLessThanOrEqual(72);
+    expect(list.rows[0]).not.toHaveProperty('description');
     expect(list.rows[0].id).toBe(`BOT:ACCESS:${saleId}`);
     expect(list.rows[1]).toEqual({ id: 'BOT:ACCESS:7a1c2a4e-5b6d-4e8f-9a0b-1c2d3e4f5a6c', title: 'Servicio' });
     expect(sendWhatsAppMessageSchema.safeParse({ idempotencyKey: '3f1c2a4e-5b6d-4e8f-9a0b-1c2d3e4f5a6b', to: '50765331751', message: list }).success).toBe(true);

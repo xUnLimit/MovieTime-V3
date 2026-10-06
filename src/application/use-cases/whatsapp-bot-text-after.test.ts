@@ -60,7 +60,7 @@ function setup(definition: BotDefinition, options: { wait?: BotWait | null; send
   const record = vi.fn().mockResolvedValue(undefined);
   const deps: BotDeps = {
     store, send, waits, now: () => now, definition, events: { record },
-    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn() },
+    claims: { owners: vi.fn(), claim: vi.fn(), release: vi.fn(), delivered: vi.fn() },
     openInbox: vi.fn().mockResolvedValue(null), fetchTravelPage: vi.fn().mockResolvedValue(null),
   };
   return { deps, waits, send, record, wait: () => wait };
@@ -68,6 +68,55 @@ function setup(definition: BotDefinition, options: { wait?: BotWait | null; send
 const payloadOf = (send: ReturnType<typeof setup>['send'], index = 0) => send.mock.calls[index][0].payload;
 
 describe('textos que continúan solos', () => {
+  it('separa el texto del siguiente paso y usa claves estables diferentes al reintentar', async () => {
+    const def = journey({ aviso: { body: 'Ten tu cuenta a mano.', after: 'continue', to: [['', 'netflix']] } }, 'aviso');
+    const node = def.nodes.find(node => node.id === 'aviso')!;
+    node.after = { mode: 'continue', delivery: 'separate' };
+    const { deps, send } = setup(def);
+    await handleBotMessage(tap('BOT:menu:ir'), deps);
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(payloadOf(send)).toEqual({ kind: 'text', text: 'Ten tu cuenta a mano.' });
+    expect(payloadOf(send, 1)).toMatchObject({ kind: 'buttons' });
+    expect(payloadOf(send, 1).body).not.toContain('Ten tu cuenta a mano.');
+    const keys = send.mock.calls.map(call => call[0].idempotencyKey);
+    expect(new Set(keys).size).toBe(2);
+    await handleBotMessage(tap('BOT:menu:ir'), deps);
+    expect(send.mock.calls.slice(2).map(call => call[0].idempotencyKey)).toEqual(keys);
+  });
+
+  it('detiene la cadena si el mensaje separado no fue aceptado', async () => {
+    const def = journey({ aviso: { body: 'Primero.', after: 'continue', to: [['', 'netflix']] } }, 'aviso');
+    def.nodes.find(node => node.id === 'aviso')!.after = { mode: 'continue', delivery: 'separate' };
+    const { deps, send } = setup(def, { sendStatus: 'failed' });
+    await expect(handleBotMessage(tap('BOT:menu:ir'), deps)).resolves.toBe('send_failed');
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('un reintento tras fallar el segundo envío conserva los mensajes previos y no confunde su actividad con otra conversación', async () => {
+    const def = journey({ aviso: { body: 'Primero.', after: 'continue', to: [['', 'netflix']] } }, 'aviso');
+    def.entryNodeId = 'aviso';
+    def.nodes.find(node => node.id === 'aviso')!.after = { mode: 'continue', delivery: 'separate' };
+    const { deps, send } = setup(def, { lastActivityAt: new Date(now.getTime() - 24 * 3_600_000).toISOString() });
+    send.mockResolvedValueOnce({ id: 'o1', sendStatus: 'accepted', waMessageId: 'out1', replayed: false, errorTitle: null });
+    send.mockRejectedValueOnce(new Error('network'));
+    await expect(handleBotMessage(write('gracias'), deps)).rejects.toThrow('network');
+    await expect(handleBotMessage(write('gracias'), deps)).resolves.toBe('menu');
+    const keys = send.mock.calls.slice(0, 2).map(call => call[0].idempotencyKey);
+    const activity = vi.mocked(deps.store.lastActivityAt).mock.calls[1];
+    expect(activity[2]).toEqual(expect.arrayContaining(keys));
+    expect(send.mock.calls.slice(2).map(call => call[0].idempotencyKey)).toEqual(keys);
+  });
+
+  it('mezcla segmentos juntos y separados y conserva la espera del último paso', async () => {
+    const def = journey({ uno: { body: 'Uno.', after: 'continue', to: [['', 'dos']] }, dos: { body: 'Dos.', after: 'continue', to: [['', 'tres']] },
+      tres: { body: 'Responde.', after: 'wait', to: [['', 'soporte']] } }, 'uno');
+    def.nodes.find(node => node.id === 'dos')!.after = { mode: 'continue', delivery: 'separate' };
+    const { deps, send, wait } = setup(def);
+    await handleBotMessage(tap('BOT:menu:ir'), deps);
+    expect(payloadOf(send)).toEqual({ kind: 'text', text: 'Uno.\n\nDos.' });
+    expect(payloadOf(send, 1)).toEqual({ kind: 'text', text: 'Responde.' });
+    expect(wait()?.nodeId).toBe('tres');
+  });
   it('el texto viaja delante del paso siguiente, en un solo mensaje', async () => {
     const def = journey({ aviso: { body: 'Ten tu cuenta a mano.', after: 'continue', to: [['', 'netflix']] } }, 'aviso');
     const { deps, send } = setup(def);
@@ -149,6 +198,14 @@ describe('textos que esperan la respuesta del cliente', () => {
     const { deps, wait } = setup(custom);
     await handleBotMessage(tap('BOT:menu:ir'), deps);
     expect(wait()?.expiresAt).toBe(new Date(now.getTime() + 2 * 3_600_000).toISOString());
+  });
+
+  it('vence a los cinco minutos cuando se elige esa unidad', async () => {
+    const def = asking();
+    def.nodes.find(node => node.id === 'pregunta')!.after = { mode: 'wait', hours: 5 / 60, unit: 'minutes' };
+    const { deps, wait } = setup(def);
+    await handleBotMessage(tap('BOT:menu:ir'), deps);
+    expect(wait()?.expiresAt).toBe(new Date(now.getTime() + 5 * 60_000).toISOString());
   });
 
   it('no queda esperando si el mensaje no se pudo enviar', async () => {
