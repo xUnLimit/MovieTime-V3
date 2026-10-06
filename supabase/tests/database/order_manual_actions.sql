@@ -64,7 +64,10 @@ SELECT is((SELECT count(*) FROM public.pedido_pagos WHERE pedido_id='b2222222-22
 
 -- Entrega manual: solo desde «asignado» con el cobro cubierto.
 SELECT throws_ok($$SELECT mt_mark_order_delivered('b4444444-4444-4444-8444-444444444444','aa333333-3333-4333-8333-333333333333')$$,'P0001','pedido_not_deliverable','a cancelled order cannot be delivered');
+-- Preparar el estado de la fixture requiere permisos de tabla: se hace como propietario y se vuelve al administrador.
+RESET ROLE;
 UPDATE public.pedidos SET delivery_state='asignado',estado='pagado' WHERE id='b3333333-3333-4333-8333-333333333333';
+SET LOCAL ROLE authenticated;
 SELECT lives_ok($$SELECT mt_mark_order_delivered('b3333333-3333-4333-8333-333333333333','aa444444-4444-4444-8444-444444444444')$$,'an assigned and paid order can be marked as delivered');
 SELECT lives_ok($$SELECT mt_mark_order_delivered('b3333333-3333-4333-8333-333333333333','aa444444-4444-4444-8444-444444444444')$$,'the same intention replays');
 SELECT is((SELECT delivery_state FROM public.pedidos WHERE id='b3333333-3333-4333-8333-333333333333'),'enviado','the delivery state advances');
