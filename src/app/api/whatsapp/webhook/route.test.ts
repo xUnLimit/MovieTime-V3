@@ -54,6 +54,8 @@ vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({ kind:
 vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: () => ({ load: loadBotConfig }) }));
 vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: recordBotEvent }) }));
 vi.mock('@/modules/messaging/netflix-claim-store', () => ({ createNetflixClaimStore: () => ({ kind: 'claim-store' }) }));
+vi.mock('@/modules/messaging/bot-wait-store', () => ({ createBotWaitStore: () => ({ kind: 'wait-store' }) }));
+vi.mock('@/application/use-cases/access-data-runtime', () => ({ createAccessData: () => ({ kind: 'access-data' }) }));
 vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox }));
 vi.mock('@/platform/server/netflix-travel-page', () => ({ fetchTravelPageHtml: vi.fn() }));
 vi.mock('@/platform/config/netflix-server', () => ({ getNetflixMailConfig }));

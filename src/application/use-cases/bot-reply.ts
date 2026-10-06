@@ -4,6 +4,7 @@ import { createLogger } from '@/platform/observability/logger';
 import type { NetflixInbox } from '@/platform/server/netflix-imap';
 import type { BotStore } from '@/modules/messaging/bot-store';
 import type { BotEventsStore } from '@/modules/messaging/bot-events-store';
+import type { BotWaitStore } from '@/modules/messaging/bot-wait-store';
 import type { NetflixClaimStore } from '@/modules/messaging/netflix-claim-store';
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { NewOutboundMessage, OutboundResult } from '@/modules/whatsapp/outbound-messages';
@@ -12,6 +13,16 @@ import type { PurchaseStep } from '@/modules/bot-config';
 import type { BotDefinition, BotEventType, PurchaseBlockType } from '@/types/bot';
 
 const log = createLogger('WhatsAppBot');
+
+/** Una venta activa del cliente a la que se le puede reenviar su acceso (sin ningún dato secreto). */
+export type AccessSale = { saleId: string; service: string; profile: string };
+/** Los datos de acceso ya armados con la plantilla de suscripción; `stored` es lo único que guarda el chat (sin contraseña ni PIN). */
+export type AccessText = { text: string; stored: string; withheld: boolean };
+// Los datos de acceso de un cliente: solo de su número y de sus ventas activas. Ausente si el bot no puede leerlos.
+export type AccessData = {
+  eligible: (waId: string) => Promise<AccessSale[]>;
+  compose: (waId: string, saleId: string) => Promise<AccessText | null>;
+};
 
 export type BotDeps = {
   store: BotStore;
@@ -29,10 +40,13 @@ export type BotDeps = {
   orderValues?: () => Promise<Record<string, string>>;
   // Si algun plan del catalogo tiene perfiles libres; lo usa la condicion «con o sin cupo».
   catalogHasStock?: () => Promise<boolean>;
+  accessData?: AccessData;
+  // Las esperas de respuesta escrita (textos que esperan al cliente); ausente si el bot no las puede guardar.
+  waits?: BotWaitStore;
 };
 
 export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavailable' | 'limited' | 'none' | 'no_profile'
-  | 'unavailable' | 'retry' | 'already_sent' | 'list' | 'code' | 'link' | 'send_failed';
+  | 'unavailable' | 'retry' | 'already_sent' | 'list' | 'code' | 'link' | 'send_failed' | 'access';
 
 /** The journey reached a purchase node: the purchase flow answers this same message (and may hand the turn back). */
 type BotDelegation = { delegate: PurchaseStep; prefix?: string };

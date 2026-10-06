@@ -81,4 +81,34 @@ describe('useFlowActions', () => {
     expect(view.current()).toBe(before);
     expect(toast.error).toHaveBeenCalledTimes(1);
   });
+
+  it('adds an action step with the action already chosen and selects it', () => {
+    const view = setup(defaultDefinition());
+    act(() => view.actions().addActionNode('service_access'));
+    const created = view.current()?.nodes.at(-1);
+    expect(created).toMatchObject({ kind: 'action', action: 'service_access', name: 'Enviar mis datos de acceso' });
+    expect(view.select).toHaveBeenCalledWith(created?.id);
+  });
+
+  it('does not add an action step when the flow is full', () => {
+    const def = defaultDefinition();
+    const full = { ...def, nodes: [...def.nodes, ...Array.from({ length: 40 - def.nodes.length }, (_, index) => ({ id: `extra_${index}`, name: `Extra ${index}`, kind: 'text' as const, body: 'x', options: [] }))] };
+    const view = setup(full);
+    act(() => view.actions().addActionNode('service_access'));
+    expect(view.current()?.nodes).toHaveLength(40);
+  });
+
+  it('changes what happens after a text and manages its catch-all answer', () => {
+    const view = setup(defaultDefinition());
+    act(() => view.actions().addNode('text'));
+    const id = view.current()!.nodes.at(-1)!.id;
+    act(() => view.actions().setTextAfter(id, 'wait'));
+    expect(view.current()?.nodes.at(-1)?.after).toMatchObject({ mode: 'wait' });
+    expect(view.current()?.nodes.at(-1)?.options).toEqual([expect.objectContaining({ any: true })]);
+    act(() => view.actions().addCatchAll(id));
+    expect(view.current()?.nodes.at(-1)?.options.filter((option) => option.any)).toHaveLength(1);
+    act(() => view.actions().setTextAfter(id, 'end'));
+    expect(view.current()?.nodes.at(-1)).toMatchObject({ options: [] });
+    expect(view.current()?.nodes.at(-1)?.after).toBeUndefined();
+  });
 });

@@ -1,6 +1,7 @@
 export {
-  ACTION_CATALOG, MESSAGE_CATALOG, NODE_LIMITS, PARAM_CATALOG, VARIABLE_CATALOG,
+  ACTION_CATALOG, MAX_CONTINUE_HOPS, MESSAGE_CATALOG, NODE_LIMITS, PARAM_CATALOG, VARIABLE_CATALOG, WAIT_HOURS,
 } from './catalog';
+export { matchTextAnswer } from './answers';
 export { defaultDefinition } from './defaults';
 export { parseDefinition } from './schema';
 export { hasBlockingIssues, validateDefinition } from './validate';
@@ -9,13 +10,13 @@ export {
 } from './render';
 export { buildNodeMessage, parseOptionReplyId, resolveOption } from './payload';
 export {
-  addNode, addOption, canAddNode, canAddOption, canSetEntry, connectOption, moveNode, moveOption, removeNode,
-  removeOption, setEntryNode, setKeywords, setMessage, setParam, updateNode, updateOption,
+  addCatchAllOption, addNode, addOption, canAddNode, canAddOption, canSetEntry, connectOption, moveNode, moveOption, removeNode,
+  removeOption, setEntryNode, setKeywords, setMessage, setParam, setTextAfter, updateNode, updateOption,
 } from './edit';
 export { COMPACT_SPACING, flowWideIssues, issuesByNode, layoutNodes } from './layout';
 export type { NodePosition } from './layout';
 export { diffDefinitions } from './diff';
-export { defaultSample, purchaseStepOf, startSimulation, stepSimulation } from './simulate';
+export { answerSimulation, defaultSample, purchaseStepOf, startSimulation, stepSimulation } from './simulate';
 export type { PurchaseStep, SimulationSample } from './simulate';
 export {
   CONDITION_CATALOG, CONDITION_TYPES, MAX_CONDITION_HOPS, NODE_VARIABLE_CATALOG, conditionOption, nodeVariablesIn, renderNodeBody,

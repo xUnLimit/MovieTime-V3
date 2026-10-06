@@ -1,5 +1,6 @@
 import { z } from '@/platform/validation/zod';
 import type { BotDefinition, BotIssue } from '@/types/bot';
+import { defaultMessages } from './defaults';
 
 // El esquema solo comprueba forma y topes generosos (defensa ante entrada hostil).
 // Los limites de negocio y de WhatsApp los aplica `validateDefinition`.
@@ -12,6 +13,7 @@ const optionSchema = z.object({
   title: text,
   description: text.optional(),
   next: z.string().max(64),
+  any: z.boolean().optional(),
 });
 
 const blockSchema = z.object({
@@ -26,7 +28,8 @@ const nodeSchema = z.object({
   body: text,
   listButtonLabel: text.optional(),
   options: z.array(optionSchema).max(100),
-  action: z.enum(['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services']).optional(),
+  after: z.union([z.object({ mode: z.literal('continue') }), z.object({ mode: z.literal('wait'), hours: z.number() })]).optional(),
+  action: z.enum(['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services', 'service_access']).optional(),
   block: blockSchema.optional(),
   condition: z.object({ type: z.enum(['customer_has_services', 'catalog_has_stock']) }).optional(),
 });
@@ -48,6 +51,9 @@ const botDefinitionSchema = z.object({
     profile_missing: text, no_netflix_account: text, rate_limited: text,
     mailbox_unavailable: text, handoff_ack: text, option_unavailable: text,
     account_picker_body: text, account_picker_button: text,
+    // Mensajes agregados después: una versión ya publicada no los trae y usa el texto por defecto.
+    access_none: text.optional(), access_picker_body: text.optional(), access_picker_button: text.optional(),
+    access_code_notice: text.optional(), access_unavailable: text.optional(),
   }),
   params: z.object({
     menuIdleHours: paramSchema, operatorQuietMinutes: paramSchema, loginWindowMinutes: paramSchema,
@@ -79,7 +85,9 @@ export function parseDefinition(input: unknown):
   { success: true; definition: BotDefinition } | { success: false; issues: BotIssue[] } {
   try {
     const result = botDefinitionSchema.safeParse(input);
-    if (result.success) return { success: true, definition: result.data };
+    if (result.success) {
+      return { success: true, definition: { ...result.data, messages: { ...defaultMessages(), ...result.data.messages } } };
+    }
     const issues = result.error.issues.slice(0, MAX_ISSUES).map((issue): BotIssue => ({
       path: pathToText(issue.path), message: describe(issue), severity: 'error',
     }));

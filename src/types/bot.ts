@@ -2,7 +2,7 @@
 // `bot-config` (logica pura), el runtime del webhook, los repositorios y la UI.
 // Cambiar un tipo aqui exige actualizar `docs/whatsapp-bot-admin.md`.
 
-export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff' | 'purchase' | 'renewal' | 'my_services';
+export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff' | 'purchase' | 'renewal' | 'my_services' | 'service_access';
 export type BotNodeKind = 'buttons' | 'list' | 'text' | 'action';
 
 /** Condiciones cerradas que el servidor resuelve con datos existentes; el nodo sigue siendo `buttons` (si / no). */
@@ -25,7 +25,16 @@ export type BotOption = {
   description?: string;
   /** Id del nodo al que lleva. */
   next: string;
+  /** Solo en textos que esperan al cliente: «cualquier otra respuesta», la salida de lo que no coincide con ninguna otra (sin palabras). */
+  any?: boolean;
 };
+
+/**
+ * Qué pasa después de un nodo de texto. Sin valor, el texto es final. `continue`: el bot sigue solo con el nodo al que lleva su única salida
+ * (el texto viaja delante, en el mismo mensaje). `wait`: el bot espera lo que escriba el cliente (hasta `hours` horas) y sigue por la salida
+ * cuya respuesta coincide; una salida con título vacío es «cualquier otra respuesta».
+ */
+export type BotTextAfter = { mode: 'continue' } | { mode: 'wait'; hours: number };
 
 export type BotNode = {
   /** Slug estable (^[a-z][a-z0-9_]{1,31}$), unico en el flujo. */
@@ -37,8 +46,10 @@ export type BotNode = {
   body: string;
   /** Solo list (max 20). */
   listButtonLabel?: string;
-  /** buttons: 1-3 · list: 1-10 · text/action: []. */
+  /** buttons: 1-3 · list: 1-10 · text: [] (final), 1 (continue) o 1-10 respuestas (wait) · action: []. */
   options: BotOption[];
+  /** Solo en nodos text: continuar con otro nodo o esperar la respuesta del cliente. */
+  after?: BotTextAfter;
   /** Solo en nodos action. */
   action?: BotActionKey;
   /** Bloque de compra con identidad fija (ver `bot-config/purchase-blocks`). */
@@ -67,7 +78,8 @@ export type BotMessageKey =
   | 'login_not_found' | 'travel_not_found' | 'already_sent'
   | 'profile_missing' | 'no_netflix_account' | 'rate_limited'
   | 'mailbox_unavailable' | 'handoff_ack' | 'option_unavailable'
-  | 'account_picker_body' | 'account_picker_button';
+  | 'account_picker_body' | 'account_picker_button'
+  | 'access_none' | 'access_picker_body' | 'access_picker_button' | 'access_code_notice' | 'access_unavailable';
 
 /** Mensajes propios de una plataforma o de un plan (por id del catálogo); lo que falta usa el texto general de la compra. */
 export type BotCatalogMessages = {

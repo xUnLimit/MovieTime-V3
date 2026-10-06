@@ -12,6 +12,7 @@ import { EntryButton } from './EntryButton';
 import { IssueList } from './IssueList';
 import { BlockOptionRow } from './BlockOptionRow';
 import { OptionRow } from './OptionRow';
+import { optionLabel } from './option-label';
 
 type FlowNodeData = {
   node: BotNode;
@@ -56,6 +57,12 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
     <p className="line-clamp-3 px-3 pt-2 pb-2 text-xs whitespace-pre-wrap text-muted-foreground">{nodePreview(node)}</p>
     <EntryButton node={node} isEntry={isEntry} actions={actions} className="nodrag mx-3 mb-2" />
     <IssueList issues={issues} label={`Problemas de ${node.name}`} />
+    {node.kind === 'text' && node.after ? <ul aria-label={`Opciones de ${node.name}`} className="border-t">
+      {node.options.map((option, index) => <li key={option.id} className="relative border-b px-3 py-2 text-xs last:border-b-0">
+        {optionLabel(node, option)}
+        <Handle type="source" id={option.id} position={Position.Right} role="img" aria-label={`Salida de la respuesta ${index + 1} de ${node.name}`} />
+      </li>)}
+    </ul> : null}
     {node.kind === 'buttons' || node.kind === 'list' ? <>
       <ul aria-label={`Opciones de ${node.name}`}>
         {node.options.map((option, index) => {

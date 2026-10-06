@@ -2563,6 +2563,27 @@ export type Database = {
           },
         ]
       }
+      whatsapp_bot_waits: {
+        Row: {
+          wa_id: string
+          node_id: string
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          wa_id: string
+          node_id: string
+          expires_at: string
+          created_at?: string
+        }
+        Update: {
+          wa_id?: string
+          node_id?: string
+          expires_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       netflix_code_claims: {
         Row: {
           mail_key: string

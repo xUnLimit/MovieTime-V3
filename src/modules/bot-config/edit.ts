@@ -1,5 +1,5 @@
 import type { BotDefinition, BotMessageKey, BotNode, BotNodeKind, BotOption, BotParams } from '@/types/bot';
-import { NODE_LIMITS, PARAM_CATALOG } from './catalog';
+import { NODE_LIMITS, PARAM_CATALOG, WAIT_HOURS } from './catalog';
 import { patchConditionNode } from './condition-node';
 import { blockOptionSpec } from './purchase-blocks';
 import { normalizeText } from './render';
@@ -96,16 +96,51 @@ export function updateNode(def: BotDefinition, nodeId: string, patch: Partial<Om
   });
 }
 
+/** A donde lleva por defecto una salida nueva: el nodo de entrada o, si este es la entrada, cualquier otro. */
+function defaultTarget(def: BotDefinition, node: BotNode): string {
+  return def.entryNodeId !== node.id && def.nodes.some((n) => n.id === def.entryNodeId)
+    ? def.entryNodeId : (def.nodes.find((n) => n.id !== node.id)?.id ?? node.id);
+}
+
+/** Maximo de salidas de este nodo: las de su tipo, o las respuestas de un texto que espera al cliente. */
+export function optionLimitOf(node: BotNode): number {
+  if (node.kind === 'text') return node.after?.mode === 'wait' ? NODE_LIMITS.listRowsMax : 0;
+  return optionLimit(node.kind);
+}
+
 export function addOption(def: BotDefinition, nodeId: string): BotDefinition {
   return mapNode(def, nodeId, (node) => {
-    const max = node.kind === 'buttons' ? NODE_LIMITS.buttonsMax : NODE_LIMITS.listRowsMax;
-    if ((node.kind !== 'buttons' && node.kind !== 'list') || node.options.length >= max || node.block || node.condition) return node;
-    const target = def.entryNodeId !== node.id && def.nodes.some((n) => n.id === def.entryNodeId)
-      ? def.entryNodeId : (def.nodes.find((n) => n.id !== node.id)?.id ?? node.id);
+    if (node.options.length >= optionLimitOf(node) || node.block || node.condition) return node;
+    const waiting = node.kind === 'text';
     const option: BotOption = {
-      id: uniqueId('opcion', node.options.map((o) => o.id)), title: 'Nueva opción', next: target,
+      id: uniqueId(waiting ? 'respuesta' : 'opcion', node.options.map((o) => o.id)), title: waiting ? 'Nueva respuesta' : 'Nueva opción', next: defaultTarget(def, node),
     };
     return { ...node, options: [...node.options, option] };
+  });
+}
+
+/** Agrega «cualquier otra respuesta» (salida sin palabras) a un texto que espera al cliente; solo puede haber una. */
+export function addCatchAllOption(def: BotDefinition, nodeId: string): BotDefinition {
+  return mapNode(def, nodeId, (node) => {
+    if (node.kind !== 'text' || node.after?.mode !== 'wait' || node.options.length >= optionLimitOf(node) || node.options.some((option) => option.any)) return node;
+    const option: BotOption = { id: uniqueId('otra_respuesta', node.options.map((o) => o.id)), title: '', next: defaultTarget(def, node), any: true };
+    return { ...node, options: [...node.options, option] };
+  });
+}
+
+/**
+ * Cambia lo que pasa después de un texto: terminar (por defecto), continuar solo con otro nodo o esperar la respuesta escrita del
+ * cliente. Conserva a donde ya llevaba y deja una salida válida; `wait` empieza con «cualquier otra respuesta».
+ */
+export function setTextAfter(def: BotDefinition, nodeId: string, mode: 'end' | 'continue' | 'wait'): BotDefinition {
+  return mapNode(def, nodeId, (node) => {
+    if (node.kind !== 'text' || node.block || node.condition || (node.after?.mode ?? 'end') === mode) return node;
+    const { after: previous, ...rest } = node;
+    void previous;
+    if (mode === 'end') return { ...rest, options: [] };
+    const next = node.options[0]?.next ?? defaultTarget(def, node);
+    if (mode === 'continue') return { ...rest, after: { mode: 'continue' }, options: [{ id: 'siguiente', title: '', next }] };
+    return { ...rest, after: { mode: 'wait', hours: WAIT_HOURS.default }, options: [{ id: 'otra_respuesta', title: '', next, any: true }] };
   });
 }
 
@@ -132,7 +167,7 @@ export function optionLimit(kind: BotNodeKind): number {
 }
 
 export function canAddOption(node: BotNode): boolean {
-  return node.condition === undefined && node.options.length < optionLimit(node.kind);
+  return node.condition === undefined && node.options.length < optionLimitOf(node);
 }
 
 export function canAddNode(def: BotDefinition): boolean {

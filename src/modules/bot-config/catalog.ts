@@ -11,7 +11,14 @@ export const NODE_LIMITS = {
   listButtonMax: 20,
   nodesMax: 40,
   keywordsMax: 30,
+  /** Largo de las palabras que identifican una respuesta escrita (varias separadas por comas). */
+  answerMax: 60,
 } as const;
+
+/** Cuánto espera el bot la respuesta escrita del cliente después de un texto (horas). */
+export const WAIT_HOURS = { min: 1, max: 72, default: 12 } as const;
+/** Textos que siguen solos uno tras otro (en un mismo mensaje) antes de cortar la cadena. */
+export const MAX_CONTINUE_HOPS = 5;
 
 export const NODE_ID_PATTERN = /^[a-z][a-z0-9_]{1,31}$/;
 export const OPTION_ID_PATTERN = /^[a-z][a-z0-9_]{0,31}$/;
@@ -19,12 +26,16 @@ export const KEYWORD_MAX_LENGTH = 40;
 export const NODE_NAME_MAX_LENGTH = 60;
 
 export const NODE_KINDS: readonly BotNodeKind[] = ['buttons', 'list', 'text', 'action'];
-export const ACTION_KEYS: readonly BotActionKey[] = ['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services'];
+export const ACTION_KEYS: readonly BotActionKey[] = ['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services', 'service_access'];
 
 export const ACTION_CATALOG: Record<BotActionKey, { label: string; description: string }> = {
   purchase: { label: 'Adquirir servicios', description: 'Abre el catálogo y el carrito con reserva y pago verificado.' },
   renewal: { label: 'Renovar servicios', description: 'Permite elegir las ventas propias antes de confirmar importe y pago.' },
   my_services: { label: 'Consultar mis servicios', description: 'Muestra solamente los servicios vinculados al número que escribe.' },
+  service_access: {
+    label: 'Enviar mis datos de acceso',
+    description: 'El cliente recibe de nuevo los datos de su servicio (correo, contraseña, perfil…) con la plantilla «Notificación de Suscripción», solo de sus propios servicios activos.',
+  },
   netflix_login_code: {
     label: 'Enviar código de inicio de sesión',
     description: 'Busca en el buzón el código que Netflix envió para iniciar sesión y se lo entrega al cliente.',
@@ -173,6 +184,36 @@ export const MESSAGE_CATALOG: Record<BotMessageKey, MessageCatalogEntry> = {
     description: 'Texto del botón que abre la lista de cuentas (máximo 20 caracteres).',
     group: 'netflix', variables: NONE, required: NONE, maxLength: NODE_LIMITS.listButtonMax,
     defaultText: 'Elegir cuenta',
+  },
+  access_none: {
+    label: 'Datos de acceso: sin servicios',
+    description: 'Se envía cuando el cliente pide sus datos de acceso y no tiene un servicio activo con este número.',
+    group: 'sistema', variables: NONE, required: NONE, maxLength: MSG_MAX,
+    defaultText: 'No encuentro un servicio activo a tu nombre con este número. Si crees que es un error, una persona te ayuda en breve.',
+  },
+  access_picker_body: {
+    label: 'Datos de acceso: elegir servicio, texto',
+    description: 'Texto de la lista que se muestra cuando el cliente tiene varios servicios activos.',
+    group: 'sistema', variables: NONE, required: NONE, maxLength: MSG_MAX,
+    defaultText: 'Tienes varios servicios activos. ¿De cuál necesitas los datos de acceso?',
+  },
+  access_picker_button: {
+    label: 'Datos de acceso: elegir servicio, botón',
+    description: 'Texto del botón que abre la lista de servicios (máximo 20 caracteres).',
+    group: 'sistema', variables: NONE, required: NONE, maxLength: NODE_LIMITS.listButtonMax,
+    defaultText: 'Elegir servicio',
+  },
+  access_code_notice: {
+    label: 'Datos de acceso: servicio con código',
+    description: 'Se añade a los datos de un servicio que entra con código: ahí no se envía la contraseña.',
+    group: 'sistema', variables: NONE, required: NONE, maxLength: MSG_MAX,
+    defaultText: 'Este servicio entra con un código: pídelo desde el menú cuando vayas a iniciar sesión.',
+  },
+  access_unavailable: {
+    label: 'Datos de acceso: no disponibles',
+    description: 'Se envía cuando no se pueden preparar los datos del cliente en este momento.',
+    group: 'sistema', variables: NONE, required: NONE, maxLength: MSG_MAX,
+    defaultText: 'No pude preparar tus datos de acceso en este momento. Una persona te ayuda en breve.',
   },
 };
 

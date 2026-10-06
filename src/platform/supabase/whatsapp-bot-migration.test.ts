@@ -13,10 +13,15 @@ function seededDefinition(): unknown {
 }
 
 describe('WhatsApp bot admin migration', () => {
-  it('seeds version 1 with exactly the default definition so code and database cannot diverge', () => {
-    const seeded = seededDefinition();
-    expect(seeded).toEqual(defaultDefinition());
-    expect(parseDefinition(seeded).success).toBe(true);
+  it('seeds version 1 with the default definition so code and database cannot diverge', () => {
+    const seeded = seededDefinition() as ReturnType<typeof defaultDefinition>;
+    const defaults = defaultDefinition();
+    // Lo que se agregó a los valores por defecto después de la migración (mensajes nuevos) no está en la siembra: se completa al leerla.
+    expect({ ...seeded, messages: undefined }).toEqual({ ...defaults, messages: undefined });
+    expect(Object.entries(seeded.messages).every(([key, text]) => defaults.messages[key as keyof typeof defaults.messages] === text)).toBe(true);
+    const parsed = parseDefinition(seeded);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.definition).toEqual(defaults);
   });
 
   it('seeds the global config switched off and pointing at version 1', () => {

@@ -13,7 +13,9 @@ import { ConditionEditor } from './ConditionEditor';
 import { EntryButton } from './EntryButton';
 import { VariableHints } from './VariableHints';
 import { OptionRow, SELECT_CLASS } from './OptionRow';
+import { AccessActionHint } from './AccessActionHint';
 import { PurchaseActionHint } from './PurchaseActionHint';
+import { TextAfterEditor } from './TextAfterEditor';
 
 type NodeEditorProps = {
   def: BotDefinition;
@@ -51,6 +53,8 @@ export function NodeEditor({ def, node, actions, showOptions, extensionsEnabled 
           <Textarea maxLength={NODE_LIMITS.bodyMax} value={node.body} onChange={(event) => actions.updateNode(node.id, { body: event.target.value })} />
           <span className="text-xs font-normal text-muted-foreground">{node.body.length}/{NODE_LIMITS.bodyMax}</span></label>}
       {node.kind === 'action' ? <PurchaseActionHint action={node.action} onOpenPurchase={onOpenPurchase} /> : null}
+      {node.kind === 'action' ? <AccessActionHint action={node.action} /> : null}
+      {node.kind === 'text' ? <TextAfterEditor node={node} targets={targets} actions={actions} /> : null}
       {extensionsEnabled && node.kind !== 'action' ? <VariableHints body={node.body} onInsert={(marker) => actions.updateNode(node.id, { body: `${node.body}${marker}` })} /> : null}
       {node.kind === 'list' ? <label className="block text-sm font-medium">Texto del botón de lista
         <Input maxLength={NODE_LIMITS.listButtonMax} value={node.listButtonLabel ?? ''} onChange={(event) => actions.updateNode(node.id, { listButtonLabel: event.target.value })} />

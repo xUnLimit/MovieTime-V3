@@ -1,6 +1,6 @@
 import type { BotDefinition, BotNode } from '@/types/bot';
 import {
-  ACTION_CATALOG, ACTION_KEYS, NODE_ID_PATTERN, NODE_KINDS, NODE_LIMITS, NODE_NAME_MAX_LENGTH, OPTION_ID_PATTERN,
+  ACTION_CATALOG, ACTION_KEYS, MAX_CONTINUE_HOPS, NODE_ID_PATTERN, NODE_KINDS, NODE_LIMITS, NODE_NAME_MAX_LENGTH, OPTION_ID_PATTERN, WAIT_HOURS,
 } from './catalog';
 import { reachableNodeIds } from './graph';
 import { NODE_VARIABLE_NAMES } from './extensions';
@@ -8,17 +8,39 @@ import { templateVariables } from './render';
 
 type Report = (path: string, message: string, severity?: 'error' | 'warning') => void;
 
+/** Un texto que continúa solo o que espera la respuesta del cliente: cuántas salidas lleva y cómo se escriben sus respuestas. */
+function checkTextAfter(node: BotNode, report: Report): void {
+  const base = `nodes[${node.id}]`;
+  const after = node.after;
+  if (after?.mode === 'continue') {
+    if (node.options.length !== 1) report(`${base}.options`, 'Elige a qué paso continúa este mensaje.');
+    return;
+  }
+  if (after?.mode !== 'wait') return;
+  const { hours } = after;
+  if (!Number.isInteger(hours) || hours < WAIT_HOURS.min || hours > WAIT_HOURS.max) {
+    report(`${base}.after`, `El tiempo de espera debe ser un número entero de horas entre ${WAIT_HOURS.min} y ${WAIT_HOURS.max}.`);
+  }
+  if (node.options.length === 0) report(`${base}.options`, 'Agrega al menos una respuesta o «cualquier otra respuesta».');
+  if (node.options.length > NODE_LIMITS.listRowsMax) report(`${base}.options`, `Máximo ${NODE_LIMITS.listRowsMax} respuestas en un texto que espera al cliente.`);
+  if (node.options.filter((option) => option.any).length > 1) report(`${base}.options`, 'Solo puede haber una «cualquier otra respuesta».');
+}
+
 function checkOptions(node: BotNode, ids: ReadonlySet<string>, report: Report): void {
   const base = `nodes[${node.id}]`;
   const max = node.kind === 'buttons' ? NODE_LIMITS.buttonsMax : NODE_LIMITS.listRowsMax;
+  const textAfter = node.kind === 'text' && node.after !== undefined;
   if (node.kind === 'buttons' || node.kind === 'list') {
     if (node.options.length === 0) report(`${base}.options`, 'Agrega al menos una opción.');
     if (node.options.length > max) {
       report(`${base}.options`, `Máximo ${max} opciones en un nodo de ${node.kind === 'buttons' ? 'botones' : 'lista'}.`);
     }
+  } else if (textAfter) {
+    checkTextAfter(node, report);
   } else if (node.options.length > 0) {
     report(`${base}.options`, 'Este tipo de nodo no admite opciones.');
   }
+  if (node.kind !== 'text' && node.after !== undefined) report(`${base}.after`, 'Solo los textos continúan o esperan una respuesta; se ignorará.', 'warning');
   const titleMax = node.kind === 'list' ? NODE_LIMITS.listTitleMax : NODE_LIMITS.buttonTitleMax;
   const taken = new Set<string>();
   node.options.forEach((option, index) => {
@@ -26,9 +48,17 @@ function checkOptions(node: BotNode, ids: ReadonlySet<string>, report: Report): 
     if (!OPTION_ID_PATTERN.test(option.id)) report(`${path}.id`, 'El id de la opción debe ser un slug (minúsculas, números y guion bajo, hasta 32).');
     if (taken.has(option.id)) report(`${path}.id`, `El id de opción «${option.id}» está repetido en este nodo.`);
     taken.add(option.id);
-    if (option.title.trim() === '') report(`${path}.title`, 'El título no puede estar vacío.');
-    if (option.title.length > titleMax) report(`${path}.title`, `El título supera ${titleMax} caracteres.`);
-    if (option.description !== undefined) {
+    if (textAfter) {
+      // En un texto que continúa el título no se usa; en uno que espera, son las palabras de la respuesta (salvo «cualquier otra»).
+      if (node.after?.mode === 'wait' && !option.any) {
+        if (option.title.trim() === '') report(`${path}.title`, 'Escribe las palabras de la respuesta (por ejemplo: sí, claro) o quítala.');
+        if (option.title.length > NODE_LIMITS.answerMax) report(`${path}.title`, `Las palabras de la respuesta superan ${NODE_LIMITS.answerMax} caracteres.`);
+      }
+    } else {
+      if (option.title.trim() === '') report(`${path}.title`, 'El título no puede estar vacío.');
+      if (option.title.length > titleMax) report(`${path}.title`, `El título supera ${titleMax} caracteres.`);
+    }
+    if (option.description !== undefined && !textAfter) {
       if (node.kind !== 'list') report(`${path}.description`, 'La descripción solo se usa en listas y se ignorará.', 'warning');
       else if (option.description.length > NODE_LIMITS.listDescriptionMax) {
         report(`${path}.description`, `La descripción supera ${NODE_LIMITS.listDescriptionMax} caracteres.`);
@@ -71,7 +101,8 @@ function checkNode(node: BotNode, ids: ReadonlySet<string>, report: Report): voi
  * puede volver al menu o salir hacia un nodo final NO cuenta: solo los ciclos inescapables bloquean publicar.
  */
 function deadEndNodes(def: BotDefinition, reachable: ReadonlySet<string>): string[] {
-  const exits = new Set(def.nodes.filter((node) => node.kind === 'text' || node.kind === 'action').map((node) => node.id));
+  // Un texto que continúa solo con otro nodo no termina nada: el final está donde llegue. Uno que espera al cliente sí se puede dejar ahí.
+  const exits = new Set(def.nodes.filter((node) => (node.kind === 'text' && node.after?.mode !== 'continue') || node.kind === 'action').map((node) => node.id));
   let grew = true;
   while (grew) {
     grew = false;
@@ -83,6 +114,43 @@ function deadEndNodes(def: BotDefinition, reachable: ReadonlySet<string>): strin
     }
   }
   return [...new Set(def.nodes.map((node) => node.id))].filter((id) => reachable.has(id) && !exits.has(id));
+}
+
+const CHAIN_JOIN = 2;
+
+/**
+ * Los textos que continúan solos viajan juntos en un único mensaje: la cadena no puede dar vueltas, no puede ser muy larga y su
+ * texto junto con el del paso donde termina debe caber en un mensaje (si no, WhatsApp lo cortaría).
+ */
+function checkContinueChains(def: BotDefinition, report: Report): void {
+  const byId = new Map(def.nodes.map((node) => [node.id, node]));
+  for (const start of def.nodes.filter((node) => node.kind === 'text' && node.after?.mode === 'continue')) {
+    const path = `nodes[${start.id}]`;
+    const seen = new Set([start.id]);
+    let current: BotNode = start;
+    let length = start.body.length;
+    for (let steps = 0; ; steps += 1) {
+      const next = byId.get(current.options[0]?.next ?? '');
+      if (!next || next.condition) break;
+      if (seen.has(next.id)) {
+        report(path, 'Estos mensajes se enviarían en bucle sin esperar al cliente. Quita una de las continuaciones.');
+        break;
+      }
+      if (steps >= MAX_CONTINUE_HOPS) {
+        report(path, `No puede haber más de ${MAX_CONTINUE_HOPS} mensajes seguidos sin esperar al cliente.`);
+        break;
+      }
+      seen.add(next.id);
+      if (next.kind === 'action') {
+        if (next.action !== 'handoff') report(path, `El texto no se enviará: el paso siguiente («${next.name}») es una acción que no admite un texto antes.`, 'warning');
+        break;
+      }
+      length += CHAIN_JOIN + next.body.length;
+      if (next.kind === 'text' && next.after?.mode === 'continue') { current = next; continue; }
+      if (length > NODE_LIMITS.bodyMax) report(path, `Este texto junto con el paso siguiente supera ${NODE_LIMITS.bodyMax} caracteres: se cortaría. Acórtalos o sepáralos.`);
+      break;
+    }
+  }
 }
 
 /** Reglas de la seccion 4 que dependen del grafo de nodos. */
@@ -107,6 +175,7 @@ export function validateNodes(def: BotDefinition, report: Report): void {
       : `Ningún botón lleva a «${node.name}». Conéctalo o márcalo como entrada.`;
     report(`nodes[${node.id}]`, label);
   }
+  checkContinueChains(def, report);
   for (const id of deadEndNodes(def, reachable)) {
     report(`nodes[${id}]`, 'Desde este nodo el cliente da vueltas sin terminar. Agrega un botón que lleve a un mensaje final o a una acción.');
   }

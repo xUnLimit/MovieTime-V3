@@ -11,6 +11,7 @@ function describeNodeChanges(before: BotNode, after: BotNode): string[] {
   if (before.action !== after.action) changes.push(`${label}: acción cambiada`);
   if ((before.listButtonLabel ?? '') !== (after.listButtonLabel ?? '')) changes.push(`${label}: botón de la lista modificado`);
   if (JSON.stringify(before.options) !== JSON.stringify(after.options)) changes.push(`${label}: opciones modificadas`);
+  if (JSON.stringify(before.after ?? null) !== JSON.stringify(after.after ?? null)) changes.push(`${label}: qué pasa después del texto modificado`);
   if (before.condition?.type !== after.condition?.type) changes.push(`${label}: condición modificada`);
   if (JSON.stringify(before.block?.copy ?? {}) !== JSON.stringify(after.block?.copy ?? {})) changes.push(`${label}: textos del bloque modificados`);
   return changes;

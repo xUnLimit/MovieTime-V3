@@ -15,6 +15,8 @@ vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: (
 vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({}) }));
 vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: mocks.record }) }));
 vi.mock('@/modules/messaging/netflix-claim-store', () => ({ createNetflixClaimStore: () => ({}) }));
+vi.mock('@/modules/messaging/bot-wait-store', () => ({ createBotWaitStore: () => ({ kind: 'wait-store' }) }));
+vi.mock('@/application/use-cases/access-data-runtime', () => ({ createAccessData: () => ({ kind: 'access-data' }) }));
 vi.mock('@/modules/whatsapp/order-delivery-store', () => ({ resolveAccessSale: vi.fn() }));
 vi.mock('@/platform/server/netflix-imap', () => ({ openNetflixInbox: mocks.openInbox }));
 vi.mock('@/platform/server/netflix-travel-page', () => ({ fetchTravelPageHtml: vi.fn() }));
@@ -47,6 +49,15 @@ beforeEach(() => {
 function lastDeps() {
   return mocks.handleBotMessage.mock.calls.at(-1)![1];
 }
+
+describe('createBotRuntime composition', () => {
+  it('gives the bot the stores for written answers and for the customer\'s access data', async () => {
+    const runtime = createBotRuntime('req');
+    await runtime.handle(defaultDefinition(), message, send);
+    expect(lastDeps().waits).toEqual({ kind: 'wait-store' });
+    expect(lastDeps().accessData).toEqual({ kind: 'access-data' });
+  });
+});
 
 describe('createBotRuntime configuration', () => {
   it('always loads the latest published version and exposes its number', async () => {

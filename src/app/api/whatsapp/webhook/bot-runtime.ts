@@ -2,6 +2,7 @@ import { getNetflixMailConfig } from '@/platform/config/netflix-server';
 import { createLogger } from '@/platform/observability/logger';
 import { openNetflixInbox } from '@/platform/server/netflix-imap';
 import { fetchTravelPageHtml } from '@/platform/server/netflix-travel-page';
+import { createAccessData } from '@/application/use-cases/access-data-runtime';
 import { orderTemplateValues } from '@/application/use-cases/bot-order-values';
 import { getPedidoServerUseCase, listCatalogoServerUseCase } from '@/application/use-cases/pedidos-server-use-cases';
 import { handleBotMessage } from '@/application/use-cases/whatsapp-bot-use-case';
@@ -10,6 +11,7 @@ import { resolveOption } from '@/modules/bot-config';
 import { createBotConfigStore } from '@/modules/messaging/bot-config-store';
 import { createBotEventsStore, type BotEventsStore } from '@/modules/messaging/bot-events-store';
 import { createBotStore } from '@/modules/messaging/bot-store';
+import { createBotWaitStore } from '@/modules/messaging/bot-wait-store';
 import { createNetflixClaimStore } from '@/modules/messaging/netflix-claim-store';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import { readBotAction } from '@/modules/whatsapp/bot-menu';
@@ -89,6 +91,8 @@ export function createBotRuntime(requestId: string) {
           },
           send,
           resolveOwnedSale: resolveAccessSale,
+          accessData: createAccessData(),
+          waits: createBotWaitStore(),
           // Solo los datos de la lista blanca del pedido abierto de este mismo numero; el RPC valida la propiedad.
           ...(orderId ? { orderValues: async () => orderTemplateValues(await getPedidoServerUseCase(message.fromWaId, orderId)) } : {}),
           catalogHasStock: async () => (await listCatalogoServerUseCase()).some((plan) => plan.perfilesLibres > 0),

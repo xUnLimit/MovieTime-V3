@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { fetchCommerceCopyUseCase } from '@/application/use-cases/commerce-copy-use-cases';
 import {
-  addConditionNode, addHandoffOption, addNode, addOption, addPurchaseFlow, applyFlowTemplate, connectOption, moveNode, moveOption, removeNode, removeOption, removePurchaseFlow,
-  setBlockCopy, setEntryNode, updateNode, updateOption, withPurchaseBlocks,
+  ACTION_CATALOG, addCatchAllOption, addConditionNode, addHandoffOption, addNode, addOption, addPurchaseFlow, applyFlowTemplate, connectOption, moveNode, moveOption, removeNode, removeOption, removePurchaseFlow,
+  setBlockCopy, setEntryNode, setTextAfter, updateNode, updateOption, withPurchaseBlocks,
 } from '@/modules/bot-config';
 import type { FlowTemplateId } from '@/modules/bot-config';
-import type { BotAdminApi, BotConditionType, BotDefinition, BotNode, BotNodeKind, BotOption } from '@/types/bot';
+import type { BotActionKey, BotAdminApi, BotConditionType, BotDefinition, BotNode, BotNodeKind, BotOption } from '@/types/bot';
 
 export const KIND_LABELS: Record<BotNodeKind, string> = {
   buttons: 'Botones', list: 'Lista', text: 'Texto', action: 'Acción',
@@ -20,6 +20,12 @@ type OptionPatch = Partial<Pick<BotOption, 'title' | 'description' | 'next'>>;
 /** Cada accion delega en una funcion pura de `bot-config/edit.ts`; la UI no repite reglas. */
 export type FlowActions = {
   addNode: (kind: BotNodeKind) => void;
+  /** Un paso de acción ya elegida (por ejemplo, enviar los datos de acceso del cliente). */
+  addActionNode: (action: BotActionKey) => void;
+  /** Qué pasa después de un texto: terminar, continuar solo con otro paso o esperar la respuesta escrita del cliente. */
+  setTextAfter: (nodeId: string, mode: 'end' | 'continue' | 'wait') => void;
+  /** «Cualquier otra respuesta» de un texto que espera al cliente. */
+  addCatchAll: (nodeId: string) => void;
   removeNode: (nodeId: string) => void;
   updateNode: (nodeId: string, patch: Partial<Omit<BotNode, 'id'>>) => void;
   moveNode: (from: number, to: number) => void;
@@ -53,6 +59,16 @@ export function useFlowActions(api: BotAdminApi, select: (nodeId: string | null)
         edit(() => next);
         select(next.nodes[next.nodes.length - 1].id);
       },
+      addActionNode: (action) => {
+        if (!draft) return;
+        const added = addNode(draft, 'action', ACTION_CATALOG[action].label);
+        if (added === draft) return;
+        const created = added.nodes[added.nodes.length - 1];
+        edit(() => updateNode(added, created.id, { action }));
+        select(created.id);
+      },
+      setTextAfter: (nodeId, mode) => edit((def) => setTextAfter(def, nodeId, mode)),
+      addCatchAll: (nodeId) => edit((def) => addCatchAllOption(def, nodeId)),
       removeNode: (nodeId) => { edit((def) => removeNode(def, nodeId)); select(null); },
       updateNode: (nodeId, patch) => edit((def) => updateNode(def, nodeId, patch)),
       moveNode: (from, to) => edit((def) => moveNode(def, from, to)),

@@ -1,14 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { GitBranch, Plus, Search, ShoppingCart } from 'lucide-react';
+import { GitBranch, KeyRound, Plus, Search, ShoppingCart } from 'lucide-react';
 import { CONDITION_CATALOG, CONDITION_TYPES, canAddNode, issuesByNode, normalizeText } from '@/modules/bot-config';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/platform/utils';
-import type { BotDefinition, BotIssue, BotNode } from '@/types/bot';
+import type { BotDefinition, BotIssue } from '@/types/bot';
+import { kindLabel } from '../flow/CompactNodeCard';
 import { KINDS, KIND_LABELS, type FlowActions } from '../flow/flow-actions';
 
 type StepSidebarProps = {
@@ -23,7 +24,6 @@ type StepSidebarProps = {
   className?: string;
 };
 
-const kindLabel = (node: BotNode) => (node.block ? 'Bloque de compra' : node.condition ? 'Condición' : KIND_LABELS[node.kind]);
 
 /** Menú único para agregar: tipos de paso, condiciones y flujo de compras. */
 function AddStepMenu({ def, actions, extensionsEnabled, purchaseLinked }: Pick<StepSidebarProps, 'def' | 'actions' | 'extensionsEnabled' | 'purchaseLinked'>) {
@@ -32,6 +32,8 @@ function AddStepMenu({ def, actions, extensionsEnabled, purchaseLinked }: Pick<S
     <DropdownMenuContent align="end" className="w-60">
       <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Nuevo paso</DropdownMenuLabel>
       {KINDS.map((kind) => <DropdownMenuItem key={kind} disabled={!canAddNode(def)} onSelect={() => actions.addNode(kind)}>{KIND_LABELS[kind]}</DropdownMenuItem>)}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem disabled={!canAddNode(def)} onSelect={() => actions.addActionNode('service_access')}><KeyRound />Datos de acceso del cliente</DropdownMenuItem>
       {extensionsEnabled ? <>
         <DropdownMenuSeparator />
         {CONDITION_TYPES.map((type) => <DropdownMenuItem key={type} disabled={!canAddNode(def)} onSelect={() => actions.addCondition(type)}><GitBranch />Condición: {CONDITION_CATALOG[type].label.toLowerCase()}</DropdownMenuItem>)}

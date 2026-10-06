@@ -10,6 +10,7 @@ export type BotCodeType = 'login' | 'travel';
 export type LegacyTarget = 'entry' | 'login' | 'travel' | 'handoff';
 
 const ACCOUNT_PREFIX = 'BOT:ACC:';
+const ACCESS_PREFIX = 'BOT:ACCESS:';
 const ACCOUNT_TYPE_TOKEN: Record<BotCodeType, string> = { login: 'LOGIN', travel: 'TRAVEL' };
 
 // Compatibility aliases: chats still show buttons that were sent with these ids.
@@ -30,6 +31,8 @@ export type BotAction =
   | { kind: 'sale'; type: BotCodeType; saleId: string }
   | { kind: 'option'; nodeId: string; optionId: string }
   | { kind: 'account'; type: BotCodeType; serviceId: string }
+  // A row of the list that asks which sale the customer wants the access data of.
+  | { kind: 'access'; saleId: string }
   | { kind: 'legacy'; target: LegacyTarget };
 
 function botAccountId(type: BotCodeType, serviceId: string): string {
@@ -59,7 +62,27 @@ export function readBotAction(message: InboundMessage): BotAction | null {
   if (legacy) return { kind: 'legacy', target: legacy };
   const option = parseOptionReplyId(payload.id);
   if (option) return { kind: 'option', ...option };
+  if (payload.id.startsWith(ACCESS_PREFIX)) {
+    const saleId = payload.id.slice(ACCESS_PREFIX.length);
+    return isUuid(saleId) ? { kind: 'access', saleId } : null;
+  }
   return readAccountRow(payload.id);
+}
+
+// The list that asks which service the access data is for; only the customer's own active sales are offered.
+export function accessListMessage(
+  sales: readonly { saleId: string; service: string; profile: string }[], texts: { body: string; buttonLabel: string },
+): ListPayload {
+  return {
+    kind: 'list',
+    body: texts.body,
+    buttonLabel: texts.buttonLabel.slice(0, NODE_LIMITS.listButtonMax),
+    rows: sales.slice(0, NODE_LIMITS.listRowsMax).map((sale) => ({
+      id: `${ACCESS_PREFIX}${sale.saleId}`,
+      title: sale.service.slice(0, NODE_LIMITS.listTitleMax) || 'Servicio',
+      ...(sale.profile ? { description: `Perfil: ${sale.profile}`.slice(0, NODE_LIMITS.listDescriptionMax) } : {}),
+    })),
+  };
 }
 
 // The list that asks which Netflix account the code is for; the wording comes from the published bot.

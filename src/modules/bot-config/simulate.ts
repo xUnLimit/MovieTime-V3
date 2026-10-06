@@ -1,6 +1,7 @@
 import type { BotActionKey, BotDefinition, BotNode } from '@/types/bot';
 import { COPY_CATALOG, blockCopyProblem, blockOfCopyKey, type CopyKey } from '@/modules/commerce-copy';
-import { VARIABLE_CATALOG } from './catalog';
+import { MAX_CONTINUE_HOPS, VARIABLE_CATALOG } from './catalog';
+import { matchTextAnswer } from './answers';
 import { CONDITION_CATALOG, MAX_CONDITION_HOPS, conditionOption, exampleNodeValues, renderNodeBody, type ConditionFacts } from './extensions';
 import { buildNodeMessage, optionReplyId, resolveOption } from './payload';
 import { blockCopyOverrides, blockOptionSpec } from './purchase-blocks';
@@ -16,6 +17,8 @@ export type SimulationSample = { facts: ConditionFacts; values: Record<string, s
 /** `copy`: textos de compras guardados en el servidor (los del lienzo mandan sobre ellos, como en el bot real). */
 export type SimulationState = {
   turns: SimulationTurn[]; currentNodeId: string | null; finished: boolean; sample?: SimulationSample;
+  /** Un texto que espera la respuesta escrita del cliente: la simulación sigue con `answerSimulation`. */
+  awaitingNodeId?: string;
   copy?: Readonly<Record<string, string>>;
 };
 type Context = { def: BotDefinition; sample: SimulationSample; copy?: Readonly<Record<string, string>> };
@@ -65,6 +68,9 @@ function actionTurns(def: BotDefinition, action: BotActionKey | undefined, prefi
     return [{ from: 'bot', text: renderTemplate(def.messages.travel_code_sent, sampleValues(def.params.travelWindowMinutes)) }];
   }
   if (action === 'handoff') return [{ from: 'bot', text: withPrefix(prefix, def.messages.handoff_ack) }];
+  if (action === 'service_access') {
+    return [warning('aquí el cliente recibe los datos de su servicio (correo, contraseña, perfil…) con la plantilla «Notificación de Suscripción»; el simulador no los muestra. Con varios servicios, primero elige de cuál.')];
+  }
   return [warning('este nodo de acción no tiene una acción válida.')];
 }
 
@@ -85,8 +91,8 @@ function conditionTarget(def: BotDefinition, node: BotNode, answer: boolean, len
 type Entering = { hops: number; lenient: boolean; prefix?: string; delegated?: boolean; handedBack?: boolean };
 type Preview = { turns: SimulationTurn[]; finished: boolean };
 
-function state(ctx: Context, turns: SimulationTurn[], currentNodeId: string | null, finished: boolean): SimulationState {
-  return { turns, currentNodeId, finished, sample: ctx.sample, ...(ctx.copy ? { copy: ctx.copy } : {}) };
+function state(ctx: Context, turns: SimulationTurn[], currentNodeId: string | null, finished: boolean, awaitingNodeId?: string): SimulationState {
+  return { turns, currentNodeId, finished, sample: ctx.sample, ...(ctx.copy ? { copy: ctx.copy } : {}), ...(awaitingNodeId ? { awaitingNodeId } : {}) };
 }
 
 /** Botones de un bloque con los titulos que usa el flujo de compras; permiten seguir la cadena en el simulador. */
@@ -153,6 +159,26 @@ function purchaseTurns(ctx: Context, node: BotNode, step: PurchaseStep, at: Ente
   return state(ctx, [...preview.turns, abroad], node.id, preview.finished);
 }
 
+/** El texto tal como lo recibe el cliente (recortado como el bot real): solo texto, sin botones. */
+function plainText(node: BotNode, body: string): string {
+  const message = buildNodeMessage({ ...node, kind: 'text', options: [], body });
+  return message.kind === 'text' ? message.text : body;
+}
+
+/**
+ * Un texto que continúa o espera. `continue`: su texto viaja delante del nodo siguiente, en el mismo mensaje, como en el bot real.
+ * `wait`: se envía y la simulación espera lo que escriba el cliente.
+ */
+function enterTextAfter(ctx: Context, node: BotNode, after: NonNullable<BotNode['after']>, turns: SimulationTurn[], at: Entering): SimulationState {
+  const body = withPrefix(at.prefix, renderNodeBody(node.body, ctx.sample.values));
+  if (after.mode === 'wait') return state(ctx, [...turns, { from: 'bot', text: plainText(node, body) }], node.id, false, node.id);
+  const next = ctx.def.nodes.find((candidate) => candidate.id === node.options[0]?.next);
+  if (!next || at.hops >= MAX_CONTINUE_HOPS) {
+    return state(ctx, [...turns, { from: 'bot', text: plainText(node, body) }, warning('este texto no tiene un paso siguiente válido y el cliente no podría continuar.')], node.id, true);
+  }
+  return enterNode(ctx, next, turns, { ...at, hops: at.hops + 1, prefix: body });
+}
+
 function enterNode(ctx: Context, node: BotNode, turns: SimulationTurn[], at: Entering): SimulationState {
   if (node.condition) {
     const answer = ctx.sample.facts[node.condition.type];
@@ -168,6 +194,7 @@ function enterNode(ctx: Context, node: BotNode, turns: SimulationTurn[], at: Ent
     return { ...preview, turns: [...turns, ...preview.turns] };
   }
   if (node.kind === 'action') return state(ctx, [...turns, ...actionTurns(ctx.def, node.action, at.prefix)], node.id, true);
+  if (node.kind === 'text' && node.after) return enterTextAfter(ctx, node, node.after, turns, at);
   const message = buildNodeMessage({ ...node, body: withPrefix(at.prefix, renderNodeBody(node.body, ctx.sample.values)) });
   if (message.kind === 'text') {
     const invalid = node.kind !== 'text';
@@ -205,4 +232,20 @@ export function stepSimulation(def: BotDefinition, current: SimulationState, opt
   return enterNode(ctx, target, turns, {
     hops: 0, lenient: cancelled !== undefined && target.id === def.entryNodeId, prefix: cancelled, handedBack: cancelled !== undefined,
   });
+}
+
+/**
+ * Lo que el cliente escribe cuando un texto espera su respuesta: sigue por la salida que coincide o, si ninguna coincide y no hay
+ * «cualquier otra respuesta», el bot no contesta y el chat queda para una persona.
+ */
+export function answerSimulation(def: BotDefinition, current: SimulationState, written: string): SimulationState {
+  const text = written.trim();
+  const node = def.nodes.find((candidate) => candidate.id === current.awaitingNodeId);
+  if (current.finished || !node || text === '') return current;
+  const ctx: Context = { def, sample: current.sample ?? defaultSample(), copy: current.copy };
+  const turns = [...current.turns, { from: 'customer' as const, text }];
+  const option = matchTextAnswer(node, text);
+  const target = option ? def.nodes.find((candidate) => candidate.id === option.next) : undefined;
+  if (!target) return state(ctx, [...turns, warning('el bot no contesta: ninguna respuesta coincide y no hay «cualquier otra respuesta». El chat queda para una persona.')], node.id, true);
+  return enterNode(ctx, target, turns, { hops: 0, lenient: false });
 }

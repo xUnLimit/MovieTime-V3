@@ -341,3 +341,50 @@ anterior ignora (`z.object` no estricto).
 - Lo que falta usa el texto general del flujo de compra (`commerce-copy`); un texto que no cumple las reglas (`catalogMessageProblem`) bloquea publicar y, si llegara a publicarse, el bot lo ignora y usa el general.
 - Marcadores por campo en `CATALOG_MESSAGE_FIELDS` (`bot-config/catalog-messages.ts`). Tope de 200 plataformas y 200 planes con mensaje propio.
 - Se edita en Automatizaciones → Editor → «Flujo de compra» → «Mensajes por servicio». El simulador todavía no los refleja.
+
+## Textos que continúan o esperan la respuesta del cliente
+
+Un nodo de texto ya no tiene que ser el final. Su campo opcional `after` decide qué pasa después (la versión anterior de la aplicación lo
+ignora: `z.object` no es estricto y lee el nodo como texto final):
+
+| `after` | Salidas (`options`) | Qué hace el bot |
+|---|---|---|
+| sin valor | ninguna | El texto es final. La conversación queda ahí hasta que el cliente escriba algo que active el menú. |
+| `{ mode: 'continue' }` | exactamente una (su título no se usa) | Sigue solo con el nodo al que lleva. **Cada mensaje recibido tiene una sola respuesta**, así que el texto viaja delante del nodo siguiente, en el mismo mensaje (igual que el aviso que acompaña a un nodo). |
+| `{ mode: 'wait', hours }` | de 1 a 10 respuestas | Envía el texto y espera lo que escriba el cliente (1 a 72 horas, 12 por defecto). Sigue por la salida que coincide. |
+
+**Respuestas escritas.** El título de cada salida son las palabras que la identifican, separadas por comas («sí, claro, ok»). Coincide si lo
+escrito incluye alguna como palabra completa, sin importar acentos ni mayúsculas (una frase de varias palabras debe aparecer completa).
+Gana la primera que coincide, en el orden del editor. La salida marcada `any: true` es «cualquier otra respuesta» (sin palabras; solo una).
+Si nada coincide y no hay «cualquier otra respuesta», el bot no contesta y el mensaje es un chat normal (una palabra del menú, como «hola», sigue abriéndolo).
+
+**Estado de la espera.** Tabla `whatsapp_bot_waits` (`wa_id` único, `node_id`, `expires_at`), solo para el servidor: RLS activa, sin acceso para
+`anon` ni `authenticated` y `SELECT/INSERT/UPDATE/DELETE` solo para `service_role`. Cada cliente espera una sola respuesta a la vez. Se borra
+después de entregar la respuesta (una reentrega del mismo mensaje todavía la encuentra), al tocar cualquier botón del menú, o cuando el texto ya no
+existe, y se limpia lo vencido al guardar otra. Un fallo al guardarla o leerla nunca impide contestar. Expand-only: la versión anterior ignora la tabla.
+
+**Validación** (`validate-nodes.ts`, errores bloqueantes salvo que se diga): continuar exige una salida; esperar exige al menos una, como máximo 10, solo
+una «cualquier otra», palabras en cada respuesta (hasta 60 caracteres) y un número entero de horas entre 1 y 72; una cadena de textos que
+continúan no puede dar vueltas ni pasar de 5 mensajes seguidos, y el texto junto con el del paso donde termina debe caber en 1024 caracteres; si el paso
+siguiente es una acción que no admite un texto antes (todas salvo pasar a una persona) es un **aviso**. Un texto que continúa no cuenta como final
+(el final está donde llega); uno que espera sí. `after` en un nodo que no es de texto se ignora con un aviso.
+
+El editor lo ofrece en el inspector de un texto («Después de este mensaje»), el simulador lo recorre (el texto que espera muestra un campo para escribir
+la respuesta del cliente) y el lienzo muestra las salidas con su etiqueta («Continúa», las palabras, «Cualquier otra respuesta»).
+
+## Datos de acceso del cliente (acción `service_access`)
+
+«Enviar mis datos de acceso» no está ligada a la compra: es una acción más del catálogo, que se conecta donde se quiera (el editor tiene «Agregar paso →
+Datos de acceso del cliente»). El cliente recibe de nuevo lo que se le envía al crear su venta: la plantilla **Notificación de Suscripción**
+(Plantillas de mensajes), con el correo, la contraseña, el perfil y lo demás según la plataforma. Lo que dice se edita en esa plantilla.
+
+- **Solo lo suyo.** Las ventas salen del número que escribe: debe pertenecer a un único cliente activo; la venta debe estar activa y vigente, de un servicio
+  en uso (no en reposo, cortado ni archivado) y sin reembolso en su último periodo. Con varios servicios el bot manda una lista para elegir de cuál
+  (`BOT:ACCESS:<venta>`); el identificador elegido se vuelve a comprobar contra las ventas del número, así que uno ajeno nunca devuelve datos.
+- **Servicios que entran con código** (política `mt_service_access.mode = 'code'`, p. ej. Netflix): no se envían la contraseña ni el PIN; se añade el aviso
+  «access_code_notice» para pedir el código desde el menú.
+- **Seguridad.** El cliente recibe el texto real; el chat guarda el mismo texto con la contraseña y el PIN ocultos. Los eventos no llevan datos de la venta
+  (`option_selected` con `destino: datos_acceso`, `not_found`, `rate_limited`, `error`). Aplica el límite de pulsaciones del menú. Sin cambios de SQL ni RPC:
+  usa lecturas del servidor con el rol de servicio, como el resto del bot.
+- **Textos editables** (Respuestas): `access_none`, `access_picker_body`, `access_picker_button`, `access_code_notice` y `access_unavailable`. Una versión
+  ya publicada que no los trae se completa con los textos por defecto al leerla (`parseDefinition`), así que publicar esta versión de la aplicación no apaga el bot.

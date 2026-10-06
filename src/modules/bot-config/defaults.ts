@@ -3,7 +3,7 @@ import { MESSAGE_CATALOG, MESSAGE_KEYS, PARAM_CATALOG, PARAM_KEYS } from './cata
 
 const DEFAULT_KEYWORDS = ['hola', 'buenas', 'buenos', 'menu', 'ayuda', 'opciones', 'codigo', 'netflix'];
 
-function defaultMessages(): Record<BotMessageKey, string> {
+export function defaultMessages(): Record<BotMessageKey, string> {
   return Object.fromEntries(MESSAGE_KEYS.map((key) => [key, MESSAGE_CATALOG[key].defaultText])) as Record<BotMessageKey, string>;
 }
 
