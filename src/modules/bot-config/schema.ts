@@ -33,6 +33,11 @@ const nodeSchema = z.object({
 
 const paramSchema = z.number();
 
+const catalogMessagesSchema = z.object({
+  categories: z.record(z.string().max(64), z.object({ chosen: text.optional(), rowDescription: text.optional() })).refine((entries) => Object.keys(entries).length <= 200),
+  plans: z.record(z.string().max(64), z.object({ added: text.optional(), rowDescription: text.optional() })).refine((entries) => Object.keys(entries).length <= 200),
+});
+
 const botDefinitionSchema = z.object({
   schemaVersion: z.literal(1),
   entryNodeId: z.string().max(64),
@@ -49,6 +54,7 @@ const botDefinitionSchema = z.object({
     travelWindowMinutes: paramSchema, maxTaps: paramSchema, tapWindowMinutes: paramSchema,
   }),
   keywords: z.array(z.string().max(200)).max(500),
+  catalogMessages: catalogMessagesSchema.optional(),
 });
 
 function pathToText(path: readonly PropertyKey[]): string {

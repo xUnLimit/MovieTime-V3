@@ -11,7 +11,7 @@ export const demoControl: AutomationControl = {
 };
 
 export const demoOrders: Pedido[] = Array.from({ length: 14 }, (_, index) => ({
-  id: `00000000-0000-4000-8000-${String(index + 100).padStart(12, '0')}`, terceroId: null, contactId: null, moneda: 'USD', total: 12,
-  estado: 'confirmado', paymentState: index === 4 ? 'exceso' : index % 3 ? 'cubierto' : 'parcial', deliveryState: index % 2 ? 'asignado' : 'pendiente', receivedAmount: index === 4 ? 14 : index % 3 ? 12 : 8, missingAmount: index % 3 ? 0 : 4, excessAmount: index === 4 ? 2 : 0, allocatedAmount: index % 2 ? 12 : 0, refundedAmount: 0, unallocatedAmount: index % 2 ? 0 : index % 3 ? 12 : 8, expiraAt: index === 0 ? '2000-10-03T13:00:00Z' : '2100-10-03T13:00:00Z',
+  id: `00000000-0000-4000-8000-${String(index + 100).padStart(12, '0')}`, terceroId: null, contactId: index % 4 === 3 ? null : `5076${String(1110000 + index)}`, moneda: 'USD', total: 12,
+  estado: index === 5 ? 'cancelado' : index % 3 === 0 ? 'esperando_pago' : index % 3 === 1 ? 'pagado' : 'pago_en_revision', paymentState: index === 4 ? 'exceso' : index % 3 ? 'cubierto' : 'parcial', deliveryState: index % 2 ? 'asignado' : 'pendiente', receivedAmount: index === 4 ? 14 : index % 3 ? 12 : 8, missingAmount: index % 3 ? 0 : 4, excessAmount: index === 4 ? 2 : 0, allocatedAmount: index % 2 ? 12 : 0, refundedAmount: 0, unallocatedAmount: index % 2 ? 0 : index % 3 ? 12 : 8, expiraAt: index === 0 ? '2000-10-03T13:00:00Z' : '2100-10-03T13:00:00Z',
   items: ['Netflix', 'Disney+'].map((planNombre, itemIndex) => ({ id: `00000000-0000-4000-8000-${String(index * 2 + itemIndex + 200).padStart(12, '0')}`, tipo: 'nueva', servicioId: '00000000-0000-4000-8000-000000000003', ventaId: null, planNombre, total: 6, estado: index % 2 ? 'aplicado' : 'pendiente', ventaIdResultante: index % 2 ? '00000000-0000-4000-8000-000000000009' : null })),
 }));

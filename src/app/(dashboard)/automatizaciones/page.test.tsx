@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,7 +38,7 @@ function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(<QueryClientProvider client={client}><AutomatizacionesPage /></QueryClientProvider>);
 }
-const selectedTab = () => screen.getByRole('tab', { selected: true }).textContent;
+const selectedTab = () => within(screen.getByRole('tablist', { name: 'Herramientas del recorrido' })).getByRole('tab', { selected: true }).textContent;
 
 beforeEach(() => {
   Object.values(useCases).forEach((mock) => mock.mockReset());
@@ -63,8 +63,8 @@ describe('/automatizaciones', () => {
   it('opens the flow editor directly, without a landing or link tabs', async () => {
     renderPage();
     expect(await screen.findByRole('heading', { name: 'Automatizaciones' })).toBeTruthy();
-    expect(selectedTab()).toBe('Recorrido');
-    expect(screen.getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Recorrido', 'Respuestas', 'Ajustes', 'Actividad', 'Versiones']);
+    expect(selectedTab()).toBe('Editor');
+    expect(within(screen.getByRole('tablist', { name: 'Herramientas del recorrido' })).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Editor', 'Respuestas', 'Actividad', 'Ajustes']);
     expect(screen.getByRole('tablist', { name: 'Herramientas del recorrido' })).toBeTruthy();
   });
 
@@ -77,22 +77,23 @@ describe('/automatizaciones', () => {
     nav.search = 'tab=resumen&editar=whatsapp';
     renderPage();
     await screen.findByRole('heading', { name: 'Automatizaciones' });
-    expect(selectedTab()).toBe('Recorrido');
+    expect(selectedTab()).toBe('Editor');
   });
 
   it('writes the chosen tab to the URL', async () => {
     renderPage();
-    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Versiones' }));
-    expect(nav.replace).toHaveBeenCalledWith('/automatizaciones?tab=versiones', { scroll: false });
-    expect(selectedTab()).toBe('Versiones');
+    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Ajustes' }));
+    expect(nav.replace).toHaveBeenCalledWith('/automatizaciones?tab=ajustes', { scroll: false });
+    expect(selectedTab()).toBe('Ajustes');
   });
 
   it('switches the bot off from the header through the real hook and use case', async () => {
     renderPage();
     const user = userEvent.setup();
-    expect(await screen.findByText('Encendido')).toBeTruthy();
-    expect(screen.getByText('Versión publicada: 2')).toBeTruthy();
-    await user.click(screen.getByRole('switch', { name: 'Apagar bot' }));
+    const status = await screen.findByRole('button', { name: 'Estado del bot: encendido' });
+    expect(status.textContent).toContain('v2');
+    await user.click(status);
+    await user.click(await screen.findByRole('menuitem', { name: 'Apagar bot' }));
     await user.click(screen.getByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(useCases.setBotEnabledUseCase).toHaveBeenCalledWith(false, expect.anything()));
     // The status is read again after the change.
@@ -102,7 +103,8 @@ describe('/automatizaciones', () => {
   it('asks before resetting and publishes the draft with a note through hook, use case and refresh', async () => {
     renderPage();
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: 'Restablecer valores por defecto' }));
+    await user.click(await screen.findByRole('button', { name: 'Más acciones del borrador' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Restablecer valores por defecto' }));
     await user.click(screen.getByRole('button', { name: 'Restablecer' }));
     await user.click(screen.getByRole('button', { name: 'Publicar' }));
     await user.type(await screen.findByLabelText('Nota de publicación'), 'Vuelta a los valores por defecto');
@@ -118,8 +120,10 @@ describe('/automatizaciones', () => {
     renderPage();
     const user = userEvent.setup();
     await user.click(await screen.findByRole('tab', { name: 'Ajustes' }));
+    await user.click(screen.getByRole('button', { name: /^Conexiones/ }));
     expect(screen.getByRole('button', { name: 'Probar buzón' })).toBeTruthy();
     expect(document.querySelector('[role="tabpanel"][hidden]')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /^Compras por WhatsApp/ }));
     expect(screen.getByRole('link', { name: 'Ir a Configuración' }).getAttribute('href')).toBe('/configuracion');
   });
 });

@@ -4,6 +4,7 @@ import { useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { MessageBubble } from '../MessageBubble';
 import { COPY_CATALOG, COPY_VARIABLES, type CopyKey } from '@/modules/commerce-copy/catalog';
 import { copyProblem, renderCopyText, sampleValues } from '@/modules/commerce-copy/render';
 
@@ -88,9 +89,7 @@ export function CopyEditor({ copyKey, saved, inherited, onSave }: CopyEditorProp
 
       <div className="space-y-2">
         <p className="text-sm font-medium">Así lo verá el cliente</p>
-        <div className="rounded-md border bg-muted p-3">
-          <p className="text-sm break-words whitespace-pre-wrap" data-testid="copy-preview">{renderCopyText(draft, sampleValues(copyKey)) || ' '}</p>
-        </div>
+        <MessageBubble text={renderCopyText(draft, sampleValues(copyKey))} testId="copy-preview" />
         <p className="text-xs text-muted-foreground">Los datos se muestran con valores de ejemplo.</p>
       </div>
 

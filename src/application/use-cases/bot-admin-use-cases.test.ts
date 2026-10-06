@@ -97,8 +97,9 @@ describe('publishBotUseCase', () => {
   });
 
   it('still refuses an incomplete purchase flow', async () => {
-    const flow = addPurchaseFlow(defaultDefinition());
-    await expect(publishBotUseCase(flow, 'Sin conectar', context())).rejects.toBeInstanceOf(BotAdminError);
+    const complete = addPurchaseFlow(defaultDefinition());
+    const flow = { ...complete, nodes: complete.nodes.filter((node) => node.id !== 'compra_pago') };
+    await expect(publishBotUseCase(flow, 'Incompleto', context())).rejects.toBeInstanceOf(BotAdminError);
     expect(mocks.publishBotVersion).not.toHaveBeenCalled();
   });
 

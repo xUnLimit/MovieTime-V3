@@ -5,6 +5,7 @@ import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
 import { createTemplateCatalog } from '@/modules/whatsapp/template-catalog';
 import { sendOutboundMessage } from '@/modules/whatsapp/outbound-messages';
 import { sendCloudApiMessage } from '@/modules/whatsapp/cloud-api-client';
+import { interestAvailableText } from './interest-copy';
 import { InterestDeliveryLeaseLostError, processInterestDeliveries } from './interest-delivery-worker';
 const logger=createLogger('InterestDelivery');
 export async function drainInterestDeliveries(manualId?:string) {
@@ -13,9 +14,9 @@ export async function drainInterestDeliveries(manualId?:string) {
   const config={accessToken:env.whatsappAccessToken,phoneNumberId:env.whatsappPhoneNumberId};
   const templateName=process.env.AUTOMATION_INTEREST_TEMPLATE;
   return processInterestDeliveries({store,onFailure:id=>logger.warn('Availability invitation remains pending',{interestId:id}),
-    send:claim=>sendOutboundMessage({idempotencyKey:claim.id,toWaId:claim.contact,sentBy:null,
+    send:async claim=>sendOutboundMessage({idempotencyKey:claim.id,toWaId:claim.contact,sentBy:null,
       payload:templateName?{kind:'template',templateName,params:[claim.name]}:{kind:'text',
-        text:`Ya tenemos disponibilidad de ${claim.name}. Responde para revisar las opciones. La disponibilidad se confirma al reservar.`}},
+        text:await interestAvailableText(claim.name)}},
     {store:outbound,catalog,send:async(recipient,payload)=>{
       if(!await store.current(claim))throw new InterestDeliveryLeaseLostError();
       return sendCloudApiMessage(config,recipient,payload);

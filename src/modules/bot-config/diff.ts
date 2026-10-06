@@ -1,4 +1,5 @@
 import type { BotDefinition, BotNode } from '@/types/bot';
+import { CATALOG_MESSAGE_FIELDS, type CatalogField, type CatalogScope } from './catalog-messages';
 import { MESSAGE_CATALOG, MESSAGE_KEYS, PARAM_CATALOG, PARAM_KEYS } from './catalog';
 
 function describeNodeChanges(before: BotNode, after: BotNode): string[] {
@@ -12,6 +13,22 @@ function describeNodeChanges(before: BotNode, after: BotNode): string[] {
   if (JSON.stringify(before.options) !== JSON.stringify(after.options)) changes.push(`${label}: opciones modificadas`);
   if (before.condition?.type !== after.condition?.type) changes.push(`${label}: condición modificada`);
   if (JSON.stringify(before.block?.copy ?? {}) !== JSON.stringify(after.block?.copy ?? {})) changes.push(`${label}: textos del bloque modificados`);
+  return changes;
+}
+
+function describeCatalogChanges(a: BotDefinition, b: BotDefinition): string[] {
+  const changes: string[] = [];
+  for (const scope of ['category', 'plan'] as CatalogScope[]) {
+    const before: Record<string, Partial<Record<CatalogField, string>>> = (scope === 'category' ? a.catalogMessages?.categories : a.catalogMessages?.plans) ?? {};
+    const after: Record<string, Partial<Record<CatalogField, string>>> = (scope === 'category' ? b.catalogMessages?.categories : b.catalogMessages?.plans) ?? {};
+    for (const id of new Set([...Object.keys(before), ...Object.keys(after)])) {
+      for (const field of Object.keys(CATALOG_MESSAGE_FIELDS[scope]) as CatalogField[]) {
+        if ((before[id]?.[field] ?? '') === (after[id]?.[field] ?? '')) continue;
+        const what = !before[id]?.[field] ? 'agregado' : !after[id]?.[field] ? 'quitado' : 'modificado';
+        changes.push(`Mensaje «${CATALOG_MESSAGE_FIELDS[scope][field]?.label ?? field}» de ${scope === 'category' ? 'la plataforma' : 'el plan'} ${id.slice(0, 8)} ${what}`);
+      }
+    }
+  }
   return changes;
 }
 
@@ -35,6 +52,7 @@ export function diffDefinitions(a: BotDefinition, b: BotDefinition): string[] {
       changes.push(`${PARAM_CATALOG[key].label}: de ${a.params[key]} a ${b.params[key]} ${PARAM_CATALOG[key].unit}`);
     }
   }
+  changes.push(...describeCatalogChanges(a, b));
   const added = b.keywords.filter((word) => !a.keywords.includes(word));
   const removed = a.keywords.filter((word) => !b.keywords.includes(word));
   if (added.length > 0) changes.push(`Palabras clave agregadas: ${added.join(', ')}`);

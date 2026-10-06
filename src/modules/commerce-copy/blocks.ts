@@ -11,6 +11,7 @@ const BLOCK_OF_STEP: Record<CopyStepId, CopyBlockType> = {
   carrito: 'resumen', reserva: 'reserva', pago: 'pago', ayuda: 'pago',
 };
 
+export const blockOfStep = (step: CopyStepId): CopyBlockType => BLOCK_OF_STEP[step];
 export const blockOfCopyKey = (key: CopyKey): CopyBlockType => BLOCK_OF_STEP[COPY_CATALOG[key].step];
 export const copyKeysOfBlock = (type: CopyBlockType): CopyKey[] => COPY_KEYS.filter(key => blockOfCopyKey(key) === type);
 

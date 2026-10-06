@@ -43,8 +43,23 @@ export function orderStatusText(order: Pedido, t: Copy): string {
 /** Mensaje al reservar: que quedo apartado, hasta cuando y como seguir. */
 export function reservationText(order: Pedido, items: CommerceItem[], t: Copy, now = new Date()): string {
   return t('reservation', {
-    servicio: items.length === 1 ? items[0].name : `${items.length} servicios`,
+    servicio: items.length === 1 ? items[0].name : t('severalServices', { cantidad: String(items.length) }),
     monto: money(order.moneda, order.total), pedido: order.id.slice(0, 8),
     plazo: formatDeadline(order.expiraAt, now) || 'que venza la reserva',
   });
+}
+
+const price = (item: CommerceItem) => `${item.currency} ${item.amount.toFixed(2)}`;
+
+/** Lo elegido, una linea por servicio y el total; cada linea y el total salen de textos editables. */
+export function commerceSummary(items: CommerceItem[], t: Copy): string {
+  const lines = items.map((item, index) => t(item.name.toLowerCase().includes(item.cycle.toLowerCase()) ? 'summaryLineSameCycle' : 'summaryLine',
+    { numero: String(index + 1), servicio: item.name, ciclo: item.cycle, precio: price(item) }));
+  const total = `${items[0]?.currency ?? 'USD'} ${(items.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) / 100).toFixed(2)}`;
+  return `${lines.join('\n')}\n${t('summaryTotal', { total })}`;
+}
+
+/** Los servicios activos del cliente, uno por linea. */
+export function servicesListText(services: readonly { nombre: string; fechaVencimiento: string }[], t: Copy): string {
+  return services.map(service => t('servicesLine', { servicio: service.nombre, fecha: formatDay(service.fechaVencimiento) })).join('\n');
 }

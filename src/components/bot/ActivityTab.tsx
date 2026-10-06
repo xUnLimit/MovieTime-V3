@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
+import { ListFilter, MessageSquare } from 'lucide-react';
 import { DataTable, defineDataTableColumns } from '@/components/shared/DataTable';
-import { Panel } from '@/components/shared/Panel';
+import { PaginationFooter } from '@/components/shared/PaginationFooter';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { TableCard } from '@/components/shared/TableCard';
+import { FilterMenu, TableSearch, TableToolbar, type FilterOption } from '@/components/shared/TableToolbar';
+import type { Tone } from '@/components/shared/tone';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { BotAdminApi, BotEvent, BotEventFilters, BotEventType } from '@/types/bot';
@@ -20,34 +23,68 @@ const eventTypes: { value: BotEventType; label: string }[] = [
   { value: 'mailbox_unavailable', label: 'Buzón no disponible' }, { value: 'handoff', label: 'Atención humana' },
   { value: 'option_unavailable', label: 'Opción no disponible' }, { value: 'error', label: 'Error' },
 ];
+const TYPE_OPTIONS: readonly FilterOption<BotEventType | 'all'>[] = [{ value: 'all', label: 'Todos los eventos' }, ...eventTypes];
+const PAGE_SIZE = 10;
+const SEARCH_DELAY_MS = 350;
+
+const eventTone = (type: BotEventType): Tone => (type === 'error' || type === 'mailbox_unavailable' ? 'danger' : type === 'rate_limited' || type === 'profile_blocked' ? 'warning' : 'neutral');
 
 const columns = defineDataTableColumns<BotEvent>([
-  { key: 'createdAt', header: 'Fecha', width: '30%', render: event => <span className="block truncate tabular-nums text-sm">{new Date(event.createdAt).toLocaleString('es-PA')}</span> },
-  { key: 'type', header: 'Evento', width: '32%', render: event => <StatusBadge tone={event.type === 'error' || event.type === 'mailbox_unavailable' ? 'danger' : event.type === 'rate_limited' || event.type === 'profile_blocked' ? 'warning' : 'neutral'}>{eventTypes.find(item => item.value === event.type)?.label ?? event.type}</StatusBadge> },
-  { key: 'waId', header: 'Cliente', width: '38%', render: event => <div className="min-w-0 leading-tight"><p className="truncate text-sm font-medium">{event.clienteNombre ?? event.waId}</p><p className="truncate text-xs text-muted-foreground">{event.waId}</p></div> },
-  { key: 'chat', header: 'Chat', width: '6rem', render: event => <Link className="text-sm font-medium text-primary underline-offset-2 hover:underline" href={`/chats?wa=${encodeURIComponent(event.waId)}`}>Abrir chat</Link> },
+  { key: 'createdAt', header: 'Fecha', width: '26%', render: event => <div className="min-w-0 leading-tight"><p className="truncate text-sm tabular-nums">{new Date(event.createdAt).toLocaleDateString('es-PA', { dateStyle: 'medium' })}</p><p className="truncate text-xs text-muted-foreground tabular-nums">{new Date(event.createdAt).toLocaleTimeString('es-PA', { timeStyle: 'short' })}</p></div> },
+  { key: 'type', header: 'Evento', width: '30%', render: event => <StatusBadge tone={eventTone(event.type)}>{eventTypes.find(item => item.value === event.type)?.label ?? event.type}</StatusBadge> },
+  { key: 'waId', header: 'Cliente', width: '44%', render: event => <div className="min-w-0 leading-tight"><p className="truncate text-sm font-medium">{event.clienteNombre ?? event.waId}</p><p className="truncate text-xs text-muted-foreground tabular-nums">{event.waId}</p></div> },
 ]);
 
+type Draft = { type: BotEventType | 'all'; phone: string; from: string; to: string };
+const EMPTY: Draft = { type: 'all', phone: '', from: '', to: '' };
+
+/** Fechas del filtro como instantes: «hasta» incluye todo ese día en la hora local. */
+function toFilters(draft: Draft): BotEventFilters {
+  return {
+    type: draft.type === 'all' ? undefined : draft.type, waId: draft.phone.trim() || undefined,
+    from: draft.from ? new Date(`${draft.from}T00:00:00`).toISOString() : undefined,
+    to: draft.to ? new Date(`${draft.to}T23:59:59.999`).toISOString() : undefined,
+  };
+}
+
+/** Indicadores y tabla de eventos del bot con el molde estándar: búsqueda, filtros, 10 filas y paginación del servidor. */
 export function ActivityTab({ api }: { api: BotAdminApi }) {
-  const [filters, setFilters] = useState<BotEventFilters>({});
+  const [draft, setDraft] = useState<Draft>(EMPTY);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const events = api.events;
-  async function load(page: number, next: BotEventFilters) {
-    try { await api.loadEvents(page, next); setError(null); }
+  const filtered = draft.type !== 'all' || draft.phone !== '' || draft.from !== '' || draft.to !== '';
+  const totalPages = Math.max(1, Math.ceil((events?.total ?? 0) / (events?.pageSize ?? PAGE_SIZE)));
+
+  async function load(page: number, next: Draft) {
+    setLoading(true);
+    try { await api.loadEvents(page, toFilters(next)); setError(null); }
     catch { setError('No se pudo cargar la actividad. Inténtalo de nuevo.'); }
+    finally { setLoading(false); }
   }
-  function change(next: BotEventFilters) { setFilters(next); void load(1, next); }
+  function change(next: Draft, delay = 0) {
+    setDraft(next);
+    clearTimeout(timer.current);
+    if (delay === 0) void load(1, next);
+    else timer.current = setTimeout(() => void load(1, next), delay);
+  }
+
   return <BotState api={api} empty={!events}><div className="space-y-4">
     <ActivityMetrics api={api} />
-    {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
-    <TableCard title="Actividad del bot" description="Eventos recientes sin códigos ni enlaces" toolbar={<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="text-xs font-medium">Tipo<select className="h-8 w-full rounded-md border bg-card px-2 text-sm" value={filters.type ?? ''} onChange={event => change({ ...filters, type: event.target.value ? event.target.value as BotEventType : undefined })}><option value="">Todos</option>{eventTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
-      <label className="text-xs font-medium">Teléfono<Input value={filters.waId ?? ''} onChange={event => change({ ...filters, waId: event.target.value || undefined })} /></label>
-      <label className="text-xs font-medium">Desde<Input type="date" value={filters.from ?? ''} onChange={event => change({ ...filters, from: event.target.value || undefined })} /></label>
-      <label className="text-xs font-medium">Hasta<Input type="date" value={filters.to ?? ''} onChange={event => change({ ...filters, to: event.target.value || undefined })} /></label>
-    </div>} footer={<div className="flex items-center justify-between gap-2 text-xs"><span>Página {events?.page ?? 1} · {events?.total ?? 0} eventos</span><div className="flex gap-1"><Button size="sm" variant="outline" disabled={!events || events.page <= 1} onClick={() => void load((events?.page ?? 1) - 1, filters)}>Anterior</Button><Button size="sm" variant="outline" disabled={!events || events.page * events.pageSize >= events.total} onClick={() => void load((events?.page ?? 1) + 1, filters)}>Siguiente</Button></div></div>}>
-      <DataTable bare fixedLayout data={events?.events.slice(0, 10) ?? []} columns={columns} emptyMessage="No hay eventos para estos filtros" />
+    {error ? <div role="alert" className="flex flex-wrap items-center gap-2"><p className="text-sm text-danger">{error}</p><Button variant="outline" size="sm" onClick={() => void load(events?.page ?? 1, draft)}>Reintentar</Button></div> : null}
+    <TableCard title="Actividad del bot" description="Eventos recientes sin códigos ni enlaces"
+      toolbar={<TableToolbar actions={filtered ? <Button variant="ghost" onClick={() => change(EMPTY)}>Limpiar filtros</Button> : undefined}>
+        <TableSearch value={draft.phone} onChange={phone => change({ ...draft, phone }, SEARCH_DELAY_MS)} placeholder="Buscar por teléfono…" ariaLabel="Teléfono" />
+        <FilterMenu icon={ListFilter} ariaLabel="Tipo de evento" value={draft.type} options={TYPE_OPTIONS} onChange={type => change({ ...draft, type })} />
+        <Input type="date" aria-label="Desde" className="w-full sm:w-40" value={draft.from} max={draft.to || undefined} onChange={event => change({ ...draft, from: event.target.value })} />
+        <Input type="date" aria-label="Hasta" className="w-full sm:w-40" value={draft.to} min={draft.from || undefined} onChange={event => change({ ...draft, to: event.target.value })} />
+      </TableToolbar>}
+      footer={events && events.total > 0 ? <PaginationFooter className="p-0" showPageSize={false} page={events.page} totalPages={totalPages}
+        hasPrevious={events.page > 1} hasMore={events.page < totalPages} onPrevious={() => void load(events.page - 1, draft)} onNext={() => void load(events.page + 1, draft)} /> : undefined}>
+      <DataTable bare fixedLayout pagination={false} data={events?.events.slice(0, PAGE_SIZE) ?? []} columns={columns} loading={loading}
+        emptyMessage={filtered ? 'No hay eventos para estos filtros.' : 'Todavía no hay actividad del bot.'}
+        actions={event => <Button variant="ghost" size="icon-sm" asChild><Link href={`/chats?wa=${encodeURIComponent(event.waId)}`} aria-label="Abrir chat" title="Abrir chat"><MessageSquare /></Link></Button>} />
     </TableCard>
-    {events?.events.length === 0 ? <Panel title="Sin actividad"><p className="text-sm text-muted-foreground">Prueba otros filtros o espera nuevos eventos.</p></Panel> : null}
   </div></BotState>;
 }

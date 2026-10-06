@@ -103,9 +103,12 @@ las medidas de Ventas: fila 49px, 10 filas, sin scroll horizontal). Solo adminis
    opciones con titulo/destino, accion), alta/baja/reordenado de nodos y opciones, contadores de caracteres con
    los limites de WhatsApp, diagrama del flujo generado automaticamente (SVG, solo lectura, nodos clicables) y
    **simulador** en un telefono (`PhoneMockup`) donde se pulsan los botones y se ve el recorrido con datos de ejemplo.
-3. **Mensajes**: una tarjeta por mensaje del sistema con descripcion de cuando se envia, marcadores disponibles
-   (chips insertables), contador, vista previa con datos de ejemplo y "Restablecer" al valor por defecto.
-4. **Reglas**: parametros con explicacion y rango, editor de palabras clave.
+3. **Respuestas**: estudio de tres columnas (lista con buscador y filtros Todos / Editados / Con error, editor y vista
+   previa del cliente). Las respuestas del bot y los textos de compras se editan igual: lo valido se aplica al borrador
+   al escribir; el motivo de un error se dice junto al campo, los datos obligatorios van marcados, "Restablecer" esta en
+   el encabezado y "Anterior / Siguiente" recorre la lista.
+4. **Ajustes**: tarjetas por tema (menu y atencion, codigos de Netflix, limites de uso) con unidad, rango, valor
+   predeterminado y marca "Cambiado" frente a lo publicado; palabras clave, conexiones y enlace a Configuracion.
 5. **Actividad**: tabla paginada de eventos con filtros (tipo, cliente/telefono, fechas) y enlace al chat.
 6. **Versiones**: historial con nota, autor y fecha; ver, cargar en el borrador y publicar.
 
@@ -256,8 +259,11 @@ control humano y preparación del scheduler.
 
 ## Flujo de compras como bloques del lienzo (Fase 3)
 
-Los bloques de compra estan siempre disponibles (la bandera `COMMERCE_FLOW_CANVAS_ENABLED` se retiro). El editor
-ofrece **Agregar flujo de compras**: cuatro nodos `buttons` con identidad fija (`compra_catalogo`, `compra_resumen`,
+Los bloques de compra estan siempre disponibles (la bandera `COMMERCE_FLOW_CANVAS_ENABLED` se retiro). Sus textos se editan en
+**Editor → Flujo de compra** (y en Respuestas) **sin agregar nada antes**: si el borrador aun no tiene los bloques se muestran con
+los textos vigentes y se crean, sin enlazar, con la primera edicion (`withPurchaseBlocks`). Un bloque que ningun boton alcanza
+no es un error de validacion (solo guarda textos; el bot no lo recorre) y el lienzo lo oculta hasta que un boton lleve a el.
+Los bloques son cuatro nodos `buttons` con identidad fija (`compra_catalogo`, `compra_resumen`,
 `compra_reserva`, `compra_pago`) y un campo opcional `block: { type, copy }`. Solo se editan textos, titulos de botones
 (derivados del texto) y a donde vuelve «cancelar». Las reglas de elegir, reservar, pagar, entregar y reembolsar siguen en
 `commerce-conversation-*` y en SQL/RPC; el grafo no las toca.
@@ -325,3 +331,13 @@ anterior ignora (`z.object` no estricto).
     version anterior de la aplicacion pierde los campos nuevos (los descarta al parsear).
 - **Simulador:** con condiciones o datos del pedido en el borrador aparece «Datos de ejemplo de la simulación»: interruptores para
   cada condicion y valores editables para cada dato. No consulta clientes ni envia mensajes; reiniciar aplica los cambios.
+
+## Mensajes propios por plataforma y plan
+
+`BotDefinition.catalogMessages` (opcional) guarda textos propios de cada plataforma y de cada plan del catálogo, por id, y viaja con la definición: se edita en el borrador y se publica con el bot, sin cambios de base de datos.
+
+- Plataforma: `chosen` (lo que se dice al elegirla y mostrar sus planes) y `rowDescription` (línea bajo su nombre en la lista de plataformas).
+- Plan: `added` (lo que se dice al agregarlo a la selección) y `rowDescription` (línea bajo su nombre en la lista de planes).
+- Lo que falta usa el texto general del flujo de compra (`commerce-copy`); un texto que no cumple las reglas (`catalogMessageProblem`) bloquea publicar y, si llegara a publicarse, el bot lo ignora y usa el general.
+- Marcadores por campo en `CATALOG_MESSAGE_FIELDS` (`bot-config/catalog-messages.ts`). Tope de 200 plataformas y 200 planes con mensaje propio.
+- Se edita en Automatizaciones → Editor → «Flujo de compra» → «Mensajes por servicio». El simulador todavía no los refleja.

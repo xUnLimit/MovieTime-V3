@@ -1,9 +1,10 @@
 import { render } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultDefinition } from '@/modules/bot-config';
 import type { FlowActions } from './flow-actions';
 import { FlowCanvas } from './FlowCanvas';
+import { loadFlowLayout } from './flow-layout-storage';
 
 type CapturedProps = {
   nodes: { id: string; position: { x: number; y: number }; measured?: { width: number; height: number } }[];
@@ -19,6 +20,7 @@ vi.mock('@xyflow/react', () => ({
   ReactFlow: (props: CapturedProps & { children: ReactNode }) => { captured.props = props; return null; },
   Background: () => null,
   Controls: () => null,
+  Panel: () => null,
   MarkerType: { ArrowClosed: 'arrowclosed' },
   Handle: () => null,
   Position: { Left: 'left', Right: 'right' },
@@ -33,6 +35,17 @@ function makeActions(): FlowActions {
     addHandoffOption: vi.fn(), addCondition: vi.fn(), setEntry: vi.fn(), applyTemplate: vi.fn(async () => {}),
   };
 }
+
+// El setup global deja localStorage como un mock vacío: aquí se usa uno que sí guarda.
+function useMemoryStorage() {
+  const data = new Map<string, string>();
+  Object.defineProperty(window, 'localStorage', { configurable: true, value: {
+    getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); },
+    removeItem: (key: string) => { data.delete(key); }, clear: () => data.clear(),
+  } });
+}
+
+beforeEach(() => { useMemoryStorage(); });
 
 describe('eventos del lienzo', () => {
   function setup() {
@@ -71,6 +84,24 @@ describe('eventos del lienzo', () => {
     expect(before).toEqual({ x: 0, y: 0 });
     expect(captured.props?.nodes.find((node) => node.id === 'menu')?.position).toEqual({ x: 321, y: 123 });
     expect(actions.updateNode).not.toHaveBeenCalled();
+  });
+
+  it('recuerda la posición al soltar el nodo (no durante el arrastre) y la recupera al volver a cargar', () => {
+    const { actions, view } = setup();
+    captured.props?.onNodesChange([{ type: 'position', id: 'menu', position: { x: 50, y: 60 }, dragging: true }]);
+    expect(loadFlowLayout()).toEqual({});
+    captured.props?.onNodesChange([{ type: 'position', id: 'menu', dragging: false }]);
+    expect(loadFlowLayout()).toEqual({ menu: { x: 50, y: 60 } });
+    view.unmount();
+    render(<FlowCanvas def={defaultDefinition()} issues={[]} selectedId={null} onSelect={vi.fn()} actions={actions} />);
+    expect(captured.props?.nodes.find((node) => node.id === 'menu')?.position).toEqual({ x: 50, y: 60 });
+    expect(captured.props?.nodes.find((node) => node.id === 'netflix')?.position.x).toBeGreaterThan(0);
+  });
+
+  it('un cambio de posición sin arrastre ni coordenadas conocidas no guarda nada', () => {
+    setup();
+    captured.props?.onNodesChange([{ type: 'position', id: 'menu', dragging: false }]);
+    expect(loadFlowLayout()).toEqual({});
   });
 
   it('guarda las medidas y selecciona solo al marcar un nodo', () => {

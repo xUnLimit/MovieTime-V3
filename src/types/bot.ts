@@ -69,6 +69,12 @@ export type BotMessageKey =
   | 'mailbox_unavailable' | 'handoff_ack' | 'option_unavailable'
   | 'account_picker_body' | 'account_picker_button';
 
+/** Mensajes propios de una plataforma o de un plan (por id del catálogo); lo que falta usa el texto general de la compra. */
+export type BotCatalogMessages = {
+  categories: Record<string, { chosen?: string; rowDescription?: string }>;
+  plans: Record<string, { added?: string; rowDescription?: string }>;
+};
+
 export type BotDefinition = {
   schemaVersion: 1;
   entryNodeId: string;
@@ -77,6 +83,8 @@ export type BotDefinition = {
   params: BotParams;
   /** Palabras (sin acentos, minusculas) que fuerzan el menu. */
   keywords: string[];
+  /** Mensajes por plataforma y por plan del catálogo de compras. */
+  catalogMessages?: BotCatalogMessages;
 };
 
 export type BotIssue = {

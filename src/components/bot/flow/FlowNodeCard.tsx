@@ -21,10 +21,12 @@ type FlowNodeData = {
   actions: FlowActions;
   /** Se puede agregar a este nodo una salida que pasa a una persona. */
   canHandoff: boolean;
+  /** Paso en el que va la simulación; el lienzo lo resalta. */
+  active?: boolean;
 };
 export type FlowNode = Node<FlowNodeData, 'flow'>;
 
-function preview(node: BotNode): string {
+export function nodePreview(node: BotNode): string {
   if (node.kind === 'action') return node.action ? `Ejecuta: ${ACTION_CATALOG[node.action].label}` : 'Falta elegir la acción';
   return node.body;
 }
@@ -51,7 +53,7 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
       <Button type="button" size="icon-sm" variant="ghost" className="nodrag" aria-label={`Eliminar ${node.name}`} disabled={isEntry || node.block !== undefined}
         onClick={() => actions.removeNode(node.id)}><Trash2 /></Button>
     </div>
-    <p className="line-clamp-3 px-3 pt-2 pb-2 text-xs whitespace-pre-wrap text-muted-foreground">{preview(node)}</p>
+    <p className="line-clamp-3 px-3 pt-2 pb-2 text-xs whitespace-pre-wrap text-muted-foreground">{nodePreview(node)}</p>
     <EntryButton node={node} isEntry={isEntry} actions={actions} className="nodrag mx-3 mb-2" />
     <IssueList issues={issues} label={`Problemas de ${node.name}`} />
     {node.kind === 'buttons' || node.kind === 'list' ? <>

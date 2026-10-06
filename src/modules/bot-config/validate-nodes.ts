@@ -100,7 +100,8 @@ export function validateNodes(def: BotDefinition, report: Report): void {
   }
   const reachable = reachableNodeIds(def);
   for (const node of def.nodes) {
-    if (reachable.has(node.id)) continue;
+    // Un bloque de compra sin enlazar no es un error: solo guarda los textos de la compra y el bot no lo recorre.
+    if (reachable.has(node.id) || node.block !== undefined) continue;
     const label = node.kind === 'action' && node.action && ACTION_KEYS.includes(node.action)
       ? `Ningún botón lleva a la acción «${ACTION_CATALOG[node.action].label}». Conéctala a un botón o quítala.`
       : `Ningún botón lleva a «${node.name}». Conéctalo o márcalo como entrada.`;

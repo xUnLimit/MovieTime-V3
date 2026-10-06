@@ -3,7 +3,7 @@ import type { BotDefinition, BotNode } from '@/types/bot';
 import {
   addNode, addOption, addPurchaseFlow, blockCopyOverrides, connectOption, defaultDefinition, hasPurchaseBlocks, moveOption,
   parseDefinition, PURCHASE_BLOCKS, removeNode, removeOption, removePurchaseFlow, setBlockCopy, updateNode, updateOption,
-  validateDefinition,
+  validateDefinition, withPurchaseBlocks,
 } from './index';
 
 const errors = (def: BotDefinition) => validateDefinition(def).filter((issue) => issue.severity === 'error');
@@ -74,8 +74,18 @@ describe('validación de los bloques de compra', () => {
     expect(errors(legacy)).toEqual([]);
   });
 
-  it('un bloque sin conectar desde el recorrido bloquea la publicación', () => {
-    expect(errors(addPurchaseFlow(defaultDefinition())).some((issue) => issue.path === 'nodes[compra_catalogo]')).toBe(true);
+  it('un bloque sin conectar desde el recorrido no bloquea la publicación: solo guarda textos', () => {
+    expect(errors(addPurchaseFlow(defaultDefinition()))).toEqual([]);
+  });
+
+  it('withPurchaseBlocks agrega los bloques una sola vez y respeta el límite de nodos', () => {
+    const base = defaultDefinition();
+    const withBlocks = withPurchaseBlocks(base);
+    expect(hasPurchaseBlocks(withBlocks)).toBe(true);
+    expect(withPurchaseBlocks(withBlocks)).toBe(withBlocks);
+    const extra = Array.from({ length: 40 - base.nodes.length }, (_, index) => ({ id: `extra_${index}`, name: `Extra ${index}`, kind: 'text' as const, body: 'x', options: [] }));
+    const full = { ...base, nodes: [...base.nodes, ...extra] };
+    expect(hasPurchaseBlocks(withPurchaseBlocks(full))).toBe(false);
   });
 
   it('exige el flujo completo y sin repetidos', () => {

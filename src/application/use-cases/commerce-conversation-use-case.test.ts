@@ -4,7 +4,9 @@ import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { Pedido } from '@/modules/orders/contracts';
 import { addOption, addPurchaseFlow, connectOption, defaultDefinition, setBlockCopy } from '@/modules/bot-config';
 import { handleCommerceConversation, type CommerceConversationDeps } from './commerce-conversation-use-case';
-import { commerceCommand, commerceStateSchema, commerceSummary } from './commerce-conversation-state';
+import { commerceCommand, commerceStateSchema } from './commerce-conversation-state';
+import { commerceSummary } from './commerce-conversation-copy';
+import { createCopy } from '@/modules/commerce-copy/render';
 
 const ID = '123e4567-e89b-42d3-a456-426614174000';
 const OTHER = '123e4567-e89b-42d3-a456-426614174001';
@@ -272,7 +274,7 @@ describe('guided commerce coordinator', () => {
     const full = state({ stage: 'buy', items: Array.from({ length: 10 }, () => ({ id: OTHER, name: 'Item', amount: 1, currency: 'USD', cycle: 'mensual' })) });
     expect(commerceStateSchema.parse((await handleCommerceConversation(message(`add:${ID}`, true), full, deps))!.context).items).toHaveLength(10);
     expect((await handleCommerceConversation(message('carrito'), state({ stage: 'buy' }), deps))?.handBack).toMatchObject({ text: expect.stringContaining('carrito está vacío') });
-    expect(commerceSummary([])).toContain('USD 0');
+    expect(commerceSummary([], createCopy())).toContain('USD 0');
   });
   it('refuses to confirm a cart that is not in USD and asks for a person', async () => {
     const deps = dependencies();

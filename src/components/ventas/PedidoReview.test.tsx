@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Pedido } from '@/modules/orders/contracts';
 import { PedidoReview } from './PedidoReview';
 
-const state = vi.hoisted(() => ({ retry: vi.fn(), cancel: vi.fn(), reconcile: vi.fn(), delivery: vi.fn(), pending: false, error: null as Error | null }));
-vi.mock('@/hooks/use-pedidos', () => ({ usePedidoActions: () => ({ retry: { mutate: state.retry, isPending: state.pending, error: state.error }, delivery: { mutate: state.delivery, isPending: false, error: null }, cancel: { mutate: state.cancel, isPending: false, error: null }, reconcile: { mutate: state.reconcile, isPending: false, error: null } }) }));
+const state = vi.hoisted(() => ({ retry: vi.fn(), cancel: vi.fn(), reconcile: vi.fn(), delivery: vi.fn(), payment: vi.fn(), delivered: vi.fn(), remove: vi.fn(), pending: false, error: null as Error | null }));
+vi.mock('@/hooks/use-pedidos', () => ({ usePedidoActions: () => ({ retry: { mutate: state.retry, isPending: state.pending, error: state.error }, delivery: { mutate: state.delivery, isPending: false, error: null }, cancel: { mutate: state.cancel, isPending: false, error: null }, reconcile: { mutate: state.reconcile, isPending: false, error: null }, payment: { mutate: state.payment, isPending: false, error: null }, delivered: { mutate: state.delivered, isPending: false, error: null }, remove: { mutate: state.remove, isPending: false, error: null } }) }));
 vi.mock('./PedidoExcessResolution', () => ({ PedidoExcessResolution: () => <p>Resolver exceso de pago</p> }));
+vi.mock('./PedidoManualActions', () => ({ PedidoManualActions: () => <p>Acciones manuales del pedido</p> }));
 vi.mock('./PedidoAllocationResolution', () => ({ PedidoAllocationResolution: () => <p>Revisar saldo sin asignar</p> }));
 const base: Pedido = { id: '00000000-0000-4000-8000-000000000001', terceroId: null, contactId: null, moneda: 'USD', total: 12, estado: 'confirmado', paymentState: 'parcial', deliveryState: 'pendiente', receivedAmount: 8, missingAmount: 4, excessAmount: 0, expiraAt: '2100-10-03T12:00:00Z', items: [{ id: '00000000-0000-4000-8000-000000000002', tipo: 'renovacion', servicioId: 's1', ventaId: 'v1', planNombre: 'Netflix', total: 12, estado: 'pendiente', ventaIdResultante: null }] };
 beforeEach(() => { vi.clearAllMocks(); state.pending = false; state.error = null; });

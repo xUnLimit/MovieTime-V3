@@ -38,3 +38,28 @@ export function resolvePedidoExcessRpc(id: string, action: 'credito' | 'reembols
     p_order_id: id, p_action: action, p_reference: reference, p_expected_amount: amount, p_idempotency_key: key,
   }, request => callRpc('mt_resolve_excess', request));
 }
+
+/** Acciones manuales del administrador: cada una es una RPC idempotente que valida rol y estado en SQL. */
+export function deletePedidoRpc(id: string, key: string): Promise<string> {
+  assertOnlineMutation();
+  assertUuid(id, 'Pedido');
+  assertUuid(key, 'Intención');
+  return executeIdempotentRpc('mt_delete_order', { p_order_id: id, p_idempotency_key: key },
+    request => callRpc('mt_delete_order', request));
+}
+
+export function registerPedidoPaymentRpc(id: string, amount: number, reference: string, key: string): Promise<string> {
+  assertOnlineMutation();
+  assertUuid(id, 'Pedido');
+  assertUuid(key, 'Intención');
+  return executeIdempotentRpc('mt_register_order_payment', { p_order_id: id, p_amount: amount, p_reference: reference, p_idempotency_key: key },
+    request => callRpc('mt_register_order_payment', request));
+}
+
+export function markPedidoDeliveredRpc(id: string, key: string): Promise<string> {
+  assertOnlineMutation();
+  assertUuid(id, 'Pedido');
+  assertUuid(key, 'Intención');
+  return executeIdempotentRpc('mt_mark_order_delivered', { p_order_id: id, p_idempotency_key: key },
+    request => callRpc('mt_mark_order_delivered', request));
+}

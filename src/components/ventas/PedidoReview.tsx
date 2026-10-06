@@ -12,15 +12,15 @@ import { getPublicErrorMessage } from '@/platform/errors/public-errors';
 import type { Pedido } from '@/modules/orders/contracts';
 import { PedidoExcessResolution } from './PedidoExcessResolution';
 import { PedidoAllocationResolution } from './PedidoAllocationResolution';
+import { PedidoAmount } from './PedidoAmount';
+import { PedidoManualActions } from './PedidoManualActions';
 import { PedidoReviewCandidate } from './PedidoReviewCandidate';
+import { pedidoStage, reservationHint, type PedidoClient } from './pedido-status';
 
 const paymentLabels = { pendiente: 'Pendiente', parcial: 'Pago incompleto', cubierto: 'Confirmado', exceso: 'Exceso por resolver', reembolsado: 'Devuelto', parcialmente_reembolsado: 'Devolución parcial' };
 const deliveryLabels = { pendiente: 'Sin asignar', parcial: 'Asignación parcial', asignado: 'Asignado', enviado: 'Acceso enviado' };
-export function PedidoAmount({ value, currency }: { value: number; currency: string }) {
-  return <span className="whitespace-nowrap font-medium tabular-nums"><span className="text-success">{currency === 'USD' ? '$' : `${currency} `}</span>{value.toFixed(2)}</span>;
-}
 
-export function PedidoReview({ pedido }: { pedido: Pedido }) {
+export function PedidoReview({ pedido, client = null }: { pedido: Pedido; client?: PedidoClient | null }) {
   const actions = usePedidoActions();
   const [reference, setReference] = useState('');
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -30,7 +30,16 @@ export function PedidoReview({ pedido }: { pedido: Pedido }) {
   const cancelled = ['cancelado', 'expirado'].includes(pedido.estado);
   const expired = usePedidoExpiration(pedido.expiraAt) && pedido.items.some(item => item.estado === 'pendiente');
   const received = pedido.receivedAmount > 0;
+  const stage = pedidoStage(pedido);
+  const hint = reservationHint(pedido);
   return <div className="space-y-4">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+      <StatusBadge tone={stage.tone}>{stage.label}</StatusBadge>
+      {client ? <span className="font-medium">{client.name}{client.phone ? <span className="font-normal tabular-nums text-muted-foreground"> · +{client.phone}</span> : null}</span> : <span className="text-muted-foreground">Sin cliente vinculado</span>}
+      {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+      {pedido.contactId ? <Button variant="ghost" size="sm" asChild><Link href={`/chats?wa=${encodeURIComponent(pedido.contactId)}`}>Abrir chat</Link></Button> : null}
+      {pedido.terceroId ? <Button variant="ghost" size="sm" asChild><Link href={`/terceros/${encodeURIComponent(pedido.terceroId)}`}>Ver cliente</Link></Button> : null}
+    </div>
     <dl className="grid grid-cols-2 gap-3 text-sm"><div><dt className="text-xs text-muted-foreground">Pedido</dt><dd className="font-medium">{pedido.id.slice(0, 8)}</dd></div><div><dt className="text-xs text-muted-foreground">Total confirmado</dt><dd><PedidoAmount value={pedido.total} currency={pedido.moneda} /></dd></div><div><dt className="mb-1 text-xs text-muted-foreground">Cobro</dt><dd><StatusBadge tone={pedido.paymentState === 'cubierto' ? 'success' : 'warning'}>{paymentLabels[pedido.paymentState]}</StatusBadge></dd></div><div><dt className="mb-1 text-xs text-muted-foreground">Asignación y entrega</dt><dd><StatusBadge tone={pedido.deliveryState === 'enviado' ? 'success' : 'info'}>{deliveryLabels[pedido.deliveryState]}</StatusBadge></dd></div></dl>
     <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm"><span>Recibido: <PedidoAmount value={pedido.receivedAmount} currency={pedido.moneda} /></span>{pedido.missingAmount > 0 ? <span>Faltante: <PedidoAmount value={pedido.missingAmount} currency={pedido.moneda} /></span> : null}{pedido.excessAmount > 0 ? <span>Exceso por resolver: <PedidoAmount value={pedido.excessAmount} currency={pedido.moneda} /></span> : null}</div>
     {pedido.excessAmount > 0 ? <PedidoExcessResolution id={pedido.id} amount={pedido.excessAmount} currency={pedido.moneda} /> : null}
@@ -44,6 +53,7 @@ export function PedidoReview({ pedido }: { pedido: Pedido }) {
     {confirmCancel ? <div className="space-y-2 border-t pt-3"><p className="text-sm">Cancelar libera la reserva y conserva el historial del pedido.</p><div className="flex gap-2"><Button variant="outline" onClick={() => setConfirmCancel(false)}>Volver</Button><Button variant="destructive" disabled={busy} onClick={() => actions.cancel.mutate(pedido.id, { onSuccess: () => { setConfirmCancel(false); setResult('Pedido cancelado. La reserva se liberó.'); } })}>Confirmar cancelación</Button></div></div> : null}
     {error ? <p role="alert" className="text-sm text-danger">{getPublicErrorMessage(error, 'No se pudo completar la acción. Revisa el pedido y reintenta.')}</p> : null}
     {result ? <p role="status" className="text-sm text-success">{result}</p> : null}
+    <PedidoManualActions pedido={pedido} />
     <PedidoAllocationResolution pedido={pedido} />
   </div>;
 }

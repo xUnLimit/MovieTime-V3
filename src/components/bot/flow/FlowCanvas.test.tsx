@@ -4,6 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addConditionNode, addNode, addPurchaseFlow, defaultDefinition, validateDefinition } from '@/modules/bot-config';
 import type { FlowActions } from './flow-actions';
 import { FlowCanvas } from './FlowCanvas';
+import { loadFlowLayout, saveFlowLayout } from './flow-layout-storage';
+
+// El setup global deja localStorage como un mock vacío: aquí se usa uno que sí guarda.
+function useMemoryStorage() {
+  const data = new Map<string, string>();
+  Object.defineProperty(window, 'localStorage', { configurable: true, value: {
+    getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); },
+    removeItem: (key: string) => { data.delete(key); }, clear: () => data.clear(),
+  } });
+}
 
 class ResizeObserverStub {
   observe() {}
@@ -23,6 +33,7 @@ function makeActions(): FlowActions {
 const hidden = { hidden: true } as const;
 
 beforeEach(() => {
+  useMemoryStorage();
   vi.stubGlobal('ResizeObserver', ResizeObserverStub);
   vi.stubGlobal('DOMMatrixReadOnly', class { m22 = 1; });
 });
@@ -88,6 +99,15 @@ describe('FlowCanvas con React Flow', () => {
     expect(actions.connect).toHaveBeenCalledWith('compra_resumen', 'cancel', 'soporte');
     expect(within(screen.getByRole('list', { ...hidden, name: 'Opciones de Compra: pago y entrega' })).getByRole('combobox', hidden)).toBeTruthy();
     expect(screen.getAllByRole('button', { ...hidden, name: 'Agregar botón' })).toHaveLength(def.nodes.filter((node) => !node.block && node.kind === 'buttons').length);
+  });
+});
+
+describe('orden del lienzo', () => {
+  it('Ordenar automáticamente olvida el orden guardado de los nodos', async () => {
+    saveFlowLayout({ menu: { x: 900, y: 900 }, otro: { x: 1, y: 2 } });
+    render(<FlowCanvas def={defaultDefinition()} issues={[]} selectedId={null} onSelect={vi.fn()} actions={makeActions()} />);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Ordenar automáticamente' }));
+    expect(loadFlowLayout()).toEqual({ otro: { x: 1, y: 2 } });
   });
 });
 

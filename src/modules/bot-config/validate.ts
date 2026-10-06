@@ -3,6 +3,7 @@ import {
   KEYWORD_MAX_LENGTH, MESSAGE_CATALOG, MESSAGE_KEYS, NODE_LIMITS, PARAM_CATALOG, PARAM_KEYS,
 } from './catalog';
 import { normalizeText, templateVariables } from './render';
+import { catalogMessageIssues } from './catalog-messages';
 import { validateBlocks } from './validate-blocks';
 import { validateExtensions } from './validate-extensions';
 import { validateNodes, type Report } from './validate-nodes';
@@ -69,6 +70,7 @@ export function validateDefinition(def: BotDefinition, options: { flowExtensions
   validateMessages(def, report);
   validateParams(def, report);
   validateKeywords(def, report);
+  issues.push(...catalogMessageIssues(def));
   return issues;
 }
 

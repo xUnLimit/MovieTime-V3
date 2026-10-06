@@ -20,6 +20,11 @@ export const COPY_VARIABLES = {
   faltante: { label: 'Monto que falta', example: 'USD 6.00' },
   exceso: { label: 'Monto pagado de más', example: 'USD 2.00' },
   entrega: { label: 'Estado de la entrega', example: 'Tu acceso ya fue enviado.' },
+  precio: { label: 'Precio', example: 'USD 10.00' },
+  ciclo: { label: 'Ciclo de pago', example: 'Mensual' },
+  cantidad: { label: 'Cantidad', example: '3' },
+  numero: { label: 'Número de línea', example: '1' },
+  fecha: { label: 'Fecha de vencimiento', example: '31 de octubre de 2026' },
 } as const satisfies Record<string, CopyVariable>;
 type CopyVariableName = keyof typeof COPY_VARIABLES;
 
@@ -34,6 +39,11 @@ const message = (step: CopyStepId, label: string, when: string, defaultText: str
 // Botones y filas de lista: una sola linea y con el limite de WhatsApp.
 const short = (step: CopyStepId, label: string, when: string, defaultText: string, maxLength: number, kind: CopyKind = 'button'): CopySpec =>
   ({ label, step, kind, when, defaultText, variables: [], required: [], maxLength });
+
+// Una linea con datos: descripciones de filas, lineas del resumen y de la lista de servicios.
+const line = (step: CopyStepId, label: string, when: string, defaultText: string, variables: readonly CopyVariableName[],
+  required: readonly CopyVariableName[] = [], maxLength = 72): CopySpec =>
+  ({ label, step, kind: 'label', when, defaultText, variables, required, maxLength });
 
 export const COPY_CATALOG = {
   greeting: message('inicio', 'Saludo y menú', 'El cliente escribe "hola" o abre el menú', 'Hola, soy el asistente de MovieTime PTY. ¿Qué necesitas?'),
@@ -50,9 +60,12 @@ export const COPY_CATALOG = {
   rowMore: short('plataformas', 'Fila: más opciones', 'Cuando hay más de una página', 'Más opciones', 24, 'label'),
   rowMoreDesc: short('plataformas', 'Descripción de esa fila', 'Cuando hay más de una página', 'Ver siguiente página', 72, 'label'),
   sectionMore: short('plataformas', 'Título de la sección de navegación', 'Sección con "más opciones" y atajos', 'Más', 24, 'label'),
+  rowPlatformPlans: line('plataformas', 'Fila de plataforma: descripción', 'Cada plataforma de la lista, con varios planes', '{{cantidad}} planes · desde {{precio}}', ['cantidad', 'precio']),
+  rowPlatformOnePlan: line('plataformas', 'Fila de plataforma: descripción (un plan)', 'Cada plataforma de la lista, con un solo plan', '1 plan · desde {{precio}}', ['precio']),
   plansPrompt: message('planes', 'Elegir plan', 'El cliente eligió una plataforma', 'Estos son los planes de {{plataforma}}. ¿Cuál prefieres?', ['plataforma']),
   listButtonPlans: short('planes', 'Botón de la lista', 'Abre la lista de planes', 'Elegir plan', 20, 'label'),
   sectionPlans: short('planes', 'Título de la sección', 'Sección con los planes', 'Planes disponibles', 24, 'label'),
+  rowPlanDesc: line('planes', 'Fila de plan: descripción', 'Cada plan de la plataforma elegida', '{{precio}} · {{ciclo}}', ['precio', 'ciclo']),
   rowBackPlatforms: short('planes', 'Fila: volver a plataformas', 'Última sección de la lista de planes', 'Otras plataformas', 24, 'label'),
   rowBackDesc: short('planes', 'Descripción de esa fila', 'Volver a lo disponible', 'Volver a lo disponible', 72, 'label'),
   addedNotice: message('planes', 'Servicio agregado', 'Al agregar un plan al carrito', 'Listo, agregué {{servicio}} a tu selección.', ['servicio'], ['servicio']),
@@ -60,21 +73,30 @@ export const COPY_CATALOG = {
   soldOutPrompt: message('agotados', 'Lista de agotados', 'El cliente toca "consultar agotados"', 'Estas opciones están sin cupo por ahora. Elige la que te interese y te aviso cuando vuelva.'),
   listButtonSoldOut: short('agotados', 'Botón de la lista', 'Abre la lista de agotados', 'Elegir opción', 20, 'label'),
   sectionSoldOut: short('agotados', 'Título de la sección', 'Sección con lo agotado', 'Sin cupo por ahora', 24, 'label'),
+  rowSoldOutPlanDesc: line('agotados', 'Fila de agotado: descripción', 'Cada opción de la lista de agotados', '{{precio}} · {{ciclo}} · Agotado', ['precio', 'ciclo']),
   rowBackSoldOut: short('agotados', 'Fila: ver plataformas', 'Última sección de la lista de agotados', 'Ver plataformas', 24, 'label'),
   soldOutAsk: message('agotados', 'Ofrecer aviso', 'El cliente elige algo sin cupo', 'Por ahora no tenemos cupo en {{plan}}. ¿Quieres que te avisemos cuando haya? Si prefieres, dejo anotado tu interés sin enviarte avisos.', ['plan'], ['plan']),
   btnInterestYes: short('agotados', 'Botón: avisarme', 'Pregunta de aviso', 'Sí, avisarme', 20),
   btnInterestNo: short('agotados', 'Botón: solo interés', 'Pregunta de aviso', 'Solo mi interés', 20),
   interestYes: message('agotados', 'Interés con avisos', 'El cliente acepta que le avisemos', '¡Anotado! Te escribo apenas haya cupo. Mientras tanto, mira lo que sí está disponible.'),
   interestNo: message('agotados', 'Interés sin avisos', 'El cliente no quiere avisos', 'Anotado: dejé tu interés sin avisos, así que no te voy a escribir por esto. Si cambias de idea, me dices.'),
+  interestAvailable: message('agotados', 'Aviso: ya hay cupo', 'Se le avisa a quien dejó su interés cuando vuelve el cupo', 'Ya tenemos disponibilidad de {{servicio}}. Responde para revisar las opciones. La disponibilidad se confirma al reservar.', ['servicio'], ['servicio']),
   renewPrompt: message('renovar', 'Elegir qué renovar', 'El cliente toca renovar', '¿Cuáles servicios quieres renovar? Elígelos de la lista. Cuando termines, toca Revisar carrito.'),
   listButtonServices: short('renovar', 'Botón de la lista', 'Abre la lista de servicios del cliente', 'Elegir servicios', 20, 'label'),
   sectionServices: short('renovar', 'Título de la sección', 'Sección con sus servicios', 'Tus servicios', 24, 'label'),
+  rowRenewDesc: line('renovar', 'Fila de servicio: descripción', 'Cada servicio del cliente en la lista de renovar', '{{precio}} · {{ciclo}}', ['precio', 'ciclo']),
   summaryTitle: message('carrito', 'Encabezado del resumen', 'Antes de la lista de lo elegido', 'Esto es lo que llevas:'),
   confirmNote: message('carrito', 'Pregunta de confirmación', 'Después del total', '¿Lo reservo? Si el precio o la disponibilidad cambian, te aviso antes de cobrarte.'),
   btnConfirm: short('carrito', 'Botón: confirmar', 'Resumen del carrito', 'Confirmar selección', 20),
   btnCancel: short('carrito', 'Botón: cancelar', 'Resumen, reserva y atajos', 'Cancelar', 20),
   btnReview: short('carrito', 'Botón y fila: revisar carrito', 'Listas y selección guardada', 'Revisar carrito', 20),
   sectionCart: short('carrito', 'Título de la sección del carrito', 'Última sección de las listas', 'Tu carrito', 24, 'label'),
+  rowCartOne: line('carrito', 'Fila del carrito (un servicio)', 'Lista con un servicio elegido', '1 servicio seleccionado', []),
+  rowCartMany: line('carrito', 'Fila del carrito (varios servicios)', 'Lista con varios servicios elegidos', '{{cantidad}} servicios seleccionados', ['cantidad']),
+  summaryLine: line('carrito', 'Línea del resumen', 'Cada servicio elegido en el resumen', '{{numero}}. {{servicio}} ({{ciclo}}): {{precio}}', ['numero', 'servicio', 'ciclo', 'precio'], ['servicio', 'precio'], 200),
+  summaryLineSameCycle: line('carrito', 'Línea del resumen (el nombre ya trae el ciclo)', 'Cuando el nombre del servicio ya dice su ciclo', '{{numero}}. {{servicio}}: {{precio}}', ['numero', 'servicio', 'precio'], ['servicio', 'precio'], 200),
+  summaryTotal: line('carrito', 'Línea del total', 'Después de la lista de lo elegido', 'Total: {{total}}', ['total'], ['total'], 200),
+  severalServices: line('carrito', 'Varios servicios en una frase', 'Reserva con más de un servicio', '{{cantidad}} servicios', ['cantidad'], ['cantidad'], 100),
   emptyCart: message('carrito', 'Carrito vacío', 'Pide revisar sin haber elegido nada', 'Tu carrito está vacío todavía. ¿Por dónde empezamos?'),
   usdOnly: message('reserva', 'Solo se cobra en USD', 'El servicio no está en dólares', 'Este servicio se cobra en {{moneda}} y Yappy solo recibe USD, así que una persona del equipo te va a ayudar a coordinar el pago.', ['moneda']),
   reservation: message('reserva', 'Reserva hecha', 'El cliente confirma su selección',
@@ -104,6 +126,7 @@ export const COPY_CATALOG = {
   deliveryPending: message('pago', 'Entrega: asignando', 'Aún no se asigna', 'Estamos asignando tus servicios; no hace falta que pagues otra vez.'),
   deliveryAssigned: message('pago', 'Entrega: asignado', 'Asignado, falta enviar el acceso', 'Tus servicios ya están asignados y en un momento te envío el acceso.'),
   servicesTitle: message('servicios', 'Encabezado de mis servicios', 'El cliente toca "Mis servicios"', 'Estos son tus servicios activos:'),
+  servicesLine: line('servicios', 'Línea de cada servicio', 'Cada servicio activo en Mis servicios', '• {{servicio}}: vence el {{fecha}}', ['servicio', 'fecha'], ['servicio', 'fecha'], 200),
   servicesHint: message('servicios', 'Pista al final de mis servicios', 'Después de la lista', 'Si quieres renovar alguno, toca "Renovar".'),
   noServices: message('servicios', 'Sin servicios activos', 'El número no tiene servicios', 'No encuentro servicios activos con este número. ¿Qué necesitas?'),
   help: message('ayuda', 'Pasar con una persona', 'El cliente pide ayuda', '¡Claro! Ya avisé a una persona del equipo para que te escriba por aquí en unos minutos.'),

@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { defaultDefinition } from './defaults';
 import { addNode, updateNode } from './edit';
-import { flowWideIssues, issuesByNode, layoutNodes } from './layout';
+import { COMPACT_SPACING, flowWideIssues, issuesByNode, layoutNodes } from './layout';
 import { validateDefinition } from './validate';
 
 describe('layoutNodes', () => {
+  it('con nodos compactos usa columnas más angostas que con tarjetas completas', () => {
+    const def = defaultDefinition();
+    const card = layoutNodes(def);
+    const compact = layoutNodes(def, {}, {}, COMPACT_SPACING);
+    expect(compact.netflix.x).toBe(COMPACT_SPACING.column);
+    expect(compact.netflix.x).toBeLessThan(card.netflix.x);
+    expect(compact.login.y).toBeLessThan(card.viaje.y);
+  });
   it('coloca un nivel por columna sin superponer nodos', () => {
     const def = defaultDefinition();
     const positions = layoutNodes(def);

@@ -85,6 +85,14 @@ export function addPurchaseFlow(def: BotDefinition, overrides: Readonly<Record<s
   return syncTitles({ ...def, nodes: [...def.nodes, ...nodes] });
 }
 
+/**
+ * El flujo de compras listo para editar sus textos: el mismo borrador si ya tiene los bloques y, si no, con los cuatro bloques
+ * agregados sin conectar. Los bloques sin enlazar no cambian lo que el bot hace: solo guardan textos.
+ */
+export function withPurchaseBlocks(def: BotDefinition): BotDefinition {
+  return hasPurchaseBlocks(def) ? def : addPurchaseFlow(def);
+}
+
 /** Quita los bloques y las opciones del recorrido que llevaban a ellos. */
 export function removePurchaseFlow(def: BotDefinition): BotDefinition {
   const blockIds = new Set(def.nodes.filter((node) => node.block).map((node) => node.id));

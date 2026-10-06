@@ -4,15 +4,15 @@ import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { BotDefinition, PurchaseBlockType } from '@/types/bot';
 import { readBotAction } from '@/modules/whatsapp/bot-menu';
-import { blockCopyOverrides, hasPurchaseBlocks } from '@/modules/bot-config';
+import { blockCopyOverrides, hasPurchaseBlocks, resolveCatalogMessage } from '@/modules/bot-config';
 import { botReplyKey } from './bot-reply';
 import { createCopy, type CopyOverrides } from '@/modules/commerce-copy/render';
 import { createLogger } from '@/platform/observability/logger';
-import { formatDay, orderStatusText, reservationText, type Copy } from './commerce-conversation-copy';
+import { commerceSummary, orderStatusText, reservationText, servicesListText, type Copy } from './commerce-conversation-copy';
 import { handlePaymentStep, orderIsClosed } from './commerce-conversation-payment';
 import { renderChoiceList, type CommerceChoice } from './commerce-conversation-lists';
 import {
-  DEFAULT_IDLE_HOURS, SHOPPING_STAGES, commerceButtons, commerceCommand, commerceStateSchema, commerceSummary, expireStage, resetStage, type CommerceItem, type CommerceState, type HandBack,
+  DEFAULT_IDLE_HOURS, SHOPPING_STAGES, commerceButtons, commerceCommand, commerceStateSchema, expireStage, resetStage, type CommerceItem, type CommerceState, type HandBack,
 } from './commerce-conversation-state';
 
 type PublicPlan = { planId: string; planNombre: string; categoriaId: string; categoriaNombre: string; precio: number; moneda: string; cicloPago: string; perfilesLibres: number };
@@ -119,7 +119,7 @@ export async function handleCommerceConversation(message: InboundMessage, contex
   } else if (command === 'services') {
     const services = await deps.services(message.fromWaId);
     if (services.length) {
-      payload = { kind: 'text', text: `${t('servicesTitle')}\n${services.map(s => `• ${s.nombre}: vence el ${formatDay(s.fechaVencimiento)}`).join('\n').slice(0, 3400)}\n\n${t('servicesHint')}` };
+      payload = { kind: 'text', text: `${t('servicesTitle')}\n${servicesListText(services, t).slice(0, 3400)}\n\n${t('servicesHint')}` };
     } else handBack = { text: t('noServices'), prefixed: true, block: null };
   } else if (command === 'buy' || command === 'renew' || command?.startsWith('page:') || command?.startsWith('add:')
     || command?.startsWith('cat:') || command === 'platforms' || command === 'soldout') {
@@ -155,10 +155,11 @@ export async function handleCommerceConversation(message: InboundMessage, contex
       if (chosen && chosen.stock > 0 && state.items.length < 10 && !state.items.some(i => i.id === chosen.id)
         && (!state.items.length || state.items[0].currency === chosen.currency)) {
         state.items.push(pick(chosen.id, chosen.name, chosen.amount, chosen.currency, chosen.cycle));
-        state.categoryId = null; state.soldout = false; state.page = 0; currencyNotice = `${t('addedNotice', { servicio: chosen.name })}\n`;
+        state.categoryId = null; state.soldout = false; state.page = 0; currencyNotice = `${resolveCatalogMessage(definition?.catalogMessages, 'plan', chosen.id, 'added',
+          { servicio: chosen.name, plataforma: chosen.categoryName, precio: `${chosen.currency} ${chosen.amount.toFixed(2)}`, ciclo: chosen.cycle }) ?? t('addedNotice', { servicio: chosen.name })}\n`;
       }
     }
-    payload = renderChoiceList(state, choices, currencyNotice, t);
+    payload = renderChoiceList(state, choices, currencyNotice, t, definition?.catalogMessages);
   } else if (command?.startsWith('interest:') && state.stage === 'interest' && state.interestPlanId) {
     const plan = (await deps.catalogue()).find(p => p.planId === state.interestPlanId);
     if (!plan || !['interest:yes', 'interest:no'].includes(command)) return null;
@@ -180,7 +181,7 @@ export async function handleCommerceConversation(message: InboundMessage, contex
       payload = commerceButtons(reservationText(order, state.items, t), [{ id: 'pay', title: t('btnPay') }, { id: 'cancel', title: t('btnCancel') }]);
     } else {
       state.stage = 'summary';
-      payload = commerceButtons(`${t('summaryTitle')}\n${commerceSummary(state.items)}\n\n${t('confirmNote')}`, [{ id: 'confirm', title: t('btnConfirm') }, { id: 'cancel', title: t('btnCancel') }]);
+      payload = commerceButtons(`${t('summaryTitle')}\n${commerceSummary(state.items, t)}\n\n${t('confirmNote')}`, [{ id: 'confirm', title: t('btnConfirm') }, { id: 'cancel', title: t('btnCancel') }]);
     }
   } else if (state.orderId && (state.stage === 'payment' || state.stage === 'last4')) {
     ({ payload, handoff } = await handlePaymentStep(message, command, state, deps, t, current));

@@ -1,18 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ChevronDown, Power } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { BotAdminApi } from '@/types/bot';
 
-/** Estado del bot en el encabezado: encendido o apagado, versión publicada e interruptor con confirmación. */
-export function BotPowerControl({ api }: { api: BotAdminApi }) {
+/**
+ * Estado del bot en un solo control: «Encendido · v12». Apagarlo o encenderlo es una acción inmediata y en vivo, distinta de
+ * publicar, así que vive en un menú con confirmación y no al lado del botón Publicar.
+ */
+export function BotStatusMenu({ api }: { api: BotAdminApi }) {
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const enabled = api.status?.enabled ?? false;
+  const version = api.status?.publishedVersion;
   const label = enabled ? 'Apagar bot' : 'Encender bot';
   async function toggle() {
     setBusy(true);
@@ -21,9 +26,18 @@ export function BotPowerControl({ api }: { api: BotAdminApi }) {
     finally { setBusy(false); }
   }
   return <>
-    <StatusBadge tone={enabled ? 'success' : 'neutral'}>{enabled ? 'Encendido' : 'Apagado'}</StatusBadge>
-    <span className="text-sm text-muted-foreground">Versión publicada: {api.status?.publishedVersion ?? 'Ninguna'}</span>
-    <Switch aria-label={label} checked={enabled} disabled={busy || !api.status} onCheckedChange={() => setConfirm(true)} />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" aria-label={`Estado del bot: ${enabled ? 'encendido' : 'apagado'}`} disabled={!api.status}>
+          <StatusBadge tone={enabled ? 'success' : 'neutral'}>{enabled ? 'Encendido' : 'Apagado'}</StatusBadge>
+          <span className="text-muted-foreground tabular-nums">{version ? `v${version}` : 'Sin publicar'}</span>
+          <ChevronDown />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => setConfirm(true)}><Power />{label}</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
     <Dialog open={confirm} onOpenChange={setConfirm}>
       <DialogContent>
         <DialogHeader><DialogTitle>{label}</DialogTitle><DialogDescription>{enabled ? 'El bot dejará de responder de inmediato.' : 'El bot comenzará a responder con la versión publicada.'}</DialogDescription></DialogHeader>

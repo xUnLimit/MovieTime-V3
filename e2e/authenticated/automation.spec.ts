@@ -7,7 +7,7 @@ test('@auth @smoke Automatizaciones es una sola herramienta con pestañas propia
   await expect(page.getByRole('heading', { name: 'Automatizaciones', exact: true })).toBeVisible();
   const tabs = page.getByRole('tablist', { name: 'Herramientas del recorrido' });
   await expect(tabs).toBeVisible();
-  await expect(page.getByRole('tablist')).toHaveCount(1);
+  await expect(page.getByRole('tablist', { name: 'Herramientas del recorrido' })).toHaveCount(1);
   await tabs.getByRole('tab', { name: 'Ajustes', exact: true }).click();
   await expect(page).toHaveURL(/tab=ajustes/);
   expect(errors).toEqual([]);

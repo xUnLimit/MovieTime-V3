@@ -10,8 +10,10 @@ import { SampleDataEditor } from './SampleDataEditor';
 
 type Simulation = ReturnType<typeof startSimulation>;
 
-export function FlowSimulator({ def }: { def: BotDefinition }) {
-  const [simulation, setSimulation] = useState<Simulation | null>(null);
+/** `onStep`: avisa en qué nodo va la simulación (o `null` al no haber), para resaltarlo en el lienzo. */
+export function FlowSimulator({ def, onStep }: { def: BotDefinition; onStep?: (nodeId: string | null) => void }) {
+  const [simulation, setSimulationState] = useState<Simulation | null>(null);
+  const setSimulation = (next: Simulation) => { setSimulationState(next); onStep?.(next.currentNodeId); };
   const [sample, setSample] = useState<SimulationSample>(defaultSample);
   const usesExtensions = def.nodes.some((node) => node.condition !== undefined || nodeVariablesIn(node.body).length > 0);
   function choose(optionReplyId: string) {

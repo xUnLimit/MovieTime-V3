@@ -12,7 +12,7 @@ export {
   addNode, addOption, canAddNode, canAddOption, canSetEntry, connectOption, moveNode, moveOption, removeNode,
   removeOption, setEntryNode, setKeywords, setMessage, setParam, updateNode, updateOption,
 } from './edit';
-export { flowWideIssues, issuesByNode, layoutNodes } from './layout';
+export { COMPACT_SPACING, flowWideIssues, issuesByNode, layoutNodes } from './layout';
 export type { NodePosition } from './layout';
 export { diffDefinitions } from './diff';
 export { defaultSample, purchaseStepOf, startSimulation, stepSimulation } from './simulate';
@@ -24,5 +24,9 @@ export { addConditionNode, addHandoffOption, canAddHandoffOption } from './edit-
 export { FLOW_TEMPLATES, applyFlowTemplate } from './templates';
 export type { FlowTemplateId } from './templates';
 export {
-  PURCHASE_BLOCKS, addPurchaseFlow, blockCopyOverrides, blockOptionSpec, hasPurchaseBlocks, removePurchaseFlow, setBlockCopy,
+  PURCHASE_BLOCKS, addPurchaseFlow, blockCopyOverrides, blockOptionSpec, hasPurchaseBlocks, removePurchaseFlow, setBlockCopy, withPurchaseBlocks,
 } from './purchase-blocks';
+export {
+  CATALOG_MESSAGE_FIELDS, catalogMessageProblem, countCatalogMessages, getCatalogMessage, resolveCatalogMessage, setCatalogMessage,
+} from './catalog-messages';
+export type { CatalogField, CatalogScope } from './catalog-messages';

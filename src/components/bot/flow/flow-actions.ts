@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { fetchCommerceCopyUseCase } from '@/application/use-cases/commerce-copy-use-cases';
 import {
   addConditionNode, addHandoffOption, addNode, addOption, addPurchaseFlow, applyFlowTemplate, connectOption, moveNode, moveOption, removeNode, removeOption, removePurchaseFlow,
-  setBlockCopy, setEntryNode, updateNode, updateOption,
+  setBlockCopy, setEntryNode, updateNode, updateOption, withPurchaseBlocks,
 } from '@/modules/bot-config';
 import type { FlowTemplateId } from '@/modules/bot-config';
 import type { BotAdminApi, BotConditionType, BotDefinition, BotNode, BotNodeKind, BotOption } from '@/types/bot';
@@ -28,7 +28,7 @@ export type FlowActions = {
   moveOption: (nodeId: string, from: number, to: number) => void;
   updateOption: (nodeId: string, optionId: string, patch: OptionPatch) => void;
   connect: (nodeId: string, optionId: string, targetId: string) => void;
-  /** Bloques de compra: se agregan juntos (con los textos editados hoy) y se quitan juntos. */
+  /** Bloques de compra: se agregan juntos (con los textos editados hoy) y se quitan juntos. Editar un texto los crea si faltan. */
   addPurchaseFlow: () => Promise<void>;
   removePurchaseFlow: () => void;
   setBlockCopy: (nodeId: string, key: string, text: string | null) => void;
@@ -73,7 +73,8 @@ export function useFlowActions(api: BotAdminApi, select: (nodeId: string | null)
         edit((def) => addPurchaseFlow(def, overrides));
       },
       removePurchaseFlow: () => { edit((def) => removePurchaseFlow(def)); select(null); },
-      setBlockCopy: (nodeId, key, text) => edit((def) => setBlockCopy(def, nodeId, key, text)),
+      // Editar un texto de compra no exige agregar el flujo antes: los bloques se crean (sin enlazar) con la primera edición.
+      setBlockCopy: (nodeId, key, text) => edit((def) => setBlockCopy(withPurchaseBlocks(def), nodeId, key, text)),
       addHandoffOption: (nodeId) => edit((def) => addHandoffOption(def, nodeId)),
       addCondition: (type) => {
         if (!draft) return;

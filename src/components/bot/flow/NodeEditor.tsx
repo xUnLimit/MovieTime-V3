@@ -23,12 +23,14 @@ type NodeEditorProps = {
   showOptions: boolean;
   /** Bandera del servidor: permite usar datos del pedido en los textos. */
   extensionsEnabled?: boolean;
+  /** Abre el flujo de compra completo como diagrama (desde un bloque de compra). */
+  onOpenPurchase?: () => void;
 };
 
 /** Propiedades del nodo seleccionado. Es tambien la ruta de teclado y celular para todo lo que hace el lienzo. */
-export function NodeEditor({ def, node, actions, showOptions, extensionsEnabled = false }: NodeEditorProps) {
+export function NodeEditor({ def, node, actions, showOptions, extensionsEnabled = false, onOpenPurchase }: NodeEditorProps) {
   const targets = def.nodes.map((item) => ({ id: item.id, name: item.name, exit: item.block === undefined }));
-  if (node.block) return <BlockEditor node={node} targets={targets} exits={targets.filter((item) => item.exit)} actions={actions} />;
+  if (node.block) return <BlockEditor node={node} targets={targets} exits={targets.filter((item) => item.exit)} actions={actions} onOpenPurchase={onOpenPurchase} />;
   if (node.condition) return <ConditionEditor node={node} targets={targets} isEntry={node.id === def.entryNodeId} actions={actions} />;
   const noun = node.kind === 'list' ? 'fila' : 'botón';
   return <Panel title={`Editar: ${node.name}`} actions={<>
@@ -48,7 +50,7 @@ export function NodeEditor({ def, node, actions, showOptions, extensionsEnabled 
         : <label className="block text-sm font-medium">Texto
           <Textarea maxLength={NODE_LIMITS.bodyMax} value={node.body} onChange={(event) => actions.updateNode(node.id, { body: event.target.value })} />
           <span className="text-xs font-normal text-muted-foreground">{node.body.length}/{NODE_LIMITS.bodyMax}</span></label>}
-      {node.kind === 'action' ? <PurchaseActionHint def={def} action={node.action} actions={actions} /> : null}
+      {node.kind === 'action' ? <PurchaseActionHint action={node.action} onOpenPurchase={onOpenPurchase} /> : null}
       {extensionsEnabled && node.kind !== 'action' ? <VariableHints body={node.body} onInsert={(marker) => actions.updateNode(node.id, { body: `${node.body}${marker}` })} /> : null}
       {node.kind === 'list' ? <label className="block text-sm font-medium">Texto del botón de lista
         <Input maxLength={NODE_LIMITS.listButtonMax} value={node.listButtonLabel ?? ''} onChange={(event) => actions.updateNode(node.id, { listButtonLabel: event.target.value })} />

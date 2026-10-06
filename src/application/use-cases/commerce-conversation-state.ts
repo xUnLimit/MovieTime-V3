@@ -76,10 +76,6 @@ export function expireStage(state: CommerceState, idleHours: number, now: Date):
   else if (now.getTime() - last >= idleHours * HOUR_MS) resetStage(state);
 }
 
-export function commerceSummary(items: CommerceItem[]): string {
-  return items.map((item, index) => `${index + 1}. ${item.name}${item.name.toLowerCase().includes(item.cycle.toLowerCase()) ? '' : ` (${item.cycle})`}: ${item.currency} ${item.amount.toFixed(2)}`).join('\n')
-    + `\nTotal: ${items[0]?.currency ?? 'USD'} ${(items.reduce((total, item) => total + Math.round(item.amount * 100), 0) / 100).toFixed(2)}`;
-}
 export function commerceButtons(body: string, buttons: { id: string; title: string }[]): OutboundPayload {
   return { kind: 'buttons', body: body.slice(0, 1024), buttons: buttons.map(button => ({ ...button, id: `SHOP:${button.id}` })) };
 }

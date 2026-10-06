@@ -3,10 +3,11 @@ import { buildFlowGraph } from './graph';
 
 export type NodePosition = { x: number; y: number };
 
-const COLUMN_WIDTH = 400;
-const CARD_BASE_HEIGHT = 150;
-const OPTION_HEIGHT = 96;
-const CARD_GAP = 32;
+/** Separaciones del lienzo: columna, alto base de un nodo, alto por opción y hueco entre nodos. */
+type LayoutSpacing = { column: number; base: number; option: number; gap: number };
+const CARD_SPACING: LayoutSpacing = { column: 460, base: 150, option: 96, gap: 32 };
+/** Nodos compactos del estudio: solo estructura, así que ocupan menos. */
+export const COMPACT_SPACING: LayoutSpacing = { column: 340, base: 104, option: 32, gap: 24 };
 
 /**
  * Posiciones iniciales del lienzo: un nivel del recorrido por columna (calculado con `buildFlowGraph`) y
@@ -17,6 +18,7 @@ export function layoutNodes(
   def: BotDefinition,
   saved: Readonly<Record<string, NodePosition>> = {},
   measured: Readonly<Record<string, number>> = {},
+  spacing: LayoutSpacing = CARD_SPACING,
 ): Record<string, NodePosition> {
   const graph = buildFlowGraph(def);
   const optionCount = new Map(def.nodes.map((node) => [node.id, node.options.length]));
@@ -25,8 +27,8 @@ export function layoutNodes(
   levels.forEach((level, column) => {
     let top = 0;
     graph.nodes.filter((vertex) => vertex.y === level).sort((a, b) => a.x - b.x).forEach((vertex) => {
-      positions[vertex.id] = saved[vertex.id] ?? { x: column * COLUMN_WIDTH, y: top };
-      top += (measured[vertex.id] ?? CARD_BASE_HEIGHT + (optionCount.get(vertex.id) ?? 0) * OPTION_HEIGHT) + CARD_GAP;
+      positions[vertex.id] = saved[vertex.id] ?? { x: column * spacing.column, y: top };
+      top += (measured[vertex.id] ?? spacing.base + (optionCount.get(vertex.id) ?? 0) * spacing.option) + spacing.gap;
     });
   });
   return positions;

@@ -9,7 +9,7 @@ const copyUseCases = vi.hoisted(() => ({ fetchCommerceCopyUseCase: vi.fn() }));
 vi.mock('@/application/use-cases/commerce-copy-use-cases', () => copyUseCases);
 const toast = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock('sonner', () => ({ toast }));
-import { FlowTab } from './FlowTab';
+import { BotStudio } from './BotStudio';
 
 class ResizeObserverStub {
   observe() {}
@@ -30,17 +30,22 @@ function makeApi(draft: BotDefinition, updateDraft: BotAdminApi['updateDraft'], 
 
 function Harness({ initial = defaultDefinition(), extensions = false }: { initial?: BotDefinition; extensions?: boolean }) {
   const [draft, setDraft] = useState(initial);
-  return <FlowTab api={makeApi(draft, (updater) => setDraft((current) => updater(current)), extensions)} />;
+  return <BotStudio api={makeApi(draft, (updater) => setDraft((current) => updater(current)), extensions)} />;
+}
+
+function setWide(wide: boolean) {
+  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    matches: wide && query.includes('min-width: 1024px'), media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(),
+    addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+  } as unknown as MediaQueryList));
 }
 
 beforeEach(() => {
   copyUseCases.fetchCommerceCopyUseCase.mockReset();
   toast.error.mockReset();
-  vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
-    matches: false, media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(),
-    addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
-  } as unknown as MediaQueryList));
+  setWide(true);
   vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+  vi.stubGlobal('DOMMatrixReadOnly', class { m22 = 1; });
 });
 
 describe('pasar a una persona desde cualquier nodo', () => {
@@ -67,14 +72,18 @@ describe('condiciones', () => {
   it('sin la bandera no se ofrecen; con ella se agregan, se editan y llevan cada respuesta a un destino', async () => {
     const user = userEvent.setup();
     const off = render(<Harness />);
-    expect(screen.queryByRole('button', { name: /^Condición:/ })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Agregar paso' }));
+    expect(await screen.findByRole('menuitem', { name: 'Texto' })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: /^Condición:/ })).toBeNull();
+    await user.keyboard('{Escape}');
     off.unmount();
     render(<Harness extensions />);
-    await user.click(screen.getByRole('button', { name: /Condición: servicio con o sin cupo/ }));
+    await user.click(screen.getByRole('button', { name: 'Agregar paso' }));
+    await user.click(await screen.findByRole('menuitem', { name: /Condición: servicio con o sin cupo/ }));
     expect(screen.getByRole('heading', { name: 'Condición: Servicio con o sin cupo' })).toBeTruthy();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Condición' }), 'customer_has_services');
     expect(screen.getByRole('heading', { name: 'Condición: Servicio con o sin cupo' })).toBeTruthy();
-    expect(screen.getByText('Existente')).toBeTruthy();
+    expect(within(screen.getByRole('complementary', { name: 'Inspector' })).getByText('Existente')).toBeTruthy();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Destino del botón Existente de Servicio con o sin cupo' }), 'netflix');
     await user.clear(screen.getByRole('textbox', { name: 'Nombre' }));
     await user.type(screen.getByRole('textbox', { name: 'Nombre' }), 'Quién es');
@@ -83,11 +92,13 @@ describe('condiciones', () => {
     expect(screen.getByRole('button', { name: 'Eliminar nodo' })).toHaveProperty('disabled', false);
   });
 
-  it('muestra el aviso de que la condicion no se puede agregar sin lugar', () => {
+  it('no ofrece agregar una condición sin lugar en el recorrido', async () => {
+    const user = userEvent.setup();
     const base = defaultDefinition();
     const full = { ...base, nodes: [...base.nodes, ...Array.from({ length: 35 }, (_, index) => ({ id: `t_${index}`, name: `T${index}`, kind: 'text' as const, body: 'x', options: [] }))] };
     render(<Harness initial={full} extensions />);
-    expect(screen.getByRole('button', { name: /Condición: cliente nuevo o existente/ })).toHaveProperty('disabled', true);
+    await user.click(screen.getByRole('button', { name: 'Agregar paso' }));
+    expect((await screen.findByRole('menuitem', { name: /Condición: cliente nuevo o existente/ })).getAttribute('aria-disabled')).toBe('true');
   });
 
   it('el nodo de condicion de un recorrido existente se edita sin poder quitar sus salidas', async () => {
@@ -131,15 +142,21 @@ describe('datos del pedido en los textos', () => {
 });
 
 describe('plantillas de flujo', () => {
+  async function openTemplates(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole('button', { name: 'Plantillas' }));
+    return screen.getByRole('dialog');
+  }
+
   it('reemplaza el borrador por el recorrido base solo tras confirmar', async () => {
     const user = userEvent.setup();
     render(<Harness initial={addConditionNode(defaultDefinition(), 'catalog_has_stock')} extensions />);
-    await user.click(screen.getByRole('button', { name: 'Usar plantilla' }));
-    expect(screen.getByRole('alert').textContent).toContain('reemplaza todo el borrador');
-    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(screen.queryByRole('alert')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Usar plantilla' }));
-    await user.click(screen.getByRole('button', { name: 'Reemplazar borrador' }));
+    const dialog = await openTemplates(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Usar plantilla Recorrido base' }));
+    expect(within(dialog).getByRole('alert').textContent).toContain('reemplaza todo el borrador');
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+    await user.click(within(dialog).getByRole('button', { name: 'Usar plantilla Recorrido base' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Reemplazar borrador' }));
     expect(screen.queryByRole('button', { name: /^Servicio con o sin cupo/ })).toBeNull();
   });
 
@@ -147,11 +164,10 @@ describe('plantillas de flujo', () => {
     const user = userEvent.setup();
     copyUseCases.fetchCommerceCopyUseCase.mockResolvedValue({ overrides: { btnPay: 'Pagar ya' } });
     render(<Harness />);
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Plantilla de recorrido' }), 'base_compras');
-    expect(screen.getByRole('button', { name: 'Usar plantilla' })).toHaveProperty('disabled', false);
-    expect(screen.queryByText(/no están activados/)).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Usar plantilla' }));
-    await user.click(screen.getByRole('button', { name: 'Reemplazar borrador' }));
+    const dialog = await openTemplates(user);
+    expect(within(dialog).getByRole('button', { name: 'Usar plantilla Recorrido base + compras' })).toHaveProperty('disabled', false);
+    await user.click(within(dialog).getByRole('button', { name: 'Usar plantilla Recorrido base + compras' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Reemplazar borrador' }));
     expect(await screen.findByRole('button', { name: /^Compra: reserva/ })).toBeTruthy();
     expect(copyUseCases.fetchCommerceCopyUseCase).toHaveBeenCalled();
   });
@@ -160,10 +176,22 @@ describe('plantillas de flujo', () => {
     const user = userEvent.setup();
     copyUseCases.fetchCommerceCopyUseCase.mockRejectedValue(new Error('x'));
     render(<Harness />);
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Plantilla de recorrido' }), 'base_compras');
-    await user.click(screen.getByRole('button', { name: 'Usar plantilla' }));
-    await user.click(screen.getByRole('button', { name: 'Reemplazar borrador' }));
+    const dialog = await openTemplates(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Usar plantilla Recorrido base + compras' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Reemplazar borrador' }));
     await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: /^Compra: reserva/ })).toBeNull();
+  });
+
+  it('ofrece las versiones guardadas como punto de partida y pide confirmar antes de cargarlas', async () => {
+    const user = userEvent.setup();
+    const loadVersionIntoDraft = vi.fn(async () => {});
+    const def = defaultDefinition();
+    render(<BotStudio api={{ ...makeApi(def, vi.fn(), false), loadVersionIntoDraft, versions: [{ version: 4, note: 'Con compras', createdAt: '2026-10-01T10:00:00Z', createdBy: null, isPublished: true }] }} />);
+    const dialog = await openTemplates(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Usar versión 4' }));
+    expect(loadVersionIntoDraft).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Reemplazar borrador' }));
+    expect(loadVersionIntoDraft).toHaveBeenCalledWith(4);
   });
 });

@@ -1,20 +1,16 @@
 'use client';
 
 import { ShoppingCart } from 'lucide-react';
-import { NODE_LIMITS, hasPurchaseBlocks } from '@/modules/bot-config';
 import { Button } from '@/components/ui/button';
-import type { BotActionKey, BotDefinition } from '@/types/bot';
-import type { FlowActions } from './flow-actions';
+import type { BotActionKey } from '@/types/bot';
 
 const COMMERCE_ACTIONS: ReadonlySet<BotActionKey> = new Set<BotActionKey>(['purchase', 'renewal', 'my_services']);
 
-/** Las acciones de compra no llevan texto propio: los mensajes que ve el cliente se editan en los bloques de compra. */
-export function PurchaseActionHint({ def, action, actions }: { def: BotDefinition; action: BotActionKey | undefined; actions: FlowActions }) {
+/** Las acciones de compra no llevan texto propio: lo que el cliente lee en cada paso se edita en el flujo de compra, que siempre está disponible. */
+export function PurchaseActionHint({ action, onOpenPurchase }: { action: BotActionKey | undefined; onOpenPurchase?: () => void }) {
   if (!action || !COMMERCE_ACTIONS.has(action)) return null;
-  const present = hasPurchaseBlocks(def);
   return <div role="note" className="space-y-2 rounded-md border bg-muted p-3 text-sm">
-    <p>Esta acción no tiene texto propio: lo que el cliente lee en cada paso se edita en los bloques de compra de este recorrido (catálogo, carrito, pago…).</p>
-    {present ? <p className="text-muted-foreground">Selecciona un bloque de compra en el lienzo o en la lista para cambiar sus textos.</p>
-      : <Button variant="outline" disabled={def.nodes.length + 4 > NODE_LIMITS.nodesMax} onClick={() => void actions.addPurchaseFlow()}><ShoppingCart />Agregar flujo de compras</Button>}
+    <p>Esta acción no tiene texto propio: lo que el cliente lee en cada paso (catálogo, carrito, pago…) se edita en el flujo de compra.</p>
+    {onOpenPurchase ? <Button variant="outline" onClick={onOpenPurchase}><ShoppingCart />Editar textos de compra</Button> : null}
   </div>;
 }

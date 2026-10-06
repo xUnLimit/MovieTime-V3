@@ -1,19 +1,17 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import Link from 'next/link';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defaultDefinition } from '@/modules/bot-config';
+import { addPurchaseFlow, defaultDefinition, validateDefinition } from '@/modules/bot-config';
 import type { BotAdminApi, BotDefinition } from '@/types/bot';
-import { FlowTab } from './FlowTab';
-import { MessagesTab } from './MessagesTab';
-import { RulesTab } from './RulesTab';
 import { ActivityTab } from './ActivityTab';
 import { VersionsTab } from './VersionsTab';
-import { PublishBar } from './PublishBar';
+import { PublishControls } from './PublishControls';
 import { BotView } from './BotView';
-import { BotPowerControl } from './BotPowerControl';
-import { SettingsTab } from './SettingsTab';
+import { SettingsBoard } from './settings/SettingsBoard';
+import { BotStudio } from './studio/BotStudio';
+import { ResponsesStudio } from './studio/ResponsesStudio';
 
 const control = vi.hoisted(() => ({ data: undefined as unknown, isLoading: false, isError: false, refetch: vi.fn() }));
 vi.mock('@/hooks/use-automation-control', () => ({ useAutomationControl: () => control }));
@@ -31,13 +29,13 @@ function makeApi(overrides: Partial<BotAdminApi> = {}): BotAdminApi {
   };
 }
 
-function RulesHarness() {
+function SettingsHarness() {
   const [draft, setDraft] = useState(defaultDefinition);
-  return <RulesTab api={makeApi({ draft, updateDraft: updater => setDraft(current => updater(current)) })} />;
+  return <SettingsBoard api={makeApi({ draft, updateDraft: updater => setDraft(current => updater(current)) })} />;
 }
 
 describe('estados de las pestañas', () => {
-  const tabs = [FlowTab, MessagesTab, RulesTab, SettingsTab, ActivityTab, VersionsTab];
+  const tabs = [BotStudio, ResponsesStudio, SettingsBoard, ActivityTab, VersionsTab];
   it.each(tabs)('muestra carga y error', Tab => {
     const { rerender } = render(<Tab api={makeApi({ loading: true })} />);
     expect(screen.getByText('Cargando bot')).toBeTruthy();
@@ -50,80 +48,166 @@ describe('estados de las pestañas', () => {
   });
 });
 
-describe('estado del bot en el encabezado', () => {
-  it('confirma el apagado', async () => {
-    const api = makeApi();
-    render(<BotPowerControl api={api} />);
-    expect(screen.getByText('Encendido')).toBeTruthy();
-    expect(screen.getByText('Versión publicada: 1')).toBeTruthy();
-    await userEvent.setup().click(screen.getByRole('switch', { name: 'Apagar bot' }));
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar' }));
-    await waitFor(() => expect(api.setEnabled).toHaveBeenCalledWith(false));
-  });
-  it('confirma el encendido y muestra apagado sin versión publicada', async () => {
-    const api = makeApi({ status: { enabled: false, publishedVersion: null, updatedAt: null } });
-    render(<BotPowerControl api={api} />);
-    expect(screen.getByText('Apagado')).toBeTruthy();
-    expect(screen.getByText('Versión publicada: Ninguna')).toBeTruthy();
-    await userEvent.setup().click(screen.getByRole('switch', { name: 'Encender bot' }));
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar' }));
-    expect(api.setEnabled).toHaveBeenCalledWith(true);
-  });
-  it('avisa si no se pudo cambiar y mantiene el diálogo abierto', async () => {
-    const api = makeApi({ setEnabled: vi.fn(async () => { throw new Error('x'); }) });
-    render(<BotPowerControl api={api} />);
-    await userEvent.setup().click(screen.getByRole('switch', { name: 'Apagar bot' }));
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar' }));
-    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo cambiar el estado del bot');
-  });
-});
-
 describe('ajustes', () => {
-  it('reúne parámetros, comprobaciones y el aviso hacia Configuración', async () => {
+  it('reúne los ajustes por tema en un índice, con las conexiones y el aviso hacia Configuración', async () => {
     const api = makeApi();
-    render(<SettingsTab api={api} />);
-    expect(screen.getByText('Parámetros')).toBeTruthy();
-    expect(screen.getByText('WhatsApp configurado')).toBeTruthy();
+    const user = userEvent.setup();
+    render(<SettingsBoard api={api} />);
+    const nav = within(screen.getByRole('navigation', { name: 'Secciones de ajustes' }));
+    expect(nav.getAllByRole('button').map(button => button.textContent)).toEqual(['Menú y atención', 'Códigos de Netflix', 'Límites de uso', 'Conexiones', 'Compras por WhatsApp', 'Versiones']);
+    expect(nav.getByRole('button', { name: 'Menú y atención' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('region', { name: 'Palabras clave' })).toBeTruthy();
+    for (const title of ['Códigos de Netflix', 'Límites de uso']) {
+      await user.click(nav.getByRole('button', { name: title }));
+      expect(screen.getByRole('heading', { name: title })).toBeTruthy();
+    }
+    expect(screen.getByText('Los ajustes coinciden con lo publicado.')).toBeTruthy();
+    await user.click(nav.getByRole('button', { name: 'Conexiones' }));
+    expect(screen.getAllByText('Configurado')).toHaveLength(2);
     expect(screen.getByText('Sin actividad', { exact: false })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Ir a Configuración' }).getAttribute('href')).toBe('/configuracion');
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Probar buzón' }));
+    await user.click(screen.getByRole('button', { name: 'Probar buzón' }));
     expect(await screen.findByText(/Buzón disponible/)).toBeTruthy();
+    await user.click(nav.getByRole('button', { name: 'Compras por WhatsApp' }));
+    expect(screen.getByRole('link', { name: 'Ir a Configuración' }).getAttribute('href')).toBe('/configuracion');
+  });
+  it('lleva las versiones dentro de Ajustes', async () => {
+    render(<SettingsBoard api={makeApi()} />);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Versiones' }));
+    expect(screen.getByRole('heading', { name: 'Versiones' })).toBeTruthy();
+    expect(screen.getByText('Historial de versiones')).toBeTruthy();
+    expect(screen.getByText('Inicial')).toBeTruthy();
+  });
+  it('marca en el índice la sección con cambios sin publicar', async () => {
+    const user = userEvent.setup();
+    render(<SettingsHarness />);
+    const nav = within(screen.getByRole('navigation', { name: 'Secciones de ajustes' }));
+    expect(nav.queryByLabelText(/cambios sin publicar/)).toBeNull();
+    await user.type(screen.getByRole('textbox', { name: 'Nueva palabra clave' }), 'promo{Enter}');
+    expect(within(nav.getByRole('button', { name: /^Menú y atención/ })).getByLabelText('1 cambios sin publicar')).toBeTruthy();
+    expect(nav.getByRole('button', { name: 'Límites de uso' }).querySelector('[aria-label]')).toBeNull();
   });
   it('muestra las conexiones pendientes y un error al probar el buzón', async () => {
-    const api = makeApi({ health: { whatsappConfigured: false, mailboxConfigured: false, lastActivityAt: '2026-10-01T10:00:00Z', eventsLast24h: 0, codesLast24h: 0, flowExtensionsEnabled: false }, testMailbox: vi.fn(async () => { throw new Error('x'); }) });
-    render(<SettingsTab api={api} />);
-    expect(screen.getByText('WhatsApp sin configurar')).toBeTruthy();
-    expect(screen.getByText('Buzón sin configurar')).toBeTruthy();
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Probar buzón' }));
+    const user = userEvent.setup();
+    const api = makeApi({ health: { whatsappConfigured: false, mailboxConfigured: true, lastActivityAt: '2026-10-01T10:00:00Z', eventsLast24h: 0, codesLast24h: 0, flowExtensionsEnabled: false }, testMailbox: vi.fn(async () => { throw new Error('x'); }) });
+    render(<SettingsBoard api={api} />);
+    await user.click(screen.getByRole('button', { name: 'Conexiones' }));
+    expect(screen.getByText('Sin configurar')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Probar buzón' }));
     expect((await screen.findByRole('alert')).textContent).toContain('No se pudo comprobar el buzón');
+  });
+  it('marca lo cambiado respecto de lo publicado y permite volver al valor predeterminado', async () => {
+    const user = userEvent.setup();
+    render(<SettingsHarness />);
+    const field = screen.getByRole('textbox', { name: /Horas para volver/i }) as HTMLInputElement;
+    await user.clear(field);
+    await user.type(field, '24');
+    await user.tab();
+    expect(field.value).toBe('24');
+    expect(screen.getByText('Cambiado')).toBeTruthy();
+    expect(screen.getByText('Publicado: 12 horas')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('1 ajuste cambiado sin publicar.');
+    await user.click(screen.getByRole('button', { name: /Restablecer «Horas para volver/ }));
+    expect(screen.getByText('Los ajustes coinciden con lo publicado.')).toBeTruthy();
+  });
+  it('dice el rango en vez de ignorar un número inválido y no lo aplica', async () => {
+    const user = userEvent.setup();
+    render(<SettingsHarness />);
+    const field = screen.getByRole('textbox', { name: /Horas para volver/i }) as HTMLInputElement;
+    await user.clear(field);
+    await user.type(field, '999');
+    expect(screen.getByRole('alert').textContent).toBe('Escribe un número entero entre 1 y 72.');
+    await user.keyboard('{Escape}');
+    expect(field.value).toBe('12');
+    expect(screen.getByText('Los ajustes coinciden con lo publicado.')).toBeTruthy();
+  });
+  it('agrega y quita palabras clave', async () => {
+    const user = userEvent.setup();
+    render(<SettingsHarness />);
+    await user.type(screen.getByRole('textbox', { name: 'Nueva palabra clave' }), '  ÁYUDA {Enter}');
+    expect(screen.getByText('ayuda')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Quitar hola' }));
+    expect(screen.queryByRole('button', { name: 'Quitar hola' })).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('1 ajuste cambiado sin publicar.');
   });
 });
 
-describe('mensajes y reglas', () => {
-  it('inserta un marcador y restablece un mensaje', async () => {
-    const api = makeApi();
-    render(<MessagesTab api={api} />);
-    const section = screen.getByRole('region', { name: 'Respuestas de Netflix' });
-    await userEvent.setup().click(within(section).getAllByRole('button', { name: /\{\{codigo\}\}/ })[0]);
-    expect(api.updateDraft).toHaveBeenCalled();
-    await userEvent.setup().click(within(section).getAllByRole('button', { name: 'Restablecer' })[0]);
-    expect(api.updateDraft).toHaveBeenCalledTimes(2);
+describe('respuestas', () => {
+  function ResponsesHarness({ initial = defaultDefinition() }: { initial?: BotDefinition }) {
+    const [draft, setDraft] = useState(initial);
+    return <ResponsesStudio api={makeApi({ draft, issues: validateDefinition(draft), updateDraft: updater => setDraft(current => updater(current)) })} />;
+  }
+  const group = (name: string) => within(screen.getByRole('region', { name: `Respuestas de ${name}` }));
+  it('muestra la lista, abre el editor con su vista previa y filtra con el buscador', async () => {
+    const user = userEvent.setup();
+    render(<ResponsesHarness />);
+    expect(group('Netflix').getAllByRole('button').length).toBeGreaterThan(3);
+    await user.click(group('Netflix').getAllByRole('button')[1]);
+    expect(screen.getByTestId('message-preview')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /Mensajes/ }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar un mensaje' }), { target: { value: 'zzzz' } });
+    expect(screen.getByText('Ningún mensaje coincide con la búsqueda.')).toBeTruthy();
   });
-  it('normaliza palabras y evita duplicados', async () => {
+  it('inserta un dato en el texto, marca el mensaje como editado y lo restablece desde el encabezado', async () => {
+    const user = userEvent.setup();
+    render(<ResponsesHarness />);
+    await user.click(group('Netflix').getAllByRole('button')[1]);
+    const field = screen.getByRole('textbox', { name: 'Texto del mensaje' }) as HTMLTextAreaElement;
+    const before = field.value;
+    await user.click(screen.getByRole('button', { name: /^Minutos/ }));
+    expect(field.value).not.toBe(before);
+    expect(screen.getAllByText('Editado').length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: 'Restablecer' }));
+    expect(field.value).toBe(before);
+  });
+  it('avisa junto al campo si falta un dato obligatorio y lista el mensaje con error', async () => {
+    const user = userEvent.setup();
+    const initial = defaultDefinition();
+    initial.messages.login_code_sent = 'Tu código llegó.';
+    render(<ResponsesHarness initial={initial} />);
+    await user.click(screen.getByRole('tab', { name: 'Con error · 1' }));
+    await user.click(group('Netflix').getByRole('button', { name: /Código de inicio de sesión enviado/ }));
+    expect(screen.getByRole('alert').textContent).toMatch(/codigo/i);
+    expect(screen.getAllByText('Con error').length).toBeGreaterThan(0);
+  });
+  it('recorre los mensajes con Anterior y Siguiente', async () => {
+    const user = userEvent.setup();
+    render(<ResponsesHarness />);
+    await user.click(group('Netflix').getAllByRole('button')[1]);
+    expect(screen.getByRole('button', { name: /Anterior/ })).toHaveProperty('disabled', true);
+    const first = screen.getByRole('heading', { level: 2 }).textContent;
+    await user.click(screen.getByRole('button', { name: /Siguiente/ }));
+    expect(screen.getByRole('heading', { level: 2 }).textContent).not.toBe(first);
+    expect(screen.getByText(/^2 de /)).toBeTruthy();
+  });
+  it('muestra los textos de compra sin agregar el flujo y lo crea al editar uno', async () => {
+    const user = userEvent.setup();
     const api = makeApi();
-    render(<RulesTab api={api} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Nueva palabra' }), { target: { value: '  ÁYUDA  ' } });
-    expect(screen.getByRole('button', { name: 'Agregar' })).toHaveProperty('disabled', true);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Nueva palabra' }), { target: { value: '  PRUEBA  ' } });
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Agregar' }));
+    render(<ResponsesStudio api={api} />);
+    expect(screen.queryByRole('button', { name: 'Agregar flujo de compras' })).toBeNull();
+    const purchase = screen.getAllByRole('region').filter(region => region.getAttribute('aria-label')?.startsWith('Respuestas de Compras'));
+    expect(purchase.length).toBeGreaterThan(0);
+    await user.click(within(purchase[0]).getByRole('button', { expanded: false }));
+    await user.click(within(purchase[0]).getAllByRole('button')[1]);
+    const field = screen.getByRole('textbox', { name: 'Texto del mensaje' }) as HTMLTextAreaElement;
+    await user.type(field, ' hoy');
     const updater = vi.mocked(api.updateDraft).mock.calls[0][0];
-    expect(updater(api.draft as BotDefinition).keywords).toContain('prueba');
+    expect((api.draft as BotDefinition).nodes.some(node => node.block)).toBe(false);
+    expect(updater(api.draft as BotDefinition).nodes.some(node => node.block)).toBe(true);
   });
-  it('ajusta parámetros y quita palabras clave', async () => {
-    render(<RulesHarness />);
-    fireEvent.change(screen.getByRole('spinbutton', { name: /Horas para volver/i }), { target: { value: '12' } });
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Quitar hola' }));
-    expect(screen.queryByRole('button', { name: 'Quitar hola' })).toBeNull();
+  it('edita un texto de compras como el resto: lo válido se aplica y lo inválido solo avisa', async () => {
+    const user = userEvent.setup();
+    render(<ResponsesHarness initial={addPurchaseFlow(defaultDefinition())} />);
+    const purchase = screen.getAllByRole('region').filter(region => region.getAttribute('aria-label')?.startsWith('Respuestas de Compras'));
+    expect(purchase.length).toBeGreaterThan(0);
+    await user.click(within(purchase[0]).getByRole('button', { expanded: false }));
+    await user.click(within(purchase[0]).getAllByRole('button')[1]);
+    expect(screen.getByTestId('copy-preview')).toBeTruthy();
+    const field = screen.getByRole('textbox', { name: 'Texto del mensaje' }) as HTMLTextAreaElement;
+    await user.clear(field);
+    expect(screen.getByRole('alert').textContent).toBe('El texto no puede estar vacío.');
+    await user.type(field, 'Hola desde la tienda');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByText('Editado').length).toBeGreaterThan(0);
   });
 });
 
@@ -164,20 +248,49 @@ describe('actividad y versiones', () => {
   it('filtra y pagina eventos', async () => {
     const api = makeApi({ events: { events: [{ id: '1', createdAt: '2026-10-01T10:00:00Z', waId: '50760000000', clienteId: null, clienteNombre: 'Cliente', type: 'menu_shown', nodeId: null, optionId: null, detail: {} }], total: 20, page: 1, pageSize: 10 } });
     render(<ActivityTab api={api} />);
+    const user = userEvent.setup();
     expect(screen.getByRole('link', { name: 'Abrir chat' }).getAttribute('href')).toBe('/chats?wa=50760000000');
-    await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Tipo' }), 'menu_shown');
-    expect(api.loadEvents).toHaveBeenCalledWith(1, { type: 'menu_shown' });
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Siguiente' }));
-    expect(api.loadEvents).toHaveBeenCalledWith(2, { type: 'menu_shown' });
+    await user.click(screen.getByRole('button', { name: 'Tipo de evento' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Menú mostrado' }));
+    expect(api.loadEvents).toHaveBeenCalledWith(1, expect.objectContaining({ type: 'menu_shown' }));
+    await user.click(await screen.findByRole('button', { name: 'Siguiente' }));
+    expect(api.loadEvents).toHaveBeenCalledWith(2, expect.objectContaining({ type: 'menu_shown' }));
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(api.loadEvents).toHaveBeenLastCalledWith(1, expect.objectContaining({ type: undefined }));
+  });
+  it('incluye todo el día elegido en «hasta» y avisa si falla la carga', async () => {
+    const api = makeApi({ loadEvents: vi.fn(async () => { throw new Error('x'); }) });
+    render(<ActivityTab api={api} />);
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-10-05' } });
+    expect(await screen.findByText('No se pudo cargar la actividad. Inténtalo de nuevo.')).toBeTruthy();
+    const filters = vi.mocked(api.loadEvents).mock.calls[0][1];
+    expect(new Date(filters.to as string).getTime()).toBeGreaterThan(new Date('2026-10-05T23:00:00').getTime());
+  });
+  it('busca por teléfono tras una pausa', async () => {
+    vi.useFakeTimers();
+    const api = makeApi();
+    render(<ActivityTab api={api} />);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Teléfono' }), { target: { value: '5076' } });
+    expect(api.loadEvents).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(400);
+    expect(api.loadEvents).toHaveBeenCalledWith(1, expect.objectContaining({ waId: '5076' }));
+    vi.useRealTimers();
   });
   it('carga una versión en borrador', async () => {
     const api = makeApi();
-    const { rerender } = render(<VersionsTab api={api} />);
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Cargar en el borrador' }));
+    render(<VersionsTab api={api} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Acciones de la versión 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Cargar en el borrador' }));
     expect(api.loadVersionIntoDraft).toHaveBeenCalledWith(1);
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Ver diferencias' }));
-    rerender(<VersionsTab api={{ ...api, draft: { ...defaultDefinition(), keywords: ['nuevo'] } }} />);
-    expect(screen.getByText(/Palabras clave agregadas/)).toBeTruthy();
+  });
+  it('avisa si no se pudo cargar la versión', async () => {
+    const api = makeApi({ loadVersionIntoDraft: vi.fn(async () => { throw new Error('x'); }) });
+    render(<VersionsTab api={api} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Acciones de la versión 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Cargar en el borrador' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo cargar la versión');
   });
 });
 
@@ -200,21 +313,23 @@ describe('salida con cambios', () => {
 describe('publicación', () => {
   it('pide confirmar antes de restablecer los valores por defecto', async () => {
     const api = makeApi();
-    render(<PublishBar api={api} />);
+    render(<PublishControls api={api} />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: 'Restablecer valores por defecto' }));
+    await user.click(screen.getByRole('button', { name: 'Más acciones del borrador' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Restablecer valores por defecto' }));
     expect(api.resetToDefaults).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(api.resetToDefaults).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Restablecer valores por defecto' }));
+    await user.click(screen.getByRole('button', { name: 'Más acciones del borrador' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Restablecer valores por defecto' }));
     await user.click(screen.getByRole('button', { name: 'Restablecer' }));
     expect(api.resetToDefaults).toHaveBeenCalledTimes(1);
   });
   it('exige nota y bloquea errores', async () => {
     const api = makeApi({ dirty: true, hasErrors: true, issues: [{ path: 'nodes[menu]', message: 'Texto requerido', severity: 'error' }] });
-    const { rerender } = render(<PublishBar api={api} />);
+    const { rerender } = render(<PublishControls api={api} />);
     expect(screen.getByRole('button', { name: 'Publicar' })).toHaveProperty('disabled', true);
-    rerender(<PublishBar api={{ ...api, hasErrors: false }} />);
+    rerender(<PublishControls api={{ ...api, hasErrors: false }} />);
     await userEvent.setup().click(screen.getByRole('button', { name: 'Publicar' }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('button', { name: 'Publicar' })).toHaveProperty('disabled', true);

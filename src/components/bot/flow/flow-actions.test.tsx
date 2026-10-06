@@ -62,6 +62,17 @@ describe('useFlowActions', () => {
     expect(view.select).toHaveBeenLastCalledWith(null);
   });
 
+  it('creates the unlinked purchase blocks with the first text edit, without adding the flow first', () => {
+    const view = setup(defaultDefinition());
+    expect(view.current()?.nodes.some((node) => node.block)).toBe(false);
+    act(() => view.actions().setBlockCopy('compra_catalogo', 'btnHelp', 'Una persona'));
+    expect(view.current()?.nodes.filter((node) => node.block)).toHaveLength(4);
+    expect(view.current()?.nodes.find((node) => node.id === 'compra_catalogo')?.block?.copy).toEqual({ btnHelp: 'Una persona' });
+    // Un segundo texto reutiliza los mismos bloques en vez de duplicarlos.
+    act(() => view.actions().setBlockCopy('compra_catalogo', 'btnHelp', 'Hablar con alguien'));
+    expect(view.current()?.nodes.filter((node) => node.block)).toHaveLength(4);
+  });
+
   it('keeps the draft unchanged and tells the admin when the current texts cannot be read', async () => {
     copy.fetchCommerceCopyUseCase.mockRejectedValue(new Error('sin red'));
     const view = setup(addPurchaseFlow(defaultDefinition()));
