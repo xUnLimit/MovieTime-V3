@@ -41,7 +41,7 @@ export function PhoneMockup({ contactName, contactStatus, children, mode }: Phon
         <Phone aria-hidden className="size-4 text-muted-foreground" />
       </div>
 
-      <div data-testid="preview-bubble" data-mode={mode} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain bg-muted/40 p-3">
+      <div role="region" aria-label="Vista previa del mensaje" tabIndex={0} data-testid="preview-bubble" data-mode={mode} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain bg-muted/40 p-3 focus-visible:outline-2 focus-visible:outline-ring">
         <p className="mx-auto w-fit rounded-md bg-card px-2 py-0.5 text-xs text-muted-foreground shadow-xs">Hoy</p>
         {children}
       </div>

@@ -293,6 +293,10 @@ describe('TemplateEditor', () => {
     expect(screen.getByRole('list', { name: 'Botones de la plantilla' }).textContent).toContain('Quiero renovar');
 
     const preview = screen.getByTestId('preview-bubble');
+    expect(preview.tabIndex).toBe(0);
+    expect(screen.getByRole('region', { name: 'Vista previa del mensaje' })).toBe(preview);
+    preview.focus();
+    expect(document.activeElement).toBe(preview);
     expect(preview.getAttribute('data-mode')).toBe('api');
     expect(preview.textContent).toContain('Buenas tardes, María');
     expect(preview.textContent).toContain('Netflix y Disney+');

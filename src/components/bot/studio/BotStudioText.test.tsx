@@ -21,8 +21,8 @@ function makeApi(draft: BotDefinition, updateDraft: BotAdminApi['updateDraft'], 
   };
 }
 
-function Harness() {
-  const [initial] = useState(defaultDefinition);
+function Harness({ definition }: { definition?: BotDefinition }) {
+  const [initial] = useState(() => definition ?? defaultDefinition());
   const [draft, setDraft] = useState(initial);
   const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }));
   return <QueryClientProvider client={client}><BotStudio api={makeApi(draft, (updater) => setDraft((current) => updater(current)), initial)} /></QueryClientProvider>;
@@ -126,14 +126,16 @@ describe('qué pasa después de un texto', () => {
 
   it('un tope de respuestas deshabilita agregar más', async () => {
     const user = userEvent.setup();
-    render(<Harness />);
-    await addText(user);
-    await user.click(screen.getByRole('button', { name: 'Esperar la respuesta del cliente' }));
-    for (let index = 0; index < 12; index += 1) {
-      const add = screen.getByRole('button', { name: 'Agregar respuesta' }) as HTMLButtonElement;
-      if (!add.disabled) await user.click(add);
-    }
+    const definition = defaultDefinition();
+    definition.nodes.unshift({ id: 'texto_limite', name: 'Texto al límite', kind: 'text', body: 'Responde', after: { mode: 'wait', hours: 1 },
+      options: Array.from({ length: 9 }, (_, index) => ({ id: `respuesta_${index}`, title: `Respuesta ${index}`, next: 'menu' })),
+    });
+    render(<Harness definition={definition} />);
+    const add = screen.getByRole('button', { name: 'Agregar respuesta' });
+    expect(add).toHaveProperty('disabled', false);
+    await user.click(add);
     expect(screen.getByRole('button', { name: 'Agregar respuesta' })).toHaveProperty('disabled', true);
+    expect(screen.getAllByRole('textbox', { name: /^Palabras de la respuesta/ })).toHaveLength(10);
   });
 
   it('las acciones de compra, códigos y atención no ofrecen «después»: solo los textos', () => {
