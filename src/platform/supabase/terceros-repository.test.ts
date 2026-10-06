@@ -51,6 +51,18 @@ describe('third-party repository', () => {
     await expect(removeTercero(terceroId)).rejects.toMatchObject({ code: 'CONFLICT' });
   });
 
+  it('explains how to resolve active orders without exposing database errors', async () => {
+    core.remove.mockRejectedValueOnce(new Error('private SQL', { cause: { code: 'P0001', message: 'tercero_has_active_orders' } }));
+    const error = await removeTercero(terceroId).catch((failure: unknown) => failure);
+    expect(getPublicErrorMessage(error, 'fallback')).toContain('Elimínalos desde Pedidos y cobros');
+    expect(getPublicErrorMessage(error, 'fallback')).not.toContain('private SQL');
+  });
+
+  it.each([{ code: 'P0001', message: 'other_failure' }, { code: 'P0001' }])('preserves unrelated database exceptions %s', async failure => {
+    core.remove.mockRejectedValueOnce(failure);
+    await expect(removeTercero(terceroId)).rejects.toBe(failure);
+  });
+
   it('validates the ID before issuing a delete', async () => {
     await expect(removeTercero('invalid')).rejects.toThrow('UUID');
     expect(core.remove).not.toHaveBeenCalled();

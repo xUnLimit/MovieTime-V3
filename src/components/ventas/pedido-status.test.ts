@@ -48,12 +48,13 @@ describe('estado de los pedidos', () => {
 
 describe('acciones manuales permitidas', () => {
   const applied = { id: 'i', tipo: 'nueva' as const, servicioId: 's', ventaId: null, planNombre: 'Netflix', total: 12, estado: 'aplicado', ventaIdResultante: 'v1' };
-  it('eliminar exige no tener dinero ni servicios asignados', () => {
+  it('eliminar del panel permite archivar pedidos con dinero y servicios asignados', () => {
     expect(canDeletePedido(pedido())).toBe(true);
     expect(canDeletePedido(pedido({ estado: 'cancelado' }))).toBe(true);
-    expect(canDeletePedido(pedido({ receivedAmount: 1 }))).toBe(false);
-    expect(canDeletePedido(pedido({ deliveryState: 'asignado' }))).toBe(false);
-    expect(canDeletePedido(pedido({ items: [applied] }))).toBe(false);
+    expect(canDeletePedido(pedido({ receivedAmount: 1 }))).toBe(true);
+    expect(canDeletePedido(pedido({ deliveryState: 'asignado' }))).toBe(true);
+    expect(canDeletePedido(pedido({ items: [applied] }))).toBe(true);
+    expect(canDeletePedido(pedido({ id: '' }))).toBe(false);
   });
   it('registrar pago solo en pedidos abiertos con faltante', () => {
     expect(canRegisterPayment(pedido())).toBe(true);

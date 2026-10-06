@@ -27,7 +27,7 @@ async function copyOrderId(id: string) {
   catch { toast.error('No se pudo copiar. Selecciona el número de pedido y cópialo a mano.'); }
 }
 
-/** Acciones por fila de Pedidos: revisar, ir al chat o al cliente, copiar el número, reintentar la asignación, cancelar (libera la reserva y conserva el historial) y eliminar (solo sin dinero ni servicios asignados). */
+/** Acciones del pedido: eliminar lo archiva sin borrar ventas, pagos ni servicios asignados. */
 export function PedidoRowActions({ pedido, client = null, onReview }: { pedido: Pedido; client?: PedidoClient | null; onReview: () => void }) {
   const { retry, cancel, remove } = usePedidoActions();
   const [confirming, setConfirming] = useState<'cancel' | 'delete' | null>(null);
@@ -52,7 +52,7 @@ export function PedidoRowActions({ pedido, client = null, onReview }: { pedido: 
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{deleting ? 'Eliminar pedido' : 'Cancelar pedido'}</AlertDialogTitle>
-          <AlertDialogDescription>{deleting ? 'El pedido sale de la lista y se libera la reserva de sus servicios. Solo se pueden eliminar pedidos sin dinero recibido ni servicios asignados.' : 'Se liberará la reserva de los servicios y el pedido quedará cancelado en el historial. Esta acción no se puede deshacer.'}</AlertDialogDescription>
+          <AlertDialogDescription>{deleting ? 'El pedido sale de la lista y libera sus reservas pendientes. Las ventas, servicios asignados y pagos existentes se conservan en su historial. Después podrás eliminar al cliente si no tiene otros pedidos pendientes.' : 'Se liberará la reserva de los servicios y el pedido quedará cancelado en el historial. Esta acción no se puede deshacer.'}</AlertDialogDescription>
         </AlertDialogHeader>
         {error ? <p role="alert" className="text-sm text-danger">{getPublicErrorMessage(error, 'No se pudo completar la acción. Revisa el pedido y reintenta.')}</p> : null}
         <AlertDialogFooter>

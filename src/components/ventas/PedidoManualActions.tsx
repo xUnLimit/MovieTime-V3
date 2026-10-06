@@ -66,7 +66,7 @@ export function PedidoManualActions({ pedido }: { pedido: Pedido }) {
     </div> : null}
     {remove ? <div className="space-y-2">
       {confirming === 'delete'
-        ? <><p className="text-sm">Eliminar quita el pedido de la lista y libera su reserva. Esta acción no se puede deshacer desde aquí.</p>
+        ? <><p className="text-sm">Eliminar quita el pedido de la lista y libera su reserva. Las ventas, servicios asignados y pagos se conservan en el historial. Esta acción no se puede deshacer desde aquí.</p>
           <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setConfirming(null)}>Volver</Button>
             <Button variant="destructive" disabled={busy} onClick={() => actions.remove.mutate(pedido.id, { onSuccess: () => { setConfirming(null); setResult('Pedido eliminado.'); } })}>Confirmar eliminación</Button></div></>
         : <Button variant="outline" disabled={busy} onClick={() => setConfirming('delete')}><Trash2 />Eliminar pedido</Button>}

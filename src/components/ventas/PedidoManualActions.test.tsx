@@ -50,7 +50,7 @@ describe('PedidoManualActions', () => {
     expect(screen.queryByRole('button', { name: /entregado/ })).toBeNull();
   });
 
-  it('elimina solo sin dinero ni servicios asignados y tras confirmar', async () => {
+  it('elimina tras confirmar, también cuando el pedido tiene dinero', async () => {
     const user = userEvent.setup();
     const { rerender } = render(<PedidoManualActions pedido={base} />);
     await user.click(screen.getByRole('button', { name: 'Eliminar pedido' }));
@@ -59,13 +59,15 @@ describe('PedidoManualActions', () => {
     await user.click(screen.getByRole('button', { name: 'Eliminar pedido' }));
     await user.click(screen.getByRole('button', { name: 'Confirmar eliminación' }));
     expect(state.remove).toHaveBeenCalledWith(base.id, expect.any(Object));
+    await user.click(screen.getByRole('button', { name: 'Volver' }));
     rerender(<PedidoManualActions pedido={{ ...base, receivedAmount: 5, missingAmount: 7 }} />);
-    expect(screen.queryByRole('button', { name: 'Eliminar pedido' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Eliminar pedido' })).toBeTruthy();
   });
 
-  it('no ofrece nada en un pedido cancelado con historial y muestra un error seguro', () => {
-    const { container, rerender } = render(<PedidoManualActions pedido={{ ...base, estado: 'cancelado', receivedAmount: 12, missingAmount: 0, paymentState: 'cubierto', deliveryState: 'asignado', items: [{ ...item, estado: 'aplicado' }] }} />);
-    expect(container.textContent).toBe('');
+  it('permite eliminar un pedido cancelado con historial y muestra un error seguro', () => {
+    const { rerender } = render(<PedidoManualActions pedido={{ ...base, estado: 'cancelado', receivedAmount: 12, missingAmount: 0, paymentState: 'cubierto', deliveryState: 'asignado', items: [{ ...item, estado: 'aplicado' }] }} />);
+    expect(screen.getByRole('button', { name: 'Eliminar pedido' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Registrar pago' })).toBeNull();
     state.error = new Error('SQL detail');
     rerender(<PedidoManualActions pedido={base} />);
     expect(screen.getByRole('alert').textContent).not.toContain('SQL detail');

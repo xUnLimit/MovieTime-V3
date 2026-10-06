@@ -23,6 +23,10 @@ export async function removeTercero(id: string): Promise<void> {
     await remove(ENTITIES.TERCEROS, id);
   } catch (error) {
     const diagnostic = error instanceof Error && error.cause !== undefined ? error.cause : error;
+    if (diagnostic && typeof diagnostic === 'object' && 'code' in diagnostic && diagnostic.code === 'P0001'
+      && 'message' in diagnostic && diagnostic.message === 'tercero_has_active_orders') {
+      throw new ConflictError('El cliente tiene pedidos en la lista. Elimínalos desde Pedidos y cobros antes de eliminar al cliente. Sus ventas y pagos se conservan en el historial.');
+    }
     if (diagnostic && typeof diagnostic === 'object' && 'code' in diagnostic && diagnostic.code === '23503') {
       throw new ConflictError(
         'No se puede eliminar el tercero porque tiene registros asociados que impiden su eliminación. Revisa sus pedidos u otras dependencias.',

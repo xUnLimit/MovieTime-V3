@@ -78,7 +78,7 @@ describe('PedidoRowActions', () => {
     expect(screen.queryByRole('menuitem', { name: 'Ver cliente' })).toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Copiar número de pedido' })).toBeTruthy();
   });
-  it('elimina solo pedidos sin dinero ni servicios asignados y tras confirmar', async () => {
+  it('elimina pedidos tras confirmar y también permite archivar los que tienen dinero', async () => {
     const user = userEvent.setup();
     const { unmount } = render(<PedidoRowActions pedido={pedido({ estado: 'cancelado' })} onReview={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Acciones del pedido' }));
@@ -89,6 +89,9 @@ describe('PedidoRowActions', () => {
     unmount();
     render(<PedidoRowActions pedido={pedido({ receivedAmount: 5, missingAmount: 7 })} onReview={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Acciones del pedido' }));
-    expect(screen.queryByRole('menuitem', { name: 'Eliminar pedido' })).toBeNull();
+    await user.click(screen.getByRole('menuitem', { name: 'Eliminar pedido' }));
+    expect(screen.getByText(/Las ventas, servicios asignados y pagos existentes se conservan/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Eliminar pedido' }));
+    expect(mocks.remove).toHaveBeenCalledTimes(2);
   });
 });

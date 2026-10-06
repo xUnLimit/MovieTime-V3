@@ -46,7 +46,7 @@ SELECT is((SELECT estado FROM public.pedidos WHERE id='b1111111-1111-4111-8111-1
 SELECT is((SELECT estado FROM public.pedido_items WHERE id='c1111111-1111-4111-8111-111111111111'),'cancelado','its pending services are cancelled');
 SELECT ok(NOT (SELECT public.mt_list_orders()) @> '[{"id":"b1111111-1111-4111-8111-111111111111"}]'::jsonb,'the panel list hides deleted orders');
 SELECT ok((SELECT public.mt_list_orders()) @> '[{"id":"b2222222-2222-4222-8222-222222222222"}]'::jsonb,'other orders stay listed');
-SELECT throws_ok($$SELECT mt_delete_order('b3333333-3333-4333-8333-333333333333','a9666666-6666-4666-8666-666666666666')$$,'P0001','pedido_has_history','an order with money and assigned services cannot be deleted');
+SELECT ok(EXISTS(SELECT 1 FROM jsonb_array_elements(mt_list_orders()) item WHERE item->>'id'='b3333333-3333-4333-8333-333333333333'),'paid orders remain listed until explicitly archived');
 SELECT throws_ok($$SELECT mt_register_order_payment('b1111111-1111-4111-8111-111111111111',5,'EFECTIVO-2','a9777777-7777-4777-8777-777777777777')$$,'P0001','pedido_not_found','a deleted order accepts no payments');
 
 -- Pago manual: parcial y luego completo, con la misma cuenta que el cruce con Yappy.
@@ -72,6 +72,12 @@ SELECT lives_ok($$SELECT mt_mark_order_delivered('b3333333-3333-4333-8333-333333
 SELECT lives_ok($$SELECT mt_mark_order_delivered('b3333333-3333-4333-8333-333333333333','aa444444-4444-4444-8444-444444444444')$$,'the same intention replays');
 SELECT is((SELECT delivery_state FROM public.pedidos WHERE id='b3333333-3333-4333-8333-333333333333'),'enviado','the delivery state advances');
 SELECT throws_ok($$SELECT mt_mark_order_delivered('b3333333-3333-4333-8333-333333333333','aa555555-5555-4555-8555-555555555555')$$,'P0001','pedido_not_deliverable','a delivered order cannot be delivered again');
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT lives_ok($$SELECT mt_delete_order('b3333333-3333-4333-8333-333333333333','a9666666-6666-4666-8666-666666666666')$$,'a completed order can be archived');
+SELECT is((SELECT count(*) FROM public.pedido_pagos WHERE pedido_id='b3333333-3333-4333-8333-333333333333'),1::bigint,'archiving preserves recorded payments');
+SELECT is((SELECT estado FROM public.pedido_items WHERE pedido_id='b3333333-3333-4333-8333-333333333333'),'aplicado','archiving preserves assigned items');
+SELECT is((SELECT delivery_state FROM public.pedidos WHERE id='b3333333-3333-4333-8333-333333333333'),'enviado','archiving preserves delivery history');
 RESET ROLE;
 SELECT ok(NOT has_function_privilege('anon','public.mt_delete_order(uuid,uuid)','EXECUTE'),'anonymous users cannot delete orders');
 SELECT ok(NOT has_function_privilege('service_role','public.mt_register_order_payment(uuid,numeric,text,uuid)','EXECUTE'),'the bot cannot register manual payments');

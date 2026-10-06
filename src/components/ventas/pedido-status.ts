@@ -64,9 +64,9 @@ export function pedidoSearchText(pedido: Pedido, client: PedidoClient | null): s
   return [pedido.id, ...pedido.items.map(item => item.planNombre), client?.name, client?.phone, pedido.contactId, pedidoStage(pedido).label].filter(Boolean).join(' ').toLowerCase();
 }
 
-/** Sin dinero recibido ni servicios asignados: es lo único que el servidor deja eliminar. */
+/** Eliminar del panel archiva el pedido y conserva sus ventas y pagos. */
 export const canDeletePedido = (pedido: Pedido): boolean =>
-  pedido.receivedAmount === 0 && pedido.deliveryState === 'pendiente' && !pedido.items.some(item => item.estado === 'aplicado');
+  Boolean(pedido.id);
 
 /** Se puede anotar un pago manual mientras el pedido siga abierto y falte dinero. */
 export const canRegisterPayment = (pedido: Pedido): boolean => !isClosedPedido(pedido) && pedido.missingAmount > 0;
