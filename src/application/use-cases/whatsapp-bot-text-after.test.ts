@@ -119,6 +119,17 @@ describe('textos que continúan solos', () => {
 });
 
 describe('textos que esperan la respuesta del cliente', () => {
+  it('el sondeo prioritario solo atiende esperas y pide reintento si no puede leerlas', async () => {
+    const def = journey({ pregunta: { body: 'Describe el problema.', after: 'wait', to: [['', 'soporte']] } }, 'pregunta');
+    const unavailable = setup(def, { waitsThrow: 'get' });
+    await expect(handleBotMessage(write('Se me fue la señal'), unavailable.deps, { waitingOnly: true })).resolves.toBe('retry');
+    expect(unavailable.send).not.toHaveBeenCalled();
+    const none = setup(def);
+    await expect(handleBotMessage(write('hola'), none.deps, { waitingOnly: true })).resolves.toBe('ignored');
+    await expect(handleBotMessage(tap('BOT:menu:ir'), none.deps, { waitingOnly: true })).resolves.toBe('ignored');
+    await expect(handleBotMessage(write('hola'), { ...none.deps, waits: undefined }, { waitingOnly: true })).resolves.toBe('ignored');
+    expect(none.send).not.toHaveBeenCalled();
+  });
   const asking = () => journey({
     pregunta: { body: '¿Quieres hablar con una persona?', after: 'wait', to: [['sí, claro', 'soporte'], ['no', 'gracias'], ['', 'netflix']] },
     gracias: { body: 'Perfecto, aquí estaré.' },

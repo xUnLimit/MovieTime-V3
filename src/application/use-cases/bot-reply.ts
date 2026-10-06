@@ -16,7 +16,7 @@ const log = createLogger('WhatsAppBot');
 
 /** Una venta activa del cliente a la que se le puede reenviar su acceso (sin ningún dato secreto). */
 export type AccessSale = { saleId: string; service: string; profile: string };
-/** Los datos de acceso ya armados con la plantilla de suscripción; `stored` es lo único que guarda el chat (sin contraseña ni PIN). */
+/** Los datos de acceso armados con su plantilla independiente; `stored` es lo único que guarda el chat (sin contraseña ni PIN). */
 export type AccessText = { text: string; stored: string; withheld: boolean };
 // Los datos de acceso de un cliente: solo de su número y de sus ventas activas. Ausente si el bot no puede leerlos.
 export type AccessData = {

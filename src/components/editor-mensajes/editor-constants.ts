@@ -35,6 +35,7 @@ const TIPO_PLACEHOLDERS: Record<EditableTipoKey, readonly string[]> = {
   datos_pago: ['{saludo}', '{nombre_cliente}', '{cliente}', '{items}', '{vencimiento}', '{monto}'],
   despedida: ['{saludo}', '{nombre_cliente}', '{cliente}', '{items}'],
   suscripcion: [...COBROS, ITEMS_BLOCK_KEY, ...ACCESO],
+  datos_acceso: [...COBROS, ITEMS_BLOCK_KEY, ...ACCESO],
   actualizacion_credenciales: [...COBROS, ...ACCESO, ...CAMBIOS],
   transferencia_servicio: [...COBROS, ...ACCESO, ...CAMBIOS],
 };

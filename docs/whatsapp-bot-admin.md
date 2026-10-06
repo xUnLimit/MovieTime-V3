@@ -361,7 +361,10 @@ Si nada coincide y no hay «cualquier otra respuesta», el bot no contesta y el 
 **Estado de la espera.** Tabla `whatsapp_bot_waits` (`wa_id` único, `node_id`, `expires_at`), solo para el servidor: RLS activa, sin acceso para
 `anon` ni `authenticated` y `SELECT/INSERT/UPDATE/DELETE` solo para `service_role`. Cada cliente espera una sola respuesta a la vez. Se borra
 después de entregar la respuesta (una reentrega del mismo mensaje todavía la encuentra), al tocar cualquier botón del menú, o cuando el texto ya no
-existe, y se limpia lo vencido al guardar otra. Un fallo al guardarla o leerla nunca impide contestar. Expand-only: la versión anterior ignora la tabla.
+existe, y se limpia lo vencido al guardar otra. Si falla la lectura prioritaria, el mensaje se reintenta y no cae en compras. Expand-only: la versión anterior ignora la tabla.
+
+La espera del recorrido se evalúa antes de compras. Al entrar en otro nodo, compras queda pausada (`context.paused`) sin cancelar el carrito ni el pedido.
+Solo un botón `SHOP:` o una delegación explícita a una acción de compras vuelve a darle el turno; los mensajes escritos de soporte no reactivan compras.
 
 **Validación** (`validate-nodes.ts`, errores bloqueantes salvo que se diga): continuar exige una salida; esperar exige al menos una, como máximo 10, solo
 una «cualquier otra», palabras en cada respuesta (hasta 60 caracteres) y un número entero de horas entre 1 y 72; una cadena de textos que
@@ -375,8 +378,9 @@ la respuesta del cliente) y el lienzo muestra las salidas con su etiqueta («Con
 ## Datos de acceso del cliente (acción `service_access`)
 
 «Enviar mis datos de acceso» no está ligada a la compra: es una acción más del catálogo, que se conecta donde se quiera (el editor tiene «Agregar paso →
-Datos de acceso del cliente»). El cliente recibe de nuevo lo que se le envía al crear su venta: la plantilla **Notificación de Suscripción**
-(Plantillas de mensajes), con el correo, la contraseña, el perfil y lo demás según la plataforma. Lo que dice se edita en esa plantilla.
+Datos de acceso del cliente»). El cliente recibe la plantilla independiente **Datos de acceso solicitados** (`datos_acceso`), en
+Plantillas de mensajes → Respuestas automáticas, con el correo, la contraseña, el perfil y lo demás según la plataforma.
+También se usa al tocar un botón `DATOS` de un aviso. La bienvenida al crear una venta sigue usando **Notificación de Suscripción**.
 
 - **Solo lo suyo.** Las ventas salen del número que escribe: debe pertenecer a un único cliente activo; la venta debe estar activa y vigente, de un servicio
   en uso (no en reposo, cortado ni archivado) y sin reembolso en su último periodo. Con varios servicios el bot manda una lista para elegir de cuál

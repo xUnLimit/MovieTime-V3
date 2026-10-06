@@ -71,6 +71,9 @@ export function createBotRuntime(requestId: string) {
       return latest?.definition ?? null;
     },
     get version() { return latestVersion; },
+    async waiting(definition: BotDefinition, message: InboundMessage, send: BotDeps['send'], orderId: string | null) {
+      return this.handle(definition, message, send, orderId, { waitingOnly: true });
+    },
     // A tap that no longer exists in the latest version still works when the version the conversation started with has it.
     async definitionFor(message: InboundMessage, pinnedVersion: number | null, latest: BotDefinition): Promise<BotDefinition> {
       const action = readBotAction(message);
@@ -80,7 +83,7 @@ export function createBotRuntime(requestId: string) {
       return pinned && resolveOption(pinned.definition, action.nodeId, action.optionId) ? pinned.definition : latest;
     },
     async handle(definition: BotDefinition, message: InboundMessage, send: BotDeps['send'], orderId: string | null = null,
-      input: { handBack?: BotHandBack } = {}): Promise<BotOutcome> {
+      input: { handBack?: BotHandBack; waitingOnly?: boolean } = {}): Promise<BotOutcome> {
       try {
         return await handleBotMessage(message, {
           store: createBotStore(), claims: createNetflixClaimStore(), events: eventsStore, definition,

@@ -51,6 +51,11 @@ function lastDeps() {
 }
 
 describe('createBotRuntime composition', () => {
+  it('queries pending answers without offering the menu or entering commerce', async () => {
+    const runtime = createBotRuntime('req');
+    await runtime.waiting(defaultDefinition(), message, send, null);
+    expect(mocks.handleBotMessage.mock.lastCall?.[2]).toEqual({ waitingOnly: true });
+  });
   it('gives the bot the stores for written answers and for the customer\'s access data', async () => {
     const runtime = createBotRuntime('req');
     await runtime.handle(defaultDefinition(), message, send);

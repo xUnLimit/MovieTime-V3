@@ -7,7 +7,7 @@ import { commerceStateSchema } from '@/application/use-cases/commerce-conversati
 
 const mocks=vi.hoisted(()=>({ env:{whatsappAccessToken:'fixture',whatsappPhoneNumberId:'123'},
   store:{claim:vi.fn(),isCurrent:vi.fn(),checkpoint:vi.fn(),finish:vi.fn()},notice:vi.fn(),commerce:vi.fn(),
-  send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{configuration:vi.fn(),definitionFor:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
+  clearWait:vi.fn(),send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{waiting:vi.fn(),configuration:vi.fn(),definitionFor:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
 vi.mock('@/platform/config',()=>({env:mocks.env}));
 vi.mock('@/platform/observability/logger',()=>({createLogger:()=>({warn:mocks.warn})}));
 vi.mock('@/modules/whatsapp/automation-inbox-store',()=>({createAutomationInboxStore:()=>mocks.store}));
@@ -18,6 +18,7 @@ vi.mock('@/application/use-cases/pedido-delivery-runtime',()=>({drainOrderDelive
 vi.mock('@/application/use-cases/interest-delivery-runtime',()=>({drainInterestDeliveries:mocks.interest}));
 vi.mock('@/modules/messaging/notice-reply-store',()=>({createNoticeReplyStore:()=>({})}));
 vi.mock('@/modules/messaging/notice-store',()=>({createNoticeStore:()=>({})}));
+vi.mock('@/modules/messaging/bot-wait-store',()=>({createBotWaitStore:()=>({clear:mocks.clearWait})}));
 vi.mock('@/modules/whatsapp/outbound-store',()=>({createOutboundStore:()=>({})}));
 vi.mock('@/modules/whatsapp/template-catalog',()=>({createTemplateCatalog:()=>({})}));
 vi.mock('@/modules/whatsapp/outbound-messages',()=>({sendOutboundMessage:mocks.send}));
@@ -41,6 +42,7 @@ beforeEach(()=>{
   mocks.store.isCurrent.mockResolvedValue(true); mocks.store.checkpoint.mockResolvedValue(true); mocks.store.finish.mockResolvedValue(true);
   mocks.notice.mockResolvedValue('ignored'); mocks.bot.configuration.mockResolvedValue(defaultDefinition()); mocks.bot.definitionFor.mockImplementation(async(_message,_pin,latest)=>latest); mocks.bot.handle.mockResolvedValue('ignored');
   mocks.commerce.mockResolvedValue(null); mocks.send.mockResolvedValue({sendStatus:'accepted'});
+  mocks.bot.waiting.mockResolvedValue('ignored'); mocks.clearWait.mockResolvedValue(undefined);
   mocks.delivery.mockResolvedValue({processed:0,failed:0});
 });
 describe('inbox composition',()=>{

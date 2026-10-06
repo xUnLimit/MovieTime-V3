@@ -6,8 +6,8 @@ import type { AccessData } from './bot-reply';
 const MAX_TEXT = 4096;
 
 /**
- * Los datos de acceso que el bot reenvía: de las ventas activas del número que escribe, con la plantilla que se envía al crear la
- * venta («Notificación de Suscripción»). Las contraseñas y PIN de un servicio que entra con código nunca se incluyen. Las
+ * Los datos de acceso que el bot reenvía: de las ventas activas del número que escribe, con su propia plantilla
+ * («Datos de acceso solicitados»). Las contraseñas y PIN de un servicio que entra con código nunca se incluyen. Las
  * dependencias se crean al primer uso: una base de datos sin configurar no debe romper la entrega del webhook.
  */
 export function createAccessData(now: () => Date = () => new Date()): AccessData {
@@ -24,7 +24,7 @@ export function createAccessData(now: () => Date = () => new Date()): AccessData
       const { clienteId, sales: rows } = await sales().eligibleSales(waId);
       const sale = rows.find((row) => row.saleId === saleId);
       if (!clienteId || !sale) return null;
-      const [ventas, template] = await Promise.all([noticeStore().loadVentas([saleId]), noticeStore().loadTemplate('suscripcion')]);
+      const [ventas, template] = await Promise.all([noticeStore().loadVentas([saleId]), noticeStore().loadTemplate('datos_acceso')]);
       const venta = ventas[0];
       if (!venta || venta.clienteId !== clienteId || !venta.activa || venta.reembolsada || venta.enReposo || !template?.contenido) return null;
       const group: NoticeGroup = {

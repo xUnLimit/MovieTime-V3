@@ -22,6 +22,8 @@ export type HandBack = z.infer<typeof handBackSchema>;
 
 export const commerceStateSchema = z.object({
   stage: z.enum(['idle', 'buy', 'renew', 'summary', 'payment', 'last4', 'interest']).default('idle'),
+  // El recorrido puede tomar el turno sin cancelar la selección ni un pedido reservado.
+  paused: z.boolean().default(false),
   kind: z.enum(['buy', 'renew']).default('buy'), items: z.array(itemSchema).max(10).default([]),
   page: z.number().int().nonnegative().max(10000).default(0),
   orderId: z.string().uuid().nullable().default(null),
@@ -62,7 +64,7 @@ const HOUR_MS = 3_600_000;
 
 /** Vuelve al reposo y suelta el carrito y el pedido enlazado (el pedido sigue en la base de datos). */
 export function resetStage(state: CommerceState): void {
-  Object.assign(state, { stage: 'idle', items: [], orderId: null, categoryId: null, soldout: false, page: 0, interestPlanId: null, last4Attempts: 0, stageAt: null });
+  Object.assign(state, { stage: 'idle', paused: false, items: [], orderId: null, categoryId: null, soldout: false, page: 0, interestPlanId: null, last4Attempts: 0, stageAt: null });
 }
 
 /**

@@ -95,7 +95,7 @@ async function clearWait(run: BotRun, only?: { nodeId: string; expiresAt: string
 // What the customer wrote while a text waited for it: the first answer that matches decides the next node. Without a match
 // (and without an «any other answer») the wait ends and the message is treated as an ordinary chat. The wait is cleared only
 // after the answer was delivered, so a redelivery of this same message still finds it.
-async function answerWait(run: BotRun, text: string, services: BotService[]): Promise<BotOutcome | null> {
+async function answerWait(run: BotRun, text: string, services: BotService[], required = false): Promise<BotOutcome | null> {
   const { waits, definition } = run.deps;
   if (!waits) return null;
   let wait;
@@ -103,7 +103,7 @@ async function answerWait(run: BotRun, text: string, services: BotService[]): Pr
     wait = await waits.get(run.message.fromWaId, run.now);
   } catch {
     log.warn('Bot wait could not be read');
-    return null;
+    return required ? 'retry' : null;
   }
   if (!wait) return null;
   const node = definition.nodes.find((candidate) => candidate.id === wait.nodeId);
@@ -227,14 +227,16 @@ async function handBackToJourney(run: BotRun, handBack: BotHandBack, services: B
  * numbers the purchase flow already serves get the journey; other numbers never get an automatic reply. `input.handBack`:
  * the purchase flow already answered this message and gives the turn back to the journey.
  */
-export async function handleBotMessage(message: InboundMessage, deps: BotDeps, input: { handBack?: BotHandBack } = {}): Promise<BotOutcome> {
+export async function handleBotMessage(message: InboundMessage, deps: BotDeps, input: { handBack?: BotHandBack; waitingOnly?: boolean } = {}): Promise<BotOutcome> {
   const action = readBotAction(message);
   const text = message.messageType === 'text' ? message.textBody : null;
+  if (input.waitingOnly && (action || text === null || !deps.waits)) return 'ignored';
   if (!input.handBack && !action && text === null) return 'ignored';
   const { known, clienteId, services, hasServices } = await deps.store.customerServices(message.fromWaId);
   const purchaseServed = PURCHASE_SERVED.test(message.fromWaId);
   if (!known && !purchaseServed) return 'ignored';
   const run: BotRun = { deps, message, now: deps.now?.() ?? new Date(), clienteId, hasServices, purchaseServed };
+  if (input.waitingOnly) return (await answerWait(run, text ?? '', services, true)) ?? 'ignored';
   if (input.handBack) return handBackToJourney(run, input.handBack, services);
   if (action) {
     // Tocar un botón del menú abandona cualquier respuesta que se estuviera esperando.

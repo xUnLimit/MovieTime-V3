@@ -151,8 +151,8 @@ describe('acción «datos de acceso del cliente»', () => {
     expect(within(stepList()).getByRole('button', { name: /^Enviar mis datos de acceso/ })).toBeTruthy();
     expect((within(inspector()).getByRole('combobox', { name: 'Acción' }) as HTMLSelectElement).value).toBe('service_access');
     const note = within(inspector()).getByRole('note');
-    expect(note.textContent).toContain('Notificación de Suscripción');
-    expect(within(note).getByRole('link', { name: /Editar la plantilla/ }).getAttribute('href')).toBe('/plantillas-mensajes');
+    expect(note.textContent).toContain('Datos de acceso solicitados');
+    expect(within(note).getByRole('link', { name: /Editar la plantilla/ }).getAttribute('href')).toBe('/plantillas-mensajes?tipo=datos_acceso');
   });
 
   it('también se puede elegir en un paso de acción existente', async () => {

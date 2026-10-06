@@ -23,7 +23,7 @@
 
 ## Messaging (WhatsApp)
 
-- Plantilla (template): message text edited in `/plantillas-mensajes` (sidebar: Plantillas de mensajes), keyed by tipo (`dia_pago`, `cancelacion`, `renovacion`, `suscripcion`, `actualizacion_credenciales`, `transferencia_servicio`, `datos_pago`, `despedida`). It can be linked to an approved Meta template so it can be sent outside the 24h window.
+- Plantilla (template): message text edited in `/plantillas-mensajes` (sidebar: Plantillas de mensajes), keyed by tipo (`dia_pago`, `cancelacion`, `renovacion`, `suscripcion`, `actualizacion_credenciales`, `transferencia_servicio`, `datos_pago`, `datos_acceso`, `despedida`). `datos_acceso` answers customer access requests independently of the subscription welcome. It can be linked to an approved Meta template so it can be sent outside the 24h window.
 - Plantilla Meta: template approved by Meta for the WhatsApp Cloud API. The approved list lives in `docs/whatsapp/plantillas-meta-v2.md`.
 - Aviso: expiration or cancellation message sent to a cliente for a venta, manually from `/notificaciones` or automatically by cron. Avisos are deduplicated per venta and event.
 - Envio automatico: hourly cron that sends payment-day avisos. It is controlled from Configuracion by an on/off switch, the send hour (Panama time) and a daily cap.

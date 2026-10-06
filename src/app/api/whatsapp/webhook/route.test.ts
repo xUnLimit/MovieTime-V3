@@ -49,7 +49,10 @@ vi.mock('@/modules/whatsapp/outbound-messages', () => ({ sendOutboundMessage }))
 vi.mock('@/modules/whatsapp/cloud-api-client', () => ({ sendCloudApiMessage }));
 vi.mock('@/modules/messaging/notice-reply-store', () => ({ createNoticeReplyStore: () => ({}) }));
 vi.mock('@/modules/messaging/notice-store', () => ({ createNoticeStore: () => ({}) }));
-vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({ handleBotMessage }));
+vi.mock('@/application/use-cases/whatsapp-bot-use-case', () => ({
+  handleBotMessage: (message: unknown, deps: unknown, input: { waitingOnly?: boolean }) =>
+    input.waitingOnly ? Promise.resolve('ignored') : handleBotMessage(message, deps, input),
+}));
 vi.mock('@/modules/messaging/bot-store', () => ({ createBotStore: () => ({ kind: 'bot-store' }) }));
 vi.mock('@/modules/messaging/bot-config-store', () => ({ createBotConfigStore: () => ({ load: loadBotConfig }) }));
 vi.mock('@/modules/messaging/bot-events-store', () => ({ createBotEventsStore: () => ({ record: recordBotEvent }) }));

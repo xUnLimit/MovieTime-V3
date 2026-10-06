@@ -2,7 +2,7 @@ import { readApiResponse } from './client';
 
 export type NoticeTipo =
   | 'notificacion_regular' | 'dia_pago' | 'renovacion' | 'suscripcion' | 'cancelacion'
-  | 'actualizacion_credenciales' | 'transferencia_servicio' | 'datos_pago' | 'despedida';
+  | 'actualizacion_credenciales' | 'transferencia_servicio' | 'datos_pago' | 'datos_acceso' | 'despedida';
 
 type NoticeResultStatus = 'accepted' | 'already_sent' | 'failed' | 'skipped' | 'uncertain' | 'wa_me';
 

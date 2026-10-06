@@ -8,6 +8,9 @@ const answer = (overrides: Partial<CommerceConversationResult> = {}): CommerceCo
 function ports(overrides: Partial<ConversationPorts> = {}) {
   const calls: string[] = [];
   const value: ConversationPorts = {
+    waiting: vi.fn(async () => 'ignored' as const),
+    pauseCommerce: vi.fn(async () => null),
+    clearWaiting: vi.fn(async () => undefined),
     commerce: vi.fn(async () => null),
     bot: vi.fn(async () => 'ignored' as const),
     checkpoint: vi.fn(async () => { calls.push('checkpoint'); }),
@@ -18,6 +21,32 @@ function ports(overrides: Partial<ConversationPorts> = {}) {
 }
 
 describe('runConversationTurn', () => {
+  it('gives a pending written answer priority and checkpoints the paused commerce state', async () => {
+    const paused = answer({ payload: null, context: { stage: 'buy', paused: true } });
+    const { value } = ports({ waiting: vi.fn(async () => 'node' as const), pauseCommerce: vi.fn(async () => paused) });
+    await expect(runConversationTurn(value)).resolves.toEqual({ result: 'node', commerce: paused });
+    expect(value.commerce).not.toHaveBeenCalled();
+    expect(value.bot).not.toHaveBeenCalled();
+    expect(value.checkpoint).toHaveBeenCalledWith(paused);
+    expect(value.clearWaiting).not.toHaveBeenCalled();
+  });
+
+  it('delegates a pending answer that explicitly leads into commerce', async () => {
+    const own = answer();
+    const { value } = ports({ waiting: vi.fn(async () => ({ delegate: 'buy' as const })), commerce: vi.fn(async () => own) });
+    await expect(runConversationTurn(value)).resolves.toEqual({ result: 'commerce', commerce: own });
+    expect(value.commerce).toHaveBeenCalledOnce();
+    expect(value.commerce).toHaveBeenCalledWith({ command: 'buy' });
+    expect(value.clearWaiting).toHaveBeenCalledOnce();
+  });
+
+  it('does not let commerce answer when reading a pending answer needs a retry', async () => {
+    const { value } = ports({ waiting: vi.fn(async () => 'retry' as const) });
+    await expect(runConversationTurn(value)).resolves.toMatchObject({ result: 'retry' });
+    expect(value.commerce).not.toHaveBeenCalled();
+    expect(value.send).not.toHaveBeenCalled();
+  });
+
   it('answers with the journey when the purchase flow has nothing to say', async () => {
     const { value } = ports({ bot: vi.fn(async () => 'menu' as const) });
     await expect(runConversationTurn(value)).resolves.toEqual({ result: 'menu', commerce: null });

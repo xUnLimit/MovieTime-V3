@@ -135,6 +135,7 @@ export type TipoTemplate =
   | 'actualizacion_credenciales'
   | 'transferencia_servicio'
   | 'datos_pago'
+  | 'datos_acceso'
   | 'despedida';
 
 export interface TemplateMensaje {

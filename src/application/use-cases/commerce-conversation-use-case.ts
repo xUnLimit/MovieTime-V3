@@ -40,7 +40,7 @@ export type CommerceConversationResult = {
   context: Json; payload: OutboundPayload | null; handBack: HandBack | null; process: string; orderId: string | null; handoff: boolean;
 };
 /** Lo que el recorrido le pide: `command` cuando un nodo de compra lo llamo, `prefix` el aviso que viaja con la respuesta. */
-export type CommerceTurnOptions = { command?: string; prefix?: string };
+export type CommerceTurnOptions = { command?: string; prefix?: string; pause?: boolean };
 
 // Bloque de compra del lienzo que corresponde a cada etapa; su salida de "cancelar" dice a donde vuelve el cliente.
 const BLOCK_OF_STAGE: Partial<Record<CommerceState['stage'], PurchaseBlockType>> = { summary: 'resumen', payment: 'reserva', last4: 'pago' };
@@ -75,18 +75,25 @@ export async function handleCommerceConversation(message: InboundMessage, contex
   definition?: BotDefinition | null, options: CommerceTurnOptions = {}): Promise<CommerceConversationResult | null> {
   if (!/^507\d{8}$/.test(message.fromWaId)) return null;
   const state = commerceStateSchema.parse(context);
+  if (options.pause) {
+    if (state.stage === 'idle') return null;
+    state.paused = true;
+    return { context: state, payload: null, handBack: null, process: 'idle', orderId: state.orderId, handoff: false };
+  }
   const now = deps.now?.() ?? new Date();
   expireStage(state, definition?.params.menuIdleHours ?? DEFAULT_IDLE_HOURS, now);
-  const command = options.command ?? commerceCommand(message, state.stage);
+  const command = options.command ?? commerceCommand(message, state.paused ? 'idle' : state.stage);
+  if (state.paused && !command) return null;
   // Access remains available while a commercial selection is in progress.
   if (!command && (readBotAction(message) || /^(?:codigo|netflix)$/i.test(message.textBody?.trim() ?? ''))) return null;
   const t = await loadCopy(deps, definition);
   const result = (payload: OutboundPayload | null, handBack: HandBack | null, handoff = false): CommerceConversationResult => (
-    { context: state, payload, handBack, process: state.stage, orderId: state.orderId, handoff });
+    { context: state, payload, handBack, process: state.paused ? 'idle' : state.stage, orderId: state.orderId, handoff });
   if (state.lastMessageId === message.waMessageId && (state.lastHandBack || state.lastReply)) {
     return state.lastHandBack ? result(null, state.lastHandBack, state.pendingHandoff)
       : result(state.lastPayload ?? { kind: 'text', text: state.lastReply as string }, null, state.pendingHandoff);
   }
+  if (command) state.paused = false;
   let payload: OutboundPayload | null = null;
   let handBack: HandBack | null = null;
   let handoff = false;
@@ -115,6 +122,7 @@ export async function handleCommerceConversation(message: InboundMessage, contex
     handBack = handBackOf(state, t(hadOrder ? 'orderCancelled' : 'cancelled'));
     resetStage(state);
   } else if (command === 'menu') {
+    state.paused = true;
     handBack = { text: t('noOptions'), prefixed: false, block: null };
   } else if (command === 'services') {
     const services = await deps.services(message.fromWaId);

@@ -74,7 +74,7 @@ export async function handleNoticeReply(message: InboundMessage, deps: NoticeRep
       ventas,
     };
     const tipo = action === 'RENOVAR' ? 'datos_pago'
-      : action === 'NO_CONTINUAR' ? 'despedida' : notice.tipo;
+      : action === 'NO_CONTINUAR' ? 'despedida' : 'datos_acceso';
     const template = await deps.notices.loadTemplate(tipo);
     if (!template?.contenido) throw new Error('Notice reply template is unavailable');
     const data = buildMessageData(group, { now });

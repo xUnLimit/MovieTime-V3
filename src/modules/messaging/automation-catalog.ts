@@ -26,6 +26,10 @@ export const AUTOMATION_CATALOG: Record<EditableTipoKey, AutomationInfo> = {
     triggers: ['respuesta'],
     detail: 'Responde sola cuando el cliente toca un botón con la acción "Enviar datos de pago".',
   },
+  datos_acceso: {
+    triggers: ['respuesta'],
+    detail: 'Responde cuando el cliente solicita sus datos de acceso en el bot o toca "Recibir mis datos". Tiene su propio texto, independiente de la bienvenida de suscripción.',
+  },
   despedida: {
     triggers: ['respuesta'],
     detail: 'Responde sola cuando el cliente toca "No continuar" y deja la venta marcada.',

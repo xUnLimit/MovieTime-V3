@@ -4850,6 +4850,7 @@ export type Database = {
         | "actualizacion_credenciales"
         | "transferencia_servicio"
         | "datos_pago"
+        | "datos_acceso"
         | "despedida"
       venta_estado_enum: "activo" | "inactivo"
     }
@@ -5025,6 +5026,7 @@ export const Constants = {
         "actualizacion_credenciales",
         "transferencia_servicio",
         "datos_pago",
+        "datos_acceso",
         "despedida",
       ],
       venta_estado_enum: ["activo", "inactivo"],

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expectNoBlockingA11yViolations } from './helpers/axe';
 
 test('@auth @smoke Automatizaciones es una sola herramienta con pestañas propias', async ({ page }) => {
   const errors: string[] = [];
@@ -19,6 +20,18 @@ test('@auth @smoke Plantillas de mensajes tiene su apartado y su pestaña de env
   const tabs = page.getByRole('tablist', { name: 'Secciones de plantillas' });
   await tabs.getByRole('tab', { name: 'Envíos recientes', exact: true }).click();
   await expect(page).toHaveURL(/tab=envios/);
+});
+
+test('@auth @smoke @a11y los datos solicitados tienen su plantilla independiente', async ({ page }) => {
+  await page.goto('/plantillas-mensajes?tipo=datos_acceso');
+  const requested = page.locator('button[data-tipo="datos_acceso"]');
+  await expect(requested).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByRole('textbox')).toHaveValue(/datos de acceso que solicitaste/);
+  await expect(page.getByRole('button', { name: /Contraseña/ })).toBeVisible();
+  await expectNoBlockingA11yViolations(page);
+  await page.locator('button[data-tipo="suscripcion"]').click();
+  await expect(requested).not.toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('button[data-tipo="suscripcion"]')).toHaveAttribute('aria-current', 'true');
 });
 
 test('@auth @smoke Pedidos y cobros agrupa pedidos, cobros e interesados; conserva el filtro al volver', async ({ page }) => {

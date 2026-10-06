@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 
 const requestSchema = z.object({
   tipo: z.enum(['notificacion_regular', 'dia_pago', 'renovacion', 'suscripcion',
-    'cancelacion', 'actualizacion_credenciales', 'transferencia_servicio', 'datos_pago', 'despedida']),
+    'cancelacion', 'actualizacion_credenciales', 'transferencia_servicio', 'datos_pago', 'datos_acceso', 'despedida']),
   ventaIds: z.array(z.string().uuid()).min(1).max(200),
   eventId: z.string().uuid().optional(),
   /** Confirmacion de renovacion que el sistema envia solo cuando el WhatsApp automatico esta encendido. */

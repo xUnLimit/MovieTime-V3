@@ -125,7 +125,7 @@ describe('handleNoticeReply', () => {
     const message = { ...inbound, payload: { type: 'template_button', payload: `DATOS:${ID}`, text: 'Recibir mis datos' } };
     expect(await handleNoticeReply(message, deps)).toBe('accepted');
     expect(deps.notices.loadVentas).toHaveBeenCalledWith(['sale-1']);
-    expect(deps.notices.loadTemplate).toHaveBeenCalledWith(tipo);
+    expect(deps.notices.loadTemplate).toHaveBeenCalledWith('datos_acceso');
     expect(deps.send).toHaveBeenCalledWith(expect.objectContaining({
       // El cliente recibe la contraseña real; el chat guarda el mismo texto con contraseña y PIN ocultos.
       storedTextBody: 'Hola Cliente Ejemplo: cuenta@example.test / •••••••• / ••••••••',

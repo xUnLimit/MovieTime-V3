@@ -34,9 +34,10 @@ describe('createAccessData.eligible', () => {
 });
 
 describe('createAccessData.compose', () => {
-  it('arma los datos con la plantilla de suscripción y guarda en el chat la versión sin contraseña', async () => {
+  it('arma los datos con su plantilla independiente y guarda en el chat la versión sin contraseña', async () => {
     const composed = await createAccessData(() => now).compose(waId, 'v1');
-    expect(stores.notices.loadTemplate).toHaveBeenCalledWith('suscripcion');
+    expect(stores.notices.loadTemplate).toHaveBeenCalledWith('datos_acceso');
+    expect(stores.notices.loadTemplate).not.toHaveBeenCalledWith('suscripcion');
     expect(stores.notices.loadVentas).toHaveBeenCalledWith(['v1']);
     expect(composed?.text).toContain('Correo: ana@movietimepty.top');
     expect(composed?.text).toContain('clave-secreta');
@@ -69,7 +70,7 @@ describe('createAccessData.compose', () => {
     expect(await createAccessData(() => now).compose(waId, 'v1')).toBeNull();
   });
 
-  it('sin plantilla de suscripción activa, o con un texto inválido, no hay datos que enviar', async () => {
+  it('sin plantilla de datos activa, o con un texto inválido, no reutiliza la suscripción', async () => {
     stores.notices.loadTemplate.mockResolvedValue(null);
     expect(await createAccessData(() => now).compose(waId, 'v1')).toBeNull();
     stores.notices.loadTemplate.mockResolvedValue({ ...template, contenido: 'x'.repeat(5000) });

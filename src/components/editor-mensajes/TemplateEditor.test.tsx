@@ -129,7 +129,7 @@ describe('TemplateEditor', () => {
     render(wrap([]));
     const groups: Record<string, string[]> = {
       cobros: ['Aviso de vencimiento', 'Aviso de corte'],
-      respuestas: ['Datos de pago', 'Despedida'],
+      respuestas: ['Datos de pago', 'Datos de acceso solicitados', 'Despedida'],
       ventas: ['Notificación de Suscripción', 'Notificación de Renovación'],
       cuentas: ['Actualización de Credenciales', 'Transferencia de Servicio'],
     };
@@ -138,7 +138,7 @@ describe('TemplateEditor', () => {
       expect(items).toHaveLength(labels.length);
       labels.forEach((label, index) => expect(items[index]).toContain(label));
     }
-    expect(document.querySelectorAll('button[data-tipo]')).toHaveLength(8);
+    expect(document.querySelectorAll('button[data-tipo]')).toHaveLength(9);
     expect(tipoButton('notificacion_regular')).toBeNull();
     expect(screen.getAllByText(/antes y el día que vence/).length).toBeGreaterThan(0);
   });
@@ -235,6 +235,19 @@ describe('TemplateEditor', () => {
     await user.click(tipoButton('suscripcion'));
     expect(screen.getByRole('button', { name: /Contraseña/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Bloque por servicio/ })).toBeTruthy();
+  });
+
+  it('edits requested access data in its own section without changing the subscription text', async () => {
+    const user = userEvent.setup();
+    render(wrap([
+      makeTemplate({ tipo: 'suscripcion', contenido: 'Bienvenido a tu suscripción.' }),
+      makeTemplate({ id: 'access-template', tipo: 'datos_acceso', contenido: 'Estos son los datos que solicitaste: {correo}' }),
+    ]));
+    await user.click(tipoButton('datos_acceso'));
+    expect(screen.getByRole('textbox')).toHaveProperty('value', 'Estos son los datos que solicitaste: {correo}');
+    expect(screen.getByRole('button', { name: /Contraseña/ })).toBeTruthy();
+    await user.click(tipoButton('suscripcion'));
+    expect(screen.getByRole('textbox')).toHaveProperty('value', 'Bienvenido a tu suscripción.');
   });
 
   it('tracks unsaved changes and only enables saving when there is something to save', async () => {

@@ -10,6 +10,7 @@ import { drainOrderDeliveries } from '@/application/use-cases/pedido-delivery-ru
 import { drainInterestDeliveries } from '@/application/use-cases/interest-delivery-runtime';
 import { createNoticeReplyStore } from '@/modules/messaging/notice-reply-store';
 import { createNoticeStore } from '@/modules/messaging/notice-store';
+import { createBotWaitStore } from '@/modules/messaging/bot-wait-store';
 import { createAutomationInboxStore } from '@/modules/whatsapp/automation-inbox-store';
 import { sendCloudApiMessage } from '@/modules/whatsapp/cloud-api-client';
 import { sendOutboundMessage, type NewOutboundMessage } from '@/modules/whatsapp/outbound-messages';
@@ -52,6 +53,9 @@ export async function drainWhatsAppInbox(requestId: string) {
       const definition = await bot.definitionFor(claim.message, claim.conversation.flowVersion, latest);
       const commerceDeps = createCommerceConversationDeps();
       const turn = await runConversationTurn({
+        waiting: () => bot.waiting(definition, claim.message, send, claim.conversation.orderId),
+        pauseCommerce: () => handleCommerceConversation(claim.message, claim.conversation.context, commerceDeps, definition, { pause: true }),
+        clearWaiting: () => createBotWaitStore().clear(claim.message.fromWaId),
         commerce: (options) => handleCommerceConversation(claim.message, claim.conversation.context, commerceDeps, definition, options),
         bot: (input) => bot.handle(definition, claim.message, send, claim.conversation.orderId, input),
         async checkpoint(commerce) {

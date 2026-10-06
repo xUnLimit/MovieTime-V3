@@ -38,6 +38,30 @@ function dependencies() {
 beforeEach(() => { counter = 0; });
 
 describe('guided commerce coordinator', () => {
+  it('pausa compras al entrar al recorrido sin perder el carrito ni el pedido', async () => {
+    const deps = dependencies();
+    for (const context of [state({ stage: 'buy', items: [item] }), state({ stage: 'payment', orderId: OTHER })]) {
+      const paused = await handleCommerceConversation(message('Otro'), context, deps, null, { pause: true });
+      expect(paused).toMatchObject({ payload: null, handBack: null, context: { paused: true, stage: context.stage,
+        items: context.items, orderId: context.orderId } });
+      for (const text of ['Se me fue la señal', 'cancelar', 'estado', 'hola']) {
+        expect(await handleCommerceConversation(message(text), paused!.context, deps)).toBeNull();
+      }
+    }
+    expect(deps.order).not.toHaveBeenCalled();
+    expect(deps.cancelOrder).not.toHaveBeenCalled();
+    expect(await handleCommerceConversation(message('Otro'), {}, deps, null, { pause: true })).toBeNull();
+  });
+  it('solo retoma compras pausadas con un botón comercial o una delegación explícita', async () => {
+    const deps = dependencies();
+    const paused = state({ stage: 'summary', items: [item], paused: true });
+    const resume = await handleCommerceConversation(message('summary', true), paused, deps);
+    expect(resume).toMatchObject({ context: { paused: false, items: [item] }, payload: { kind: 'buttons' } });
+    const delegated = await handleCommerceConversation(message('renovar'), paused, deps, null, { command: 'renew' });
+    expect(delegated).toMatchObject({ context: { paused: false, stage: 'renew' } });
+    const menu = await handleCommerceConversation(message('hola'), state({ stage: 'buy', items: [item] }), deps);
+    expect(menu).toMatchObject({ context: { paused: true, items: [item] }, handBack: { prefixed: false } });
+  });
   it('usa los textos editados desde el panel en mensajes, botones y listas', async () => {
     const deps = { ...dependencies(), copyOverrides: vi.fn().mockResolvedValue({
       btnReview: 'Ver carrito', platformsPrompt: 'Elige tu plataforma.', sectionPlatforms: 'Con cupo',

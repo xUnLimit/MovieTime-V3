@@ -7,6 +7,7 @@ type TemplateTipoKey =
   | 'actualizacion_credenciales'
   | 'transferencia_servicio'
   | 'datos_pago'
+  | 'datos_acceso'
   | 'despedida';
 
 export type EditableTipoKey = Exclude<TemplateTipoKey, 'notificacion_regular'>;
@@ -20,12 +21,13 @@ export const TEMPLATE_TIPOS: readonly { value: EditableTipoKey; label: string; c
   { value: 'actualizacion_credenciales', label: 'Actualización de Credenciales', cuando: 'al cambiar datos de acceso' },
   { value: 'transferencia_servicio', label: 'Transferencia de Servicio', cuando: 'al mover a otra cuenta' },
   { value: 'datos_pago', label: 'Datos de pago', cuando: 'cuando el cliente toca un botón de renovar' },
+  { value: 'datos_acceso', label: 'Datos de acceso solicitados', cuando: 'cuando el cliente solicita sus datos de acceso' },
   { value: 'despedida', label: 'Despedida', cuando: 'cuando toca "No continuar"' },
 ];
 
 export const TEMPLATE_GROUPS: readonly { id: string; label: string; tipos: readonly EditableTipoKey[] }[] = [
   { id: 'cobros', label: 'Cobros', tipos: ['dia_pago', 'cancelacion'] },
-  { id: 'respuestas', label: 'Respuestas automáticas', tipos: ['datos_pago', 'despedida'] },
+  { id: 'respuestas', label: 'Respuestas automáticas', tipos: ['datos_pago', 'datos_acceso', 'despedida'] },
   { id: 'ventas', label: 'Ventas', tipos: ['suscripcion', 'renovacion'] },
   { id: 'cuentas', label: 'Cuentas', tipos: ['actualizacion_credenciales', 'transferencia_servicio'] },
 ];
