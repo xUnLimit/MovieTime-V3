@@ -3,6 +3,10 @@ SELECT no_plan();
 INSERT INTO auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at)
  VALUES('00000000-0000-0000-0000-000000000000','a1111111-1111-4111-8111-111111111111','authenticated','authenticated','manual-admin@example.test','',now());
 UPDATE public.usuarios SET role='admin' WHERE id='a1111111-1111-4111-8111-111111111111';
+-- Un segundo usuario sin rol de administrador: bajar de rol al unico admin lo impide la regla de "al menos un administrador activo".
+INSERT INTO auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at)
+ VALUES('00000000-0000-0000-0000-000000000000','a1111112-1111-4111-8111-111111111111','authenticated','authenticated','manual-operator@example.test','',now());
+UPDATE public.usuarios SET role='operador' WHERE id='a1111112-1111-4111-8111-111111111111';
 INSERT INTO public.categorias(id,nombre,tipo) VALUES('a2222222-2222-4222-8222-222222222222','Manual fixture','cliente');
 INSERT INTO public.planes_tipos(id,categoria_id,nombre) VALUES('a3333333-3333-4333-8333-333333333333','a2222222-2222-4222-8222-222222222222','Individual');
 INSERT INTO public.planes(id,categoria_id,plan_tipo_id,nombre,ciclo_pago,precio)
@@ -24,13 +28,13 @@ INSERT INTO public.pedido_items(id,pedido_id,tipo,plan_id,categoria_id,servicio_
 INSERT INTO public.pedido_pagos(pedido_id,source,monto) VALUES('b3333333-3333-4333-8333-333333333333','manual',10);
 
 -- Quien no es administrador no puede usar ninguna de las tres acciones.
-UPDATE public.usuarios SET role='operador' WHERE id='a1111111-1111-4111-8111-111111111111';
+SELECT set_config('request.jwt.claims','{"sub":"a1111112-1111-4111-8111-111111111111","role":"authenticated"}',true);
 SET LOCAL ROLE authenticated;
 SELECT throws_ok($$SELECT mt_delete_order('b1111111-1111-4111-8111-111111111111','a9111111-1111-4111-8111-111111111111')$$,'42501','forbidden','an operator cannot delete orders');
 SELECT throws_ok($$SELECT mt_register_order_payment('b1111111-1111-4111-8111-111111111111',5,'EFECTIVO-1','a9222222-2222-4222-8222-222222222222')$$,'42501','forbidden','an operator cannot register payments');
 SELECT throws_ok($$SELECT mt_mark_order_delivered('b3333333-3333-4333-8333-333333333333','a9333333-3333-4333-8333-333333333333')$$,'42501','forbidden','an operator cannot mark deliveries');
 RESET ROLE;
-UPDATE public.usuarios SET role='admin' WHERE id='a1111111-1111-4111-8111-111111111111';
+SELECT set_config('request.jwt.claims','{"sub":"a1111111-1111-4111-8111-111111111111","role":"authenticated"}',true);
 SET LOCAL ROLE authenticated;
 
 -- Eliminar: archivo lógico de un pedido sin dinero; es idempotente y desaparece de la lista.
