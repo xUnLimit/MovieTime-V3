@@ -30,7 +30,7 @@ describe('FlowSimulator con datos de ejemplo', () => {
     await user.click(screen.getByRole('button', { name: 'Iniciar simulación' }));
     await user.click(screen.getByRole('button', { name: 'Mi pedido' }));
     expect(screen.getByText(/Cliente nuevo o existente»: Existente/)).toBeTruthy();
-    expect(screen.getByText('Total USD 12.50 (pendiente de pago)')).toBeTruthy();
+    expect(screen.getByText('Total $12.50 (pendiente de pago)')).toBeTruthy();
 
     await user.click(screen.getByText('Datos de ejemplo de la simulación'));
     await user.click(screen.getByRole('switch', { name: /Cliente nuevo o existente/ }));
@@ -49,6 +49,6 @@ describe('FlowSimulator con datos de ejemplo', () => {
     await user.clear(screen.getByLabelText('Estado del pago'));
     await user.click(screen.getByRole('button', { name: 'Iniciar simulación' }));
     await user.click(screen.getByRole('button', { name: 'Mi pedido' }));
-    expect(screen.getByText('Total USD 12.50 (—)')).toBeTruthy();
+    expect(screen.getByText('Total $12.50 (—)')).toBeTruthy();
   });
 });

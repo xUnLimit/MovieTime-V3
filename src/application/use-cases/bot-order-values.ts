@@ -1,11 +1,12 @@
 import type { Pedido } from '@/modules/orders/contracts';
+import { formatMonto } from '@/platform/utils/whatsapp-template-render';
 import { formatDeadline } from './commerce-conversation-copy';
 
 const PAYMENT_LABEL: Record<Pedido['paymentState'], string> = {
   pendiente: 'pendiente de pago', parcial: 'con pago parcial', cubierto: 'pagado', exceso: 'pagado',
   reembolsado: 'reembolsado', parcialmente_reembolsado: 'parcialmente reembolsado',
 };
-const money = (currency: string, amount: number) => `${currency} ${amount.toFixed(2)}`;
+const money = (currency: string, amount: number) => formatMonto(amount, currency);
 
 /**
  * Los unicos datos del pedido que un texto del recorrido puede mostrar (lista blanca de `bot-config`): montos, estado

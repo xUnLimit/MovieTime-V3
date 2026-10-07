@@ -36,9 +36,9 @@ const VALUE_MAX = 40;
 
 /** Datos del pedido admitidos en los textos de los nodos: lista blanca cerrada, sin identificadores ni datos personales. */
 export const NODE_VARIABLE_CATALOG: Record<string, { label: string; example: string }> = {
-  pedido_total: { label: 'Total del pedido', example: 'USD 12.50' },
+  pedido_total: { label: 'Total del pedido', example: '$12.50' },
   pedido_estado: { label: 'Estado del pago', example: 'pendiente de pago' },
-  pedido_pendiente: { label: 'Monto que falta por pagar', example: 'USD 12.50' },
+  pedido_pendiente: { label: 'Monto que falta por pagar', example: '$12.50' },
   pedido_servicios: { label: 'Cantidad de servicios del pedido', example: '2' },
   pedido_vence: { label: 'Vencimiento de la reserva', example: 'hoy a las 10:42 p. m.' },
 };

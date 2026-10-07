@@ -57,7 +57,15 @@ export function PurchaseStudio({ def, actions, updateDraft, status, switcher }: 
   const block = step ? blockFor(def, step) : undefined;
   const choose = (next: Selection) => { setSelected(next); setPane('paso'); };
 
-  const list = <ul aria-label="Pasos de la compra" className="min-h-0 flex-1 overflow-y-auto p-1.5">
+  const guidance = <div className="space-y-1 border-b px-4 py-3">
+    <h2 className="text-sm font-semibold">Personaliza la compra</h2>
+    <p className="text-xs text-muted-foreground">Elige un paso para cambiar sus mensajes, botones y detalles. Guardar modifica el borrador; Publicar lo activa para los clientes.</p>
+    <p className="text-xs text-muted-foreground">Los precios, la disponibilidad y las reglas de reserva y pago se mantienen al editar los textos.</p>
+  </div>;
+  const list = <><div className="space-y-1 border-b px-3 py-3">
+    <h2 className="text-sm font-semibold">Pasos de la compra</h2>
+    <p className="text-xs text-muted-foreground">Elige dónde quieres cambiar lo que ve el cliente.</p>
+  </div><ul aria-label="Pasos de la compra" className="min-h-0 flex-1 overflow-y-auto p-1.5">
     {steps.map((item) => {
       const info = data.get(item.id);
       const current = !services && item.id === step;
@@ -65,6 +73,7 @@ export function PurchaseStudio({ def, actions, updateDraft, status, switcher }: 
         <button type="button" aria-current={current ? 'true' : undefined} onClick={() => choose(item.id)} className={cn(ROW, current && 'bg-accent')}>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block truncate text-sm font-medium">{item.title}</span>
+            <span className="block line-clamp-2 text-xs text-muted-foreground">{item.description}</span>
             <span className="block truncate text-xs text-muted-foreground">{info?.total ?? 0} {info?.total === 1 ? 'texto' : 'textos'}</span>
           </span>
           {info && info.edited > 0 ? <StatusBadge tone="info">{info.edited} {info.edited === 1 ? 'editado' : 'editados'}</StatusBadge> : null}
@@ -79,7 +88,7 @@ export function PurchaseStudio({ def, actions, updateDraft, status, switcher }: 
         </span>
       </button>
     </li>
-  </ul>;
+  </ul></>;
 
   const edit = services
     ? <ServiceMessagesEditor def={def} update={updateDraft} />
@@ -94,7 +103,8 @@ export function PurchaseStudio({ def, actions, updateDraft, status, switcher }: 
         <div className="flex items-center gap-2">{switcher}</div>
       </div>
       {status}
-      <TabsContent value="pasos" className="flex rounded-xl border bg-card">{list}</TabsContent>
+      {guidance}
+      <TabsContent value="pasos" className="flex flex-col rounded-xl border bg-card">{list}</TabsContent>
       <TabsContent value="paso" className="rounded-xl border bg-card">{edit}</TabsContent>
       <TabsContent value="probar"><FlowSimulator def={def} /></TabsContent>
     </Tabs>;
@@ -107,7 +117,7 @@ export function PurchaseStudio({ def, actions, updateDraft, status, switcher }: 
       <TabsContent value="probar" className="min-h-0 overflow-y-auto"><FlowSimulator def={def} /></TabsContent>
     </PanelInset>
   </Tabs>;
-  return <StudioShell status={status} actions={switcher} sidebar={list} inspector={inspector}>
+  return <StudioShell status={status} actions={switcher} banner={guidance} sidebar={list} inspector={inspector}>
     <div className="h-full w-full bg-muted" role="region" aria-label="Diagrama del flujo de compra">
       <ReactFlow<PurchaseStepFlowNode> nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onNodeClick={(_, node) => choose(node.id as CopyStepId)}
         nodesDraggable={false} nodesConnectable={false} edgesFocusable={false} zoomOnScroll={false} preventScrolling={false} zoomActivationKeyCode={ZOOM_KEYS}

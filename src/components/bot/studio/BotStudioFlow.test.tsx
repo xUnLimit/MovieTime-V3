@@ -215,7 +215,7 @@ describe('estudio del recorrido con el flujo de compras', () => {
     expect(screen.queryByRole('button', { name: 'Eliminar nodo' })).toBeNull();
     const platforms = await screen.findByRole('region', { name: 'Textos de Plataformas' });
     expect(within(platforms).getByText('Elige tu plataforma favorita')).toBeTruthy();
-    await user.click(within(platforms).getByRole('button', { name: /^Elegir plataformas*Elige tu plataforma/ }));
+    await user.click(within(platforms).getByRole('button', { name: /^Elegir plataforma.*Lista de plataformas con cupo.*Elige tu plataforma/ }));
     const field = screen.getByRole('textbox', { name: 'Texto' }) as HTMLTextAreaElement;
     expect(field.value).toBe('Elige tu plataforma favorita');
     await user.clear(field);
@@ -230,7 +230,7 @@ describe('estudio del recorrido con el flujo de compras', () => {
     render(<Harness initial={linked()} />);
     await user.click(stepButton(/^Compra: catálogo/));
     const platforms = await screen.findByRole('region', { name: 'Textos de Plataformas' });
-    await user.click(within(platforms).getByRole('button', { name: /^Elegir plataformas*Elige tu plataforma/ }));
+    await user.click(within(platforms).getByRole('button', { name: /^Elegir plataforma.*Lista de plataformas con cupo.*Elige tu plataforma/ }));
     await user.click(screen.getByRole('button', { name: 'Restaurar original' }));
     const after = screen.getByRole('region', { name: 'Textos de Plataformas' });
     expect(within(after).getAllByText(/¿Qué plataforma te interesa\?/).length).toBeGreaterThan(0);

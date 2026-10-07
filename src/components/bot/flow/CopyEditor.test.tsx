@@ -15,7 +15,7 @@ describe('CopyEditor', () => {
     setup();
     expect(screen.getByLabelText('Texto')).toHaveProperty('value', COPY_CATALOG.reservation.defaultText);
     expect(screen.getByText(`Se usa cuando: ${COPY_CATALOG.reservation.when}.`)).toBeTruthy();
-    expect(screen.getByTestId('copy-preview').textContent).toContain('Reservé Netflix Mensual por USD 10.00');
+    expect(screen.getByTestId('copy-preview').textContent).toContain('Reservé Netflix Mensual por $10.00');
     expect(screen.getByRole('button', { name: 'Guardar' })).toHaveProperty('disabled', true);
     expect(screen.getByRole('button', { name: 'Restaurar original' })).toHaveProperty('disabled', true);
     expect(screen.queryByRole('note')).toBeNull();

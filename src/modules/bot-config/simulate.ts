@@ -104,7 +104,7 @@ function blockButtons(ctx: Context, node: BotNode): { id: string; title: string 
 }
 
 function blockPreview(ctx: Context, node: BotNode, prefix?: string): Preview {
-  const total = ctx.sample.values.pedido_total || 'USD 10.00';
+  const total = ctx.sample.values.pedido_total || '$10.00';
   const texts: Record<string, string> = {
     resumen: `${copyText(ctx, 'summaryTitle')}\n1. Servicio de ejemplo: ${total}\nTotal: ${total}\n\n${copyText(ctx, 'confirmNote')}`,
     reserva: renderTemplate(copyText(ctx, 'reservation'), {

@@ -90,7 +90,7 @@ describe('flujo de compras con y sin bloques en el lienzo', () => {
       'compra_reserva', 'reservation', 'Apartado {{servicio}} por {{monto}}.'));
     const on = await run(DB, edited);
     expect(on[0].payload).toMatchObject({ kind: 'list', body: 'Plataformas desde el lienzo' });
-    expect(on[4].payload).toMatchObject({ body: 'Apartado Netflix Mensual por USD 5.00.' });
+    expect(on[4].payload).toMatchObject({ body: 'Apartado Netflix Mensual por $5.00.' });
     expect(await run(DB, null)).not.toEqual(on);
   });
 
@@ -99,7 +99,7 @@ describe('flujo de compras con y sin bloques en el lienzo', () => {
     const on = await run({}, edited);
     const off = await run({}, null);
     expect(on.map((step) => [step.process, step.orderId, step.handoff])).toEqual(off.map((step) => [step.process, step.orderId, step.handoff]));
-    const reply = 'Tu pedido #123e4567 es de USD 5.00.\nPagado. Tu acceso ya fue enviado.';
+    const reply = 'Tu pedido #123e4567 es de $5.00.\nPagado. Tu acceso ya fue enviado.';
     expect(on.map((step) => step.context)).toEqual(off.map((step) => step.context).map((context, index) => (
       index === 9 ? { ...(context as object), lastReply: reply, lastPayload: { kind: 'text', text: reply } } : context)));
   });

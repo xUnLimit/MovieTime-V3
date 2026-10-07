@@ -86,7 +86,7 @@ describe('simulador: nodos de compra', () => {
     expect(catalog.currentNodeId).toBe('compra_catalogo');
     expect(catalog.finished).toBe(false);
     const summary = stepSimulation(def, catalog, 'resumen');
-    expect(shown(summary).text).toContain('Total: USD 12.50');
+    expect(shown(summary).text).toContain('Total: $12.50');
     expect(shown(summary).buttons?.map((button) => button.id)).toEqual(['BOT:compra_resumen:confirm', 'BOT:compra_resumen:cancel']);
     expect(texts(summary).join('\n')).toContain('Tu carrito está vacío todavía');
     const reserved = stepSimulation(def, summary, 'confirm');

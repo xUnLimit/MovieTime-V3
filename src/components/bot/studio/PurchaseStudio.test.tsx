@@ -64,6 +64,20 @@ describe('datos del diagrama de compra', () => {
 });
 
 describe('PurchaseStudio en pantallas angostas', () => {
+  it('explica el alcance de la edición y separa los textos por su función', async () => {
+    const user = userEvent.setup();
+    renderStudio(addPurchaseFlow(defaultDefinition()));
+    expect(screen.getByText(/Guardar modifica el borrador; Publicar lo activa/)).toBeTruthy();
+    expect(screen.getByText(/Los precios, la disponibilidad y las reglas de reserva y pago/)).toBeTruthy();
+    const steps = within(screen.getByRole('list', { name: 'Pasos de la compra' }));
+    expect(steps.getByText('Planes disponibles de la plataforma elegida.')).toBeTruthy();
+    await user.click(steps.getByRole('button', { name: /^Planes/ }));
+    const texts = within(screen.getByRole('region', { name: 'Textos de Planes' }));
+    expect(texts.getByRole('list', { name: 'Mensajes al cliente' })).toBeTruthy();
+    expect(texts.getByRole('list', { name: 'Botones y opciones' })).toBeTruthy();
+    expect(texts.getByRole('list', { name: 'Detalles de listas y resumen' })).toBeTruthy();
+  });
+
   it('lista cada paso, muestra los textos del elegido y los guarda en su bloque', async () => {
     const user = userEvent.setup();
     const actions = renderStudio(addPurchaseFlow(defaultDefinition()));
@@ -107,6 +121,14 @@ describe('PurchaseStudio en pantallas angostas', () => {
 });
 
 describe('PurchaseStudio en pantallas anchas', () => {
+  it('mantiene la guía de edición visible junto al diagrama', () => {
+    setWide(true);
+    renderStudio(addPurchaseFlow(defaultDefinition()));
+    expect(screen.getByRole('heading', { name: 'Personaliza la compra' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Diagrama del flujo de compra' })).toBeTruthy();
+    expect(screen.getByRole('list', { name: 'Pasos de la compra' })).toBeTruthy();
+  });
+
   it('dibuja el diagrama con un nodo por paso y el selector en la barra', () => {
     setWide(true);
     renderStudio(addPurchaseFlow(defaultDefinition()));

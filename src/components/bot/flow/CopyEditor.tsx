@@ -89,16 +89,21 @@ export function CopyEditor({ copyKey, saved, inherited, onSave }: CopyEditorProp
 
       <div className="space-y-2">
         <p className="text-sm font-medium">Así lo verá el cliente</p>
-        <MessageBubble text={renderCopyText(draft, sampleValues(copyKey))} testId="copy-preview" />
+        {multiline ? <MessageBubble text={renderCopyText(draft, sampleValues(copyKey))} testId="copy-preview" />
+          : <p data-testid="copy-preview" className={`rounded-md border px-3 py-2 text-sm whitespace-pre-wrap ${spec.kind === 'button' || copyKey.startsWith('listButton') ? 'text-center font-medium' : ''}`}>{renderCopyText(draft, sampleValues(copyKey))}</p>}
         <p className="text-xs text-muted-foreground">Los datos se muestran con valores de ejemplo.</p>
       </div>
 
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="space-y-2 border-t pt-3">
+        <p role="status" className="text-xs text-muted-foreground">{changed ? 'Cambios sin guardar en el borrador.' : 'Este texto coincide con el borrador.'}</p>
+        <p className="text-xs text-muted-foreground">Guardar añade este texto al borrador. Los clientes lo verán cuando publiques el recorrido.</p>
+        <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="ghost" disabled={isOriginal && !changed}
           onClick={() => { if (isOriginal) setDraft(spec.defaultText); else store(original); }}>
           Restaurar original
         </Button>
         <Button type="button" variant="outline" disabled={problem !== null || !changed} onClick={() => store(draft.trim())}>Guardar</Button>
+        </div>
       </div>
     </div>
   );

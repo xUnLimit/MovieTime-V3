@@ -25,7 +25,7 @@ describe('simulador con condiciones y datos de ejemplo', () => {
     const { def } = flow();
     const state = stepSimulation(def, startSimulation(def), 'estado');
     expect(state.turns.map((turn) => turn.text)).toContain('Aviso del simulador: condición «Cliente nuevo o existente»: Existente.');
-    expect(lastBot(state).text).toBe('Tu pedido suma USD 12.50 (pendiente de pago).');
+    expect(lastBot(state).text).toBe('Tu pedido suma $12.50 (pendiente de pago).');
     expect(state.finished).toBe(false);
   });
 
@@ -50,7 +50,7 @@ describe('simulador con condiciones y datos de ejemplo', () => {
   it('un estado sin datos de ejemplo usa los de ejemplo por defecto', () => {
     const { def } = flow();
     const bare = { ...startSimulation(def), sample: undefined };
-    expect(lastBot(stepSimulation(def, bare, 'estado')).text).toContain('USD 12.50');
+    expect(lastBot(stepSimulation(def, bare, 'estado')).text).toContain('$12.50');
   });
 
   it('avisa si la condicion no tiene un destino valido o si se encadenan demasiadas', () => {

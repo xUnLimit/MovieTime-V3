@@ -101,12 +101,12 @@ describe('guided commerce coordinator', () => {
     expect(list.body).toContain('plataforma');
     expect((list.rows as { section?: string }[]).map(row => row.section)).toEqual(['Plataformas disponibles', 'Más']);
     expect(list.rows.map(row => row.title)).toEqual(['Disney+', 'Consultar agotados']);
-    expect(list.rows[0].description).toBe('2 planes · desde USD 4.00');
+    expect(list.rows[0].description).toBe('2 planes · desde $4.00');
     expect(JSON.stringify(list)).not.toContain('Netflix');
     const disney = await handleCommerceConversation(message(`cat:${DISNEY}`, true), platforms!.context, deps);
     const planRows = (disney!.payload as { rows: { id: string; title: string; description: string }[] }).rows;
     expect(planRows.map(row => row.title)).toEqual(['Mensual', 'Trimestral', 'Otras plataformas']);
-    expect(planRows[1].description).toBe('USD 10.00 · trimestral');
+    expect(planRows[1].description).toBe('$10.00 · trimestral');
     const added = await handleCommerceConversation(message(`add:${THIRD}`, true), disney!.context, deps);
     const back = added!.payload as { body: string; rows: { id: string }[] };
     expect(back.body).toContain('agregué Disney+ Trimestral');
@@ -114,7 +114,7 @@ describe('guided commerce coordinator', () => {
     expect(back.rows[0].id).toBe(`SHOP:cat:${DISNEY}`);
     const summary = await handleCommerceConversation(message('carrito'), added!.context, deps);
     const body = (summary!.payload as { body: string }).body;
-    expect(body).toContain('1. Disney+ Trimestral: USD 10.00');
+    expect(body).toContain('1. Disney+ Trimestral: $10.00');
     expect(body).not.toMatch(/servidor|revalida/i);
   });
   it('deja lo agotado aparte para registrar interés y vuelve a las plataformas', async () => {
@@ -228,7 +228,7 @@ describe('guided commerce coordinator', () => {
     const deps = dependencies();
     const initial = await handleCommerceConversation(message(`add:${ID}`, true), state({ stage: 'buy' }), deps);
     const summary = await handleCommerceConversation(message('confirmar'), initial!.context, deps);
-    expect(summary?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('Total: USD 5') });
+    expect(summary?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('Total: $5') });
     expect(deps.buy).not.toHaveBeenCalled();
     const confirmed = await handleCommerceConversation(message('confirmar'), summary!.context, deps);
     expect(confirmed?.orderId).toBe(OTHER);
@@ -298,7 +298,7 @@ describe('guided commerce coordinator', () => {
     const full = state({ stage: 'buy', items: Array.from({ length: 10 }, () => ({ id: OTHER, name: 'Item', amount: 1, currency: 'USD', cycle: 'mensual' })) });
     expect(commerceStateSchema.parse((await handleCommerceConversation(message(`add:${ID}`, true), full, deps))!.context).items).toHaveLength(10);
     expect((await handleCommerceConversation(message('carrito'), state({ stage: 'buy' }), deps))?.handBack).toMatchObject({ text: expect.stringContaining('carrito está vacío') });
-    expect(commerceSummary([], createCopy())).toContain('USD 0');
+    expect(commerceSummary([], createCopy())).toContain('$0');
   });
   it('refuses to confirm a cart that is not in USD and asks for a person', async () => {
     const deps = dependencies();
@@ -317,7 +317,7 @@ describe('guided commerce coordinator', () => {
     deps.order.mockResolvedValue({ ...order, paymentState: 'exceso', receivedAmount: 7, missingAmount: 0, excessAmount: 2, deliveryState: 'asignado' });
     const excess = await handleCommerceConversation(message('estado'), paying, deps);
     expect(excess?.handoff).toBe(true);
-    expect(excess?.payload).toMatchObject({ text: expect.stringContaining('Pagaste USD 2.00 de más') });
+    expect(excess?.payload).toMatchObject({ text: expect.stringContaining('Pagaste $2.00 de más') });
     expect(excess?.payload).toMatchObject({ text: expect.stringContaining('te envío el acceso') });
   });
   it('uses bounded payment instructions and preserves fallback when unavailable or media is unreadable', async () => {
@@ -406,7 +406,7 @@ describe('selección abandonada y pedidos cerrados', () => {
     expect(restart?.handBack?.text).toContain('Tu carrito está vacío');
     // Dentro del plazo se conserva.
     const fresh = await handleCommerceConversation(message('summary', true), stale(11), deps, defaultDefinition());
-    expect(fresh?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('Total: USD 5') });
+    expect(fresh?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('Total: $5') });
     // El plazo es el del recorrido publicado.
     const short = { ...defaultDefinition(), params: { ...defaultDefinition().params, menuIdleHours: 1 } };
     expect(await handleCommerceConversation(message('hola'), stale(2), deps, short)).toBeNull();
@@ -416,7 +416,7 @@ describe('selección abandonada y pedidos cerrados', () => {
     const deps = dependencies();
     const legacy = state({ stage: 'summary', items: [item] });
     const result = await handleCommerceConversation(message('summary', true), legacy, deps, defaultDefinition());
-    expect(result?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('Total: USD 5') });
+    expect(result?.payload).toMatchObject({ kind: 'buttons', body: expect.stringContaining('Total: $5') });
     expect(commerceStateSchema.parse(result?.context).stageAt).toBe(NOW.toISOString());
     const reposo = await handleCommerceConversation(message('buy', true), {}, deps);
     expect(commerceStateSchema.parse(reposo?.context).stageAt).toBe(NOW.toISOString());

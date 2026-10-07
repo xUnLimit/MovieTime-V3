@@ -28,7 +28,7 @@ const definition = [
   (def: ReturnType<typeof defaultDefinition>) => setCatalogMessage(def, 'category', NETFLIX, 'rowDescription', 'Series y películas desde {{precio}}'),
   (def: ReturnType<typeof defaultDefinition>) => setCatalogMessage(def, 'category', NETFLIX, 'chosen', 'Bienvenido a {{plataforma}}. Elige tu plan.'),
   (def: ReturnType<typeof defaultDefinition>) => setCatalogMessage(def, 'plan', PREMIUM, 'rowDescription', '4 pantallas · {{precio}}'),
-  (def: ReturnType<typeof defaultDefinition>) => setCatalogMessage(def, 'plan', PREMIUM, 'added', 'Premium: 4 pantallas en HD ({{ciclo}}).'),
+  (def: ReturnType<typeof defaultDefinition>) => setCatalogMessage(def, 'plan', PREMIUM, 'added', 'Premium: 4 pantallas en HD ({{ciclo}}) por {{precio}}.'),
 ].reduce((def, edit) => edit(def), defaultDefinition());
 
 describe('mensajes propios por plataforma y plan en la conversación', () => {
@@ -36,17 +36,17 @@ describe('mensajes propios por plataforma y plan en la conversación', () => {
     const dependencies = deps();
     const platforms = await handleCommerceConversation(message('buy'), {}, dependencies, definition);
     const rows = (platforms!.payload as { rows: { id: string; title: string; description: string }[] }).rows;
-    expect(rows.find(row => row.title === 'Netflix')?.description).toBe('Series y películas desde USD 4.00');
-    expect(rows.find(row => row.title === 'Disney+')?.description).toBe('1 plan · desde USD 20.00');
+    expect(rows.find(row => row.title === 'Netflix')?.description).toBe('Series y películas desde $4.00');
+    expect(rows.find(row => row.title === 'Disney+')?.description).toBe('1 plan · desde $20.00');
 
     const netflix = await handleCommerceConversation(message(`cat:${NETFLIX}`), platforms!.context, dependencies, definition);
     const plans = netflix!.payload as { body: string; rows: { title: string; description: string }[] };
     expect(plans.body).toBe('Bienvenido a Netflix. Elige tu plan.');
-    expect(plans.rows.find(row => row.title === 'Premium')?.description).toBe('4 pantallas · USD 8.00');
-    expect(plans.rows.find(row => row.title === 'Básico')?.description).toBe('USD 4.00 · mensual');
+    expect(plans.rows.find(row => row.title === 'Premium')?.description).toBe('4 pantallas · $8.00');
+    expect(plans.rows.find(row => row.title === 'Básico')?.description).toBe('$4.00 · mensual');
 
     const premium = await handleCommerceConversation(message(`add:${PREMIUM}`), netflix!.context, dependencies, definition);
-    expect((premium!.payload as { body: string }).body).toContain('Premium: 4 pantallas en HD (mensual).');
+    expect((premium!.payload as { body: string }).body).toContain('Premium: 4 pantallas en HD (mensual) por $8.00.');
     const basic = await handleCommerceConversation(message(`add:${BASIC}`), premium!.context, dependencies, definition);
     expect((basic!.payload as { body: string }).body).toContain('agregué Netflix Básico');
   });
@@ -57,7 +57,7 @@ describe('mensajes propios por plataforma y plan en la conversación', () => {
     for (const def of [undefined, bad]) {
       const platforms = await handleCommerceConversation(message('buy'), {}, dependencies, def);
       const rows = (platforms!.payload as { rows: { title: string; description: string }[] }).rows;
-      expect(rows.find(row => row.title === 'Netflix')?.description).toBe('2 planes · desde USD 4.00');
+      expect(rows.find(row => row.title === 'Netflix')?.description).toBe('2 planes · desde $4.00');
     }
   });
 });

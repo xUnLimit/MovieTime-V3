@@ -18,7 +18,7 @@ describe('orderTemplateValues', () => {
     const values = orderTemplateValues(order);
     expect(Object.keys(values).sort()).toEqual(Object.keys(NODE_VARIABLE_CATALOG).sort());
     expect(values).toMatchObject({
-      pedido_total: 'USD 12.50', pedido_estado: 'con pago parcial', pedido_pendiente: 'USD 7.50', pedido_servicios: '2',
+      pedido_total: '$12.50', pedido_estado: 'con pago parcial', pedido_pendiente: '$7.50', pedido_servicios: '2',
     });
     expect(values.pedido_vence).toContain('25 de diciembre');
   });

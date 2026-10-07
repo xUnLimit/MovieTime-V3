@@ -1,4 +1,5 @@
 import type { Json } from '@/platform/supabase/database.types';
+import { formatMonto } from '@/platform/utils/whatsapp-template-render';
 import type { Pedido } from '@/modules/orders/contracts';
 import type { InboundMessage } from '@/modules/whatsapp/webhook-payload';
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
@@ -164,7 +165,7 @@ export async function handleCommerceConversation(message: InboundMessage, contex
         && (!state.items.length || state.items[0].currency === chosen.currency)) {
         state.items.push(pick(chosen.id, chosen.name, chosen.amount, chosen.currency, chosen.cycle));
         state.categoryId = null; state.soldout = false; state.page = 0; currencyNotice = `${resolveCatalogMessage(definition?.catalogMessages, 'plan', chosen.id, 'added',
-          { servicio: chosen.name, plataforma: chosen.categoryName, precio: `${chosen.currency} ${chosen.amount.toFixed(2)}`, ciclo: chosen.cycle }) ?? t('addedNotice', { servicio: chosen.name })}\n`;
+          { servicio: chosen.name, plataforma: chosen.categoryName, precio: formatMonto(chosen.amount, chosen.currency), ciclo: chosen.cycle }) ?? t('addedNotice', { servicio: chosen.name })}\n`;
       }
     }
     payload = renderChoiceList(state, choices, currencyNotice, t, definition?.catalogMessages);

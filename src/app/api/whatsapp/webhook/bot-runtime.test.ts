@@ -135,7 +135,7 @@ describe('createBotRuntime handle', () => {
       moneda: 'USD', total: 10, paymentState: 'pendiente', missingAmount: 10, items: [{}], expiraAt: '2099-12-25T15:00:00.000Z',
     });
     await createBotRuntime('req').handle(defaultDefinition(), message, send, ORDER_ID);
-    await expect(lastDeps().orderValues()).resolves.toMatchObject({ pedido_total: 'USD 10.00', pedido_servicios: '1' });
+    await expect(lastDeps().orderValues()).resolves.toMatchObject({ pedido_total: '$10.00', pedido_servicios: '1' });
     expect(mocks.getPedido).toHaveBeenCalledWith('50765331751', ORDER_ID);
   });
 

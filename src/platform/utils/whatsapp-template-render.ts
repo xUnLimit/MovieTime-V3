@@ -18,8 +18,8 @@ function firstName(fullName: string) {
   return fullName.trim().split(/\s+/)[0] ?? '';
 }
 
-export function formatMonto(monto: number) {
-  return `$${monto.toFixed(2)}`;
+export function formatMonto(monto: number, moneda = 'USD') {
+  return `${moneda === 'USD' ? '$' : `${moneda} `}${monto.toFixed(2)}`;
 }
 
 export function formatVencimiento(fecha: Date | null) {

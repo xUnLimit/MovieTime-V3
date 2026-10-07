@@ -113,6 +113,8 @@ Reglas de uso:
 
 ## 8. Estados
 
+En el flujo de compra de Automatizaciones, la lista de pasos explica cuándo aparece cada etapa. El inspector agrupa los textos en mensajes al cliente, botones y opciones, y detalles de listas y resumen. Cada elemento muestra su contexto de uso antes de abrirlo. La vista previa distingue mensajes, botones y detalles; el pie del editor indica si hay cambios locales y aclara que Guardar aplica al borrador y Publicar activa el recorrido para los clientes.
+
 Todo dato remoto tiene carga, vacio y error.
 - **Carga:** `MetricCard loading`, `DataTable loading` o `Skeleton` con la misma forma y altura que el contenido. Nunca "Calculando..." como valor.
 - **Vacio:** `EmptyState` con mensaje y, si el siguiente paso es obvio, una accion.

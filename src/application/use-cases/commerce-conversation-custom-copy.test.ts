@@ -20,19 +20,19 @@ describe('textos de compras con datos', () => {
   it('las descripciones de la lista de plataformas, planes y renovación salen de textos editables', () => {
     const t = createCopy({ rowPlatformPlans: '{{cantidad}} opciones desde {{precio}}', rowPlanDesc: '{{ciclo}} a {{precio}}' });
     const platforms = list(renderChoiceList(commerceStateSchema.parse({}), [choice(1), choice(2)], '', t));
-    expect(platforms.rows[0].description).toBe('2 opciones desde USD 4.00');
+    expect(platforms.rows[0].description).toBe('2 opciones desde $4.00');
     const plans = list(renderChoiceList(commerceStateSchema.parse({ categoryId: id(900) }), [choice(1)], '', t));
-    expect(plans.rows[0].description).toBe('Mensual a USD 4.00');
+    expect(plans.rows[0].description).toBe('Mensual a $4.00');
     const one = list(renderChoiceList(commerceStateSchema.parse({}), [choice(1)], '', createCopy({ rowPlatformOnePlan: 'Solo un plan: {{precio}}' })));
-    expect(one.rows[0].description).toBe('Solo un plan: USD 4.00');
+    expect(one.rows[0].description).toBe('Solo un plan: $4.00');
     const renew = list(renderChoiceList(commerceStateSchema.parse({ kind: 'renew' }), [choice(1)], '', createCopy({ rowRenewDesc: 'Renueva por {{precio}}' })));
-    expect(renew.rows[0].description).toBe('Renueva por USD 4.00');
+    expect(renew.rows[0].description).toBe('Renueva por $4.00');
   });
 
   it('las filas de agotados y del carrito también son editables', () => {
     const t = createCopy({ rowSoldOutPlanDesc: '{{precio}} · sin cupo', rowCartOne: 'Llevas uno', rowCartMany: 'Llevas {{cantidad}}' });
     const sold = list(renderChoiceList(commerceStateSchema.parse({ soldout: true }), [choice(1, { stock: 0 })], '', t));
-    expect(sold.rows[0].description).toBe('USD 4.00 · sin cupo');
+    expect(sold.rows[0].description).toBe('$4.00 · sin cupo');
     const one = list(renderChoiceList(commerceStateSchema.parse({ items: [item(1)] }), [choice(1)], '', t));
     expect(one.rows.at(-1)?.description).toBe('Llevas uno');
     const many = list(renderChoiceList(commerceStateSchema.parse({ items: [item(1), item(2)] }), [choice(1)], '', t));
@@ -41,10 +41,10 @@ describe('textos de compras con datos', () => {
 
   it('el resumen usa las líneas y el total editados y respeta el ciclo que ya trae el nombre', () => {
     const original = commerceSummary([item(1), item(2, 'Disney Mensual')], createCopy());
-    expect(original).toBe('1. Servicio 1 (Mensual): USD 5.00\n2. Disney Mensual: USD 5.00\nTotal: USD 10.00');
+    expect(original).toBe('1. Servicio 1 (Mensual): $5.00\n2. Disney Mensual: $5.00\nTotal: $10.00');
     const custom = commerceSummary([item(1)], createCopy({ summaryLine: '{{numero}}) {{servicio}} → {{precio}}', summaryTotal: 'A pagar: {{total}}' }));
-    expect(custom).toBe('1) Servicio 1 → USD 5.00\nA pagar: USD 5.00');
-    expect(commerceSummary([], createCopy())).toContain('USD 0');
+    expect(custom).toBe('1) Servicio 1 → $5.00\nA pagar: $5.00');
+    expect(commerceSummary([], createCopy())).toContain('$0');
   });
 
   it('la lista de servicios y la reserva con varios servicios son editables', () => {

@@ -21,6 +21,12 @@ type StepCopyListProps = {
   actions: FlowActions;
 };
 
+const GROUPS = [
+  { kind: 'message', title: 'Mensajes al cliente' },
+  { kind: 'button', title: 'Botones y opciones' },
+  { kind: 'label', title: 'Detalles de listas y resumen' },
+] as const;
+
 /**
  * Textos que el bot envía en uno o varios pasos de la compra. Cada texto muestra lo que el bot manda de verdad: el del bloque,
  * si no el guardado fuera del recorrido y si no el original; al abrirlo se edita con su burbuja de WhatsApp.
@@ -47,8 +53,14 @@ export function StepCopyList({ node, steps, actions }: StepCopyListProps) {
       <h3 className="text-sm font-semibold">{stepTitle(step)}</h3>
       <p className="text-xs text-muted-foreground">{stepDescription(step)}</p>
     </div>
-    <ul className="rounded-md border">
-      {keys.filter((key) => COPY_CATALOG[key].step === step).map((key) => {
+    {GROUPS.map((group) => {
+      // Los botones que abren listas usan los límites de una etiqueta en el catálogo, pero el cliente los ve como botones.
+      const items = keys.filter((key) => COPY_CATALOG[key].step === step && (key.startsWith('listButton') ? 'button' : COPY_CATALOG[key].kind) === group.kind);
+      if (items.length === 0) return null;
+      return <div key={group.kind} className="space-y-2 pt-3">
+        <h4 className="text-xs font-medium text-muted-foreground">{group.title}</h4>
+        <ul aria-label={group.title} className="rounded-md border">
+      {items.map((key) => {
         const text = effective(key);
         const open = selected === key;
         const panelId = `texto-${node.id}-${key}`;
@@ -57,6 +69,7 @@ export function StepCopyList({ node, steps, actions }: StepCopyListProps) {
             onClick={() => setSelected(open ? null : key)}>
             <span className="min-w-0 flex-1 leading-tight">
               <span className="block truncate">{COPY_CATALOG[key].label}</span>
+              <span className="block text-xs font-normal whitespace-normal text-muted-foreground">{COPY_CATALOG[key].when}</span>
               <span className="block truncate text-xs font-normal text-muted-foreground">{renderCopyText(text, sampleValues(key)).replace(/\s+/g, ' ')}</span>
             </span>
             {text.trim() === COPY_CATALOG[key].defaultText.trim() ? null : <StatusBadge tone="info">Editado</StatusBadge>}
@@ -67,6 +80,8 @@ export function StepCopyList({ node, steps, actions }: StepCopyListProps) {
           </div> : null}
         </li>;
       })}
-    </ul>
+        </ul>
+      </div>;
+    })}
   </section>)}</>;
 }

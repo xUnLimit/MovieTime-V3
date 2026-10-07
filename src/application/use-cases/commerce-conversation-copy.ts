@@ -1,11 +1,12 @@
 import type { Pedido } from '@/modules/orders/contracts';
 import type { createCopy } from '@/modules/commerce-copy/render';
+import { formatMonto } from '@/platform/utils/whatsapp-template-render';
 import type { CommerceItem } from './commerce-conversation-state';
 
 // Datos que se insertan en los textos del flujo de compras (los textos viven en @/modules/commerce-copy).
 export type Copy = ReturnType<typeof createCopy>;
 const PANAMA = 'America/Panama';
-const money = (currency: string, amount: number) => `${currency} ${amount.toFixed(2)}`;
+const money = (currency: string, amount: number) => formatMonto(amount, currency);
 const dayKey = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: PANAMA }).format(date);
 
 /** "hoy a las 10:42 p. m." o "el 4 de octubre a las 10:42 p. m."; vacio si la fecha no es valida. */
@@ -49,13 +50,13 @@ export function reservationText(order: Pedido, items: CommerceItem[], t: Copy, n
   });
 }
 
-const price = (item: CommerceItem) => `${item.currency} ${item.amount.toFixed(2)}`;
+const price = (item: CommerceItem) => money(item.currency, item.amount);
 
 /** Lo elegido, una linea por servicio y el total; cada linea y el total salen de textos editables. */
 export function commerceSummary(items: CommerceItem[], t: Copy): string {
   const lines = items.map((item, index) => t(item.name.toLowerCase().includes(item.cycle.toLowerCase()) ? 'summaryLineSameCycle' : 'summaryLine',
     { numero: String(index + 1), servicio: item.name, ciclo: item.cycle, precio: price(item) }));
-  const total = `${items[0]?.currency ?? 'USD'} ${(items.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) / 100).toFixed(2)}`;
+  const total = money(items[0]?.currency ?? 'USD', items.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) / 100);
   return `${lines.join('\n')}\n${t('summaryTotal', { total })}`;
 }
 

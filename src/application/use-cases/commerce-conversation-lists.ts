@@ -1,6 +1,7 @@
 import { resolveCatalogMessage } from '@/modules/bot-config';
 import type { OutboundPayload } from '@/modules/whatsapp/cloud-api-client';
 import type { BotCatalogMessages } from '@/types/bot';
+import { formatMonto } from '@/platform/utils/whatsapp-template-render';
 import type { Copy } from './commerce-conversation-copy';
 import type { CommerceItem, CommerceState } from './commerce-conversation-state';
 
@@ -9,7 +10,7 @@ export type CommerceChoice = CommerceItem & { stock: number; categoryId: string;
 
 type Row = { id: string; title: string; description?: string; section?: string };
 const PAGE_SIZE = 7;
-const money = (choice: CommerceItem) => `${choice.currency} ${choice.amount.toFixed(2)}`;
+const money = (choice: CommerceItem) => formatMonto(choice.amount, choice.currency);
 const row = (id: string, title: string, description?: string): Row => ({ id, title: title.slice(0, 24), ...(description ? { description: description.slice(0, 72) } : {}) });
 const inSection = (section: string, rows: Row[]): Row[] => rows.map(item => ({ ...item, section: section.slice(0, 24) }));
 
