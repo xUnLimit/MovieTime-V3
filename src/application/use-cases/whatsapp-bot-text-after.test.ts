@@ -84,6 +84,11 @@ describe('recopilación y entrega segura', () => {
     expect(await handleBotMessage(message, deps, { waitingOnly: true })).toBe('handoff');
     expect(createReport).toHaveBeenCalledWith(message); expect(send).toHaveBeenCalledTimes(1); expect(waits.clear).toHaveBeenCalled();
     expect(payloadOf(send).text).toContain('Recibimos tu reporte');
+    def.messages.report_ack = 'Guardamos el problema. Te responderemos aquí.';
+    const customized = setup(def, { wait: { nodeId: 'pregunta', expiresAt: '2026-10-07T03:00:00Z' } });
+    customized.deps.createReport = createReport;
+    expect(await handleBotMessage(message, customized.deps, { waitingOnly: true })).toBe('handoff');
+    expect(payloadOf(customized.send).text).toBe(def.messages.report_ack);
     const noAction = setup(defaultDefinition()); noAction.deps.createReport = createReport; createReport.mockClear();
     await handleBotMessage(write('hola'), noAction.deps); expect(createReport).not.toHaveBeenCalled();
   });

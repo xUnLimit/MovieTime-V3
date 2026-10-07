@@ -49,7 +49,7 @@ const botDefinitionSchema = z.object({
     login_code_sent: text, travel_code_sent: text, travel_link_sent: text,
     login_not_found: text, travel_not_found: text, already_sent: text,
     profile_missing: text, no_netflix_account: text, rate_limited: text,
-    mailbox_unavailable: text, handoff_ack: text, option_unavailable: text,
+    mailbox_unavailable: text, handoff_ack: text, report_ack: text.optional(), option_unavailable: text,
     account_picker_body: text, account_picker_button: text,
     // Mensajes agregados después: una versión ya publicada no los trae y usa el texto por defecto.
     access_none: text.optional(), access_picker_body: text.optional(), access_picker_button: text.optional(),

@@ -162,6 +162,12 @@ export const MESSAGE_CATALOG: Record<BotMessageKey, MessageCatalogEntry> = {
     group: 'netflix', variables: NONE, required: NONE, maxLength: MSG_MAX,
     defaultText: 'No pude consultar el correo de Netflix en este momento. Una persona te ayuda en breve.',
   },
+  report_ack: {
+    label: 'Confirmación de reporte',
+    description: 'Se envía después de guardar el problema del cliente y antes de pasar el chat al equipo.',
+    group: 'sistema', variables: NONE, required: NONE, maxLength: MSG_MAX,
+    defaultText: 'Recibimos tu reporte. Una persona del equipo revisará el problema y te ayudará por este chat.',
+  },
   handoff_ack: {
     label: 'Pase a una persona',
     description: 'Se envía cuando el cliente pide hablar con una persona.',

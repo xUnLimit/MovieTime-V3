@@ -42,7 +42,7 @@ Todo color sale de tokens en `src/app/globals.css`. **Prohibido** usar paleta cr
 Reglas:
 - Texto de estado: `text-{tono}`. Fondo tenue: `bg-{tono}-subtle`. Borde: `border-{tono}-border`. Solido: `bg-{tono}` + `text-{tono}-foreground`.
 - No hay variantes `dark:` para colores semanticos: los tokens ya cambian con el tema.
-- Contraste minimo AA (4.5:1 cuerpo, 3:1 texto grande) en ambos temas.
+- Contraste minimo AA (4.5:1 cuerpo, 3:1 texto grande) en ambos temas. Los botones destructivos usan el mismo rojo oscuro sólido en claro y oscuro para mantener el contraste del texto blanco.
 - En codigo, el tono se expresa con el tipo `Tone` (`src/components/shared/tone.ts`), nunca con clases sueltas.
 
 ## 4. Tipografia
@@ -114,6 +114,8 @@ Reglas de uso:
 ## 8. Estados
 
 En el flujo de compra de Automatizaciones, la lista de pasos explica cuándo aparece cada etapa. El inspector agrupa los textos en mensajes al cliente, botones y opciones, y detalles de listas y resumen. Cada elemento muestra su contexto de uso antes de abrirlo. La vista previa distingue mensajes, botones y detalles; el pie del editor indica si hay cambios locales y aclara que Guardar aplica al borrador y Publicar activa el recorrido para los clientes.
+
+Al seleccionar una acción del recorrido, el inspector muestra sus respuestas editables con vista previa y restablecimiento, usando el mismo borrador y validación de Respuestas. Compras abre su editor de textos y los datos de acceso enlazan su plantilla.
 
 Todo dato remoto tiene carga, vacio y error.
 - **Carga:** `MetricCard loading`, `DataTable loading` o `Skeleton` con la misma forma y altura que el contenido. Nunca "Calculando..." como valor.

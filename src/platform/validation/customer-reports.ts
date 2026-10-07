@@ -4,7 +4,7 @@ const reportStatusSchema = z.enum(['open', 'in_progress', 'resolved']);
 const customerReportSchema = z.object({
   id: z.string().uuid(), wa_id: z.string().regex(/^\d{5,20}$/), source_message_id: z.string().min(1).max(256),
   description: z.string().min(1).max(65536), status: reportStatusSchema,
-  version: z.number().int().nonnegative(), created_at: z.string().datetime(), updated_at: z.string().datetime(),
+  version: z.number().int().nonnegative(), created_at: z.string().datetime({ offset: true }), updated_at: z.string().datetime({ offset: true }),
 });
 export const reportQuerySchema = z.object({
   status: reportStatusSchema.optional(), page: z.coerce.number().int().min(1).max(100000).default(1),

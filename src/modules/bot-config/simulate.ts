@@ -1,6 +1,6 @@
 import type { BotActionKey, BotDefinition, BotNode } from '@/types/bot';
 import { COPY_CATALOG, blockCopyProblem, blockOfCopyKey, type CopyKey } from '@/modules/commerce-copy';
-import { MAX_CONTINUE_HOPS, VARIABLE_CATALOG } from './catalog';
+import { MAX_CONTINUE_HOPS, MESSAGE_CATALOG, VARIABLE_CATALOG } from './catalog';
 import { matchTextAnswer } from './answers';
 import { CONDITION_CATALOG, MAX_CONDITION_HOPS, conditionOption, exampleNodeValues, renderNodeBody, type ConditionFacts } from './extensions';
 import { buildNodeMessage, optionReplyId, resolveOption } from './payload';
@@ -68,7 +68,7 @@ function actionTurns(def: BotDefinition, action: BotActionKey | undefined, prefi
   if (action === 'netflix_travel_code') {
     return [{ from: 'bot', text: renderTemplate(def.messages.travel_code_sent, sampleValues(def.params.travelWindowMinutes)) }];
   }
-  if (action === 'create_report') return [warning('aquí se crea un reporte con la explicación recopilada y el chat pasa al equipo; la simulación no guarda reportes.'), { from: 'bot', text: 'Recibimos tu reporte. Una persona del equipo revisará el problema y te ayudará por este chat.' }];
+  if (action === 'create_report') return [warning('aquí se crea un reporte con la explicación recopilada y el chat pasa al equipo; la simulación no guarda reportes.'), { from: 'bot', text: def.messages.report_ack || MESSAGE_CATALOG.report_ack.defaultText }];
   if (action === 'handoff') return [{ from: 'bot', text: withPrefix(prefix, def.messages.handoff_ack) }];
   if (action === 'service_access') {
     return [warning('aquí el cliente recibe los datos de su servicio (correo, contraseña, perfil…) con la plantilla «Notificación de Suscripción»; el simulador no los muestra. Con varios servicios, primero elige de cuál.')];

@@ -23,6 +23,7 @@ type ResponseFrameProps = {
   value: string;
   maxLength: number;
   multiline?: boolean;
+  compact?: boolean;
   onChange: (value: string) => void;
   /** Problemas del texto, dichos junto al campo y no solo al publicar. */
   problems: readonly { message: string; severity: 'error' | 'warning' }[];
@@ -37,7 +38,7 @@ type ResponseFrameProps = {
  * mientras se escribe. Restablecer y el estado «Editado» están siempre a la vista en el encabezado. Lo usan las respuestas del
  * bot y los textos de compras, para que ambas se editen y se guarden igual: todo se aplica al borrador al escribir.
  */
-export function ResponseFrame({ title, hint, edited, onRestore, note, value, maxLength, multiline = true, onChange, problems, variables, previewText, previewTestId }: ResponseFrameProps) {
+export function ResponseFrame({ title, hint, edited, onRestore, note, value, maxLength, multiline = true, compact = false, onChange, problems, variables, previewText, previewTestId }: ResponseFrameProps) {
   const field = useRef<HTMLTextAreaElement>(null);
   const fieldId = useId();
   const insert = (name: string) => {
@@ -48,7 +49,7 @@ export function ResponseFrame({ title, hint, edited, onRestore, note, value, max
     requestAnimationFrame(() => { field.current?.focus(); field.current?.setSelectionRange(start + marker.length, start + marker.length); });
   };
   const failing = problems.some((problem) => problem.severity === 'error');
-  return <div className="space-y-5 p-5">
+  return <div className={compact ? "space-y-3" : "space-y-5 p-5"}>
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0 space-y-0.5">
         <div className="flex flex-wrap items-center gap-2">
@@ -60,7 +61,7 @@ export function ResponseFrame({ title, hint, edited, onRestore, note, value, max
       </div>
       <Button type="button" variant="outline" disabled={!edited} onClick={onRestore}><RotateCcw />Restablecer</Button>
     </header>
-    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className={compact ? "grid min-w-0 gap-3" : "grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]"}>
       <div className="min-w-0 space-y-4">
         <div className="space-y-1.5">
           <label htmlFor={fieldId} className="text-sm font-medium">Texto del mensaje</label>
@@ -95,12 +96,13 @@ type ResponseEditorProps = {
   value: string;
   onChange: (value: string) => void;
   issues: readonly BotIssue[];
+  compact?: boolean;
 };
 
 /** Respuesta del bot dentro de la conversación (códigos, errores, atención). */
-export function ResponseEditor({ messageKey, value, onChange, issues }: ResponseEditorProps) {
+export function ResponseEditor({ messageKey, value, onChange, issues, compact }: ResponseEditorProps) {
   const item = MESSAGE_CATALOG[messageKey];
-  return <ResponseFrame title={item.label} hint={item.description} edited={value.trim() !== item.defaultText.trim()} onRestore={() => onChange(item.defaultText)}
+  return <ResponseFrame compact={compact} title={item.label} hint={item.description} edited={value.trim() !== item.defaultText.trim()} onRestore={() => onChange(item.defaultText)}
     value={value} maxLength={item.maxLength} onChange={onChange} problems={issues}
     variables={item.variables.map((name) => ({ name, label: VARIABLE_CATALOG[name]?.label ?? name, example: VARIABLE_CATALOG[name]?.example ?? '', required: item.required.includes(name) }))}
     previewText={renderTemplate(value, examples)} previewTestId="message-preview" />;

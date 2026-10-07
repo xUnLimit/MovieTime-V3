@@ -78,7 +78,7 @@ export type BotMessageKey =
   | 'login_code_sent' | 'travel_code_sent' | 'travel_link_sent'
   | 'login_not_found' | 'travel_not_found' | 'already_sent'
   | 'profile_missing' | 'no_netflix_account' | 'rate_limited'
-  | 'mailbox_unavailable' | 'handoff_ack' | 'option_unavailable'
+  | 'mailbox_unavailable' | 'handoff_ack' | 'report_ack' | 'option_unavailable'
   | 'account_picker_body' | 'account_picker_button'
   | 'access_none' | 'access_picker_body' | 'access_picker_button' | 'access_code_notice' | 'access_unavailable';
 

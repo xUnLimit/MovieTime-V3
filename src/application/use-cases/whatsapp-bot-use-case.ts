@@ -27,7 +27,7 @@ async function runAction(run: BotRun, action: BotActionKey | undefined, services
   if (action === 'create_report') {
     if (!run.deps.createReport) throw new Error('Report storage unavailable');
     await run.deps.createReport(run.message);
-    const sent = await reply(run.deps, run.message, { kind: 'text', text: 'Recibimos tu reporte. Una persona del equipo revisará el problema y te ayudará por este chat.' });
+    const sent = await sayMessage(run, 'report_ack');
     return sent.sendStatus === 'accepted' ? 'handoff' : 'send_failed';
   }
   if (action === 'handoff') {

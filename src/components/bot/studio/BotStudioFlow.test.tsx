@@ -109,6 +109,20 @@ describe('estudio del recorrido: edición de pasos', () => {
     expect(screen.getByRole('textbox', { name: /^Texto/ })).toBeTruthy();
   });
 
+  it('permite editar la confirmación al seleccionar crear reporte y la conserva al cambiar de paso', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(stepButton(/^Hablar con soporte/));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Acción' }), 'create_report');
+    const field = screen.getByRole('textbox', { name: 'Texto del mensaje' });
+    await user.clear(field);
+    await user.type(field, 'Gracias, revisaremos tu reporte.');
+    expect(screen.getByTestId('message-preview').textContent).toContain('Gracias, revisaremos tu reporte.');
+    await user.click(stepButton(/^Menú principal/));
+    await user.click(stepButton(/^Hablar con soporte/));
+    expect(screen.getByRole('textbox', { name: 'Texto del mensaje' })).toHaveProperty('value', 'Gracias, revisaremos tu reporte.');
+  });
+
   it('el paso de entrada no se puede eliminar y se marca como Entrada', () => {
     render(<Harness />);
     expect(screen.getByRole('button', { name: 'Eliminar nodo' })).toHaveProperty('disabled', true);

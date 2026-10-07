@@ -29,7 +29,7 @@ vi.mock('@xyflow/react/dist/style.css', () => ({}));
 
 function makeActions(): FlowActions {
   return {
-    addNode: vi.fn(), removeNode: vi.fn(), updateNode: vi.fn(), moveNode: vi.fn(), addOption: vi.fn(), removeOption: vi.fn(),
+    setMessage: vi.fn(), addNode: vi.fn(), removeNode: vi.fn(), updateNode: vi.fn(), moveNode: vi.fn(), addOption: vi.fn(), removeOption: vi.fn(),
     moveOption: vi.fn(), updateOption: vi.fn(), connect: vi.fn(),
     addPurchaseFlow: vi.fn(async () => {}), removePurchaseFlow: vi.fn(), setBlockCopy: vi.fn(),
     addHandoffOption: vi.fn(), addCondition: vi.fn(), setEntry: vi.fn(), applyTemplate: vi.fn(async () => {}),

@@ -31,6 +31,12 @@ describe('useFlowActions', () => {
     expect(view.select).toHaveBeenLastCalledWith(null);
   });
 
+  it('updates action responses in the shared draft', () => {
+    const view = setup(defaultDefinition());
+    act(() => view.actions().setMessage('report_ack', 'Reporte guardado.'));
+    expect(view.current()?.messages.report_ack).toBe('Reporte guardado.');
+  });
+
   it('sets the entry node through the pure model', () => {
     const view = setup(defaultDefinition());
     act(() => view.actions().setEntry('netflix'));

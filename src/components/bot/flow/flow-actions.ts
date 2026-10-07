@@ -3,10 +3,10 @@ import { toast } from 'sonner';
 import { fetchCommerceCopyUseCase } from '@/application/use-cases/commerce-copy-use-cases';
 import {
   ACTION_CATALOG, addCatchAllOption, addConditionNode, addHandoffOption, addNode, addOption, addPurchaseFlow, applyFlowTemplate, connectOption, moveNode, moveOption, removeNode, removeOption, removePurchaseFlow,
-  setBlockCopy, setEntryNode, setTextAfter, updateNode, updateOption, withPurchaseBlocks,
+  setBlockCopy, setEntryNode, setMessage, setTextAfter, updateNode, updateOption, withPurchaseBlocks,
 } from '@/modules/bot-config';
 import type { FlowTemplateId } from '@/modules/bot-config';
-import type { BotActionKey, BotAdminApi, BotConditionType, BotDefinition, BotNode, BotNodeKind, BotOption } from '@/types/bot';
+import type { BotActionKey, BotAdminApi, BotConditionType, BotDefinition, BotMessageKey, BotNode, BotNodeKind, BotOption } from '@/types/bot';
 
 export const KIND_LABELS: Record<BotNodeKind, string> = {
   buttons: 'Botones', list: 'Lista', text: 'Texto', action: 'Acción',
@@ -19,6 +19,7 @@ type OptionPatch = Partial<Pick<BotOption, 'title' | 'description' | 'next'>>;
 
 /** Cada accion delega en una funcion pura de `bot-config/edit.ts`; la UI no repite reglas. */
 export type FlowActions = {
+  setMessage: (key: BotMessageKey, text: string) => void;
   addNode: (kind: BotNodeKind) => void;
   /** Un paso de acción ya elegida (por ejemplo, enviar los datos de acceso del cliente). */
   addActionNode: (action: BotActionKey) => void;
@@ -52,6 +53,7 @@ export function useFlowActions(api: BotAdminApi, select: (nodeId: string | null)
   return useMemo(() => {
     const edit = (change: (def: BotDefinition) => BotDefinition) => updateDraft(change);
     return {
+      setMessage: (key, text) => edit((def) => setMessage(def, key, text)),
       addNode: (kind) => {
         if (!draft) return;
         const next = addNode(draft, kind, '');
