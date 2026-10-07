@@ -42,6 +42,7 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
   const seenCount = useRef(messages.length);
   const [unseen, setUnseen] = useState(0);
   const [atBottom, setAtBottom] = useState(true);
+  const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   // El aviso de no leidos se fija al abrir el chat; no se mueve mientras se lee.
   const [openingUnread] = useState(unreadCount);
   const visibleMessages = useMemo(() => messages.filter((message) => message.kind !== 'reaction'), [messages]);
@@ -101,7 +102,9 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
     <div className="relative min-h-0 flex-1">
       <div
         ref={scrollRef}
+        onPointerDown={event => { if (event.pointerType === 'touch' && event.target instanceof Element && !event.target.closest('[data-message-id]')) setActionsMessageId(null); }}
         onScroll={(event) => {
+          setActionsMessageId(null);
           const element = event.currentTarget;
           const bottom = element.scrollHeight - element.scrollTop - element.clientHeight < STICKY_THRESHOLD;
           stickToBottom.current = bottom;
@@ -127,7 +130,7 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
             {items.map((item) => {
               if (item.type === 'day') {
                 return (
-                  <li key={item.key} className="sticky top-1 z-10 flex justify-center py-2">
+                  <li key={item.key} data-day-divider className="flex justify-center py-2">
                     <span className="rounded-lg bg-chat-raised px-3 py-1 text-xs font-medium text-chat-muted shadow-sm">{item.label}</span>
                   </li>
                 );
@@ -141,7 +144,7 @@ export function MessageTimeline({ messages, isLoading, unreadCount, now, searchQ
                   </li>
                 );
               }
-              return <MessageBubble key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} templateContent={item.message.templateName ? buildTemplateContent(item.message.templateName, item.message.templateParams, metaTemplates) : null} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} reactionEmojis={reactionEmojis} onReply={onReply} onReact={onReact && ((message, emoji) => { recordReaction(emoji); onReact(message, emoji); })} onForward={onForward} onRetry={onRetry} onHide={onHide} onOpenImage={onOpenImage} onSaveSticker={onSaveSticker} canRetry={canRetry} />;
+              return <MessageBubble actionsActive={actionsMessageId === item.message.id} onActivateActions={() => setActionsMessageId(item.message.id)} key={item.key} message={item.message} continued={item.continued} quotedByWaMessageId={quoteLookup} reactions={item.message.waMessageId ? reactions.get(item.message.waMessageId) : undefined} templateContent={item.message.templateName ? buildTemplateContent(item.message.templateName, item.message.templateParams, metaTemplates) : null} highlighted={Boolean(searchQuery.trim() && matches.includes(item.message.id))} activeMatch={item.message.id === activeId} reactionEmojis={reactionEmojis} onReply={onReply} onReact={onReact && ((message, emoji) => { recordReaction(emoji); onReact(message, emoji); })} onForward={onForward} onRetry={onRetry} onHide={onHide} onOpenImage={onOpenImage} onSaveSticker={onSaveSticker} canRetry={canRetry} />;
             })}
           </ol>
         )}

@@ -3,7 +3,7 @@ import { createServiceRoleClient } from '@/platform/server/supabase-server';
 type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
 /** El texto del recorrido cuya respuesta escrita espera el bot de un cliente, y hasta cuándo. */
-export type BotWait = { nodeId: string; expiresAt: string };
+export type BotWait = { nodeId: string; expiresAt: string; collectMinutes?: number };
 export type BotWaitStore = {
   // Solo una espera vigente: una vencida es como si no existiera.
   get(waId: string, now: Date): Promise<BotWait | null>;
@@ -28,6 +28,7 @@ export function createBotWaitStore(client: ServiceClient = createServiceRoleClie
     async set(waId, wait, now) {
       const { error } = await client.from('whatsapp_bot_waits').upsert({
         wa_id: waId, node_id: wait.nodeId, expires_at: wait.expiresAt, created_at: now.toISOString(),
+        collect_minutes: wait.collectMinutes ?? 0, collect_started_at: null,
       }, { onConflict: 'wa_id' });
       check(error, 'save');
       // Limpieza de pasada: las esperas vencidas no sirven para nada.

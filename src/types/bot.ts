@@ -2,7 +2,7 @@
 // `bot-config` (logica pura), el runtime del webhook, los repositorios y la UI.
 // Cambiar un tipo aqui exige actualizar `docs/whatsapp-bot-admin.md`.
 
-export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff' | 'purchase' | 'renewal' | 'my_services' | 'service_access';
+export type BotActionKey = 'netflix_login_code' | 'netflix_travel_code' | 'handoff' | 'purchase' | 'renewal' | 'my_services' | 'service_access' | 'create_report';
 export type BotNodeKind = 'buttons' | 'list' | 'text' | 'action';
 
 /** Condiciones cerradas que el servidor resuelve con datos existentes; el nodo sigue siendo `buttons` (si / no). */
@@ -35,7 +35,7 @@ export type BotOption = {
  * cuya respuesta coincide; una salida con título vacío es «cualquier otra respuesta».
  */
 // La duración se guarda siempre en horas; unit solo controla la unidad visible en el editor.
-export type BotTextAfter = { mode: 'continue'; delivery?: 'joined' | 'separate' } | { mode: 'wait'; hours: number; unit?: 'hours' | 'minutes' };
+export type BotTextAfter = { mode: 'continue'; delivery?: 'joined' | 'separate' } | { mode: 'wait'; hours: number; unit?: 'hours' | 'minutes'; collectMinutes?: number };
 
 export type BotNode = {
   /** Slug estable (^[a-z][a-z0-9_]{1,31}$), unico en el flujo. */

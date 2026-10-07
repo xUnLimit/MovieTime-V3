@@ -36,6 +36,11 @@ const now = new Date('2026-10-06T15:00:00.000Z');
 const wait = { nodeId: 'pregunta', expiresAt: '2026-10-07T03:00:00.000Z' };
 
 describe('createBotWaitStore', () => {
+  it('persiste la recopilación y reinicia el comienzo solo al abrir una nueva espera', async () => {
+    const { client, calls } = fakeClient([{}, {}]);
+    await createBotWaitStore(client).set(waId, { ...wait, collectMinutes: 3 }, now);
+    expect(calls).toContainEqual({ method: 'upsert', args: [expect.objectContaining({ collect_minutes: 3, collect_started_at: null }), { onConflict: 'wa_id' }] });
+  });
   it('lee solo una espera vigente del cliente', async () => {
     const { client, calls } = fakeClient([{ data: { node_id: 'pregunta', expires_at: wait.expiresAt } }]);
     await expect(createBotWaitStore(client).get(waId, now)).resolves.toEqual(wait);
@@ -51,7 +56,7 @@ describe('createBotWaitStore', () => {
   it('guarda la espera reemplazando la anterior y limpia las vencidas', async () => {
     const { client, calls } = fakeClient([{}, {}]);
     await createBotWaitStore(client).set(waId, wait, now);
-    expect(calls).toContainEqual({ method: 'upsert', args: [{ wa_id: waId, node_id: 'pregunta', expires_at: wait.expiresAt, created_at: now.toISOString() }, { onConflict: 'wa_id' }] });
+    expect(calls).toContainEqual({ method: 'upsert', args: [{ wa_id: waId, node_id: 'pregunta', expires_at: wait.expiresAt, created_at: now.toISOString(), collect_minutes: 0, collect_started_at: null }, { onConflict: 'wa_id' }] });
     expect(calls).toContainEqual({ method: 'lt', args: ['expires_at', now.toISOString()] });
   });
 

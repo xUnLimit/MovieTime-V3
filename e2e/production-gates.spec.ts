@@ -6,6 +6,16 @@ type CspViolation = {
   directive: string;
 };
 
+test('@smoke protects customer report reads and status updates', async ({ request }) => {
+  const read = await request.get('/api/customer-reports');
+  const write = await request.post('/api/customer-reports', { data: { id: '00000000-0000-4000-8000-000000000001', status: 'resolved', version: 0 } });
+  for (const response of [read, write]) {
+    expect(response.status()).toBe(401);
+    expect(response.headers()['cache-control']).toContain('no-store');
+    expect(response.headers()['x-request-id']).toBeTruthy();
+  }
+});
+
 declare global {
   interface Window {
     __cspViolations?: CspViolation[];

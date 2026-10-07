@@ -7,7 +7,8 @@ import { commerceStateSchema } from '@/application/use-cases/commerce-conversati
 
 const mocks=vi.hoisted(()=>({ env:{whatsappAccessToken:'fixture',whatsappPhoneNumberId:'123'},
   store:{claim:vi.fn(),isCurrent:vi.fn(),checkpoint:vi.fn(),finish:vi.fn()},notice:vi.fn(),commerce:vi.fn(),
-  clearWait:vi.fn(),send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{waiting:vi.fn(),configuration:vi.fn(),definitionFor:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
+  report:vi.fn(),clearWait:vi.fn(),send:vi.fn(),cloud:vi.fn(),delivery:vi.fn(),interest:vi.fn(),bot:{waiting:vi.fn(),configuration:vi.fn(),definitionFor:vi.fn(),handle:vi.fn(),version:3},warn:vi.fn() }));
+vi.mock('@/application/use-cases/customer-report-use-case',()=>({createCustomerReportUseCase:mocks.report}));
 vi.mock('@/platform/config',()=>({env:mocks.env}));
 vi.mock('@/platform/observability/logger',()=>({createLogger:()=>({warn:mocks.warn})}));
 vi.mock('@/modules/whatsapp/automation-inbox-store',()=>({createAutomationInboxStore:()=>mocks.store}));
@@ -46,6 +47,14 @@ beforeEach(()=>{
   mocks.delivery.mockResolvedValue({processed:0,failed:0});
 });
 describe('inbox composition',()=>{
+  it.each(['text','image'])('creates a report only through the explicit action, fenced to the current %s turn',async(messageType)=>{
+    const input=queue(claim({},messageType));
+    mocks.bot.handle.mockImplementation(async(_definition,_message,_send,_order,options)=>{await options.createReport();return 'handoff';});
+    expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
+    expect(mocks.report).toHaveBeenCalledWith({waId:input.message.fromWaId,messageId:input.message.waMessageId,
+      description:messageType==='text'?'free wording':'Problema reportado por el cliente. Consulta la conversación para ver los detalles.',token:input.token,fence:input.fence});
+    expect(mocks.store.finish).toHaveBeenCalledWith(input,expect.objectContaining({outcome:'handoff'}));
+  });
   it('remains idle without channel credentials and handles known notice replies before the bot',async()=>{
     mocks.env.whatsappAccessToken=''; expect(await drainWhatsAppInbox('request')).toEqual({processed:0,failed:0});
     expect(mocks.store.claim).not.toHaveBeenCalled(); mocks.env.whatsappAccessToken='fixture'; queue(); mocks.notice.mockResolvedValue('handled');
@@ -60,7 +69,7 @@ describe('inbox composition',()=>{
   it('hands the conversation order to the bot so node texts can show its data',async()=>{
     const input=claim(); input.conversation.orderId=orderId; queue(input);
     expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
-    expect(mocks.bot.handle).toHaveBeenCalledWith(defaultDefinition(),input.message,expect.any(Function),orderId,undefined);
+    expect(mocks.bot.handle).toHaveBeenCalledWith(defaultDefinition(),input.message,expect.any(Function),orderId,{createReport:expect.any(Function)});
   });
   it('keeps payment images on the guided reply with no receipt reading',async()=>{
     const input=queue(claim({stage:'payment',orderId},'image')); commercial(input);
@@ -102,7 +111,7 @@ describe('inbox composition',()=>{
     mocks.bot.handle.mockResolvedValue('menu');
     expect(await drainWhatsAppInbox('request')).toEqual({processed:1,failed:0});
     expect(mocks.store.checkpoint).toHaveBeenCalledWith(input,context,'idle',null,3);
-    expect(mocks.bot.handle).toHaveBeenCalledWith(pinned,input.message,expect.any(Function),null,{handBack});
+    expect(mocks.bot.handle).toHaveBeenCalledWith(pinned,input.message,expect.any(Function),null,{handBack,createReport:expect.any(Function)});
     expect(mocks.send).not.toHaveBeenCalled();
     expect(mocks.store.finish).toHaveBeenCalledWith(input,expect.objectContaining({outcome:'done',context,process:'idle'}));
   });

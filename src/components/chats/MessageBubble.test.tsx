@@ -35,7 +35,7 @@ describe('MessageBubble template messages', () => {
 });
 
 describe('MessageBubble', () => {
-  it('reserves room for the always-visible mobile menu button so it never overlaps short text', () => {
+  it('reserves room for the message menu button so it never overlaps short text', () => {
     const { container } = render(<MessageBubble message={{ ...base, textBody: 'Test' }} continued={false} />);
     const spacer = container.querySelector('p span[aria-hidden]');
     expect(spacer?.className).toContain('float-right');

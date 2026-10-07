@@ -67,6 +67,45 @@ function setup(definition: BotDefinition, options: { wait?: BotWait | null; send
 }
 const payloadOf = (send: ReturnType<typeof setup>['send'], index = 0) => send.mock.calls[index][0].payload;
 
+describe('recopilación y entrega segura', () => {
+  it('guarda la duración de recopilación al mostrar la pregunta', async () => {
+    const def = journey({ pregunta: { body: 'Cuéntanos.', after: 'wait', to: [['', 'soporte']] } }, 'pregunta');
+    def.nodes.find(node => node.id === 'pregunta')!.after = { mode: 'wait', hours: 12, collectMinutes: 2 };
+    const { deps, waits } = setup(def);
+    await handleBotMessage(tap('BOT:menu:ir'), deps);
+    expect(waits.set).toHaveBeenCalledWith(waId, { nodeId: 'pregunta', expiresAt: '2026-10-07T03:00:00.000Z', collectMinutes: 2 }, now);
+  });
+  it('crea un reporte solamente al alcanzar la acción y pasa al equipo', async () => {
+    const def = journey({ pregunta: { body: 'Cuéntanos.', after: 'wait', to: [['', 'soporte']] } }, 'pregunta');
+    def.nodes.find(node => node.id === 'soporte')!.action = 'create_report';
+    const { deps, send, waits } = setup(def, { wait: { nodeId: 'pregunta', expiresAt: '2026-10-07T03:00:00Z' } });
+    const createReport = vi.fn().mockResolvedValue(undefined); deps.createReport = createReport;
+    const message = write('El servicio no abre.\n\nDesde ayer.');
+    expect(await handleBotMessage(message, deps, { waitingOnly: true })).toBe('handoff');
+    expect(createReport).toHaveBeenCalledWith(message); expect(send).toHaveBeenCalledTimes(1); expect(waits.clear).toHaveBeenCalled();
+    expect(payloadOf(send).text).toContain('Recibimos tu reporte');
+    const noAction = setup(defaultDefinition()); noAction.deps.createReport = createReport; createReport.mockClear();
+    await handleBotMessage(write('hola'), noAction.deps); expect(createReport).not.toHaveBeenCalled();
+  });
+  it('no confirma un reporte si su guardado falla y conserva la espera si falla la confirmación', async () => {
+    const def = journey({ pregunta: { body: 'Cuéntanos.', after: 'wait', to: [['', 'soporte']] } }, 'pregunta');
+    def.nodes.find(node => node.id === 'soporte')!.action = 'create_report';
+    const { deps, send, waits } = setup(def, { wait: { nodeId: 'pregunta', expiresAt: '2026-10-07T03:00:00Z' }, sendStatus: 'failed' });
+    await expect(handleBotMessage(write('No abre.'), deps)).rejects.toThrow('Report storage unavailable');
+    expect(send).not.toHaveBeenCalled();
+    deps.createReport = vi.fn().mockRejectedValue(new Error('db')); await expect(handleBotMessage(write('No abre.'), deps)).rejects.toThrow('db');
+    deps.createReport = vi.fn().mockResolvedValue(undefined); expect(await handleBotMessage(write('No abre.'), deps)).toBe('send_failed');
+    expect(waits.clear).not.toHaveBeenCalled();
+  });
+  it('conserva la espera cuando la respuesta siguiente no se puede enviar', async () => {
+    const def = journey({ pregunta: { body: 'Cuéntanos.', after: 'wait', to: [['', 'aviso']] }, aviso: { body: 'Gracias.', after: 'continue', to: [['', 'netflix']] } }, 'pregunta');
+    def.nodes.find(node => node.id === 'aviso')!.after = { mode: 'continue', delivery: 'separate' };
+    const { deps, waits } = setup(def, { wait: { nodeId: 'pregunta', expiresAt: '2026-10-07T03:00:00Z' }, sendStatus: 'failed' });
+    await expect(handleBotMessage(write('No funciona.'), deps, { waitingOnly: true })).resolves.toBe('send_failed');
+    expect(waits.clear).not.toHaveBeenCalled();
+  });
+});
+
 describe('textos que continúan solos', () => {
   it('separa el texto del siguiente paso y usa claves estables diferentes al reintentar', async () => {
     const def = journey({ aviso: { body: 'Ten tu cuenta a mano.', after: 'continue', to: [['', 'netflix']] } }, 'aviso');

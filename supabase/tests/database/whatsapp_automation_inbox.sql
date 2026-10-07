@@ -43,16 +43,18 @@ SET LOCAL ROLE authenticated;
 SELECT ok(NOT public.set_whatsapp_conversation_mode('50760000088', 'bot', 1), 'stale operator cannot release');
 SELECT ok(public.set_whatsapp_conversation_mode('50760000088', 'bot', 2), 'explicit release restores processing');
 RESET ROLE;
+INSERT INTO public.whatsapp_inbound_messages(wa_message_id,phone_number_id,from_wa_id,message_type,text_body,sent_at)
+VALUES ('inbox-fixture-retry','123','50760000088','text','catalogo',now()),('inbox-fixture-review','123','50760000088','text','carrito',now());
 UPDATE inbox_claim SET value = public.claim_whatsapp_automation(90);
 SELECT ok(public.finish_whatsapp_automation((SELECT (value->>'id')::bigint FROM inbox_claim),
   (SELECT (value->>'token')::uuid FROM inbox_claim), (SELECT (value->>'fence')::bigint FROM inbox_claim), 'retry'), 'failure retains job');
 SELECT is(public.claim_whatsapp_automation(90), NULL::jsonb, 'backoff preserves conversation order');
-UPDATE public.whatsapp_automation_inbox SET available_at = now()-interval '1 minute' WHERE wa_message_id='inbox-fixture-1';
+UPDATE public.whatsapp_automation_inbox SET available_at = now()-interval '1 minute' WHERE wa_message_id='inbox-fixture-retry';
 UPDATE inbox_claim SET value = public.claim_whatsapp_automation(90);
-SELECT is((SELECT value->>'attempts' FROM inbox_claim), '3', 'retries counted durably');
+SELECT is((SELECT value->>'attempts' FROM inbox_claim), '2', 'retries counted durably');
 SELECT ok(public.finish_whatsapp_automation((SELECT (value->>'id')::bigint FROM inbox_claim),
   (SELECT (value->>'token')::uuid FROM inbox_claim), (SELECT (value->>'fence')::bigint FROM inbox_claim), 'done'), 'success advances head');
-SELECT ok((SELECT processed_at IS NOT NULL FROM public.whatsapp_inbound_messages WHERE wa_message_id='inbox-fixture-1'), 'stored message is processed only after completion');
+SELECT ok((SELECT processed_at IS NOT NULL FROM public.whatsapp_inbound_messages WHERE wa_message_id='inbox-fixture-retry'), 'stored message is processed only after completion');
 UPDATE inbox_claim SET value = public.claim_whatsapp_automation(90);
 SELECT ok(public.finish_whatsapp_automation((SELECT (value->>'id')::bigint FROM inbox_claim),
   (SELECT (value->>'token')::uuid FROM inbox_claim), (SELECT (value->>'fence')::bigint FROM inbox_claim), 'review'), 'ambiguous delivery requests human');
@@ -61,7 +63,7 @@ SELECT ok(NOT public.set_whatsapp_conversation_mode('50760000088', 'bot', 6), 'u
 SELECT ok(NOT public.resolve_whatsapp_automation_review('50760000088', 5), 'stale resolution is rejected');
 SELECT ok(public.resolve_whatsapp_automation_review('50760000088', 6), 'admin explicitly records manual resolution');
 RESET ROLE;
-SELECT is((SELECT resolved_by FROM public.whatsapp_automation_inbox WHERE wa_message_id='inbox-fixture-2'),
+SELECT is((SELECT resolved_by FROM public.whatsapp_automation_inbox WHERE wa_message_id='inbox-fixture-review'),
   '93333333-3333-4333-8333-333333333333'::uuid, 'manual resolution has actor audit');
 SELECT is((SELECT mode FROM public.whatsapp_conversation_state WHERE wa_id='50760000088'), 'human', 'manual resolution never enables bot implicitly');
 INSERT INTO public.whatsapp_inbound_messages(wa_message_id,phone_number_id,from_wa_id,message_type,sent_at)

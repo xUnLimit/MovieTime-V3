@@ -32,6 +32,7 @@ export type SidebarNavSection = {
 };
 
 const adminOnlyPaths = [
+  '/reportes',
   '/chats',
   '/automatizaciones',
   '/pedidos-cobros',
@@ -87,6 +88,7 @@ const navigationSections: SidebarNavSection[] = [
   {
     label: 'Seguimiento',
     items: [
+      { name: 'Reportes', href: '/reportes', icon: FileText },
       {
         name: 'Notificaciones',
         href: '/notificaciones',

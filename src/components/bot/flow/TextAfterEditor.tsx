@@ -38,7 +38,7 @@ function WaitRules({ node, targets, actions }: TextAfterEditorProps) {
   const presets = unit === 'minutes' ? [1, 5, 10, 15, 30, 60] : HOURS_CHOICES;
   const choices = presets.includes(value) ? presets : [...presets, value].sort((a, b) => a - b);
   const update = (value: number, selectedUnit = unit) => actions.updateNode(node.id, {
-    after: { mode: 'wait', hours: selectedUnit === 'minutes' ? value / 60 : value, unit: selectedUnit },
+    after: { ...(node.after?.mode === 'wait' ? node.after : {}), mode: 'wait', hours: selectedUnit === 'minutes' ? value / 60 : value, unit: selectedUnit },
   });
   const rules = node.options.flatMap((option, index) => (option.any ? [] : [{ option, index }]));
   const catchAll = node.options.find((option) => option.any);
@@ -62,6 +62,11 @@ function WaitRules({ node, targets, actions }: TextAfterEditorProps) {
     <p className="text-xs text-muted-foreground">
       El cliente responde escribiendo. Gana la primera respuesta que incluya alguna de sus palabras, en este orden. Sepáralas con comas: «sí, claro, ok».
     </p>
+    <label className="block text-sm font-medium">Minutos para recopilar mensajes
+      <Input type="number" min={0} max={60} step={1} value={node.after?.mode === 'wait' ? node.after.collectMinutes ?? 0 : 0}
+        onChange={event => actions.updateNode(node.id, { after: { mode: 'wait', hours, unit, collectMinutes: Number(event.target.value) } })} />
+    </label>
+    <p className="text-xs text-muted-foreground">Con 0 se procesa la primera respuesta. De 1 a 60 minutos: el tiempo empieza con el primer mensaje del cliente, reúne lo que escriba y luego continúa una sola vez. No se reinicia con cada mensaje.</p>
     <ul aria-label={`Respuestas de ${node.name}`} className="space-y-2">
       {rules.map(({ option, index }, position) => {
         const label = `respuesta ${position + 1} de ${node.name}`;

@@ -1,4 +1,16 @@
 @import "tailwindcss";
+
+/* Message controls appear for the selected touch message, keyboard focus or a real mouse hover. */
+.chat-message-action { pointer-events: none; }
+.chat-message-action:focus-visible,
+.chat-message-action[data-state="open"],
+[data-message-id][data-actions-active="true"] .chat-message-action {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-message-id]:hover .chat-message-action { opacity: 1; pointer-events: auto; }
+}
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

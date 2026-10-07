@@ -57,7 +57,7 @@ Un grafo de **nodos**; cada nodo es un mensaje y sus opciones llevan a otros nod
 | `action` | nada propio: ejecuta una accion integrada | ninguna |
 
 Acciones integradas (el codigo sabe *como* hacerlas; el administrador decide *donde* conectarlas y *que dicen*):
-`netflix_login_code`, `netflix_travel_code`, `handoff` (pasar a una persona).
+`netflix_login_code`, `netflix_travel_code`, `handoff` (pasar a una persona), `create_report` (crear un reporte de problema y pasar a una persona).
 
 Flujo por defecto (equivale al actual): `menu` (buttons: Codigo de Netflix -> `netflix`, Hablar con soporte ->
 `soporte`) · `netflix` (buttons: Iniciar sesion -> `login`, Estoy de viaje -> `viaje`) · `login` (action) ·

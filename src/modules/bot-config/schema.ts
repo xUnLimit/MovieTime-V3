@@ -28,8 +28,8 @@ const nodeSchema = z.object({
   body: text,
   listButtonLabel: text.optional(),
   options: z.array(optionSchema).max(100),
-  after: z.union([z.object({ mode: z.literal('continue'), delivery: z.enum(['joined', 'separate']).optional() }), z.object({ mode: z.literal('wait'), hours: z.number(), unit: z.enum(['hours', 'minutes']).optional() })]).optional(),
-  action: z.enum(['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services', 'service_access']).optional(),
+  after: z.union([z.object({ mode: z.literal('continue'), delivery: z.enum(['joined', 'separate']).optional() }), z.object({ mode: z.literal('wait'), hours: z.number(), unit: z.enum(['hours', 'minutes']).optional(), collectMinutes: z.number().int().min(0).max(60).optional() })]).optional(),
+  action: z.enum(['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services', 'service_access', 'create_report']).optional(),
   block: blockSchema.optional(),
   condition: z.object({ type: z.enum(['customer_has_services', 'catalog_has_stock']) }).optional(),
 });

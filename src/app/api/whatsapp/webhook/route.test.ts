@@ -294,7 +294,7 @@ describe('POST /api/whatsapp/webhook', () => {
         return 'menu';
       });
       await deliver();
-      expect(handleBotMessage).toHaveBeenCalledWith(expect.objectContaining({ waMessageId: 'wamid.IN' }), expect.anything(), {});
+      expect(handleBotMessage).toHaveBeenCalledWith(expect.objectContaining({ waMessageId: 'wamid.IN' }), expect.anything(), { createReport: expect.any(Function) });
       expect(openNetflixInbox).toHaveBeenCalledWith('owner@gmail.com', 'app-password');
       expect(sendCloudApiMessage).toHaveBeenCalledTimes(1);
       expect(recordBotEvent).toHaveBeenCalledWith({ waId: '50760000000', type: 'menu_shown' });

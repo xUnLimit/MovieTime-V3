@@ -24,6 +24,12 @@ async function runAction(run: BotRun, action: BotActionKey | undefined, services
   if (action === 'netflix_login_code') return requestNetflixCode(run, services, { type: 'login', serviceId: null });
   if (action === 'netflix_travel_code') return requestNetflixCode(run, services, { type: 'travel', serviceId: null });
   if (action === 'service_access') return requestServiceAccess(run, null);
+  if (action === 'create_report') {
+    if (!run.deps.createReport) throw new Error('Report storage unavailable');
+    await run.deps.createReport(run.message);
+    const sent = await reply(run.deps, run.message, { kind: 'text', text: 'Recibimos tu reporte. Una persona del equipo revisará el problema y te ayudará por este chat.' });
+    return sent.sendStatus === 'accepted' ? 'handoff' : 'send_failed';
+  }
   if (action === 'handoff') {
     await sayMessage(run, 'handoff_ack', undefined, prefix);
     await trackEvent(run, 'handoff');
@@ -77,14 +83,14 @@ async function showTextAfter(run: BotRun, node: BotNode, after: BotTextAfter, se
     }
   }
   const sent = await reply(run.deps, run.message, buildNodeMessage({ ...rendered, kind: 'text', options: [], body }));
-  if (after.mode === 'wait' && sent.sendStatus === 'accepted') await startWait(run, node, after.hours);
+  if (after.mode === 'wait' && sent.sendStatus === 'accepted') await startWait(run, node, after.hours, after.collectMinutes);
   return { result: 'node', shown: node };
 }
 
-async function startWait(run: BotRun, node: BotNode, hours: number): Promise<void> {
+async function startWait(run: BotRun, node: BotNode, hours: number, collectMinutes?: number): Promise<void> {
   try {
     const expiresAt = new Date(run.now.getTime() + hours * HOUR_MS).toISOString();
-    await run.deps.waits?.set(run.message.fromWaId, { nodeId: node.id, expiresAt }, run.now);
+    await run.deps.waits?.set(run.message.fromWaId, { nodeId: node.id, expiresAt, ...(collectMinutes ? { collectMinutes } : {}) }, run.now);
   } catch {
     log.warn('Bot wait could not be saved', { nodeId: node.id });
   }
@@ -121,7 +127,7 @@ async function answerWait(run: BotRun, text: string, services: BotService[], req
   }
   await trackEvent(run, 'option_selected', { nodeId: node.id, optionId: option.id, detail: { destino: target.id, respuesta: 'escrita' } });
   const result = await deliverNode(run, target, services);
-  await clearWait(run, wait);
+  if (result !== 'send_failed' && result !== 'retry') await clearWait(run, wait);
   return result;
 }
 

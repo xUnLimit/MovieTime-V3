@@ -11,6 +11,20 @@ import { MessageTimeline } from './MessageTimeline';
 
 const NOW = new Date(2026, 8, 27, 15, 30);
 
+it('selecciona las acciones de un solo mensaje al tocarlo y las cierra al desplazar la conversación', () => {
+  const { container } = render(<MessageTimeline messages={[message({ id: 'touch-1' }), message({ id: 'touch-2' })]} isLoading={false} unreadCount={0} now={NOW} onReact={vi.fn()} />);
+  const first = container.querySelector('[data-message-id="touch-1"]')!;
+  const second = container.querySelector('[data-message-id="touch-2"]')!;
+  const touch = (target: Element) => { const event = new Event('pointerdown', { bubbles: true }); Object.defineProperty(event, 'pointerType', { value: 'touch' }); fireEvent(target, event); };
+  touch(first);
+  expect(first.getAttribute('data-actions-active')).toBe('true');
+  touch(second);
+  expect(first.getAttribute('data-actions-active')).toBe('false');
+  expect(second.getAttribute('data-actions-active')).toBe('true');
+  fireEvent.scroll(container.querySelector('.overflow-y-auto')!);
+  expect(second.getAttribute('data-actions-active')).toBe('false');
+});
+
 function message(overrides: Partial<WhatsAppChatMessage>): WhatsAppChatMessage {
   return {
     id: 'm', direction: 'inbound', kind: 'text', textBody: 'Hola', templateName: null,

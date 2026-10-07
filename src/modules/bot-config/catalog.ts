@@ -26,7 +26,7 @@ export const KEYWORD_MAX_LENGTH = 40;
 export const NODE_NAME_MAX_LENGTH = 60;
 
 export const NODE_KINDS: readonly BotNodeKind[] = ['buttons', 'list', 'text', 'action'];
-export const ACTION_KEYS: readonly BotActionKey[] = ['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services', 'service_access'];
+export const ACTION_KEYS: readonly BotActionKey[] = ['netflix_login_code', 'netflix_travel_code', 'handoff', 'purchase', 'renewal', 'my_services', 'service_access', 'create_report'];
 
 export const ACTION_CATALOG: Record<BotActionKey, { label: string; description: string }> = {
   purchase: { label: 'Adquirir servicios', description: 'Abre el catálogo y el carrito con reserva y pago verificado.' },
@@ -44,6 +44,7 @@ export const ACTION_CATALOG: Record<BotActionKey, { label: string; description: 
     label: 'Enviar código de viaje',
     description: 'Busca la solicitud de viaje del perfil del cliente y le entrega el código o el enlace de verificación.',
   },
+  create_report: { label: 'Crear reporte de problema', description: 'Guarda la explicación del cliente en Reportes y pasa el chat al equipo. No se ejecuta al pedir códigos.' },
   handoff: {
     label: 'Pasar a una persona',
     description: 'Avisa al cliente que una persona lo atenderá y deja el chat para el equipo.',

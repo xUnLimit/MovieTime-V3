@@ -19,6 +19,7 @@ export type SimulationState = {
   turns: SimulationTurn[]; currentNodeId: string | null; finished: boolean; sample?: SimulationSample;
   /** Un texto que espera la respuesta escrita del cliente: la simulación sigue con `answerSimulation`. */
   awaitingNodeId?: string;
+  collectedText?: string[];
   copy?: Readonly<Record<string, string>>;
 };
 type Context = { def: BotDefinition; sample: SimulationSample; copy?: Readonly<Record<string, string>> };
@@ -67,6 +68,7 @@ function actionTurns(def: BotDefinition, action: BotActionKey | undefined, prefi
   if (action === 'netflix_travel_code') {
     return [{ from: 'bot', text: renderTemplate(def.messages.travel_code_sent, sampleValues(def.params.travelWindowMinutes)) }];
   }
+  if (action === 'create_report') return [warning('aquí se crea un reporte con la explicación recopilada y el chat pasa al equipo; la simulación no guarda reportes.'), { from: 'bot', text: 'Recibimos tu reporte. Una persona del equipo revisará el problema y te ayudará por este chat.' }];
   if (action === 'handoff') return [{ from: 'bot', text: withPrefix(prefix, def.messages.handoff_ack) }];
   if (action === 'service_access') {
     return [warning('aquí el cliente recibe los datos de su servicio (correo, contraseña, perfil…) con la plantilla «Notificación de Suscripción»; el simulador no los muestra. Con varios servicios, primero elige de cuál.')];
@@ -239,12 +241,13 @@ export function stepSimulation(def: BotDefinition, current: SimulationState, opt
  * Lo que el cliente escribe cuando un texto espera su respuesta: sigue por la salida que coincide o, si ninguna coincide y no hay
  * «cualquier otra respuesta», el bot no contesta y el chat queda para una persona.
  */
-export function answerSimulation(def: BotDefinition, current: SimulationState, written: string): SimulationState {
-  const text = written.trim();
+export function answerSimulation(def: BotDefinition, current: SimulationState, written: string, finishCollection = false): SimulationState {
+  const text = (finishCollection ? current.collectedText?.join('\n\n') ?? '' : written).trim();
   const node = def.nodes.find((candidate) => candidate.id === current.awaitingNodeId);
   if (current.finished || !node || text === '') return current;
   const ctx: Context = { def, sample: current.sample ?? defaultSample(), copy: current.copy };
-  const turns = [...current.turns, { from: 'customer' as const, text }];
+  const turns = finishCollection ? current.turns : [...current.turns, { from: 'customer' as const, text }];
+  if (!finishCollection && node.after?.mode === 'wait' && node.after.collectMinutes) return { ...current, turns, collectedText: [...current.collectedText ?? [], text] };
   const option = matchTextAnswer(node, text);
   const target = option ? def.nodes.find((candidate) => candidate.id === option.next) : undefined;
   if (!target) return state(ctx, [...turns, warning('el bot no contesta: ninguna respuesta coincide y no hay «cualquier otra respuesta». El chat queda para una persona.')], node.id, true);

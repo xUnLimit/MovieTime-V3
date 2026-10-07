@@ -43,6 +43,7 @@ export type BotDeps = {
   accessData?: AccessData;
   // Las esperas de respuesta escrita (textos que esperan al cliente); ausente si el bot no las puede guardar.
   waits?: BotWaitStore;
+  createReport?: (message: InboundMessage) => Promise<void>;
 };
 
 export type BotResult = 'ignored' | 'menu' | 'node' | 'handoff' | 'option_unavailable' | 'limited' | 'none' | 'no_profile'

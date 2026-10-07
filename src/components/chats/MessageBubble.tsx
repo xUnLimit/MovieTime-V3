@@ -40,6 +40,8 @@ type MessageBubbleProps = {
   onOpenImage?: (message: WhatsAppChatMessage, objectUrl: string) => void;
   onSaveSticker?: (message: WhatsAppChatMessage) => void;
   canRetry?: (message: WhatsAppChatMessage) => boolean;
+  actionsActive?: boolean;
+  onActivateActions?: () => void;
 };
 
 function StatusIcon({ status }: { status: string }) {
@@ -55,7 +57,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-export function MessageBubble({ message, continued, quotedByWaMessageId = {}, reactions, templateContent, reactionEmojis = QUICK_REACTIONS, highlighted, activeMatch, onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry }: MessageBubbleProps) {
+export function MessageBubble({ message, continued, quotedByWaMessageId = {}, reactions, templateContent, reactionEmojis = QUICK_REACTIONS, highlighted, activeMatch, onReply, onReact, onForward, onRetry, onHide, onOpenImage, onSaveSticker, canRetry, actionsActive = false, onActivateActions }: MessageBubbleProps) {
   const [confirmHide, setConfirmHide] = useState(false);
   const [reactMenuOpen, setReactMenuOpen] = useState(false);
   const outbound = message.direction === 'outbound';
@@ -81,7 +83,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
         <button
           type="button"
           className={cn(
-            'grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-chat-quiet opacity-0 transition-opacity hover:text-chat-accent-strong focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/message:opacity-100 data-[state=open]:opacity-100 max-md:opacity-100',
+            'grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-chat-quiet opacity-0 transition-opacity hover:text-chat-accent-strong focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring chat-message-action data-[state=open]:opacity-100',
             outbound ? 'text-chat-bubble-out-meta' : 'text-chat-muted'
           )}
           aria-label="Opciones del mensaje"
@@ -111,7 +113,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-chat-quiet opacity-0 transition-opacity hover:bg-chat-raised hover:text-chat-accent-strong focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/message:opacity-100 data-[state=open]:opacity-100 max-md:opacity-100"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-chat-quiet opacity-0 transition-opacity hover:bg-chat-raised hover:text-chat-accent-strong focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring chat-message-action data-[state=open]:opacity-100"
           aria-label="Reaccionar al mensaje"
         >
           <SmilePlus className="h-[18px] w-[18px]" />
@@ -124,7 +126,7 @@ export function MessageBubble({ message, continued, quotedByWaMessageId = {}, re
   ) : null;
 
   return (
-    <li data-message-id={message.id} className={cn('group/message flex items-center gap-1 px-[13px] sm:px-[clamp(17px,3vw,48px)]', outbound ? 'flex-row-reverse' : 'flex-row', continued ? 'mt-[4px]' : 'mt-[9px]')}>
+    <li data-message-id={message.id} data-actions-active={actionsActive} onPointerDown={event => { if (event.pointerType === 'touch') onActivateActions?.(); }} className={cn('group/message flex items-center gap-1 px-[13px] sm:px-[clamp(17px,3vw,48px)]', outbound ? 'flex-row-reverse' : 'flex-row', continued ? 'mt-[4px]' : 'mt-[9px]')}>
       <div
         className={cn(
           'relative inline-block w-fit max-w-[80%] pb-[5px] pl-[9px] pr-2 pt-[6px] text-sm leading-[19px] [overflow-wrap:anywhere] sm:max-w-[min(65%,480px)]',

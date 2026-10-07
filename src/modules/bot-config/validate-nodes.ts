@@ -17,6 +17,9 @@ function checkTextAfter(node: BotNode, report: Report): void {
     return;
   }
   if (after?.mode !== 'wait') return;
+  if (after.collectMinutes !== undefined && (!Number.isInteger(after.collectMinutes) || after.collectMinutes < 0 || after.collectMinutes > 60)) {
+    report(`${base}.after.collectMinutes`, 'El tiempo de recopilación debe ser de 0 a 60 minutos enteros.');
+  }
   const minutes = after.unit === 'minutes';
   const value = minutes ? after.hours * 60 : after.hours;
   const max = WAIT_HOURS.max * (minutes ? 60 : 1);

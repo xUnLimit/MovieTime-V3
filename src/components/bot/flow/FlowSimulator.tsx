@@ -24,6 +24,8 @@ export function FlowSimulator({ def, onStep }: { def: BotDefinition; onStep?: (n
   }
   // Un texto que espera la respuesta del cliente: se escribe lo que respondería, como en WhatsApp.
   const waiting = simulation !== null && !simulation.finished && simulation.awaitingNodeId !== undefined;
+  const after = def.nodes.find(node => node.id === simulation?.awaitingNodeId)?.after;
+  const collecting = waiting && after?.mode === 'wait' && (after.collectMinutes ?? 0) > 0;
   return <Panel title="Simulador" contentClassName="overflow-x-auto" actions={<Button variant="outline" onClick={() => setSimulation(startSimulation(def, sample))}>Iniciar simulación</Button>}>
     {usesExtensions ? <div className="mb-3"><SampleDataEditor sample={sample} onChange={setSample} /></div> : null}
     {simulation ? <PhoneMockup contactName="MovieTime PTY" contactStatus="Simulación" mode="bot">{simulation.turns.map((turn, index) => <div key={index} className={`max-w-[90%] rounded-md p-2 text-sm ${turn.from === 'customer' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-card'}`}>
@@ -37,5 +39,8 @@ export function FlowSimulator({ def, onStep }: { def: BotDefinition; onStep?: (n
       <Input className="min-w-0 flex-1" aria-label="Respuesta del cliente" placeholder="Escribe lo que respondería el cliente…" value={written} onChange={(event) => setWritten(event.target.value)} />
       <Button type="submit" disabled={written.trim() === ''}>Enviar respuesta</Button>
     </form> : null}
+    {collecting && simulation ? <div className="mt-2 space-y-2"><p className="text-xs text-muted-foreground">La ventana empieza con el primer mensaje y dura {after?.mode === 'wait' ? after.collectMinutes : 0} minutos. Puedes enviar varios mensajes antes de simular el fin del tiempo.</p>
+      <Button variant="outline" disabled={!simulation.collectedText?.length} onClick={() => setSimulation(answerSimulation(def, simulation, '', true))}>Simular fin de recopilación</Button>
+    </div> : null}
   </Panel>;
 }

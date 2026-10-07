@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_reports: {
+        Row: { id: string; wa_id: string; source_message_id: string; description: string; status: string; version: number; created_at: string; updated_at: string; updated_by: string | null }
+        Insert: { id?: string; wa_id: string; source_message_id: string; description: string; status?: string; version?: number; created_at?: string; updated_at?: string; updated_by?: string | null }
+        Update: { status?: string; version?: number; updated_at?: string; updated_by?: string | null }
+        Relationships: []
+      }
       intereses: {
         Row: { id: string; contact_id: string; categoria_id: string; plan_id: string | null; origen: string; estado: string; created_at: string; avisado_at: string | null; consent_at: string | null; paused_at: string | null; invite_until: string | null; notice_attempts: number }
         Insert: { id?: string; contact_id: string; categoria_id: string; plan_id?: string | null; origen: string; estado?: string; created_at?: string; avisado_at?: string | null; consent_at?: string | null; paused_at?: string | null; invite_until?: string | null; notice_attempts?: number }
@@ -2568,18 +2574,24 @@ export type Database = {
           wa_id: string
           node_id: string
           expires_at: string
+          collect_minutes: number
+          collect_started_at: string | null
           created_at: string
         }
         Insert: {
           wa_id: string
           node_id: string
           expires_at: string
+          collect_minutes?: number
+          collect_started_at?: string | null
           created_at?: string
         }
         Update: {
           wa_id?: string
           node_id?: string
           expires_at?: string
+          collect_minutes?: number
+          collect_started_at?: string | null
           created_at?: string
         }
         Relationships: []
@@ -4289,6 +4301,8 @@ export type Database = {
       }
     }
     Functions: {
+      create_customer_report: { Args: { p_wa_id: string; p_message_id: string; p_description: string; p_token: string; p_fence: number }; Returns: string }
+      update_customer_report: { Args: { p_id: string; p_status: string; p_version: number }; Returns: boolean }
       mt_order_resolution_quote: { Args: { p_order_id: string }; Returns: Json }
       mt_resolve_order: { Args: { p_order_id: string; p_action: string; p_expected_amount: number; p_reference: string | null; p_items: string[] | null; p_idempotency_key: string }; Returns: string }
       mt_claim_order_delivery: { Args: { p_order_id?: string | null }; Returns: Json }

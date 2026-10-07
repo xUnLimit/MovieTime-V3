@@ -17,6 +17,7 @@ import { sendOutboundMessage, type NewOutboundMessage } from '@/modules/whatsapp
 import { createOutboundStore } from '@/modules/whatsapp/outbound-store';
 import { createTemplateCatalog } from '@/modules/whatsapp/template-catalog';
 import { createBotRuntime } from './bot-runtime';
+import { createCustomerReportUseCase } from '@/application/use-cases/customer-report-use-case';
 
 const logger = createLogger('WhatsAppInboxRuntime');
 
@@ -52,12 +53,18 @@ export async function drainWhatsAppInbox(requestId: string) {
       await assertCurrent();
       const definition = await bot.definitionFor(claim.message, claim.conversation.flowVersion, latest);
       const commerceDeps = createCommerceConversationDeps();
+      const createReport = async () => {
+        await assertCurrent();
+        await createCustomerReportUseCase({ waId: claim.message.fromWaId, messageId: claim.message.waMessageId,
+          description: claim.message.messageType === 'text' ? claim.message.textBody?.trim() || 'Problema reportado por el cliente.' : 'Problema reportado por el cliente. Consulta la conversación para ver los detalles.',
+          token: claim.token, fence: claim.fence });
+      };
       const turn = await runConversationTurn({
-        waiting: () => bot.waiting(definition, claim.message, send, claim.conversation.orderId),
+        waiting: () => bot.waiting(definition, claim.message, send, claim.conversation.orderId, createReport),
         pauseCommerce: () => handleCommerceConversation(claim.message, claim.conversation.context, commerceDeps, definition, { pause: true }),
         clearWaiting: () => createBotWaitStore().clear(claim.message.fromWaId),
         commerce: (options) => handleCommerceConversation(claim.message, claim.conversation.context, commerceDeps, definition, options),
-        bot: (input) => bot.handle(definition, claim.message, send, claim.conversation.orderId, input),
+        bot: (input) => bot.handle(definition, claim.message, send, claim.conversation.orderId, { ...input, createReport }),
         async checkpoint(commerce) {
           if (!await store.checkpoint(claim, commerce.context, commerce.process, commerce.orderId, bot.version)) throw new AutomationLeaseLostError();
         },

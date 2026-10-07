@@ -122,6 +122,8 @@ Todo dato remoto tiene carga, vacio y error.
 
 ## 9. Movimiento
 
+En Chats las fechas son separadores normales entre días: no flotan sobre mensajes. Los controles de mensaje (`chat-message-action`) aparecen con hover real del mouse, foco de teclado o al tocar un mensaje; en pantallas táctiles solo un mensaje queda seleccionado y desplazar la conversación cierra esa selección. La vista `/design-lab/paginas?p=chats` permite comprobarlo con varios días sintéticos. Reportes se revisa con `?p=reportes` y usa la misma tabla y paginación compartidas.
+
 Discreto y funcional: 150-200ms `ease-out` en hover, aperturas y cambios de vista; retroalimentacion de pulsacion (`active:scale-[0.98]`). Se respeta `prefers-reduced-motion`. Sin animaciones decorativas.
 
 **Acceso (`/login`)** es la unica pantalla con una secuencia propia, porque marca el paso entre "fuera" y "dentro" y comunica estado (`LoginScreen`, clases `login-*` en `globals.css`):
