@@ -61,20 +61,20 @@ describe('qué pasa después de un texto', () => {
     render(<Harness />);
     await addText(user);
     await user.click(screen.getByRole('button', { name: 'Continuar con otro paso' }));
-    const destination = screen.getByRole('combobox', { name: /^Continúa en/ }) as HTMLSelectElement;
+    const destination = screen.getByLabelText(/^Continúa en/) as HTMLSelectElement;
     expect(destination.value).toBe('menu');
     await user.selectOptions(destination, 'netflix');
-    expect((screen.getByRole('combobox', { name: /^Continúa en/ }) as HTMLSelectElement).value).toBe('netflix');
+    expect((screen.getByLabelText(/^Continúa en/) as HTMLSelectElement).value).toBe('netflix');
     expect(within(stepList()).getByRole('button', { name: /^Nuevo nodo de texto/ }).textContent).toContain('Texto · continúa solo');
     expect(screen.getByText(/en un solo mensaje/)).toBeTruthy();
-    const delivery = screen.getByRole('combobox', { name: 'Enviar mensajes' });
+    const delivery = screen.getByLabelText('Enviar mensajes');
     await user.selectOptions(delivery, 'separate');
     expect((delivery as HTMLSelectElement).value).toBe('separate');
     expect(screen.getByText(/Primero se envía este texto/)).toBeTruthy();
     await user.selectOptions(delivery, 'joined');
     expect(screen.getByText(/en un solo mensaje/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Terminar aquí' }));
-    expect(screen.queryByRole('combobox', { name: /^Continúa en/ })).toBeNull();
+    expect(screen.queryByLabelText(/^Continúa en/)).toBeNull();
     expect(within(stepList()).getByRole('button', { name: /^Nuevo nodo de texto/ }).textContent).not.toContain('continúa');
   });
 
@@ -82,58 +82,60 @@ describe('qué pasa después de un texto', () => {
     const user = userEvent.setup();
     render(<Harness />);
     await addText(user);
-    await user.click(screen.getByRole('button', { name: 'Esperar la respuesta del cliente' }));
+    const editor = within(inspector());
+    await user.click(editor.getByRole('button', { name: 'Esperar la respuesta del cliente' }));
     expect(within(stepList()).getByRole('button', { name: /^Nuevo nodo de texto/ }).textContent).toContain('Texto · espera la respuesta');
     expect(within(inspector()).getByText('Cualquier otra respuesta')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Agregar «cualquier otra respuesta»/ })).toHaveProperty('disabled', true);
-    const hours = screen.getByRole('combobox', { name: /Esperar hasta/ }) as HTMLSelectElement;
+    expect(editor.getByRole('button', { name: /Agregar «cualquier otra respuesta»/ })).toHaveProperty('disabled', true);
+    const hours = editor.getByLabelText(/Esperar hasta/) as HTMLSelectElement;
     expect(hours.value).toBe('12');
     await user.selectOptions(hours, '2');
-    expect((screen.getByRole('combobox', { name: /Esperar hasta/ }) as HTMLSelectElement).value).toBe('2');
-    expect(within(screen.getByRole('combobox', { name: /Esperar hasta/ })).getByRole('option', { name: '1 hora' })).toBeTruthy();
-    const custom = screen.getByRole('spinbutton', { name: 'Horas de espera' });
+    expect((editor.getByLabelText(/Esperar hasta/) as HTMLSelectElement).value).toBe('2');
+    expect(within(editor.getByLabelText(/Esperar hasta/)).getByRole('option', { name: '1 hora' })).toBeTruthy();
+    const custom = editor.getByLabelText('Horas de espera');
     await user.clear(custom);
     expect(custom.getAttribute('aria-invalid')).toBe('true');
     await user.type(custom, '5');
     expect((custom as HTMLInputElement).value).toBe('5');
-    expect((screen.getByRole('combobox', { name: /Esperar hasta/ }) as HTMLSelectElement).value).toBe('5');
+    expect((editor.getByLabelText(/Esperar hasta/) as HTMLSelectElement).value).toBe('5');
     expect(custom.getAttribute('aria-invalid')).toBe('false');
     await user.selectOptions(hours, '2');
     expect((custom as HTMLInputElement).value).toBe('2');
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Unidad de espera' }), 'minutes');
-    const minutes = screen.getByRole('spinbutton', { name: 'Minutos de espera' });
+    await user.selectOptions(editor.getByLabelText('Unidad de espera'), 'minutes');
+    const minutes = editor.getByLabelText('Minutos de espera');
     await user.clear(minutes);
     await user.type(minutes, '7');
-    expect((screen.getByRole('combobox', { name: /Esperar hasta/ }) as HTMLSelectElement).value).toBe('7');
+    expect((editor.getByLabelText(/Esperar hasta/) as HTMLSelectElement).value).toBe('7');
     expect(minutes.getAttribute('aria-invalid')).toBe('false');
     await user.selectOptions(hours, '1');
     expect((minutes as HTMLInputElement).value).toBe('1');
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Unidad de espera' }), 'hours');
-    expect((screen.getByRole('spinbutton', { name: 'Horas de espera' }) as HTMLInputElement).value).toBe('1');
+    await user.selectOptions(editor.getByLabelText('Unidad de espera'), 'hours');
+    expect((editor.getByLabelText('Horas de espera') as HTMLInputElement).value).toBe('1');
   });
 
   it('agrega respuestas con sus palabras, las ordena, cambia su destino y las quita', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await addText(user);
-    await user.click(screen.getByRole('button', { name: 'Esperar la respuesta del cliente' }));
-    await user.click(screen.getByRole('button', { name: 'Agregar respuesta' }));
-    await user.click(screen.getByRole('button', { name: 'Agregar respuesta' }));
-    const first = screen.getByRole('textbox', { name: /^Palabras de la respuesta 1/ });
+    const editor = within(inspector());
+    await user.click(editor.getByRole('button', { name: 'Esperar la respuesta del cliente' }));
+    await user.click(editor.getByRole('button', { name: 'Agregar respuesta' }));
+    await user.click(editor.getByRole('button', { name: 'Agregar respuesta' }));
+    const first = editor.getByLabelText(/^Palabras de la respuesta 1/);
     await user.clear(first);
     await user.type(first, 'sí, claro');
-    const second = screen.getByRole('textbox', { name: /^Palabras de la respuesta 2/ });
+    const second = editor.getByLabelText(/^Palabras de la respuesta 2/);
     await user.clear(second);
     await user.type(second, 'no');
-    await user.selectOptions(screen.getByRole('combobox', { name: /^Destino de la respuesta 2/ }), 'soporte');
-    expect((screen.getByRole('combobox', { name: /^Destino de la respuesta 2/ }) as HTMLSelectElement).value).toBe('soporte');
-    expect(screen.getByRole('button', { name: /^Subir respuesta 1/ })).toHaveProperty('disabled', true);
-    expect(screen.getByRole('button', { name: /^Bajar respuesta 2/ })).toHaveProperty('disabled', true);
-    await user.click(screen.getByRole('button', { name: /^Subir respuesta 2/ }));
-    expect((screen.getByRole('textbox', { name: /^Palabras de la respuesta 1/ }) as HTMLInputElement).value).toBe('no');
-    await user.click(screen.getByRole('button', { name: /^Quitar respuesta 1/ }));
-    expect(screen.queryByRole('textbox', { name: /^Palabras de la respuesta 2/ })).toBeNull();
-    expect((screen.getByRole('textbox', { name: /^Palabras de la respuesta 1/ }) as HTMLInputElement).value).toBe('sí, claro');
+    await user.selectOptions(editor.getByLabelText(/^Destino de la respuesta 2/), 'soporte');
+    expect((editor.getByLabelText(/^Destino de la respuesta 2/) as HTMLSelectElement).value).toBe('soporte');
+    expect(editor.getByRole('button', { name: /^Subir respuesta 1/ })).toHaveProperty('disabled', true);
+    expect(editor.getByRole('button', { name: /^Bajar respuesta 2/ })).toHaveProperty('disabled', true);
+    await user.click(editor.getByRole('button', { name: /^Subir respuesta 2/ }));
+    expect((editor.getByLabelText(/^Palabras de la respuesta 1/) as HTMLInputElement).value).toBe('no');
+    await user.click(editor.getByRole('button', { name: /^Quitar respuesta 1/ }));
+    expect(editor.queryByLabelText(/^Palabras de la respuesta 2/)).toBeNull();
+    expect((editor.getByLabelText(/^Palabras de la respuesta 1/) as HTMLInputElement).value).toBe('sí, claro');
   });
 
   it('quitar «cualquier otra respuesta» avisa qué pasa sin ella y se puede volver a agregar', async () => {
@@ -146,7 +148,7 @@ describe('qué pasa después de un texto', () => {
     expect(screen.getByRole('status').textContent).toMatch(/impide|impiden/);
     await user.click(screen.getByRole('button', { name: /Agregar «cualquier otra respuesta»/ }));
     expect(within(inspector()).getByText('Cualquier otra respuesta')).toBeTruthy();
-    expect(screen.getByRole('combobox', { name: /^Destino de cualquier otra respuesta/ })).toBeTruthy();
+    expect(screen.getByLabelText(/^Destino de cualquier otra respuesta/)).toBeTruthy();
   });
 
   it('un tope de respuestas deshabilita agregar más', async () => {
@@ -160,7 +162,7 @@ describe('qué pasa después de un texto', () => {
     expect(add).toHaveProperty('disabled', false);
     await user.click(add);
     expect(screen.getByRole('button', { name: 'Agregar respuesta' })).toHaveProperty('disabled', true);
-    expect(screen.getAllByRole('textbox', { name: /^Palabras de la respuesta/ })).toHaveLength(10);
+    expect(screen.getAllByLabelText(/^Palabras de la respuesta/)).toHaveLength(10);
   });
 
   it('las acciones de compra, códigos y atención no ofrecen «después»: solo los textos', () => {

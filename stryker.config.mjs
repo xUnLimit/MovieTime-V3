@@ -24,6 +24,9 @@ const config = {
   thresholds: { high: 80, low: 60, break: 50 },
   concurrency: 4,
   timeoutMS: 30000,
+  // El runner ejecuta en serie las suites relacionadas; cinco minutos no alcanzan para el arranque.
+  // Este presupuesto no cambia el timeout de cada mutante ni los umbrales.
+  dryRunTimeoutMinutes: 15,
   // El sandbox solo necesita fuentes y configuracion; evita copiar symlinks de skills, builds y e2e.
   ignorePatterns: ['.claude', '.agents', '.git', '.next', '.stryker-tmp', 'reports', 'e2e', 'docs', 'coverage', 'playwright-report', 'test-results', 'public'],
   tempDirName: '.stryker-tmp',

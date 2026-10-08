@@ -15,7 +15,7 @@ La definicion de terminado y los umbrales obligatorios viven en [`AGENTS.md`](..
 
 La integracion y pgTAP requieren `npx supabase start` y Docker. Para integracion configura `INTEGRATION_SUPABASE_URL`, `INTEGRATION_SUPABASE_ANON_KEY` e `INTEGRATION_SUPABASE_SERVICE_ROLE_KEY` con los valores locales de `supabase status -o env`; nunca uses credenciales de produccion. El contrato de variables `E2E_*` del gate autenticado esta en `scripts/lib/auth-gate.mjs`. Las pruebas de navegador arrancan su propio servidor; consulta su script antes de ejecutarlas y deja libre el puerto configurado.
 
-Stryker usa `stryker.config.mjs` y escribe resultados en `reports/mutation/`. Para comprobar solo un modulo: `npx stryker run --mutate src/platform/utils/calculations.ts`. La corrida completa es lenta y corresponde al control nocturno.
+Stryker usa `stryker.config.mjs` y escribe resultados en `reports/mutation/`. Para comprobar solo un modulo: `npx stryker run --mutate src/platform/utils/calculations.ts`. La corrida completa es lenta y corresponde al control nocturno. El arranque instrumentado tiene un presupuesto de 15 minutos porque el runner ejecuta las suites relacionadas en serie; el timeout por mutante y los umbrales permanecen en `stryker.config.mjs`. Para verificar el arranque sin ejecutar los mutantes: `npm run test:mutation -- --dryRunOnly`.
 
 ## PR, release y nocturno
 

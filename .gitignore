@@ -73,3 +73,6 @@ reports/
 
 # Playwright: sesiones guardadas por el proyecto setup (contienen tokens)
 e2e/.auth/
+
+# Worktrees locales de agentes; no son submodulos del proyecto
+/.claude/worktrees/
