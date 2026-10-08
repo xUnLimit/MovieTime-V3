@@ -16,17 +16,40 @@ it('reads the whole report, links its chat and updates with the current version'
   expect(mocks.mutate).toHaveBeenCalledWith({ id: row.id, status: 'resolved', version: 2 }, expect.anything());
   mocks.mutate.mock.calls[0][1].onSuccess();
 });
+it('shows a metric for every report state and a reusable resolution message', async () => {
+  const user = userEvent.setup();
+  const resolved = { ...row, status: 'resolved' as const };
+  mocks.use.mockImplementation((input: { status: string }) => ({ ...state, query: { ...state.query, data: { reports: [resolved], total: input.status === 'open' ? 3 : input.status === 'in_progress' ? 2 : 9 } } }));
+  render(<ReportsView />);
+  expect(screen.getByRole('button', { name: /Abiertos.*3/ })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /En atención.*2/ })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /Resueltos.*9/ })).toBeTruthy();
+  expect(screen.getByRole('tab', { name: /Abiertos.*3/ })).toBeTruthy();
+  expect(screen.getByRole('tab', { name: /^En atenci/ })).toBeTruthy();
+  expect(screen.getByRole('tab', { name: /^Resueltos/ })).toBeTruthy();
+  const openMetric = screen.getByRole('button', { name: /Abiertos.*3/ });
+  expect(openMetric.getAttribute('aria-pressed')).toBe('true');
+  expect(openMetric.firstElementChild?.className).toContain('min-h-32');
+  expect(openMetric.firstElementChild?.className).toContain('bg-accent');
+  await user.click(screen.getByRole('button', { name: /En atenci/ }));
+  expect(screen.getByRole('button', { name: /En atenci/ }).getAttribute('aria-pressed')).toBe('true');
+  await user.click(screen.getByRole('button', { name: 'Ver reporte de +50760000001' }));
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByRole('heading', { name: 'Avisar al cliente' })).toBeTruthy();
+  expect(within(dialog).getByRole('textbox', { name: 'Mensaje de resolución' })).toHaveProperty('value', expect.stringContaining('ya fue resuelto'));
+  expect(within(dialog).getByRole('button', { name: 'Abrir WhatsApp' })).toBeTruthy();
+});
 it('resets pagination on tab change and forwards server filters', async () => {
   const user = userEvent.setup(); render(<ReportsView />);
-  await user.click(screen.getByRole('button', { name: 'Siguiente' })); expect(mocks.use).toHaveBeenLastCalledWith({ status: 'open', page: 2 }, true);
-  await user.click(screen.getByRole('tab', { name: 'En atención' })); expect(mocks.use).toHaveBeenLastCalledWith({ status: 'in_progress', page: 1 }, true);
-  await user.click(screen.getByRole('tab', { name: 'Resueltos' })); expect(mocks.use).toHaveBeenLastCalledWith({ status: 'resolved', page: 1 }, true);
+  await user.click(screen.getByRole('button', { name: 'Siguiente' })); expect(mocks.use).toHaveBeenCalledWith({ status: 'open', page: 2 }, true);
+  await user.click(screen.getByRole('tab', { name: /^En atenci/ })); expect(mocks.use).toHaveBeenCalledWith({ status: 'in_progress', page: 1 }, true);
+  await user.click(screen.getByRole('tab', { name: /^Resueltos/ })); expect(mocks.use).toHaveBeenCalledWith({ status: 'resolved', page: 1 }, true);
 });
 it('shows controlled errors and retry, empty and loading states, and denies unauthorized UI', async () => {
   state.query.isError = true; state.change.isError = true; state.query.data = undefined;
   const user = userEvent.setup(); const { rerender } = render(<ReportsView />); expect(screen.getAllByRole('alert')).toHaveLength(2);
   await user.click(screen.getByRole('button', { name: 'Reintentar' })); expect(mocks.refetch).toHaveBeenCalled();
-  expect(screen.getByText('No hay reportes en este estado.')).toBeTruthy();
-  state.query.isLoading = true; rerender(<ReportsView />); expect(screen.queryByText('No hay reportes en este estado.')).toBeNull();
+  expect(screen.getByText('No hay reportes abiertos por ahora.')).toBeTruthy();
+  state.query.isLoading = true; rerender(<ReportsView />); expect(screen.queryByText('No hay reportes abiertos por ahora.')).toBeNull();
   rerender(<ReportsView enabled={false} />); expect(screen.getByText('Esta sección está disponible solo para administradores.')).toBeTruthy();
 });

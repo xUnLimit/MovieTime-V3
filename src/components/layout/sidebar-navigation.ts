@@ -88,7 +88,6 @@ const navigationSections: SidebarNavSection[] = [
   {
     label: 'Seguimiento',
     items: [
-      { name: 'Reportes', href: '/reportes', icon: FileText },
       {
         name: 'Notificaciones',
         href: '/notificaciones',
@@ -99,6 +98,7 @@ const navigationSections: SidebarNavSection[] = [
         href: '/chats',
         icon: MessageCircle,
       },
+      { name: 'Reportes', href: '/reportes', icon: FileText },
       {
         name: 'Servicios en Reposo',
         href: '/reposo',

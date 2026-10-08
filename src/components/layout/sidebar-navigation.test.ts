@@ -49,6 +49,12 @@ describe('getSidebarNavigationSections', () => {
     expect(section('Seguimiento')).not.toContain('Automatizaciones');
   });
 
+  it('ubica Reportes inmediatamente debajo de Chats', () => {
+    const section = getSidebarNavigationSections('admin').find((item) => item.label === 'Seguimiento');
+    const names = section?.items.map((item) => item.name) ?? [];
+    expect(names[names.indexOf('Chats') + 1]).toBe('Reportes');
+  });
+
   it('reserva los apartados nuevos a administradores', () => {
     expect(names('vendedor')).not.toContain('Pedidos y cobros');
     expect(names('vendedor')).not.toContain('Plantillas de mensajes');
