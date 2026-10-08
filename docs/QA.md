@@ -17,6 +17,8 @@ La integracion y pgTAP requieren `npx supabase start` y Docker. Para integracion
 
 Stryker usa `stryker.config.mjs` y escribe resultados en `reports/mutation/`. Para comprobar solo un modulo: `npx stryker run --mutate src/platform/utils/calculations.ts`. La corrida completa es lenta y corresponde al control nocturno. El arranque instrumentado tiene un presupuesto de 15 minutos porque el runner ejecuta las suites relacionadas en serie; el timeout por mutante y los umbrales permanecen en `stryker.config.mjs`. Para verificar el arranque sin ejecutar los mutantes: `npm run test:mutation -- --dryRunOnly`.
 
+Vitest y sus plugins de cobertura/UI permanecen fijados a 4.1.11: Stryker 10 forma los filtros de pruebas con nombres separados por espacios, mientras Vitest 5 usa ` > ` y omite las pruebas seleccionadas. `mutation-compatibility.test.mjs` ejecuta el runner real sobre una prueba anidada y exige que mate todos los mutantes. Una actualizacion de Vitest debe pasar esa regresion antes de cambiar las versiones.
+
 ## PR, release y nocturno
 
 - Durante el desarrollo: `npm run quality:fast`. El gate de PR debe incluir analisis estatico, arquitectura, tamano de modulos, paridad CI, Knip, cobertura y los jobs de navegador y base de datos. El E2E autenticado debe estar conectado al job correspondiente para bloquear el PR.
