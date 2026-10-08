@@ -19,6 +19,10 @@ function DialogPortal({
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
+function DialogTrigger(props: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+}
+
 function hasDialogDescription(children: React.ReactNode): boolean {
   return React.Children.toArray(children).some((child) => {
     if (!React.isValidElement(child)) return false
@@ -160,4 +164,5 @@ export {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 }

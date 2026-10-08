@@ -57,5 +57,5 @@ function seed(queryClient: QueryClient) {
 /** `?p=`: pedidos-cobros (y su `?tab=`), plantillas, configuracion o acceso. Por defecto, Pedidos y cobros. */
 export function PaginasPreview() {
   const which = typeof window === 'undefined' ? 'pedidos-cobros' : new URLSearchParams(window.location.search).get('p') ?? 'pedidos-cobros';
-  return <ShellPreview seed={seed}>{which === 'chats' ? <ChatTimelinePreview /> : which === 'reportes' ? <ReportsView /> : which === 'plantillas' ? <PlantillasMensajesPage /> : which === 'configuracion' ? <ConfiguracionView /> : which === 'acceso' ? <ServiceAccessPanel serviceId="00000000-0000-4000-8000-000000000003" clients={4} /> : <PedidosCobrosPage />}</ShellPreview>;
+  return <ShellPreview seed={seed}>{which === 'chats' ? <ChatTimelinePreview /> : which === 'reportes' ? <ReportsView liveUpdates={false} /> : which === 'plantillas' ? <PlantillasMensajesPage /> : which === 'configuracion' ? <ConfiguracionView /> : which === 'acceso' ? <ServiceAccessPanel serviceId="00000000-0000-4000-8000-000000000003" clients={4} /> : <PedidosCobrosPage />}</ShellPreview>;
 }

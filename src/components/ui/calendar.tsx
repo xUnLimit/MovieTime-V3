@@ -11,7 +11,7 @@ import {
   getDefaultClassNames,
   type DayButton,
 } from "react-day-picker"
-import { es } from "date-fns/locale"
+import { es } from "react-day-picker/locale"
 
 import { cn } from "@/platform/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -102,7 +102,7 @@ function Calendar({
             : "rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-sidebar-foreground [&>svg]:size-3.5",
           defaultClassNames.caption_label
         ),
-        table: "w-full border-collapse",
+        month_grid: cn("w-full border-collapse", defaultClassNames.month_grid),
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
           "text-sidebar-foreground rounded-md flex-1 font-normal text-xs select-none",
@@ -177,13 +177,13 @@ function Calendar({
           )
         },
         DayButton: CalendarDayButton,
-        WeekNumber: ({ children, ...props }) => {
+        WeekNumber: ({ children, week, ...props }) => {
           return (
-            <td {...props}>
+            <th {...props}>
               <div className="flex size-(--cell-size) items-center justify-center text-center">
-                {children}
+                {children ?? week.weekNumber}
               </div>
-            </td>
+            </th>
           )
         },
         ...components,

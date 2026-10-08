@@ -15,3 +15,17 @@ it('fetches paginated reports, refetches after updates and does not query for un
   await act(() => hook.result.current.change.mutateAsync(input)); expect(mocks.update).toHaveBeenCalledWith(input, expect.anything());
   await waitFor(() => expect(mocks.list.mock.calls.length).toBeGreaterThan(1)); hook.unmount(); client.clear();
 });
+it('uses the Realtime backup interval instead of polling every fifteen seconds', async () => {
+  vi.useFakeTimers(); mocks.list.mockClear(); mocks.list.mockResolvedValue({ reports: [], total: 0 });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  const hook = renderHook(() => useCustomerReports({ page: 1, status: 'open' }, true, 120_000), { wrapper });
+  try {
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(mocks.list).toHaveBeenCalledTimes(1);
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+    expect(mocks.list).toHaveBeenCalledTimes(1);
+    await act(async () => { await vi.advanceTimersByTimeAsync(105_000); });
+    expect(mocks.list).toHaveBeenCalledTimes(2);
+  } finally { hook.unmount(); client.clear(); vi.useRealTimers(); }
+});

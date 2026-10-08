@@ -2,6 +2,7 @@ import { fetchCustomerReports, postCustomerReport } from '@/platform/api/custome
 import { getCurrentSession } from '@/platform/supabase/auth';
 import { assertOnlineMutation } from '@/platform/utils/online-mutation';
 import type { ReportQuery, ReportUpdate } from '@/platform/validation/customer-reports';
+export { subscribeToReportChanges } from '@/platform/supabase/customer-reports-realtime';
 
 async function token() {
   const session = await getCurrentSession();

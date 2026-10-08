@@ -5,7 +5,7 @@
  * Imported in vitest.config.mts
  */
 
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { webcrypto } from 'node:crypto';
 
@@ -25,7 +25,10 @@ const localStorageMock = {
   clear: vi.fn(),
 };
 
-global.localStorage = localStorageMock as unknown as Storage;
+beforeEach(() => {
+  // Suites may restore their globals after a test; install this fixture for each test.
+  vi.stubGlobal('localStorage', localStorageMock);
+});
 
 // Mock matchMedia
 if (typeof window !== 'undefined') Object.defineProperty(window, 'matchMedia', {

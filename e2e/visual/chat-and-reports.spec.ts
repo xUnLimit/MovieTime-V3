@@ -69,3 +69,31 @@ test('reports fit on mobile across tabs and page changes', async ({ page }) => {
   await expect(page.locator('tbody tr')).toHaveCount(10);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`reports share notification metrics and layout in ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 951 });
+    await page.addInitScript(value => localStorage.setItem('theme', value), theme);
+    const measure = () => page.evaluate(() => {
+      const card = document.querySelector('[data-slot="metric-card"]');
+      const tabs = document.querySelector('[data-slot="tabs-list"]');
+      const table = document.querySelector('[data-slot="table-card"]');
+      if (!card || !tabs || !table) throw new Error('Faltan componentes compartidos');
+      const styles = getComputedStyle(card);
+      return { cardHeight: card.getBoundingClientRect().height, border: styles.borderTopWidth,
+        cardTop: card.getBoundingClientRect().top, tabsTop: tabs.getBoundingClientRect().top,
+        tableTop: table.getBoundingClientRect().top };
+    });
+    await page.goto('/design-lab/notificaciones');
+    await expect(page.locator('tbody tr').first()).toBeVisible();
+    const reference = await measure();
+    await page.goto('/design-lab/paginas?p=reportes');
+    await expect(page.locator('tbody tr')).toHaveCount(10);
+    expect(await measure()).toEqual(reference);
+    expect(reference.cardHeight).toBe(80);
+    expect(reference.border).toBe('1px');
+    expect(await page.locator('[data-slot="metric-card"]').evaluateAll(cards => cards.every(card => !card.closest('button')))).toBe(true);
+    const axe = await new AxeBuilder({ page }).analyze();
+    expect(axe.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([]);
+  });
+}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -17,10 +17,10 @@ export function OverlaysSection() {
     <LabSection id="overlays" title="Overlays" description="Diálogos para tareas enfocadas; menús ordenados por frecuencia; toasts por tono.">
       <div className="space-y-5 rounded-xl border bg-card p-5">
         <LabRow label="Dialog · Menú · Popover">
-          <Button variant="outline" onClick={() => setDialogOpen(true)}>
-            Abrir diálogo
-          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">Abrir diálogo</Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Cortar venta</DialogTitle>

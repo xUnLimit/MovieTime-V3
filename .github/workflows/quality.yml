@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Secret scan (complete repository)
@@ -59,7 +59,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Tests and coverage
@@ -83,7 +83,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Production build
@@ -109,7 +109,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run build:verify
@@ -134,7 +134,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Start clean local Supabase and apply every migration
@@ -170,7 +170,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 24
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Start clean local Supabase

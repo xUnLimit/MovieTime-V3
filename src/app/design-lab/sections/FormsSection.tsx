@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +24,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
 
 export function FormsSection() {
   const [notify, setNotify] = useState(true);
+  const [date, setDate] = useState<Date | undefined>(new Date(2026, 9, 7));
 
   return (
     <LabSection id="formularios" title="Formularios" description="Campos con hairline, foco visible y error cerca del campo.">
@@ -51,6 +53,10 @@ export function FormsSection() {
         </Field>
         <Field label="Notas">
           <Textarea placeholder="Comentarios internos sobre la venta" />
+        </Field>
+        <Field label="Fecha">
+          <Calendar mode="single" defaultMonth={new Date(2026, 9, 1)}
+            selected={date} onSelect={setDate} />
         </Field>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
